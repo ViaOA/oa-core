@@ -415,7 +415,7 @@ public abstract class OAObjectParentService {
 				return OAObjectParentService.this.getOAObjectHubService().getHubReferences(oaObj);
 			}
 			@Override
-			public void callHubEventFireBeforeDeleteEvent(Hub hub, Object obj) {
+			public <T extends OAObject> void callHubEventFireBeforeDeleteEvent(Hub<T> hub, T obj) {
 				OAObjectParentService.this.getHubService().getHubEventService().fireBeforeDeleteEvent(hub, obj);
 			}
 			@Override

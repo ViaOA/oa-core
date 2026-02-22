@@ -512,6 +512,7 @@ public abstract class HubAddRemoveService {
 	 * @param obj     the object to test
 	 * @return {@code null} if adding is allowed, otherwise an error message
 	 */
+	@SuppressWarnings("unchecked")
 	public <T extends OAObject> String canAddMsg(final Hub<T> thisHub, final T obj) {
 		if (thisHub == null) {
 			return "hub is null";

@@ -38,6 +38,7 @@ public abstract class HubLinkService {
 	 * @param bAutoCreate           true to auto-create linked objects
 	 * @param bAutoCreateAllowDups  true to allow duplicates when auto-creating objects
 	 */
+	@SuppressWarnings("unchecked")
 	public <T extends OAObject> void setLinkHub(Hub<T> thisHub, String propertyFrom, Hub<?> linkToHub, String propertyTo, boolean linkPosFlag,
 			boolean bAutoCreate, boolean bAutoCreateAllowDups) {
 		// 20110809 add bAutoCreateAllowDups

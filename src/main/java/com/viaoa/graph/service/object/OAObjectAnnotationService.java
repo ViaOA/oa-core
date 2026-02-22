@@ -62,7 +62,7 @@ public abstract class OAObjectAnnotationService {
 	 * @param oi    the metadata object to update
 	 * @param clazz the class whose annotations will be processed
 	 */
-	public void update(OAObjectInfo oi, Class clazz) {
+	public void update(OAObjectInfo oi, Class<?> clazz) {
 		HashSet<String> hs = new HashSet<String>();
 		for (; clazz != null;) {
 			if (OAObject.class.equals(clazz)) {
@@ -81,7 +81,7 @@ public abstract class OAObjectAnnotationService {
 	 * @param oi    the metadata object to update
 	 * @param clazz the class whose trigger annotations will be processed
 	 */
-	public void update2(OAObjectInfo oi, Class clazz) {
+	public void update2(OAObjectInfo oi, Class<?> clazz) {
 		for (; clazz != null;) {
 			if (OAObject.class.equals(clazz)) {
 				break;
@@ -104,7 +104,7 @@ public abstract class OAObjectAnnotationService {
 	 * @param clazz the class whose annotations are processed
 	 * @param hs    a set used to track processed annotation categories
 	 */
-	private void _update(final OAObjectInfo oi, final Class clazz, HashSet<String> hs) {
+	private void _update(final OAObjectInfo oi, final Class<?> clazz, HashSet<String> hs) {
 		String s;
 
 		if (!hs.contains("OAClass")) {
@@ -1029,7 +1029,7 @@ public abstract class OAObjectAnnotationService {
 	 * @param oi    the metadata object being updated
 	 * @param clazz the class whose trigger methods are processed
 	 */
-	private void _update2(final OAObjectInfo oi, final Class clazz) {
+	private void _update2(final OAObjectInfo oi, final Class<?> clazz) {
 		Method[] methods = clazz.getDeclaredMethods();
 		if (methods == null) {
 			return;
@@ -1079,7 +1079,7 @@ public abstract class OAObjectAnnotationService {
 	 * @param method     the accessor method returning a {@link Hub}
 	 * @return the class of objects stored in the hub, or {@code null} if unresolved
 	 */
-	public Class getHubObjectClass(OAMany annotation, Method method) {
+	public Class<? extends OAObject> getHubObjectClass(OAMany annotation, Method method) {
 		Class cx = this.callReflectGetHubObjectClass(method);
 		if (cx == null && annotation != null) {
 			Class cz = annotation.toClass();

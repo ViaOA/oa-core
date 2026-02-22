@@ -37,6 +37,7 @@ public abstract class HubDetailService {
 	 * @param bShared     whether the detail hub should share underlying data
 	 * @param selectOrder the select order to assign to the detail hub
 	 */
+	@SuppressWarnings("unchecked")
 	public <T extends OAObject, U extends OAObject> void setMasterHub(Hub<T> thisHub, Hub<U> masterHub, String path, boolean bShared, String selectOrder) {
 		final HubDataMaster hdm = faHub.getHubDataMaster(thisHub);
 		final HubDataUnique<?> hdu = faHub.getHubDataUnique(thisHub);

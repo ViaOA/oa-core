@@ -704,8 +704,7 @@ public abstract class OAObjectReflectService {
 	 * @param hubMatch         optional Hub for autoMatch
 	 * @return the reference Hub, possibly empty but never {@code null}
 	 */
-	public Hub getReferenceHub(final OAObject oaObj, final String linkPropertyName, String sortOrder, boolean bSequence,
-			Hub hubMatch) {
+	public Hub getReferenceHub(final OAObject oaObj, final String linkPropertyName, String sortOrder, boolean bSequence, Hub hubMatch) {
 		/*
 		 lock obj.props[]
 		   get Hub from oaObj.props[]

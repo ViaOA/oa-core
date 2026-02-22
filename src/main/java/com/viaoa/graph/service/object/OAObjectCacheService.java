@@ -68,9 +68,9 @@ import com.viaoa.util.OAString;
 public abstract class OAObjectCacheService {
 	private static final Logger LOG = Logger.getLogger(OAObjectCacheService.class.getName());
 
-	private final Map<Class<? extends OAObject>, List<OAObjectCacheListener<? extends OAObject>>> hmCacheListener = new ConcurrentHashMap<>();
-    private final Map<Class<? extends OAObject>, WeakReference<Hub<? extends OAObject>>[]> hmCacheSelectAllHub = new HashMap<>(37,.75F);
-    private final Map<String, WeakReference<Hub<? extends OAObject>>> hmCacheNamedHub = new HashMap<>(29,.75F);
+	private final Map<Class<? extends OAObject>, List<OAObjectCacheListener<?>>> hmCacheListener = new ConcurrentHashMap<>();
+    private final Map<Class<? extends OAObject>, WeakReference<Hub<?>>[]> hmCacheSelectAllHub = new HashMap<>(37,.75F);
+    private final Map<String, WeakReference<Hub<?>>> hmCacheNamedHub = new HashMap<>(29,.75F);
 	
 	private final AtomicInteger aiListenerCount = new AtomicInteger();
 	private boolean bDisableCache = false;
@@ -114,10 +114,10 @@ public abstract class OAObjectCacheService {
 	 * listeners to notify and the object that was added.
 	 */
 	private class SendAddEventInfo {
-		OAObjectCacheListener[] hls;
-		Object obj;
+		OAObjectCacheListener<? extends OAObject>[] hls;
+		OAObject obj;
 
-		public SendAddEventInfo(OAObjectCacheListener[] hls, Object obj) {
+		public SendAddEventInfo(OAObjectCacheListener<? extends OAObject>[] hls, OAObject obj) {
 			this.hls = hls;
 			this.obj = obj;
 		}
@@ -132,16 +132,16 @@ public abstract class OAObjectCacheService {
 	 * @param clazz the class whose select-all Hubs are requested
 	 * @return an array of matching Hubs, or {@code null} if none exist
 	 */
-	public Hub[] getSelectAllHubs(Class clazz) {
+	public <T extends OAObject> Hub<T>[] getSelectAllHubs(Class<T> clazz) {
 		if (clazz == null) {
 			return null;
 		}
 		synchronized (hmCacheSelectAllHub) {
-			WeakReference<Hub<? extends OAObject>>[] refs = hmCacheSelectAllHub.get(clazz);
+			WeakReference<Hub<?>>[] refs = hmCacheSelectAllHub.get(clazz);
 			if (refs == null) return null;
-			Hub[] hubs = new Hub[refs.length];
+			Hub<?>[] hubs = new Hub[refs.length];
 			for (int i = 0; i < refs.length; i++) {
-				hubs[i] = (Hub) refs[i].get();
+				hubs[i] = (Hub<?>) refs[i].get();
 				if (hubs[i] == null) {
 					if (refs.length == 1) {
 						hmCacheSelectAllHub.remove(clazz);
@@ -152,7 +152,7 @@ public abstract class OAObjectCacheService {
 					}
 				}
 			}
-			return hubs;
+			return (Hub<T>[]) hubs;
 		}
 	}
 	
@@ -163,10 +163,10 @@ public abstract class OAObjectCacheService {
 	 * @param clazz the class whose first select-all Hub is requested
 	 * @return the first matching Hub, or {@code null} if none exist
 	 */
-	public Hub getSelectAllHub(Class clazz) {
-		Hub[] hs = getSelectAllHubs(clazz);
+	public <T extends OAObject> Hub<T> getSelectAllHub(Class<T> clazz) {
+		Hub<?>[] hs = getSelectAllHubs(clazz);
 		if (hs != null && hs.length > 0) {
-			return hs[0];
+			return (Hub<T>) hs[0];
 		}
 		return null;
 	}
@@ -179,8 +179,8 @@ public abstract class OAObjectCacheService {
 	 * @param refRemove the specific weak reference to remove
 	 * @return a new array with the reference removed, or the original array if not found
 	 */
-	private WeakReference[] removeSelectAllHubs(WeakReference[] refs, WeakReference refRemove) {
-		WeakReference[] refs2 = new WeakReference[refs.length - 1];
+	private WeakReference<Hub<?>>[] removeSelectAllHubs(WeakReference<Hub<?>>[] refs, WeakReference<Hub<?>> refRemove) {
+		WeakReference<Hub<?>>[] refs2 = new WeakReference[refs.length - 1];
 		boolean bFound = false;
 		int j = 0;
 		for (int i = 0; i < refs.length; i++) {
@@ -204,15 +204,15 @@ public abstract class OAObjectCacheService {
 	 *
 	 * @param hub the Hub to register as a select-all Hub
 	 */
-	public void setSelectAllHub(Hub hub) {
+	public <T extends OAObject> void setSelectAllHub(Hub<T> hub) {
 		if (hub == null) {
 			return;
 		}
-		Class clazz = hub.getObjectClass();
+		Class<T> clazz = hub.getObjectClass();
 		LOG.fine("Hub.objectClass = " + clazz);
 
 		synchronized (hmCacheSelectAllHub) {
-			WeakReference[] refs = (WeakReference[]) hmCacheSelectAllHub.get(clazz);
+			WeakReference<Hub<?>>[] refs = (WeakReference<Hub<?>>[]) hmCacheSelectAllHub.get(clazz);
 			if (refs == null) {
 				refs = new WeakReference[1];
 			} else {
@@ -222,11 +222,11 @@ public abstract class OAObjectCacheService {
 						return;
 					}
 				}
-				WeakReference[] refs2 = new WeakReference[refs.length + 1];
+				WeakReference<Hub<?>>[] refs2 = new WeakReference[refs.length + 1];
 				System.arraycopy(refs, 0, refs2, 0, refs.length);
 				refs = refs2;
 			}
-			refs[refs.length - 1] = new WeakReference(hub);
+			refs[refs.length - 1] = new WeakReference<Hub<?>>(hub);
 			hmCacheSelectAllHub.put(clazz, refs);
 			LOG.finer("total for class=" + clazz + " is now " + refs.length);
 		}
@@ -239,21 +239,21 @@ public abstract class OAObjectCacheService {
 	 *
 	 * @param hub the Hub to remove from the select-all list
 	 */
-	public void removeSelectAllHub(Hub hub) {
+	public <T extends OAObject> void removeSelectAllHub(Hub<T> hub) {
 		if (hub == null) {
 			return;
 		}
-		Class clazz = hub.getObjectClass();
+		Class<T> clazz = hub.getObjectClass();
 		if (clazz == null) {
 			return;
 		}
 
 		synchronized (hmCacheSelectAllHub) {
-			WeakReference[] refs = (WeakReference[]) hmCacheSelectAllHub.get(clazz);
+			WeakReference<Hub<?>>[] refs = (WeakReference<Hub<?>>[]) hmCacheSelectAllHub.get(clazz);
 			if (refs == null) return;
 			
 			for (int i = 0; i < refs.length; i++) {
-				Hub h = (Hub) refs[i].get();
+				Hub h = refs[i].get();
 				if (h == hub) {
 					if (refs.length == 1) {
 						hmCacheSelectAllHub.remove(clazz);
@@ -286,7 +286,7 @@ public abstract class OAObjectCacheService {
 	 * @param name the reference name (case-insensitive)
 	 * @param hub  the Hub to associate with the name
 	 */
-	public void setNamedHub(String name, Hub<? extends OAObject> hub) {
+	public void setNamedHub(String name, Hub<?> hub) {
 		LOG.fine("Hub=" + hub + ", name=" + name);
 		if (name == null || hub == null) {
 			return;
@@ -305,13 +305,13 @@ public abstract class OAObjectCacheService {
 	 * @param name the name of the Hub to retrieve (case-insensitive)
 	 * @return the Hub associated with the name, or {@code null} if not found
 	 */
-	public Hub getNamedHub(String name) {
+	public Hub<?> getNamedHub(String name) {
 		//LOG.finer("Name="+name);
 		if (name == null) {
 			return null;
 		}
 		
-		Hub hub = null;
+		Hub<?> hub = null;
 		synchronized (hmCacheNamedHub) {
 			WeakReference ref = (WeakReference) hmCacheNamedHub.get(name.toUpperCase());
 			if (ref != null) {
@@ -334,7 +334,7 @@ public abstract class OAObjectCacheService {
 	 */
 	public <T extends OAObject> void addListener(final Class<T> clazz, final OAObjectCacheListener<T> l) {
 		LOG.fine("class=" + clazz);
-		List alListener = hmCacheListener.computeIfAbsent(clazz, k -> new ArrayList<>());
+		List<OAObjectCacheListener<?>> alListener = hmCacheListener.computeIfAbsent(clazz, k -> new ArrayList<>());
 		
 		synchronized (alListener) {
 			if (!alListener.contains(l)) {
@@ -373,11 +373,11 @@ public abstract class OAObjectCacheService {
 	 * @param clazz the class whose listener list should be modified
 	 * @param l     the listener to remove
 	 */
-	public void removeListener(Class clazz, OAObjectCacheListener l) {
+	public <T extends OAObject> void removeListener(Class<T> clazz, OAObjectCacheListener<T> l) {
 		LOG.fine("class=" + clazz);
 		if (clazz == null || l == null) return;
 	
-		List alListener = hmCacheListener.get(clazz);
+		List<OAObjectCacheListener<?>> alListener = hmCacheListener.get(clazz);
 		if (alListener != null) {
 			synchronized (alListener) {
 				if (alListener.remove(l)) {
@@ -434,7 +434,7 @@ public abstract class OAObjectCacheService {
 	 * @param bLocalOnly   unused indicator for local-only routing
 	 * @param bSendEvent   whether to dispatch the event to listeners
 	 */
-	public void fireAfterPropertyChange(OAObject obj, OAObjectKey origKey, String propertyName, Object oldValue, Object newValue,
+	public <T extends OAObject> void fireAfterPropertyChange(T obj, OAObjectKey origKey, String propertyName, Object oldValue, Object newValue,
 			boolean bLocalOnly, boolean bSendEvent) {
 		// Note: oldValue could be OAObjectKey, but will be resolved when HubEvent.getOldValue() is called
 		if (aiListenerCount.get() == 0) {
@@ -445,7 +445,7 @@ public abstract class OAObjectCacheService {
 		}
 		if (bSendEvent) {
 			// LOG.finest("object="+obj+", propertyName="+propertyName+", key="+origKey);
-			OAObjectCacheListener[] hl = getListeners(obj.getClass());
+			OAObjectCacheListener<T>[] hl = getListeners((Class<T>) obj.getClass());
 			if (hl != null && hl.length > 0) {
 				for (int i = 0; i < hl.length; i++) {
 					hl[i].afterPropertyChange(obj, propertyName, oldValue, newValue);
@@ -487,7 +487,7 @@ public abstract class OAObjectCacheService {
 		if (hub == null || obj == null) return;
 		if (aiListenerCount.get() == 0) return;
 
-		final OAObjectCacheListener<T>[] hl = getListeners((Class<T>) obj.getClass());
+		final OAObjectCacheListener<T>[] hl = getListeners( (Class<T>) obj.getClass());
 		if (hl == null) return;
 		final int x = hl.length;
 		if (x > 0) {
@@ -540,7 +540,7 @@ public abstract class OAObjectCacheService {
 	 *
 	 * @param c the class whose cached objects should be removed
 	 */
-	public void removeAllObjects(Class c) {
+	public void removeAllObjects(Class<? extends OAObject> c) {
 		LOG.warning(String.format("removing all Objects for class=%s was called (fyi only)", c.getSimpleName()));
 		objectCache.clearCache(c);
 	}
@@ -639,7 +639,7 @@ public abstract class OAObjectCacheService {
 	 * @param clazz the class whose cached object count is requested
 	 * @return the number of cached objects for the class
 	 */
-	public int getTotal(Class clazz) {
+	public int getTotal(Class<? extends OAObject> clazz) {
 		return objectCache.getTotal(clazz);
 	}
 
@@ -735,7 +735,7 @@ public abstract class OAObjectCacheService {
 	 *
 	 * @param clazz the class whose cached objects should be cleared
 	 */
-	public void clearCache(Class clazz) {
+	public void clearCache(Class<? extends OAObject> clazz) {
 		objectCache.clearCache(clazz);
 	}
 	
@@ -763,7 +763,7 @@ public abstract class OAObjectCacheService {
 	 * @param bAddToSelectAll   whether the object should be added to all select-all Hubs
 	 * @return the existing cached object if one matches, otherwise the supplied object
 	 */
-	public OAObject add(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll) {
+	public <T extends OAObject> T add(T obj, boolean bErrorIfExists, boolean bAddToSelectAll) {
 		return add(obj, bErrorIfExists, bAddToSelectAll, false);
 	}
 
@@ -779,11 +779,11 @@ public abstract class OAObjectCacheService {
 	 * @param bSendAddEventInAnotherThread    whether after-add events should be queued for asynchronous dispatch
 	 * @return the existing cached object if one matches, otherwise the supplied object
 	 */
-	public OAObject add(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll, boolean bSendAddEventInAnotherThread) {
+	public <T extends OAObject> T add(T obj, boolean bErrorIfExists, boolean bAddToSelectAll, boolean bSendAddEventInAnotherThread) {
 		if (bDisableCache) {
 			return obj;
 		}
-		OAObject objx = _add(obj, bErrorIfExists, bAddToSelectAll, bSendAddEventInAnotherThread);
+		T objx = _add(obj, bErrorIfExists, bAddToSelectAll, bSendAddEventInAnotherThread);
 		return objx;
 	}
 
@@ -799,12 +799,10 @@ public abstract class OAObjectCacheService {
 	 * @param bSendAddEventInAnotherThread    whether after-add events should be dispatched asynchronously
 	 * @return the existing cached object if found, otherwise the supplied object
 	 */
-	private OAObject _add(final OAObject obj, final boolean bErrorIfExists, boolean bAddToSelectAll,
+	private <T extends OAObject> T _add(final T obj, final boolean bErrorIfExists, boolean bAddToSelectAll,
 			final boolean bSendAddEventInAnotherThread) {
 		final OAObjectKey key = callKeyCreateObjectKey(obj);
-		OAObject objResult;
-
-		objResult = _add2(obj, key, bErrorIfExists, bAddToSelectAll, bSendAddEventInAnotherThread);
+		T objResult = _add2(obj, key, bErrorIfExists, bAddToSelectAll, bSendAddEventInAnotherThread);
 		return objResult;
 	}
 	
@@ -823,21 +821,19 @@ public abstract class OAObjectCacheService {
 	 * @return the existing cached object if found, otherwise the supplied object
 	 * @throws RuntimeException if the object or key is null or if the key has an invalid GUID
 	 */
-	private OAObject _add2(final OAObject obj, final OAObjectKey key, final boolean bErrorIfExists, boolean bAddToSelectAll,
-			final boolean bSendAddEventInAnotherThread) {
-
+	private <T extends OAObject> T _add2(final T obj, final OAObjectKey key, final boolean bErrorIfExists, boolean bAddToSelectAll, final boolean bSendAddEventInAnotherThread) {
 		if (obj == null) return null;
 		if (key == null) {
 			throw new RuntimeException("Adding to object cache without a key"); 
 		}
 		
-		final Class clazz = obj.getClass();
+		final Class<T> clazz = (Class<T>) obj.getClass();
 		final UUID guid = key.getGuid();
 		if (guid == null) {
 			throw new RuntimeException("Adding to object cache without a guid, key="+key); 
 		}
 		
-		OAObject objFound = objectCache.getObject(clazz, guid);
+		T objFound = objectCache.getObject(clazz, guid);
 		boolean bGuidFound = objFound != null;
 		
 		if (objFound == null) {
@@ -1061,8 +1057,8 @@ public abstract class OAObjectCacheService {
 	 * @return the cached object matching the GUID, or {@code null} if not found
 	 */
 	public <T extends OAObject> T getNewObjectUsingGuid(Class<T> clazz, UUID guid) {
-		Object obj = objectCache.getObject((Class<OAObject>) clazz, guid); 
-		return (T) obj;
+		T obj = objectCache.getObject(clazz, guid); 
+		return obj;
 	}
 
 	/**
@@ -1074,8 +1070,8 @@ public abstract class OAObjectCacheService {
 	 * @return the cached object matching the GUID, or {@code null} if not found
 	 */
 	public <T extends OAObject> T getUsingGuid(Class<T> clazz, UUID guid) {
-		Object obj = objectCache.getObject(clazz, guid); 
-		return (T) obj;
+		T obj = objectCache.getObject(clazz, guid); 
+		return obj;
 	}
 
 	/**
@@ -1105,9 +1101,7 @@ public abstract class OAObjectCacheService {
 	 * @return the next object in the cache, or {@code null} if none found
 	 */
 	public <T extends OAObject> T findNext(T fromObject) {
-		if (fromObject == null) {
-			return null;
-		}
+		if (fromObject == null) return null;
 		Class<T> c = (Class<T>) fromObject.getClass();
 		return _find(fromObject, c, null, null, false, true);
 	}
@@ -1122,6 +1116,7 @@ public abstract class OAObjectCacheService {
 	 * @param findObject   the value to compare against
 	 * @return the next matching object in the cache, or {@code null} if none found
 	 */
+	@SuppressWarnings("unchecked")
 	public <T extends OAObject> T findNext(T fromObject, String propertyPath, Object findObject) {
 		if (fromObject == null) {
 			return null;
@@ -1143,6 +1138,7 @@ public abstract class OAObjectCacheService {
 	 * @param bThrowException whether to throw an exception if no matching object is found
 	 * @return the next matching object in the cache, or {@code null} if none found
 	 */
+	@SuppressWarnings("unchecked")
 	public <T extends OAObject> T findNext(T fromObject, String propertyPath, Object findObject, boolean bSkipNew, boolean bThrowException) {
 		if (fromObject == null) {
 			return null;
@@ -1557,7 +1553,7 @@ public abstract class OAObjectCacheService {
 		purpose="", 
 		example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)"
 	)
-	public abstract OAObjectInfo callInfoGetObjectInfo(Class clazz);	
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class<? extends OAObject> clazz);	
 	
 	@OAParentProvided (
 			parentName = "OAObjectService", 
@@ -1571,7 +1567,7 @@ public abstract class OAObjectCacheService {
 		purpose="", 
 		example = "srvcObject.getOAObjectKeyService().createObjectKey(clazz, key)"
 	)
-	public abstract OAObjectKey callKeyCreateObjectKey(final Class c, final Object ...ids);	
+	public abstract OAObjectKey callKeyCreateObjectKey(final Class<? extends OAObject> c, final Object ...ids);	
 
 	@OAParentProvided (
 		parentName = "OAObjectService", 
@@ -1585,14 +1581,14 @@ public abstract class OAObjectCacheService {
 		purpose="", 
 		example = "srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(h)"
 	)
-	public abstract OALinkInfo callDetailGetLinkInfoFromDetailToMaster(Hub hub);
+	public abstract OALinkInfo callDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
 
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcHub.getHubSelectService().refreshSelect(h)"
 	)
-	public abstract boolean callHubSelectRefreshSelect(Hub thisHub);
+	public abstract boolean callHubSelectRefreshSelect(Hub<?> thisHub);
 	
 	@OAParentProvided (
 		parentName = "OAObjectService", 
@@ -1606,7 +1602,7 @@ public abstract class OAObjectCacheService {
 		purpose="", 
 		example = "og.getSyncService().getRemoteServer().refreshCache(clazz)"
 	)
-	public abstract void callSyncRemoteServerRefreshCache(Class clazz);	
+	public abstract void callSyncRemoteServerRefreshCache(Class<? extends OAObject> clazz);	
 
 	@OAParentProvided (
 		parentName = "OAObjectService", 

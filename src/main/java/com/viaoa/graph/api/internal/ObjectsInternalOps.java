@@ -220,7 +220,7 @@ public interface ObjectsInternalOps {
 	public void callObjectReflectLoadAllReferences(OAObject oaObj, boolean bOne, boolean bMany, boolean bIncludeCalc);
 	public void callObjectReflectLoadAllReferences(OAObject oaObj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc);
 	public int callObjectReflectLoadAllReferences(OAObject oaObj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc, int maxRefsToLoad);
-	public <T extends OAObject> T callObjectReflectGetObject(Class<T> clazz, Object keyValue);
+	public <T extends OAObject> T callObjectReflectGetObject(Class<T> clazz, Object keyValue); //qqqqqqqqq add this to graph.objects().getObject(c, k)
 	public <T extends OAObject> T callObjectReflectCreateNewObject(Class<T> clazz);
 	public boolean callObjectReflectAreAllReferencesLoaded(OAObject oaObj, boolean bIncludeCalc);
 	public boolean callObjectReflectIsReferenceHubLoaded(OAObject oaObj, String hubPropertyName);
