@@ -83,7 +83,7 @@ public interface OADataSourceInterface {
 	 * @param clazz the class to evaluate
 	 * @return true if the class is supported
 	 */
-	boolean isClassSupported(Class clazz);
+	boolean isClassSupported(Class<?> clazz);
 
 	/**
 	 * Determines whether the DataSource supports the specified class and
@@ -93,7 +93,7 @@ public interface OADataSourceInterface {
 	 * @param filter optional filter for fine-grained support evaluation
 	 * @return true if supported under the given filter
 	 */
-	boolean isClassSupported(Class clazz, OAFilter filter);
+	<T> boolean isClassSupported(Class<?> clazz, OAFilter<T> filter);
 
 	/**
 	 * Indicates whether the DataSource supports persistent storage operations
@@ -265,10 +265,10 @@ public interface OADataSourceInterface {
 	 * @param bDirty                   true to populate all properties even if already loaded
 	 * @return iterator over matching objects
 	 */
-	Iterator select(Class selectClass,
+	<T> Iterator<T> select(Class<T> selectClass,
 			String queryWhere, Object[] params, String queryOrder,
 			OAObject whereObject, String propertyFromWhereObject, String extraWhere,
-			int max, OAFilter filter, boolean bDirty);
+			int max, OAFilter<T> filter, boolean bDirty);
 
 	/**
 	 * Performs a select using the DataSource's native query language rather
@@ -282,9 +282,9 @@ public interface OADataSourceInterface {
 	 * @param bDirty      true to fully populate properties
 	 * @return iterator over matching objects
 	 */
-	Iterator selectPassthru(Class selectClass,
+	<T> Iterator<T> selectPassthru(Class<T> selectClass,
 			String queryWhere, String queryOrder,
-			int max, OAFilter filter, boolean bDirty);
+			int max, OAFilter<T> filter, boolean bDirty);
 
 	/**
 	 * Executes a native command on the underlying DataSource.
@@ -307,7 +307,7 @@ public interface OADataSourceInterface {
 	 * @param max                      maximum count limit, or zero for unlimited
 	 * @return number of matching objects
 	 */
-	int count(Class selectClass,
+	int count(Class<?> selectClass,
 			String queryWhere, Object[] params,
 			OAObject whereObject, String propertyFromWhereObject, String extraWhere, int max);
 
@@ -319,7 +319,7 @@ public interface OADataSourceInterface {
 	 * @param max         maximum count, or zero for unlimited
 	 * @return number of matching objects
 	 */
-	int countPassthru(Class selectClass,
+	int countPassthru(Class<?> selectClass,
 			String queryWhere, int max);
 
 	/**
@@ -331,7 +331,7 @@ public interface OADataSourceInterface {
 	 * @param bDirty true to fully populate the object
 	 * @return the matching object, or null if not found
 	 */
-	Object getObject(OAObjectInfo oi, Class clazz, OAObjectKey key, boolean bDirty);
+	<T> T getObject(OAObjectInfo oi, Class<T> clazz, OAObjectKey key, boolean bDirty);
 
 	/**
 	 * Returns the raw BLOB value for the specified property of the given object.
@@ -350,7 +350,7 @@ public interface OADataSourceInterface {
 	 * @param propertyName  the property to evaluate
 	 * @return maximum length supported for that property
 	 */
-	int getMaxLength(Class c, String propertyName);
+	int getMaxLength(Class<?> c, String propertyName);
 
 	/**
 	 * Hook for implementations to perform internal corruption checks.

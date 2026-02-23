@@ -122,7 +122,7 @@ public abstract class OAObjectInfoService {
 	 * @param clazz the class to retrieve metadata for.
 	 * @return the corresponding OAObjectInfo instance.
 	 */
-	public OAObjectInfo getOAObjectInfo(Class clazz) {
+	public OAObjectInfo getOAObjectInfo(Class<?> clazz) {
 		OAObjectInfo oi;
 		if (clazz != null) {
 			oi = hmObjectInfo.get(clazz);
@@ -137,7 +137,7 @@ public abstract class OAObjectInfoService {
 			}
 		}
 
-		oi = getOAObjectInfo(clazz, new HashMap<Class, OAObjectInfo>());
+		oi = getOAObjectInfo(clazz, new HashMap<Class<?>, OAObjectInfo>());
 		return oi;
 	}
 
@@ -151,7 +151,7 @@ public abstract class OAObjectInfoService {
 	 * @param hash  map used to prevent recursive reprocessing.
 	 * @return the OAObjectInfo for the class.
 	 */
-	private OAObjectInfo getOAObjectInfo(Class clazz, HashMap<Class, OAObjectInfo> hash) {
+	private OAObjectInfo getOAObjectInfo(Class<?> clazz, HashMap<Class<?>, OAObjectInfo> hash) {
 		OAObjectInfo oi;
 		boolean bNotOa = false;
 		if (clazz == null || !OAObject.class.isAssignableFrom(clazz) || OAObject.class.equals(clazz)) {
@@ -224,7 +224,7 @@ public abstract class OAObjectInfoService {
 	 * @param clazz the class to create metadata for.
 	 * @return the constructed OAObjectInfo instance.
 	 */
-	private OAObjectInfo _getOAObjectInfo(Class clazz) {
+	private OAObjectInfo _getOAObjectInfo(Class<?> clazz) {
 		boolean bSkip = false;
 		if (clazz == null || !OAObject.class.isAssignableFrom(clazz) || OAObject.class.equals(clazz)) {
 			bSkip = true;
@@ -318,7 +318,7 @@ public abstract class OAObjectInfoService {
 	 * @param thisOI the OAObjectInfo being initialized.
 	 * @param clazz  the class whose metadata is extracted.
 	 */
-	private void initialize(OAObjectInfo thisOI, Class clazz) {
+	private void initialize(OAObjectInfo thisOI, Class<?> clazz) {
 		if (thisOI.getForClass() != null) {
 			return;
 		}
@@ -406,7 +406,7 @@ public abstract class OAObjectInfoService {
 	 * @param clazz the class whose metadata is requested.
 	 * @return the OAObjectInfo for the class.
 	 */
-	public OAObjectInfo getObjectInfo(Class clazz) {
+	public OAObjectInfo getObjectInfo(Class<?> clazz) {
 		return getOAObjectInfo(clazz);
 	}
 
@@ -421,7 +421,7 @@ public abstract class OAObjectInfoService {
 	 * @param clazz  the target class for ONE links; null for MANY links.
 	 * @param type   link type constant from OALinkInfo.
 	 */
-	private void createLink(OAObjectInfo thisOI, String name, Class clazz, int type) {
+	private void createLink(OAObjectInfo thisOI, String name, Class<?> clazz, int type) {
 		for (OALinkInfo li : thisOI.getLinkInfos()) {
 			if (name.equalsIgnoreCase(li.getName())) {
 				return; // already exists
@@ -444,7 +444,7 @@ public abstract class OAObjectInfoService {
 	 * @param bIncludeSuperClasses  true to scan superclasses.
 	 * @return array of discovered property names.
 	 */
-	private String[] getPropertyNames(Class clazzOrig, boolean bIncludeSuperClasses) {
+	private String[] getPropertyNames(Class<?> clazzOrig, boolean bIncludeSuperClasses) {
 		ArrayList<String> alFound = new ArrayList<>();
 
 		HashSet<String> hsGetter = new HashSet<>();
@@ -900,7 +900,7 @@ public abstract class OAObjectInfoService {
 	 * @param hub the Hub instance to cache.
 	 * @return true if the Hub was cached; false otherwise.
 	 */
-	public boolean cacheHub(OALinkInfo li, final Hub hub) {
+	public boolean cacheHub(OALinkInfo li, final Hub<?> hub) {
 		if (li == null || hub == null || li.getCacheSize() < 1) {
 			return false;
 		}
@@ -929,7 +929,7 @@ public abstract class OAObjectInfoService {
 	 * @param hsCache the membership check set.
 	 * @return true if the Hub was added or already cached.
 	 */
-	private boolean _cacheHub(OALinkInfo li, Hub hub, List alCache, Set hsCache) {
+	private boolean _cacheHub(OALinkInfo li, Hub<?> hub, List alCache, Set hsCache) {
 		if (hsCache.contains(hub)) {
 			return true;
 		}
@@ -963,7 +963,7 @@ public abstract class OAObjectInfoService {
 	 * @param hub the Hub instance to check.
 	 * @return true if cached; false otherwise.
 	 */
-	public boolean isCached(OALinkInfo li, Hub hub) {
+	public boolean isCached(OALinkInfo li, Hub<?> hub) {
 		if (li == null || hub == null) {
 			return false;
 		}
@@ -1028,7 +1028,7 @@ public abstract class OAObjectInfoService {
 	 * @param methodName the method name.
 	 * @return the matching Method, or null if not found.
 	 */
-	public Method getMethod(Class clazz, String methodName) {
+	public Method getMethod(Class<?> clazz, String methodName) {
 		OAObjectInfo oi = getOAObjectInfo(clazz); // this will load up the methods
 		return getMethod(oi, methodName);
 	}
@@ -1127,7 +1127,7 @@ public abstract class OAObjectInfoService {
 	 * @param classParam the expected parameter type.
 	 * @return the matching Method, or null.
 	 */
-	public Method getMethod(OAObjectInfo oi, String methodName, final Class classParam) {
+	public Method getMethod(OAObjectInfo oi, String methodName, final Class<?> classParam) {
 		if (methodName == null || oi == null) {
 			return null;
 		}
@@ -1155,7 +1155,7 @@ public abstract class OAObjectInfoService {
 	 * @param clazz  the class whose cache is updated.
 	 * @param method the method to store.
 	 */
-	public void storeMethod(Class clazz, Method method) {
+	public void storeMethod(Class<?> clazz, Method method) {
 		//qqqqqqqq method was protected
 		Map<String, Method> map = getClassMethodMap(clazz);
 		method.setAccessible(true); // 20130131
@@ -1206,7 +1206,7 @@ public abstract class OAObjectInfoService {
 	 * @param propertyName the property name.
 	 * @return the property’s class type, or null.
 	 */
-	public Class getPropertyClass(Class clazz, String propertyName) {
+	public Class<?> getPropertyClass(Class<? extends OAObject> clazz, String propertyName) {
 		Method m = getMethod(clazz, "get" + propertyName);
 		if (m == null) {
 			return null;
@@ -1222,7 +1222,7 @@ public abstract class OAObjectInfoService {
 	 * @param propertyName the hub-property name.
 	 * @return the target class for the hub, or null.
 	 */
-	public Class getHubPropertyClass(Class clazz, String propertyName) {
+	public Class<? extends OAObject> getHubPropertyClass(Class<? extends OAObject> clazz, String propertyName) {
 		OALinkInfo li = getLinkInfo(clazz, propertyName);
 		if (li != null) {
 			return li.getToClass();
@@ -1239,7 +1239,7 @@ public abstract class OAObjectInfoService {
 	 * @param propertyName the link-property name.
 	 * @return the matching OALinkInfo, or null.
 	 */
-	public OALinkInfo getLinkInfo(Class clazz, String propertyName) {
+	public OALinkInfo getLinkInfo(Class<? extends OAObject> clazz, String propertyName) {
 		OAObjectInfo oi = getOAObjectInfo(clazz);
 		return getLinkInfo(oi, propertyName);
 	}
@@ -1290,7 +1290,7 @@ public abstract class OAObjectInfoService {
 	 * @param hub        the Hub instance to match.
 	 * @return the associated link info, or null.
 	 */
-	public OALinkInfo getLinkInfo(OAObjectInfo oi, OAObject fromObject, Hub hub) {
+	public OALinkInfo getLinkInfo(OAObjectInfo oi, OAObject fromObject, Hub<?> hub) {
 		for (OALinkInfo li : oi.getLinkInfos()) {
 			if (!li.getUsed()) {
 				continue;
@@ -1314,7 +1314,7 @@ public abstract class OAObjectInfoService {
 	 * @param toClass   the target class.
 	 * @return the matching link info, or null.
 	 */
-	public OALinkInfo getLinkInfo(Class fromClass, Class toClass) {
+	public OALinkInfo getLinkInfo(Class<? extends OAObject> fromClass, Class<? extends OAObject> toClass) {
 		OAObjectInfo oi = getOAObjectInfo(fromClass);
 		return getLinkInfo(oi, toClass);
 	}
@@ -1638,7 +1638,7 @@ public abstract class OAObjectInfoService {
 	 * @param propertyPath the forward property path.
 	 * @return the reversed property path, or null.
 	 */
-	public String reversePath(Class clazz, String propertyPath) {
+	public String reversePath(Class<? extends OAObject> clazz, String propertyPath) {
 		String revPropertyPath = "";
 		StringTokenizer st = new StringTokenizer(propertyPath, ".");
 		for (int i = 0; st.hasMoreTokens(); i++) {
@@ -1837,7 +1837,7 @@ public abstract class OAObjectInfoService {
 	 * @param clazz the class whose method cache is requested.
 	 * @return the method cache map.
 	 */
-	public Map<String, Method> getClassMethodMap(Class clazz) {
+	public Map<String, Method> getClassMethodMap(Class<?> clazz) {
     	//qqqqqqqqqq method was protected
 		Map<String, Method> map = hmClassMethod.computeIfAbsent(clazz, k -> new ConcurrentHashMap<>());
     	return map;
@@ -1851,7 +1851,7 @@ public abstract class OAObjectInfoService {
 	 * @param clazz the class whose not-found map is requested.
 	 * @return the not-found method-name set.
 	 */
-    public Set<String> getClassMethodNotFoundMap(Class clazz) {
+    public Set<String> getClassMethodNotFoundMap(Class<?> clazz) {
     	//qqqqqqqqqq method was protected
         Set<String> map = hmClassMethodNotFound.computeIfAbsent(clazz, k -> new HashSet<String>(3, .75f));
         return map;
@@ -1869,7 +1869,7 @@ public abstract class OAObjectInfoService {
     }
     
 	@OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().update2")
-	public abstract void callAnnotationUpdate2(OAObjectInfo oi, Class clazz);
+	public abstract void callAnnotationUpdate2(OAObjectInfo oi, Class<?> clazz);
     
 	@OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().updateImportMatches")
 	public abstract void callAnnotationUpdateImportMatches(OAObjectInfo oi); 
@@ -1878,7 +1878,7 @@ public abstract class OAObjectInfoService {
 	public abstract void callAnnotationUpdateLinkFkeys(final OAObjectInfo oi);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().update")
-	public abstract void callAnnotationUpdate(OAObjectInfo oi, Class clazz); 
+	public abstract void callAnnotationUpdate(OAObjectInfo oi, Class<?> clazz); 
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().getRawReference")
 	public abstract Object callReflectGetRawReference(OAObject oaObj, String name);

@@ -599,7 +599,7 @@ public abstract class OAObjectSerializeService {
 	public abstract void callGuidSetGuid(OAObject oaObj, UUID guid);    
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
-	public abstract OAObjectInfo callInfoGetObjectInfo(Class clazz);
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().unsafeSetPropertyIfEmpty")
 	public abstract void callPropertyUnsafeSetPropertyIfEmpty(OAObject oaObj, String name, Object value);
@@ -651,16 +651,16 @@ public abstract class OAObjectSerializeService {
 	
 	
 	@OAParentProvided (example = "srvcHub.getHubSerializeService().replaceObject")
-	public abstract int callHubSerializeReplaceObject(Hub thisHub, OAObject objFrom, OAObject objTo);
+	public abstract int callHubSerializeReplaceObject(Hub<?> thisHub, OAObject objFrom, OAObject objTo);
 	
 	@OAParentProvided (example = "srvcHub.getHubSerializeService().isResolved")
-	public abstract boolean callHubSerializeIsResolved(Hub thisHub); 
+	public abstract boolean callHubSerializeIsResolved(Hub<?> thisHub); 
 
 	@OAParentProvided (example = "srvcHub.getHubSerializeService().replaceMasterObject")
-	public abstract void callHubSerializeReplaceMasterObject(Hub thisHub, OAObject objFrom, OAObject objTo);
+	public abstract void callHubSerializeReplaceMasterObject(Hub<?> thisHub, OAObject objFrom, OAObject objTo);
 	
 	@OAParentProvided (example = "srvcHub.getAutoMatch")
-	public abstract HubAutoMatch callHubGetAutoMatch(Hub thisHub);
+	public abstract HubAutoMatch callHubGetAutoMatch(Hub<?> thisHub);
 	
 	
 	@OAParentProvided (example = "srvcSync.getSyncClient().isObjectOnServer(..)")

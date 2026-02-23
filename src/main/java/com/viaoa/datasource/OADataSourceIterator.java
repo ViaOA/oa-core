@@ -48,7 +48,7 @@ import com.viaoa.object.OASiblingHelper;
  * @see OADataSource
  * @see OASelect
  */
-public interface OADataSourceIterator extends Iterator {
+public interface OADataSourceIterator<T> extends Iterator<T> {
     
 	/**
 	 * Returns the primary query expression used to produce this iterator,

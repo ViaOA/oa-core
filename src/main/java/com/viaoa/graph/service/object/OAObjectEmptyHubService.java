@@ -50,7 +50,7 @@ public abstract class OAObjectEmptyHubService {
         if (map == null) return;
         if (obj == null) return;
         
-        Class clazz = obj.getClass();
+        Class<? extends OAObject> clazz = obj.getClass();
 
         HashMap<Integer, String[]> hm = map.get(clazz.getName());
         if (hm == null) return;
@@ -115,10 +115,10 @@ public abstract class OAObjectEmptyHubService {
         
         final HashMap<String, HashMap<Integer, String[]>> mapx = new HashMap<String, HashMap<Integer,String[]>>();
         
-        callCacheCallback(new OACallback() {
+        callCacheCallback(new OACallback<OAObject>() {
             int cnt = 0;
             @Override
-            public boolean updateObject(Object obj) {
+            public boolean updateObject(OAObject obj) {
                 if (!(obj instanceof OAObject)) return true;
                 cnt++;
                 if (cnt % 250 == 0) {
@@ -166,7 +166,7 @@ public abstract class OAObjectEmptyHubService {
 	public abstract void callPropertySetProperty(OAObject oaObj, String name, Object value); 
 
 	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().callback(..)")
-	public abstract void callCacheCallback(OACallback callback); 
+	public abstract void callCacheCallback(OACallback<OAObject> callback); 
 
 	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getPropertyNames((OAObject) obj)")
 	public abstract String[] callPropertyGetPropertyNames(OAObject oaObj);

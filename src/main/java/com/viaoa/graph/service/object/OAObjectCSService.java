@@ -248,7 +248,7 @@ public abstract class OAObjectCSService {
 	 * @param select optional select used when loading data
 	 * @return {@code true} if executed on the server; otherwise {@code false}
 	 */
-	public boolean loadReferenceHubDataOnServer(Hub thisHub, OASelect select) {
+	public <T extends OAObject> boolean loadReferenceHubDataOnServer(Hub<T> thisHub, OASelect<T> select) {
         if (thisHub == null) return false;
         boolean bResult;
         if (callSyncIsServer()) {
@@ -326,7 +326,7 @@ public abstract class OAObjectCSService {
 		purpose="", 
 		example = "getOAObjectInfo(class)"
 	)
-	public abstract OAObjectInfo callInfoGetObjectInfo(Class clazz);	
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz);	
     
 	@OAParentProvided (
 		parentName = "OAObjectService", 
@@ -361,7 +361,7 @@ public abstract class OAObjectCSService {
 		purpose="", 
 		example = "srvcSync.getRemoteSync().propertyChange(c, ok, propertyName, val, b)"
 	)
-	public abstract boolean callRemoteSyncPropertyChange(Class objectClass, OAObjectKey origKey, String propertyName, Object newValue, boolean bIsBlob);
+	public abstract boolean callRemoteSyncPropertyChange(Class<? extends OAObject> objectClass, OAObjectKey origKey, String propertyName, Object newValue, boolean bIsBlob);
 
 	@OAParentProvided (
 		parentName = "OAObjectService", 
@@ -383,7 +383,7 @@ public abstract class OAObjectCSService {
 		purpose="", 
 		example = "srvcHub.getHubSelectService().loadAllData(thisHub, select)"
 	)
-	public abstract void callHubSelectLoadAllData(Hub thisHub, OASelect select);
+	public abstract <T extends OAObject> void callHubSelectLoadAllData(Hub<T> thisHub, OASelect<T> select);
 	
 	
 	@OAParentProvided (
@@ -399,7 +399,7 @@ public abstract class OAObjectCSService {
 		purpose="", 
 		example = "srvcSync.getRemoteClient().createCopy(c, ok, excludeProps)"
 	)
-	public abstract OAObject callSyncClientCreateCopy(Class objectClass, OAObjectKey objectKey, String[] excludeProperties);
+	public abstract <T extends OAObject> T callSyncClientCreateCopy(Class<T> objectClass, OAObjectKey objectKey, String[] excludeProperties);
 
 
 	@OAParentProvided (
@@ -407,7 +407,7 @@ public abstract class OAObjectCSService {
 		purpose="", 
 		example = "getSyncService().getRemoteServer().save(oaObj.getClass(), oaObj.getObjectKey(), iCascadeRule)"
 	)
-	public abstract boolean callSyncServerSave(Class objectClass, OAObjectKey objectKey, int iCascadeRule);
+	public abstract boolean callSyncServerSave(Class<? extends OAObject> objectClass, OAObjectKey objectKey, int iCascadeRule);
 
 	@OAParentProvided (
 		parentName = "OAObjectService", 
@@ -453,21 +453,21 @@ public abstract class OAObjectCSService {
 		purpose="", 
 		example = "srvcSync.getRemoteServer().getObject(clazz, key)"
 	)
-	public abstract OAObject callSyncServerGetObject(Class clazz, OAObjectKey key);
+	public abstract <T extends OAObject> T callSyncServerGetObject(Class<T> clazz, OAObjectKey key);
 
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcSync.getRemoteSync().serverDelete(clazz, key)"
 	)
-	public abstract boolean callSyncSyncServerDelete(Class clazz, OAObjectKey key);
+	public abstract boolean callSyncSyncServerDelete(Class<? extends OAObject> clazz, OAObjectKey key);
 
 	@OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcSync.getRemoteSync().clientDelete(clazz, key)"
 	)
-	public abstract boolean callSyncSyncClientDelete(Class clazz, OAObjectKey key);
+	public abstract boolean callSyncSyncClientDelete(Class<? extends OAObject> clazz, OAObjectKey key);
 
 }
 

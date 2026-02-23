@@ -69,8 +69,8 @@ public abstract class OAObjectReflectService {
 	 * @return a new instance of the class, or a primitive wrapper/empty
 	 *         primitive placeholder when applicable
 	 */
-	public Object createNewObject(Class clazz) {
-		Object obj = _createNewObject(clazz);
+	public <T extends OAObject> T createNewObject(Class<T> clazz) {
+		T obj = _createNewObject(clazz);
 		return obj;
 	}
 
@@ -84,9 +84,9 @@ public abstract class OAObjectReflectService {
 	 * @return the newly created instance or a primitive wrapper/default
 	 * @throws RuntimeException if construction fails for any reason
 	 */
-	private Object _createNewObject(Class clazz) {
+	private <T> T _createNewObject(Class<T> clazz) {
 		OAObjectInfo oi = getOAObjectInfo(clazz);
-		Object obj = null;
+		T obj = null;
 
 		/**
 		 * 20190205 create on client if (!oi.getLocalOnly()) { RemoteSessionInterface rc = OASyncDelegate.getRemoteSession(clazz); if (rc !=
@@ -95,12 +95,12 @@ public abstract class OAObjectReflectService {
 
 		try {
 			Constructor constructor = clazz.getConstructor(new Class[] {});
-			obj = constructor.newInstance(new Object[] {});
+			obj = (T) constructor.newInstance(new Object[] {});
 		} catch (NoSuchMethodException nsme) {
 			if (clazz.isPrimitive()) {
-				obj = OAReflect.getEmptyPrimitive(clazz);
+				obj = (T) OAReflect.getEmptyPrimitive(clazz);
 			} else if (OAReflect.isPrimitiveClassWrapper(clazz)) {
-				obj = OAReflect.getPrimitiveClassWrapperObject(clazz);
+				obj = (T) OAReflect.getPrimitiveClassWrapperObject(clazz);
 			} else {
 				throw new RuntimeException("OAObject.createNewObject() cant get constructor() for class " + clazz.getName() + " "
 						+ nsme.getCause(), nsme);
@@ -123,7 +123,7 @@ public abstract class OAObjectReflectService {
 	 * @param propPath the property name or path to evaluate
 	 * @return the resolved property value or {@code null}
 	 */
-	public Object getProperty(Hub hub, String propPath) {
+	public Object getProperty(Hub<?> hub, String propPath) {
 		return getProperty(hub, null, propPath);
 	}
 
@@ -152,7 +152,7 @@ public abstract class OAObjectReflectService {
 	 * @param propPath the property or dotted path to evaluate
 	 * @return the final resolved value or {@code null} if unavailable
 	 */
-	public Object getProperty(Hub hubLast, OAObject oaObj, String propPath) {
+	public Object getProperty(Hub<?> hubLast, OAObject oaObj, String propPath) {
 		if (propPath == null || propPath.trim().length() == 0) {
 			return null;
 		}
@@ -222,7 +222,7 @@ public abstract class OAObjectReflectService {
 	 * @param propName  the simple property name
 	 * @return the resolved value, possibly {@code null}
 	 */
-	private Object _getProperty(Hub hubLast, OAObject oaObj, String propName) {
+	private Object _getProperty(Hub<?> hubLast, OAObject oaObj, String propName) {
 		OAObjectInfo oi;
 		if (hubLast != null) {
 			oi = getOAObjectInfo(hubLast.getObjectClass());
@@ -653,7 +653,7 @@ public abstract class OAObjectReflectService {
 	 * @param key   a key value or {@link OAObjectKey}
 	 * @return the resolved object or {@code null} if not found
 	 */
-	public OAObject getObject(Class clazz, Object key) {
+	public <T extends OAObject> T getObject(Class<T> clazz, Object key) {
 		if (clazz == null || key == null) {
 			return null;
 		}
@@ -671,7 +671,7 @@ public abstract class OAObjectReflectService {
 	 * @param oi    metadata associated with the class
 	 * @return the located {@link OAObject} or {@code null}
 	 */
-	public OAObject getObject(Class clazz, Object key, OAObjectInfo oi) {
+	public <T extends OAObject> T getObject(final Class<T> clazz, Object key, OAObjectInfo oi) {
 		if (clazz == null || key == null) {
 			return null;
 		}
@@ -680,12 +680,12 @@ public abstract class OAObjectReflectService {
 			key = callKeyCreateObjectKey(clazz, key);
 		}
 
-		OAObject oaObj = (OAObject) callCacheGet(clazz, (OAObjectKey) key);
+		T oaObj = callCacheGet(clazz, (OAObjectKey) key);
 		if (oaObj == null) {
 			if (callCSIsClient() && (oi == null || !oi.getLocalOnly())) {
-				oaObj = (OAObject) callCSGetServerObject(clazz, (OAObjectKey) key);
+				oaObj = callCSGetServerObject(clazz, (OAObjectKey) key);
 			} else {
-				oaObj = (OAObject) callDSGetObject(clazz, (OAObjectKey) key);
+				oaObj = callDSGetObject(clazz, (OAObjectKey) key);
 			}
 		}
 		return oaObj;
@@ -704,7 +704,7 @@ public abstract class OAObjectReflectService {
 	 * @param hubMatch         optional Hub for autoMatch
 	 * @return the reference Hub, possibly empty but never {@code null}
 	 */
-	public Hub getReferenceHub(final OAObject oaObj, final String linkPropertyName, String sortOrder, boolean bSequence, Hub hubMatch) {
+	public <T extends OAObject> Hub<T> getReferenceHub(final OAObject oaObj, final String linkPropertyName, String sortOrder, boolean bSequence, Hub<T> hubMatch) {
 		/*
 		 lock obj.props[]
 		   get Hub from oaObj.props[]
@@ -876,7 +876,7 @@ public abstract class OAObjectReflectService {
 	 * @param linkInfo         link metadata for the relationship
 	 * @return the initialized Hub
 	 */
-	private Hub _getReferenceHub(final OAObject oaObj, final String linkPropertyName, String sortOrder,
+	private Hub<?> _getReferenceHub(final OAObject oaObj, final String linkPropertyName, String sortOrder,
 			boolean bSequence, Hub hubMatch, final OAObjectInfo oi, final OALinkInfo linkInfo) {
 
 		Object propertyValue = callPropertyGetProperty(oaObj, linkPropertyName, true, true);
@@ -1442,7 +1442,7 @@ public abstract class OAObjectReflectService {
 	 *
 	 * @param hub the Hub whose objects will have references loaded
 	 */
-	public void loadAllReferences(Hub hub) {
+	public void loadAllReferences(Hub<?> hub) {
 		loadAllReferences(hub, false);
 	}
 
@@ -1453,7 +1453,7 @@ public abstract class OAObjectReflectService {
 	 * @param hub          Hub containing objects to load
 	 * @param bIncludeCalc true to include calculated links
 	 */
-	public void loadAllReferences(Hub hub, boolean bIncludeCalc) {
+	public void loadAllReferences(Hub<?> hub, boolean bIncludeCalc) {
 		OASiblingHelper siblingHelper = new OASiblingHelper(hub);
 		callThreadLocalAddSiblingHelper(siblingHelper);
 		try {
@@ -1632,7 +1632,7 @@ public abstract class OAObjectReflectService {
 	 * @param maxLevelsToLoad  the maximum depth of recursive loading
 	 * @return the total number of references loaded
 	 */
-	public int loadAllReferences(Hub hub, int maxLevelsToLoad) {
+	public int loadAllReferences(Hub<?> hub, int maxLevelsToLoad) {
 		return _loadAllReferences(0, hub, 0, maxLevelsToLoad, 0, true, null, null, 0);
 	}
 
@@ -1677,7 +1677,7 @@ public abstract class OAObjectReflectService {
 	 * @param additionalOwnedLevelsToLoad additional owned-reference depth
 	 * @return number of references loaded
 	 */
-	public int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad) {
+	public int loadAllReferences(Hub<?> hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad) {
 		return _loadAllReferences(0, hub, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, true, null, null, 0);
 	}
 
@@ -1692,7 +1692,7 @@ public abstract class OAObjectReflectService {
 	 * @param maxRefsToLoad              maximum references to load
 	 * @return number of references loaded
 	 */
-	public int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, int maxRefsToLoad) {
+	public int loadAllReferences(Hub<?> hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, int maxRefsToLoad) {
 		return _loadAllReferences(0, hub, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, true, null, null, maxRefsToLoad);
 	}
 
@@ -1757,7 +1757,7 @@ public abstract class OAObjectReflectService {
 	 * @param bIncludeCalc               include calculated links if true
 	 * @return number of references loaded
 	 */
-	public int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc) {
+	public int loadAllReferences(Hub<?> hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc) {
 		return _loadAllReferences(0, hub, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, null, null, 0);
 	}
 
@@ -1773,7 +1773,7 @@ public abstract class OAObjectReflectService {
 	 * @param maxRefsToLoad              maximum references to load
 	 * @return number of loaded references
 	 */
-	public int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
+	public int loadAllReferences(Hub<?> hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			int maxRefsToLoad) {
 		return _loadAllReferences(0, hub, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, null, null, maxRefsToLoad);
 	}
@@ -1826,7 +1826,7 @@ public abstract class OAObjectReflectService {
 	 * @param callback                   invoked before loading each object
 	 * @return number of references loaded
 	 */
-	public int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
+	public int loadAllReferences(Hub<?> hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			OACallback callback) {
 		return _loadAllReferences(0, hub, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, callback, null, 0);
 	}
@@ -1844,7 +1844,7 @@ public abstract class OAObjectReflectService {
 	 * @param maxRefsToLoad              maximum references to load
 	 * @return number of references loaded
 	 */
-	public int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
+	public int loadAllReferences(Hub<?> hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			OACallback callback, int maxRefsToLoad) {
 		return _loadAllReferences(0, hub, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, callback, null, maxRefsToLoad);
 	}
@@ -1864,7 +1864,7 @@ public abstract class OAObjectReflectService {
 	 * @param cascade                    cascade manager used during loading
 	 * @return number of references loaded
 	 */
-	public int loadAllReferences(final Hub hub, int levelsLoaded, int maxLevelsToLoad, int additionalOwnedLevelsToLoad,
+	public int loadAllReferences(final Hub<?> hub, int levelsLoaded, int maxLevelsToLoad, int additionalOwnedLevelsToLoad,
 			boolean bIncludeCalc, OACallback callback, OACascade cascade) {
 		int cnt = 0;
 
@@ -1895,7 +1895,7 @@ public abstract class OAObjectReflectService {
 	 * @param maxRefsToLoad              maximum references to load
 	 * @return number of references loaded
 	 */
-	public int loadAllReferences(final Hub hub, int levelsLoaded, int maxLevelsToLoad, int additionalOwnedLevelsToLoad,
+	public int loadAllReferences(final Hub<?> hub, int levelsLoaded, int maxLevelsToLoad, int additionalOwnedLevelsToLoad,
 			boolean bIncludeCalc, OACallback callback, OACascade cascade, int maxRefsToLoad) {
 		int cnt = 0;
 
@@ -1922,7 +1922,7 @@ public abstract class OAObjectReflectService {
 	 * @param cascade                    cascade handler
 	 * @return number of loaded references
 	 */
-	public int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
+	public int loadAllReferences(Hub<?> hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			OACascade cascade) {
 		return _loadAllReferences(0, hub, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, null, cascade, 0);
 	}
@@ -1940,7 +1940,7 @@ public abstract class OAObjectReflectService {
 	 * @param maxRefsToLoad              maximum references to load
 	 * @return number of loaded references
 	 */
-	public int loadAllReferences(Hub hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
+	public int loadAllReferences(Hub<?> hub, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc,
 			OACascade cascade, int maxRefsToLoad) {
 		return _loadAllReferences(0, hub, 0, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, null, cascade, maxRefsToLoad);
 	}
@@ -2036,7 +2036,7 @@ public abstract class OAObjectReflectService {
 	 * @param maxRefsToLoad              maximum references allowed
 	 * @return number of references loaded
 	 */
-	private int _loadAllReferences(int currentRefsLoaded, final Hub hub, final int levelsLoaded, final int maxLevelsToLoad,
+	private int _loadAllReferences(int currentRefsLoaded, final Hub<?> hub, final int levelsLoaded, final int maxLevelsToLoad,
 			final int additionalOwnedLevelsToLoad,
 			final boolean bIncludeCalc, final OACallback callback, OACascade cascade, final int maxRefsToLoad) {
 
@@ -2888,7 +2888,7 @@ public abstract class OAObjectReflectService {
 	 * @param hub           the Hub whose objects will have properties loaded
 	 * @param propertyPaths one or more property names or dotted paths
 	 */
-	public void loadProperties(Hub hub, String... propertyPaths) {
+	public void loadProperties(Hub<?> hub, String... propertyPaths) {
 		if (propertyPaths == null) {
 			return;
 		}
@@ -3124,7 +3124,7 @@ public abstract class OAObjectReflectService {
 	 * @param copyCallback     optional callback invoked during copying
 	 * @param hmNew            map tracking already-copied objects
 	 */
-	public void _copyInto(final OAObject oaObj, final OAObject newObject, final String[] excludeProperties,
+	public <T extends OAObject> void _copyInto(final T oaObj, final T newObject, final String[] excludeProperties,
 			final OACopyCallback copyCallback, final Map<UUID, OAObject> hmNew) {
 		if (oaObj == null || newObject == null) {
 			return;
@@ -3401,7 +3401,7 @@ public abstract class OAObjectReflectService {
 		return false;
 	}
 
-	public Class getHubObjectClass(Method method) {
+	public Class<?> getHubObjectClass(Method method) {
 		Class cx = null;
 		Type rt = method.getGenericReturnType();
 		if (rt instanceof ParameterizedType) {
@@ -3485,7 +3485,7 @@ public abstract class OAObjectReflectService {
 	 * @param maxLevelsToCheck the maximum number of parent levels to traverse
 	 * @return the number of levels to reach the Hub, or -1 if not found
 	 */
-	public int getHierarchyLevelsToHub(Hub findHub, OAObject fromObj, int maxLevelsToCheck) {
+	public int getHierarchyLevelsToHub(Hub<?> findHub, OAObject fromObj, int maxLevelsToCheck) {
 		return getHierarchyLevelsToHub(findHub, fromObj, 0, maxLevelsToCheck);
 	}
 
@@ -3501,7 +3501,7 @@ public abstract class OAObjectReflectService {
 	 * @param maxLevelsToCheck the maximum number of levels allowed
 	 * @return the number of levels to reach the Hub, or -1 if not found
 	 */
-	public int getHierarchyLevelsToHub(Hub findHub, OAObject fromObj, int currentLevel, int maxLevelsToCheck) {
+	public int getHierarchyLevelsToHub(Hub<?> findHub, OAObject fromObj, int currentLevel, int maxLevelsToCheck) {
 		if (findHub == null || fromObj == null) {
 			return -1;
 		}
@@ -3538,7 +3538,7 @@ public abstract class OAObjectReflectService {
 	 * @param hubChild  the child Hub
 	 * @return the property path from parent to child, or null if none exists
 	 */
-	private String getPropertyPathFromMaster(final Hub hubParent, final Hub hubChild) {
+	private String getPropertyPathFromMaster(final Hub<?> hubParent, final Hub<?> hubChild) {
 		if (hubParent == null) {
 			return null;
 		}
@@ -3625,7 +3625,7 @@ public abstract class OAObjectReflectService {
 	 * @param hubChild  the child Hub
 	 * @return the property path from the parent to the Hub, or null if none exists
 	 */
-	public String getPropertyPathFromMaster(final OAObject objParent, final Hub hubChild) {
+	public String getPropertyPathFromMaster(final OAObject objParent, final Hub<?> hubChild) {
 		if (objParent == null) {
 			return null;
 		}
@@ -3698,7 +3698,7 @@ public abstract class OAObjectReflectService {
 	 * @param hubChild   the child Hub whose display object is needed
 	 * @return the object to display in the child Hub, or null if none applies
 	 */
-	public Object getObjectToDisplay(final Hub hubFrom, Object fromObject, final Hub hubChild) {
+	public Object getObjectToDisplay(final Hub<?> hubFrom, Object fromObject, final Hub<?> hubChild) {
 		if (hubFrom == null) {
 			return null;
 		}
@@ -3779,7 +3779,7 @@ public abstract class OAObjectReflectService {
 	 * @param hubChild  the child Hub
 	 * @return the property path between the two Hubs, or null if none exists
 	 */
-	public String getPropertyPathBetweenHubs(final Hub hubParent, final Hub hubChild) {
+	public String getPropertyPathBetweenHubs(final Hub<?> hubParent, final Hub<?> hubChild) {
 		return getPropertyPathBetweenHubs(null, hubParent, hubChild, true);
 	}
 
@@ -3796,7 +3796,7 @@ public abstract class OAObjectReflectService {
 	 * @param bCheckLink true to check direct link relationships first
 	 * @return the completed property path, or null if none exists
 	 */
-	private String getPropertyPathBetweenHubs(final String propPath, final Hub hubParent, final Hub hubChild, boolean bCheckLink) {
+	private String getPropertyPathBetweenHubs(final String propPath, final Hub<?> hubParent, final Hub<?> hubChild, boolean bCheckLink) {
 		if (hubChild == hubParent) {
 			return null;
 		}
@@ -3904,16 +3904,16 @@ public abstract class OAObjectReflectService {
 	public abstract boolean callCSIsClient();
 
 	@OAParentProvided (example = "srvcObject.getOAObjectCSService().getServerObject")
-	public abstract OAObject callCSGetServerObject(Class clazz, OAObjectKey key);
+	public abstract <T extends OAObject> T callCSGetServerObject(Class<T> clazz, OAObjectKey key);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectCSService().getServerReferenceHub")
-	public abstract Hub getCSGetServerReferenceHub(OAObject oaObj, String linkPropertyName);
+	public abstract Hub<?> getCSGetServerReferenceHub(OAObject oaObj, String linkPropertyName);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectCSService().getServerReferenceBlob")
 	public abstract byte[] callCSGetServerReferenceBlob(OAObject oaObj, String propertyName);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectCSService().loadReferenceHubDataOnServer")
-	public abstract boolean callCSLoadReferenceHubDataOnServer(Hub thisHub, OASelect select);
+	public abstract boolean callCSLoadReferenceHubDataOnServer(Hub<?> thisHub, OASelect select);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectCSService().getServerReference")
 	public abstract Object callCSGetServerReference(OAObject oaObj, String linkPropertyName);
@@ -3921,10 +3921,10 @@ public abstract class OAObjectReflectService {
 	
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectDSService().getObject")
-	public abstract Object callDSGetObject(Class clazz, OAObjectKey key);
+	public abstract <T extends OAObject> T callDSGetObject(Class<T> clazz, OAObjectKey key);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectDSService().getObject")
-	public abstract Object callDSGetObject(OAObjectInfo oi, Class clazz, OAObjectKey key);
+	public abstract <T extends OAObject> T callDSGetObject(OAObjectInfo oi, Class<T> clazz, OAObjectKey key);
 	
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectEventService().fireBeforePropertyChange")
@@ -3948,7 +3948,7 @@ public abstract class OAObjectReflectService {
 
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
-	public abstract OAObjectInfo getOAObjectInfo(Class clazz); 
+	public abstract OAObjectInfo getOAObjectInfo(Class<?> clazz); 
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getMethod(oi, name, 0)")
 	public abstract Method callInfoGetMethod(OAObjectInfo oi, String methodName, int argumentCount);
@@ -3969,7 +3969,7 @@ public abstract class OAObjectReflectService {
 	public abstract OALinkInfo callInfoGetReverseLinkInfo(OALinkInfo li);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().cacheHub")
-	public abstract boolean callInfoCacheHub(OALinkInfo li, final Hub hub);
+	public abstract boolean callInfoCacheHub(OALinkInfo li, final Hub<?> hub);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getRecursiveLinkInfo")
 	public abstract OALinkInfo callInfoGetRecursiveLinkInfo(OAObjectInfo thisOI, int type);
@@ -3978,7 +3978,7 @@ public abstract class OAObjectReflectService {
 	public abstract boolean callInfoIsOne2One(OALinkInfo thisLi);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
-	public abstract OALinkInfo callInfoGetLinkInfo(Class clazz, String propertyName);
+	public abstract OALinkInfo callInfoGetLinkInfo(Class<?> clazz, String propertyName);
 	
 	
 	
@@ -4048,67 +4048,67 @@ public abstract class OAObjectReflectService {
 	
 	
 	@OAParentProvided (example = "srvcHub.getAutoMatch")
-	public abstract HubAutoMatch callHubGetAutoMatch(Hub thisHub);
+	public abstract HubAutoMatch callHubGetAutoMatch(Hub<?> thisHub);
 	
 	@OAParentProvided (example = "srvcHub.getAutoSequence")
-	public abstract HubAutoSequence callHubGetAutoSequence(Hub thisHub);
+	public abstract HubAutoSequence callHubGetAutoSequence(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubSortService().getSortListener")
-	public abstract HubSortListener callHubSortGetSortListener(Hub thisHub);
+	public abstract HubSortListener callHubSortGetSortListener(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubSortService().sort")
-	public abstract void callHubSortSort(Hub thisHub, String propertyPaths, boolean bAscending, Comparator comp, boolean bAlreadySortedAndLocalOnly);
+	public abstract void callHubSortSort(Hub<?> thisHub, String propertyPaths, boolean bAscending, Comparator comp, boolean bAlreadySortedAndLocalOnly);
 
 	@OAParentProvided (example = "srvcHub.getHubSortService().getSortProperty")
-	public abstract String callHubSortGetSortProperty(Hub thisHub);
+	public abstract String callHubSortGetSortProperty(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubSortService().getSortAsc")
-	public abstract boolean callHubSortGetSortAsc(Hub thisHub);
+	public abstract boolean callHubSortGetSortAsc(Hub<?> thisHub);
 	
 	@OAParentProvided (example = "srvcHub.getHubSortService().isSorted")
-	public abstract boolean callHubSortIsSorted(Hub thisHub);
+	public abstract boolean callHubSortIsSorted(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getMasterObject")
-	public abstract OAObject callHubGetMasterObject(Hub hub);
+	public abstract OAObject callHubGetMasterObject(Hub<?> hub);
 
 	@OAParentProvided (example = "srvcHub.getHubSelectService().loadAllData")
-	public abstract void callHubSelectLoadAllData(Hub thisHub, OASelect select);
+	public abstract void callHubSelectLoadAllData(Hub<?> thisHub, OASelect select);
 
 	@OAParentProvided (example = "srvcHub.getHubDataService().resizeToFit")
-	public abstract void callHubDataResizeToFit(Hub thisHub);
+	public abstract void callHubDataResizeToFit(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubDetailService().getPropertyFromDetailToMaster")
-	public abstract String callHubDetailGetPropertyFromDetailToMaster(Hub thisHub);
+	public abstract String callHubDetailGetPropertyFromDetailToMaster(Hub<?> thisHub);
 	
 	@OAParentProvided (example = "srvcHub.getHubLinkService().getLinkedOnPos")
-	public abstract boolean callHubLinkGetLinkedOnPos(final Hub thisHub, boolean bIncludeCopiedHubs);
+	public abstract boolean callHubLinkGetLinkedOnPos(final Hub<?> thisHub, boolean bIncludeCopiedHubs);
 
 	@OAParentProvided (example = "srvcHub.getHubLinkService().getLinkFromProperty")
-	public abstract String callHubLinkGetLinkFromProperty(final Hub thisHub, boolean bIncludeCopiedHubs);
+	public abstract String callHubLinkGetLinkFromProperty(final Hub<?> thisHub, boolean bIncludeCopiedHubs);
 
 	@OAParentProvided (example = "srvcHub.getHubLinkService().getLinkToHub")
-	public abstract Hub callHubLinkGetLinkToHub(final Hub thisHub, boolean bIncludeCopiedHubs);
+	public abstract Hub callHubLinkGetLinkToHub(final Hub<?> thisHub, boolean bIncludeCopiedHubs);
 
 	@OAParentProvided (example = "srvcHub.getHubLinkService().getLinkHubPath")
-	public abstract String callHubLinkGetLinkHubPath(final Hub thisHub, boolean bIncludeCopiedHubs);
+	public abstract String callHubLinkGetLinkHubPath(final Hub<?> thisHub, boolean bIncludeCopiedHubs);
 
 	@OAParentProvided (example = "srvcHub.getHubShareService().isUsingSameSharedAO")
-	public abstract boolean callHubShareIsUsingSameSharedAO(Hub hub1, Hub hub2, boolean bIncludeFilteredHubs);
+	public abstract boolean callHubShareIsUsingSameSharedAO(Hub<?> hub1, Hub<?> hub2, boolean bIncludeFilteredHubs);
 
 	@OAParentProvided (example = "srvcHub.getHubDetailService().getPropertyFromMasterToDetail")
-	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub thisHub);
+	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubLinkService().getLinkToProperty")
-	public abstract String callHubLinkGetLinkToProperty(Hub thisHub);
+	public abstract String callHubLinkGetLinkToProperty(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubShareService().isUsingSameSharedHub")
-	public abstract boolean callHubShareIsUsingSameSharedHub(Hub hub1, Hub hub2);
+	public abstract boolean callHubShareIsUsingSameSharedHub(Hub<?> hub1, Hub<?> hub2);
 
 	@OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster")
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub hub);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectDSService().getDataSource")
-	public abstract OADataSource callDSGetDataSource(Class c);
+	public abstract OADataSource callDSGetDataSource(Class<?> c);
 	
 
 	@OAParentProvided (example = "srvcSync.getSyncClient().isObjectOnServer")

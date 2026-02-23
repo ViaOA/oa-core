@@ -434,9 +434,9 @@ public abstract class HubSelectService {
 			if (select.getRewind()) {
 
 				// 20120716
-				OAFilter<Hub> filter = new OAFilter<Hub>() {
+				OAFilter<Hub<?>> filter = new OAFilter<Hub<?>>() {
 					@Override
-					public boolean isUsed(Hub h) {
+					public boolean isUsed(Hub<?> h) {
 						if (h != thisHub && faHub.getHubDataActive(h) != faHub.getHubDataActive(thisHub)) {
 							if (faHub.getHubDataUnique(h).getLinkToHub() == null) {
 								return true;
@@ -1026,7 +1026,7 @@ public abstract class HubSelectService {
 	public abstract void callHubDataClearAllAndReset(Hub<?> hub);
 	
 	@OAParentProvided (example = "srvcHub.getHubShareService().getAllSharedHubs")
-	public abstract <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> hub, OAFilter<Hub> filter);
+	public abstract <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> hub, OAFilter<Hub<?>> filter);
 
 	@OAParentProvided (example = "srvcHub.getHubEventService().fireOnNewListEvent")
 	public abstract void callHubEventFireOnNewListEvent(Hub<?> hub, boolean bAll);

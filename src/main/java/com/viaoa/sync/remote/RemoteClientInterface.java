@@ -54,7 +54,7 @@ public interface RemoteClientInterface {
 	 * @return the copied object
 	 */
     @OARemoteMethod(returnOnQueueSocket = true)
-	OAObject createCopy(Class objectClass, OAObjectKey objectKey, String[] excludeProperties);
+    <T extends OAObject> T createCopy(Class<T> objectClass, OAObjectKey objectKey, String[] excludeProperties);
 
     /**
      * Retrieves a detail property or hub value for a master object.

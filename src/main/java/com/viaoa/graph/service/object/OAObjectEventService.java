@@ -915,7 +915,7 @@ public abstract class OAObjectEventService {
 		// By changing a reference property, the object could be moved to another hub
 		List<Hub> alUpdateHub = null;
 		if (oldObj != null || liRecursive != null) {
-			Hub[] hubs = callHubGetHubReferences(oaObj);
+			Hub<?>[] hubs = callHubGetHubReferences(oaObj);
 			if (hubs != null) {
 				for (Hub h : hubs) {
 					if (h == null) {
@@ -923,13 +923,13 @@ public abstract class OAObjectEventService {
 					}
 
 					// 20120716
-					OAFilter<Hub> filter = new OAFilter<Hub>() {
+					OAFilter filter = new OAFilter() {
 						@Override
-						public boolean isUsed(Hub h) {
-							return (h.getAO() == oaObj);
+						public boolean isUsed(Object h) {
+							return (((Hub)h).getAO() == oaObj);
 						}
 					};
-					Hub[] hubss = callHubShareGetAllSharedHubs(h, filter);
+					Hub<?>[] hubss = callHubShareGetAllSharedHubs( (Hub) h, filter);
 
 					//was:Hub[] hubss = srvcHub.getHubShareService().getAllSharedHubs(h);
 					for (int ii = 0; ii < hubss.length; ii++) {
@@ -1236,12 +1236,12 @@ public abstract class OAObjectEventService {
 	public abstract boolean callHubIsInHub(OAObject oaObj);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectHubService().getHubReferences(oaObj)")
-	public abstract Hub[] callHubGetHubReferences(OAObject oaObj);
+	public abstract <T extends OAObject> Hub<T>[] callHubGetHubReferences(T oaObj);
 	
 	
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
-	public abstract OAObjectInfo callInfoGetObjectInfo(Class clazz); 
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz); 
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo(..)")
 	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
@@ -1313,7 +1313,7 @@ public abstract class OAObjectEventService {
 	public abstract void callReflectSetProperty(final OAObject oaObj, String propName, Object value, final String fmt);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().getObject(..)")
-	public abstract OAObject callReflectGetObject(Class clazz, Object key);
+	public abstract OAObject callReflectGetObject(Class<? extends OAObject> clazz, Object key);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().isReferenceHubLoadedAndNotEmpty(..)")
 	public abstract boolean callReflectIsReferenceHubLoadedAndNotEmpty(OAObject oaObj, String propertyName);
@@ -1329,28 +1329,28 @@ public abstract class OAObjectEventService {
 
 
 	@OAParentProvided (example = "srvcHub.getHubAddRemoveService().remove(hub, oaObj, false, true, false, true, false, false)")
-	public abstract boolean callHubAddRemoveRemove(final Hub thisHub, Object obj, final boolean bForce,
+	public abstract <T extends OAObject> T callHubAddRemoveRemove(final Hub<T> thisHub, Object obj, final boolean bForce,
 			final boolean bSendEvent, final boolean bDeleting, final boolean bSetAO,
 			final boolean bSetPropToMaster, final boolean bIsRemovingAll);
 
 	@OAParentProvided (example = "srvcHub.getHubAOService().setActiveObject(hub, oaObj, bAllowAdjustMaster, false, false)")
-	public abstract void callHubAOSetActiveObject(Hub thisHub, Object object, boolean adjustMaster, boolean bUpdateLink, boolean bForce);
+	public abstract <T extends OAObject> void callHubAOSetActiveObject(Hub<T> thisHub, T object, boolean adjustMaster, boolean bUpdateLink, boolean bForce);
 	
 	@OAParentProvided (example = "srvcHub.getHubDetailService().getHubWithMasterHub(hub)")
-	public abstract Hub callHubDetailGetHubWithMasterHub(final Hub thisHub);
+	public abstract <T extends OAObject> Hub<T> callHubDetailGetHubWithMasterHub(final Hub<T> thisHub);
 	
 	@OAParentProvided (example = "srvcHub.getHubEventService().fireBeforePropertyChange(..)")
-	public abstract void callHubEventFireBeforePropertyChange(Hub thisHub, OAObject oaObj, String propertyName, Object oldValue, Object newValue);
+	public abstract <T extends OAObject> void callHubEventFireBeforePropertyChange(Hub<T> thisHub, T oaObj, String propertyName, Object oldValue, Object newValue);
 	
 	@OAParentProvided (example = "srvcHub.getHubEventService().fireAfterPropertyChange(..)")
-	public abstract void callHubEventFireAfterPropertyChange(final Hub thisHub, final OAObject oaObj, final String propertyName, final Object oldValue,
+	public abstract <T extends OAObject> void callHubEventFireAfterPropertyChange(final Hub<T> thisHub, final T oaObj, final String propertyName, final Object oldValue,
 			final Object newValue, final OALinkInfo linkInfo);
 
 	@OAParentProvided (example = "srvcHub.getHubEventService().fireAfterLoadEvent(h, oaObj)")
-	public abstract void callHubEventFireAfterLoadEvent(Hub thisHub, OAObject oaObj);
+	public abstract <T extends OAObject> void callHubEventFireAfterLoadEvent(Hub<T> thisHub, T oaObj);
 	
 	@OAParentProvided (example = "srvcHub.getHubShareService().getAllSharedHubs(h, filter)")
-	public abstract Hub[] callHubShareGetAllSharedHubs(Hub thisHub, OAFilter<Hub> filter);
+	public abstract <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub<?>> filter);
 	
 
 	@OAParentProvided (example = "srvcSync.isServer()")
@@ -1383,10 +1383,10 @@ public abstract class OAObjectEventService {
 	public abstract void callThreadLocalSetDeleting(Object obj, boolean b);
 
 	@OAParentProvided (example = "srvcOAThreadLocal.addHubEvent(hubEvent)")
-	public abstract void callThreadLocalAddHubEvent(HubEvent he);
+	public abstract void callThreadLocalAddHubEvent(HubEvent<?> he);
 	
 	@OAParentProvided (example = "srvcOAThreadLocal.removeHubEvent(hubEvent)")
-	public abstract void callThreadLocalRemoveHubEvent(HubEvent he);
+	public abstract void callThreadLocalRemoveHubEvent(HubEvent<?>  he);
 	
 	
 	

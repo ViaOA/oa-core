@@ -5,6 +5,7 @@ import java.util.logging.Logger;
 import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.Hub;
 import com.viaoa.model.oa.VString;
+import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAPropertyInfo;
 
@@ -24,7 +25,7 @@ public abstract class OAObjectEnumService {
 	 * @return a hub containing the name/value entries, or {@code null}
 	 *         if the property does not define enumeration metadata
 	 */
-	public Hub<VString> getNameValues(Class clazz, String propertyName) {
+	public Hub<VString> getNameValues(Class<? extends OAObject> clazz, String propertyName) {
 		OAObjectInfo oi = callInfoGetObjectInfo(clazz);
 		OAPropertyInfo pi = oi.getPropertyInfo(propertyName);
 		if (pi == null) {
@@ -44,7 +45,7 @@ public abstract class OAObjectEnumService {
 	 * @return a hub containing display-name entries, or {@code null}
 	 *         if the property does not define enumeration metadata
 	 */
-	public Hub<VString> getDisplayNameValues(Class clazz, String propertyName) {
+	public Hub<VString> getDisplayNameValues(Class<? extends OAObject> clazz, String propertyName) {
 		OAObjectInfo oi = callInfoGetObjectInfo(clazz);
 		OAPropertyInfo pi = oi.getPropertyInfo(propertyName);
 		if (pi == null) {

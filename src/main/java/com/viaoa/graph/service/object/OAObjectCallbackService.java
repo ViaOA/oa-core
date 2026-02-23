@@ -2410,7 +2410,7 @@ public abstract class OAObjectCallbackService {
 		purpose="", 
 		example = "srvcObject.getOAObjectHubService().getHubReferences(obj)"
 	)
-	public abstract Hub[] callHubGetHubReferences(OAObject oaObj);	
+	public abstract <T extends OAObject> Hub<T>[] callHubGetHubReferences(T oaObj);	
 
 	
 	@OAParentProvided (
@@ -2454,7 +2454,7 @@ public abstract class OAObjectCallbackService {
 		purpose="", 
 		example = "srvcHub.getHubEventService().getAllListeners(hub)"
 	)
-	public abstract HubListener[] callHubEventGetAllListeners(Hub<? extends OAObject> hub);
+	public abstract <T extends OAObject> HubListener<T>[] callHubEventGetAllListeners(Hub<T> hub);
 
 
 	@OAParentProvided (

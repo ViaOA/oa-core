@@ -206,14 +206,14 @@ public abstract class HubLinkService {
 	 * @param bIncludeCopiedHubs true to also check shared/copied Hubs
 	 * @return true if auto-create is enabled; otherwise false
 	 */
-	public boolean isLinkAutoCreated(final Hub<?> thisHub, boolean bIncludeCopiedHubs) {
+	public <T extends OAObject> boolean isLinkAutoCreated(final Hub<T> thisHub, boolean bIncludeCopiedHubs) {
 		if (faHub.getHubDataUnique(thisHub).isAutoCreate()) {
 			return true;
 		}
 		if (!bIncludeCopiedHubs) {
 			return false;
 		}
-		Hub<?> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub>() {
+		Hub<?> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub<T>>() {
 			@Override
 			public boolean isUsed(Hub obj) {
 				Hub h = (Hub) obj;
@@ -250,7 +250,7 @@ public abstract class HubLinkService {
 		if (!bIncludeCopiedHubs) {
 			return false;
 		}
-		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub>() {
+		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub<T>>() {
 			@Override
 			public boolean isUsed(Hub obj) {
 				Hub h = (Hub) obj;
@@ -481,7 +481,7 @@ public abstract class HubLinkService {
 		if (!bIncludeCopiedHubs) {
 			return null;
 		}
-		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub>() {
+		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub<T>>() {
 			@Override
 			public boolean isUsed(Hub obj) {
 				Hub h = (Hub) obj;
@@ -524,7 +524,7 @@ public abstract class HubLinkService {
 		if (!bIncludeCopiedHubs) {
 			return null;
 		}
-		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub>() {
+		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub<T>>() {
 			@Override
 			public boolean isUsed(Hub obj) {
 				Hub h = (Hub) obj;
@@ -554,7 +554,7 @@ public abstract class HubLinkService {
 		if (faHub.getHubDataUnique(thisHub).getLinkToHub() != null) {
 			return faHub.getHubDataUnique(thisHub).getLinkToHub();
 		}
-		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub>() {
+		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub<T>>() {
 			@Override
 			public boolean isUsed(Hub obj) {
 				Hub h = (Hub) obj;
@@ -581,7 +581,7 @@ public abstract class HubLinkService {
 		if (faHub.getHubDataUnique(thisHub).getLinkToHub() != null) {
 			return thisHub;
 		}
-		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub>() {
+		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub<T>>() {
 			@Override
 			public boolean isUsed(Hub obj) {
 				Hub h = (Hub) obj;
@@ -619,7 +619,7 @@ public abstract class HubLinkService {
 			return false;
 		}
 
-		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub>() {
+		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub<T>>() {
 			@Override
 			public boolean isUsed(Hub obj) {
 				Hub h = (Hub) obj;
@@ -661,7 +661,7 @@ public abstract class HubLinkService {
 			return null;
 		}
 
-		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub>() {
+		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub<T>>() {
 			@Override
 			public boolean isUsed(Hub obj) {
 				Hub h = (Hub) obj;
@@ -706,7 +706,7 @@ public abstract class HubLinkService {
 			return null;
 		}
 
-		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub>() {
+		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub<T>>() {
 			@Override
 			public boolean isUsed(Hub obj) {
 				Hub h = (Hub) obj;
@@ -751,7 +751,7 @@ public abstract class HubLinkService {
 			return null;
 		}
 
-		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub>() {
+		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub<T>>() {
 			@Override
 			public boolean isUsed(Hub obj) {
 				Hub h = (Hub) obj;
@@ -934,7 +934,7 @@ public abstract class HubLinkService {
 	public abstract <T extends OAObject> void callHubEventFireAfterChangeActiveObjectEvent(Hub<T> thisHub, T obj, int pos, boolean bAllShared);
 
 	@OAParentProvided (example = "srvcHub.getHubShareService().getFirstSharedHub")
-	public abstract <T extends OAObject> Hub<T> callHubShareGetFirstSharedHub(Hub<T> thisHub, OAFilter<Hub> filter, boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO);
+	public abstract <T extends OAObject> Hub<T> callHubShareGetFirstSharedHub(Hub<T> thisHub, OAFilter<Hub<T>> filter, boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO);
 
 	@OAParentProvided (example = "srvcHub.getHubAOService().setActiveObject")
 	public abstract <T extends OAObject> void callHubAOSetActiveObject(Hub<T> thisHub, T object, boolean adjustMaster, boolean bUpdateLink, boolean bForce);

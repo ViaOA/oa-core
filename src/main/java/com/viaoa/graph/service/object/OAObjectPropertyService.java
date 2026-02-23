@@ -1046,16 +1046,16 @@ public abstract class OAObjectPropertyService {
 	public abstract UUID callGuidGetGuid(OAObject oaObj);
 		
 	@OAParentProvided (example = "srvcObject.getOAObjectHubService().setMasterObject")
-	public abstract void callHubSetMasterObject(Hub hub, OAObject oaObj, String nameFromMasterToDetail);
+	public abstract void callHubSetMasterObject(Hub<?> hub, OAObject oaObj, String nameFromMasterToDetail);
 		
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
-	public abstract OAObjectInfo callInfoGetObjectInfo(Class clazz); 
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz); 
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().isWeakReferenceable")
 	public abstract boolean callInfoIsWeakReferenceable(OAObjectInfo oi);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
-	public abstract OALinkInfo callInfoGetLinkInfo(Class clazz, String propertyName);	
+	public abstract OALinkInfo callInfoGetLinkInfo(Class<? extends OAObject> clazz, String propertyName);	
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().isForSameOAObject")
 	public abstract boolean callKeyIsForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey ok1, final OAObjectKey ok2);

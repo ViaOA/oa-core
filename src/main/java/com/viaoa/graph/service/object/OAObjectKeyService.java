@@ -55,7 +55,7 @@ public abstract class OAObjectKeyService {
 	 * @param ids the ID values or an {@link OAObject} whose key should be returned
 	 * @return a newly created {@link OAObjectKey}, or {@code null} if no IDs are provided
 	 */
-	public OAObjectKey createObjectKey(final Class c, final Object ...ids) {
+	public OAObjectKey createObjectKey(final Class<? extends OAObject> c, final Object ...ids) {
 		return createObjectKey(c, (UUID) null, ids);
 	}
 
@@ -510,17 +510,17 @@ public abstract class OAObjectKeyService {
 	public abstract boolean callCSIsWorkstation(OAObject obj);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectCSService().getServerObject")
-	public abstract OAObject callCSGetServerObject(Class clazz, OAObjectKey key);
+	public abstract <T extends OAObject> T callCSGetServerObject(Class<T> clazz, OAObjectKey key);
 	
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectDSService().isAssigningId")
 	public abstract boolean callDSIsAssigningId(OAObject obj);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectDSService().allowIdChange")
-	public abstract boolean callDSAllowIdChange(Class c);
+	public abstract boolean callDSAllowIdChange(Class<? extends OAObject>  c);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectDSService().getObject")
-	public abstract Object callDSGetObject(OAObjectInfo oi, Class clazz, OAObjectKey key);
+	public abstract <T extends OAObject> T callDSGetObject(OAObjectInfo oi, Class<T> clazz, OAObjectKey key);
 	
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
@@ -530,7 +530,7 @@ public abstract class OAObjectKeyService {
 	public abstract boolean callInfoIsIdProperty(OAObjectInfo oi, String propertyName);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getPropertyClass")
-	public abstract Class callInfoGetPropertyClass(OAObjectInfo oi, String propertyName);
+	public abstract Class<? extends OAObject> callInfoGetPropertyClass(OAObjectInfo oi, String propertyName);
 	
 	
 	@OAParentProvided (example = "srvcObject.getPropertyIdValues(obj)")

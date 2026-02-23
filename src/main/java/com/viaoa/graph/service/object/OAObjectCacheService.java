@@ -1574,7 +1574,7 @@ public abstract class OAObjectCacheService {
 		purpose="", 
 		example = "srvcObject.getOAObjectHubService().getHubReferences(obj)"
 	)
-	public abstract Hub[] callHubGetHubReferences(OAObject oaObj);	
+	public abstract <T extends OAObject> Hub<T>[] callHubGetHubReferences(T oaObj);	
 	
 	@OAParentProvided (
 		parentName = "OAObjectService", 

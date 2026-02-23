@@ -660,7 +660,7 @@ public abstract class OAObjectDeleteService {
 	public abstract OAObject callCacheAdd(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().callback(..)")
-	public abstract void callCacheCallback(OACallback callback, Class clazz);
+	public abstract <T extends OAObject> void callCacheCallback(OACallback<T> callback, Class<T> clazz);
 	
 	
 	
@@ -697,10 +697,10 @@ public abstract class OAObjectDeleteService {
 	
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectHubService().getHubReferences(oaObj)")
-	public abstract Hub[] callObjectHubGetHubReferences(OAObject oaObj);
+	public abstract <T extends OAObject> Hub<T>[] callObjectHubGetHubReferences(T oaObj);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectHubService().deleteAll(hub, cascade)")
-	public abstract void callObjectHubDeleteAll(Hub hub, OACascade cascade);
+	public abstract void callObjectHubDeleteAll(Hub<?> hub, OACascade cascade);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectHubService().getHub(..)")
 	public abstract Hub callHubGetHub(OAObject oaObj, OALinkInfo li);
@@ -708,7 +708,7 @@ public abstract class OAObjectDeleteService {
 	
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
-	public abstract OAObjectInfo getOAObjectInfo(Class clazz);	
+	public abstract OAObjectInfo getOAObjectInfo(Class<?> clazz);	
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().isMany2Many(li)")
 	public abstract boolean callInfoIsMany2Many(OALinkInfo li);
@@ -760,27 +760,27 @@ public abstract class OAObjectDeleteService {
 
 	
 	@OAParentProvided (example = "srvcHub.getHubAddRemoveService().remove(..)")
-	public abstract boolean callHubRemove(final Hub thisHub, Object obj, final boolean bForce,
+	public abstract <T extends OAObject> T callHubRemove(final Hub<T> thisHub, Object obj, final boolean bForce,
 			final boolean bSendEvent, final boolean bDeleting, final boolean bSetAO,
 			final boolean bSetPropToMaster, final boolean bIsRemovingAll);
 
 	@OAParentProvided (example = "srvcHub.getHubCSService().removeAllFromHub(hub)")
-	public abstract void callHubCSRemoveAllFromHub(Hub thisHub);	
+	public abstract void callHubCSRemoveAllFromHub(Hub<?> thisHub);	
 	
 	@OAParentProvided (example = "srvcHub.getHubDataService().removeFromRemovedList(hub, oaObj)")
-	public abstract void callHubDataRemoveFromRemovedList(Hub thisHub, Object obj);
+	public abstract <T extends OAObject> void callHubDataRemoveFromRemovedList(Hub<T> thisHub, T obj);
 
 	@OAParentProvided (example = "srvcHub.getHubDSService().removeMany2ManyLinks(hub)")
-	public abstract void callHubDSRemoveMany2ManyLinks(Hub hub);
+	public abstract void callHubDSRemoveMany2ManyLinks(Hub<?> hub);
 
 	@OAParentProvided (example = "srvcHub.getHubEventService().fireBeforeDeleteEvent(h, oaObj)")
-	public abstract void callHubEventFireBeforeDeleteEvent(Hub thisHub, Object obj);
+	public abstract <T extends OAObject> void callHubEventFireBeforeDeleteEvent(Hub<T> hub, T obj);
 
 	@OAParentProvided (example = "srvcHub.getHubEventService().fireAfterDeleteEvent(h, oaObj)")
-	public abstract void callHubEventFireAfterDeleteEvent(Hub thisHub, Object obj);
+	public abstract <T extends OAObject> void callHubEventFireAfterDeleteEvent(Hub<T> thisHub, T obj);
 	
 	@OAParentProvided (example = "srvcHub.getMasterObject(..)")
-	public abstract OAObject callHubGetMasterObject(Hub hub);
+	public abstract OAObject callHubGetMasterObject(Hub<?> hub);
 
 	
 	

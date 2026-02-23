@@ -329,13 +329,13 @@ public abstract class OAObjectImportMatchService {
 	}
 
     @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(c)")
-	public abstract OAObjectInfo callInfogetObjectInfo(Class clazz);
+	public abstract OAObjectInfo callInfogetObjectInfo(Class<? extends OAObject> clazz);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().find(..)")
-	public abstract Object callCacheFind(Class clazz, OAFinder finder); 
+	public abstract <T extends OAObject> T callCacheFind(Class<T> clazz, OAFinder<T, T> finder); 
 
 	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().createNewObject(..)")
-	public abstract Object callReflectCreateNewObject(Class clazz);
+	public abstract <T extends OAObject> T callReflectCreateNewObject(Class<T> clazz);
 	
 	@OAParentProvided (example = "srvcOAThreadLocal.isLoading")
 	public abstract boolean callThreadLocalIsLoading();

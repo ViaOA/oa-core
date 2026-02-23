@@ -121,7 +121,7 @@ public abstract class OAObjectDSService {
 		return OADataSource.getDataSource(obj.getClass());
 	}
 
-	public OADataSource getDataSource(Class c) {
+	public OADataSource getDataSource(Class<?> c) {
 		return OADataSource.getDataSource(c);
 	}
 	
@@ -142,7 +142,7 @@ public abstract class OAObjectDSService {
 	 * @param c the class to evaluate
 	 * @return {@code true} if a DataSource is registered; otherwise {@code false}
 	 */
-	public static boolean hasDataSource(Class c) {
+	public static boolean hasDataSource(Class<? extends OAObject> c) {
 		return OADataSource.getDataSource(c) != null;
 	}
 	
@@ -154,7 +154,7 @@ public abstract class OAObjectDSService {
 	 * @return {@code true} if the DataSource exists and supports storage,
 	 *         otherwise {@code false}
 	 */
-	public boolean supportsStorage(Class clazz) {
+	public boolean supportsStorage(Class<? extends OAObject> clazz) {
 		OADataSource ds = OADataSource.getDataSource(clazz);
 		return (ds != null && ds.supportsStorage());
 	}
@@ -169,7 +169,7 @@ public abstract class OAObjectDSService {
 	 * @return the retrieved object, or {@code null} if not found or no
 	 *         DataSource is available
 	 */
-	public OAObject getObject(Class clazz, Object key) {
+	public OAObject getObject(Class<? extends OAObject> clazz, Object key) {
 		if (clazz == null || key == null) {
 			return null;
 		}
@@ -195,7 +195,7 @@ public abstract class OAObjectDSService {
 		if (obj == null) {
 			return;
 		}
-		Class clazz = obj.getClass();
+		Class<? extends OAObject> clazz = obj.getClass();
 		OADataSource ds = OADataSource.getDataSource(clazz);
 		if (ds != null) {
 			OAObjectKey key = callKeyGetKey(obj);
@@ -212,7 +212,7 @@ public abstract class OAObjectDSService {
 	 * @param key the object key
 	 * @return the retrieved object, or {@code null} if none exists
 	 */
-	protected Object getObject(Class clazz, OAObjectKey key) {
+	protected <T extends OAObject> T  getObject(Class<T> clazz, OAObjectKey key) {
 		return OADataSource.getObject(clazz, key);
 	}
 
@@ -225,8 +225,7 @@ public abstract class OAObjectDSService {
 	 * @param key the object's key
 	 * @return the retrieved object, or {@code null} if no DataSource exists
 	 */
-	public Object getObject(OAObjectInfo oi, Class clazz, OAObjectKey key) {
-		//qqqqqqq method was protected
+	public <T extends OAObject> T getObject(OAObjectInfo oi, Class<T> clazz, OAObjectKey key) {
 		OADataSource ds = OADataSource.getDataSource(clazz);
 		if (ds == null) {
 			return null;
@@ -247,7 +246,7 @@ public abstract class OAObjectDSService {
 		if (obj == null || propName == null) {
 			return null;
 		}
-		Class clazz = obj.getClass();
+		Class<? extends OAObject> clazz = obj.getClass();
 		OADataSource ds = OADataSource.getDataSource(clazz);
 		if (ds == null) return null;
 		return ds.getPropertyBlobValue(obj, propName);
@@ -352,7 +351,7 @@ public abstract class OAObjectDSService {
 	 * @return {@code true} if ID changes are permitted, or if no
 	 *         DataSource exists; otherwise {@code false}
 	 */
-	public boolean allowIdChange(Class c) {
+	public boolean allowIdChange(Class<? extends OAObject> c) {
 		OADataSource ds = OADataSource.getDataSource(c);
 		return (ds == null || ds.getAllowIdChange());
 	}
@@ -373,13 +372,13 @@ public abstract class OAObjectDSService {
 
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
-	public abstract OAObjectInfo callInfoGetObjectInfo(Class clazz); 
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz); 
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectGuidService().getGuid(obj)")
 	public abstract UUID callGuidGetGuid(OAObject oaObj);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().createObjectKey(clazz, key)")
-	public abstract OAObjectKey callKeyCreateObjectKey(final Class c, final Object ...ids);
+	public abstract OAObjectKey callKeyCreateObjectKey(final Class<? extends OAObject> c, final Object ...ids);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().getKey(obj)")
 	public abstract OAObjectKey callKeyGetKey(OAObject oaObj); 

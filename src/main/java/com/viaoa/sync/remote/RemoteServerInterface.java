@@ -77,10 +77,10 @@ public interface RemoteServerInterface {
 	 * @return the resolved object, or {@code null} if not found
 	 */
     @OARemoteMethod(returnOnQueueSocket = true)
-	OAObject getObject(Class objectClass, OAObjectKey objectKey);
+    <T extends OAObject> T getObject(Class<T> objectClass, OAObjectKey objectKey);
 
     @OARemoteMethod(returnOnQueueSocket = true)
-	OAObject getObjectUsingPkey(Class objectClass, OAObjectKey objectKey);
+    <T extends OAObject> T getObjectUsingPkey(Class<T> objectClass, OAObjectKey objectKey);
     
     /**
      * Creates or retrieves a remote session for a client.

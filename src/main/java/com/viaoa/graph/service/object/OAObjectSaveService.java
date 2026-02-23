@@ -340,7 +340,7 @@ public abstract class OAObjectSaveService {
 	public abstract boolean callCSSave(OAObject oaObj, int iCascadeRule);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectHubService().getHubReferences")
-	public abstract Hub[] callHubGetHubReferences(OAObject oaObj); 
+	public abstract Hub<?>[] callHubGetHubReferences(OAObject oaObj); 
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
 	public abstract OAObjectInfo callInfoGetObjectInfo(OAObject obj); 
@@ -352,7 +352,7 @@ public abstract class OAObjectSaveService {
 	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath); 
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
-	public abstract OAObjectInfo callInfoGetOAObjectInfo(Class clazz);
+	public abstract OAObjectInfo callInfoGetOAObjectInfo(Class<?> clazz);
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectDSService().saveWithoutReferences")
 	public abstract void callDSSaveWithoutReferences(OAObject oaObj);
@@ -375,10 +375,10 @@ public abstract class OAObjectSaveService {
 	
 	
 	@OAParentProvided (example = "srvcHub.getHubEventService().fireBeforeSaveEvent")
-	public abstract void callHubEventFireBeforeSaveEvent(Hub thisHub, OAObject obj);
+	public abstract <T extends OAObject> void callHubEventFireBeforeSaveEvent(Hub<T> thisHub, T obj);
 	
 	@OAParentProvided (example = "srvcHub.getHubEventService().fireAfterSaveEvent")
-	public abstract void callHubEventFireAfterSaveEvent(Hub thisHub, OAObject obj);
+	public abstract <T extends OAObject> void callHubEventFireAfterSaveEvent(Hub<T> thisHub, T obj);
 	
 	@OAParentProvided (example = "srvcOAThreadLocal.isDeleting")
 	public abstract boolean callThreadLocalIsDeleting();

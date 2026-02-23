@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 
 import com.viaoa.annotation.*;
 import com.viaoa.datasource.jdbc.db.*;
+import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.util.*;
@@ -22,7 +23,7 @@ public abstract class OAObjectDatabaseService {
 	 * @param classes  the classes whose annotations define table and column structure
 	 * @throws Exception if required annotations are missing or inconsistent
 	 */
-	public void update(Database database, Class[] classes) throws Exception {
+	public void update(Database database, Class<? extends OAObject>[] classes) throws Exception {
 		if (classes == null) {
 			return;
 		}
@@ -47,7 +48,7 @@ public abstract class OAObjectDatabaseService {
 	 * @param clazz    the class whose annotated properties define table columns
 	 * @throws Exception if required table annotations are missing
 	 */
-	private void _createColumns(Database database, Class clazz) throws Exception {
+	private void _createColumns(Database database, Class<? extends OAObject> clazz) throws Exception {
 		Method[] methods = clazz.getDeclaredMethods(); // need to get all access types, since some could be private.  does not get superclass methods
 
 		OATable dbTable = (OATable) clazz.getAnnotation(OATable.class);
@@ -121,7 +122,7 @@ public abstract class OAObjectDatabaseService {
 	 * @param clazz    the class whose annotations define table-level metadata
 	 * @throws Exception if required table or column annotations are missing or inconsistent
 	 */
-	private void _updateTable(Database database, Class clazz) throws Exception {
+	private void _updateTable(Database database, Class<? extends OAObject> clazz) throws Exception {
 
 		Method[] methods = clazz.getDeclaredMethods(); // need to get all access types, since some could be private. does not get superclass methods
 
@@ -355,10 +356,10 @@ public abstract class OAObjectDatabaseService {
 	
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
-	public abstract OAObjectInfo callInfoGetObjectInfo(Class clazz);	
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz);	
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().getHubObjectClass(oamany, m)")
-	public abstract Class callAnnotationGetHubObjectClass(OAMany annotation, Method method);	
+	public abstract Class<?> callAnnotationGetHubObjectClass(OAMany annotation, Method method);	
     
 }
 

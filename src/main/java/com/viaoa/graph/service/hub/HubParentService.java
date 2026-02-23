@@ -376,7 +376,7 @@ public abstract class HubParentService {
 				return HubParentService.this.srvcObject.getOAObjectInfoService().getReverseLinkInfo(thisLi);
 			}
 			@Override
-			public <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub> filter) {
+			public <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub<?>> filter) {
 				return HubParentService.this.getHubShareService().getAllSharedHubs(thisHub, filter);
 			}
 			@Override
@@ -780,7 +780,7 @@ public abstract class HubParentService {
 				return HubParentService.this.getHubShareService().getSharedWeakHubs(thisHub);
 			}
 			@Override
-			public <T extends OAObject> Hub<T> callHubShareGetFirstSharedHub(Hub<T> thisHub, OAFilter<Hub> filter, boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO) {
+			public <T extends OAObject> Hub<T> callHubShareGetFirstSharedHub(Hub<T> thisHub, OAFilter<Hub<T>> filter, boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO) {
 				return HubParentService.this.getHubShareService().getFirstSharedHub(thisHub, filter, bIncludeFilteredHubs, bOnlyIfSharedAO);
 			}
 			@Override
@@ -992,7 +992,7 @@ public abstract class HubParentService {
 				HubParentService.this.getHubEventService().fireAfterChangeActiveObjectEvent(thisHub, obj, pos, bAllShared);
 			}
 			@Override
-			public <T extends OAObject> Hub<T> callHubShareGetFirstSharedHub(Hub<T> thisHub, OAFilter<Hub> filter, boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO) {
+			public <T extends OAObject> Hub<T> callHubShareGetFirstSharedHub(Hub<T> thisHub, OAFilter<Hub<T>> filter, boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO) {
 				return HubParentService.this.getHubShareService().getFirstSharedHub(thisHub, filter, bIncludeFilteredHubs, bOnlyIfSharedAO);
 			}
 			@Override
@@ -1057,7 +1057,7 @@ public abstract class HubParentService {
 				HubParentService.this.srvcObject.getOAObjectInfoService().setRootHub(thisOI, h);
 			}
 			@Override
-			public <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub> filter) {
+			public <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub<?>> filter) {
 				return HubParentService.this.getHubShareService().getAllSharedHubs(thisHub, filter);
 			}
     	};
@@ -1156,7 +1156,7 @@ public abstract class HubParentService {
 				HubParentService.this.getHubDataService().clearAllAndReset(thisHub);
 			}
 			@Override
-			public <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub> filter) {
+			public <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub<?>> filter) {
 				return HubParentService.this.getHubShareService().getAllSharedHubs(thisHub, filter);
 			}
 			@Override
@@ -1957,9 +1957,9 @@ public abstract class HubParentService {
 		}
 
 		// 20120716
-		OAFilter<Hub> filter = new OAFilter<Hub>() {
+		OAFilter<Hub<?>> filter = new OAFilter<Hub<?>>() {
 			@Override
-			public boolean isUsed(Hub h) {
+			public boolean isUsed(Hub<?> h) {
 				return h.getAddHub() != null;
 			}
 		};

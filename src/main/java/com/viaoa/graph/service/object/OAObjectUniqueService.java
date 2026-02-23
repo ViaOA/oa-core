@@ -92,10 +92,10 @@ public abstract class OAObjectUniqueService {
     }
 
 	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().find")
-	public abstract Object callCacheFind(Class clazz, String propertyPath, Object findObject);
+	public abstract Object callCacheFind(Class<? extends OAObject> clazz, String propertyPath, Object findObject);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().createNewObject")
-	public abstract Object callReflectCreateNewObject(Class clazz); 
+	public abstract Object callReflectCreateNewObject(Class<?> clazz); 
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectCSService().isClient)")
 	public abstract boolean callCSIsClient();

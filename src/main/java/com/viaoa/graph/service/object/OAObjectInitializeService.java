@@ -363,7 +363,7 @@ public abstract class OAObjectInitializeService {
 	public abstract boolean callInfoIsOne2One(OALinkInfo thisLi);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
-	public abstract OAObjectInfo callInfoGetObjectInfo(Class clazz); 
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz); 
 
 	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().unsafeAddProperty")
 	public abstract void callPropertyUnsafeAddProperty(OAObject oaObj, String name, Object value); 

@@ -655,7 +655,7 @@ public abstract class HubDetailService {
 	 * @param bIncludedFilteredHub whether filtered hubs are eligible
 	 * @return the resolved {@code HubDataMaster}, or null if not found
 	 */
-	private HubDataMaster getDataMaster(final Hub<?> thisHub, final Class<? extends OAObject> masterClass, boolean bIncludedFilteredHub) {
+	private <T extends OAObject> HubDataMaster getDataMaster(final Hub<T> thisHub, final Class<? extends OAObject> masterClass, boolean bIncludedFilteredHub) {
 		if (thisHub == null) {
 			return null;
 		}
@@ -664,9 +664,9 @@ public abstract class HubDetailService {
 			return faHub.getHubDataMaster(thisHub);
 		}
 
-		OAFilter<Hub> filter = new OAFilter<Hub>() {
+		OAFilter<Hub<T>> filter = new OAFilter<Hub<T>>() {
 			@Override
-			public boolean isUsed(Hub h) {
+			public boolean isUsed(Hub<T> h) {
 				if (faHub.getHubDataMaster(h).getMasterHub() != null) {
 					if (masterClass == null || masterClass.equals(faHub.getHubDataMaster(h).getMasterHub().getObjectClass())) {
 						return true;
@@ -675,7 +675,7 @@ public abstract class HubDetailService {
 				return false;
 			}
 		};
-		Hub<?> hubx = callHubShareGetFirstSharedHub(thisHub, filter, bIncludedFilteredHub, false);
+		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, filter, bIncludedFilteredHub, false);
 		if (hubx != null) {
 			return faHub.getHubDataMaster(hubx);
 		}
@@ -697,9 +697,9 @@ public abstract class HubDetailService {
 			return thisHub;
 		}
 
-		OAFilter<Hub> filter = new OAFilter<>() {
+		OAFilter<Hub<T>> filter = new OAFilter<>() {
 			@Override
-			public boolean isUsed(Hub h) {
+			public boolean isUsed(Hub<T> h) {
 				if (faHub.getHubDataMaster(h).getMasterHub() != null) {
 					// 20130916 make sure it has the same masterObject
 					//    since it could be a recursive hub, that points
@@ -728,9 +728,9 @@ public abstract class HubDetailService {
 			return thisHub;
 		}
 
-		OAFilter<Hub> filter = new OAFilter<>() {
+		OAFilter<Hub<T>> filter = new OAFilter<>() {
 			@Override
-			public boolean isUsed(Hub h) {
+			public boolean isUsed(Hub<T> h) {
 				if (faHub.getHubDataMaster(h).getMasterHub() != null) {
 					// 20130916 make sure it has the same masterObject
 					//    since it could be a recursive hub, that points
@@ -1712,7 +1712,7 @@ public abstract class HubDetailService {
 	public abstract <T extends OAObject> WeakReference<Hub<T>>[] callHubShareGetSharedWeakHubs(Hub<T> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubShareService().getFirstSharedHub")
-	public abstract <T extends OAObject> Hub<T> callHubShareGetFirstSharedHub(Hub<T> thisHub, OAFilter<Hub> filter, boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO);
+	public abstract <T extends OAObject> Hub<T> callHubShareGetFirstSharedHub(Hub<T> thisHub, OAFilter<Hub<T>> filter, boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO);
 
 	@OAParentProvided (example = "srvcHub.getPropertyPathforClasses")
 	public abstract String callHubGetPropertyPathforClasses(Hub<?> hub, Class<? extends OAObject>[] classes);

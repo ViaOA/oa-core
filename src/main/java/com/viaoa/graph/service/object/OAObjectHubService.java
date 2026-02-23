@@ -32,7 +32,7 @@ public abstract class OAObjectHubService {
     // 20120827 might be used later
     // send event to master object when a change is made to one of its reference hubs
     // called by HubEventDelegate when a change happens to a hub
-    public void fireMasterObjectHubChangeEvent(Hub thisHub, boolean bRefreshFlag) {
+    public void fireMasterObjectHubChangeEvent(Hub<?> thisHub, boolean bRefreshFlag) {
         if (thisHub == null) return;
 
         OAObject objMaster = callHubGetMasterObject(thisHub);
@@ -204,7 +204,7 @@ public abstract class OAObjectHubService {
     /**
      * Return all Hubs that this object is a member of. Note: could have null values
      */
-    public Hub[] getHubReferences(OAObject oaObj) { // Note: this needs to be public
+    public <T extends OAObject> Hub<T>[] getHubReferences(T oaObj) { // Note: this needs to be public
         if (oaObj == null) return null;
 
         WeakReference<Hub<? extends OAObject>>[] refs = faObject.getWeakHubs(oaObj);
@@ -220,7 +220,7 @@ public abstract class OAObjectHubService {
         return hubs;
     }
 
-    public WeakReference<Hub<? extends OAObject>>[] getHubReferencesNoCopy(OAObject oaObj) {
+    public <T extends OAObject> WeakReference<Hub<?>>[] getHubReferencesNoCopy(T oaObj) {
         if (oaObj == null) return null;
         return faObject.getWeakHubs(oaObj);
     }
@@ -235,7 +235,7 @@ public abstract class OAObjectHubService {
         return cnt;
     }
 
-    public boolean addHub(OAObject oaObj, Hub hub) {
+    public <T extends OAObject> boolean addHub(T oaObj, Hub<T> hub) {
         // 20140313 was: addHub(oaObj, hub, true, false);
         return addHub(oaObj, hub, false);
     }
@@ -243,9 +243,9 @@ public abstract class OAObjectHubService {
     /**
      * Called by Hub when an OAObject is added to a Hub.
      */
-    public boolean addHub(final OAObject oaObj, final Hub hubOrig, final boolean bAlwaysAddIfM2M) {
+    public <T extends OAObject> boolean addHub(final T oaObj, final Hub<T> hubOrig, final boolean bAlwaysAddIfM2M) {
         if (oaObj == null || hubOrig == null) return false;
-        final Hub hub = hubOrig.getRealHub();
+        final Hub<T> hub = hubOrig.getRealHub();
 
         // 20120702 dont store hub if M2M&Private: reverse linkInfo does not have a method.
         // since this could have a lot of references (ex: VetJobs JobCategory has m2m Jobs)
@@ -458,7 +458,7 @@ public abstract class OAObjectHubService {
     /**
      * Used by Hub.add() before adding, quicker then checking array
      */
-    public boolean isAlreadyInHub(OAObject oaObj, Hub hubFind) {
+    public <T extends OAObject> boolean isAlreadyInHub(T oaObj, Hub<T> hubFind) {
         if (oaObj == null || hubFind == null) return false;
         hubFind = hubFind.getRealHub();
         boolean b = _isAlreadyInHub(oaObj, hubFind);
@@ -482,7 +482,7 @@ public abstract class OAObjectHubService {
         return false;
     }
 
-    private boolean _isAlreadyInHub(OAObject oaObj, Hub hubFind) {
+    private <T extends OAObject> boolean _isAlreadyInHub(T oaObj, Hub<T> hubFind) {
         if (oaObj == null) return false;
 
         WeakReference<Hub<? extends OAObject>>[] refs = faObject.getWeakHubs(oaObj);
@@ -496,27 +496,27 @@ public abstract class OAObjectHubService {
     }
 
     
-    public boolean getChanged(Hub thisHub, int changedRule, OACascade cascade) {
+    public boolean getChanged(Hub<?> thisHub, int changedRule, OACascade cascade) {
         return callHubGetChanged(thisHub, changedRule, cascade);
     }
 
-    public void saveAll(Hub hub, int iCascadeRule, OACascade cascade) {
+    public void saveAll(Hub<?> hub, int iCascadeRule, OACascade cascade) {
         if (hub == null) return; 
         callHubSaveSaveAll(hub, iCascadeRule, cascade); // cascade save and update M2M links
     }
 
-    public void deleteAll(Hub hub, OACascade cascade) {
+    public void deleteAll(Hub<?> hub, OACascade cascade) {
         if (hub == null) return; 
         callHubDeleteDeleteAll(hub, cascade); // cascade delete and update M2M links
     }
 
-    public void setMasterObject(Hub hub, OAObject oaObj, OALinkInfo liDetailToMaster) {
+    public <T extends OAObject> void setMasterObject(Hub<T> hub, T oaObj, OALinkInfo liDetailToMaster) {
         if (callHubDetailGetMasterObject(hub) == null) {
         	callHubDetailSetMasterObject(hub, oaObj, liDetailToMaster);
         }
     }
 
-    public void setMasterObject(Hub hub, OAObject oaObj, String nameFromMasterToDetail) {
+    public <T extends OAObject> void setMasterObject(Hub<T> hub, T oaObj, String nameFromMasterToDetail) {
         if (hub == null || oaObj == null || nameFromMasterToDetail == null) return;
         Object objx = callHubDetailGetMasterObject(hub);
         if (objx != null && objx == oaObj) {
@@ -543,7 +543,7 @@ public abstract class OAObjectHubService {
 	public abstract void callEventSendHubPropertyChange(final OAObject oaObj, final String propertyName, final Object oldObj, final Object newObj, final OALinkInfo linkInfo); 
 
     @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(c)")
-	public abstract OAObjectInfo callInfoGetObjectInfo(Class clazz);
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class<? extends OAObject> clazz);
 
     @OAParentProvided (example = "srvcObject.getOAObjectInfoService().isMany2Many(..)")
 	public abstract boolean callInfoIsMany2Many(OALinkInfo thisLi);
@@ -562,31 +562,31 @@ public abstract class OAObjectHubService {
 	
 
 	@OAParentProvided (example = "srvcHub.getChanged(..)")
-	public abstract boolean callHubGetChanged(Hub thisHub, int iCascadeRule, OACascade cascade);
+	public abstract boolean callHubGetChanged(Hub<?> thisHub, int iCascadeRule, OACascade cascade);
 
 	@OAParentProvided (example = "srvcHub.getMasterObject(..)")
-	public abstract OAObject callHubGetMasterObject(Hub hub);
+	public abstract OAObject callHubGetMasterObject(Hub<?> hub);
 	
 	@OAParentProvided (example = "srvcHub.getHubDataService().containsDirect(..)")
-	public abstract boolean callHubDataContainsDirect(Hub hub, Object obj);
+	public abstract boolean callHubDataContainsDirect(Hub<?> hub, Object obj);
 	
 	@OAParentProvided (example = "srvcHub.getHubDeleteService().deleteAll(..)")
-	public abstract void callHubDeleteDeleteAll(Hub thisHub, OACascade cascade);
+	public abstract void callHubDeleteDeleteAll(Hub<?> thisHub, OACascade cascade);
 	
 	@OAParentProvided (example = "srvcHub.getHubDetailService().setMasterObject(..)")
-	public abstract void callHubDetailSetMasterObject(Hub thisHub, OAObject masterObject, OALinkInfo liDetailToMaster);
+	public abstract void callHubDetailSetMasterObject(Hub<?> thisHub, OAObject masterObject, OALinkInfo liDetailToMaster);
 	
 	@OAParentProvided (example = "srvcHub.getHubDetailService().getPropertyFromMasterToDetail(..)")
-	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub thisHub);
+	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(..)")
-	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub hub);
+	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
 
 	@OAParentProvided (example = "srvcHub.getHubDetailService().getMasterObject(..)")
-	public abstract OAObject callHubDetailGetMasterObject(Hub thisHub);
+	public abstract OAObject callHubDetailGetMasterObject(Hub<?> thisHub);
 	
 	@OAParentProvided (example = "srvcHub.getHubSaveService().saveAll(..)")
-	public abstract void callHubSaveSaveAll(Hub thisHub, int iCascadeRule, OACascade cascade);
+	public abstract void callHubSaveSaveAll(Hub<?> thisHub, int iCascadeRule, OACascade cascade);
 
 	@OAParentProvided (example = "srvcSync.isClient(..)")
 	public abstract boolean callSyncIsClient();

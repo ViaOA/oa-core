@@ -154,7 +154,7 @@ public abstract class OAObjectLogService {
     }
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
-	public abstract OAObjectInfo callInfoGetObjectInfo(Class clazz); 
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz); 
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
 	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName);

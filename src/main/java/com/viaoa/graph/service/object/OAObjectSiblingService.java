@@ -483,7 +483,7 @@ public abstract class OAObjectSiblingService {
 	 */
 	public void findSiblings(
 			final ArrayList<OAObjectKey> alFoundObjectKey,
-			final Hub hubRoot, final int startPosHubRoot, final String finderPropertyPath, final String origProperty,
+			final Hub<?> hubRoot, final int startPosHubRoot, final String finderPropertyPath, final String origProperty,
 			final OALinkInfo linkInfo,
 			final OAObject mainObject,
 			final HashMap<OAObjectKey, OAObject> hmTypeOneObjKey, // for calling thread, refobjs already looked at
@@ -578,7 +578,7 @@ public abstract class OAObjectSiblingService {
 	 * @param liToMaster   optional link-restriction for selecting the hub
 	 * @return the hub best suited for sibling evaluation, or null if none match
 	 */
-	public Hub findBestSiblingHub(OAObject masterObject, OALinkInfo liToMaster) {
+	public Hub<?> findBestSiblingHub(OAObject masterObject, OALinkInfo liToMaster) {
 		Hub[] hubs = callHubGetHubReferences(masterObject);
 
 		int siblingHits = 0;
@@ -615,10 +615,10 @@ public abstract class OAObjectSiblingService {
 	}
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
-	public abstract OALinkInfo callInfoGetLinkInfo(Class clazz, String propertyName);
+	public abstract OALinkInfo callInfoGetLinkInfo(Class<?> clazz, String propertyName);
 
 	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
-	public abstract OALinkInfo callInfoGetLinkInfo(Class fromClass, Class toClass); 
+	public abstract OALinkInfo callInfoGetLinkInfo(Class<?> fromClass, Class<?> toClass); 
 
 	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getProperty")
 	public abstract Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef);
@@ -630,13 +630,13 @@ public abstract class OAObjectSiblingService {
 	public abstract Hub[] callHubGetHubReferences(OAObject oaObj); 
 
 	@OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster")
-	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub hub);
+	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
 
 	@OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromMasterHubToDetail")
-	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub thisDetailHub);
+	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub<?> thisDetailHub);
 	
 	@OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromMasterToDetail")
-	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterToDetail(Hub thisDetailHub);
+	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterToDetail(Hub<?> thisDetailHub);
 
 	
 	@OAParentProvided (example = "srvcOAThreadLocal.getSiblingHelpers")

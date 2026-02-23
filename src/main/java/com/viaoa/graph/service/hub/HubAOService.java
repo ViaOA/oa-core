@@ -270,7 +270,7 @@ public abstract class HubAOService {
 		faHub.getHubDataUnique(thisHub).setUpdatingActiveObject(false);
 
 		// Now call for all sharedHubs with same "dataa"
-		OAFilter<Hub> filter = new OAFilter<Hub>() {
+		OAFilter<Hub<?>> filter = new OAFilter<Hub<?>>() {
 			@Override
 			public boolean isUsed(Hub h) {
 				return faHub.getHubDataActive(h) == faHub.getHubDataActive(thisHub); 
@@ -325,7 +325,7 @@ public abstract class HubAOService {
 		}
 
 		// Now call for all sharedHubs with same "dataa"
-		OAFilter<Hub> filter = new OAFilter<>() {
+		OAFilter<Hub<?>> filter = new OAFilter<>() {
 			@Override
 			public boolean isUsed(Hub h) {
 				return faHub.getHubDataActive(h) == faHub.getHubDataActive(thisHub); 
@@ -425,7 +425,7 @@ public abstract class HubAOService {
 	public abstract <T extends OAObject> void callHubLinkUpdateLinkProperty(Hub<T> thisHub, T fromObject, int pos);
 
 	@OAParentProvided (example = "srvcHub.getHubShareService().getAllSharedHubs")
-	public abstract <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub> filter);
+	public abstract <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub<?>> filter);
 
 	@OAParentProvided (example = "srvcHub.getHubEventService().fireAfterChangeActiveObjectEvent")
 	public abstract <T extends OAObject> void callHubEventFireAfterChangeActiveObjectEvent(Hub<T> thisHub, T obj, int pos, boolean bAllShared);
