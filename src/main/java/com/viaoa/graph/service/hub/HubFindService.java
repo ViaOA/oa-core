@@ -6,12 +6,36 @@ import com.viaoa.filter.*;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
 
-public class HubFindService {
+public abstract class HubFindService {
 	private final Logger LOG = Logger.getLogger(HubFindService.class.getName());
 
 	public HubFindService() {
 	}
 
+	
+	/**
+	 * Resolves the canonical instance of the given object for this hub. If the
+	 * object's class does not match the hub's object class, the cache is queried
+	 * first; if no cached instance exists, the hub is asked to resolve the object,
+	 * potentially triggering data loading.
+	 *
+	 * @param hub    the hub providing the object class and lookup context
+	 * @param object the object or key to resolve
+	 * @return the resolved object instance, or the original value if no resolution
+	 *         occurs
+	 */
+	public <T extends OAObject> T getRealObject(Hub<T> hub, Object object) {
+		if (object != null && !object.getClass().equals(hub.getObjectClass())) {
+			T objx = callObjectCacheGet(hub.getObjectClass(), object);
+			if (objx != null) {
+				return objx;
+			}
+			object = callHubDataGetObject(hub, object); // might not have loaded all data yet (fetchMore will be called)
+		}
+		return (T) object;
+	}
+
+	
 	/**
 	 * Finds the first object in the specified {@code Hub} whose property located by
 	 * {@code propertyPath} matches the supplied {@code findValue} using a
@@ -38,6 +62,8 @@ public class HubFindService {
         return foundObj;
 	}
 
+	public abstract <T extends OAObject> T callObjectCacheGet(Class<T> clazz, Object key);
+	public abstract <T extends OAObject> T callHubDataGetObject(final Hub<T> thisHub, Object key);	
     
 }
 

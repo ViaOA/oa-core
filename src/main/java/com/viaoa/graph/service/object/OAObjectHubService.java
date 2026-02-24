@@ -35,7 +35,7 @@ public abstract class OAObjectHubService {
     public void fireMasterObjectHubChangeEvent(Hub<?> thisHub, boolean bRefreshFlag) {
         if (thisHub == null) return;
 
-        OAObject objMaster = callHubGetMasterObject(thisHub);
+        OAObject objMaster = callHubMasterGetMasterObject(thisHub);
         if (objMaster == null) return;
 
         String prop = callHubDetailGetPropertyFromMasterToDetail(thisHub);
@@ -497,7 +497,7 @@ public abstract class OAObjectHubService {
 
     
     public boolean getChanged(Hub<?> thisHub, int changedRule, OACascade cascade) {
-        return callHubGetChanged(thisHub, changedRule, cascade);
+        return callHubStatusGetChanged(thisHub, changedRule, cascade);
     }
 
     public void saveAll(Hub<?> hub, int iCascadeRule, OACascade cascade) {
@@ -562,10 +562,10 @@ public abstract class OAObjectHubService {
 	
 
 	@OAParentProvided (example = "srvcHub.getChanged(..)")
-	public abstract boolean callHubGetChanged(Hub<?> thisHub, int iCascadeRule, OACascade cascade);
+	public abstract boolean callHubStatusGetChanged(Hub<?> thisHub, int iCascadeRule, OACascade cascade);
 
 	@OAParentProvided (example = "srvcHub.getMasterObject(..)")
-	public abstract OAObject callHubGetMasterObject(Hub<?> hub);
+	public abstract OAObject callHubMasterGetMasterObject(Hub<?> hub);
 	
 	@OAParentProvided (example = "srvcHub.getHubDataService().containsDirect(..)")
 	public abstract boolean callHubDataContainsDirect(Hub<?> hub, Object obj);

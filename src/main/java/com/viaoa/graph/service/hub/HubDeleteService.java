@@ -161,11 +161,11 @@ public abstract class HubDeleteService {
                     }
                 }
             }
-            callHubDataSetChanged(thisHub,
+            callHubStatusSetChanged(thisHub,
                 (faHub.getHubData(thisHub).getVecAdd() != null && faHub.getHubData(thisHub).getVecAdd().size() > 0) || (faHub.getHubData(thisHub).getVecRemove() != null && faHub.getHubData(thisHub).getVecRemove().size() > 0));
         }
         else {
-        	callHubDataSetChanged(thisHub, true);
+        	callHubStatusSetChanged(thisHub, true);
         }
 
         for (T obj : objs) {
@@ -215,7 +215,7 @@ public abstract class HubDeleteService {
 	public abstract <T extends OAObject> Vector<T> callHubDataCreateVecRemove(Hub<T> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubDataService().setChanged")
-	public abstract void callHubDataSetChanged(Hub<?> thisHub, boolean bChanged);
+	public abstract void callHubStatusSetChanged(Hub<?> thisHub, boolean bChanged);
 
 	@OAParentProvided (example = "srvcHub._updateHubAddsAndRemoves")
 	public abstract void callHub_updateHubAddsAndRemoves(final Hub<?> thisHub, final int iCascadeRule, final OACascade cascade, final boolean bIsSaving);

@@ -1,5 +1,7 @@
 package com.viaoa.graph.service.hub;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -8,6 +10,7 @@ import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.graph.service.HubService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDataMaster;
+import com.viaoa.object.OACascade;
 import com.viaoa.object.OAFkeyInfo;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -81,7 +84,7 @@ public abstract class HubAddRemoveService {
 			return null;
 		}
 		
-		T obj = callHubGetRealObject(thisHub, objOrig);
+		T obj = callHubFindGetRealObject(thisHub, objOrig);
 		if (obj == null) return null;
 		
 		if (!bIsRemovingAll && !thisHub.contains(obj)) {
@@ -178,7 +181,7 @@ public abstract class HubAddRemoveService {
 		if (bSendEvent) {
 			callHubEventFireAfterRemoveEvent(thisHub, obj, pos);
 		}
-		callHubSetReferenceable(thisHub, true);
+		callHubStatusSetReferenceable(thisHub, true);
 		return obj;
 	}
 
@@ -209,7 +212,7 @@ public abstract class HubAddRemoveService {
 			final Class c = obj.getClass();
 			
 			if (thisHub.getObjectClass() == null) {
-				callHubSetObjectClass(thisHub, c);
+				callHubDataSetObjectClass(thisHub, c);
 			}
 			if (!thisHub.getObjectClass().isAssignableFrom(c)) {
 				return "class not assignable, class=" + c.getSimpleName();
@@ -406,9 +409,9 @@ public abstract class HubAddRemoveService {
 			boolean b = (faHub.getHubData(thisHub).getVecAdd() != null && faHub.getHubData(thisHub).getVecAdd().size() > 0)
 					|| (faHub.getHubData(thisHub).getVecRemove() != null && faHub.getHubData(thisHub).getVecRemove().size() > 0);
 
-			callHubDataSetChanged(thisHub, b); 
+			callHubStatusSetChanged(thisHub, b); 
 		} else {
-			callHubDataSetChanged(thisHub, true);
+			callHubStatusSetChanged(thisHub, true);
 		}
 
 		// if this is OAClientThread, so that OAClientMessageHandler can continue with next message
@@ -526,7 +529,7 @@ public abstract class HubAddRemoveService {
 			final Class c = obj.getClass();
 			
 			if (faHub.getHubData(thisHub).getObjClass() == null) {
-				callHubSetObjectClass(thisHub, c);
+				callHubDataSetObjectClass(thisHub, c);
 			}
 			if (!faHub.getHubData(thisHub).getObjClass().isAssignableFrom(c)) {
 				return "class not assignable, class=" + c.getSimpleName();
@@ -670,7 +673,7 @@ public abstract class HubAddRemoveService {
 		if (thisHub.getObjectClass() == null || thisHub.getObjectClass().equals(OAObject.class)) {
 			Class c = obj.getClass();
 			if (thisHub.getObjectClass() == null || !c.equals(OAObject.class)) {
-				callHubSetObjectClass(thisHub, c);
+				callHubDataSetObjectClass(thisHub, c);
 			}
 		}
 
@@ -753,7 +756,7 @@ public abstract class HubAddRemoveService {
 		callHubEventFireAfterAddEvent(thisHub, obj, thisHub.getCurrentSize() - 1);
 		
 		if (!callThreadLocalIsLoading()) {
-			callHubSetReferenceable(thisHub, true);
+			callHubStatusSetReferenceable(thisHub, true);
 		} else { // 20120425 need to send ObjectCache event
 					// 20130518 dont send if bInFetch (too much noise)
 					// 201512 not needed, too noisy
@@ -935,7 +938,7 @@ public abstract class HubAddRemoveService {
 		if (thisHub.getObjectClass() == null || thisHub.getObjectClass().equals(OAObject.class)) {
 			Class c = obj.getClass();
 			if (thisHub.getObjectClass() == null || !c.equals(OAObject.class)) {
-				callHubSetObjectClass(thisHub, c);
+				callHubDataSetObjectClass(thisHub, c);
 			}
 		}
 		
@@ -1104,7 +1107,7 @@ public abstract class HubAddRemoveService {
 		callHubEventFireAfterInsertEvent(thisHub, obj, pos);
 		
 		if (!callThreadLocalIsLoading()) {
-			callHubSetReferenceable(thisHub, true);
+			callHubStatusSetReferenceable(thisHub, true);
 		}
 	}
 
@@ -1242,6 +1245,130 @@ public abstract class HubAddRemoveService {
 	}
 
 	
+	/**
+	 * Updates link relationships for objects added to or removed from this hub.
+	 * When objects are removed, the method determines whether the reverse link
+	 * requires deletion, reference removal, or persistence based on the link type,
+	 * master relationship, and cascade rules. Many-to-many links are updated when
+	 * needed. New objects are skipped because they do not yet exist in the data
+	 * source.
+	 *
+	 * @param thisHub       the hub whose add/remove state is being processed
+	 * @param iCascadeRule  the cascade rule for save/delete operations
+	 * @param cascade       the cascade tracker for preventing reprocessing
+	 * @param bIsSaving     whether the caller is performing a save operation
+	 */
+	
+		
+	public void _updateHubAddsAndRemoves(final Hub thisHub, final int iCascadeRule, final OACascade cascade,
+			final boolean bIsSaving) {
+		//qqqqqqqq method was protected
+		// removed Objects need to be saved if reference = null.
+		HubDataMaster dm = callHubDetailGetDataMaster(thisHub);
+		
+		boolean bM2M = (dm != null && dm.getDetailToMasterLinkInfo() != null && dm.getDetailToMasterLinkInfo().getType() == OALinkInfo.MANY);
+		OALinkInfo liRev = null;
+		if (dm != null && dm.getDetailToMasterLinkInfo() != null) {
+			liRev = callObjectInfoGetReverseLinkInfo(dm.getDetailToMasterLinkInfo());
+		}
+
+		boolean bHasMethod = true;
+		if (dm == null) {
+		} else if (bM2M) {
+			bHasMethod = false;
+			if (dm.getMasterObject() != null && dm.getDetailToMasterLinkInfo() != null) {
+				updateMany2ManyLinks(thisHub, dm); // update any link tables
+			}
+		} else {
+			// 20120907 cases where there is not a public method created, and would use a link table.
+			Method method = callObjectInfoGetMethod(dm.getDetailToMasterLinkInfo());
+			if (method == null || ((method.getModifiers() & (Modifier.PRIVATE)) != 0)) {
+				bHasMethod = false;
+				updateMany2ManyLinks(thisHub, dm); // update any link tables
+			}
+		}
+
+		Object[] objs = callHubDataGetRemovedObjects(thisHub);
+		if (objs == null) {
+			return;
+		}
+
+		for (int i = 0; i < objs.length; i++) {
+			OAObject obj = (OAObject) objs[i];
+			if (obj.getNew()) {
+				continue; // does not exist in DS
+			}
+			if (liRev != null && liRev.isOwner()) {
+				if (dm.getDetailToMasterLinkInfo() != null) {
+					Object ox = callObjectReflectGetProperty(obj, dm.getDetailToMasterLinkInfo().getName());
+					if (ox == null) {
+						callObjectDeleteDelete(obj, cascade);
+					}
+				}
+			} else if (dm != null && dm.getDetailToMasterLinkInfo() != null && bHasMethod) {
+				Object ox = callObjectReflectGetProperty(obj, dm.getDetailToMasterLinkInfo().getName());
+				if (ox == null) { // else property has been reassigned
+					// 20120925
+					callObjectDSRemoveReference(obj, dm.getDetailToMasterLinkInfo());
+					//was: OAObjectSaveDelegate._saveObjectOnly(obj, cascade);
+				}
+			} else if (bIsSaving && dm != null && dm.getDetailToMasterLinkInfo() != null && !bHasMethod && callSyncIsServer() && !obj.isDeleted()) {
+				// 20181126 if it is a removed object from ServerRoot, need to save now
+				callObjectSaveSave(obj, iCascadeRule, cascade);
+			}
+		}
+	}
+
+	
+	
+	
+	/**
+	 * Synchronizes many-to-many link table entries for this hub. Added and removed
+	 * objects are examined and cross-updated on the opposite hub. When changes
+	 * occur, the link table is updated using the master object's reverse link
+	 * property.
+	 *
+	 * @param thisHub the hub whose many-to-many links are being updated
+	 * @param dm      the master relationship information for this hub
+	 */
+	private void updateMany2ManyLinks(Hub thisHub, HubDataMaster dm) {
+		if (dm == null || dm.getDetailToMasterLinkInfo() == null) {
+			return;
+		}
+		OAObject[] adds = callHubAddRemoveGetAddedObjects(thisHub);
+		OAObject[] removes = callHubAddRemoveGetRemovedObjects(thisHub);
+
+		boolean b = false;
+		// cross update opposite hub vecAdd/Remove
+		for (int i = 0; adds != null && i < adds.length; i++) {
+			b = true;
+			if (adds[i] == null) continue;
+			OAObject obj = adds[i];
+			if (obj.getNew()) continue;
+			Object objx = callObjectReflectGetRawReference(obj, dm.getDetailToMasterLinkInfo().getName());
+			if (objx instanceof Hub) {
+				callHubDataRemoveFromAddedList((Hub) objx, dm.getMasterObject());
+			}
+		}
+		for (int i = 0; removes != null && i < removes.length; i++) {
+			b = true;
+			if (removes[i] == null) continue;
+			OAObject obj = (OAObject) removes[i];
+			Object objx = callObjectReflectGetRawReference(obj, dm.getDetailToMasterLinkInfo().getName());
+			if (objx instanceof Hub) {
+				callHubDataRemoveFromRemovedList((Hub) objx, dm.getMasterObject());
+			}
+		}
+		if (b) {
+			String propFromMaster = callObjectInfoGetReverseLinkInfo(dm.getDetailToMasterLinkInfo()).getName();
+			callHubDSUpdateMany2ManyLinks(dm.getMasterObject(), adds, removes, propFromMaster);
+		}
+	}
+	
+	
+	
+	
+	
 	@OAParentProvided (example = "srvcObject.getOAObjectHubService().addHub")
 	public abstract <T extends OAObject> boolean callObjectHubAddHub(T oaObj, Hub<T> hub);
 	
@@ -1280,7 +1407,7 @@ public abstract class HubAddRemoveService {
 	public abstract <T extends OAObject> T callHubDataGetObjectAt(Hub<T> thisHub, int pos);
 
 	@OAParentProvided (example = "srvcHub.getRealObject")
-	public abstract <T extends OAObject> T callHubGetRealObject(Hub<T> hub, Object object); //qqqqqqq Object can be T, OAObjectKey, pkey value
+	public abstract <T extends OAObject> T callHubFindGetRealObject(Hub<T> hub, Object object); //qqqqqqq Object can be T, OAObjectKey, pkey value
 
 	@OAParentProvided (example = "srvcHub.getHubDataService().getPos")
 	public abstract <T extends OAObject> int callHubDataGetPos(final Hub<T> thisHub, T object, final boolean adjustMaster, final boolean bUpdateLink);
@@ -1304,14 +1431,16 @@ public abstract class HubAddRemoveService {
 	public abstract <T extends OAObject> void callHubEventFireAfterRemoveEvent(Hub<T> thisHub, final T obj, int pos);
 
 	@OAParentProvided (example = "srvcHub.setReferenceable")
-	public abstract void callHubSetReferenceable(Hub<?> hub, boolean bReferenceable);
+	public abstract void callHubStatusSetReferenceable(Hub<?> hub, boolean bReferenceable);
 
 	@OAParentProvided (example = "srvcHub.setObjectClass")
-	public abstract <T extends OAObject> void callHubSetObjectClass(Hub<T> thisHub, Class<T> objClass);
+	public abstract <T extends OAObject> void callHubDataSetObjectClass(Hub<T> thisHub, Class<T> objClass);
 
 	@OAParentProvided (example = "srvcHub.getHubDetailService().getDataMaster")
 	public abstract HubDataMaster callHubDetailGetDataMaster(final Hub<?> thisHub, boolean bIncludedFilteredHub);
-
+	public abstract HubDataMaster callHubDetailGetDataMaster(final Hub<?> thisHub);
+	
+	
 	@OAParentProvided (example = "srvcHub.getHubSelectService().cancelSelect")
 	public abstract void callHubSelectCancelSelect(Hub<?> thisHub, boolean bRemoveSelect);
 
@@ -1325,7 +1454,7 @@ public abstract class HubAddRemoveService {
 	public abstract <T extends OAObject> Vector<T> callHubDataCreateVecRemove(Hub<T> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getHubDataService().setChanged")
-	public abstract void callHubDataSetChanged(Hub<?> thisHub, boolean bChanged);
+	public abstract void callHubStatusSetChanged(Hub<?> thisHub, boolean bChanged);
 
 	@OAParentProvided (example = "srvcHub.getHubShareService().setSharedHubsAfterRemoveAll")
 	public abstract void callHubShareSetSharedHubsAfterRemoveAll(Hub<?> thisHub);
@@ -1337,7 +1466,7 @@ public abstract class HubAddRemoveService {
 	public abstract void callHubEventFireAfterRemoveAllEvent(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.verifyUniqueProperty")
-	public abstract boolean callHubVerifyUniqueProperty(final Hub<?> thisHub, final Object object);
+	public abstract <T extends OAObject> boolean callHubVerifyUniqueProperty(final Hub<T> thisHub, final T object);
 
 	@OAParentProvided (example = "srvcHub.getHubDetailService().isRecursiveMasterDetail")
 	public abstract boolean callHubDetailIsRecursiveMasterDetail(Hub<?> thisHub);
@@ -1420,4 +1549,20 @@ public abstract class HubAddRemoveService {
 
 	@OAParentProvided (example = "srvcRemoteThread.setStartedNextThread")
 	public abstract void callRemoteThreadSetStartedNextThread(boolean b);
+
+
+	public abstract Method callObjectInfoGetMethod(OALinkInfo li);
+	public abstract Method callObjectInfoGetMethod(Class<?> clazz, String methodName);
+	public abstract Object callObjectReflectGetProperty(OAObject oaObj, String propPath);
+	public abstract void callObjectDSRemoveReference(OAObject oaObj, OALinkInfo li);
+	public abstract void callObjectDeleteDelete(final OAObject oaObj, OACascade cascade);	
+	public abstract void callObjectSaveSave(OAObject oaObj, int iCascadeRule, OACascade cascade);	
+	public abstract boolean callSyncIsServer();
+	public abstract <T extends OAObject>  T[] callHubAddRemoveGetAddedObjects(Hub<T> thisHub);	
+	public abstract <T extends OAObject> T[] callHubAddRemoveGetRemovedObjects(Hub<T> thisHub);
+	public abstract Object callObjectReflectGetRawReference(OAObject oaObj, String name);	
+	public abstract <T extends OAObject> void callHubDataRemoveFromAddedList(Hub<T> thisHub, T obj);
+	public abstract <T extends OAObject> void callHubDataRemoveFromRemovedList(Hub<T> thisHub, T obj);
+	public abstract void callHubDSUpdateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propFromMaster);
+
 }

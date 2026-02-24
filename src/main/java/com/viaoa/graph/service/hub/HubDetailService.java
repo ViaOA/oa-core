@@ -1068,7 +1068,7 @@ public abstract class HubDetailService {
 		if (pos < 0) {
 			if (detailHub != null) {
 				if (detailHub.getObjectClass() == null) {
-					callHubGetObjectClass(detailHub, newClass);
+					callHubDataGetObjectClass(detailHub, newClass);
 				}
 				if (hub != null && !hub.getObjectClass().equals(detailHub.getObjectClass())) {
 					if (!hub.getObjectClass().isAssignableFrom(detailHub.getObjectClass())) {
@@ -1718,7 +1718,7 @@ public abstract class HubDetailService {
 	public abstract String callHubGetPropertyPathforClasses(Hub<?> hub, Class<? extends OAObject>[] classes);
 
 	@OAParentProvided (example = "srvcHub.setObjectClass")
-	public abstract <T extends OAObject> void callHubGetObjectClass(Hub<T> thisHub, Class<T> objClass);
+	public abstract <T extends OAObject> void callHubDataGetObjectClass(Hub<T> thisHub, Class<T> objClass);
 
 	@OAParentProvided (example = "srvcHub.getHubShareService().getMainSharedHub")
 	public abstract <T extends OAObject> Hub<T> callHubShareGetMainSharedHub(Hub<T> hub);

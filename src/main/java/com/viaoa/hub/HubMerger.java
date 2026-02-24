@@ -917,7 +917,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         }
         // verify that last property is same class as hubCombined
         if (hubCombined != null && hubCombined.getObjectClass() == null) {
-            og.hubsInternal().callHubSetObjectClass(hubCombined, clazz);
+            og.hubsInternal().callHubHubSetObjectClass(hubCombined, clazz);
         }
         if (hubCombined != null && !hubCombined.getObjectClass().equals(clazz)) {
             if (!clazz.equals(Hub.class)) {
@@ -1900,7 +1900,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                         // 20120612 dont send event, unless there is a recursive prop, which needs to
                         // have recursives nodes updated
                 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubCombined);
-                		og.hubsInternal().callHubAddRemoveRemove(hubCombined, obj, false, bIsRecusive, false, false, false, false);
+                		og.hubsInternal().callHubAddRemoveRemove((Hub<OAObject>)hubCombined, (OAObject)obj, false, bIsRecusive, false, false, false, false);
                     } else {
                         if (hubCombined != null) {
                             hubCombined.remove(obj);
@@ -1921,7 +1921,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
                     if (srvcOAThreadLocal.isHubMergerChanging()) {
                 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubCombined);
-                		og.hubsInternal().callHubAddRemoveRemove(hubCombined, obj, false, bIsRecusive, false, false, false, false);
+                		og.hubsInternal().callHubAddRemoveRemove((Hub<OAObject>)hubCombined, (OAObject)obj, false, bIsRecusive, false, false, false, false);
                     } else {
                         if (hubCombined != null) {
                             hubCombined.remove(obj);
@@ -1976,7 +1976,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
                             if (srvcOAThreadLocal.isHubMergerChanging()) { // 20120102
                         		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(child.hub);
-                        		og.hubsInternal().callHubAddRemoveRemove(child.hub, ref, false, false, false, false, false, false);
+                        		og.hubsInternal().callHubAddRemoveRemove((Hub<OAObject>)child.hub, (OAObject)ref, false, false, false, false, false, false);
                             } else {
                                 child.hub.remove(ref);
                             }

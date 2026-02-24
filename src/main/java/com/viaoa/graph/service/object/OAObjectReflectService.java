@@ -980,7 +980,7 @@ public abstract class OAObjectReflectService {
 				// throw new RuntimeException("getHub from Server failed, this.oaObj="+oaObj+", linkPropertyName="+linkPropertyName);
 			}
 
-			if (callHubGetMasterObject(hub) == null) {
+			if (callHubMasterGetMasterObject(hub) == null) {
 				if (hub.getSize() == 0 && hub.getObjectClass() == null) {
 					if (linkInfo == null) {
 						return null;
@@ -2397,7 +2397,7 @@ public abstract class OAObjectReflectService {
 				if (li.getPrivateMethod()) {
 					Hub hubx = callHubGetHub(oaObj, li);
 					if (hubx != null) {
-						ref = callHubGetMasterObject(hubx);
+						ref = callHubMasterGetMasterObject(hubx);
 					}
 				}
 
@@ -4069,7 +4069,7 @@ public abstract class OAObjectReflectService {
 	public abstract boolean callHubSortIsSorted(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getMasterObject")
-	public abstract OAObject callHubGetMasterObject(Hub<?> hub);
+	public abstract OAObject callHubMasterGetMasterObject(Hub<?> hub);
 
 	@OAParentProvided (example = "srvcHub.getHubSelectService().loadAllData")
 	public abstract void callHubSelectLoadAllData(Hub<?> thisHub, OASelect select);

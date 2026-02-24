@@ -53,7 +53,7 @@ public abstract class HubShareService {
 	 * @param filter  an OAFilter determining which Hubs to include
 	 * @return array of filtered shared Hubs
 	 */
-	public <T extends OAObject> Hub<T>[] getAllSharedHubs(Hub<T> thisHub, OAFilter<Hub<?>> filter) {
+	public <T extends OAObject> Hub<T>[] getAllSharedHubs(Hub<T> thisHub, OAFilter<Hub<T>> filter) {
 		return getAllSharedHubs(thisHub, false, filter);
 	}
 
@@ -66,7 +66,7 @@ public abstract class HubShareService {
 	 * @param filter        optional filter to select which Hubs to return
 	 * @return array of shared Hubs
 	 */
-	public <T extends OAObject> Hub<T>[] getAllSharedHubs(Hub<T> thisHub, boolean bChildrenOnly, OAFilter<Hub<?>> filter) {
+	public <T extends OAObject> Hub<T>[] getAllSharedHubs(Hub<T> thisHub, boolean bChildrenOnly, OAFilter<Hub<T>> filter) {
 		return getAllSharedHubs(thisHub, bChildrenOnly, filter, false, false);
 	}
 
@@ -81,7 +81,7 @@ public abstract class HubShareService {
 	 * @param bOnlyIfSharedAO      true to include only Hubs sharing the AO source
 	 * @return array of discovered shared Hubs
 	 */
-	public <T extends OAObject> Hub<T>[] getAllSharedHubs(Hub<T> thisHub, boolean bChildrenOnly, OAFilter<Hub<?>> filter, boolean bIncludeFilteredHubs,
+	public <T extends OAObject> Hub<T>[] getAllSharedHubs(Hub<T> thisHub, boolean bChildrenOnly, OAFilter<Hub<T>> filter, boolean bIncludeFilteredHubs,
 			boolean bOnlyIfSharedAO) {
 
 		if (thisHub == null) {
@@ -112,7 +112,7 @@ public abstract class HubShareService {
 	 * @param bOnlyIfSharedAO      restrict traversal to AO-sharing Hubs
 	 * @param bIncludeHubShareAO   include HubShareAO-linked Hubs
 	 */
-	private <T extends OAObject> void _getAllSharedHubs(final Hub<T> hub, final Hub<T> findHub, final ArrayList<Hub<T>> alHub, final OAFilter<Hub<?>> filter,
+	private <T extends OAObject> void _getAllSharedHubs(final Hub<T> hub, final Hub<T> findHub, final ArrayList<Hub<T>> alHub, final OAFilter<Hub<T>> filter,
 			final int cnter, final boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO, boolean bIncludeHubShareAO) {
 
 		if (filter == null || filter.isUsed(hub)) {
@@ -751,9 +751,9 @@ public abstract class HubShareService {
 		// make sure both hubs are compatible
 		if (sharedMasterHub != null) {
 			if (thisHub.getObjectClass() == null) {
-				callHubSetObjectClass(thisHub, sharedMasterHub.getObjectClass());
+				callHubDataSetObjectClass(thisHub, sharedMasterHub.getObjectClass());
 			} else if (sharedMasterHub.getObjectClass() == null) {
-				callHubSetObjectClass(sharedMasterHub, thisHub.getObjectClass());
+				callHubDataSetObjectClass(sharedMasterHub, thisHub.getObjectClass());
 			}
 			Class c = thisHub.getObjectClass();
 			if (c != null && !c.equals(sharedMasterHub.getObjectClass())) {
@@ -1218,6 +1218,38 @@ public abstract class HubShareService {
 		return cnt;
 	}
 
+	/**
+	 * Returns this hub or any shared hub that has an addHub defined. Shared hubs
+	 * are scanned using a filter to locate the first hub that supports additions.
+	 *
+	 * @param hub the hub to evaluate
+	 * @return a hub with an addHub, or {@code null} if none exists
+	 */
+	public <T extends OAObject> Hub<T> getAnyAddHub(final Hub<T> hub) {
+		if (hub.getAddHub() != null) {
+			return hub;
+		}
+
+		// 20120716
+		OAFilter<Hub<T>> filter = new OAFilter<Hub<T>>() {
+			@Override
+			public boolean isUsed(Hub<T> h) {
+				return h.getAddHub() != null;
+			}
+		};
+		Hub<T>[] hubs = getAllSharedHubs(hub, filter);
+
+		// was: Hub[] hubs = getHubShareService().getAllSharedHubs(hub);
+		for (int i = 0; i < hubs.length; i++) {
+			if (hubs[i].getAddHub() != null) {
+				return hubs[i];
+			}
+		}
+		return null;
+	}
+	
+	
+	
 	@OAParentProvided (example = "srvcObject.getOAObjectHubService().removeHub")
 	public abstract <T extends OAObject> void callObjectHubRemoveHub(final T oaObj, Hub<T> hub, boolean bIsOnHubFinalize);
 	
@@ -1251,7 +1283,7 @@ public abstract class HubShareService {
 	public abstract void callHubDataIncChangeCount(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.setObjectClass")
-	public abstract <T extends OAObject> void callHubSetObjectClass(Hub<T> thisHub, Class<T> objClass);
+	public abstract <T extends OAObject> void callHubDataSetObjectClass(Hub<T> thisHub, Class<T> objClass);
 
 	@OAParentProvided (example = "srvcHub.getHubEventService().fireOnNewListEvent")
 	public abstract void callHubEventFireOnNewListEvent(Hub<?> thisHub, boolean bAll);

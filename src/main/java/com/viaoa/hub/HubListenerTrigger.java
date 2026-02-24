@@ -303,7 +303,7 @@ public class HubListenerTrigger<TYPE extends OAObject> {
 				for (Object obj : hub) {
 					try {
 						if (finder.findFirst((OAObject) obj) != null) {
-							og.hubsInternal().callHubEventFireCalcPropertyChange(HubListenerTrigger.this.hub, obj, propertyName);
+							og.hubsInternal().callHubEventFireCalcPropertyChange((Hub<OAObject>)HubListenerTrigger.this.hub, (OAObject)obj, propertyName);
 						}
 					} catch (Exception e) {
 						break;

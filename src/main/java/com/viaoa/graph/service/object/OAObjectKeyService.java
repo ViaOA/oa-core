@@ -31,7 +31,7 @@ public abstract class OAObjectKeyService {
 	 */
 	public OAObjectKey createObjectKey(OAObject obj) {
 		if (obj == null) return null;
-		OAObjectKey key = new OAObjectKey(callObjectGetPropertyIdValues(obj), obj.getGuid());
+		OAObjectKey key = new OAObjectKey(callObjectInfoGetPropertyIdValues(obj), obj.getGuid());
 		return key;
 	}
 
@@ -533,8 +533,8 @@ public abstract class OAObjectKeyService {
 	public abstract Class<? extends OAObject> callInfoGetPropertyClass(OAObjectInfo oi, String propertyName);
 	
 	
-	@OAParentProvided (example = "srvcObject.getPropertyIdValues(obj)")
-	public abstract Object[] callObjectGetPropertyIdValues(OAObject obj);
+	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getPropertyIdValues(obj)")
+	public abstract Object[] callObjectInfoGetPropertyIdValues(OAObject obj);
 
 	
 	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().isReferenceObjectLoadedAndNotEmpty")

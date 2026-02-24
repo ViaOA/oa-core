@@ -92,7 +92,7 @@ public abstract class HubSaveService {
         callHub_updateHubAddsAndRemoves(thisHub, iCascadeRule, cascade, true);
     	thisHub.setChanged(false); // removes all vecAdd, vecRemove objects
     	
-    	callHubSetReferenceable(thisHub, false);
+    	callHubStatusSetReferenceable(thisHub, false);
     }
 
 	@OAParentProvided (example = "srvcObject.getOAObjectSaveService().save")
@@ -114,7 +114,7 @@ public abstract class HubSaveService {
 	public abstract void callHub_updateHubAddsAndRemoves(final Hub<?> thisHub, final int iCascadeRule, final OACascade cascade, final boolean bIsSaving);
 
 	@OAParentProvided (example = "srvcHub.setReferenceable")
-	public abstract void callHubSetReferenceable(Hub<?> hub, boolean bReferenceable);
+	public abstract void callHubStatusSetReferenceable(Hub<?> hub, boolean bReferenceable);
 }
 
 

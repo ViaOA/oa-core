@@ -20,9 +20,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.HubService;
-import com.viaoa.graph.service.object.OAObjectEnumService;
-import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.model.oa.VString;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
@@ -31,6 +28,7 @@ import com.viaoa.runtime.thread.OARemoteThreadService;
 import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAStr;
+import com.viaoa.graph.service.hub.HubStatusService;
 
 /**
  * Maintains object synchronization between two {@link Hub}s by ensuring that each
@@ -351,10 +349,10 @@ public class HubAutoMatch<TYPE extends OAObject, PROPTYPE extends OAObject> exte
         try {
             if (bCheckInSync) {
         		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.hub);
-    			if (og.hubsInternal().callHubGetCurrentState(hub, null, null) != HubService.HubCurrentStateEnum.InSync) {
+    			if (og.hubsInternal().callHubStatusGetCurrentState(hub, null, null) != HubStatusService.HubCurrentStateEnum.InSync) {
     				return;
     			}
-    			if (hubMaster != null && og.hubsInternal().callHubGetCurrentState(hubMaster, null, null) != HubService.HubCurrentStateEnum.InSync) {
+    			if (hubMaster != null && og.hubsInternal().callHubStatusGetCurrentState(hubMaster, null, null) != HubStatusService.HubCurrentStateEnum.InSync) {
     			    srvcOAThreadLocal.addHubMergerCallback(new OAThreadLocalHubMergerCallback() {
                         @Override
                         public void callback() {

@@ -45,24 +45,24 @@ public class OAObjectService extends OAObjectParentService implements ObjectsOps
 	}
 
 	@Override
-	public boolean callObjectGetChanged(OAObject oaObj, int cascadeRule) {
-	    return getChanged(oaObj, cascadeRule);
+	public boolean callObjectChangeGetChanged(OAObject oaObj, int cascadeRule) {
+	    return getOAObjectChangeService().getChanged(oaObj, cascadeRule);
 	}
 
 	@Override
 	public void callObjectSetAutoAdd(OAObject oaObj, boolean bAutoAdd) {
-	    setAutoAdd(oaObj, bAutoAdd);
+	     getOAObjectAutoAddService().setAutoAdd(oaObj, bAutoAdd);
 	}
 
 	@Override
 	public boolean callObjectGetAutoAdd(OAObject oaObj) {
-	    return getAutoAdd(oaObj);
+	    return getOAObjectAutoAddService().getAutoAdd(oaObj);
 	}
 
 
 	@Override
 	public Object[] callObjectFind(OAObject oaObjBase, String propertyPath, Object findValue, boolean bFindAll) {
-	    return find(oaObjBase, propertyPath, findValue, bFindAll);
+	    return getOAObjectFindService().find(oaObjBase, propertyPath, findValue, bFindAll);
 	}
 
 	

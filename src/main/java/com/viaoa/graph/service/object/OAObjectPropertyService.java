@@ -26,6 +26,12 @@ public abstract class OAObjectPropertyService {
     	this.faObject = faObject;
     }
 	
+	public Object[] getProperties(OAObject obj) {
+		if (obj == null) return null;
+		return faObject.getProperties(obj);
+	}
+    
+    
 	/**
 	 * Returns whether the specified property has already been loaded for the
 	 * given object. A property is considered loaded when its stored value is
@@ -1039,6 +1045,8 @@ public abstract class OAObjectPropertyService {
 		}
 	}
 
+	
+	
 	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().get")
 	public abstract <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok);
 

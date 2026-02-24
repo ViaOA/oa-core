@@ -53,7 +53,7 @@ public abstract class HubRootService {
 
 		// 3: get dm
 		// 20120717 could be more then one master hub available, find the one that owns this object
-		OAFilter<Hub<?>> filter = new OAFilter<Hub<?>>() {
+		OAFilter<Hub<T>> filter = new OAFilter<>() {
 			@Override
 			public boolean isUsed(Hub hx) {
 				return (faHub.getHubDataMaster(hx).getMasterHub() != null);
@@ -201,6 +201,6 @@ public abstract class HubRootService {
 	public abstract void callObjectInfoSetRootHub(OAObjectInfo thisOI, Hub<?> h);
 
 	@OAParentProvided (example = "srvcHub.getHubShareService().getAllSharedHubs")
-	public abstract <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub<?>> filter);
+	public abstract <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub<T>> filter);
 
 }

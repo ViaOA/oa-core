@@ -43,7 +43,7 @@ public interface ObjectsInternalOps {
 	
 	// Object (itself)
 	public void callObjectSetNew(OAObject oaObj, boolean bIsNew);
-	public boolean callObjectGetChanged(OAObject oaObj, int cascadeRule);
+	public boolean callObjectChangeGetChanged(OAObject oaObj, int cascadeRule);
 	public void callObjectSetAutoAdd(OAObject oaObj, boolean bAutoAdd);
 	public boolean callObjectGetAutoAdd(OAObject oaObj);
 	public Object[] callObjectFind(OAObject oaObjBase, String propertyPath, Object findValue, boolean bFindAll);

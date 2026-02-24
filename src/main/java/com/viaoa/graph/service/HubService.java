@@ -11,6 +11,7 @@ import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.api.HubsOps;
 import com.viaoa.graph.api.internal.HubsInternalOps;
 import com.viaoa.graph.service.hub.*;
+import com.viaoa.graph.service.hub.HubStatusService.HubCurrentStateEnum;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubAutoSequence;
 import com.viaoa.hub.HubDataMaster;
@@ -29,82 +30,25 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	public static final Boolean TRUE = Boolean.valueOf(true);
 	public static final Boolean FALSE = Boolean.valueOf(false);
 	
+
+	
 	// Hub =========================
 	@Override
-	public HubAutoSequence callHubGetAutoSequence(Hub<?> hub) {
-	    return getAutoSequence(hub);
+	public <T extends OAObject> void callHubHubSetObjectClass(Hub<T> hubDetail, Class<T> clazz) {
+		getHubDataService().setObjectClass(hubDetail, clazz);
 	}
 
 	@Override
-	public int callHubGetSize(Hub<?> hub) {
-	    return getSize(hub);
+	public boolean callHubStatusIsValid(Hub<?> hub) {
+	    return getHubStatusService().isValid(hub);
 	}
 
 	@Override
-	public int callHubGetLoadedSize(Hub<?> hub) {
-	    return getLoadedSize(hub);
+	public boolean callHubStatusGetChanged(Hub<?> thisHub, int iCascadeRule, OACascade cascade) {
+	    return getHubStatusService().getChanged(thisHub, iCascadeRule, cascade);
 	}
-
-	@Override
-	public void callHubSetAutoSequence(Hub<?> hub, String property, int startNumber, boolean bKeepSeq) {
-	    setAutoSequence(hub, property, startNumber, bKeepSeq);
-	}
-
-	@Override
-	public void callHubResequence(Hub<?> hub) {
-	    resequence(hub);
-	}
-
-	@Override
-	public <T extends OAObject> HubCurrentStateEnum callHubGetCurrentState(Hub<T> thisHub, Hub<T> hubNew, ArrayList<T> alNew) {
-	    return getCurrentState(thisHub, hubNew, alNew);
-	}
-
-	@Override
-	public <T extends OAObject> void callHubSetObjectClass(Hub<T> hubDetail, Class<T> clazz) {
-	    setObjectClass(hubDetail, clazz);
-	}
-
-	@Override
-	public void callHubSetAutoMatch(Hub<?> hub, String property, Hub<?> hubMaster, boolean bServerSideOnly) {
-	    setAutoMatch(hub, property, hubMaster, bServerSideOnly);
-	}
-
-	@Override
-	public void callHubSetAutoMatch(Hub<?> hub, String property, Hub<?> hubMaster, boolean bServerSideOnly, OAObject objStop, String stopProperty) {
-	    setAutoMatch(hub, property, hubMaster, bServerSideOnly, objStop, stopProperty);
-	}
-
-	@Override
-	public boolean callHubIsValid(Hub<?> hub) {
-	    return isValid(hub);
-	}
-
-	@Override
-	public boolean callHubGetChanged(Hub<?> thisHub, int iCascadeRule, OACascade cascade) {
-	    return getChanged(thisHub, iCascadeRule, cascade);
-	}
-
-	@Override
-	public void callHubSetProperty(Hub<?> hub, String name, Object obj) {
-	    setProperty(hub, name, obj);
-	}
-
-	@Override
-	public Object callHubGetProperty(Hub<?> hub, String name) {
-	    return getProperty(hub, name);
-	}
-
-	@Override
-	public void callHubRemoveProperty(Hub<?> hub, String name) {
-	    removeProperty(hub, name);
-	}
-
-	@Override
-	public void callHubSetUniqueProperty(Hub<?> hub, String propertyName) {
-	    setUniqueProperty(hub, propertyName);
-	}
-
+	
+	
 	// AddRemove =========================
 
 	@Override
@@ -187,6 +131,7 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	    getHubAddRemoveService().refresh(hub, hubNew);
 	}
 
+	
 	// AO =========================
 	@Override
 	public <T extends OAObject> T callHubAOSetActiveObject(Hub<T> hub, int pos) {
@@ -208,6 +153,17 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	    return getHubAOService().setActiveObject(hub, obj);
 	}
 	
+	
+	// AutoMatch =========================
+	@Override
+	public void callHubAutoMatchSetAutoMatch(Hub<?> hub, String property, Hub<?> hubMaster, boolean bServerSideOnly) {
+		getHubAutoMatchService().setAutoMatch(hub, property, hubMaster, bServerSideOnly);
+	}
+
+	@Override
+	public void callHubAutoMatchSetAutoMatch(Hub<?> hub, String property, Hub<?> hubMaster, boolean bServerSideOnly, OAObject objStop, String stopProperty) {
+		getHubAutoMatchService().setAutoMatch(hub, property, hubMaster, bServerSideOnly, objStop, stopProperty);
+	}
 	
 	
 	// CS =========================
@@ -235,8 +191,8 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	}
 
 	@Override
-	public void callHubDataSetChanged(Hub<?> hub, boolean bIsChanged) {
-	    getHubDataService().setChanged(hub, bIsChanged);
+	public void callHubStatusSetChanged(Hub<?> hub, boolean bIsChanged) {
+	    getHubStatusService().setChanged(hub, bIsChanged);
 	}
 
 	@Override
@@ -482,6 +438,7 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	    return getHubFindService().findFirst(hub, propertyPath, findValue, bSetAO, lastFoundObject);
 	}
 
+	
 	// Link =========================
 
 	@Override
@@ -525,8 +482,30 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	    return getHubLinkService().getLinkToProperty(hub);
 	}
 
-	// Root =========================
+	// Property =========================
+	@Override
+	public void callHubPropertySetProperty(Hub<?> hub, String name, Object obj) {
+		getHubPropertyService().setProperty(hub, name, obj);
+	}
 
+	@Override
+	public Object callHubPropertyGetProperty(Hub<?> hub, String name) {
+	    return getHubPropertyService().getProperty(hub, name);
+	}
+
+	@Override
+	public void callHubPropertyRemoveProperty(Hub<?> hub, String name) {
+		getHubPropertyService().removeProperty(hub, name);
+	}
+
+	@Override
+	public void callHubPropertySetUniqueProperty(Hub<?> hub, String propertyName) {
+		getHubPropertyService().setUniqueProperty(hub, propertyName);
+	}
+	
+	
+	
+	// Root =========================
 	@Override
 	public <T extends OAObject> Hub<T> callHubRootGetRootHub(Hub<T> hub) {
 	    return getHubRootService().getRootHub(hub);
@@ -641,8 +620,24 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	    return getHubSelectService().getSelectWhereHubPropertyPath(hub);
 	}
 
+	
+	
+	// Sequence =========================
+	@Override
+	public HubAutoSequence callHubSequenceGetAutoSequence(Hub<?> hub) {
+	    return getHubSequenceService().getAutoSequence(hub);
+	}
+	@Override
+	public void callHubSequenceSetAutoSequence(Hub<?> hub, String property, int startNumber, boolean bKeepSeq) {
+		getHubSequenceService().setAutoSequence(hub, property, startNumber, bKeepSeq);
+	}
+	@Override
+	public void callHubSequenceResequence(Hub<?> hub) {
+		getHubSequenceService().resequence(hub);
+	}
+	
+	
 	// Serialize =========================
-
 	@Override
 	public void callHubSerializeWriteObject(Hub<?> hub, ObjectOutputStream stream) throws IOException {
 	    getHubSerializeService()._writeObject(hub, stream);
@@ -684,6 +679,24 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	    return getHubShareService().getMainSharedHub(hub);
 	}
 
+	
+	// Size =========================
+	@Override
+	public int callHubSizeGetSize(Hub<?> hub) {
+	    return getHubSizeService().getSize(hub);
+	}
+
+	@Override
+	public int callHubSizeGetLoadedSize(Hub<?> hub) {
+	    return getHubSizeService().getLoadedSize(hub);
+	}
+	
+	@Override
+	public <T extends OAObject> HubCurrentStateEnum callHubStatusGetCurrentState(Hub<T> thisHub, Hub<T> hubNew, ArrayList<T> alNew) {
+	    return getHubStatusService().getCurrentState(thisHub, hubNew, alNew);
+	}
+	
+	
 	// Sort =========================
 	@Override
 	public HubSortListener callHubSortGetSortListener(Hub<?> hub) {

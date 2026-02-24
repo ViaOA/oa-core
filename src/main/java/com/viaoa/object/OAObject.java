@@ -1466,7 +1466,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 	public boolean getChanged(int relationshipType) {
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.objectsInternal().callObjectGetChanged(this, relationshipType);
+		return og.objectsInternal().callObjectChangeGetChanged(this, relationshipType);
 	}
 
 	

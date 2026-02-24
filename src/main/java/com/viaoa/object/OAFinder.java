@@ -1223,7 +1223,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 						}
 						if (objx instanceof Hub) {
 							Hub h = (Hub) objx;
-							if (og.hubsInternal().callHubSortGetSortListener(h) == null && og.hubsInternal().callHubGetAutoSequence(h) == null) {
+							if (og.hubsInternal().callHubSortGetSortListener(h) == null && og.hubsInternal().callHubSequenceGetAutoSequence(h) == null) {
 								final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
 								OAThreadLocal tl = srvcOAThreadLocal.getThreadLocal(true);
 								if (tl.cntGetSiblingCalled > 1) {
@@ -1271,7 +1271,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		} else {
 			hx = (Hub) og.objectsInternal(). callObjectPropertyGetProperty((OAObject) obj, li.name, false, true);
 		}
-		if (hx == null || (og.hubsInternal().callHubSortGetSortListener(hx) == null && og.hubsInternal().callHubGetAutoSequence(hx) == null)) {
+		if (hx == null || (og.hubsInternal().callHubSortGetSortListener(hx) == null && og.hubsInternal().callHubSequenceGetAutoSequence(hx) == null)) {
 			return true;
 		}
 		return false;

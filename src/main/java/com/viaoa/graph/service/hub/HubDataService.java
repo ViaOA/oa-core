@@ -18,6 +18,53 @@ public abstract class HubDataService {
     	this.faHub = faHub;
 	}
 
+	
+	/**
+	 * Assigns the object class for this hub. The class cannot be changed if the hub
+	 * already contains objects, has detail hubs, has a master object, or is shared.
+	 * If validation passes, the hub's object class is updated.
+	 *
+	 * @param thisHub  the hub whose object class is being changed
+	 * @param objClass the new object class
+	 * @throws RuntimeException if the object class cannot be changed due to
+	 *                          existing state constraints
+	 */
+	public <T extends OAObject> void setObjectClass(Hub<T> thisHub, Class<T> objClass) {
+		final HubData<T> hd = faHub.getHubData(thisHub);
+		final HubDataMaster hdm = faHub.getHubDataMaster(thisHub);
+		final HubDataUnique<T> hdu = faHub.getHubDataUnique(thisHub);
+		
+		Class cx = faHub.getHubData(thisHub).getObjClass();
+		
+		if (cx != null && !cx.equals(objClass) && !cx.equals(OAObject.class)) {
+			if (callHubDataGetCurrentSize(thisHub) > 0 || (hdu.getVecHubDetail() != null && hdu.getVecHubDetail().size() > 0)) {
+				throw new RuntimeException("cant change object class if objects are in hub");
+			}
+			if (hdm.getMasterHub() != null || hdm.getMasterObject() != null) {
+				throw new RuntimeException("cant change object class if masterObject exists");
+			}
+			if (hdu.getSharedHub() != null || callHubShareGetSharedWeakHubSize(thisHub) > 0) {
+				throw new RuntimeException("cant change object class since this is a shared hub.");
+			}
+		}
+		// 20141111 removed since the select could be valid
+		// srvcHub.getHubSelectService().cancelSelect(thisHub, true);
+		faHub.getHubData(thisHub).setObjClass(objClass);
+
+		/* 20141111 not needed here
+		if (objClass != null) {
+		    // find out if class is OAObject
+			thisHub.data.setOAObjectFlag(OAObject.class.isAssignableFrom(objClass));
+			// thisHub.data.setObjectInfo(srvcObject.getOAObjectInfoService().getOAObjectInfo(objClass));
+		}
+		else {
+		    thisHub.data.setObjectInfo(null);
+		    thisHub.data.setOAObjectFlag(false);
+		}
+		*/
+	}
+	
+	
     /**
      * Clears all internal Hub data structures and resets tracking state.
      * Removes all elements from the Hub’s vector and clears add/remove
@@ -71,41 +118,6 @@ public abstract class HubDataService {
 		v.trimToSize();
 	}
 
-	/**
-	 * Updates the Hub’s changed flag and increments its change counter
-	 * when the value transitions. Clearing the changed flag also clears
-	 * tracked add/remove lists. When marking as changed, the master
-	 * object may also be marked changed based on link metadata.
-	 *
-	 * @param thisHub   the hub whose changed state is being updated
-	 * @param bChanged  the new changed value
-	 */
-	public void setChanged(Hub<?> thisHub, boolean bChanged) {
-		//qqqqqqq method was proteced
-	    if (thisHub == null) return;
-        boolean old = faHub.getHubData(thisHub).getChanged();
-        if (bChanged == old) return;
-        faHub.getHubData(thisHub).setChanged( bChanged);
-        if (bChanged != old) faHub.getHubData(thisHub).incrementChangeCount();
-        if (!bChanged) {
-            clearHubChanges(thisHub);
-        }
-        else {  // 20180529 if changed, then masterObject needs to be flagged as changed
-            OAObject obj = thisHub.getMasterObject();
-            if (obj != null) {
-                OALinkInfo li = callHubDetailGetLinkInfoFromMasterHubToDetail(thisHub);
-                if (li != null && (li.getType() == li.MANY)) {
-                    boolean bx = (li.getOwner() || li.getCascadeSave());
-                    if (!bx) { 
-                        OALinkInfo rli = li.getReverseLinkInfo();
-                        bx = (rli != null && rli.getType() == li.MANY);
-                    }
-                    if (bx) obj.setChanged(true);
-                }
-            }
-        }
-    }
-	
 	/**
 	 * Clears the Hub’s add/remove tracking lists and resets the changed
 	 * flag when those lists become empty. Drops {@code hubDatax} if it is
@@ -307,7 +319,7 @@ public abstract class HubDataService {
 		        thisHub.setChanged( (v != null && v.size() > 0) || (v2 != null && v2.size() > 0) );
 		    }
 		    else {
-		    	setChanged(thisHub, true);
+		    	callHubStatusSetChanged(thisHub, true);
 		    }
 	    }	    
 	    return pos;
@@ -586,15 +598,6 @@ public abstract class HubDataService {
         }
 	}
 
-	/**
-	 * Returns whether the Hub is marked as changed.
-	 *
-	 * @param thisHub the Hub to check
-	 * @return {@code true} if the Hub is marked as changed, otherwise {@code false}
-	 */
-	public boolean getChanged(Hub<?> thisHub) {
-		return faHub.getHubData(thisHub).getChanged();
-	}
 	
 	/**
 	 * Returns the object in the Hub matching the supplied key.
@@ -685,7 +688,7 @@ public abstract class HubDataService {
 
 	    if (!(object instanceof OAObject)) {
 	        if (OAObject.class.isAssignableFrom(object.getClass())) {  // could be hub of strings
-	            object = callHubGetRealObject(thisHub, object);
+	            object = callHubFindGetRealObject(thisHub, object);
 	        }
 	    }
 	    pos = -1;
@@ -871,6 +874,12 @@ public abstract class HubDataService {
 	    }
 	}
 
+	
+	public boolean getChanged(Hub thisHub) {
+    	return faHub.getHubData(thisHub).getChanged();
+	}
+	
+	
 	/**
 	 * Returns the Hub’s change counter value.
 	 *
@@ -1149,9 +1158,6 @@ public abstract class HubDataService {
 
 	
 	
-	@OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromMasterHubToDetail")
-	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub<?> thisDetailHub);
-	
 	@OAParentProvided (example = "srvcHub.getHubCSService().clearHubChanges")
 	public abstract boolean callHubCSClearHubChanges(Hub<?> thisHub);
 
@@ -1165,7 +1171,7 @@ public abstract class HubDataService {
 	public abstract int callHubSelectFetchMore(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.getRealObject")
-	public abstract <T extends OAObject> T callHubGetRealObject(Hub<T> hub, Object object);
+	public abstract <T extends OAObject> T callHubFindGetRealObject(Hub<T> hub, Object object);
 
 	@OAParentProvided (example = "srvcHub.getHubShareService().setSharedHub")
 	public abstract <T extends OAObject> void callHubShareSetSharedHub(Hub<T> thisHub, Hub<T> sharedMasterHub, boolean shareActiveObject);
@@ -1192,5 +1198,10 @@ public abstract class HubDataService {
 
 	@OAParentProvided (example = "srvcSync.isServer")
 	public abstract boolean callSyncIsServer();
-    
+
+	public abstract int callHubDataGetCurrentSize(Hub<?> thisHub);
+	public abstract int callHubShareGetSharedWeakHubSize(Hub<?> thisHub);
+
+	public abstract void callHubStatusSetChanged(Hub<?> thisHub, boolean b);
+	
 }

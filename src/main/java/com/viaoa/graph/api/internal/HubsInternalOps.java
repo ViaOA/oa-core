@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 
 import com.viaoa.datasource.OASelect;
+import com.viaoa.graph.service.hub.HubStatusService.HubCurrentStateEnum;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubAutoSequence;
 import com.viaoa.hub.HubDataMaster;
@@ -28,43 +29,6 @@ import com.viaoa.xml.OAXMLWriter;
 
 public interface HubsInternalOps {
 
-	// Hub
- 	public HubAutoSequence callHubGetAutoSequence(Hub<?> hub);	
-	public int callHubGetSize(Hub<?> hub);
-	public int callHubGetLoadedSize(Hub<?> hub);
-	public void callHubSetAutoSequence(Hub<?> hub, String property, int startNumber, boolean bKeepSeq);
-	public void callHubResequence(Hub<?> hub);
-	public <T extends OAObject> HubCurrentStateEnum callHubGetCurrentState(Hub<T> thisHub, Hub<T> hubNew, ArrayList<T> alNew);
-	public <T extends OAObject> void callHubSetObjectClass(Hub<T> hubDetail, Class<T> clazz);
-	public void callHubSetAutoMatch(Hub<?> hub, String property, Hub<?> hubMaster, boolean bServerSideOnly);
-	public void callHubSetAutoMatch(Hub<?> hub, String property, Hub<?> hubMaster, boolean bServerSideOnly, OAObject objStop, String stopProperty);
-	public boolean callHubIsValid(Hub<?> hub);
-	public boolean callHubGetChanged(Hub<?> thisHub, int iCascadeRule, OACascade cascade); 
-	public void callHubSetProperty(Hub<?> hub, String name, Object obj);
-	public Object callHubGetProperty(Hub<?> hub, String name);
-	public void callHubRemoveProperty(Hub<?> hub, String name);
-	public void callHubSetUniqueProperty(Hub<?> hub, String propertyName);
-
-	/**
-	 * Enumeration describing the synchronization state of a hub during updates.
-	 *
-	 * <ul>
-	 *   <li>{@code InSync} – the hub is correctly aligned with its master or linked
-	 *       state.</li>
-	 *   <li>{@code DetailDisconnectedFromMaster} – the detail hub does not match its
-	 *       expected master state.</li>
-	 *   <li>{@code DetailHubNotSameAsMasterObject} – the detail hub contains a
-	 *       different object than the master hub’s active object.</li>
-	 *   <li>{@code HubMergerNotUpdated} – a hub merger is not in sync with its
-	 *       source hubs.</li>
-	 * </ul>
-	 */
-	public static enum HubCurrentStateEnum {
-		InSync,
-		DetailDisconnectedFromMaster,
-		DetailHubNotSameAsMasterObject, // caused when object/hubs are in flux (hub event that is calling listeners and changing linkages)
-		HubMergerNotUpdated
-	}
 	
  	// AddRemove
 	public <T extends OAObject> boolean callHubAddRemoveAdd(Hub<T> hub, T obj);
@@ -77,7 +41,6 @@ public interface HubsInternalOps {
 	public String callHubAddRemoveGetCantRemoveAllMessage(Hub<?> hub, int checkType);
 	public <T extends OAObject> void callHubAddRemoveAdd(Hub<T> hub, T obj, boolean bAlreadyCalledContains);
 	public void callHubAddRemoveClear(Hub<?> thisHub, boolean bSetAOtoNull, boolean bSendNewList);
-//qqqqqqqqqqqq remove methods	
 	public <T extends OAObject> boolean callHubAddRemoveRemove(Hub<T> hub, T obj);
 	public <T extends OAObject> T callHubAddRemoveRemove(Hub<T> hub, int pos);
 	public <T extends OAObject> boolean callHubAddRemoveRemove(Hub<T> hub, Object obj);
@@ -93,6 +56,10 @@ public interface HubsInternalOps {
 	public <T extends OAObject> void callHubAOSetActiveObjectForce(Hub<T> hub, T obj);
 	public <T extends OAObject> T callHubAOSetActiveObject(Hub<T> hub, Object obj);
 
+	// AutoMatch	
+	public void callHubAutoMatchSetAutoMatch(Hub<?> hub, String property, Hub<?> hubMaster, boolean bServerSideOnly);
+	public void callHubAutoMatchSetAutoMatch(Hub<?> hub, String property, Hub<?> hubMaster, boolean bServerSideOnly, OAObject objStop, String stopProperty);
+
 	// CS
 	public void callHubCSSendRefresh(Hub<?> hub);
 	public boolean callHubCSIsServer(Hub<?> hub);
@@ -101,7 +68,7 @@ public interface HubsInternalOps {
 	// Data
 	public void callHubDataEnsureCapacity(Hub<?> hub, int size);
 	public void callHubDataResizeToFit(Hub<?> hub);
-	public void callHubDataSetChanged(Hub<?> hub, boolean bIsChanged);
+	public void callHubStatusSetChanged(Hub<?> hub, boolean bIsChanged);
 	public <T extends OAObject> void callHubDataCopyInto(Hub<T> hub, T[] anArray);
 	public <T extends OAObject> T[] callHubDataToArray(Hub<T> hub);
 	public int callHubDataGetCurrentSize(Hub<?> hub);
@@ -125,8 +92,6 @@ public interface HubsInternalOps {
 	public void callHubDetailSetMasterObject(Hub<?> hub, OAObject masterObject, OALinkInfo liDetailToMaster);
 	public HubDataMaster callHubDetailGetDataMaster(Hub<?> hub);
 	public boolean callHubDetailIsOwned(Hub<?> hub);
-	
-	
 	public Hub<?> callHubDetailGetDetailHub(Hub<?> hub, String path);
 	public Hub<?> callHubDetailGetDetailHub(Hub<?> hub, String path, boolean bShareActive, String selectOrder);
 	public Hub<?> callHubDetailGetDetailHub(Hub<?> hub, String path, boolean bShareActive);
@@ -164,6 +129,15 @@ public interface HubsInternalOps {
 	// Find
 	public <T extends OAObject> T callHubFindFindFirst(Hub<T> hub, String propertyPath, Object findValue, boolean bSetAO, T lastFoundObject);
 	
+//qqqqqqqqqqq transfer these qqqqqqqqqqqqqq	
+//qqqqqqqq ?? maybe put in Hub	
+	// HubHub
+
+	public <T extends OAObject> HubCurrentStateEnum callHubStatusGetCurrentState(Hub<T> thisHub, Hub<T> hubNew, ArrayList<T> alNew);
+	public <T extends OAObject> void callHubHubSetObjectClass(Hub<T> hubDetail, Class<T> clazz);
+	public boolean callHubStatusIsValid(Hub<?> hub);
+	public boolean callHubStatusGetChanged(Hub<?> thisHub, int iCascadeRule, OACascade cascade); 
+
 	// Link
 	public <T extends OAObject> Hub<T> callHubLinkGetHubWithLink(Hub<T> hub, boolean bIncludeCopiedHubs);
 	public void callHubLinkSetLinkHub(Hub<?> thisHub, String propertyFrom, Hub<?> linkToHub, String propertyTo, boolean linkPosFlag, boolean bAutoCreate, boolean bAutoCreateAllowDups);
@@ -174,6 +148,12 @@ public interface HubsInternalOps {
 	public boolean callHubLinkGetLinkedOnPos(Hub<?> hub);
 	public String callHubLinkGetLinkToProperty(Hub<?> hub);
 
+	// Property
+	public void callHubPropertySetProperty(Hub<?> hub, String name, Object obj);
+	public Object callHubPropertyGetProperty(Hub<?> hub, String name);
+	public void callHubPropertyRemoveProperty(Hub<?> hub, String name);
+	public void callHubPropertySetUniqueProperty(Hub<?> hub, String propertyName);
+	
 	// Root
 	public <T extends OAObject> Hub<T> callHubRootGetRootHub(Hub<T> hub);
 	public void callHubRootSetRootHub(Hub<?> hub, boolean bIsRoot);
@@ -202,8 +182,11 @@ public interface HubsInternalOps {
 	public <T extends OAObject> Hub<T> callHubSelectGetSelectWhereHub(Hub<T> hub);
 	public String callHubSelectGetSelectWhereHubPropertyPath(Hub<?> hub);
 	
-	
-	
+	// Sequence	
+ 	public HubAutoSequence callHubSequenceGetAutoSequence(Hub<?> hub);	
+	public void callHubSequenceSetAutoSequence(Hub<?> hub, String property, int startNumber, boolean bKeepSeq);
+	public void callHubSequenceResequence(Hub<?> hub);
+
 	// Serialize
 	public void callHubSerializeWriteObject(Hub<?> hub, ObjectOutputStream stream) throws IOException;
 	public Object callHubSerializeReadResolve(Hub<?> hub) throws ObjectStreamException;
@@ -215,6 +198,11 @@ public interface HubsInternalOps {
 	public boolean callHubShareIsUsingSameSharedHub(Hub<?> hub, Hub<?> hub2);
 	public boolean callHubShareIsUsingSameSharedAO(Hub<?> hub, Hub<?> hub2);
 	public <T extends OAObject> Hub<T> callHubShareGetMainSharedHub(Hub<T> hub);
+	
+	// Size
+	public int callHubSizeGetSize(Hub<?> hub);
+	public int callHubSizeGetLoadedSize(Hub<?> hub);
+	
 	
 	// Sort
  	public HubSortListener callHubSortGetSortListener(Hub<?> hub);

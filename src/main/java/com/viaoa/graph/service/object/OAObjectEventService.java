@@ -1350,7 +1350,7 @@ public abstract class OAObjectEventService {
 	public abstract <T extends OAObject> void callHubEventFireAfterLoadEvent(Hub<T> thisHub, T oaObj);
 	
 	@OAParentProvided (example = "srvcHub.getHubShareService().getAllSharedHubs(h, filter)")
-	public abstract <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub<?>> filter);
+	public abstract <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub<T>> filter);
 	
 
 	@OAParentProvided (example = "srvcSync.isServer()")

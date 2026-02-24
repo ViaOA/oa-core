@@ -545,7 +545,7 @@ public abstract class OAObjectDeleteService {
 				OAObject masterObj;
 				Hub hubx = callHubGetHub(oaObj, li);
 				if (hubx != null) {
-					masterObj = callHubGetMasterObject(hubx);
+					masterObj = callHubMasterGetMasterObject(hubx);
 				} else {
 					Object objx = callReflectGetReferenceObject(oaObj, li.getName());
 					if (objx instanceof OAObject) {
@@ -780,7 +780,7 @@ public abstract class OAObjectDeleteService {
 	public abstract <T extends OAObject> void callHubEventFireAfterDeleteEvent(Hub<T> thisHub, T obj);
 	
 	@OAParentProvided (example = "srvcHub.getMasterObject(..)")
-	public abstract OAObject callHubGetMasterObject(Hub<?> hub);
+	public abstract OAObject callHubMasterGetMasterObject(Hub<?> hub);
 
 	
 	

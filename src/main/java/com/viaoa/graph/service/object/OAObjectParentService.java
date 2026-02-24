@@ -60,7 +60,9 @@ public abstract class OAObjectParentService {
 	private final OAObjectInternalBridge faBridge = new OAObjectInternalBridge();
 
     private OAObjectAnnotationService srvcOAObjectAnnotation;
+    private OAObjectAutoAddService srvcOAObjectAutoAdd;
     private OAObjectCacheService srvcOAObjectCache;
+    private OAObjectChangeService srvcOAObjectChange;
     private OAObjectCallbackService srvcOAObjectCallback;
     private OAObjectCSService srvcOAObjectCS;
     private OAObjectDatabaseService srvcOAObjectDatabase;
@@ -69,7 +71,8 @@ public abstract class OAObjectParentService {
     private OAObjectEnumService srvcOAObjectEnum;
     private OAObjectEmptyHubService srvcOAObjectEmptyHub;
     private OAObjectEventService srvcOAObjectEvent;
-    private OAObjectGuidService srvcGuid;
+    private OAObjectFindService srvcOAObjectFind;
+    private OAObjectGuidService srvcOAObjectGuid;
     private OAObjectHubService srvcOAObjectHub;
     private OAObjectImportMatchService srvcOAObjectImportMatch;
     private OAObjectInfoService srvcOAObjectInfo; 
@@ -78,6 +81,7 @@ public abstract class OAObjectParentService {
     private OAObjectLockService srvcOAObjectLock;
     private OAObjectLogService srvcOAObjectLog;
     private OAObjectPropertyService srvcOAObjectProperty;
+    private OAObjectRecurseService srvcOAObjectRecurse;
     private OAObjectReflectService srvcOAObjectReflect;
     private OAObjectSaveService srvcOAObjectSave;
     private OAObjectSchedulerService srvcOAObjectScheduler;
@@ -101,26 +105,7 @@ public abstract class OAObjectParentService {
 	 */
 	public static final String WORD_Deleted = "DELETED";
 	
-	/**
-	 * Reserved property name representing whether auto-add behavior is enabled
-	 * for reverse-link insertion.
-	 */
-	public static final String WORD_AutoAdd = "AutoAdd";
 
-//qqqqqqqq remove these 2 boolean	
-	/**
-	 * Shared Boolean constant used when firing lifecycle-related property-change
-	 * events.
-	 */
-	public static final Boolean TRUE = Boolean.TRUE;
-	
-	/**
-	 * Shared Boolean constant used when firing lifecycle-related property-change
-	 * events.
-	 */
-	public static final Boolean FALSE = Boolean.FALSE;
-    
-    
 	public void initialize(HubService srvcHub, OASyncService srvcSync, OAThreadLocalService srvcThreadLocal, OARemoteThreadService srvcRemoteThread) {
     	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
     	if (srvcSync == null) throw new IllegalArgumentException("OASyncService can not be null");
@@ -161,7 +146,40 @@ public abstract class OAObjectParentService {
 		};
     	return srvcOAObjectAnnotation;
     }
-	
+
+    public OAObjectAutoAddService getOAObjectAutoAddService() {
+    	if (srvcOAObjectAutoAdd != null) return srvcOAObjectAutoAdd;
+    	
+    	srvcOAObjectAutoAdd = new OAObjectAutoAddService(faBridge.getObjectFriendAccess()) {
+			@Override
+			public void callThreadLocalSetSuppressCSMessages(boolean b) {
+				OAObjectParentService.this.srvcThreadLocal.setSuppressCSMessages(b);				
+			}
+			@Override
+			public Object callObjectReflectGetRawReference(OAObject oaObj, String name) {
+				return OAObjectParentService.this.getOAObjectReflectService().getRawReference(oaObj, name);
+			}
+			@Override
+			public Object callObjectReflectGetProperty(OAObject obj, String name) {
+				return OAObjectParentService.this.getOAObjectReflectService().getProperty(obj, name);
+			}
+			@Override
+			public OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo li) {
+				return OAObjectParentService.this.getOAObjectInfoService().getReverseLinkInfo(li);
+			}
+			@Override
+			public OAObjectInfo callObjectInfoGetOAObjectInfo(OAObject oaObj) {
+				return OAObjectParentService.this.getOAObjectInfoService().getOAObjectInfo(oaObj);
+			}
+			@Override
+			public void callObjectEventFirePropertyChange(OAObject oaObj, String propertyName, Object oldObj, Object newObj, boolean bLocalOnly, boolean bSetChanged) {
+				OAObjectParentService.this.getOAObjectEventService().firePropertyChange(oaObj, propertyName, oldObj, newObj, bLocalOnly, bSetChanged);
+			}
+		};
+    	return srvcOAObjectAutoAdd;
+    }
+
+    
     public OAObjectCacheService getOAObjectCacheService() {
     	if (srvcOAObjectCache != null) return srvcOAObjectCache;
 		srvcOAObjectCache = new OAObjectCacheService() {
@@ -259,6 +277,41 @@ public abstract class OAObjectParentService {
 			}
     	};
     	return srvcOAObjectCallback;
+    }
+    
+    public OAObjectChangeService getOAObjectChangeService() {
+    	if (srvcOAObjectChange != null) return srvcOAObjectChange;
+		srvcOAObjectChange = new OAObjectChangeService(faBridge.getObjectFriendAccess()) {
+			@Override
+			public OAObjectInfo callObjectInfoGetOAObjectInfo(OAObject oaObj) {
+				return OAObjectParentService.this.getOAObjectInfoService().getOAObjectInfo(oaObj);
+			}
+			@Override
+			public boolean callObjectInfoIsMany2Many(OALinkInfo li) {
+				return OAObjectParentService.this.getOAObjectInfoService().isMany2Many(li);
+			}
+			@Override
+			public boolean callHubStatusGetChanged(Hub hub, int type, OACascade cascade) {
+				return OAObjectParentService.this.srvcHub.getHubStatusService().getChanged(hub, type, cascade);
+			}
+			@Override
+			public Object callObjectReflectGetRawReference(OAObject oaObj, String prop) {
+				return OAObjectParentService.this.getOAObjectReflectService().getRawReference(oaObj, prop);
+			}
+			@Override
+			public Object callObjectReflectGetProperty(OAObject oaObj, String prop) {
+				return OAObjectParentService.this.getOAObjectReflectService().getProperty(oaObj, prop);
+			}
+			@Override
+			public boolean callObjectHubGetChanged(Hub hub, int cascadeRule, OACascade cascade) {
+				return OAObjectParentService.this.getOAObjectHubService().getChanged(hub, cascadeRule, cascade);
+			}
+			@Override
+			public boolean callObjectReflectIsReferenceNullOrNotLoaded(OAObject oaObj, String prop) {
+				return OAObjectParentService.this.getOAObjectReflectService().isReferenceNullOrNotLoaded(oaObj, prop);
+			}
+		};
+		return srvcOAObjectChange;
     }
     
     public OAObjectCSService getOAObjectCSService() {
@@ -479,8 +532,8 @@ public abstract class OAObjectParentService {
 				return OAObjectParentService.this.getOAObjectReflectService().getProperty(oaObj, propPath);
 			}
 			@Override
-			public OAObject callHubGetMasterObject(Hub<?> hub) {
-				return OAObjectParentService.this.getHubService().getMasterObject(hub);
+			public OAObject callHubMasterGetMasterObject(Hub<?> hub) {
+				return OAObjectParentService.this.getHubService().getHubMasterService().getMasterObject(hub);
 			}
 			@Override
 			public Object callReflectGetReferenceObject(OAObject oaObj, String linkPropertyName) {
@@ -634,7 +687,7 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public void callObjectSetAutoAdd(OAObject oaObj, boolean bEnabled) {
-				OAObjectParentService.this.setAutoAdd(oaObj, bEnabled);
+				OAObjectParentService.this.getOAObjectAutoAddService().setAutoAdd(oaObj, bEnabled);
 			}
 			@Override
 			public void callRemoteThreadStartNextThread() {
@@ -774,7 +827,7 @@ public abstract class OAObjectParentService {
 				return OAObjectParentService.this.getOAObjectInfoService().getLinkInfo(oi, propertyName);
 			}
 			@Override
-			public <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub<?>> filter) {
+			public <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub<T>> filter) {
 				return OAObjectParentService.this.srvcHub.getHubShareService().getAllSharedHubs(thisHub, filter);
 			}
 			@Override
@@ -811,7 +864,7 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public boolean callObjectGetAutoAdd(OAObject oaObj) {
-				return OAObjectParentService.this.getAutoAdd(oaObj);
+				return OAObjectParentService.this.getOAObjectAutoAddService().getAutoAdd(oaObj);
 			}
 			@Override
 			public boolean callDSIsAssigningId(OAObject obj) {
@@ -845,12 +898,18 @@ public abstract class OAObjectParentService {
     	
     	return srvcOAObjectEvent;
     }
+
+    public OAObjectFindService getOAObjectFindService() {
+    	if (srvcOAObjectFind != null) return srvcOAObjectFind;
+    	srvcOAObjectFind = new OAObjectFindService();
+    	return srvcOAObjectFind;
+    }
     
     public OAObjectGuidService getOAObjectGuidService() {
-    	if (srvcGuid != null) return srvcGuid;
-    	srvcGuid = new OAObjectGuidService(faBridge.getObjectFriendAccess()) {
+    	if (srvcOAObjectGuid != null) return srvcOAObjectGuid;
+    	srvcOAObjectGuid = new OAObjectGuidService(faBridge.getObjectFriendAccess()) {
 		};
-    	return srvcGuid;
+    	return srvcOAObjectGuid;
     }
 
     
@@ -891,12 +950,12 @@ public abstract class OAObjectParentService {
 				OAObjectParentService.this.srvcHub.getHubSaveService().saveAll(thisHub, iCascadeRule, cascade);
 			}
 			@Override
-			public OAObject callHubGetMasterObject(Hub hub) {
-				return OAObjectParentService.this.srvcHub.getMasterObject(hub);
+			public OAObject callHubMasterGetMasterObject(Hub hub) {
+				return OAObjectParentService.this.srvcHub.getHubMasterService().getMasterObject(hub);
 			}
 			@Override
-			public boolean callHubGetChanged(Hub thisHub, int iCascadeRule, OACascade cascade) {
-				return OAObjectParentService.this.srvcHub.getChanged(thisHub, iCascadeRule, cascade);
+			public boolean callHubStatusGetChanged(Hub thisHub, int iCascadeRule, OACascade cascade) {
+				return OAObjectParentService.this.srvcHub.getHubStatusService().getChanged(thisHub, iCascadeRule, cascade);
 			}
 			@Override
 			public void callHubDetailSetMasterObject(Hub thisHub, OAObject masterObject, OALinkInfo liDetailToMaster) {
@@ -1118,8 +1177,8 @@ public abstract class OAObjectParentService {
 				return OAObjectParentService.this.getOAObjectInfoService().getPropertyClass(oi, propertyName);
 			}
 			@Override
-			public Object[] callObjectGetPropertyIdValues(OAObject obj) {
-				return OAObjectParentService.this.getPropertyIdValues(obj);
+			public Object[] callObjectInfoGetPropertyIdValues(OAObject obj) {
+				return OAObjectParentService.this.getOAObjectInfoService().getPropertyIdValues(obj);
 			}
 			@Override
 			public boolean callDSIsAssigningId(OAObject obj) {
@@ -1253,6 +1312,23 @@ public abstract class OAObjectParentService {
 			}
 		};
     	return srvcOAObjectProperty;
+    }
+
+    public OAObjectRecurseService getOAObjectRecurseService() {
+    	if (srvcOAObjectRecurse != null) return srvcOAObjectRecurse;
+    	
+    	srvcOAObjectRecurse = new OAObjectRecurseService() {
+			@Override
+			public Object callObjectReflectGetProperty(OAObject oaObj, String name) {
+				return OAObjectParentService.this.getOAObjectReflectService().getProperty(oaObj, name);
+			}
+			@Override
+			public OAObjectInfo callObjectInfoGetOAObjectInfo(OAObject oaObj) {
+				return OAObjectParentService.this.getOAObjectInfoService().getOAObjectInfo(oaObj);
+			}
+		};
+    	
+    	return srvcOAObjectRecurse;
     }
     
     public OAObjectReflectService getOAObjectReflectService() {
@@ -1463,8 +1539,8 @@ public abstract class OAObjectParentService {
 				return OAObjectParentService.this.srvcHub.getHubLinkService().getLinkFromProperty(thisHub, bIncludeCopiedHubs);
 			}
 			@Override
-			public OAObject callHubGetMasterObject(Hub hub) {
-				return OAObjectParentService.this.srvcHub.getMasterObject(hub);
+			public OAObject callHubMasterGetMasterObject(Hub hub) {
+				return OAObjectParentService.this.srvcHub.getHubMasterService().getMasterObject(hub);
 			}
 			@Override
 			public Hub[] callHubGetHubReferences(OAObject oaObj) {
@@ -1476,11 +1552,11 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public HubAutoSequence callHubGetAutoSequence(Hub thisHub) {
-				return OAObjectParentService.this.srvcHub.getAutoSequence(thisHub);
+				return OAObjectParentService.this.srvcHub.getHubSequenceService().getAutoSequence(thisHub);
 			}
 			@Override
 			public HubAutoMatch callHubGetAutoMatch(Hub thisHub) {
-				return OAObjectParentService.this.srvcHub.getAutoMatch(thisHub);
+				return OAObjectParentService.this.srvcHub.getHubAutoMatchService().getAutoMatch(thisHub);
 			}
 			@Override
 			public String callHubDetailGetPropertyFromMasterToDetail(Hub thisHub) {
@@ -1679,7 +1755,7 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public Object[] callGetProperties(OAObject obj) {
-				return OAObjectParentService.this.getProperties(obj);
+				return OAObjectParentService.this.getOAObjectPropertyService().getProperties(obj);
 			}
 			@Override
 			public Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef) {
@@ -1715,15 +1791,15 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public boolean callInfoCacheHub(OALinkInfo li, Hub hub) {
-				return OAObjectParentService.this.srvcOAObjectInfo.cacheHub(li, hub);
+				return OAObjectParentService.this.getOAObjectInfoService().cacheHub(li, hub);
 			}
 			@Override
 			public boolean callCSIsServer() {
-				return OAObjectParentService.this.srvcOAObjectCS.callSyncIsServer();
+				return OAObjectParentService.this.getOAObjectCSService().callSyncIsServer();
 			}
 			@Override
 			public int callHubSerializeReplaceObject(Hub thisHub, OAObject objFrom, OAObject objTo) {
-				return OAObjectParentService.this.srvcOAObjectSerialize.callHubSerializeReplaceObject(thisHub, objFrom, objTo);
+				return OAObjectParentService.this.getOAObjectSerializeService().callHubSerializeReplaceObject(thisHub, objFrom, objTo);
 			}
 			@Override
 			public boolean callHubSerializeIsResolved(Hub thisHub) {
@@ -1735,7 +1811,7 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public HubAutoMatch callHubGetAutoMatch(Hub thisHub) {
-				return OAObjectParentService.this.srvcHub.getAutoMatch(thisHub);
+				return OAObjectParentService.this.srvcHub.getHubAutoMatchService().getAutoMatch(thisHub);
 			}
 			@Override
 			public boolean callSyncClientIsObjectOnServer(OAObject obj) {
@@ -1875,41 +1951,6 @@ public abstract class OAObjectParentService {
     }
 
     
-    
-//qqqqqqqqqqqqqqq next    
-/*	
-
-    	@OAParentProvided (example = "")
-    	public abstract
-
-    	@OAParentProvided (example = "")
-    	public abstract 
-
-    	@OAParentProvided (example = "")
-    	public abstract
-
-    	@OAParentProvided (example = "")
-    	public abstract
-
-    	@OAParentProvided (example = "")
-    	public abstract 
-
-    	@OAParentProvided (example = "")
-    	public abstract
-
-    	@OAParentProvided (example = "")
-    	public abstract
-
-    	@OAParentProvided (example = "")
-    	public abstract 
-
-    	@OAParentProvided (example = "")
-    	public abstract
-    */	 
-
-    
-    
-    
 	/**
 	 * Updates the {@code newFlag} of the specified {@link OAObject} and fires the
 	 * corresponding before/after property-change events for the reserved property
@@ -1939,530 +1980,16 @@ public abstract class OAObjectParentService {
 		if (b == old) {
 			return;
 		}
-		getOAObjectEventService().fireBeforePropertyChange(oaObj, WORD_New, old ? TRUE : FALSE, b ? TRUE : FALSE, false, false);
+		getOAObjectEventService().fireBeforePropertyChange(oaObj, WORD_New, old, b, false, false);
 
 		faBridge.getObjectFriendAccess().setNew(oaObj, b);
 		
-		getOAObjectEventService().firePropertyChange(oaObj, WORD_New, old ? TRUE : FALSE, b ? TRUE : FALSE, false, false);
+		getOAObjectEventService().firePropertyChange(oaObj, WORD_New, old, b, false, false);
 		if (!b) {
-			setAutoAdd(oaObj, true);
+			getOAObjectAutoAddService().setAutoAdd(oaObj, true);
 		}
 	}
-    
-	/**
-	 * Convenience method that determines whether the specified {@link OAObject} is
-	 * considered changed according to the supplied rule. This method allocates a
-	 * new {@link OACascade} instance and delegates to
-	 * {@link #getChanged(OAObject, int, OACascade)}.
-	 *
-	 * @param oaObj       the object to evaluate; may be {@code null}.
-	 * @param iCascadeRule the rule controlling change evaluation.
-	 * @return {@code true} if the object or any related object is considered
-	 *         changed; otherwise {@code false}.
-	 */
-	public boolean getChanged(OAObject oaObj, int iCascadeRule) {
-		if (oaObj == null) return false;
-		if (iCascadeRule == OAObject.CASCADE_NONE) {
-			OAObject.FriendAccess fa = faBridge.getObjectFriendAccess();
-			return (fa.getChangedFlag(oaObj) || fa.getNewFlag(oaObj));
-		}
-		OACascade cascade = new OACascade();
-		boolean b = getChanged(oaObj, iCascadeRule, cascade);
-		return b;
-	}
-
-	
-	/**
-	 * Determines whether the specified {@link OAObject} is considered changed based
-	 * on the supplied cascade rule and {@link OACascade} context. This variant is
-	 * used when change detection must be coordinated with an active cascade
-	 * operation, ensuring that objects are not visited more than once during a
-	 * recursive evaluation.
-	 *
-	 * <p>If the object is {@code null}, the method returns {@code false}. Otherwise,
-	 * the object's change status is evaluated according to the cascade rule:</p>
-	 *
-	 * <ul>
-	 *   <li><b>OAObjectInfo.CHANGED_NONE</b>  
-	 *       Always returns {@code false}.</li>
-	 *
-	 *   <li><b>OAObjectInfo.CHANGED_LOCAL</b>  
-	 *       Returns the object's own {@code changedFlag} value.</li>
-	 *
-	 *   <li><b>OAObjectInfo.CHANGED_ALL</b>  
-	 *       Performs a recursive scan of related objects using the provided
-	 *       {@link OACascade} instance to track visited objects and prevent loops.</li>
-	 *
-	 *   <li><b>Depth-based rules</b>  
-	 *       Interprets {@code iCascadeRule} as a maximum recursion depth and checks
-	 *       linked objects up to that depth.</li>
-	 * </ul>
-	 *
-	 * <p>The recursion is delegated to
-	 * {@link #getChanged(OAObject, int, int, OALinkInfo[])} after the cascade context
-	 * registers the root object to ensure it is not revisited. If any reachable
-	 * object is marked changed, the method returns {@code true}; otherwise it
-	 * returns {@code false}.</p>
-	 *
-	 * @param oaObj the object to evaluate; may be {@code null}.
-	 * @param iCascadeRule the rule controlling how far recursive change detection
-	 *                     should propagate.
-	 * @param cascade the active {@link OACascade} used to record visited objects and
-	 *                prevent infinite recursion.
-	 * @return {@code true} if the object or any reachable related object is changed
-	 *         according to the rule; {@code false} otherwise.
-	 */
-	public boolean getChanged(final OAObject oaObj, int iCascadeRule, OACascade cascade) {
-		if (oaObj == null) return false;
-		
-		OAObject.FriendAccess fa = faBridge.getObjectFriendAccess();
-		if (fa.getChangedFlag(oaObj)) return true;
-		if (fa.getNewFlag(oaObj)) return true;
-
-		if (iCascadeRule == oaObj.CASCADE_NONE) {
-			return false;
-		}
-		if (cascade.wasCascaded(oaObj, true)) {
-			return false;
-		}
-
-		if (fa.getProperties(oaObj) == null) return false;
-
-		// check link cascade objects
-		OAObjectInfo oi = getOAObjectInfoService().getOAObjectInfo(oaObj);
-		List al = oi.getLinkInfos();
-		for (int i = 0; i < al.size(); i++) {
-			OALinkInfo li = (OALinkInfo) al.get(i);
-			String prop = li.getName();
-			if (prop == null || prop.length() < 1) {
-				continue;
-			}
-			if (li.getCalculated()) {
-				continue;
-			}
-			if (li.getPrivateMethod()) {
-				continue;
-			}
-			if (!li.getUsed()) {
-				continue;
-			}
-
-			// same as OAObjectSaveDelegate.cascadeSave()
-			if (getOAObjectReflectService().isReferenceNullOrNotLoaded(oaObj, prop)) {
-				continue;
-			}
-
-			boolean bValidCascade = false;
-			if (iCascadeRule == OAObject.CASCADE_LINK_RULES && li.getCascadeSave()) {
-				bValidCascade = true;
-			} else if (iCascadeRule == OAObject.CASCADE_OWNED_LINKS && li.getOwner()) {
-				bValidCascade = true;
-			} else if (iCascadeRule == OAObject.CASCADE_ALL_LINKS) {
-				bValidCascade = true;
-			}
-
-			
-			if (getOAObjectInfoService().isMany2Many(li)) {
-				Hub hub = (Hub) getOAObjectReflectService().getRawReference(oaObj, prop);
-				if (getHubService().getChanged(hub, OAObject.CASCADE_NONE, cascade)) {
-					return true;
-				}
-			}
-			
-			if (!bValidCascade) {
-				continue;
-			}
-
-			Object obj = getOAObjectReflectService().getProperty(oaObj, li.getName()); // if Hub with Keys, then this will load the correct objects to check
-			if (obj == null) {
-				continue;
-			}
-
-			if (obj instanceof Hub) {
-				if (getOAObjectHubService().getChanged((Hub) obj, iCascadeRule, cascade)) {
-					return true; //  if there have been adds/removes to hub
-				}
-			} else {
-				if (obj instanceof OAObject) { // 20110420 could be OANullObject
-					if (getChanged((OAObject) obj, iCascadeRule, cascade)) {
-						return true;
-					}
-				}
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * Convenience method that initiates a recursive traversal of the object graph
-	 * starting from the specified {@link OAObject}. This variant simply allocates a
-	 * new {@link OACascade} instance and delegates all traversal logic to
-	 * {@link #recurse(OAObject, OACallback, OACascade)}.
-	 *
-	 * <p>This method exists for callers that do not need to manage or reuse an
-	 * {@link OACascade} context. See the cascade-enabled variant for the full
-	 * traversal behavior and callback invocation rules.</p>
-	 *
-	 * @param oaObj the root object to traverse; may be {@code null}.
-	 * @param callback the callback invoked for each visited object; must not be {@code null}.
-	 */
-	public void recurse(OAObject oaObj, OACallback callback) {
-		OACascade cascade = new OACascade();
-		recurse(oaObj, callback, cascade);
-	}
-
-	/**
-	 * Recursively traverses the reachable object graph beginning at the specified
-	 * {@link OAObject}, invoking the provided {@link OACallback} for the root object
-	 * and for each subsequently visited object. The supplied {@link OACascade}
-	 * tracks visited objects to ensure each instance is processed at most once and
-	 * to prevent infinite loops when cycles exist in the graph.
-	 *
-	 * <p>If {@code oaObj} is {@code null}, the method returns immediately. Otherwise,
-	 * the object is registered with the {@code cascade} and the callback is invoked
-	 * for it. The method then retrieves all link relationships from the object's
-	 * metadata and recursively visits referenced objects according to the link type:
-	 * </p>
-	 *
-	 * <ul>
-	 *   <li><b>One-to-one links</b> — the referenced object is visited if present
-	 *       and has not already been processed by the cascade.</li>
-	 *   <li><b>One-to-many or many-to-many links</b> — each object in the associated
-	 *       hub is visited, again subject to cascade loop-prevention.</li>
-	 * </ul>
-	 *
-	 * <p>The traversal continues until all reachable related objects have been
-	 * processed or the cascade prevents further descent. The method performs no
-	 * depth limiting; callers wishing to restrict traversal depth must enforce such
-	 * behavior externally.</p>
-	 *
-	 * @param oaObj   the root or current object being processed; may be {@code null}.
-	 * @param callback the callback to invoke for each visited object; must not be {@code null}.
-	 * @param cascade  the cascade context used to record visited objects and prevent
-	 *                 revisiting or infinite recursion; must not be {@code null}.
-	 */
-	public void recurse(OAObject oaObj, OACallback callback, OACascade cascade) {
-		if (cascade.wasCascaded(oaObj, true)) {
-			return;
-		}
-
-		if (callback != null) {
-			callback.updateObject(oaObj);
-		}
-		OAObjectInfo oi = getOAObjectInfoService().getOAObjectInfo(oaObj);
-
-		List al = oi.getLinkInfos();
-		for (int i = 0; i < al.size(); i++) {
-			OALinkInfo li = (OALinkInfo) al.get(i);
-			if (li.getCalculated()) {
-				continue;
-			}
-			if (li.getPrivateMethod()) {
-				continue;
-			}
-			if (!li.getUsed()) {
-				continue;
-			}
-			String prop = li.getName();
-
-			final OAObjectReflectService srvcOAObjectReflect = getOAObjectReflectService();
-			Object obj = srvcOAObjectReflect.getProperty(oaObj, li.getName()); // select all
-			if (obj == null) {
-				continue;
-			}
-
-			if (obj instanceof Hub) {
-				Hub h = (Hub) obj;
-				for (int j = 0;; j++) {
-					Object o = h.elementAt(j);
-					if (o == null) {
-						break;
-					}
-					if (o instanceof OAObject) {
-						recurse((OAObject) o, callback, cascade);
-					} else {
-						if (callback != null) {
-							callback.updateObject(o);
-						}
-					}
-					Object o2 = h.elementAt(j);
-					if (o != o2) {
-						j--;
-					}
-				}
-			} else {
-				if (obj instanceof OAObject) {
-					recurse((OAObject) obj, callback, cascade);
-				} else {
-					if (callback != null) {
-						callback.updateObject(obj);
-					}
-				}
-			}
-		}
-	}
-
-	/**
-	 * Searches the object graph beginning at the specified {@link OAObject} for
-	 * objects whose property value matches the supplied {@code findValue}, following
-	 * the navigation defined by the {@code propertyPath}. This method implements
-	 * the full recursive search logic for all {@code find(...)} overloads.
-	 *
-	 * <p>The {@code propertyPath} is a dot-separated sequence of property or link
-	 * names beginning at {@code base}. Each segment may refer to either a simple
-	 * property or a relationship link (one-to-one or one-to-many). The method
-	 * traverses the path step by step and evaluates the final property value(s)
-	 * against the provided {@code findValue}. If {@code bFindAll} is {@code false},
-	 * the search stops as soon as the first match is found; otherwise, all matches
-	 * reachable along the path are collected.</p>
-	 *
-	 * <h3>Traversal Behavior</h3>
-	 * <ul>
-	 *   <li>If {@code base} is {@code null} or the {@code propertyPath} is empty,
-	 *       an empty result array is returned.</li>
-	 *   <li>The method resolves each segment in the {@code propertyPath} using
-	 *       {@link OAPropertyPath} metadata provided by {@code base}'s
-	 *       {@link OAObjectInfo}.</li>
-	 *   <li>For link segments:
-	 *     <ul>
-	 *       <li>One-to-one links: the referenced object becomes the next traversal node.</li>
-	 *       <li>One-to-many or many-to-many links: each object in the associated hub
-	 *           is recursively processed for the remaining path.</li>
-	 *     </ul>
-	 *   </li>
-	 *   <li>For the final segment:
-	 *     <ul>
-	 *       <li>If it is a property, its value is retrieved via the object's getter.</li>
-	 *       <li>A match occurs if {@code findValue == null} and the property value is {@code null},
-	 *           or if {@code findValue.equals(propertyValue)} is {@code true}.</li>
-	 *     </ul>
-	 *   </li>
-	 * </ul>
-	 *
-	 * <h3>Results</h3>
-	 * <ul>
-	 *   <li>Returns an array of all matching values if {@code bFindAll} is {@code true}.</li>
-	 *   <li>Returns a single-element array containing the first match if
-	 *       {@code bFindAll} is {@code false}.</li>
-	 *   <li>Returns an empty array if no matches are found.</li>
-	 * </ul>
-	 *
-	 * @param base         the root object from which the property path traversal
-	 *                     begins; may be {@code null}.
-	 * @param propertyPath the dot-separated property or link path to follow; must
-	 *                     not be {@code null}.
-	 * @param findValue    the value to compare against the resolved property value.
-	 * @param bFindAll     if {@code true}, collect all matches; otherwise stop at the first match.
-	 * @return an array containing matched values (or objects), never {@code null}.
-	 */
-	public Object[] find(OAObject base, String propertyPath, Object findValue, boolean bFindAll) {
-		if (propertyPath == null || propertyPath.length() == 0) {
-			return null;
-		}
-		StringTokenizer st = new StringTokenizer(propertyPath, ".");
-		Object result = base;
-		for (; st.hasMoreTokens();) {
-			String s = st.nextToken();
-			base = (OAObject) result; // previous object
-			result = base.getProperty(s);
-
-			if (!st.hasMoreTokens()) {
-				// last property, check against findValue
-				if (result == findValue || (result != null && OACompare.compare(result, findValue) == 0)) {
-					Object[] objs = new Object[] { base };
-					return objs;
-				}
-				return null;
-			}
-
-			if (result == null) {
-				return null;
-			}
-
-			if (result instanceof Hub) {
-				String pp = null;
-				for (; st.hasMoreTokens();) {
-					s = st.nextToken();
-					if (pp == null) {
-						pp = s;
-					} else {
-						pp += "." + s;
-					}
-				}
-				ArrayList al = null;
-				Hub h = (Hub) result;
-				for (int ii = 0;; ii++) {
-					Object obj = h.elementAt(ii);
-					if (obj == null) {
-						break;
-					}
-					Object[] objs = find((OAObject) obj, pp, findValue, bFindAll);
-					if (objs != null) {
-						if (!bFindAll) {
-							return objs;
-						}
-						if (al == null) {
-							al = new ArrayList(10);
-						}
-						for (int i3 = 0; i3 < objs.length; i3++) {
-							al.add(objs[i3]);
-						}
-					}
-				}
-				if (al == null) {
-					return null;
-				}
-				Object[] objs = new Object[al.size()];
-				objs = al.toArray(objs);
-				return objs;
-			}
-			if (!(result instanceof OAObject)) {
-				return null;
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * Tracks OAObjects for which automatic reverse-link insertion is disabled.
-	 * Presence of a GUID in this map indicates auto-add is turned off.
-	 */
-	private static final ConcurrentHashMap<UUID, Long> hmAutoAdd = new ConcurrentHashMap();
-	
-	/**
-	 * Enables or disables automatic reverse-link insertion for the specified
-	 * {@link OAObject}. When enabled, the object is eligible to be added to
-	 * reverse-link hubs when link-one assignments occur.
-	 *
-	 * <p>Behavior:</p>
-	 * <ul>
-	 *   <li>If {@code oaObj} is {@code null}, no action is taken.</li>
-	 *   <li>Disabling auto-add is ignored if the object is not new.</li>
-	 *   <li>Updates the internal auto-add state stored in the {@code hmAutoAdd} map.</li>
-	 *   <li>Fires a property-change event for the reserved {@code "AutoAdd"} property.</li>
-	 *   <li>When enabling auto-add and the object is not deleted, temporarily
-	 *       suppresses client-sync messages and ensures the object is added to any
-	 *       applicable reverse-link hubs.</li>
-	 * </ul>
-	 *
-	 * @param oaObj the object whose auto-add behavior is being modified; may be {@code null}.
-	 * @param bEnabled {@code true} to enable auto-add; {@code false} to disable it.
-	 */
-	public void setAutoAdd(final OAObject oaObj, boolean bEnabled) {
-		if (oaObj == null) {
-			return;
-		}
-		if (!bEnabled && !oaObj.isNew()) {
-			return;
-		}
-
-		OAObject.FriendAccess fa = faBridge.getObjectFriendAccess();
-		boolean bOld = !hmAutoAdd.containsKey(fa.getGuid(oaObj));
-		if (bOld == bEnabled) {
-			return;
-		}
-
-		UUID guid = fa.getGuid(oaObj);
-		if (!bEnabled) {
-			hmAutoAdd.put(guid, 0L);
-		} else {
-			hmAutoAdd.remove(guid);
-		}
-		getOAObjectEventService().firePropertyChange(oaObj, WORD_AutoAdd, bOld ? TRUE : FALSE, bEnabled ? TRUE : FALSE, false, false);
-
-		if (!bEnabled || faBridge.getObjectFriendAccess().getDeleteFlag(oaObj)) {
-			return;
-		}
-
-		try {
-			srvcThreadLocal.setSuppressCSMessages(true);
-			// need to see if object should be put into linkOne/masterObject hub(s)
-			OAObjectInfo oi = getOAObjectInfoService().getOAObjectInfo(oaObj);
-			for (OALinkInfo li : oi.getLinkInfos()) {
-				if (!li.getUsed()) {
-					continue;
-				}
-				if (li.getType() != li.ONE) {
-					continue;
-				}
-				final OAObjectReflectService srvcOAObjectReflect = getOAObjectReflectService();
-				Object objx = srvcOAObjectReflect.getRawReference(oaObj, li.getName());
-				if (!(objx instanceof OAObject)) {
-					continue;
-				}
-
-				OALinkInfo liRev = getOAObjectInfoService().getReverseLinkInfo(li);
-				if (liRev == null) {
-					continue;
-				}
-				if (!liRev.getUsed()) {
-					continue;
-				}
-				if (liRev.getType() != li.MANY) {
-					continue;
-				}
-				if (liRev.getPrivateMethod()) {
-					continue;
-				}
-
-				Object objz = srvcOAObjectReflect.getProperty((OAObject) objx, liRev.getName());
-				if (objz instanceof Hub) {
-					((Hub) objz).add(oaObj);
-				}
-			}
-		} finally {
-			srvcThreadLocal.setSuppressCSMessages(false);
-		}
-	}
-
-	/**
-	 * Returns whether automatic reverse-link insertion is enabled for the specified
-	 * {@link OAObject}. If the object is {@code null}, the method returns
-	 * {@code false}.
-	 *
-	 * <p>This method simply returns the value of the object's internal
-	 * {@code autoAddEnabled} flag. It does not evaluate any link relationships or
-	 * perform any side effects. The flag determines whether the object should be
-	 * automatically inserted into reverse-link Hubs when link assignments occur.</p>
-	 *
-	 * @param oaObj the object whose auto-add setting is queried; may be {@code null}.
-	 * @return {@code true} if automatic reverse-link insertion is enabled,
-	 *         {@code false} otherwise.
-	 */
-	public boolean getAutoAdd(OAObject oaObj) {
-		if (oaObj == null) {
-			return false;
-		}
-		return !hmAutoAdd.containsKey(faBridge.getObjectFriendAccess().getGuid(oaObj));
-	}
-
-	/**
-	 * Convenience method that returns the ID (primary-key) property values of the
-	 * specified {@link OAObject}. This method simply delegates to
-	 * {@link OAObjectInfoDelegate#getPropertyIdValues(OAObjectInfo, OAObject, String[])}
-	 * using the object's {@link OAObjectInfo} metadata.
-	 *
-	 * <p>If {@code obj} is {@code null}, this method returns {@code null}. Otherwise,
-	 * all ID property names defined in the model are resolved through the metadata
-	 * and their values are retrieved. For composite keys, all ID components are
-	 * returned in the order specified by the model.</p>
-	 *
-	 * <p>See the delegate method for full details on ID resolution behavior.</p>
-	 *
-	 * @param obj the object whose ID property values are requested; may be {@code null}.
-	 * @return an array of ID values, or {@code null} if {@code obj} is {@code null}.
-	 */
-	public Object[] getPropertyIdValues(OAObject obj) {
-		if (obj == null) return null;
-		return getOAObjectInfoService().getPropertyIdValues(obj);
-	}
-
-	//qqqqqqqqq this was created/added ... needs to be more protected ?? 
-	public Object[] getProperties(OAObject obj) {
-		if (obj == null) return null;
-		return faBridge.getObjectFriendAccess().getProperties(obj);
-	}
-	
+    	
 	// flag so that OAObject.finalize should ignore this object.	
 	//qqqqqqqqqqqq make sure other code looks for guid=0, and ignore default cleanup (cached, etc)
 	public void dontFinalize(OAObject obj) {
@@ -2470,7 +1997,6 @@ public abstract class OAObjectParentService {
 			getOAObjectGuidService().setGuid(obj, null);
 		}
 	}
-	
 
 }
 

@@ -1412,7 +1412,7 @@ public abstract class HubEventService {
 	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub<?> thisHub);
 
 	@OAParentProvided (example = "srvcHub.verifyUniqueProperty")
-	public abstract boolean callHubVerifyUniqueProperty(final Hub<?> thisHub, final Object object);
+	public abstract <T extends OAObject> boolean callHubVerifyUniqueProperty(final Hub<T> thisHub, final T object);
 
 	@OAParentProvided (example = "srvcHub.getHubDetailService().updateDetail")
 	public abstract void callHubDetailUpdateDetail(final Hub<?> thisHub, final HubDetail detail, final Hub detailHub, final boolean bUpdateLink);

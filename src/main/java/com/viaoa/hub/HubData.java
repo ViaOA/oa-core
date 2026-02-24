@@ -795,9 +795,12 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
         }
     }
 
+//qqqqqq this should use HubStatusService change methods (todo: make this more protected)    
     public boolean getChanged() {
     	return this.changed;
     }
+    
+//qqqqqq this should use HubStatusService change methods (todo: make this more protected)   
     public void setChanged(boolean b) {
     	this.changed = b;
     }
