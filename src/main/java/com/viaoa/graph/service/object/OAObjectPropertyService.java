@@ -7,7 +7,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
@@ -1047,33 +1046,33 @@ public abstract class OAObjectPropertyService {
 
 	
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().get")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().get")
 	public abstract <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectGuidService().getGuid")
+	// @OAParentProvided (example = "srvcObject.getOAObjectGuidService().getGuid")
 	public abstract UUID callGuidGetGuid(OAObject oaObj);
 		
-	@OAParentProvided (example = "srvcObject.getOAObjectHubService().setMasterObject")
+	// @OAParentProvided (example = "srvcObject.getOAObjectHubService().setMasterObject")
 	public abstract void callHubSetMasterObject(Hub<?> hub, OAObject oaObj, String nameFromMasterToDetail);
 		
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz); 
 
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().isWeakReferenceable")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().isWeakReferenceable")
 	public abstract boolean callInfoIsWeakReferenceable(OAObjectInfo oi);
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
 	public abstract OALinkInfo callInfoGetLinkInfo(Class<? extends OAObject> clazz, String propertyName);	
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().isForSameOAObject")
+	// @OAParentProvided (example = "srvcObject.getOAObjectKeyService().isForSameOAObject")
 	public abstract boolean callKeyIsForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey ok1, final OAObjectKey ok2);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().getKey")
+	// @OAParentProvided (example = "srvcObject.getOAObjectKeyService().getKey")
 	public abstract OAObjectKey callKeyGetKey(OAObject oaObj);
 	
-	@OAParentProvided (example = "srvcSync.isServer()")
+	// @OAParentProvided (example = "srvcSync.isServer()")
 	public abstract boolean callSyncIsServer();
 
-	@OAParentProvided (example = "srvcOARemoteThread.startNextThread")
+	// @OAParentProvided (example = "srvcOARemoteThread.startNextThread")
 	public abstract void callRemoteThreadStartNextThread();
 }

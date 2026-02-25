@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.*;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -32,14 +31,14 @@ public abstract class HubAutoMatchService {
 	 * @param hubMaster       the hub whose objects must be mirrored
 	 * @param bServerSideOnly whether matching should only be enforced on the server
 	 */
-	public void setAutoMatch(Hub thisHub, String property, Hub hubMaster, boolean bServerSideOnly) {
-		final HubData hd = faHub.getHubData(thisHub);
+	public <T extends OAObject> void setAutoMatch(Hub<T> thisHub, String property, Hub<T> hubMaster, boolean bServerSideOnly) {
+		final HubData<T> hd = faHub.getHubData(thisHub);
 		if (hd.getAutoMatch() != null) {
 			hd.getAutoMatch().close();
 		}
 		// 20220802 now works with Enum (name/value) property
 		// if (hubMaster != null) {
-		HubAutoMatch am = new HubAutoMatch();
+		HubAutoMatch<T, T> am = new HubAutoMatch();
 		hd.setAutoMatch(am);
 		am.setServerSideOnly(bServerSideOnly);
 		am.init(thisHub, property, hubMaster, null, null);

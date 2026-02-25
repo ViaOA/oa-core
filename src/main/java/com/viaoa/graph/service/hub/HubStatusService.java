@@ -6,15 +6,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.hub.*;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.runtime.OARuntime;
-import com.viaoa.util.OAFilter;
 
 public abstract class HubStatusService {
 	private final Logger LOG = Logger.getLogger(HubStatusService.class.getName());
@@ -466,7 +463,7 @@ public abstract class HubStatusService {
 	public abstract <T extends OAObject> HubListener<T>[] callHubEventGetAllListeners(Hub<T> thisHub);	
 	public abstract boolean callThreadLocalIsHubMergerChanging();
 
-	public abstract <T extends OAObject> Hub callHubLinkGetHubWithLink(final Hub<T> thisHub, boolean bIncludeCopiedHubs);
+	public abstract <T extends OAObject> Hub<T> callHubLinkGetHubWithLink(final Hub<T> thisHub, boolean bIncludeCopiedHubs);
 	public abstract <T extends OAObject> T callHubDataGetObjectAt(Hub<T> thisHub, int pos);
 	public abstract boolean callObjectChangeGetChanged(final OAObject oaObj, int iCascadeRule, OACascade cascade);
     

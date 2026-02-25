@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OACallback;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;

@@ -4,7 +4,6 @@ import java.lang.ref.WeakReference;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
@@ -532,66 +531,66 @@ public abstract class OAObjectHubService {
     }
 
 
-	@OAParentProvided (example = "srvcObject.getOAObjectCSService().updateObjectsWithoutHubs(..)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCSService().updateObjectsWithoutHubs(..)")
 	public abstract void callCSUpdateObjectsWithoutHubs(OAObject obj);
     
-	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().fireAfterPropertyChange(..)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().fireAfterPropertyChange(..)")
 	public abstract void callCacheFireAfterPropertyChange(OAObject obj, OAObjectKey origKey, String propertyName, Object oldValue, Object newValue,
 			boolean bLocalOnly, boolean bSendEvent);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectEventService().sendHubPropertyChange(..)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectEventService().sendHubPropertyChange(..)")
 	public abstract void callEventSendHubPropertyChange(final OAObject oaObj, final String propertyName, final Object oldObj, final Object newObj, final OALinkInfo linkInfo); 
 
-    @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(c)")
+    // @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(c)")
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class<? extends OAObject> clazz);
 
-    @OAParentProvided (example = "srvcObject.getOAObjectInfoService().isMany2Many(..)")
+    // @OAParentProvided (example = "srvcObject.getOAObjectInfoService().isMany2Many(..)")
 	public abstract boolean callInfoIsMany2Many(OALinkInfo thisLi);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo(li)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo(li)")
 	public abstract OALinkInfo callInfoGetReverseLinkInfo(OALinkInfo thisLi);
     
-	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().getKey(..)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectKeyService().getKey(..)")
 	public abstract OAObjectKey callKeyGetKey(OAObject oaObj);
     
-	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getProperty(..)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getProperty(..)")
 	public abstract Object callPropertyGetProperty(OAObject oaObj, String name);
 
 
 	
 	
 
-	@OAParentProvided (example = "srvcHub.getChanged(..)")
+	// @OAParentProvided (example = "srvcHub.getChanged(..)")
 	public abstract boolean callHubStatusGetChanged(Hub<?> thisHub, int iCascadeRule, OACascade cascade);
 
-	@OAParentProvided (example = "srvcHub.getMasterObject(..)")
+	// @OAParentProvided (example = "srvcHub.getMasterObject(..)")
 	public abstract OAObject callHubMasterGetMasterObject(Hub<?> hub);
 	
-	@OAParentProvided (example = "srvcHub.getHubDataService().containsDirect(..)")
+	// @OAParentProvided (example = "srvcHub.getHubDataService().containsDirect(..)")
 	public abstract boolean callHubDataContainsDirect(Hub<?> hub, Object obj);
 	
-	@OAParentProvided (example = "srvcHub.getHubDeleteService().deleteAll(..)")
+	// @OAParentProvided (example = "srvcHub.getHubDeleteService().deleteAll(..)")
 	public abstract void callHubDeleteDeleteAll(Hub<?> thisHub, OACascade cascade);
 	
-	@OAParentProvided (example = "srvcHub.getHubDetailService().setMasterObject(..)")
+	// @OAParentProvided (example = "srvcHub.getHubDetailService().setMasterObject(..)")
 	public abstract void callHubDetailSetMasterObject(Hub<?> thisHub, OAObject masterObject, OALinkInfo liDetailToMaster);
 	
-	@OAParentProvided (example = "srvcHub.getHubDetailService().getPropertyFromMasterToDetail(..)")
+	// @OAParentProvided (example = "srvcHub.getHubDetailService().getPropertyFromMasterToDetail(..)")
 	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub<?> thisHub);
 
-	@OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(..)")
+	// @OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(..)")
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
 
-	@OAParentProvided (example = "srvcHub.getHubDetailService().getMasterObject(..)")
+	// @OAParentProvided (example = "srvcHub.getHubDetailService().getMasterObject(..)")
 	public abstract OAObject callHubDetailGetMasterObject(Hub<?> thisHub);
 	
-	@OAParentProvided (example = "srvcHub.getHubSaveService().saveAll(..)")
+	// @OAParentProvided (example = "srvcHub.getHubSaveService().saveAll(..)")
 	public abstract void callHubSaveSaveAll(Hub<?> thisHub, int iCascadeRule, OACascade cascade);
 
-	@OAParentProvided (example = "srvcSync.isClient(..)")
+	// @OAParentProvided (example = "srvcSync.isClient(..)")
 	public abstract boolean callSyncIsClient();
 	
-	@OAParentProvided (example = "srvcOARemoteThread.shouldSendMessages() ")
+	// @OAParentProvided (example = "srvcOARemoteThread.shouldSendMessages() ")
 	public abstract boolean callRemoteThreadShouldSendMessages();
 
 

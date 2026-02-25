@@ -1,13 +1,11 @@
 package com.viaoa.graph.service.hub;
 
-
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.ConcurrentModificationException;
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.*;
 import com.viaoa.object.OASiblingHelper;
 import com.viaoa.runtime.OARuntime;
@@ -332,28 +330,28 @@ public abstract class HubSortService {
         return s;
     }
 
-	@OAParentProvided (example = "srvcHub.getHubCSService().sort")
-	public abstract void callHubCSSort(Hub<?> thisHub, String propertyPaths, boolean bAscending, Comparator comp);
+	// @OAParentProvided (example = "srvcHub.getHubCSService().sort")
+	public abstract void callHubCSSort(Hub<?> thisHub, String propertyPaths, boolean bAscending, Comparator<?> comp);
 
-	@OAParentProvided (example = "srvcHub.getHubSelectService().loadAllData")
+	// @OAParentProvided (example = "srvcHub.getHubSelectService().loadAllData")
 	public abstract void callHubSelectLoadAllData(Hub<?> thisHub);
 
-	@OAParentProvided (example = "srvcHub.getHubEventService().fireAfterSortEvent")
+	// @OAParentProvided (example = "srvcHub.getHubEventService().fireAfterSortEvent")
 	public abstract void callHubEventFireAfterSortEvent(Hub<?> thisHub);
 
-	@OAParentProvided (example = "srvcThreadLocal.lock")
+	// @OAParentProvided (example = "srvcThreadLocal.lock")
 	public abstract void callThreadLocalLock(Object object);
 	
-	@OAParentProvided (example = "srvcThreadLocal.unlock")
+	// @OAParentProvided (example = "srvcThreadLocal.unlock")
 	public abstract void callThreadLocalUnlock(Object object);
 	
-	@OAParentProvided (example = "srvcRemoteThread.startNextThread")
+	// @OAParentProvided (example = "srvcRemoteThread.startNextThread")
 	public abstract void callRemoteThreadStartNextThread();
 
-	@OAParentProvided (example = "srvcThreadLocal.addSiblingHelper")
+	// @OAParentProvided (example = "srvcThreadLocal.addSiblingHelper")
 	public abstract boolean callThreadLocalAddSiblingHelper(OASiblingHelper<?> sh);
 
-	@OAParentProvided (example = "srvcThreadLocal.removeSiblingHelper")
+	// @OAParentProvided (example = "srvcThreadLocal.removeSiblingHelper")
 	public abstract void callThreadLocalRemoveSiblingHelper(OASiblingHelper<?> sh);
     
 }

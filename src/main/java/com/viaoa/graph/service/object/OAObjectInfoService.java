@@ -16,7 +16,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
 import com.viaoa.annotation.OAClass;
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OACalcInfo;
 import com.viaoa.object.OALinkInfo;
@@ -1868,24 +1867,24 @@ public abstract class OAObjectInfoService {
     	return hmObjectInfo;
     }
     
-	@OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().update2")
+	// @OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().update2")
 	public abstract void callAnnotationUpdate2(OAObjectInfo oi, Class<?> clazz);
     
-	@OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().updateImportMatches")
+	// @OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().updateImportMatches")
 	public abstract void callAnnotationUpdateImportMatches(OAObjectInfo oi); 
 
-	@OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().updateLinkFkeys")
+	// @OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().updateLinkFkeys")
 	public abstract void callAnnotationUpdateLinkFkeys(final OAObjectInfo oi);
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().update")
+	// @OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().update")
 	public abstract void callAnnotationUpdate(OAObjectInfo oi, Class<?> clazz); 
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().getRawReference")
+	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().getRawReference")
 	public abstract Object callReflectGetRawReference(OAObject oaObj, String name);
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().getProperty")
+	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().getProperty")
 	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath);
 	
-	@OAParentProvided (example = "srvcSync.isServer(..)")
+	// @OAParentProvided (example = "srvcSync.isServer(..)")
 	public abstract boolean callSyncIsServer();
 }

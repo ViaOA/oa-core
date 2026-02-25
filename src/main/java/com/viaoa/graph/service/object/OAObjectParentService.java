@@ -3,8 +3,6 @@ package com.viaoa.graph.service.object;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
-import java.util.StringTokenizer;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
@@ -39,7 +37,6 @@ import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.remote.RemoteServerInterface;
 import com.viaoa.sync.remote.RemoteSessionInterface;
 import com.viaoa.sync.remote.RemoteSyncInterface;
-import com.viaoa.util.OACompare;
 import com.viaoa.util.OAFilter;
 import com.viaoa.xml.OAXMLWriter;
 

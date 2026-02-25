@@ -3,7 +3,6 @@ package com.viaoa.graph.service.object;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.context.OAContext;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
@@ -335,54 +334,54 @@ public abstract class OAObjectInitializeService {
 		}
 	}
 
-	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().add")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().add")
 	public abstract OAObject callCacheAdd(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll);
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().fireAfterLoadEvent")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().fireAfterLoadEvent")
 	public abstract <T extends OAObject> void callCacheFireAfterLoadEvent(T obj);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().addToSelectAllHubs")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().addToSelectAllHubs")
 	public abstract void callCacheAddToSelectAllHubs(OAObject obj);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectDSService().assignId")
+	// @OAParentProvided (example = "srvcObject.getOAObjectDSService().assignId")
 	public abstract void callDSAssignId(OAObject oaObj);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectDSService().getAssignIdOnCreate")
+	// @OAParentProvided (example = "srvcObject.getOAObjectDSService().getAssignIdOnCreate")
 	public abstract boolean callDSGetAssignIdOnCreate(OAObject oaObj);
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectGuidService().getGuid")
+	// @OAParentProvided (example = "srvcObject.getOAObjectGuidService().getGuid")
 	public abstract UUID callGuidGetGuid(OAObject oaObj);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectGuidService().assignNewGuid")
+	// @OAParentProvided (example = "srvcObject.getOAObjectGuidService().assignNewGuid")
 	public abstract void callGuidAssignNewGuid(OAObject obj);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectGuidService().assignGuid")
+	// @OAParentProvided (example = "srvcObject.getOAObjectGuidService().assignGuid")
 	public abstract void callGuidAssignGuid(OAObject obj);
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().isOne2One")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().isOne2One")
 	public abstract boolean callInfoIsOne2One(OALinkInfo thisLi);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz); 
 
-	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().unsafeAddProperty")
+	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().unsafeAddProperty")
 	public abstract void callPropertyUnsafeAddProperty(OAObject oaObj, String name, Object value); 
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().setProperty")
+	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().setProperty")
 	public abstract void callReflectSetProperty(final OAObject oaObj, String propName, Object value, final String fmt);
 	
 	
-	@OAParentProvided (example = "srvcSync.isClient")
+	// @OAParentProvided (example = "srvcSync.isClient")
 	public abstract boolean callSyncIsClient();
 
-	@OAParentProvided (example = "srvcSync.getSyncClient().objectCreated")
+	// @OAParentProvided (example = "srvcSync.getSyncClient().objectCreated")
 	public abstract void callSyncClientObjectCreated(OAObject obj);	
 
 	
-	@OAParentProvided (example = "srvcOAThreadLocal.isLoading()")
+	// @OAParentProvided (example = "srvcOAThreadLocal.isLoading()")
 	public abstract boolean callThreadLocalIsLoading();
 
-	@OAParentProvided (example = "srvcOAThreadLocal.setLoading(..)")
+	// @OAParentProvided (example = "srvcOAThreadLocal.setLoading(..)")
 	public abstract boolean callThreadLocalSetLoading(boolean b);
 }
 

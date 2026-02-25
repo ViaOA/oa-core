@@ -4,7 +4,6 @@ import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListenerAdapter;
@@ -184,7 +183,7 @@ public abstract class HubAOService {
 		setActiveObject(thisHub, object, pos, bUpdateLink, bForce, bCalledByShareHub, true);
 	}
 
-	protected final HashSet<Hub> hsWarnOnSettingAO = new HashSet<>();
+	protected final HashSet<Hub<?>> hsWarnOnSettingAO = new HashSet<>();
 
 	/**
 	 * Registers the hub to emit warnings when its active object is set directly.
@@ -272,7 +271,7 @@ public abstract class HubAOService {
 		// Now call for all sharedHubs with same "dataa"
 		OAFilter<Hub<T>> filter = new OAFilter<Hub<T>>() {
 			@Override
-			public boolean isUsed(Hub h) {
+			public boolean isUsed(Hub<T> h) {
 				return faHub.getHubDataActive(h) == faHub.getHubDataActive(thisHub); 
 			}
 		};
@@ -327,7 +326,7 @@ public abstract class HubAOService {
 		// Now call for all sharedHubs with same "dataa"
 		OAFilter<Hub<T>> filter = new OAFilter<>() {
 			@Override
-			public boolean isUsed(Hub h) {
+			public boolean isUsed(Hub<T> h) {
 				return faHub.getHubDataActive(h) == faHub.getHubDataActive(thisHub); 
 			}
 		};
@@ -335,7 +334,7 @@ public abstract class HubAOService {
 		Hub<T>[] hubs = callHubShareGetAllSharedHubs(thisHub, filter);
 
 		for (int i = 0; i < hubs.length; i++) {
-			Hub h = hubs[i];
+			Hub<T> h = hubs[i];
 			if (h != thisHub && faHub.getHubDataActive(h) == faHub.getHubDataActive(thisHub)) {
 				faHub.getHubDataUnique(h).setUpdatingActiveObject(true);
 				callHubDetailUpdateAllDetail(h, true);
@@ -351,13 +350,13 @@ public abstract class HubAOService {
 	 *
 	 * @param thisHub the hub whose active object should always be the first object
 	 */
-	public void keepActiveObject(final Hub<?> thisHub) {
+	public <T extends OAObject> void keepActiveObject(final Hub<T> thisHub) {
 		if (thisHub == null) {
 			return;
 		}
-		thisHub.addHubListener(new HubListenerAdapter() {
+		thisHub.addHubListener(new HubListenerAdapter<T>() {
 			@Override
-			public void afterChangeActiveObject(HubEvent e) {
+			public void afterChangeActiveObject(HubEvent<T> e) {
 				update();
 			}
 
@@ -393,48 +392,20 @@ public abstract class HubAOService {
 		thisHub.setPos(0);
 	}
 
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
 	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi); 
-
-	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().getProperty")
 	public abstract Object callObjectReflectGetProperty(OAObject oaObj, String propPath);
-		
-	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().setProperty")
 	public abstract void callObjectReflectSetProperty(final OAObject oaObj, String propName, Object value, final String fmt);
-
-
-	@OAParentProvided (example = "srvcHub.getHubDataService().getPos")
 	public abstract <T extends OAObject> int callHubDataGetPos(final Hub<T> thisHub, T object, final boolean adjustMaster, final boolean bUpdateLink);
-
-	@OAParentProvided (example = "srvcHub.getRealObject")
 	public abstract <T extends OAObject> T callHubFindGetRealObject(Hub<T> hub, Object object);
-
-	@OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromMasterObjectToDetail")
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterObjectToDetail(Hub<?> thisDetailHub);
-
-	@OAParentProvided (example = "srvcHub.getHubDetailService().getMasterObject")
 	public abstract OAObject callHubDetailGetMasterObject(Hub<?> thisHub);
-
-	@OAParentProvided (example = "srvcHub.getHubDataService().getObjectAt")
 	public abstract <T extends OAObject> T callHubDataGetObjectAt(Hub<T> thisHub, int pos);
-
-	@OAParentProvided (example = "srvcHub.getHubDetailService().updateAllDetail")
 	public abstract void callHubDetailUpdateAllDetail(Hub<?> thisHub, boolean bUpdateLink);
-	
-	@OAParentProvided (example = "srvcHub.getHubLinkService().updateLinkProperty")
 	public abstract <T extends OAObject> void callHubLinkUpdateLinkProperty(Hub<T> thisHub, T fromObject, int pos);
-
-	@OAParentProvided (example = "srvcHub.getHubShareService().getAllSharedHubs")
 	public abstract <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub<T>> filter);
-
-	@OAParentProvided (example = "srvcHub.getHubEventService().fireAfterChangeActiveObjectEvent")
 	public abstract <T extends OAObject> void callHubEventFireAfterChangeActiveObjectEvent(Hub<T> thisHub, T obj, int pos, boolean bAllShared);
 
-
-	@OAParentProvided (example = "srvcThreadLocal.lock")
 	public abstract void callThreadLocalLock(Object object);
-	
-	@OAParentProvided (example = "srvcThreadLocal.unlock")
 	public abstract void callThreadLocalUnlock(Object object);
 	
 }

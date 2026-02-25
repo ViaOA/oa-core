@@ -5,7 +5,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -371,16 +370,16 @@ public abstract class OAObjectDSService {
 	}
 
 
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz); 
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectGuidService().getGuid(obj)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectGuidService().getGuid(obj)")
 	public abstract UUID callGuidGetGuid(OAObject oaObj);
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().createObjectKey(clazz, key)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectKeyService().createObjectKey(clazz, key)")
 	public abstract OAObjectKey callKeyCreateObjectKey(final Class<? extends OAObject> c, final Object ...ids);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().getKey(obj)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectKeyService().getKey(obj)")
 	public abstract OAObjectKey callKeyGetKey(OAObject oaObj); 
 }
 

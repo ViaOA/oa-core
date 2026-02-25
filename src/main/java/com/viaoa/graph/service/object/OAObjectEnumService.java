@@ -2,7 +2,6 @@ package com.viaoa.graph.service.object;
 
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.Hub;
 import com.viaoa.model.oa.VString;
 import com.viaoa.object.OAObject;
@@ -54,7 +53,7 @@ public abstract class OAObjectEnumService {
 		return pi.getDisplayNameValues();
 	}
 
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class clazz); 
 	
 }

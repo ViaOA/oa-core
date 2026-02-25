@@ -91,7 +91,7 @@ public abstract class HubMasterService {
 	}
 
 	public abstract HubDataMaster callHubDetailGetDataMaster(final Hub<?> thisHub, boolean bIncludedFilteredHub);
-	public abstract <T extends OAObject> Hub callHubLinkGetHubWithLink(final Hub<T> thisHub, boolean bIncludeCopiedHubs);
+	public abstract <T extends OAObject> Hub<?> callHubLinkGetHubWithLink(final Hub<T> thisHub, boolean bIncludeCopiedHubs);
 }
 
 

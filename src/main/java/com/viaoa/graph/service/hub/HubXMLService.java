@@ -2,7 +2,6 @@ package com.viaoa.graph.service.hub;
 
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.*;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OAObject;
@@ -105,7 +104,7 @@ public abstract class HubXMLService {
         else ow.println("</"+tagName+">");
     }
 
-	@OAParentProvided (example = "srvcObject.getOAObjectXMLService().write")
+	// @OAParentProvided (example = "srvcObject.getOAObjectXMLService().write")
 	public abstract void callObjectXMLWrite(final OAObject oaObj, final OAXMLWriter ow, final String tagName, boolean bKeyOnly, final OACascade cascade);
 
 }

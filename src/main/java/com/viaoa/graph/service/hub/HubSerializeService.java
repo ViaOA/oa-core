@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.*;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -85,19 +84,19 @@ public abstract class HubSerializeService {
 		return thisHub;
 	}
 
-	@OAParentProvided (example = "srvcObject.getOAObjectHubService().isAlreadyInHub")
+	// @OAParentProvided (example = "srvcObject.getOAObjectHubService().isAlreadyInHub")
 	public abstract boolean callObjectHubIsAlreadyInHub(OAObject oaObj, OALinkInfo li);
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectHubService().addHub")
+	// @OAParentProvided (example = "srvcObject.getOAObjectHubService().addHub")
 	public abstract <T extends OAObject> boolean callObjectHubAddHub(T oaObj, Hub<T> hub);
 
-	@OAParentProvided (example = "srvcHub.getHubSelectService().isMoreData")
+	// @OAParentProvided (example = "srvcHub.getHubSelectService().isMoreData")
 	public abstract boolean callHubSelectIsMoreData(Hub<?> thisHub);
 
-	@OAParentProvided (example = "srvcHub.getHubSelectService().loadAllData")
+	// @OAParentProvided (example = "srvcHub.getHubSelectService().loadAllData")
 	public abstract void callHubSelectLoadAllData(Hub<?> thisHub);
 
-	@OAParentProvided (example = "srvcThreadLocal.setSuppressCSMessages")
+	// @OAParentProvided (example = "srvcThreadLocal.setSuppressCSMessages")
 	public abstract void callThreadLocalSetSuppressCSMessages(boolean b);
 }
 

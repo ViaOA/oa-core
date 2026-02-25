@@ -2,7 +2,6 @@ package com.viaoa.graph.service.hub;
 
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
 import com.viaoa.util.OAFilter;
@@ -182,25 +181,25 @@ public abstract class HubRootService {
 
 	
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getRecursiveLinkInfo")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getRecursiveLinkInfo")
 	public abstract OALinkInfo callObjectInfoGetRecursiveLinkInfo(OAObjectInfo thisOI, int type);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getRootHub")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getRootHub")
 	public abstract <T extends OAObject> Hub<T> callObjectInfoGetRootHub(OAObjectInfo thisOI, Hub<T> hub);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
 	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().getProperty")
+	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().getProperty")
 	public abstract Object callObjectReflectGetProperty(OAObject oaObj, String propPath);
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkToOwner")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkToOwner")
 	public abstract OALinkInfo callObjectInfoGetLinkToOwner(OAObjectInfo thisOI);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().setRootHub")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().setRootHub")
 	public abstract void callObjectInfoSetRootHub(OAObjectInfo thisOI, Hub<?> h);
 
-	@OAParentProvided (example = "srvcHub.getHubShareService().getAllSharedHubs")
+	// @OAParentProvided (example = "srvcHub.getHubShareService().getAllSharedHubs")
 	public abstract <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub<T>> filter);
 
 }

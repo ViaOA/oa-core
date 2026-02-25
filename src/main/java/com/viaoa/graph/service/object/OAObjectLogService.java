@@ -2,7 +2,6 @@ package com.viaoa.graph.service.object;
 
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OALogRecord;
@@ -153,13 +152,13 @@ public abstract class OAObjectLogService {
         }
     }
 
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz); 
 
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
 	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
 	public abstract OALinkInfo callInfoGetReverseLinkInfo(OALinkInfo thisLi); 
 	
 }

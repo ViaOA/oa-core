@@ -15,7 +15,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.objectcache.OADataSourceObjectCache;
 import com.viaoa.filter.OAEqualFilter;
@@ -1541,74 +1540,23 @@ public abstract class OAObjectCacheService {
 
 
 
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "srvcObject.getOAObjectKeyService().createObjectKey(obj)"
-	)
 	public abstract OAObjectKey callKeyCreateObjectKey(OAObject obj);
 
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)"
-	)
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class<? extends OAObject> clazz);	
 	
-	@OAParentProvided (
-			parentName = "OAObjectService", 
-			purpose="", 
-			example = "srvcObject.getOAObjectKeyService().getKey((OAObject) key)"
-		)
 	public abstract OAObjectKey callKeyGetKey(OAObject oaObj);	
 	
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "srvcObject.getOAObjectKeyService().createObjectKey(clazz, key)"
-	)
 	public abstract OAObjectKey callKeyCreateObjectKey(final Class<? extends OAObject> c, final Object ...ids);	
 
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "srvcObject.getOAObjectHubService().getHubReferences(obj)"
-	)
 	public abstract <T extends OAObject> Hub<T>[] callHubGetHubReferences(T oaObj);	
 	
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(h)"
-	)
 	public abstract OALinkInfo callDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
 
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "srvcHub.getHubSelectService().refreshSelect(h)"
-	)
 	public abstract boolean callHubSelectRefreshSelect(Hub<?> thisHub);
 	
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "og.getSyncService().isServer()"
-	)
 	public abstract boolean callSyncIsServer();	
-	
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "og.getSyncService().getRemoteServer().refreshCache(clazz)"
-	)
 	public abstract void callSyncRemoteServerRefreshCache(Class<? extends OAObject> clazz);	
 
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "srvcThreadLocal.getObjectCacheAddMode()"
-	)
 	public abstract int callThreadLocalGetObjectCacheAddMode();
 }
 

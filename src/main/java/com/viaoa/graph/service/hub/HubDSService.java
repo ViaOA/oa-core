@@ -2,7 +2,6 @@ package com.viaoa.graph.service.hub;
 
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
@@ -69,13 +68,13 @@ public abstract class HubDSService {
         ds.updateMany2ManyLinks(objMaster, null, objs, propFromMaster);
     }
 
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().isMany2Many")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().isMany2Many")
 	public abstract boolean callObjectInfoIsMany2Many(OALinkInfo thisLi);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
 	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi);
 
-	@OAParentProvided (example = "srvcHub.getHubAddRemoveService().getRemovedObjects")
+	// @OAParentProvided (example = "srvcHub.getHubAddRemoveService().getRemovedObjects")
 	public abstract <T extends OAObject> T[] callHubAddRemoveGetRemovedObjects(Hub<T> thisHub);
 	
 }

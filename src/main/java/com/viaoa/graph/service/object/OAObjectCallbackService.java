@@ -5,7 +5,6 @@ import java.util.logging.Logger;
 
 import javax.swing.JLabel;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.context.OAContext;
 import com.viaoa.context.OAUserAccess;
 import com.viaoa.graph.OAGraphImpl;
@@ -2383,85 +2382,19 @@ public abstract class OAObjectCallbackService {
 	}
 
 	
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(class)"
-	)
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz);	
 
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "srvcObject.getOAObjectPropertyService().getProperty(oaObj, propertyName)"
-	)
 	public abstract Object callPropertyGetProperty(OAObject oaObj, String propertyName);
 
-
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "srvcObject.getOAObjectReflectService().getProperty(oaObj, propPath)"
-	)
 	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath);
-
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "srvcObject.getOAObjectHubService().getHubReferences(obj)"
-	)
 	public abstract <T extends OAObject> Hub<T>[] callHubGetHubReferences(T oaObj);	
-
-	
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "srvcObject.getOAObjectInfoService().getMethod(oi, name, clazz)"
-	)
 	public abstract Method callInfoGetMethod(OAObjectInfo oi, String methodName, final Class<?> classParam);	
-	
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "srvcObject.getOAObjectInfoService().getMethod(oi, name, clazz, amt)"
-	)
 	public abstract Method callInfoGetMethod(OAObjectInfo oi, String methodName, int argumentCount);	
-
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "srvcHub.getHubDetailService().getPropertyFromMasterToDetail(hub)"
-	)
 	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub<? extends OAObject> thisHub);	
-
-
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(hub)"
-	)
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<? extends OAObject> hub);
-	
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "srvcHub.getHubDetailService().getLinkInfoFromMasterHubToDetail(hub)"
-	)
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub<? extends OAObject> hub);
-	
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "srvcHub.getHubEventService().getAllListeners(hub)"
-	)
 	public abstract <T extends OAObject> HubListener<T>[] callHubEventGetAllListeners(Hub<T> hub);
 
-
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "getSyncService().isServer()"
-	)
 	public abstract boolean callSyncIsServer();
 
 }

@@ -3,7 +3,6 @@ package com.viaoa.graph.service.object;
 import java.util.*;
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.service.OAObjectService;
 import com.viaoa.graph.service.OASyncService;
@@ -131,16 +130,16 @@ public abstract class OAObjectLockService {
         }
 	}
 
-	@OAParentProvided (example = "srvcSync.isClient")
+	// @OAParentProvided (example = "srvcSync.isClient")
 	public abstract boolean callSyncIsClient();
 	
-	@OAParentProvided (example = "srvcSync.isServer")
+	// @OAParentProvided (example = "srvcSync.isServer")
 	public abstract boolean callSyncIsServer();
 
-	@OAParentProvided (example = "srvcSync.setLock")
+	// @OAParentProvided (example = "srvcSync.setLock")
 	public abstract boolean callSyncSetLock(Class objectClass, OAObjectKey objectKey, boolean bLock);
 
-	@OAParentProvided (example = "srvcSync.setLock")
+	// @OAParentProvided (example = "srvcSync.setLock")
 	public abstract boolean callSyncIsLocked(Class objectClass, OAObjectKey objectKey);
 	
 }

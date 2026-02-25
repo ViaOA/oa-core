@@ -2,7 +2,6 @@ package com.viaoa.graph.service.object;
 
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.object.OAObject;
 import com.viaoa.util.OAString;
@@ -91,18 +90,18 @@ public abstract class OAObjectUniqueService {
         return oaObj;
     }
 
-	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().find")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().find")
 	public abstract Object callCacheFind(Class<? extends OAObject> clazz, String propertyPath, Object findObject);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().createNewObject")
+	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().createNewObject")
 	public abstract Object callReflectCreateNewObject(Class<?> clazz); 
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectCSService().isClient)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCSService().isClient)")
 	public abstract boolean callCSIsClient();
 
-	@OAParentProvided (example = "srvcSync.getSyncClient().getRemoteServer().getUnique")
+	// @OAParentProvided (example = "srvcSync.getSyncClient().getRemoteServer().getUnique")
 	public abstract OAObject callSyncClientGetUnique(Class<? extends OAObject> clazz, final String propertyName, Object uniqueKey, boolean bAutoCreate);
 
-	@OAParentProvided (example = "srvcOAThreadLocal.setLoading")
+	// @OAParentProvided (example = "srvcOAThreadLocal.setLoading")
 	public abstract void callThreadLocalSetLoading(boolean b);
 }

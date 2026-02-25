@@ -8,7 +8,6 @@ import java.io.ObjectOutputStream;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.object.OACallback;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
@@ -159,18 +158,18 @@ public abstract class OAObjectEmptyHubService {
         oos.close();
     }
 
-	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().getKey(obj)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectKeyService().getKey(obj)")
 	public abstract OAObjectKey callKeyGetKey(OAObject oaObj); 
 
-	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().setProperty(..)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().setProperty(..)")
 	public abstract void callPropertySetProperty(OAObject oaObj, String name, Object value); 
 
-	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().callback(..)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().callback(..)")
 	public abstract void callCacheCallback(OACallback<OAObject> callback); 
 
-	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getPropertyNames((OAObject) obj)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getPropertyNames((OAObject) obj)")
 	public abstract String[] callPropertyGetPropertyNames(OAObject oaObj);
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().isReferenceHubLoadedAndEmpty((OAObject) obj, propName)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().isReferenceHubLoadedAndEmpty((OAObject) obj, propName)")
 	public abstract boolean callReflectIsReferenceHubLoadedAndEmpty(OAObject oaObj, String propertyName);
 }

@@ -106,7 +106,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
 	 *
 	 * @param objClass the class of objects stored in the hub
 	 */
-	public HubData(Class objClass) {
+	public HubData(Class<TYPE> objClass) {
 		this(objClass, 5);
 	}
     
@@ -118,7 +118,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
 	 * @param size          the initial capacity of the vector
 	 * @param incrementSize the growth increment for the vector
 	 */
-	public HubData(Class objClass, int size, int incrementSize) {
+	public HubData(Class<TYPE> objClass, int size, int incrementSize) {
         int x = Math.max(1, incrementSize);
         x = Math.min(100, x);
         vector = new Vector(size, x);
@@ -148,7 +148,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
     }
     
     //qqqqqq add javadoc
-	public void setVector(Vector v) {
+	public void setVector(Vector<TYPE> v) {
 		vector = v;
 	}
     
@@ -158,7 +158,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
      *
      * @return the add-tracking vector, or {@code null}
      */
-    public Vector getVecAdd() {
+    public Vector<TYPE> getVecAdd() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return null;
         return hdx.vecAdd;
@@ -170,7 +170,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
      *
      * @param vecAdd the vector of added objects
      */
-    public void setVecAdd(Vector vecAdd) {
+    public void setVecAdd(Vector<TYPE> vecAdd) {
         if (hubDatax != null || vecAdd != null) {
             getHubDatax().vecAdd = vecAdd;
         }
@@ -182,7 +182,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
      *
      * @return the remove-tracking vector, or {@code null}
      */
-    public Vector getVecRemove() {
+    public Vector<TYPE> getVecRemove() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return null;
         return hdx.vecRemove;
@@ -194,7 +194,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
      *
      * @param vecRemove the vector of removed objects
      */
-    public void setVecRemove(Vector vecRemove) {
+    public void setVecRemove(Vector<TYPE> vecRemove) {
         if (hubDatax != null || vecRemove != null) {
             getHubDatax().vecRemove = vecRemove;
         }
@@ -342,7 +342,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
      * all-data-loading state, keyed by the HubData object and associated with
      * the owning thread.
      */
-    private static ConcurrentHashMap<HubData, Thread> hmLoadingAllData = new ConcurrentHashMap<HubData, Thread>(23, .85f);
+    private static ConcurrentHashMap<HubData<?>, Thread> hmLoadingAllData = new ConcurrentHashMap<HubData<?>, Thread>(23, .85f);
 
     /**
      * Returns whether the hub is currently in a “loading all data”

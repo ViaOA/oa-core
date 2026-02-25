@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
-import com.viaoa.graph.service.HubService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDataMaster;
 import com.viaoa.object.OACascade;
@@ -16,7 +14,6 @@ import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCallback;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.util.*;
 
@@ -29,8 +26,6 @@ public abstract class HubAddRemoveService {
     	if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
     	this.faHub = faHub;
 	}
-
-
 	
 	public <T extends OAObject> T remove(final Hub<T> thisHub, final int pos) {
 		return remove(thisHub, pos, false);
@@ -61,7 +56,7 @@ public abstract class HubAddRemoveService {
 	 * reference cleanup, and master/detail property adjustments.
 	 *
 	 * @param thisHub         the hub from which the object will be removed
-	 * @param obj             the object to remove
+	 * @param obj             the object to remove (OAObject, OAObjectKey, pkey value(s)) 
 	 * @param bForce          whether to force removal
 	 * @param bSendEvent      whether to send before/after remove events
 	 * @param bDeleting       whether the removal is part of a delete operation
@@ -186,10 +181,6 @@ public abstract class HubAddRemoveService {
 	}
 
 	
-	
-	
-	
-	
 	/**
 	 * Determines whether the specified object can be removed from the hub and
 	 * returns a descriptive message if removal is not allowed.
@@ -199,6 +190,7 @@ public abstract class HubAddRemoveService {
 	 * @param checkType the callback check type
 	 * @return a message describing why removal is not allowed, or {@code null} if allowed
 	 */
+	@SuppressWarnings({"unchecked"})
 	public <T extends OAObject> String getCantRemoveMessage(final Hub<T> thisHub, final T obj, final int checkType) {
 		if (thisHub == null) {
 			return "hub is null";
@@ -209,7 +201,7 @@ public abstract class HubAddRemoveService {
 		}
 
 		if (obj != null) {
-			final Class c = obj.getClass();
+			final Class<T> c = (Class<T>) obj.getClass();
 			
 			if (thisHub.getObjectClass() == null) {
 				callHubDataSetObjectClass(thisHub, c);
@@ -320,7 +312,7 @@ public abstract class HubAddRemoveService {
 	public void clear(final Hub<?> thisHub, final boolean bSetAOtoNull, final boolean bSendNewList) {
 		if (!callRemoteThreadIsRemoteThread() && bSendNewList) {
 			OAObjectCallback eq = callObjectCallbackGetVerifyRemoveAllObjectCallback(thisHub, OAObjectCallback.CHECK_CallbackMethod);
-			if (!eq.getAllowed()) {
+			if (eq != null && !eq.getAllowed()) {
 				String s = eq.getResponse();
 				if (OAString.isEmpty(s)) {
 					s = "Cant clear, OAObjectCallback allowRemoveAll retured false";
@@ -354,7 +346,7 @@ public abstract class HubAddRemoveService {
 	 * @param bSendNewList whether to send a new-list event
 	 * @return {@code true} if the hub was cleared, otherwise {@code false}
 	 */
-	private boolean _clear(final Hub thisHub, final boolean bSetAOtoNull, final boolean bSendNewList) {
+	private <T extends OAObject> boolean _clear(final Hub<T> thisHub, final boolean bSetAOtoNull, final boolean bSendNewList) {
 		if (thisHub.getSharedHub() != null) {
 			return _clear(thisHub.getSharedHub(), bSetAOtoNull, bSendNewList);
 		}
@@ -386,15 +378,15 @@ public abstract class HubAddRemoveService {
 		}
 
 		// 20160615
-		OAObject[] objs = thisHub.toArray();
+		T[] objs = thisHub.toArray();
 		faHub.getHubData(thisHub).getVector().removeAllElements();
 		
 		boolean bIsDeleting = callThreadLocalIsDeleting(thisHub);
 		if (!bIsDeleting && (faHub.getHubDataMaster(thisHub).getTrackChanges() || faHub.getHubData(thisHub).getTrackChanges())) {
-			Vector vecRemove = faHub.getHubData(thisHub).getVecRemove();
+			Vector<T> vecRemove = faHub.getHubData(thisHub).getVecRemove();
 			final boolean bWasEmpty = vecRemove == null ? true : vecRemove.size() == 0;
-			for (Object obj : objs) {
-				Vector vx = faHub.getHubData(thisHub).getVecAdd();
+			for (T obj : objs) {
+				Vector<T> vx = faHub.getHubData(thisHub).getVecAdd();
 				if (vx != null && vx.removeElement(obj)) {
 					// no-op
 				} else {
@@ -426,27 +418,6 @@ public abstract class HubAddRemoveService {
 				remove(thisHub, obj, false, false, bIsDeleting, bSetAOtoNull, true, true);
 			}
 		}
-
-		/*was
-		Object objLast = null;
-		for (int pos=0 ; ; ) {
-		    Object obj = thisHub.elementAt(pos);
-		    if (obj == null) break;
-
-		    if (obj == objLast) {
-		        // object was not deleted
-		        pos++;
-		        continue;
-		    }
-		    objLast = obj;
-
-		    // 20140422 set to false, since clients will now have clear msg
-		    remove(thisHub, obj, false,
-		            false, false, bSetAOtoNull,
-		            true, true); // dont force, dont send remove events
-		    //was: remove(thisHub, ho, false, bSendEvent, false, bSetAOtoNull, bSetAOtoNull, true); // dont force, dont send remove events
-		}
-		*/
 		return true;
 	}
 
@@ -526,7 +497,7 @@ public abstract class HubAddRemoveService {
 		}
 
 		if (obj != null) {
-			final Class c = obj.getClass();
+			final Class<T> c = (Class<T>) obj.getClass();
 			
 			if (faHub.getHubData(thisHub).getObjClass() == null) {
 				callHubDataSetObjectClass(thisHub, c);
@@ -671,7 +642,7 @@ public abstract class HubAddRemoveService {
      */
 	private <T extends OAObject> boolean _add(final Hub<T> thisHub, final T obj, final boolean bIsLoading, final boolean bAlreadyCalledContains) {
 		if (thisHub.getObjectClass() == null || thisHub.getObjectClass().equals(OAObject.class)) {
-			Class c = obj.getClass();
+			Class<T> c = (Class<T>) obj.getClass();
 			if (thisHub.getObjectClass() == null || !c.equals(OAObject.class)) {
 				callHubDataSetObjectClass(thisHub, c);
 			}
@@ -798,7 +769,7 @@ public abstract class HubAddRemoveService {
 	 * @param thisHub the hub containing the object
 	 * @param obj     the object to reposition
 	 */
-	public void sortMove(final Hub thisHub, final Object obj) {
+	public void sortMove(final Hub<?> thisHub, final Object obj) {
 		for (int i = 0; i < 5; i++) {
 			try {
 				int pos = thisHub.getPos(obj);
@@ -936,7 +907,7 @@ public abstract class HubAddRemoveService {
 	 */
 	private <T extends OAObject> int _insert(final Hub<T> thisHub, final T obj, int pos) {
 		if (thisHub.getObjectClass() == null || thisHub.getObjectClass().equals(OAObject.class)) {
-			Class c = obj.getClass();
+			Class<T> c = (Class<T>) obj.getClass();
 			if (thisHub.getObjectClass() == null || !c.equals(OAObject.class)) {
 				callHubDataSetObjectClass(thisHub, c);
 			}
@@ -1366,203 +1337,118 @@ public abstract class HubAddRemoveService {
 	}
 	
 	
-	
-	
-	
-	@OAParentProvided (example = "srvcObject.getOAObjectHubService().addHub")
-	public abstract <T extends OAObject> boolean callObjectHubAddHub(T oaObj, Hub<T> hub);
-	
-	@OAParentProvided (example = "srvcObject.getOAObjectHubService().removeHub")
-	public abstract <T extends OAObject> void callObjectHubRemoveHub(final T oaObj, Hub<T> hub, boolean bIsOnHubFinalize);
-	
-	@OAParentProvided (example = "srvcObject.getOAObjectCallbackService().getAllowRemoveObjectCallback")
+	// ObjectCallback
 	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetAllowRemoveObjectCallback(final Hub<T> hub, final T objRemove, final int checkType);
-
-	@OAParentProvided (example = "srvcObject.getOAObjectCallbackService().getVerifyRemoveObjectCallback")
 	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyRemoveObjectCallback(final Hub<T> hub, final T objRemove, final int checkType);
-	
-	@OAParentProvided (example = "srvcObject.getOAObjectCallbackService().getAllowRemoveAllObjectCallback")
 	public abstract OAObjectCallback callObjectCallbackGetAllowRemoveAllObjectCallback(final Hub<?> hub, final int checkType);
-	
-	@OAParentProvided (example = "srvcObject.getOAObjectCallbackService().getVerifyRemoveAllObjectCallback")
 	public abstract OAObjectCallback callObjectCallbackGetVerifyRemoveAllObjectCallback(final Hub<?> hub, final int checkType);
-
-	@OAParentProvided (example = "srvcObject.getOAObjectCallbackService().getAllowAddObjectCallback")
 	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetAllowAddObjectCallback(final Hub<T> hub, T objAdd, final int checkType);
-
-	@OAParentProvided (example = "srvcObject.getOAObjectCallbackService().getVerifyAddObjectCallback")
 	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyAddObjectCallback(final Hub<T> hub, final T oaObj, final int checkType);
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
+	// ObjectDelete
+	public abstract void callObjectDeleteDelete(final OAObject oaObj, OACascade cascade);	
+
+	// ObjectDS
+	public abstract void callObjectDSRemoveReference(OAObject oaObj, OALinkInfo li);
+	
+	// ObjectHub
+	public abstract <T extends OAObject> boolean callObjectHubAddHub(T oaObj, Hub<T> hub);
+	public abstract <T extends OAObject> void callObjectHubRemoveHub(final T oaObj, Hub<T> hub, boolean bIsOnHubFinalize);
+
+	// ObjectInfo
 	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi); 
-
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getRecursiveLinkInfo")
 	public abstract OALinkInfo callObjectInfoGetRecursiveLinkInfo(OAObjectInfo thisOI, int type);
-	
-	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().setProperty")
-	public abstract void callObjectReflectSetProperty(final OAObject oaObj, String propName, Object value, final String fmt);
-
-	
-	@OAParentProvided (example = "srvcHub.getHubDataService().getObjectAt")
-	public abstract <T extends OAObject> T callHubDataGetObjectAt(Hub<T> thisHub, int pos);
-
-	@OAParentProvided (example = "srvcHub.getRealObject")
-	public abstract <T extends OAObject> T callHubFindGetRealObject(Hub<T> hub, Object object); //qqqqqqq Object can be T, OAObjectKey, pkey value
-
-	@OAParentProvided (example = "srvcHub.getHubDataService().getPos")
-	public abstract <T extends OAObject> int callHubDataGetPos(final Hub<T> thisHub, T object, final boolean adjustMaster, final boolean bUpdateLink);
-
-	@OAParentProvided (example = "srvcHub.getHubEventService().fireBeforeRemoveEvent")
-	public abstract <T extends OAObject> void callHubEventFireBeforeRemoveEvent(Hub<T> thisHub, T obj, int pos);
-
-	@OAParentProvided (example = "srvcHub.getHubCSService().removeFromHub")
-	public abstract <T extends OAObject> void callHubCSRemoveFromHub(Hub<T> thisHub, T obj, int pos);
-
-	@OAParentProvided (example = "srvcHub.getHubDataService()._remove")
-	public abstract <T extends OAObject> int callHubData_remove(Hub<T> thisHub, T obj, boolean bDeleting, boolean bIsRemovingAll);
-
-	@OAParentProvided (example = "srvcHub.getHubShareService().setSharedHubsAfterRemove")
-	public abstract <T extends OAObject> void callHubShareSetSharedHubsAfterRemove(Hub<T> thisHub, T objRemoved, int posRemoved);
-
-	@OAParentProvided (example = "srvcHub.getHubDetailService().setPropertyToMasterHub")
-	public abstract <T extends OAObject> void callHubDetailSetPropertyToMasterHub(Hub<T> thisHub, T detailObject, OAObject objMaster);
-
-	@OAParentProvided (example = "srvcHub.getHubEventService().fireAfterRemoveEvent")
-	public abstract <T extends OAObject> void callHubEventFireAfterRemoveEvent(Hub<T> thisHub, final T obj, int pos);
-
-	@OAParentProvided (example = "srvcHub.setReferenceable")
-	public abstract void callHubStatusSetReferenceable(Hub<?> hub, boolean bReferenceable);
-
-	@OAParentProvided (example = "srvcHub.setObjectClass")
-	public abstract <T extends OAObject> void callHubDataSetObjectClass(Hub<T> thisHub, Class<T> objClass);
-
-	@OAParentProvided (example = "srvcHub.getHubDetailService().getDataMaster")
-	public abstract HubDataMaster callHubDetailGetDataMaster(final Hub<?> thisHub, boolean bIncludedFilteredHub);
-	public abstract HubDataMaster callHubDetailGetDataMaster(final Hub<?> thisHub);
-	
-	
-	@OAParentProvided (example = "srvcHub.getHubSelectService().cancelSelect")
-	public abstract void callHubSelectCancelSelect(Hub<?> thisHub, boolean bRemoveSelect);
-
-	@OAParentProvided (example = "srvcHub.getHubEventService().fireBeforeRemoveAllEvent")
-	public abstract void callHubEventFireBeforeRemoveAllEvent(Hub<?> thisHub);
-
-	@OAParentProvided (example = "srvcHub.getHubCSService().removeAllFromHub")
-	public abstract void callHubCSRemoveAllFromHub(Hub<?> thisHub);
-
-	@OAParentProvided (example = "srvcHub.getHubDataService().createVecRemove")
-	public abstract <T extends OAObject> Vector<T> callHubDataCreateVecRemove(Hub<T> thisHub);
-
-	@OAParentProvided (example = "srvcHub.getHubDataService().setChanged")
-	public abstract void callHubStatusSetChanged(Hub<?> thisHub, boolean bChanged);
-
-	@OAParentProvided (example = "srvcHub.getHubShareService().setSharedHubsAfterRemoveAll")
-	public abstract void callHubShareSetSharedHubsAfterRemoveAll(Hub<?> thisHub);
-
-	@OAParentProvided (example = "srvcHub.getHubEventService().fireOnNewListEvent")
-	public abstract void callHubEventFireOnNewListEvent(Hub<?> thisHub, boolean bAll);
-
-	@OAParentProvided (example = "srvcHub.getHubEventService().fireAfterRemoveAllEvent")
-	public abstract void callHubEventFireAfterRemoveAllEvent(Hub<?> thisHub);
-
-	@OAParentProvided (example = "srvcHub.verifyUniqueProperty")
-	public abstract <T extends OAObject> boolean callHubVerifyUniqueProperty(final Hub<T> thisHub, final T object);
-
-	@OAParentProvided (example = "srvcHub.getHubDetailService().isRecursiveMasterDetail")
-	public abstract boolean callHubDetailIsRecursiveMasterDetail(Hub<?> thisHub);
-	
-	@OAParentProvided (example = "srvcHub.getHubDetailService().getMasterObject")
-	public abstract OAObject callHubDetailGetMasterObject(Hub<?> thisHub);
-
-	@OAParentProvided (example = "srvcHub.getHubEventService().fireBeforeAddEvent")
-	public abstract <T extends OAObject> void callHubEventFireBeforeAddEvent(Hub<T> thisHub, T obj, int pos);
-
-	@OAParentProvided (example = "srvcHub.getHubCSService().addToHub")
-	public abstract <T extends OAObject> void callHubCSAddToHub(final Hub<T> thisHub, final T thisObj);
-
-	@OAParentProvided (example = "srvcHub.getHubDataService().contains")
-	public abstract <T extends OAObject> boolean callHubDataContains(Hub<T> hub, T obj, final boolean bJustAdded);
-
-	@OAParentProvided (example = "srvcHub.getHubSelectService().getSelectWhereHub")
-	public abstract <T extends OAObject> Hub<T> callHubSelectGetSelectWhereHub(Hub<T> thisHub);
-
-	@OAParentProvided (example = "srvcHub.getHubSelectService().getSelectWhereHubPropertyPath")
-	public abstract String callHubSelectGetSelectWhereHubPropertyPath(Hub<?> thisHub);
-	
-	@OAParentProvided (example = "srvcHub.getHubEventService().fireAfterAddEvent")
-	public abstract <T extends OAObject> void callHubEventFireAfterAddEvent(Hub<T> thisHub, final T obj, int pos);
-
-	@OAParentProvided (example = "srvcHub.getHubDataService()._add")
-	public abstract <T extends OAObject> boolean callHubData_add(Hub<T> thisHub, T obj, boolean bHasLock, boolean bCheckContains);
-
-	@OAParentProvided (example = "srvcHub.getHubEventService().fireBeforeMoveEvent")
-	public abstract void callHubEventFireBeforeMoveEvent(Hub<?> thisHub, int fromPos, int toPos);
-
-	@OAParentProvided (example = "srvcHub.getHubCSService().moveObjectInHub")
-	public abstract void callHubCSMoveObjectInHub(Hub<?> thisHub, int posFrom, int posTo);
-
-	@OAParentProvided (example = "srvcHub.getHubDataService()._move")
-	public abstract <T extends OAObject> void callHubData_move(Hub<T> thisHub, T obj, int posFrom, int posTo);
-	
-	@OAParentProvided (example = "srvcHub.getHubEventService().fireAfterMoveEvent")
-	public abstract void callHubEventFireAfterMoveEvent(Hub<?> thisHub, int fromPos, int toPos);
-
-	@OAParentProvided (example = "srvcHub.getHubEventService().fireBeforeInsertEvent")
-	public abstract <T extends OAObject> void callHubEventFireBeforeInsertEvent(Hub<T> thisHub, T obj, int pos);
-
-	@OAParentProvided (example = "srvcHub.getHubCSService().insertInHub")
-	public abstract <T extends OAObject> boolean callHubCSInsertInHub(Hub<T> thisHub, T obj, int pos);
-
-	@OAParentProvided (example = "srvcHub.getHubDataService()._insert")
-	public abstract <T extends OAObject> boolean callHubData_insert(Hub<T> thisHub, T obj, int pos, boolean bIsLocked);
-
-	@OAParentProvided (example = "srvcHub.getHubEventService().fireAfterInsertEvent")
-	public abstract <T extends OAObject> void callHubEventFireAfterInsertEvent(Hub<T> thisHub, final T obj, int pos);
-
-	@OAParentProvided (example = "srvcHub.getHubDataService().getAddedObjects")
-	public abstract <T extends OAObject> T[] callHubDataGetAddedObjects(Hub<T> thisHub);
-
-	@OAParentProvided (example = "srvcHub.getHubDataService().getRemovedObjects")
-	public abstract <T extends OAObject> T[] callHubDataGetRemovedObjects(Hub<T> thisHub);
-
-	@OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster")
-	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
-
-	
-	@OAParentProvided (example = "srvcThreadLocal.isDeleting")
-	public abstract boolean callThreadLocalIsDeleting(Object obj);
-	
-	@OAParentProvided (example = "srvcThreadLocal.isLoading")
-	public abstract boolean callThreadLocalIsLoading();
-	
-	@OAParentProvided (example = "srvcThreadLocal.lock")
-	public abstract void callThreadLocalLock(Object object);
-	
-	@OAParentProvided (example = "srvcThreadLocal.unlock")
-	public abstract void callThreadLocalUnlock(Object object);
-	
-	@OAParentProvided (example = "srvcRemoteThread.isRemoteThread")
-	public abstract boolean callRemoteThreadIsRemoteThread();
-
-	@OAParentProvided (example = "srvcRemoteThread.startNextThread")
-	public abstract void callRemoteThreadStartNextThread();
-
-	@OAParentProvided (example = "srvcRemoteThread.setStartedNextThread")
-	public abstract void callRemoteThreadSetStartedNextThread(boolean b);
-
-
 	public abstract Method callObjectInfoGetMethod(OALinkInfo li);
 	public abstract Method callObjectInfoGetMethod(Class<?> clazz, String methodName);
+	
+	// ObjectReflect
+	public abstract void callObjectReflectSetProperty(final OAObject oaObj, String propName, Object value, final String fmt);
 	public abstract Object callObjectReflectGetProperty(OAObject oaObj, String propPath);
-	public abstract void callObjectDSRemoveReference(OAObject oaObj, OALinkInfo li);
-	public abstract void callObjectDeleteDelete(final OAObject oaObj, OACascade cascade);	
+	public abstract Object callObjectReflectGetRawReference(OAObject oaObj, String name);	
+
+	// ObjectSave
 	public abstract void callObjectSaveSave(OAObject oaObj, int iCascadeRule, OACascade cascade);	
-	public abstract boolean callSyncIsServer();
+	
+	// HubAddRemove
 	public abstract <T extends OAObject>  T[] callHubAddRemoveGetAddedObjects(Hub<T> thisHub);	
 	public abstract <T extends OAObject> T[] callHubAddRemoveGetRemovedObjects(Hub<T> thisHub);
-	public abstract Object callObjectReflectGetRawReference(OAObject oaObj, String name);	
+	
+	// HubCS
+	public abstract <T extends OAObject> void callHubCSRemoveFromHub(Hub<T> thisHub, T obj, int pos);
+	public abstract void callHubCSRemoveAllFromHub(Hub<?> thisHub);
+	public abstract <T extends OAObject> void callHubCSAddToHub(final Hub<T> thisHub, final T thisObj);
+	public abstract void callHubCSMoveObjectInHub(Hub<?> thisHub, int posFrom, int posTo);
+	public abstract <T extends OAObject> boolean callHubCSInsertInHub(Hub<T> thisHub, T obj, int pos);
+	
+	// HubData
+	public abstract <T extends OAObject> T callHubDataGetObjectAt(Hub<T> thisHub, int pos);
+	public abstract <T extends OAObject> int callHubDataGetPos(final Hub<T> thisHub, T object, final boolean adjustMaster, final boolean bUpdateLink);
+	public abstract <T extends OAObject> int callHubData_remove(Hub<T> thisHub, T obj, boolean bDeleting, boolean bIsRemovingAll);
+	public abstract <T extends OAObject> void callHubDataSetObjectClass(Hub<T> thisHub, Class<T> objClass);
+	public abstract <T extends OAObject> Vector<T> callHubDataCreateVecRemove(Hub<T> thisHub);
+	public abstract <T extends OAObject> boolean callHubDataContains(Hub<T> hub, T obj, final boolean bJustAdded);
+	public abstract <T extends OAObject> boolean callHubData_add(Hub<T> thisHub, T obj, boolean bHasLock, boolean bCheckContains);
+	public abstract <T extends OAObject> void callHubData_move(Hub<T> thisHub, T obj, int posFrom, int posTo);
+	public abstract <T extends OAObject> boolean callHubData_insert(Hub<T> thisHub, T obj, int pos, boolean bIsLocked);
+	public abstract <T extends OAObject> T[] callHubDataGetAddedObjects(Hub<T> thisHub);
+	public abstract <T extends OAObject> T[] callHubDataGetRemovedObjects(Hub<T> thisHub);
 	public abstract <T extends OAObject> void callHubDataRemoveFromAddedList(Hub<T> thisHub, T obj);
 	public abstract <T extends OAObject> void callHubDataRemoveFromRemovedList(Hub<T> thisHub, T obj);
-	public abstract void callHubDSUpdateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propFromMaster);
 
+	// HubDetail
+	public abstract HubDataMaster callHubDetailGetDataMaster(final Hub<?> thisHub, boolean bIncludedFilteredHub);
+	public abstract HubDataMaster callHubDetailGetDataMaster(final Hub<?> thisHub);
+	public abstract <T extends OAObject> void callHubDetailSetPropertyToMasterHub(Hub<T> thisHub, T detailObject, OAObject objMaster);
+	public abstract boolean callHubDetailIsRecursiveMasterDetail(Hub<?> thisHub);
+	public abstract OAObject callHubDetailGetMasterObject(Hub<?> thisHub);
+	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
+	
+	// HubDS
+	public abstract void callHubDSUpdateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propFromMaster);
+	
+	// HubEvent
+	public abstract <T extends OAObject> void callHubEventFireBeforeRemoveEvent(Hub<T> thisHub, T obj, int pos);
+	public abstract <T extends OAObject> void callHubEventFireAfterRemoveEvent(Hub<T> thisHub, final T obj, int pos);
+	public abstract void callHubEventFireBeforeRemoveAllEvent(Hub<?> thisHub);
+	public abstract void callHubEventFireOnNewListEvent(Hub<?> thisHub, boolean bAll);
+	public abstract void callHubEventFireAfterRemoveAllEvent(Hub<?> thisHub);
+	public abstract <T extends OAObject> void callHubEventFireBeforeAddEvent(Hub<T> thisHub, T obj, int pos);
+	public abstract <T extends OAObject> void callHubEventFireAfterAddEvent(Hub<T> thisHub, final T obj, int pos);
+	public abstract void callHubEventFireBeforeMoveEvent(Hub<?> thisHub, int fromPos, int toPos);
+	public abstract void callHubEventFireAfterMoveEvent(Hub<?> thisHub, int fromPos, int toPos);
+	public abstract <T extends OAObject> void callHubEventFireBeforeInsertEvent(Hub<T> thisHub, T obj, int pos);
+	public abstract <T extends OAObject> void callHubEventFireAfterInsertEvent(Hub<T> thisHub, final T obj, int pos);
+
+	// HubFind
+	public abstract <T extends OAObject> T callHubFindGetRealObject(Hub<T> hub, Object object); //qqqqqqq Object can be T, OAObjectKey, pkey value
+	
+	// HubShare
+	public abstract <T extends OAObject> void callHubShareSetSharedHubsAfterRemove(Hub<T> thisHub, T objRemoved, int posRemoved);
+	public abstract void callHubShareSetSharedHubsAfterRemoveAll(Hub<?> thisHub);
+	
+	// HubStatus
+	public abstract void callHubStatusSetReferenceable(Hub<?> hub, boolean bReferenceable);
+	public abstract void callHubStatusSetChanged(Hub<?> thisHub, boolean bChanged);
+	
+	// HubSelect
+	public abstract void callHubSelectCancelSelect(Hub<?> thisHub, boolean bRemoveSelect);
+	public abstract <T extends OAObject> Hub<T> callHubSelectGetSelectWhereHub(Hub<T> thisHub);
+	public abstract String callHubSelectGetSelectWhereHubPropertyPath(Hub<?> thisHub);
+	
+	// HubVerify
+	public abstract <T extends OAObject> boolean callHubVerifyUniqueProperty(final Hub<T> thisHub, final T object);
+
+	// ThreadLocal
+	public abstract boolean callThreadLocalIsDeleting(Object obj);
+	public abstract boolean callThreadLocalIsLoading();
+	public abstract void callThreadLocalLock(Object object);
+	public abstract void callThreadLocalUnlock(Object object);
+	
+	// RemoteThread
+	public abstract boolean callRemoteThreadIsRemoteThread();
+	public abstract void callRemoteThreadStartNextThread();
+	public abstract void callRemoteThreadSetStartedNextThread(boolean b);
+	
+	// Sync
+	public abstract boolean callSyncIsServer();
 }

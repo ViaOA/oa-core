@@ -4,7 +4,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
 
@@ -1126,77 +1125,77 @@ public abstract class HubDataService {
         return bx;
     }
 
-	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().getKey")
+	// @OAParentProvided (example = "srvcObject.getOAObjectKeyService().getKey")
 	public abstract OAObjectKey callObjectKeyGetKey(OAObject oaObj);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().isForSameOAObject")
+	// @OAParentProvided (example = "srvcObject.getOAObjectKeyService().isForSameOAObject")
 	public abstract boolean callObjectKeyIsForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey ok1, final OAObjectKey ok2);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().getObject")
-	public abstract OAObject callObjectReflectGetObject(Class clazz, Object key);
+	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().getObject")
+	public abstract <T extends OAObject> T callObjectReflectGetObject(Class<T> clazz, Object key);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectHubService().addHub")
+	// @OAParentProvided (example = "srvcObject.getOAObjectHubService().addHub")
 	public abstract <T extends OAObject> boolean callObjectHubAddHub(T oaObj, Hub<T> hub);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getRecursiveLinkInfo")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getRecursiveLinkInfo")
 	public abstract OALinkInfo callObjectInfoGetRecursiveLinkInfo(OAObjectInfo thisOI, int type);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
 	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().getProperty")
+	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().getProperty")
 	public abstract Object callObjectReflectGetProperty(OAObject oaObj, String propPath);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().get")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().get")
 	public abstract <T extends OAObject> T callObjectCacheGet(Class<T> clazz, Object key);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectHubService().isAlreadyInHub")
+	// @OAParentProvided (example = "srvcObject.getOAObjectHubService().isAlreadyInHub")
 	public abstract <T extends OAObject> boolean callObjectHubIsAlreadyInHub(T oaObj, Hub<T> hubFind);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectKeyService().createObjectKey")
-	public abstract OAObjectKey callObjectKeyCreateObjectKey(final Class c, final Object ...ids);
+	// @OAParentProvided (example = "srvcObject.getOAObjectKeyService().createObjectKey")
+	public abstract OAObjectKey callObjectKeyCreateObjectKey(final Class<? extends OAObject> c, final Object ...ids);
 
 	
 	
-	@OAParentProvided (example = "srvcHub.getHubCSService().clearHubChanges")
+	// @OAParentProvided (example = "srvcHub.getHubCSService().clearHubChanges")
 	public abstract boolean callHubCSClearHubChanges(Hub<?> thisHub);
 
-	@OAParentProvided (example = "srvcHub.getHubDetailService().setPropertyToMasterHub")
+	// @OAParentProvided (example = "srvcHub.getHubDetailService().setPropertyToMasterHub")
 	public abstract <T extends OAObject> void callHubDetailSetPropertyToMasterHub(Hub<T> thisHub, T detailObject, OAObject objMaster);
 
-	@OAParentProvided (example = "srvcHub.getHubSelectService().isMoreData")
+	// @OAParentProvided (example = "srvcHub.getHubSelectService().isMoreData")
 	public abstract boolean callHubSelectIsMoreData(Hub<?> thisHub);
 
-	@OAParentProvided (example = "srvcHub.getHubSelectService().fetchMore")
+	// @OAParentProvided (example = "srvcHub.getHubSelectService().fetchMore")
 	public abstract int callHubSelectFetchMore(Hub<?> thisHub);
 
-	@OAParentProvided (example = "srvcHub.getRealObject")
+	// @OAParentProvided (example = "srvcHub.getRealObject")
 	public abstract <T extends OAObject> T callHubFindGetRealObject(Hub<T> hub, Object object);
 
-	@OAParentProvided (example = "srvcHub.getHubShareService().setSharedHub")
+	// @OAParentProvided (example = "srvcHub.getHubShareService().setSharedHub")
 	public abstract <T extends OAObject> void callHubShareSetSharedHub(Hub<T> thisHub, Hub<T> sharedMasterHub, boolean shareActiveObject);
 
-	@OAParentProvided (example = "srvcHub.getHubShareService().setSharedHub")
+	// @OAParentProvided (example = "srvcHub.getHubShareService().setSharedHub")
 	public abstract <T extends OAObject> void callHubShareSetSharedHub(Hub<T> thisHub, Hub<T> sharedMasterHub, boolean shareActiveObject, Object newLinkValue);
 
-	@OAParentProvided (example = "srvcHub.getHubDetailService().setMasterHubActiveObject")
+	// @OAParentProvided (example = "srvcHub.getHubDetailService().setMasterHubActiveObject")
 	public abstract <T extends OAObject> boolean callHubDetailSetMasterHubActiveObject(Hub<T> thisHub, T detailObject, boolean bUpdateLink);
 
 	
-	@OAParentProvided (example = "srvcThreadLocal.lock")
+	// @OAParentProvided (example = "srvcThreadLocal.lock")
 	public abstract void callThreadLocalLock(Object object);
 	
-	@OAParentProvided (example = "srvcThreadLocal.unlock")
+	// @OAParentProvided (example = "srvcThreadLocal.unlock")
 	public abstract void callThreadLocalUnlock(Object object);
 
-	@OAParentProvided (example = "srvcRemoteThread.startNextThread")
+	// @OAParentProvided (example = "srvcRemoteThread.startNextThread")
 	public abstract void callRemoteThreadStartNextThread();
 
-	@OAParentProvided (example = "srvcThreadLocal.isLoading")
+	// @OAParentProvided (example = "srvcThreadLocal.isLoading")
 	public abstract boolean callThreadLocalIsLoading();
 	
 
-	@OAParentProvided (example = "srvcSync.isServer")
+	// @OAParentProvided (example = "srvcSync.isServer")
 	public abstract boolean callSyncIsServer();
 
 	public abstract int callHubDataGetCurrentSize(Hub<?> thisHub);

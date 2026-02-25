@@ -1,10 +1,8 @@
 package com.viaoa.graph.service.object;
 
-
 import java.lang.reflect.Method;
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.object.*;
 import com.viaoa.scheduler.OAScheduler;
 import com.viaoa.util.OADate;
@@ -123,7 +121,7 @@ public abstract class OAObjectSchedulerService {
     }
 
     
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getObjectInfo")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getObjectInfo")
 	public abstract OAObjectInfo callInfoGetObjectInfo(OAObject obj); 
 
 }

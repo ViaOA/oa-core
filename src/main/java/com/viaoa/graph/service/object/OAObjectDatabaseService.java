@@ -355,10 +355,10 @@ public abstract class OAObjectDatabaseService {
 	}
 	
 
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz);	
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().getHubObjectClass(oamany, m)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().getHubObjectClass(oamany, m)")
 	public abstract Class<?> callAnnotationGetHubObjectClass(OAMany annotation, Method method);	
     
 }

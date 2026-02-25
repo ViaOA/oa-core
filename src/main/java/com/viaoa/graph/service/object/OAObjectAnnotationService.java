@@ -19,7 +19,6 @@ import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAMethod;
 import com.viaoa.annotation.OAObjCallback;
 import com.viaoa.annotation.OAOne;
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATriggerMethod;
 import com.viaoa.hub.Hub;
@@ -1260,9 +1259,6 @@ public abstract class OAObjectAnnotationService {
 	}
 	
 	
-	
-	
-	
 //qqqqqqqq same methods are in OAObjectDatabaseService qqqqq find new home	
 	public String getPropertyName(String s) {
 		return getPropertyName(s, true);
@@ -1286,28 +1282,7 @@ public abstract class OAObjectAnnotationService {
 		return s;
 	}
 	
-
-
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="Resolve the Hub object class associated with a reflected Method (OAMany).", 
-		example = "srvcOAObjectReflect.getHubObjectClass(method)"
-	)
 	public abstract Class<?> callReflectGetHubObjectClass(Method method);
-
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "srvcObjectInfo.getOACalcInfo(oi, name)"
-	)
 	public abstract OACalcInfo callInfoGetCalcInfo(OAObjectInfo thisOI, String name);
-	
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "srvcObjectInfo.getOALinkInfo(oi, name)"
-	)
 	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
-	
-	
 }

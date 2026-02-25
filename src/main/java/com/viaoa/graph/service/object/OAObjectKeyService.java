@@ -6,7 +6,6 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OALinkInfo;
@@ -493,63 +492,63 @@ public abstract class OAObjectKeyService {
 		return null;
 	}
 
-	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().get")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().get")
 	public abstract <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().propertyKeyValueChanged")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().propertyKeyValueChanged")
 	public abstract void callCachePropertyKeyValueChanged(OAObject obj);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().get")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().get")
 	public abstract <T extends OAObject> T callCacheGet(Class<T> clazz, Object key);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().removeObject")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().removeObject")
 	public abstract void callCacheRemoveObject(final OAObject obj); 
 	
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectCSService().isWorkstation")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCSService().isWorkstation")
 	public abstract boolean callCSIsWorkstation(OAObject obj);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectCSService().getServerObject")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCSService().getServerObject")
 	public abstract <T extends OAObject> T callCSGetServerObject(Class<T> clazz, OAObjectKey key);
 	
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectDSService().isAssigningId")
+	// @OAParentProvided (example = "srvcObject.getOAObjectDSService().isAssigningId")
 	public abstract boolean callDSIsAssigningId(OAObject obj);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectDSService().allowIdChange")
+	// @OAParentProvided (example = "srvcObject.getOAObjectDSService().allowIdChange")
 	public abstract boolean callDSAllowIdChange(Class<? extends OAObject>  c);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectDSService().getObject")
+	// @OAParentProvided (example = "srvcObject.getOAObjectDSService().getObject")
 	public abstract <T extends OAObject> T callDSGetObject(OAObjectInfo oi, Class<T> clazz, OAObjectKey key);
 	
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
 	public abstract OAObjectInfo callInfogetObjectInfo(Class clazz); 
 
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().isIdProperty")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().isIdProperty")
 	public abstract boolean callInfoIsIdProperty(OAObjectInfo oi, String propertyName);
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getPropertyClass")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getPropertyClass")
 	public abstract Class<? extends OAObject> callInfoGetPropertyClass(OAObjectInfo oi, String propertyName);
 	
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getPropertyIdValues(obj)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getPropertyIdValues(obj)")
 	public abstract Object[] callObjectInfoGetPropertyIdValues(OAObject obj);
 
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().isReferenceObjectLoadedAndNotEmpty")
+	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().isReferenceObjectLoadedAndNotEmpty")
 	public abstract boolean callReflectIsReferenceObjectLoadedAndNotEmpty(OAObject oaObj, String propertyName);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().getProperty")
+	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().getProperty")
 	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath);
 
 	
-	@OAParentProvided (example = "srvcOAThreadLocal.isLoading")
+	// @OAParentProvided (example = "srvcOAThreadLocal.isLoading")
 	public abstract boolean callThreadLocalIsLoading();
 
-	@OAParentProvided (example = "srvcOAThreadLocal.getObjectCacheAddMode")
+	// @OAParentProvided (example = "srvcOAThreadLocal.getObjectCacheAddMode")
 	public abstract int callThreadLocalGetObjectCacheAddMode();
 	
-	@OAParentProvided (example = "srvcOARemoteThread.isRemoteThread()")
+	// @OAParentProvided (example = "srvcOARemoteThread.isRemoteThread()")
 	public abstract boolean callIsRemoteThread();
 }

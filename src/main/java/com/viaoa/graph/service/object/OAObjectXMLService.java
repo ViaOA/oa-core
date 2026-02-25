@@ -1,12 +1,12 @@
 package com.viaoa.graph.service.object;
 
+
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
@@ -323,24 +323,24 @@ public abstract class OAObjectXMLService {
 		return false;
 	}
 
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
 	public abstract OAObjectInfo callInfoGetOAObjectInfo(OAObject obj);
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectGuidService().getGuid")
+	// @OAParentProvided (example = "srvcObject.getOAObjectGuidService().getGuid")
 	public abstract UUID callGuidGetGuid(OAObject oaObj); 
 
-	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().getProperty")
+	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().getProperty")
 	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getPropertyNames")
+	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getPropertyNames")
 	public abstract String[] callPropertyGetPropertyNames(OAObject oaObj);
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
 	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName); 
 
-	@OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getProperty")
+	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getProperty")
 	public abstract Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef);
 
-	@OAParentProvided (example = "srvcHub.getHubXMLService().write")
+	// @OAParentProvided (example = "srvcHub.getHubXMLService().write")
 	public abstract void callHubXMLWrite(Hub thisHub, OAXMLWriter ow, final String tagName, int writeType, OACascade cascade);
 }

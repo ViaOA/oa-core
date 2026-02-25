@@ -3,7 +3,6 @@ package com.viaoa.graph.service.hub;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OACascade;
@@ -185,56 +184,56 @@ public abstract class HubDeleteService {
         thisHub.setChanged(false); // removes all vecAdd, vecRemove objects
     }
 
-	@OAParentProvided (example = "srvcObject.getOAObjectDeleteService().delete")
+	// @OAParentProvided (example = "srvcObject.getOAObjectDeleteService().delete")
 	public abstract void callObjectDeleteDelete(final OAObject oaObj, OACascade cascade);
     
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
 	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi);
 
-	@OAParentProvided (example = "srvcHub.getHubCSService().deleteAll")
+	// @OAParentProvided (example = "srvcHub.getHubCSService().deleteAll")
 	public abstract boolean callHubCSDeleteAll(Hub<?> thisHub);
 
-	@OAParentProvided (example = "srvcHub.getHubAddRemoveService().clear")
+	// @OAParentProvided (example = "srvcHub.getHubAddRemoveService().clear")
 	public abstract void callHubAddRemoveClear(final Hub<?> thisHub);
 	
-	@OAParentProvided (example = "srvcHub.getHubDataService().clearHubChanges")
+	// @OAParentProvided (example = "srvcHub.getHubDataService().clearHubChanges")
 	public abstract void callHubDataClearHubChanges(Hub<?> thisHub);
 
-	@OAParentProvided (example = "srvcHub.getHubAddRemoveService().remove")
+	// @OAParentProvided (example = "srvcHub.getHubAddRemoveService().remove")
 	public abstract <T extends OAObject> boolean callHubAddRemoveRemove(final Hub<T> thisHub, T obj, final boolean bForce,
 			final boolean bSendEvent, final boolean bDeleting, final boolean bSetAO,
 			final boolean bSetPropToMaster, final boolean bIsRemovingAll);
 
-	@OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster")
+	// @OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster")
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
 
-	@OAParentProvided (example = "srvcHub.getHubDetailService().getMasterObject")
+	// @OAParentProvided (example = "srvcHub.getHubDetailService().getMasterObject")
 	public abstract OAObject callHubDetailGetMasterObject(Hub<?> thisHub);
 
-	@OAParentProvided (example = "srvcHub.getHubDataService().createVecRemove")
+	// @OAParentProvided (example = "srvcHub.getHubDataService().createVecRemove")
 	public abstract <T extends OAObject> Vector<T> callHubDataCreateVecRemove(Hub<T> thisHub);
 
-	@OAParentProvided (example = "srvcHub.getHubDataService().setChanged")
+	// @OAParentProvided (example = "srvcHub.getHubDataService().setChanged")
 	public abstract void callHubStatusSetChanged(Hub<?> thisHub, boolean bChanged);
 
-	@OAParentProvided (example = "srvcHub._updateHubAddsAndRemoves")
+	// @OAParentProvided (example = "srvcHub._updateHubAddsAndRemoves")
 	public abstract void callHub_updateHubAddsAndRemoves(final Hub<?> thisHub, final int iCascadeRule, final OACascade cascade, final boolean bIsSaving);
 
 
 
-	@OAParentProvided (example = "srvcThreadLocal.setDeleting")
+	// @OAParentProvided (example = "srvcThreadLocal.setDeleting")
 	public abstract void callThreadLocalSetDeleting(Hub<?> hub, boolean b);
 
-	@OAParentProvided (example = "srvcThreadLocal.isDeleting")
+	// @OAParentProvided (example = "srvcThreadLocal.isDeleting")
 	public abstract boolean callThreadLocalIsDeleting(Hub<?> hub);
 
-	@OAParentProvided (example = "srvcThreadLocal.lock")
+	// @OAParentProvided (example = "srvcThreadLocal.lock")
 	public abstract void callThreadLocalLock(Hub<?> hub);
 
-	@OAParentProvided (example = "srvcThreadLocal.unlock")
+	// @OAParentProvided (example = "srvcThreadLocal.unlock")
 	public abstract void callThreadLocalUnlock(Hub<?> hub);
 
-	@OAParentProvided (example = "srvcRemoteThread.sendMessages")
+	// @OAParentProvided (example = "srvcRemoteThread.sendMessages")
 	public abstract void callRemoteThreadSendMessages(boolean b);
 
 

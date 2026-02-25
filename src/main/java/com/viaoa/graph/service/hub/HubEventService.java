@@ -6,7 +6,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
 import com.viaoa.util.*;
@@ -1384,64 +1383,64 @@ public abstract class HubEventService {
 	 * boolean canRemoveAll(Hub<?> thisHub) { return srvcObject.getOAObjectCallbackService().getAllowRemoveAll(thisHub); }
 	 */
 
-	@OAParentProvided (example = "srvcObject.getOAObjectCallbackService().getVerifyRemoveObjectCallback")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCallbackService().getVerifyRemoveObjectCallback")
 	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyRemoveObjectCallback(final Hub<T> hub, final T objRemove, final int checkType);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().fireAfterRemoveEvent")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().fireAfterRemoveEvent")
 	public abstract <T extends OAObject> void callObjectCacheFireAfterRemoveEvent(Hub<T> hub, T obj);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
-	public abstract OAObjectInfo callObjectInfoGetObjectInfo(Class clazz);
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
+	public abstract OAObjectInfo callObjectInfoGetObjectInfo(Class<?> clazz);
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
 	public abstract OAObjectInfo callObjectInfoGetObjectInfo(OAObject obj);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectCallbackService().getVerifyRemoveAllObjectCallback")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCallbackService().getVerifyRemoveAllObjectCallback")
 	public abstract OAObjectCallback callObjectCallbackGetVerifyRemoveAllObjectCallback(final Hub<?> hub, final int checkType);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().fireAfterAddEvent")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().fireAfterAddEvent")
 	public abstract <T extends OAObject> void callObjectCacheFireAfterAddEvent(Hub<T> hub, T obj);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectCallbackService().getVerifyAddObjectCallback")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCallbackService().getVerifyAddObjectCallback")
 	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyAddObjectCallback(final Hub<T> hub, final T oaObj, final int checkType);
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
 	public abstract OALinkInfo callObjectInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
 
-	@OAParentProvided (example = "srvcHub.getHubDetailService().getPropertyFromMasterToDetail")
+	// @OAParentProvided (example = "srvcHub.getHubDetailService().getPropertyFromMasterToDetail")
 	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub<?> thisHub);
 
-	@OAParentProvided (example = "srvcHub.verifyUniqueProperty")
+	// @OAParentProvided (example = "srvcHub.verifyUniqueProperty")
 	public abstract <T extends OAObject> boolean callHubVerifyUniqueProperty(final Hub<T> thisHub, final T object);
 
-	@OAParentProvided (example = "srvcHub.getHubDetailService().updateDetail")
-	public abstract void callHubDetailUpdateDetail(final Hub<?> thisHub, final HubDetail detail, final Hub detailHub, final boolean bUpdateLink);
+	// @OAParentProvided (example = "srvcHub.getHubDetailService().updateDetail")
+	public abstract void callHubDetailUpdateDetail(final Hub<?> thisHub, final HubDetail detail, final Hub<?> detailHub, final boolean bUpdateLink);
 
-	@OAParentProvided (example = "srvcHub.getHubShareService().getSharedWeakHubs")
+	// @OAParentProvided (example = "srvcHub.getHubShareService().getSharedWeakHubs")
 	public abstract <T extends OAObject> WeakReference<Hub<T>>[] callHubShareGetSharedWeakHubs(Hub<T> thisHub);
 
-	@OAParentProvided (example = "srvcHub.getHubDataService().incChangeCount")
+	// @OAParentProvided (example = "srvcHub.getHubDataService().incChangeCount")
 	public abstract void callHubDataIncChangeCount(Hub<?> thisHub);
 
-	@OAParentProvided (example = "srvcRemoteThread.isRemoteThread")
+	// @OAParentProvided (example = "srvcRemoteThread.isRemoteThread")
 	public abstract boolean callRemoteThreadIsRemoteThread();
 
-	@OAParentProvided (example = "srvcThreadLocal.addHubEvent")
+	// @OAParentProvided (example = "srvcThreadLocal.addHubEvent")
 	public abstract void callThreadLocalAddHubEvent(HubEvent he);
 
-	@OAParentProvided (example = "srvcThreadLocal.removeHubEvent")
+	// @OAParentProvided (example = "srvcThreadLocal.removeHubEvent")
 	public abstract void callThreadLocalRemoveHubEvent(HubEvent<?> he);
 
-	@OAParentProvided (example = "srvcThreadLocal.isLoading")
+	// @OAParentProvided (example = "srvcThreadLocal.isLoading")
 	public abstract boolean callThreadLocalIsLoading();		
 
-	@OAParentProvided (example = "srvcRemoteThread.shouldEventsBeQueued")
+	// @OAParentProvided (example = "srvcRemoteThread.shouldEventsBeQueued")
 	public abstract boolean callRemoteThreadShouldEventsBeQueued();
 
-	@OAParentProvided (example = "srvcRemoteThread.queueEvent")
+	// @OAParentProvided (example = "srvcRemoteThread.queueEvent")
 	public abstract boolean callRemoteThreadQueueEvent(Runnable r);
 
-	@OAParentProvided (example = "srvcThreadLocal.hasSentCalcPropertyChange")
+	// @OAParentProvided (example = "srvcThreadLocal.hasSentCalcPropertyChange")
 	public abstract <T extends OAObject> boolean callThreadLocalHasSentCalcPropertyChange(Hub<T> thisHub, T thisObj, String propertyName);
 	
 }

@@ -1,19 +1,14 @@
 package com.viaoa.graph.service.hub;
 
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Hashtable;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.*;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.util.OACompare;
-import com.viaoa.util.OAFilter;
 import com.viaoa.util.OANullObject;
 
 public abstract class HubPropertyService {

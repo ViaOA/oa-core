@@ -1,11 +1,9 @@
 package com.viaoa.graph.service.object;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.filter.OAQueryFilter;
 import com.viaoa.hub.Hub;
@@ -328,22 +326,22 @@ public abstract class OAObjectImportMatchService {
 		objThis.setProperty(liNext.getName(), objNext);
 	}
 
-    @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(c)")
+    // @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(c)")
 	public abstract OAObjectInfo callInfogetObjectInfo(Class<? extends OAObject> clazz);
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectCacheService().find(..)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().find(..)")
 	public abstract <T extends OAObject> T callCacheFind(Class<T> clazz, OAFinder<T, T> finder); 
 
-	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().createNewObject(..)")
+	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().createNewObject(..)")
 	public abstract <T extends OAObject> T callReflectCreateNewObject(Class<T> clazz);
 	
-	@OAParentProvided (example = "srvcOAThreadLocal.isLoading")
+	// @OAParentProvided (example = "srvcOAThreadLocal.isLoading")
 	public abstract boolean callThreadLocalIsLoading();
 
-	@OAParentProvided (example = "srvcOAThreadLocal.setLoading(..)")
+	// @OAParentProvided (example = "srvcOAThreadLocal.setLoading(..)")
 	public abstract boolean callThreadLocalSetLoading(boolean b);
 
-	@OAParentProvided (example = "srvcOAThreadLocal.getOAJackson()")
+	// @OAParentProvided (example = "srvcOAThreadLocal.getOAJackson()")
 	public abstract OAJson callThreadLocalGetOAJackson();
 }
 

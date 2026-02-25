@@ -39,7 +39,7 @@ public abstract class HubParentService {
 	private final Logger LOG = Logger.getLogger(HubParentService.class.getName());
 
 	private final HubInternalBridge faBridge = new HubInternalBridge();
-	private Hub.FriendAccess faHub;
+	private final Hub.FriendAccess faHub;
 	
 	private OAObjectService srvcObject;
 	private OASyncService srvcSync;
@@ -70,17 +70,16 @@ public abstract class HubParentService {
 	private HubStatusService srvcHubStatus;
 	private HubXMLService srvcHubXML;
 	
-	private boolean bInitialized;
-	public static final Boolean TRUE = Boolean.valueOf(true);
-	public static final Boolean FALSE = Boolean.valueOf(false);
+	public HubParentService() {
+		this.faHub = faBridge.getHubFriendAccess();
+	}
+	
 	
 	public void initialize(OAObjectService srvcObject, OASyncService srvcSync, OAThreadLocalService srvcThreadLocal, OARemoteThreadService srvcRemoteThread) {
     	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
     	if (srvcSync == null) throw new IllegalArgumentException("OASyncService can not be null");
     	if (srvcThreadLocal == null) throw new IllegalArgumentException("OAThreadLocalService can not be null");
     	if (srvcRemoteThread == null) throw new IllegalArgumentException("OARemoteThreadService can not be null");
-		
-		this.faHub = faBridge.getHubFriendAccess();
     	
     	this.srvcObject = srvcObject; 
 		this.srvcSync = srvcSync;
@@ -92,14 +91,14 @@ public abstract class HubParentService {
 	public HubAddRemoveService getHubAddRemoveService() {
 		if (srvcHubAddRemove != null) return srvcHubAddRemove;
 		
-		srvcHubAddRemove = new HubAddRemoveService(faBridge.getHubFriendAccess()) {
+		srvcHubAddRemove = new HubAddRemoveService(faHub) {
 			@Override
 			public void callThreadLocalLock(Object object) {
-				HubParentService.this.srvcThreadLocal.lock(object);;
+				HubParentService.this.srvcThreadLocal.lock(object);
 			}
 			@Override
 			public void callThreadLocalUnlock(Object object) {
-				HubParentService.this.srvcThreadLocal.unlock(object);;
+				HubParentService.this.srvcThreadLocal.unlock(object);
 			}
 			@Override
 			public boolean callThreadLocalIsLoading() {
@@ -323,7 +322,7 @@ public abstract class HubParentService {
 			}
 			@Override
 			public <T extends OAObject> void callHubCSAddToHub(Hub<T> thisHub, T thisObj) {
-				HubParentService.this.getHubCSService().addToHub(thisHub, thisObj);;				
+				HubParentService.this.getHubCSService().addToHub(thisHub, thisObj);
 			}
 			@Override
 			public void callRemoteThreadSetStartedNextThread(boolean b) {
@@ -396,7 +395,7 @@ public abstract class HubParentService {
 	public HubAOService getHubAOService() {
 		if (srvcHubAO != null) return srvcHubAO;
 		
-		srvcHubAO = new HubAOService(faBridge.getHubFriendAccess()) {
+		srvcHubAO = new HubAOService(faHub) {
 			@Override
 			public void callThreadLocalUnlock(Object object) {
 				HubParentService.this.srvcThreadLocal.unlock(object);				
@@ -459,14 +458,14 @@ public abstract class HubParentService {
 
 	public HubAutoMatchService getHubAutoMatchService() {
 		if (srvcHubAutoMatch != null) return srvcHubAutoMatch;
-		srvcHubAutoMatch = new HubAutoMatchService(faBridge.getHubFriendAccess()) {
+		srvcHubAutoMatch = new HubAutoMatchService(faHub) {
 		};
 		return srvcHubAutoMatch;
 	}
 
 	public HubCSService getHubCSService() {
 		if (srvcHubCS != null) return srvcHubCS;
-		srvcHubCS = new HubCSService(faBridge.getHubFriendAccess()) {
+		srvcHubCS = new HubCSService(faHub) {
 			@Override
 			public boolean callThreadLocalIsSuppressCSMessages() {
 				return HubParentService.this.srvcThreadLocal.isSuppressCSMessages();
@@ -480,7 +479,7 @@ public abstract class HubParentService {
 				return HubParentService.this.srvcSync.getSyncClient().isObjectOnServer(obj);
 			}
 			@Override
-			public boolean callSyncSyncSort(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName, String propertyPaths, boolean bAscending, Comparator comp) {
+			public boolean callSyncSyncSort(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName, String propertyPaths, boolean bAscending, Comparator<?> comp) {
 				return HubParentService.this.srvcSync.getRemoteSync().sort(objectClass, objectKey, hubPropertyName, propertyPaths, bAscending, comp);
 			}
 			@Override
@@ -586,7 +585,7 @@ public abstract class HubParentService {
 	public HubDataService getHubDataService() {
 		if (srvcHubData != null) return srvcHubData;
 		
-		srvcHubData = new HubDataService(faBridge.getHubFriendAccess()) {
+		srvcHubData = new HubDataService(faHub) {
 			@Override
 			public OAObjectKey callObjectKeyGetKey(OAObject oaObj) {
 				return HubParentService.this.srvcObject.getOAObjectKeyService().getKey(oaObj);
@@ -596,7 +595,7 @@ public abstract class HubParentService {
 				return HubParentService.this.srvcObject.getOAObjectKeyService().isForSameOAObject(clazz, ok1, ok2);
 			}
 			@Override
-			public OAObject callObjectReflectGetObject(Class clazz, Object key) {
+			public <T extends OAObject> T callObjectReflectGetObject(Class<T> clazz, Object key) {
 				return HubParentService.this.srvcObject.getOAObjectReflectService().getObject(clazz, key);
 			}
 			@Override
@@ -624,7 +623,7 @@ public abstract class HubParentService {
 				return HubParentService.this.srvcObject.getOAObjectHubService().isAlreadyInHub(oaObj, hubFind);
 			}
 			@Override
-			public OAObjectKey callObjectKeyCreateObjectKey(Class c, Object... ids) {
+			public OAObjectKey callObjectKeyCreateObjectKey(Class<? extends OAObject> c, Object... ids) {
 				return HubParentService.this.srvcObject.getOAObjectKeyService().createObjectKey(c, ids);
 			}
 			@Override
@@ -701,7 +700,7 @@ public abstract class HubParentService {
 	public HubDeleteService getHubDeleteService() {
 		if (srvcHubDelete != null) return srvcHubDelete;
 		
-		srvcHubDelete =  new HubDeleteService(faBridge.getHubFriendAccess()) {
+		srvcHubDelete =  new HubDeleteService(faHub) {
 			@Override
 			public void callObjectDeleteDelete(OAObject oaObj, OACascade cascade) {
 				HubParentService.this.srvcObject.getOAObjectDeleteService().delete(oaObj, cascade);				
@@ -774,7 +773,7 @@ public abstract class HubParentService {
 	
 	public HubDetailService getHubDetailService() {
 		if (srvcHubDetail != null) return srvcHubDetail;
-		srvcHubDetail = new HubDetailService(faBridge.getHubFriendAccess()) {
+		srvcHubDetail = new HubDetailService(faHub) {
 			@Override
 			public OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi) {
 				return HubParentService.this.srvcObject.getOAObjectInfoService().getReverseLinkInfo(thisLi);
@@ -788,7 +787,7 @@ public abstract class HubParentService {
 				HubParentService.this.srvcObject.getOAObjectReflectService().setProperty(oaObj, propName, value, fmt);				
 			}
 			@Override
-			public Method callObjectInfoGetMethod(Class clazz, String methodName) {
+			public Method callObjectInfoGetMethod(Class<?> clazz, String methodName) {
 				return HubParentService.this.srvcObject.getOAObjectInfoService().getMethod(clazz, methodName);
 			}
 			@Override
@@ -903,7 +902,7 @@ public abstract class HubParentService {
 	
 	public HubDSService getHubDSService() {
 		if (srvcHubDS != null) return srvcHubDS;
-    	srvcHubDS = new HubDSService(faBridge.getHubFriendAccess()) {
+    	srvcHubDS = new HubDSService(faHub) {
 			@Override
 			public boolean callObjectInfoIsMany2Many(OALinkInfo thisLi) {
 				return HubParentService.this.srvcObject.getOAObjectInfoService().isMany2Many(thisLi);
@@ -925,7 +924,7 @@ public abstract class HubParentService {
 	public HubEventService getHubEventService() {
 		if (srvcHubEvent != null) return srvcHubEvent;
 		
-    	srvcHubEvent = new HubEventService(faBridge.getHubFriendAccess()) {
+    	srvcHubEvent = new HubEventService(faHub) {
 			@Override
 			public <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyRemoveObjectCallback(Hub<T> hub, T objRemove, int checkType) {
 				return HubParentService.this.srvcObject.getOAObjectCallbackService().getVerifyRemoveObjectCallback(hub, objRemove, checkType);
@@ -935,7 +934,7 @@ public abstract class HubParentService {
 				HubParentService.this.srvcObject.getOAObjectCacheService().fireAfterRemoveEvent(hub, obj);
 			}
 			@Override
-			public OAObjectInfo callObjectInfoGetObjectInfo(Class clazz) {
+			public OAObjectInfo callObjectInfoGetObjectInfo(Class<?> clazz) {
 				return HubParentService.this.srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz);
 			}
 			@Override
@@ -967,7 +966,7 @@ public abstract class HubParentService {
 				return HubParentService.this.getHubPropertyService().verifyUniqueProperty(thisHub, object);
 			}
 			@Override
-			public void callHubDetailUpdateDetail(Hub<?> thisHub, HubDetail detail, Hub detailHub, boolean bUpdateLink) {
+			public void callHubDetailUpdateDetail(Hub<?> thisHub, HubDetail detail, Hub<?> detailHub, boolean bUpdateLink) {
 				HubParentService.this.getHubDetailService().updateDetail(thisHub, detail, detailHub, bUpdateLink);				
 			}
 			@Override
@@ -1028,13 +1027,13 @@ public abstract class HubParentService {
 	
 	public HubLinkService getHubLinkService() {
 		if (srvcHubLink != null) return srvcHubLink;
-    	srvcHubLink = new HubLinkService(faBridge.getHubFriendAccess()) {
+    	srvcHubLink = new HubLinkService(faHub) {
 			@Override
-			public OAObjectInfo callObjectInfoGetObjectInfo(Class clazz) {
+			public OAObjectInfo callObjectInfoGetObjectInfo(Class<?> clazz) {
 				return HubParentService.this.srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz);
 			}
 			@Override
-			public Method callObjectInfoGetMethod(Class clazz, String methodName) {
+			public Method callObjectInfoGetMethod(Class<? extends OAObject> clazz, String methodName) {
 				return HubParentService.this.srvcObject.getOAObjectInfoService().getMethod(clazz, methodName);
 			}
 			@Override
@@ -1095,9 +1094,9 @@ public abstract class HubParentService {
 
 	public HubMasterService getHubMasterService() {
 		if (srvcHubMaster != null) return srvcHubMaster;
-		srvcHubMaster = new HubMasterService(faBridge.getHubFriendAccess()) {
+		srvcHubMaster = new HubMasterService(faHub) {
 			@Override
-			public <T extends OAObject> Hub callHubLinkGetHubWithLink(Hub<T> thisHub, boolean bIncludeCopiedHubs) {
+			public <T extends OAObject> Hub<?> callHubLinkGetHubWithLink(Hub<T> thisHub, boolean bIncludeCopiedHubs) {
 				return HubParentService.this.getHubLinkService().getHubWithLink(thisHub, bIncludeCopiedHubs);
 			}
 			@Override
@@ -1113,7 +1112,7 @@ public abstract class HubParentService {
 	public HubPropertyService getHubPropertyService() {
 		if (srvcHubProperty != null) return srvcHubProperty;
 		
-		srvcHubProperty = new HubPropertyService(faBridge.getHubFriendAccess()) {
+		srvcHubProperty = new HubPropertyService(faHub) {
 			@Override
 			public Method callObjectInfoGetMethod(OALinkInfo li) {
 				return HubParentService.this.srvcObject.getOAObjectInfoService().getMethod(li);
@@ -1139,7 +1138,7 @@ public abstract class HubParentService {
 	public HubRootService getHubRootService() {
 		if (srvcHubRoot != null) return srvcHubRoot;
 		
-    	srvcHubRoot = new HubRootService(faBridge.getHubFriendAccess()) {
+    	srvcHubRoot = new HubRootService(faHub) {
 			@Override
 			public OALinkInfo callObjectInfoGetRecursiveLinkInfo(OAObjectInfo thisOI, int type) {
 				return HubParentService.this.srvcObject.getOAObjectInfoService().getRecursiveLinkInfo(thisOI, type);
@@ -1203,7 +1202,7 @@ public abstract class HubParentService {
 			}
 			@Override
 			public void callHubStatusSetReferenceable(Hub<?> hub, boolean bReferenceable) {
-				HubParentService.this.getHubStatusService().setReferenceable(hub, bReferenceable);;
+				HubParentService.this.getHubStatusService().setReferenceable(hub, bReferenceable);
 			}
     	};
 		
@@ -1212,7 +1211,7 @@ public abstract class HubParentService {
 	
 	public HubSequenceService getHubSequenceService() {
 		if (srvcHubSequence != null) return srvcHubSequence;
-		srvcHubSequence = new HubSequenceService(faBridge.getHubFriendAccess()) {
+		srvcHubSequence = new HubSequenceService(faHub) {
 			@Override
 			public boolean callHubCSIsServer(Hub<?> thisHub) {
 				return HubParentService.this.getHubCSService().isServer(thisHub);
@@ -1226,9 +1225,9 @@ public abstract class HubParentService {
 	public HubSelectService getHubSelectService() {
 		if (srvcHubSelect != null) return srvcHubSelect;
 		
-    	srvcHubSelect = new HubSelectService(faBridge.getHubFriendAccess()) {
+    	srvcHubSelect = new HubSelectService(faHub) {
 			@Override
-			public OAObjectInfo callObjectInfoGetObjectInfo(Class clazz) {
+			public OAObjectInfo callObjectInfoGetObjectInfo(Class<?> clazz) {
 				return HubParentService.this.srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz);
 			}
 			@Override
@@ -1315,13 +1314,13 @@ public abstract class HubParentService {
 	public HubSerializeService getHubSerializeService() {
 		if (srvcHubSerialize != null) return srvcHubSerialize;
 
-    	srvcHubSerialize = new HubSerializeService(faBridge.getHubFriendAccess()) {
+    	srvcHubSerialize = new HubSerializeService(faHub) {
 			@Override
 			public boolean callObjectHubIsAlreadyInHub(OAObject oaObj, OALinkInfo li) {
 				return HubParentService.this.srvcObject.getOAObjectHubService().isAlreadyInHub(oaObj, li);
 			}
 			@Override
-			public boolean callObjectHubAddHub(OAObject oaObj, Hub hub) {
+			public <T extends OAObject> boolean callObjectHubAddHub(T oaObj, Hub<T> hub) {
 				return HubParentService.this.srvcObject.getOAObjectHubService().addHub(oaObj, hub);
 			}
 			@Override
@@ -1340,11 +1339,10 @@ public abstract class HubParentService {
 		return srvcHubSerialize;
 	}
 
-
 	public HubShareService getHubShareService() {
 		if (srvcHubShare != null) return srvcHubShare;
 		
-    	srvcHubShare = new HubShareService(faBridge.getHubFriendAccess()) {
+    	srvcHubShare = new HubShareService(faHub) {
 			@Override
 			public <T extends OAObject> void callObjectHubRemoveHub(T oaObj, Hub<T> hub, boolean bIsOnHubFinalize) {
 				HubParentService.this.srvcObject.getOAObjectHubService().removeHub(oaObj, hub, bIsOnHubFinalize);
@@ -1403,7 +1401,7 @@ public abstract class HubParentService {
 
 	public HubSizeService getHubSizeService() {
 		if (srvcHubSize != null) return srvcHubSize;
-    	srvcHubSize = new HubSizeService(faBridge.getHubFriendAccess()) {
+    	srvcHubSize = new HubSizeService(faHub) {
 			@Override
 			public boolean callHubSelectIsMoreData(Hub<?> thisHub) {
 				return HubParentService.this.getHubSelectService().isMoreData(thisHub);
@@ -1431,9 +1429,9 @@ public abstract class HubParentService {
 	public HubSortService getHubSortService() {
 		if (srvcHubSort != null) return srvcHubSort;
 		
-    	srvcHubSort = new HubSortService(faBridge.getHubFriendAccess()) {
+    	srvcHubSort = new HubSortService(faHub) {
 			@Override
-			public void callHubCSSort(Hub<?> thisHub, String propertyPaths, boolean bAscending, Comparator comp) {
+			public void callHubCSSort(Hub<?> thisHub, String propertyPaths, boolean bAscending, Comparator<?> comp) {
 				HubParentService.this.getHubCSService().sort(thisHub, propertyPaths, bAscending, comp);				
 			}
 			@Override
@@ -1470,7 +1468,7 @@ public abstract class HubParentService {
 	
 	public HubStatusService getHubStatusService() {
 		if (srvcHubStatus != null) return srvcHubStatus;
-		srvcHubStatus = new HubStatusService(faBridge.getHubFriendAccess()) {
+		srvcHubStatus = new HubStatusService(faHub) {
 			@Override
 			public HubDataMaster callHubDetailGetDataMaster(Hub<?> thisHub, boolean bIncludedFilteredHub) {
 				return HubParentService.this.getHubDetailService().getDataMaster(thisHub, bIncludedFilteredHub);
@@ -1488,7 +1486,7 @@ public abstract class HubParentService {
 				return HubParentService.this.srvcThreadLocal.isHubMergerChanging();
 			}
 			@Override
-			public <T extends OAObject> Hub callHubLinkGetHubWithLink(Hub<T> thisHub, boolean bIncludeCopiedHubs) {
+			public <T extends OAObject> Hub<T> callHubLinkGetHubWithLink(Hub<T> thisHub, boolean bIncludeCopiedHubs) {
 				return HubParentService.this.getHubLinkService().getHubWithLink(thisHub, bIncludeCopiedHubs);
 			}
 			@Override
@@ -1552,8 +1550,5 @@ public abstract class HubParentService {
 		return srvcHubXML;
 	}
 	
-	
-	
-
 	
 }

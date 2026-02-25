@@ -4,7 +4,6 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
 
@@ -333,54 +332,54 @@ public abstract class OAObjectSaveService {
 		return true;
 	}
 
-	@OAParentProvided (example = "srvcObject.getOAObjectCSService().isWorkstation")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCSService().isWorkstation")
 	public abstract boolean callCSIsWorkstation(); 
 
-	@OAParentProvided (example = "srvcObject.getOAObjectCSService().save")
+	// @OAParentProvided (example = "srvcObject.getOAObjectCSService().save")
 	public abstract boolean callCSSave(OAObject oaObj, int iCascadeRule);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectHubService().getHubReferences")
+	// @OAParentProvided (example = "srvcObject.getOAObjectHubService().getHubReferences")
 	public abstract Hub<?>[] callHubGetHubReferences(OAObject oaObj); 
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
 	public abstract OAObjectInfo callInfoGetObjectInfo(OAObject obj); 
 
-	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().isReferenceNullOrNotLoaded")
+	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().isReferenceNullOrNotLoaded")
 	public abstract boolean callReflectIsReferenceNullOrNotLoaded(OAObject oaObj, String propertyName);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().getProperty")
+	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().getProperty")
 	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath); 
 
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
 	public abstract OAObjectInfo callInfoGetOAObjectInfo(Class<?> clazz);
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectDSService().saveWithoutReferences")
+	// @OAParentProvided (example = "srvcObject.getOAObjectDSService().saveWithoutReferences")
 	public abstract void callDSSaveWithoutReferences(OAObject oaObj);
 
-	@OAParentProvided (example = "srvcObject.setNew")
+	// @OAParentProvided (example = "srvcObject.setNew")
 	public abstract void callObjectSetNew(final OAObject oaObj, final boolean b);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectHubService().saveAll")
+	// @OAParentProvided (example = "srvcObject.getOAObjectHubService().saveAll")
 	public abstract void callHubSaveAll(Hub hub, int iCascadeRule, OACascade cascade);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectReflectService().getRawReference")
+	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().getRawReference")
 	public abstract Object callReflectGetRawReference(OAObject oaObj, String name);
 
-	@OAParentProvided (example = "srvcObject.getOAObjectDSService().save")
+	// @OAParentProvided (example = "srvcObject.getOAObjectDSService().save")
 	public abstract void callDSSave(OAObject oaObj); 
 
-	@OAParentProvided (example = "srvcObject.getOAObjectLogService().logToXmlFile")
+	// @OAParentProvided (example = "srvcObject.getOAObjectLogService().logToXmlFile")
 	public abstract void callLogLogToXmlFile(OAObject oaObj, boolean bSave);
 
 	
 	
-	@OAParentProvided (example = "srvcHub.getHubEventService().fireBeforeSaveEvent")
+	// @OAParentProvided (example = "srvcHub.getHubEventService().fireBeforeSaveEvent")
 	public abstract <T extends OAObject> void callHubEventFireBeforeSaveEvent(Hub<T> thisHub, T obj);
 	
-	@OAParentProvided (example = "srvcHub.getHubEventService().fireAfterSaveEvent")
+	// @OAParentProvided (example = "srvcHub.getHubEventService().fireAfterSaveEvent")
 	public abstract <T extends OAObject> void callHubEventFireAfterSaveEvent(Hub<T> thisHub, T obj);
 	
-	@OAParentProvided (example = "srvcOAThreadLocal.isDeleting")
+	// @OAParentProvided (example = "srvcOAThreadLocal.isDeleting")
 	public abstract boolean callThreadLocalIsDeleting();
 	
 	

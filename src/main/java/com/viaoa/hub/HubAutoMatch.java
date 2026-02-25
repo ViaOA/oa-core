@@ -59,19 +59,19 @@ import com.viaoa.graph.service.hub.HubStatusService;
  * @param <TYPE>      The target Hub object type
  * @param <PROPTYPE>  The master Hub object type
  */
-public class HubAutoMatch<TYPE extends OAObject, PROPTYPE extends OAObject> extends HubListenerAdapter implements java.io.Serializable {
+public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends HubListenerAdapter<TYPE2> implements java.io.Serializable {
 	static final long serialVersionUID = 1L;
 
 	/**
 	 * The target Hub that will be synchronized to match the contents of the
 	 * master Hub.
 	 */
-	protected Hub hub;
+	protected Hub<TYPE> hub;
 	
 	/**
 	 * The master Hub providing source objects that the target Hub must match.
 	 */
-	protected Hub hubMaster;
+	protected Hub<TYPE2> hubMaster;
 
 	/**
 	 * Name of the property used to map objects in the target Hub to matching
@@ -137,7 +137,7 @@ public class HubAutoMatch<TYPE extends OAObject, PROPTYPE extends OAObject> exte
 	 * @param hubMaster       the master hub providing source objects for matching
 	 * @param bManuallyCalled whether updates must be invoked manually
 	 */
-	public HubAutoMatch(Hub<TYPE> hub, String property, Hub<PROPTYPE> hubMaster, boolean bManuallyCalled) {
+	public HubAutoMatch(Hub<TYPE> hub, String property, Hub<TYPE2> hubMaster, boolean bManuallyCalled) {
 		this.bManuallyCalled = bManuallyCalled;
 		init(hub, property, hubMaster, null, null);
 	}
@@ -150,7 +150,7 @@ public class HubAutoMatch<TYPE extends OAObject, PROPTYPE extends OAObject> exte
 	 * @param property  the property in the target hub used to match objects
 	 * @param hubMaster the master hub providing source objects for matching
 	 */
-	public HubAutoMatch(Hub<TYPE> hub, String property, Hub<PROPTYPE> hubMaster) {
+	public HubAutoMatch(Hub<TYPE> hub, String property, Hub<TYPE2> hubMaster) {
 		this(hub, property, hubMaster, false);
 	}
 
@@ -164,7 +164,7 @@ public class HubAutoMatch<TYPE extends OAObject, PROPTYPE extends OAObject> exte
 	 * @param objStop      the object whose property controls stopping behavior
 	 * @param stopProperty the property name evaluated for stopping synchronization
 	 */
-	public HubAutoMatch(Hub<TYPE> hub, String property, Hub<PROPTYPE> hubMaster, OAObject objStop, String stopProperty) {
+	public HubAutoMatch(Hub<TYPE> hub, String property, Hub<TYPE2> hubMaster, OAObject objStop, String stopProperty) {
 		init(hub, property, hubMaster, objStop, stopProperty);
 	}
 	
@@ -194,7 +194,7 @@ public class HubAutoMatch<TYPE extends OAObject, PROPTYPE extends OAObject> exte
 	 * @param objStop      the object controlling stop behavior
 	 * @param stopProperty the property used to evaluate stopping
 	 */
-	public void init(Hub<TYPE> hub, String property, Hub<PROPTYPE> hubMaster, OAObject objStop, String stopProperty) {
+	public void init(Hub<TYPE> hub, String property, Hub<TYPE2> hubMaster, OAObject objStop, String stopProperty) {
 		if (bInit) {
 			return;
 		}
@@ -392,23 +392,23 @@ public class HubAutoMatch<TYPE extends OAObject, PROPTYPE extends OAObject> exte
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.hub);
 		// Step 1: verify that both hubs are using the correct hub
 		//         (in case AO of master hub has been changed, and one of these hubs has not yet been adjusted).
-		Hub hubMasterx = og.hubsInternal().callHubDetailGetRealHub(hubMaster);
-		Hub hubx = og.hubsInternal().callHubDetailGetRealHub(hub); // in case it is a detailHub and has not been updated yet
+		Hub<TYPE2> hubMasterx = og.hubsInternal().callHubDetailGetRealHub(hubMaster);
+		Hub<TYPE> hubx = og.hubsInternal().callHubDetailGetRealHub(hub); // in case it is a detailHub and has not been updated yet
 		if (hubx == null) {
 			return;
 		}
 
 		// Step 2: see if every object in hubMasterx exists in hubx
 		for (int i = 0;; i++) {
-			OAObject obj = hubMasterx.elementAt(i);
+			TYPE2 obj = hubMasterx.elementAt(i);
 			if (obj == null) {
 				break;
 			}
 			// see if object is in hubx
 			if (getMethod == null) {
 				if (hubx.getObject(obj) == null) {
-					if (hubx.getAllowAdd(OAObjectCallback.CHECK_AllButProcessed, obj)) {
-						hubx.add(obj);
+					if (hubx.getAllowAdd(OAObjectCallback.CHECK_AllButProcessed, (TYPE) obj)) {
+						hubx.add((TYPE) obj);
 					}
 					/* 20210514 was:
 					if (hubx.getEnabled()) {
@@ -421,13 +421,8 @@ public class HubAutoMatch<TYPE extends OAObject, PROPTYPE extends OAObject> exte
 					Object o = hubx.elementAt(j);
 					if (o == null) {
 						if (hubx.getAllowAdd(OAObjectCallback.CHECK_AllButProcessed, obj)) {
-							createNewObject((PROPTYPE) obj);
+							createNewObject((TYPE2) obj);
 						}
-						/* 20210514 was:
-						if (hubx.getEnabled()) {
-						    createNewObject((PROPTYPE) obj);
-						}
-						*/
 						break;
 					}
 					try {
@@ -547,7 +542,7 @@ public class HubAutoMatch<TYPE extends OAObject, PROPTYPE extends OAObject> exte
 	 * @param obj the property value used to initialize the new object
 	 * @return the created object added to the hub
 	 */
-	protected TYPE createNewObject(Object obj) {
+	protected TYPE createNewObject(TYPE2 obj) {
 		TYPE object;
 		try {
 			object = (TYPE) hub.getObjectClass().newInstance();

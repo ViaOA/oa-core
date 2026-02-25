@@ -3,7 +3,6 @@ package com.viaoa.graph.service.object;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OALinkInfo;
@@ -321,56 +320,46 @@ public abstract class OAObjectCSService {
 
 
 
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "getOAObjectInfo(class)"
-	)
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz);	
     
-	@OAParentProvided (
-		parentName = "OAObjectService", 
-		purpose="", 
-		example = "srvcSync.isSingleUser()"
-	)
 	public abstract boolean callSyncIsSingleUser();
     
-	@OAParentProvided (
+	// @OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcSync.isServer()"
 	)
 	public abstract boolean callSyncIsServer();
 
-	@OAParentProvided (
+	// @OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcSync.isClient()"
 	)
 	public abstract boolean callSyncIsClient();
 	
-	@OAParentProvided (
+	// @OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcSync.getSyncClient().getDetail(oaObj, linkPropertyName)"
 	)
 	public abstract Object callSyncClientGetDetail(final OAObject masterObject, final String propertyName);	
 
-	@OAParentProvided (
+	// @OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcSync.getRemoteSync().propertyChange(c, ok, propertyName, val, b)"
 	)
 	public abstract boolean callRemoteSyncPropertyChange(Class<? extends OAObject> objectClass, OAObjectKey origKey, String propertyName, Object newValue, boolean bIsBlob);
 
-	@OAParentProvided (
+	// @OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "OAObjectService.this.srvcSync.getSyncClient().objectCreated"
 	)
 	public abstract void callSyncClientObjectCreated(OAObject obj);	
 
-	@OAParentProvided (
+	// @OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "OAObjectService.this.srvcSync.getSyncClient().objectFinalized"
@@ -378,7 +367,7 @@ public abstract class OAObjectCSService {
 	public abstract void callSyncClientObjectFinalized(UUID guid);	
 
 
-	@OAParentProvided (
+	// @OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcHub.getHubSelectService().loadAllData(thisHub, select)"
@@ -386,7 +375,7 @@ public abstract class OAObjectCSService {
 	public abstract <T extends OAObject> void callHubSelectLoadAllData(Hub<T> thisHub, OASelect<T> select);
 	
 	
-	@OAParentProvided (
+	// @OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcSync.getSyncClient().updateObjectsWithoutHubs(obj)"
@@ -394,7 +383,7 @@ public abstract class OAObjectCSService {
 	public abstract void callSyncClientUpdateObjectsWithoutHubs(OAObject obj);
 
 
-	@OAParentProvided (
+	// @OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcSync.getRemoteClient().createCopy(c, ok, excludeProps)"
@@ -402,21 +391,21 @@ public abstract class OAObjectCSService {
 	public abstract <T extends OAObject> T callSyncClientCreateCopy(Class<T> objectClass, OAObjectKey objectKey, String[] excludeProperties);
 
 
-	@OAParentProvided (
+	// @OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "getSyncService().getRemoteServer().save(oaObj.getClass(), oaObj.getObjectKey(), iCascadeRule)"
 	)
 	public abstract boolean callSyncServerSave(Class<? extends OAObject> objectClass, OAObjectKey objectKey, int iCascadeRule);
 
-	@OAParentProvided (
+	// @OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcObjectInfo.getOALinkInfo(oi, name)"
 	)
 	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
 
-	@OAParentProvided (
+	// @OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcRemoteThread.shouldSendMessages()"
@@ -424,14 +413,14 @@ public abstract class OAObjectCSService {
 	public abstract boolean callRemoteThreadShouldSendMessages();
 	
 	
-	@OAParentProvided (
+	// @OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcOAThreadLocal.isSuppressCSMessages()"
 	)
 	public abstract boolean callThreadLocalIsSuppressCSMessages();		
 	
-	@OAParentProvided (
+	// @OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcOAThreadLocal.isLoading()"
@@ -440,7 +429,7 @@ public abstract class OAObjectCSService {
 
 
 	
-	@OAParentProvided (
+	// @OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcOAThreadLocal.setSuppressCSMessages(b)"
@@ -448,21 +437,21 @@ public abstract class OAObjectCSService {
 	public abstract void callThreadLocalSetSuppressCSMessages(boolean b);		
 
 	
-	@OAParentProvided (
+	// @OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcSync.getRemoteServer().getObject(clazz, key)"
 	)
 	public abstract <T extends OAObject> T callSyncServerGetObject(Class<T> clazz, OAObjectKey key);
 
-	@OAParentProvided (
+	// @OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcSync.getRemoteSync().serverDelete(clazz, key)"
 	)
 	public abstract boolean callSyncSyncServerDelete(Class<? extends OAObject> clazz, OAObjectKey key);
 
-	@OAParentProvided (
+	// @OAParentProvided (
 		parentName = "OAObjectService", 
 		purpose="", 
 		example = "srvcSync.getRemoteSync().clientDelete(clazz, key)"

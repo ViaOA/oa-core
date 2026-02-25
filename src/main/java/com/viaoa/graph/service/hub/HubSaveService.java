@@ -2,7 +2,6 @@ package com.viaoa.graph.service.hub;
 
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAParentProvided;
 import com.viaoa.hub.*;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
@@ -95,25 +94,25 @@ public abstract class HubSaveService {
     	callHubStatusSetReferenceable(thisHub, false);
     }
 
-	@OAParentProvided (example = "srvcObject.getOAObjectSaveService().save")
+	// @OAParentProvided (example = "srvcObject.getOAObjectSaveService().save")
 	public abstract void callObjectSaveSave(OAObject oaObj, int iCascadeRule, OACascade cascade);
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectInfoService().isMany2Many")
+	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().isMany2Many")
 	public abstract boolean callObjectInfoIsMany2Many(OALinkInfo thisLi);
 	
-	@OAParentProvided (example = "srvcObject.getOAObjectSaveService()._saveObjectOnly")
+	// @OAParentProvided (example = "srvcObject.getOAObjectSaveService()._saveObjectOnly")
 	public abstract void callObjectSaveSaveObjectOnly(OAObject oaObj, OACascade cascade);
 
-	@OAParentProvided (example = "srvcHub.getHubDetailService().getDataMaster")
+	// @OAParentProvided (example = "srvcHub.getHubDetailService().getDataMaster")
 	public abstract HubDataMaster callHubDetailGetDataMaster(final Hub<?> thisHub);
 
-	@OAParentProvided (example = "srvcHub.getHubDataService().getAddedObjects")
+	// @OAParentProvided (example = "srvcHub.getHubDataService().getAddedObjects")
 	public abstract <T extends OAObject> T[] callHubDataGetAddedObjects(Hub<T> thisHub);
 
-	@OAParentProvided (example = "srvcHub._updateHubAddsAndRemoves")
+	// @OAParentProvided (example = "srvcHub._updateHubAddsAndRemoves")
 	public abstract void callHub_updateHubAddsAndRemoves(final Hub<?> thisHub, final int iCascadeRule, final OACascade cascade, final boolean bIsSaving);
 
-	@OAParentProvided (example = "srvcHub.setReferenceable")
+	// @OAParentProvided (example = "srvcHub.setReferenceable")
 	public abstract void callHubStatusSetReferenceable(Hub<?> hub, boolean bReferenceable);
 }
 
