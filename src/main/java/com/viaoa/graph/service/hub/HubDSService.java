@@ -23,7 +23,7 @@ public abstract class HubDSService {
 	 * @param c the class used to look up its data source
 	 * @return the data source for the class, or null if none exists
 	 */
-	public OADataSource getDataSource(Class c) {
+	public OADataSource getDataSource(Class<?> c) {
 	    return OADataSource.getDataSource(c);
 	}
     
@@ -37,7 +37,7 @@ public abstract class HubDSService {
 	 * @param removes        objects to remove from the link table
 	 * @param propFromMaster the name of the master-side property for the link
 	 */
-	public void updateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propFromMaster) {
+	public <T extends OAObject> void updateMany2ManyLinks(OAObject masterObject, T[] adds, T[] removes, String propFromMaster) {
 		OADataSource ds = OADataSource.getDataSource(masterObject.getClass());
 		if (ds != null) ds.updateMany2ManyLinks(masterObject, adds, removes, propFromMaster);
 	}
@@ -68,15 +68,9 @@ public abstract class HubDSService {
         ds.updateMany2ManyLinks(objMaster, null, objs, propFromMaster);
     }
 
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().isMany2Many")
 	public abstract boolean callObjectInfoIsMany2Many(OALinkInfo thisLi);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
 	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi);
-
-	// @OAParentProvided (example = "srvcHub.getHubAddRemoveService().getRemovedObjects")
 	public abstract <T extends OAObject> T[] callHubAddRemoveGetRemovedObjects(Hub<T> thisHub);
-	
 }
 
 

@@ -59,7 +59,7 @@ import com.viaoa.util.*;
  *       prevent cross-client event storms.</li>
  * </ul>
  */
-public class HubSortListener extends HubListenerAdapter implements java.io.Serializable {
+public class HubSortListener<TYPE extends OAObject> extends HubListenerAdapter<TYPE> implements java.io.Serializable {
     static final long serialVersionUID = 1L;
     private static Logger LOG = Logger.getLogger(HubSortListener.class.getName()); 
     
@@ -89,13 +89,13 @@ public class HubSortListener extends HubListenerAdapter implements java.io.Seria
      * All property-change and list-change events are evaluated against this
      * Hub instance.
      */
-    Hub hub;
+    Hub<TYPE> hub;
     
     /**
      * Comparator used for sorting Hub contents. If null, an OAComparator
      * will be created automatically based on the property paths.
      */
-    Comparator comparator;
+    Comparator<?> comparator;
     
     /**
      * Indicates whether sorting is ascending (true) or descending (false),
@@ -111,7 +111,7 @@ public class HubSortListener extends HubListenerAdapter implements java.io.Seria
      * @param propertyPaths property path(s) used for sorting
      * @param bAscending    true for ascending order, false for descending
      */
-    public HubSortListener(Hub hub, String propertyPaths, boolean bAscending) {
+    public HubSortListener(Hub<TYPE> hub, String propertyPaths, boolean bAscending) {
         this(hub, null, propertyPaths, bAscending);
     }
 
@@ -122,7 +122,7 @@ public class HubSortListener extends HubListenerAdapter implements java.io.Seria
      * @param hub           the Hub to keep sorted
      * @param propertyPaths property path(s) used for sorting
      */
-    public HubSortListener(Hub hub, String propertyPaths) {
+    public HubSortListener(Hub<TYPE> hub, String propertyPaths) {
         this(hub, null, propertyPaths, true);
     }
 
@@ -135,7 +135,7 @@ public class HubSortListener extends HubListenerAdapter implements java.io.Seria
      * @param bAscending true if the comparator’s natural ordering should be
      *                   treated as ascending
      */
-    public HubSortListener(Hub hub, Comparator comparator, boolean bAscending) {
+    public HubSortListener(Hub<TYPE> hub, Comparator<?> comparator, boolean bAscending) {
         this(hub, comparator, null, bAscending);
     }
 
@@ -146,7 +146,7 @@ public class HubSortListener extends HubListenerAdapter implements java.io.Seria
      * @param hub        the Hub to keep sorted
      * @param comparator explicit Comparator for sorting
      */
-    public HubSortListener(Hub hub, Comparator comparator) {
+    public HubSortListener(Hub<TYPE> hub, Comparator<?> comparator) {
         this(hub, comparator, null, true);
     }
 
@@ -160,7 +160,7 @@ public class HubSortListener extends HubListenerAdapter implements java.io.Seria
      * @param propertyPaths property-path expression for sorting
      * @param bAscending    true for ascending sort, false for descending
      */
-    public HubSortListener(Hub hub, Comparator comparator, String propertyPaths, boolean bAscending) {
+    public HubSortListener(Hub<TYPE> hub, Comparator<?> comparator, String propertyPaths, boolean bAscending) {
         this.hub = hub;
         this.comparator = comparator;
         this.propertyPaths = propertyPaths;
@@ -204,7 +204,7 @@ public class HubSortListener extends HubListenerAdapter implements java.io.Seria
     protected void setupPropertyPaths() {
     	if (propertyPaths == null) return;
 
-        final Class clazz = hub.getObjectClass();
+        final Class<? extends OAObject> clazz = hub.getObjectClass();
 
     	StringTokenizer st = new StringTokenizer(propertyPaths, ", ", true);
         
@@ -275,7 +275,7 @@ public class HubSortListener extends HubListenerAdapter implements java.io.Seria
      *
      * @param e event describing the list replacement
      */
-    public @Override void onNewList(HubEvent e) {
+    public @Override void onNewList(HubEvent<TYPE> e) {
         Hub h = e.getHub();
         if (h == hub) {
     		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
@@ -305,7 +305,7 @@ public class HubSortListener extends HubListenerAdapter implements java.io.Seria
      *
      * @param e property-change event
      */
-    public @Override void afterPropertyChange(HubEvent e) {
+    public @Override void afterPropertyChange(HubEvent<TYPE> e) {
         if (bCallingSortMove) return;
         String s = e.getPropertyName();
         if (s != null && s.equalsIgnoreCase(sortPropertyName)) {
@@ -323,7 +323,7 @@ public class HubSortListener extends HubListenerAdapter implements java.io.Seria
         }
     }
     
-    public Comparator getComparator() {
+    public Comparator<?> getComparator() {
     	return comparator;
     }
 }

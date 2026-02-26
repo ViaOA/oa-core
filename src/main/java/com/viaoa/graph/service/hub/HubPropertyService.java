@@ -34,8 +34,8 @@ public abstract class HubPropertyService {
 	 * @throws IllegalArgumentException if the property is nested, lacks a getter,
 	 *                                  or the getter requires parameters
 	 */
-	public void setUniqueProperty(Hub thisHub, String propertyName) {
-		final HubData hd = faHub.getHubData(thisHub);
+	public <T extends OAObject> void setUniqueProperty(Hub<T> thisHub, String propertyName) {
+		final HubData<T> hd = faHub.getHubData(thisHub);
 		
 		if (propertyName == null) {
 			hd.setUniqueProperty(null);
@@ -69,12 +69,12 @@ public abstract class HubPropertyService {
 	 * @param name    the property name
 	 * @param obj     the value to store, or {@code null}
 	 */
-	public void setProperty(Hub thisHub, String name, Object obj) {
+	public <T extends OAObject> void setProperty(Hub<T> thisHub, String name, Object obj) {
 		if (name == null) {
 			return;
 		}
 		name = name.toUpperCase();
-		final HubData hd = faHub.getHubData(thisHub);
+		final HubData<T> hd = faHub.getHubData(thisHub);
 		if (hd.getHashProperty() == null) {
 			hd.setHashProperty(new Hashtable(7));
 		}
@@ -90,8 +90,8 @@ public abstract class HubPropertyService {
 	 * @param name    the property name
 	 * @return the stored value, or {@code null} if not found
 	 */
-	public Object getProperty(Hub thisHub, String name) {
-		final HubData hd = faHub.getHubData(thisHub);
+	public <T extends OAObject> Object getProperty(Hub<T> thisHub, String name) {
+		final HubData<T> hd = faHub.getHubData(thisHub);
 		if (hd.getHashProperty() == null) {
 			return null;
 		}
@@ -111,8 +111,8 @@ public abstract class HubPropertyService {
 	 * @param thisHub the hub whose property should be removed
 	 * @param name    the name of the property to remove
 	 */
-	public void removeProperty(Hub thisHub, String name) {
-		final HubData hd = faHub.getHubData(thisHub);
+	public <T extends OAObject> void removeProperty(Hub<T> thisHub, String name) {
+		final HubData<T> hd = faHub.getHubData(thisHub);
 		if (hd.getHashProperty() != null) {
 			name = name.toUpperCase();
 			hd.getHashProperty().remove(name);
@@ -159,7 +159,7 @@ public abstract class HubPropertyService {
 				uniqueLinkPropName = hdm.getUniqueProperty();
 			}
 			if (uniqueLinkPropName != null) {
-				OAObjectInfo oi = thisHub.getOAObjectInfo();
+				OAObjectInfo oi = callObjectInfoGetOAObjectInfo(thisHub);
 				if (oi.getLinkInfo(uniqueLinkPropName) == null) {
 					uniqueLinkPropName = null;
 				}
@@ -222,12 +222,9 @@ public abstract class HubPropertyService {
 		return true;
 	}
 	
-	
+	public abstract OAObjectInfo callObjectInfoGetOAObjectInfo(Hub hub);
 	public abstract Method callObjectInfoGetMethod(OALinkInfo li);
 	public abstract Method callObjectInfoGetMethod(Class<?> clazz, String methodName);
 	public abstract Object callObjectPropertyGetProperty(OAObject oaObj, String name);			
 	public abstract boolean callThreadLocalIsLoading();			
-
-
-
 }

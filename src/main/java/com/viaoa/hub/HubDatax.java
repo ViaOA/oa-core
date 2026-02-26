@@ -203,7 +203,7 @@ public class HubDatax<TYPE extends OAObject> implements java.io.Serializable {
 	 * Case-insensitive map of arbitrary name/value properties associated
 	 * with this HubDatax instance.
 	 */
-	protected Hashtable hashProperty;
+	protected Hashtable<String, Object> hashProperty;
 
 	/**
 	 * Property path(s) specifying alternate ordering for select operations.

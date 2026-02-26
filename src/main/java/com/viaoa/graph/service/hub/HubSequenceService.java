@@ -2,6 +2,7 @@ package com.viaoa.graph.service.hub;
 
 import java.util.logging.Logger;
 import com.viaoa.hub.*;
+import com.viaoa.object.OAObject;
 
 public abstract class HubSequenceService {
 	private final Logger LOG = Logger.getLogger(HubSequenceService.class.getName());
@@ -25,7 +26,7 @@ public abstract class HubSequenceService {
 	 * @param startNumber the initial sequence number
 	 * @param bKeepSeq    whether sequence values are preserved after removals
 	 */
-	public void setAutoSequence(Hub thisHub, String property, int startNumber, boolean bKeepSeq) {
+	public <T extends OAObject> void setAutoSequence(Hub<T> thisHub, String property, int startNumber, boolean bKeepSeq) {
 		// 20091030 only set for server for detail hubs
 		boolean bServerOnly = false;
 		if (thisHub.getMasterObject() != null) {
@@ -34,7 +35,7 @@ public abstract class HubSequenceService {
 			}
 			bServerOnly = true;
 		}
-		final HubData hd = faHub.getHubData(thisHub);
+		final HubData<T> hd = faHub.getHubData(thisHub);
 		if (hd.getAutoSequence() != null) {
 			hd.getAutoSequence().close();
 		}
@@ -49,8 +50,8 @@ public abstract class HubSequenceService {
 	 * @param thisHub the hub whose auto-sequence handler is requested
 	 * @return the auto-sequence object, or {@code null} if not configured
 	 */
-	public HubAutoSequence getAutoSequence(Hub thisHub) {
-		final HubData hd = faHub.getHubData(thisHub);
+	public <T extends OAObject> HubAutoSequence getAutoSequence(Hub<T> thisHub) {
+		final HubData<T> hd = faHub.getHubData(thisHub);
 		return hd.getAutoSequence();
 	}
 
@@ -60,8 +61,8 @@ public abstract class HubSequenceService {
 	 *
 	 * @param thisHub the hub whose sequence values will be recalculated
 	 */
-	public void resequence(Hub thisHub) {
-		final HubData hd = faHub.getHubData(thisHub);
+	public <T extends OAObject> void resequence(Hub<T> thisHub) {
+		final HubData<T> hd = faHub.getHubData(thisHub);
 		if (hd.getAutoSequence() != null) {
 			hd.getAutoSequence().resequence();
 		}

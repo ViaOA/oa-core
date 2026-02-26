@@ -22,6 +22,7 @@ import com.viaoa.annotation.OAProperty;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
+import com.viaoa.model.oa.VEnum;
 import com.viaoa.model.oa.VString;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAString;
@@ -174,13 +175,7 @@ public class OAPropertyInfo implements java.io.Serializable {
 	 * Holds the list of valid name-value entries for this property when it is
 	 * configured as a name-value type. Lazily created on first access.
 	 */
-	private Hub<VString> hubNameValue;
-	
-	/**
-	 * Holds the list of valid display-name entries associated with this property.
-	 * Lazily created on first access, typically used by UI selection components.
-	 */
-	private Hub<VString> hubDisplayNameValue;
+	private Hub<VEnum> hubVEnum;
 	
 	/**
 	 * Indicates whether this property represents a currency value. Influences
@@ -728,21 +723,11 @@ public class OAPropertyInfo implements java.io.Serializable {
 	/**
 	 * Returns the hub of name values for this property, creating it if needed.
 	 */
-	public Hub<VString> getNameValues() {
-		if (hubNameValue == null) {
-			hubNameValue = new Hub<VString>(VString.class);
+	public Hub<VEnum> getVEnums() {
+		if (hubVEnum == null) {
+			hubVEnum = new Hub<>(VEnum.class);
 		}
-		return hubNameValue;
-	}
-
-	/**
-	 * Returns the hub of display name values for this property, creating it if needed.
-	 */
-	public Hub<VString> getDisplayNameValues() {
-		if (hubDisplayNameValue == null) {
-			hubDisplayNameValue = new Hub<VString>(VString.class);
-		}
-		return hubDisplayNameValue;
+		return hubVEnum;
 	}
 
 	/**

@@ -38,7 +38,7 @@ public abstract class HubLinkService {
 	 * @param bAutoCreateAllowDups  true to allow duplicates when auto-creating objects
 	 */
 	@SuppressWarnings("unchecked")
-	public <T extends OAObject> void setLinkHub(Hub<T> thisHub, String propertyFrom, Hub<?> linkToHub, String propertyTo, boolean linkPosFlag,
+	public <T extends OAObject> void setLinkHub(final Hub<T> thisHub, String propertyFrom, Hub<?> linkToHub, String propertyTo, boolean linkPosFlag,
 			boolean bAutoCreate, boolean bAutoCreateAllowDups) {
 		// 20110809 add bAutoCreateAllowDups
 		if (linkToHub == thisHub) {
@@ -46,7 +46,7 @@ public abstract class HubLinkService {
 		}
 
 		// 20181211 verify that no other shared hub is linked
-		Hub hx = getHubWithLink(thisHub, true);
+		Hub<T> hx = getHubWithLink(thisHub, true);
 		if (linkToHub != null && hx != null && hx != thisHub) {
 
 			// 20201221 allow setting bAutoCreate
@@ -83,9 +83,9 @@ public abstract class HubLinkService {
 			Class<? extends OAObject> c = linkToHub.getObjectClass();
 			OAObjectInfo oi = callObjectInfoGetObjectInfo(c); // this never returns null
 
-			List al = oi.getLinkInfos();
+			List<OALinkInfo> al = oi.getLinkInfos();
 			for (int i = 0; i < al.size(); i++) {
-				OALinkInfo li = (OALinkInfo) al.get(i);
+				OALinkInfo li = al.get(i);
 				if (li.getType() != li.ONE) {
 					continue;
 				}
@@ -136,7 +136,7 @@ public abstract class HubLinkService {
 			throw new RuntimeException("cant find set method for property " + propertyTo);
 		}
 
-		Class[] cc = faHub.getHubDataUnique(thisHub).getLinkToSetMethod().getParameterTypes();
+		Class<?>[] cc = faHub.getHubDataUnique(thisHub).getLinkToSetMethod().getParameterTypes();
 
 		if (!linkPosFlag) {
 			if (cc.length == 1 && cc[0].isPrimitive()) {
@@ -214,8 +214,7 @@ public abstract class HubLinkService {
 		}
 		Hub<?> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub<T>>() {
 			@Override
-			public boolean isUsed(Hub obj) {
-				Hub h = (Hub) obj;
+			public boolean isUsed(Hub<T> h) {
 				if (faHub.getHubDataUnique(h).isAutoCreate()) {
 					return true;
 				}
@@ -251,8 +250,7 @@ public abstract class HubLinkService {
 		}
 		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub<T>>() {
 			@Override
-			public boolean isUsed(Hub obj) {
-				Hub h = (Hub) obj;
+			public boolean isUsed(Hub<T> h) {
 				if (faHub.getHubDataUnique(h).isLinkPos()) {
 					return true;
 				}
@@ -271,7 +269,7 @@ public abstract class HubLinkService {
 	 * @param pos        location index when linking by position
 	 */
 	public <T extends OAObject> void updateLinkProperty(Hub<T> thisHub, T fromObject, int pos) {
-		Hub h = faHub.getHubDataUnique(thisHub).getLinkToHub();
+		Hub<?> h = faHub.getHubDataUnique(thisHub).getLinkToHub();
 		if (h == null || faHub.getHubDataUnique(h).isUpdatingActiveObject()) {
 			return;
 		}
@@ -390,8 +388,8 @@ public abstract class HubLinkService {
 	 * @param linkObject the object whose linked property value is requested
 	 * @return the linked property value, or null if none
 	 */
-	public <T extends OAObject, U extends OAObject> Object getPropertyValueInLinkedToHub(Hub<?> thisHub, U linkObject) {
-		Hub h = getHubWithLink(thisHub, true);
+	public <T extends OAObject> Object getPropertyValueInLinkedToHub(Hub<T> thisHub, OAObject linkObject) {
+		Hub<T> h = getHubWithLink(thisHub, true);
 		if (h == null) {
 			return null;
 		}
@@ -406,7 +404,7 @@ public abstract class HubLinkService {
 	 * @param linkObject the object to inspect
 	 * @return the resolved linked-to value, or null
 	 */
-	private <T extends OAObject, U extends OAObject> Object _getPropertyValueInLinkedToHub(final Hub<T> thisHub, final U linkObjectOrig) {
+	private <T extends OAObject> Object _getPropertyValueInLinkedToHub(final Hub<T> thisHub, final OAObject linkObjectOrig) {
 		
 		// example: hubDept linked to hubEmp.dept ...thisHub=hubDept, linkObjectOrig=Emp   return=emp.dept
 		
@@ -482,8 +480,7 @@ public abstract class HubLinkService {
 		}
 		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub<T>>() {
 			@Override
-			public boolean isUsed(Hub obj) {
-				Hub h = (Hub) obj;
+			public boolean isUsed(Hub<T> h) {
 				if (h == thisHub) {
 					return false;
 				}
@@ -525,8 +522,7 @@ public abstract class HubLinkService {
 		}
 		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub<T>>() {
 			@Override
-			public boolean isUsed(Hub obj) {
-				Hub h = (Hub) obj;
+			public boolean isUsed(Hub<T> h) {
 				if (h == thisHub) {
 					return false;
 				}
@@ -549,14 +545,13 @@ public abstract class HubLinkService {
 	 * @param bIncludeCopiedHubs true to include shared/copied Hubs
 	 * @return the linked-to Hub, or null if none
 	 */
-	public <T extends OAObject> Hub getLinkToHub(final Hub<T> thisHub, boolean bIncludeCopiedHubs) {
+	public <T extends OAObject> Hub<?> getLinkToHub(final Hub<T> thisHub, boolean bIncludeCopiedHubs) {
 		if (faHub.getHubDataUnique(thisHub).getLinkToHub() != null) {
 			return faHub.getHubDataUnique(thisHub).getLinkToHub();
 		}
 		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub<T>>() {
 			@Override
-			public boolean isUsed(Hub obj) {
-				Hub h = (Hub) obj;
+			public boolean isUsed(Hub<T> h) {
 				if (faHub.getHubDataUnique(h).getLinkToHub() != null) {
 					return true;
 				}
@@ -576,14 +571,13 @@ public abstract class HubLinkService {
 	 * @param bIncludeCopiedHubs true to check shared/copied Hubs
 	 * @return the linked-to Hub, or null
 	 */
-	public <T extends OAObject> Hub getHubWithLink(final Hub<T> thisHub, boolean bIncludeCopiedHubs) {
+	public <T extends OAObject> Hub<T> getHubWithLink(final Hub<T> thisHub, boolean bIncludeCopiedHubs) {
 		if (faHub.getHubDataUnique(thisHub).getLinkToHub() != null) {
 			return thisHub;
 		}
 		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub<T>>() {
 			@Override
-			public boolean isUsed(Hub obj) {
-				Hub h = (Hub) obj;
+			public boolean isUsed(Hub<T> h) {
 				if (faHub.getHubDataUnique(h).getLinkToHub() != null) {
 					return true;
 				}
@@ -620,8 +614,7 @@ public abstract class HubLinkService {
 
 		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub<T>>() {
 			@Override
-			public boolean isUsed(Hub obj) {
-				Hub h = (Hub) obj;
+			public boolean isUsed(Hub<T> h) {
 				if (h == thisHub) {
 					return false;
 				}
@@ -662,8 +655,7 @@ public abstract class HubLinkService {
 
 		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub<T>>() {
 			@Override
-			public boolean isUsed(Hub obj) {
-				Hub h = (Hub) obj;
+			public boolean isUsed(Hub<T> h) {
 				if (h == thisHub) {
 					return false;
 				}
@@ -707,8 +699,7 @@ public abstract class HubLinkService {
 
 		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub<T>>() {
 			@Override
-			public boolean isUsed(Hub obj) {
-				Hub h = (Hub) obj;
+			public boolean isUsed(Hub<T> h) {
 				if (h == thisHub) {
 					return false;
 				}
@@ -752,8 +743,7 @@ public abstract class HubLinkService {
 
 		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub<T>>() {
 			@Override
-			public boolean isUsed(Hub obj) {
-				Hub h = (Hub) obj;
+			public boolean isUsed(Hub<T> h) {
 				if (h == thisHub) {
 					return false;
 				}
@@ -778,7 +768,7 @@ public abstract class HubLinkService {
 	 * @param obj       the new value used for updating
 	 */
 	public <T extends OAObject> void updateLinkedToHub(Hub<T> fromHub, Hub<?> linkToHub, T obj) {
-		updateLinkedToHub(fromHub, linkToHub, obj, null);
+		updateLinkedToHub(fromHub, linkToHub, obj, (String) null);
 	}
 
 	/**
@@ -822,13 +812,13 @@ public abstract class HubLinkService {
 					// Update Master/Detail hubs for the LinkedFromHub
 					// if none of the master hubs have links or details, then set their
 					// activeObject to null
-					Hub h = fromHub;
+					Hub<?> h = fromHub;
 					for (; h != null;) {
 						if (!faHub.getHubData(h).isDupAllowAddRemove() && h.getSize() == 1) {
 							break; // detail hub using an object instead of a Hub
 						}
 
-						Hub[] hubs = callHubShareGetAllSharedHubs(h);
+						Hub<?>[] hubs = callHubShareGetAllSharedHubs(h);
 						int flag = 0;
 						for (int i = 0; i < hubs.length && flag != 5; i++) {
 							if (hubs[i] == fromHub) {
@@ -870,12 +860,12 @@ public abstract class HubLinkService {
 			// check for self referring links, where a link is based on master/details that then also have a link back to this hub.
 			boolean bForce = false;
 			Hub h = fromHub;
-			ArrayList<Hub> al = null;
+			ArrayList<Hub<?>> al = null;
 			for (int i = 0; !bForce; i++) {
 				// 20120717 endless loop caused by recursive hubs
 				if (i > 5) {
 					if (al == null) {
-						al = new ArrayList<Hub>();
+						al = new ArrayList<Hub<?>>();
 					} else if (al.contains(h)) {
 						break;
 					}
@@ -909,51 +899,21 @@ public abstract class HubLinkService {
 		}
 	}
 
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
 	public abstract OAObjectInfo callObjectInfoGetObjectInfo(Class<?> clazz);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getMethod")
 	public abstract Method callObjectInfoGetMethod(Class<? extends OAObject> clazz, String methodName);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
 	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi);
-
-	// @OAParentProvided (example = "srvcHub.getHubEventService().removeHubListener")
 	public abstract <T extends OAObject> void callHubEventRemoveHubListener(Hub<T> thisHub, HubListener<T> l);
-
-	// @OAParentProvided (example = "srvcHub.getHubEventService().fireAfterPropertyChange")
 	public abstract <T extends OAObject> void callHubEventFireAfterPropertyChange(final Hub<T> thisHub, final T oaObj, final String propertyName, final Object oldValue,
 			final Object newValue, final OALinkInfo linkInfo);
-
-	// @OAParentProvided (example = "srvcHub.getHubEventService().addHubListener")
 	public abstract <T extends OAObject> void callHubEventAddHubListener(Hub<T> thisHub, HubListener<T> hl);
-
-	// @OAParentProvided (example = "srvcHub.getHubEventService().fireAfterChangeActiveObjectEvent")
 	public abstract <T extends OAObject> void callHubEventFireAfterChangeActiveObjectEvent(Hub<T> thisHub, T obj, int pos, boolean bAllShared);
-
-	// @OAParentProvided (example = "srvcHub.getHubShareService().getFirstSharedHub")
 	public abstract <T extends OAObject> Hub<T> callHubShareGetFirstSharedHub(Hub<T> thisHub, OAFilter<Hub<T>> filter, boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO);
-
-	// @OAParentProvided (example = "srvcHub.getHubAOService().setActiveObject")
 	public abstract <T extends OAObject> void callHubAOSetActiveObject(Hub<T> thisHub, T object, boolean adjustMaster, boolean bUpdateLink, boolean bForce);
-
-	// @OAParentProvided (example = "srvcHub.getHubAOService().setActiveObject")
 	public abstract <T extends OAObject> void callHubAOSetActiveObject(final Hub<T> thisHub, T object, int pos, boolean bUpdateLink, boolean bForce, boolean bCalledByShareHub);
-
-	// @OAParentProvided (example = "srvcHub.getHubDetailService().getDataMaster")
 	public abstract HubDataMaster callHubDetailGetDataMaster(final Hub<?> thisHub);
-
-	// @OAParentProvided (example = "srvcHub.getHubDataService().getPos")
 	public abstract <T extends OAObject> int callHubDataGetPos(final Hub<T> thisHub, T object, final boolean adjustMaster, final boolean bUpdateLink);
-
-	// @OAParentProvided (example = "srvcHub.getHubShareService().getAllSharedHubs")
 	public abstract <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub);
-
-	// @OAParentProvided (example = "srvcThreadLocal.addDontAdjustHub")
 	public abstract void callThreadLocalAddDontAdjustHub(Hub<?> hub);
-
-	// @OAParentProvided (example = "srvcThreadLocal.removeDontAdjustHub")
 	public abstract void callThreadLocalRemoveDontAdjustHub(Hub<?> hub);
 }
 

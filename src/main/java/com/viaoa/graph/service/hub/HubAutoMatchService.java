@@ -1,14 +1,8 @@
 package com.viaoa.graph.service.hub;
 
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import com.viaoa.hub.*;
-import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OAFilter;
 
 public abstract class HubAutoMatchService {
 	private final Logger LOG = Logger.getLogger(HubAutoMatchService.class.getName());
@@ -31,14 +25,14 @@ public abstract class HubAutoMatchService {
 	 * @param hubMaster       the hub whose objects must be mirrored
 	 * @param bServerSideOnly whether matching should only be enforced on the server
 	 */
-	public <T extends OAObject> void setAutoMatch(Hub<T> thisHub, String property, Hub<T> hubMaster, boolean bServerSideOnly) {
+	public <T extends OAObject, T2 extends OAObject> void setAutoMatch(Hub<T> thisHub, String property, Hub<T2> hubMaster, boolean bServerSideOnly) {
 		final HubData<T> hd = faHub.getHubData(thisHub);
 		if (hd.getAutoMatch() != null) {
 			hd.getAutoMatch().close();
 		}
 		// 20220802 now works with Enum (name/value) property
 		// if (hubMaster != null) {
-		HubAutoMatch<T, T> am = new HubAutoMatch();
+		HubAutoMatch<T, T2> am = new HubAutoMatch<>();
 		hd.setAutoMatch(am);
 		am.setServerSideOnly(bServerSideOnly);
 		am.init(thisHub, property, hubMaster, null, null);
@@ -57,14 +51,14 @@ public abstract class HubAutoMatchService {
 	 * @param objStop         optional object used to limit matching
 	 * @param stopProperty    the property that defines the stopping condition
 	 */
-	public void setAutoMatch(Hub thisHub, String property, Hub hubMaster, boolean bServerSideOnly, OAObject objStop, String stopProperty) {
-		final HubData hd = faHub.getHubData(thisHub);
+	public <T extends OAObject, T2 extends OAObject> void setAutoMatch(Hub<T> thisHub, String property, Hub<T2> hubMaster, boolean bServerSideOnly, OAObject objStop, String stopProperty) {
+		final HubData<T> hd = faHub.getHubData(thisHub);
 		if (hd.getAutoMatch() != null) {
 			hd.getAutoMatch().close();
 		}
 		// 20220802 now works with Enum (name/value) property
 		// if (hubMaster != null) {
-		HubAutoMatch am = new HubAutoMatch();
+		HubAutoMatch<T, T2> am = new HubAutoMatch<>();
 		hd.setAutoMatch(am);
 		am.setServerSideOnly(bServerSideOnly);
 		am.init(thisHub, property, hubMaster, objStop, stopProperty);
@@ -78,8 +72,9 @@ public abstract class HubAutoMatchService {
 	 * @param thisHub the hub whose auto-match handler is requested
 	 * @return the auto-match object, or {@code null} if none exists
 	 */
-	public HubAutoMatch getAutoMatch(Hub thisHub) {
-		final HubData hd = faHub.getHubData(thisHub);
+	@SuppressWarnings({"unchecked"})
+	public <T extends OAObject> HubAutoMatch<T, ? extends OAObject> getAutoMatch(Hub<T> thisHub) {
+		final HubData<T> hd = faHub.getHubData(thisHub);
 		return hd.getAutoMatch();
 	}
 

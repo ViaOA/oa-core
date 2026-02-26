@@ -41,12 +41,12 @@ public abstract class HubMasterService {
 	 * @param hub the hub whose master object's class is requested
 	 * @return the master class, or {@code null} if unavailable
 	 */
-	public Class<?> getMasterClass(Hub<?> hub) {
+	public Class<? extends OAObject> getMasterClass(Hub<?> hub) {
 		if (hub == null) {
 			return null;
 		}
 		HubDataMaster dm = callHubDetailGetDataMaster(hub, true);
-		Object obj = dm.getMasterObject();
+		OAObject obj = dm.getMasterObject();
 		if (obj != null) {
 			return obj.getClass();
 		}
@@ -65,14 +65,15 @@ public abstract class HubMasterService {
      * @param thisHub the hub whose controlling hub is requested
      * @return the controlling hub
      */
-	public Hub getControllingHub(Hub thisHub) {
+	public Hub<?> getControllingHub(Hub<?> thisHub) {
+		if (thisHub == null) return null;
 		HubDataMaster dm = callHubDetailGetDataMaster(thisHub, true);
 		if (dm.getMasterHub() != null) {
 			return dm.getMasterHub();
 		}
 
 		// 20181119 find shared hub with link
-		Hub hubWithLink = callHubLinkGetHubWithLink(thisHub, true);
+		Hub<?> hubWithLink = callHubLinkGetHubWithLink(thisHub, true);
 		
 		if (hubWithLink != null) {
 			HubDataUnique hdu = faHub.getHubDataUnique(hubWithLink);			

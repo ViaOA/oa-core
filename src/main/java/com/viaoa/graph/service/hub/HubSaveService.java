@@ -67,9 +67,9 @@ public abstract class HubSaveService {
         if (iCascadeRule != OAObject.CASCADE_NONE) {
 	        int x = thisHub.getCurrentSize(); // only check the objects that are loaded
 	        for (int i=0; i<x ; i++) {
-	            Object obj = thisHub.elementAt(i);
+	            OAObject obj = thisHub.elementAt(i);
 	            if (obj == null) break;
-            	callObjectSaveSave((OAObject)obj, iCascadeRule, cascade);
+            	callObjectSaveSave(obj, iCascadeRule, cascade);
 	        }
         }
         else {
@@ -94,25 +94,12 @@ public abstract class HubSaveService {
     	callHubStatusSetReferenceable(thisHub, false);
     }
 
-	// @OAParentProvided (example = "srvcObject.getOAObjectSaveService().save")
 	public abstract void callObjectSaveSave(OAObject oaObj, int iCascadeRule, OACascade cascade);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().isMany2Many")
 	public abstract boolean callObjectInfoIsMany2Many(OALinkInfo thisLi);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectSaveService()._saveObjectOnly")
 	public abstract void callObjectSaveSaveObjectOnly(OAObject oaObj, OACascade cascade);
-
-	// @OAParentProvided (example = "srvcHub.getHubDetailService().getDataMaster")
 	public abstract HubDataMaster callHubDetailGetDataMaster(final Hub<?> thisHub);
-
-	// @OAParentProvided (example = "srvcHub.getHubDataService().getAddedObjects")
 	public abstract <T extends OAObject> T[] callHubDataGetAddedObjects(Hub<T> thisHub);
-
-	// @OAParentProvided (example = "srvcHub._updateHubAddsAndRemoves")
 	public abstract void callHub_updateHubAddsAndRemoves(final Hub<?> thisHub, final int iCascadeRule, final OACascade cascade, final boolean bIsSaving);
-
-	// @OAParentProvided (example = "srvcHub.setReferenceable")
 	public abstract void callHubStatusSetReferenceable(Hub<?> hub, boolean bReferenceable);
 }
 

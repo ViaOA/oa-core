@@ -34,6 +34,7 @@ public abstract class HubRootService {
 	 * @param thisHub the Hub whose recursive root is being requested
 	 * @return the root Hub for this recursive Hub, or {@code null} if not recursive
 	 */
+	@SuppressWarnings("unchecked")
 	public <T extends OAObject> Hub<T> getRootHub(final Hub<T> thisHub) {
 		if (thisHub == null) {
 			return null;
@@ -45,7 +46,7 @@ public abstract class HubRootService {
 		}
 
 		// 2: check for root hub
-		Hub h = callObjectInfoGetRootHub(faHub.getHubData(thisHub).getObjectInfo(), thisHub);
+		Hub<T> h = callObjectInfoGetRootHub(faHub.getHubData(thisHub).getObjectInfo(), thisHub);
 		if (h != null) {
 			return h;
 		}
@@ -54,11 +55,11 @@ public abstract class HubRootService {
 		// 20120717 could be more then one master hub available, find the one that owns this object
 		OAFilter<Hub<T>> filter = new OAFilter<>() {
 			@Override
-			public boolean isUsed(Hub hx) {
+			public boolean isUsed(Hub<T> hx) {
 				return (faHub.getHubDataMaster(hx).getMasterHub() != null);
 			}
 		};
-		Hub[] hubs = callHubShareGetAllSharedHubs(thisHub, filter);
+		Hub<T>[] hubs = callHubShareGetAllSharedHubs(thisHub, filter);
 		HubDataMaster dm = null;
 		for (int i = 0; hubs != null && i < hubs.length; i++, dm = null) {
 			dm = faHub.getHubDataMaster(hubs[i]);
@@ -86,10 +87,10 @@ public abstract class HubRootService {
 		}
 		if (faHub.getHubDataMaster(thisHub).getMasterObject() == null) {
 			if (faHub.getHubDataMaster(thisHub).getMasterHub() != null) {
-				Class mc = faHub.getHubDataMaster(thisHub).getMasterHub().getObjectClass();
+				Class<?> mc = faHub.getHubDataMaster(thisHub).getMasterHub().getObjectClass();
 				if (mc != null) {
 					if (mc.equals(thisHub.getObjectClass())) {
-						h = getRootHub(faHub.getHubDataMaster(thisHub).getMasterHub());
+						h = (Hub<T>) getRootHub(faHub.getHubDataMaster(thisHub).getMasterHub());
 						if (h != null) {
 							return h;
 						}
@@ -128,7 +129,7 @@ public abstract class HubRootService {
 				// cant use the masterHub, need to get the "real" detail hub of master object
 				//   For recursive hubs that are linked, the master (owner) might not be using the root hub.
 				//   By getting the hub value of the masterObject, it will call its hub getMethod, which will be the root hub
-				return (Hub) callObjectReflectGetProperty(	(OAObject) dm.getMasterObject(),
+				return (Hub<T>) callObjectReflectGetProperty(	(OAObject) dm.getMasterObject(),
 																	callObjectInfoGetReverseLinkInfo(dm.getDetailToMasterLinkInfo()).getName());
 			}
 
@@ -152,7 +153,7 @@ public abstract class HubRootService {
 					if (!(root instanceof Hub)) {
 						throw new RuntimeException("Hub.getRootHub() method from owner object not returning a Hub.");
 					}
-					return (Hub) root;
+					return (Hub<T>) root;
 				}
 			}
 		}
@@ -174,32 +175,17 @@ public abstract class HubRootService {
 	 * @param thisHub the Hub to set or clear as the root
 	 * @param b       {@code true} to set thisHub as root, {@code false} to remove it
 	 */
-	public void setRootHub(Hub thisHub, boolean bIsRoot) {
+	public void setRootHub(Hub<?> thisHub, boolean bIsRoot) {
 		if (thisHub == null) return;
 		callObjectInfoSetRootHub(faHub.getHubData(thisHub).getObjectInfo(), bIsRoot ? thisHub : null);
 	}
-
 	
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getRecursiveLinkInfo")
 	public abstract OALinkInfo callObjectInfoGetRecursiveLinkInfo(OAObjectInfo thisOI, int type);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getRootHub")
 	public abstract <T extends OAObject> Hub<T> callObjectInfoGetRootHub(OAObjectInfo thisOI, Hub<T> hub);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
 	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().getProperty")
 	public abstract Object callObjectReflectGetProperty(OAObject oaObj, String propPath);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkToOwner")
 	public abstract OALinkInfo callObjectInfoGetLinkToOwner(OAObjectInfo thisOI);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().setRootHub")
 	public abstract void callObjectInfoSetRootHub(OAObjectInfo thisOI, Hub<?> h);
-
-	// @OAParentProvided (example = "srvcHub.getHubShareService().getAllSharedHubs")
 	public abstract <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub<T>> filter);
 
 }

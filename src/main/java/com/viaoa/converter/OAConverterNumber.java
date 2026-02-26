@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Pattern;
 
+import com.viaoa.model.oa.VEnum;
 import com.viaoa.util.OAConverter;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAReflect;
@@ -272,6 +273,9 @@ public class OAConverterNumber implements OAConverterInterface<Number> {
 		} else if (value instanceof Enum) {
 			Enum<?> e = (Enum<?>) value;
 			num = Long.valueOf(e.ordinal());
+		} else if (value instanceof VEnum) {
+			VEnum e = (VEnum) value;
+			num = Long.valueOf(e.getValue());
 		}
 
 		if (value instanceof byte[]) {

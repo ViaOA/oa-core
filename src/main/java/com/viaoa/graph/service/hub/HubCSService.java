@@ -138,8 +138,6 @@ public abstract class HubCSService {
 	    }
 	    */
 	    
-	    
-
         final boolean bIsLoading = callThreadLocalIsLoading(); 
         if (bIsLoading) {
             if (!callSyncClientIsObjectOnServer(master)) {
@@ -304,7 +302,7 @@ public abstract class HubCSService {
 	 * @param bAscending    whether sorting is ascending
 	 * @param comp          optional comparator used for sorting
 	 */
-	public void sort(Hub<?> thisHub, String propertyPaths, boolean bAscending, Comparator comp) {
+	public void sort(Hub<?> thisHub, String propertyPaths, boolean bAscending, Comparator<?> comp) {
         if (callSyncIsSingleUser()) return;
         if (!callRemoteThreadShouldSendMessages()) return;
         if (callThreadLocalIsSuppressCSMessages()) return;
@@ -412,59 +410,29 @@ public abstract class HubCSService {
         callSyncSyncRefresh(obj.getClass(), obj.getObjectKey(), li.getName());
     }
 
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
 	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi);
-    
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
 	public abstract OAObjectInfo callObjectInfoGetObjectInfo(OAObject obj);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
 	public abstract OAObjectInfo callObjectInfoGetObjectInfo(Class<? extends OAObject> c);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectHubService().isInHub")
 	public abstract boolean callObjectHubIsInHub(OAObject oaObj);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectHubService().isInHubWithMaster")
 	public abstract boolean callHubIsInHubWithMaster(OAObject oaObj);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectHubService().isInHubWithMaster")
 	public abstract <T extends OAObject> boolean callHubIsInHubWithMaster(T oaObj, Hub<T> hubIgnore);
-
-
-	
-	// @OAParentProvided (example = "srvcHub.getHubDetailService().getPropertyFromMasterToDetail")
 	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub<?> thisHub);
-
-	// @OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromMasterObjectToDetail")
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterObjectToDetail(Hub<?> thisDetailHub);
-
-
-	
-	// @OAParentProvided (example = "srvcSync.isServer")
 	public abstract boolean callSyncIsServer();
-
-	// @OAParentProvided (example = "srvcSync.isClient")
 	public abstract boolean callSyncIsClient();
-	
-	// @OAParentProvided (example = "srvcSync.isSingleUser")
 	public abstract boolean callSyncIsSingleUser();
-	
-
-	// @OAParentProvided (example = "srvcSync.getRemoteSync().removeAllFromHub")
 	public abstract boolean callSyncRemoteSyncRemoveAllFromHub(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName);
-	/*
+	/* qqqqqqqqqq was:
     RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
     if (rs != null) rs.removeAllFromHub(..)
     */        
 
-	// @OAParentProvided (example = "srvcSync.getRemoteSync().removeFromHub")
 	public abstract boolean callSyncRemoteSyncRemoveFromHub(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName, Class<? extends OAObject> objectClassX, OAObjectKey objectKeyX);	
-	/*
+	/* qqqqqqqqqq was:
     RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
     if (rs != null) rs.removeFromHub(..)
     */        
 
-	// @OAParentProvided (example = "srvcSync.getSyncClient().isObjectOnServer")
 	public abstract boolean callSyncClientIsObjectOnServer(OAObject obj);
 	/*
         final OASyncClient sc = og.getSyncService().getSyncClient();
@@ -473,8 +441,6 @@ public abstract class HubCSService {
         }
 	*/
 	
-
-	// @OAParentProvided (example = "srvcSync.getRemoteSync().insertInHub")
 	public abstract boolean callSyncSyncInsertInHub(Class<? extends OAObject> masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, Object obj, int pos);
 	/*
         RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
@@ -488,7 +454,6 @@ public abstract class HubCSService {
 	
 	*/
 	
-	// @OAParentProvided (example = "srvcSync.getRemoteSync().moveObjectInHub")
 	public abstract boolean callSyncSyncMoveObjectInHub(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName,  int posFrom, int posTo);
 	/*
         RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
@@ -499,7 +464,6 @@ public abstract class HubCSService {
         }
 	*/
 
-	// @OAParentProvided (example = "srvcSync.getRemoteSync().sort")
 	public abstract boolean callSyncSyncSort(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName, String propertyPaths, boolean bAscending, Comparator<?> comp);
 	/*
         RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
@@ -511,7 +475,6 @@ public abstract class HubCSService {
 	
 	*/
 
-	// @OAParentProvided (example = "srvcSync.getRemoteClient().deleteAll")
 	public abstract boolean callSyncClientDeleteAll(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName);
 	/*
         RemoteClientInterface rs = og.getSyncService().getRemoteClient();
@@ -520,16 +483,13 @@ public abstract class HubCSService {
         rs.deleteAll(master.getClass(), master.getObjectKey(), prop);
 	*/
 
-	// @OAParentProvided (example = "srvcSync.shouldSendMessages")
 	public abstract boolean callSyncShouldSendMessages();
 	//og.getSyncService().shouldSendMessages()
 	
-	// @OAParentProvided (example = "srvcSync.getSuppressCSMessages")
 	public abstract boolean callSyncGetSuppressCSMessages();
     // if (og.getSyncService().getSuppressCSMessages()) return false;
 
 
-	// @OAParentProvided (example = "srvcSync.getRemoteSync().clearHubChanges")
 	public abstract void callSyncSyncClearHubChanges(Class<? extends OAObject> masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName);
 	/*
         RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
@@ -543,7 +503,6 @@ public abstract class HubCSService {
 	
 	*/
 
-	// @OAParentProvided (example = "srvcSync.getRemoteSync().refresh")
 	public abstract void callSyncSyncRefresh(Class<? extends OAObject> masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName);
 	/*
         RemoteSyncInterface rsi = og.getSyncService().getRemoteSync();
@@ -556,7 +515,6 @@ public abstract class HubCSService {
 	
 	*/
 	
-	// @OAParentProvided (example = "srvcSync.getRemoteSync().addNewToHub")
 	public abstract boolean callSyncSyncAddNewToHub(Class<? extends OAObject> masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, OAObjectSerializer obj);
 	/*	
 	RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
@@ -566,23 +524,10 @@ public abstract class HubCSService {
 	                            callHubDetailGetPropertyFromMasterToDetail(thisHub), oos);
 	*/
 
-	// @OAParentProvided (example = "srvcSync.getRemoteSync().addToHub")
 	public abstract boolean callSyncSyncAddToHub(Class<? extends OAObject> masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, Object obj);
-	
-
-	
-	
-	
-	// @OAParentProvided (example = "srvcThreadLocal.isSuppressCSMessages")
 	public abstract boolean callThreadLocalIsSuppressCSMessages();		
-
-	// @OAParentProvided (example = "srvcThreadLocal.isLoading")
 	public abstract boolean callThreadLocalIsLoading();		
-	
-	// @OAParentProvided (example = "srvcRemoteThread.shouldSendMessages")
 	public abstract boolean callRemoteThreadShouldSendMessages();
-
-	// @OAParentProvided (example = "srvcRemoteThread.isRemoteThread")
 	public abstract boolean callRemoteThreadIsRemoteThread();
 	
     

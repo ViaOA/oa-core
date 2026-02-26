@@ -24,6 +24,7 @@ public abstract class HubFindService {
 	 * @return the resolved object instance, or the original value if no resolution
 	 *         occurs
 	 */
+	@SuppressWarnings("unchecked")
 	public <T extends OAObject> T getRealObject(Hub<T> hub, Object object) {
 		if (object != null && !object.getClass().equals(hub.getObjectClass())) {
 			T objx = callObjectCacheGet(hub.getObjectClass(), object);
@@ -51,12 +52,13 @@ public abstract class HubFindService {
 	 * @param lastFoundObject the last object found, used by {@link com.viaoa.object.OAFinder#findNext}
 	 * @return the first matching object, or {@code null} if none found
 	 */
+	@SuppressWarnings("unchecked")
     public <T extends OAObject> T findFirst(Hub<T> thisHub, String propertyPath, final Object findValue, final boolean bSetAO, T lastFoundObject) {
         if (thisHub == null) return null;
         
-        OAFinder finder = new OAFinder();
+        OAFinder<T,?> finder = new OAFinder<>();
         finder.addFilter(new OALikeFilter(propertyPath, findValue));
-        T foundObj = (T) finder.findNext(thisHub, (OAObject) lastFoundObject);
+        T foundObj = (T) finder.findNext(thisHub, lastFoundObject);
         
         if (bSetAO) thisHub.setAO(foundObj);
         return foundObj;

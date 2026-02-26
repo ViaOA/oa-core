@@ -63,8 +63,8 @@ public abstract class HubDeleteService {
 
         if (objs != null) {
             OACascade cascade = new OACascade();
-            for (Object obj : objs) {
-                callObjectDeleteDelete((OAObject) obj, cascade);
+            for (T obj : objs) {
+                callObjectDeleteDelete(obj, cascade);
             }
             for (T obj : objs) {
                 callHubAddRemoveRemove(thisHub, obj, false, false, true, false, false, true);
@@ -140,9 +140,9 @@ public abstract class HubDeleteService {
         faHub.getHubData(thisHub).getVector().removeAllElements();
 
         if ((faHub.getHubDataMaster(thisHub).getTrackChanges() || faHub.getHubData(thisHub).getTrackChanges())) {
-            Vector vecRemove = faHub.getHubData(thisHub).getVecRemove();
+            Vector<T> vecRemove = faHub.getHubData(thisHub).getVecRemove();
             int x = vecRemove == null ? 0 : vecRemove.size();
-            for (Object obj : objs) {
+            for (T obj : objs) {
                 if (faHub.getHubData(thisHub).getVecAdd() != null && faHub.getHubData(thisHub).getVecAdd().removeElement(obj)) {
                     // no-op
                 }
@@ -173,10 +173,10 @@ public abstract class HubDeleteService {
             callHubAddRemoveRemove(thisHub, obj, false, true, true, true, true, true);
 
             if (dataSource != null) {
-                dataSource.updateMany2ManyLinks(masterObj, null, new OAObject[] { (OAObject) obj }, liRev.getName());
+                dataSource.updateMany2ManyLinks(masterObj, null, new OAObject[] { obj }, liRev.getName());
             }
 
-            callObjectDeleteDelete((OAObject) obj, cascade);
+            callObjectDeleteDelete(obj, cascade);
         }
 
         callHub_updateHubAddsAndRemoves(thisHub, -1, cascade, false);
@@ -184,56 +184,23 @@ public abstract class HubDeleteService {
         thisHub.setChanged(false); // removes all vecAdd, vecRemove objects
     }
 
-	// @OAParentProvided (example = "srvcObject.getOAObjectDeleteService().delete")
 	public abstract void callObjectDeleteDelete(final OAObject oaObj, OACascade cascade);
-    
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
 	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi);
-
-	// @OAParentProvided (example = "srvcHub.getHubCSService().deleteAll")
 	public abstract boolean callHubCSDeleteAll(Hub<?> thisHub);
-
-	// @OAParentProvided (example = "srvcHub.getHubAddRemoveService().clear")
 	public abstract void callHubAddRemoveClear(final Hub<?> thisHub);
-	
-	// @OAParentProvided (example = "srvcHub.getHubDataService().clearHubChanges")
 	public abstract void callHubDataClearHubChanges(Hub<?> thisHub);
-
-	// @OAParentProvided (example = "srvcHub.getHubAddRemoveService().remove")
 	public abstract <T extends OAObject> boolean callHubAddRemoveRemove(final Hub<T> thisHub, T obj, final boolean bForce,
 			final boolean bSendEvent, final boolean bDeleting, final boolean bSetAO,
 			final boolean bSetPropToMaster, final boolean bIsRemovingAll);
-
-	// @OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster")
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
-
-	// @OAParentProvided (example = "srvcHub.getHubDetailService().getMasterObject")
 	public abstract OAObject callHubDetailGetMasterObject(Hub<?> thisHub);
-
-	// @OAParentProvided (example = "srvcHub.getHubDataService().createVecRemove")
 	public abstract <T extends OAObject> Vector<T> callHubDataCreateVecRemove(Hub<T> thisHub);
-
-	// @OAParentProvided (example = "srvcHub.getHubDataService().setChanged")
 	public abstract void callHubStatusSetChanged(Hub<?> thisHub, boolean bChanged);
-
-	// @OAParentProvided (example = "srvcHub._updateHubAddsAndRemoves")
 	public abstract void callHub_updateHubAddsAndRemoves(final Hub<?> thisHub, final int iCascadeRule, final OACascade cascade, final boolean bIsSaving);
-
-
-
-	// @OAParentProvided (example = "srvcThreadLocal.setDeleting")
 	public abstract void callThreadLocalSetDeleting(Hub<?> hub, boolean b);
-
-	// @OAParentProvided (example = "srvcThreadLocal.isDeleting")
 	public abstract boolean callThreadLocalIsDeleting(Hub<?> hub);
-
-	// @OAParentProvided (example = "srvcThreadLocal.lock")
 	public abstract void callThreadLocalLock(Hub<?> hub);
-
-	// @OAParentProvided (example = "srvcThreadLocal.unlock")
 	public abstract void callThreadLocalUnlock(Hub<?> hub);
-
-	// @OAParentProvided (example = "srvcRemoteThread.sendMessages")
 	public abstract void callRemoteThreadSendMessages(boolean b);
 
 

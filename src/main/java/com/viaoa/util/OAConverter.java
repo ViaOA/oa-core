@@ -60,7 +60,9 @@ import com.viaoa.converter.OAConverterTimeZone;
 import com.viaoa.converter.OAConverterTimestamp;
 import com.viaoa.converter.OAConverterZoneId;
 import com.viaoa.converter.OAConverterZonedDateTime;
+import com.viaoa.converter.OAConverterVEnum;
 import com.viaoa.hub.Hub;
+import com.viaoa.model.oa.VEnum;
 
 /**
  * <p>
@@ -136,6 +138,7 @@ public class OAConverter {
 		addConverter(java.awt.Color.class, new OAConverterColor());
 		addConverter(java.awt.Font.class, new OAConverterFont());
 		addConverter(Enum.class, new OAConverterEnum());
+		addConverter(VEnum.class, new OAConverterVEnum());
 		addConverter(TimeZone.class, new OAConverterTimeZone());
 		addConverter(Class.class, new OAConverterClass());
 		addConverter(LocalDateTime.class, new OAConverterLocalDateTime());

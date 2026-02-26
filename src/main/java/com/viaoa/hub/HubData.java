@@ -159,7 +159,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
      * @return the add-tracking vector, or {@code null}
      */
     public Vector<TYPE> getVecAdd() {
-        HubDatax hdx = hubDatax;
+        HubDatax<TYPE> hdx = hubDatax;
         if (hdx == null) return null;
         return hdx.vecAdd;
     }
@@ -488,7 +488,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
      * @return the hash property table, or {@code null}
      */
     public Hashtable getHashProperty() {
-        HubDatax hdx = hubDatax;
+        HubDatax<TYPE> hdx = hubDatax;
         if (hdx == null) return null;
         return hdx.hashProperty;
     }
@@ -499,7 +499,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
      *
      * @param hashProperty the hashtable to assign
      */
-    public void setHashProperty(Hashtable hashProperty) {
+    public void setHashProperty(Hashtable<String, Object> hashProperty) {
         if (hubDatax != null || hashProperty != null) {
             getHubDatax().hashProperty = hashProperty;
         }
@@ -567,8 +567,8 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
      *
      * @return the HubAutoMatch instance, or {@code null}
      */
-    public HubAutoMatch getAutoMatch() {
-        HubDatax hdx = hubDatax;
+    public HubAutoMatch<TYPE, ? extends OAObject> getAutoMatch() {
+        HubDatax<TYPE> hdx = hubDatax;
         if (hdx == null) return null;
         return hdx.autoMatch;
     }
@@ -579,7 +579,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
      *
      * @param autoMatch the auto-match object to assign
      */
-    public void setAutoMatch(HubAutoMatch autoMatch) {
+    public void setAutoMatch(HubAutoMatch<TYPE, ? extends OAObject> autoMatch) {
         if (hubDatax != null || autoMatch != null) {
             getHubDatax().autoMatch = autoMatch;
         }
@@ -744,7 +744,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
      *
      * @return the hub used for select-where filtering, or {@code null}
      */
-    public Hub getSelectWhereHub() {
+    public Hub<TYPE> getSelectWhereHub() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return null;
         return hdx.selectWhereHub;
@@ -756,7 +756,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
      *
      * @param hub the hub used for select-where filtering
      */
-    public void setSelectWhereHub(Hub hub) {
+    public void setSelectWhereHub(Hub<TYPE> hub) {
         if (hubDatax != null || hub != null) {
             getHubDatax().selectWhereHub = hub;
         }

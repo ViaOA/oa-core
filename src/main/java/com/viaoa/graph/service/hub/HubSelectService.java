@@ -37,8 +37,6 @@ public abstract class HubSelectService {
 		int x = fetchMore(thisHub, getSelect(thisHub));
 		return x;
 	}
-
-	
 	
 	/**
 	 * Retrieves more objects from the given {@link OASelect}, using its
@@ -80,7 +78,7 @@ public abstract class HubSelectService {
 	 * Tracks fetch locks per Hub to serialize concurrent fetchMore operations.
 	 * Ensures only one thread fetches data for a Hub at a time.
 	 */
-	private  ConcurrentHashMap<Hub<?>, Integer> hmHubFetch = new ConcurrentHashMap<>(11, .85f);
+	private ConcurrentHashMap<Hub<?>, Integer> hmHubFetch = new ConcurrentHashMap<>(11, .85f);
 
 	/**
 	 * Core thread-safe implementation of fetchMore. Ensures only one thread
@@ -93,7 +91,7 @@ public abstract class HubSelectService {
 	 * @return number of objects fetched
 	 */
 	public <T extends OAObject> int fetchMore(Hub<T> thisHub, OASelect<T> sel, int famt) {
-        if (sel == null) {
+        if (thisHub == null || sel == null) {
             return 0;
         }
         if (sel.hasNextCompleted()) return 0;
@@ -696,10 +694,9 @@ public abstract class HubSelectService {
 	 * @param orderClause raw ORDER BY clause
 	 * @param bAppend     whether to append instead of clearing the Hub first
 	 */
-	@SuppressWarnings({"unchecked","rawtypes"})
 	public <T extends OAObject> void selectPassthru(Hub<T> thisHub, String whereClause, String orderClause, boolean bAppend) {
-		Class<T> classX = (Class) thisHub.getObjectClass();
-		OASelect<T> sel = new OASelect(classX);
+		Class<T> classX = (Class<T>) thisHub.getObjectClass();
+		OASelect<T> sel = new OASelect<>(classX);
 		sel.setPassthru(true);
 		sel.setAppend(bAppend);
 		sel.setWhere(whereClause);
@@ -727,7 +724,7 @@ public abstract class HubSelectService {
 	 * @param thisHub the Hub whose whereHub is being set
 	 * @param hub     the Hub to use for filtering
 	 */
-	public <T extends OAObject> void setSelectWhereHub(Hub<T> thisHub, Hub<?> hub) {
+	public <T extends OAObject> void setSelectWhereHub(Hub<T> thisHub, Hub<T> hub) {
 		if (thisHub == null) {
 			return;
 		}
@@ -988,64 +985,25 @@ public abstract class HubSelectService {
 		return true;
 	}
 
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
 	public abstract OAObjectInfo callObjectInfoGetObjectInfo(Class<?> clazz);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectHubService().removeHub")
 	public abstract <T extends OAObject> void callObjectHubRemoveHub(final T oaObj, Hub<T> hub, boolean bIsOnHubFinalize);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().setSelectAllHub")
 	public abstract void callObjectCacheSetSelectAllHub(Hub<?> hub);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().removeSelectAllHub")
 	public abstract void callObjectCacheRemoveSelectAllHub(Hub<?> hub);
-
-	// @OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster")
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
-
-	// @OAParentProvided (example = "srvcHub.getHubDataService().ensureCapacity")
 	public abstract void callHubDataEnsureCapacity(Hub<?> hub, int size);
-
-	// @OAParentProvided (example = "srvcHub.getHubAddRemoveService().add")
 	public abstract <T extends OAObject> boolean callHubAddRemoveAdd(final Hub<T> hub, final T obj);
-
-	// @OAParentProvided (example = "srvcHub.getHubEventService().fireBeforeSelectEvent")
 	public abstract void callHubEventFireBeforeSelectEvent(Hub<?> hub);
-
-	// @OAParentProvided (example = "srvcHub.getHubDataService().incChangeCount")
 	public abstract void callHubDataIncChangeCount(Hub<?> hub);
-
-	// @OAParentProvided (example = "srvcHub.getHubDataService().getCurrentSize")
 	public abstract int callHubDataGetCurrentSize(Hub<?> hub);
-	
-	// @OAParentProvided (example = "srvcHub.getHubDataService().getObjectAt")
 	public abstract <T extends OAObject> T callHubDataGetObjectAt(Hub<T> hub, int pos);
-
-	// @OAParentProvided (example = "srvcHub.getHubDataService().clearAllAndReset")
 	public abstract void callHubDataClearAllAndReset(Hub<?> hub);
-	
-	// @OAParentProvided (example = "srvcHub.getHubShareService().getAllSharedHubs")
 	public abstract <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> hub, OAFilter<Hub<T>> filter);
-
-	// @OAParentProvided (example = "srvcHub.getHubEventService().fireOnNewListEvent")
 	public abstract void callHubEventFireOnNewListEvent(Hub<?> hub, boolean bAll);
-
-	// @OAParentProvided (example = "srvcHub.getHubDataService().resizeToFit")
 	public abstract void callHubDataResizeToFit(Hub<?> hub);
-
-	// @OAParentProvided (example = "srvcHub.getHubEventService().fireBeforeRefreshEvent")
 	public abstract void callHubEventFireBeforeRefreshEvent(Hub<?> hub);
-
-	// @OAParentProvided (example = "srvcHub.getHubDetailService().getMasterObject")
 	public abstract OAObject callHubDetailGetMasterObject(Hub<?> hub);
-
-	// @OAParentProvided (example = "srvcHub.getHubDetailService().getPropertyFromMasterToDetail")
 	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub<?> hub);
-	
-	// @OAParentProvided (example = "srvcThreadLocal.setLoading")
 	public abstract boolean callThreadLocalSetLoading(boolean b);
-
-	// @OAParentProvided (example = "srvcThreadLocal.setRefreshing")
 	public abstract void callThreadLocalSetRefreshing(boolean b);
 }
 

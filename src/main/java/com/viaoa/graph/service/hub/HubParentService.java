@@ -844,7 +844,7 @@ public abstract class HubParentService {
 				return OAPropertyPathDelegate.getPropertyPathforClasses(hub, classes);
 			}
 			@Override
-			public <T extends OAObject> void callHubDataGetObjectClass(Hub<T> thisHub, Class<T> objClass) {
+			public <T extends OAObject> void callHubDataSetObjectClass(Hub<T> thisHub, Class<T> objClass) {
 				HubParentService.this.getHubDataService().setObjectClass(thisHub, objClass);				
 			}
 			@Override

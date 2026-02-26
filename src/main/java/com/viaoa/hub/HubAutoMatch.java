@@ -27,6 +27,7 @@ import com.viaoa.runtime.OAThreadImpl;
 import com.viaoa.runtime.thread.OARemoteThreadService;
 import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAConv;
+import com.viaoa.util.OAConverter;
 import com.viaoa.util.OAStr;
 import com.viaoa.graph.service.hub.HubStatusService;
 
@@ -392,8 +393,8 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.hub);
 		// Step 1: verify that both hubs are using the correct hub
 		//         (in case AO of master hub has been changed, and one of these hubs has not yet been adjusted).
-		Hub<TYPE2> hubMasterx = og.hubsInternal().callHubDetailGetRealHub(hubMaster);
-		Hub<TYPE> hubx = og.hubsInternal().callHubDetailGetRealHub(hub); // in case it is a detailHub and has not been updated yet
+		final Hub<TYPE2> hubMasterx = og.hubsInternal().callHubDetailGetRealHub(hubMaster);
+		final Hub<TYPE> hubx = og.hubsInternal().callHubDetailGetRealHub(hub); // in case it is a detailHub and has not been updated yet
 		if (hubx == null) {
 			return;
 		}
@@ -407,19 +408,17 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 			// see if object is in hubx
 			if (getMethod == null) {
 				if (hubx.getObject(obj) == null) {
+//qqqqqqqqqqqqq needs VEnum support					
 					if (hubx.getAllowAdd(OAObjectCallback.CHECK_AllButProcessed, (TYPE) obj)) {
 						hubx.add((TYPE) obj);
 					}
-					/* 20210514 was:
-					if (hubx.getEnabled()) {
-					    hubx.add(obj);
-					}
-					*/
 				}
 			} else {
+				Class<?> returnTypeClass = getMethod.getReturnType();
 				for (int j = 0;; j++) {
 					Object o = hubx.elementAt(j);
 					if (o == null) {
+//qqqqqqqqqqqqq needs VEnum support						
 						if (hubx.getAllowAdd(OAObjectCallback.CHECK_AllButProcessed, obj)) {
 							createNewObject((TYPE2) obj);
 						}
@@ -433,12 +432,19 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 					if (o != null && o.equals(obj)) {
 						break;
 					}
+					if (!OAObject.class.isAssignableFrom(returnTypeClass)) {
+						// ex: VEnum used to set 
+						Object obj2 = OAConverter.convert(returnTypeClass, obj);
+						if (o != null && o.equals(obj2)) {
+							break;
+						}
+					}
 				}
 			}
 		}
 		// Step 3: remove objects not in hubMasterx
 		for (int i = 0;; i++) {
-			OAObject obj = hubx.elementAt(i);
+			TYPE obj = hubx.elementAt(i);
 			if (obj == null) {
 				break;
 			}
@@ -492,6 +498,7 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 		
 		
 		for (int i = hub.getSize(); i < max; i++) {
+//qqqqqqqq  needs VEnum support			
 			createNewObject(i);
 		}
 	}
