@@ -817,7 +817,7 @@ public abstract class HubAddRemoveService {
 		if (faHub.getHubData(thisHub).getSortListener() != null) {
 			boolean b = false;
 			for (int i = 0;; i++) {
-				Object cobj = thisHub.elementAt(i);
+				T cobj = thisHub.elementAt(i);
 				if (cobj == null) {
 					posTo = (i - 1);
 					break;
@@ -938,7 +938,7 @@ public abstract class HubAddRemoveService {
 					i--;
 				}
 
-				Object cobj = thisHub.elementAt(i);
+				T cobj = thisHub.elementAt(i);
 				if (obj == cobj || obj.equals(cobj)) {
 					return -1;
 				}

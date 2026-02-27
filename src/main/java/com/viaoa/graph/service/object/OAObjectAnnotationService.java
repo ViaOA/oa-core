@@ -24,7 +24,6 @@ import com.viaoa.annotation.OATriggerMethod;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.model.oa.VEnum;
-import com.viaoa.model.oa.VString;
 import com.viaoa.object.OACalcInfo;
 import com.viaoa.object.OAFkeyInfo;
 import com.viaoa.object.OALinkInfo;
@@ -37,6 +36,7 @@ import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OATriggerDelegate;
 import com.viaoa.object.OATriggerListener;
 import com.viaoa.object.OATriggerMethodListener;
+import com.viaoa.text.OATextCode;
 import com.viaoa.util.OAReflect;
 import com.viaoa.util.OAStr;
 import com.viaoa.util.OAString;
@@ -130,7 +130,7 @@ public abstract class OAObjectAnnotationService {
 	            oi.setLowerName(s);
 
 				oi.setSoftDeleteProperty(oaclass.softDeleteProperty());
-				oi.setSoftDeleteReasonProperty(oaclass.softDeleteProperty());
+				oi.setSoftDeleteReasonProperty(oaclass.softDeleteReasonProperty());
 				oi.setVersionProperty(oaclass.versionProperty());
 				oi.setVersionLinkProperty(oaclass.versionLinkProperty());
 				oi.setTimeSeriesProperty(oaclass.timeSeriesProperty());
@@ -168,7 +168,7 @@ public abstract class OAObjectAnnotationService {
 				String sx = "annotation OAId - should also have OAProperty annotation";
 				LOG.log(Level.WARNING, sx, new Exception(sx));
 			}
-			s = getPropertyName(m.getName());
+			s = OATextCode.getPropertyName(m.getName());
 			if (hs.contains("OAId." + s)) {
 				continue;
 			}
@@ -215,7 +215,7 @@ public abstract class OAObjectAnnotationService {
 			if (oaprop == null) {
 				continue;
 			}
-			final String name = getPropertyName(m.getName());
+			final String name = OATextCode.getPropertyName(m.getName());
 			if (hs.contains("prop." + name)) {
 				continue;
 			}
@@ -304,7 +304,7 @@ public abstract class OAObjectAnnotationService {
 			boolean b = oaprop.isBlob();
 			if (b) {
 				b = false;
-				Class c = m.getReturnType();
+				Class<?> c = m.getReturnType();
 				if (c.isArray()) {
 					c = c.getComponentType();
 					if (c.equals(byte.class)) {
@@ -332,12 +332,12 @@ public abstract class OAObjectAnnotationService {
 				Hub<VEnum> h = pi.getVEnums();
 				try {
 				    Method mx = OAReflect.getMethod(clazz, "get" + pi.getName()+"Enum");
-				    Class cz;
+				    Class<?> cz;
 				    if (mx != null) cz = mx.getReturnType();
 				    else cz = Class.forName(clazz.getName() + "$" + pi.getName());
 					// Field[] allFields = cz.getDeclaredFields();
 
-					Method mz = cz.getMethod("values", new Class[] {});
+					Method mz = cz.getMethod("values", new Class<?>[] {});
 					Object objzs = mz.invoke(null, (Object[]) null);
 					int xz = Array.getLength(objzs);
 					Method displayMethod = null;
@@ -354,7 +354,7 @@ public abstract class OAObjectAnnotationService {
 						if (displayMethod == null && !bDisplayMethod) {
 							bDisplayMethod = true;
 							try {
-								displayMethod = objz.getClass().getMethod("getDisplay", new Class[] {});
+								displayMethod = objz.getClass().getMethod("getDisplay", new Class<?>[] {});
 							} catch (Exception e) {
 							}
 						}
@@ -366,9 +366,8 @@ public abstract class OAObjectAnnotationService {
 						}
 					}
 				} catch (Exception e) {
-					System.out.println("OAAnnotationService exception loading enum names for class.property " + clazz.getSimpleName() + "."
-							+ pi.getName() + ", exception: " + e + ", will continue");
-					// e.printStackTrace();
+					LOG.log(Level.WARNING, "OAAnnotationService exception loading enum names for class.property " + clazz.getSimpleName() + "."
+							+ pi.getName() + ", exception: " + e + ", will continue", e);
 				}
 			}
 
@@ -404,7 +403,7 @@ public abstract class OAObjectAnnotationService {
 				continue;
 			}
 
-			String name = getPropertyName(m.getName());
+			String name = OATextCode.getPropertyName(m.getName());
 
 			if (hs.contains("fkprop." + name)) {
 				continue;
@@ -432,14 +431,14 @@ public abstract class OAObjectAnnotationService {
 			}
 
 			boolean bHub = false;
-			Class[] cs = m.getParameterTypes();
+			Class<?>[] cs = m.getParameterTypes();
 			if (cs != null && cs.length == 1 && Hub.class.equals(cs[0])) {
 				if (Modifier.isStatic(m.getModifiers())) {
 					bHub = true;
 				}
 			}
 
-			String name = getPropertyName(m.getName(), false);
+			String name = OATextCode.getPropertyName(m.getName(), false);
 			if (hs.contains("calc." + name)) {
 				continue;
 			}
@@ -485,9 +484,9 @@ public abstract class OAObjectAnnotationService {
 			if (annotation == null) {
 				continue;
 			}
-			Class c = m.getReturnType();
+			Class<?> c = m.getReturnType();
 
-			String name = getPropertyName(m.getName(), false);
+			String name = OATextCode.getPropertyName(m.getName(), false);
 			if (hs.contains("link." + name)) {
 				continue;
 			}
@@ -570,7 +569,7 @@ public abstract class OAObjectAnnotationService {
 
 		// Manys
 		for (final Method m : methods) {
-			Class c = m.getReturnType();
+			Class<?> c = m.getReturnType();
 			if (!Hub.class.isAssignableFrom(c)) {
 				continue; // 20111027 added
 			}
@@ -578,11 +577,11 @@ public abstract class OAObjectAnnotationService {
 				continue;
 			}
 
-			String name = getPropertyName(m.getName(), false);
+			String name = OATextCode.getPropertyName(m.getName(), false);
 
 			OALinkInfo li = callInfoGetLinkInfo(oi, name);
 			OAMany annotation = (OAMany) m.getAnnotation(OAMany.class);
-			Class cx = getHubObjectClass(annotation, m);
+			Class<?> cx = getHubObjectClass(annotation, m);
 
 			if (li == null) {
 				li = new OALinkInfo(name, cx, OALinkInfo.MANY);
@@ -735,7 +734,7 @@ public abstract class OAObjectAnnotationService {
 		for (final Method m : methods) {
 			String name = m.getName();
 			final OAObjCallback eq = (OAObjCallback) m.getAnnotation(OAObjCallback.class);
-			final Class[] cs = m.getParameterTypes();
+			final Class<?>[] cs = m.getParameterTypes();
 			if (eq == null) {
 				if (cs != null && cs.length == 1 && cs[0].equals(OAObjectCallback.class)) {
 				} else {
@@ -756,7 +755,7 @@ public abstract class OAObjectAnnotationService {
 			if (oi.getMethodInfo(name) != null) {
 				continue;
 			}
-			s = getPropertyName(name);
+			s = OATextCode.getPropertyName(name);
 			if (!s.equals(name)) {
 				boolean b = true;
 				if (oi.getPropertyInfo(s) == null) {
@@ -997,7 +996,7 @@ public abstract class OAObjectAnnotationService {
 		for (final Method m : methods) {
 			String name = m.getName();
 
-			final Class[] cs = m.getParameterTypes();
+			final Class<?>[] cs = m.getParameterTypes();
 			if (cs == null) {
 				continue;
 			}
@@ -1031,7 +1030,6 @@ public abstract class OAObjectAnnotationService {
 			return;
 		}
 		String s;
-		String[] ss;
 
 		for (Method method : methods) {
 			OATriggerMethod annotation = (OATriggerMethod) method.getAnnotation(OATriggerMethod.class);
@@ -1051,7 +1049,7 @@ public abstract class OAObjectAnnotationService {
 			s = "public void callbackName(HubEvent hubEvent)";
 			s = ("callback method signature for class=" + clazz.getSimpleName() + ", callbackMethod=" + method.getName() + ", must match: "
 					+ s);
-			Class[] cs = method.getParameterTypes();
+			Class<?>[] cs = method.getParameterTypes();
 			if (cs == null || cs.length != 1 || !Modifier.isPublic(method.getModifiers())) {
 				throw new RuntimeException(s);
 			}
@@ -1078,7 +1076,7 @@ public abstract class OAObjectAnnotationService {
 	public Class<? extends OAObject> getHubObjectClass(OAMany annotation, Method method) {
 		Class cx = this.callReflectGetHubObjectClass(method);
 		if (cx == null && annotation != null) {
-			Class cz = annotation.toClass();
+			Class<?> cz = annotation.toClass();
 			if (cz != null && !cz.equals(Object.class)) {
 				cx = cz;
 			}
@@ -1191,14 +1189,14 @@ public abstract class OAObjectAnnotationService {
 			final ArrayList<String> alPropertyName,
 			final ArrayList<String> alPropertyPath, final HashSet<OALinkInfo> hsLi) {
 
+		if (li == null || !li.isImportMatch()) {
+			return;
+		}
 		if (hsLi.contains(li)) {
 			return;
 		}
 		hsLi.add(li);
 
-		if (li == null || !li.isImportMatch()) {
-			return;
-		}
 
 		final OAObjectInfo oiTo = li.getToObjectInfo();
 
@@ -1255,29 +1253,6 @@ public abstract class OAObjectAnnotationService {
 		}
 	}
 	
-	
-//qqqqqqqq same methods are in OAObjectDatabaseService qqqqq find new home	
-	public String getPropertyName(String s) {
-		return getPropertyName(s, true);
-	}
-	public String getPropertyName(String s, boolean bToLower) {
-		boolean b = true;
-		if (s.startsWith("get")) {
-			s = s.substring(3);
-		} else if (s.startsWith("is")) {
-			s = s.substring(2);
-		} else if (s.startsWith("has")) {
-			s = s.substring(3);
-		} else if (s.startsWith("set")) {
-			s = s.substring(3);
-		} else {
-			b = false;
-		}
-		if (bToLower && b && s.length() > 1) {
-			s = Character.toLowerCase(s.charAt(0)) + s.substring(1);
-		}
-		return s;
-	}
 	
 	public abstract Class<?> callReflectGetHubObjectClass(Method method);
 	public abstract OACalcInfo callInfoGetCalcInfo(OAObjectInfo thisOI, String name);

@@ -33,6 +33,7 @@ import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.OAObjectService;
 import com.viaoa.hub.Hub;
+import com.viaoa.model.oa.VEnum;
 import com.viaoa.model.oa.VString;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadImpl;
@@ -4007,7 +4008,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	}
 
 	/**
-	 * Returns the enumeration name/value pairs defined for the specified property.
+	 * Returns the enumeration name/value pairs using VEnum, that is defined for the specified property.
 	 * <p>
 	 * This method delegates to {@link OAObjectEnumDelegate#getNameValues(Class, String)},
 	 * which locates any {@code @OAEnum} metadata declared for the property and
@@ -4019,28 +4020,11 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param propertyName the name of the property whose enumeration values are requested
 	 * @return a Hub of enumeration values, or {@code null} if the property has no enum metadata
 	 */
-	public Hub<VString> getNameValues(String propertyName) {
+	public Hub<VEnum> getNameValues(String propertyName) {
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.objectsInternal().callObjectEnumGetNameValues(this.getClass(), propertyName);
+		return og.objectsInternal().callObjectEnumGetVEnums(this.getClass(), propertyName);
 	}
 
-	/**
-	 * Returns the display-name values for the enum-style property specified.
-	 * <p>
-	 * This method delegates directly to
-	 * {@link OAObjectEnumDelegate#getDisplayNameValues(Class, String)},
-	 * passing this object's class and the given property name.
-	 * The delegate resolves any configured enum metadata and produces
-	 * a Hub<String> containing the display names associated with the
-	 * property's allowed values.
-	 *
-	 * @param propertyName the name of the enum-style property
-	 * @return a Hub of display-name strings for the property; never null
-	 */
-	public Hub<VString> getDisplayNameValues(String propertyName) {
-		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.objectsInternal().callObjectEnumGetDisplayNameValues(this.getClass(), propertyName);
-	}
 	
 	public static final class FriendAccess {
 		private FriendAccess() {

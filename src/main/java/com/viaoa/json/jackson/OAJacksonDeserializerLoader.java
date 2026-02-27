@@ -1362,9 +1362,9 @@ public class OAJacksonDeserializerLoader {
 				objx = jn.asText();
 				if (objx != null) {
 				    boolean bFound = false;
-					for (int i = 0; i < pi.getNameValues().size(); i++) {
+					for (int i = 0; i < pi.getVEnums().size(); i++) {
 						String sx = ((VString) objx).getValue();
-						if (sx != null && sx.equalsIgnoreCase(pi.getNameValues().get(i).getValue())) {
+						if (sx != null && sx.equalsIgnoreCase(pi.getVEnums().get(i).getName())) {
 							objx = i;
 							bFound = true;
 							break;

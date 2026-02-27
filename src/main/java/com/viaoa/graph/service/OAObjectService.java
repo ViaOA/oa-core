@@ -17,6 +17,7 @@ import com.viaoa.graph.api.internal.ObjectsInternalOps;
 import com.viaoa.graph.service.object.*;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubChangeListener;
+import com.viaoa.model.oa.VEnum;
 import com.viaoa.model.oa.VString;
 import com.viaoa.object.OACalcInfo;
 import com.viaoa.object.OACallback;
@@ -67,11 +68,6 @@ public class OAObjectService extends OAObjectParentService implements ObjectsOps
 
 	
 	// AnnotationService ======
-	@Override
-	public String callObjectAnnotationGetPropertyName(String methodName) {
-	    return getOAObjectAnnotationService().getPropertyName(methodName);
-	}
-
 	@Override
 	public Class<? extends OAObject> callObjectAnnotationGetHubObjectClass(OAMany annotation, Method method) {
 	    return getOAObjectAnnotationService().getHubObjectClass(annotation, method);
@@ -406,13 +402,8 @@ public class OAObjectService extends OAObjectParentService implements ObjectsOps
 
 	// EnumService ======
 	@Override
-	public Hub<VString> callObjectEnumGetNameValues(Class<? extends OAObject> clazz, String propertyName) {
-	    return getOAObjectEnumService().getNameValues(clazz, propertyName);
-	}
-
-	@Override
-	public Hub<VString> callObjectEnumGetDisplayNameValues(Class<? extends OAObject> clazz, String propertyName) {
-	    return getOAObjectEnumService().getDisplayNameValues(clazz, propertyName);
+	public Hub<VEnum> callObjectEnumGetVEnums(Class<? extends OAObject> clazz, String propertyName) {
+	    return getOAObjectEnumService().getVEnums(clazz, propertyName);
 	}
 
 	// EventService ======

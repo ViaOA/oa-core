@@ -42,7 +42,7 @@ public abstract class OAObjectDSService {
 		}
 	}
     
-    private static final ConcurrentHashMap<UUID, Long> hmAssigningId = new ConcurrentHashMap<UUID, Long>(17, 0.75F);
+    private static final ConcurrentHashMap<UUID, Long> hmAssigningId = new ConcurrentHashMap<>(17, 0.75F);
 	
 	/**
 	 * Returns the internal map tracking GUIDs of objects currently
@@ -69,7 +69,7 @@ public abstract class OAObjectDSService {
 		}
 		UUID g = callGuidGetGuid(obj);
 		if (b) {
-			getAssigningIdMap().put(g, 0l);
+			getAssigningIdMap().put(g, 0L);
 		} else {
 			getAssigningIdMap().remove(g);
 		}
@@ -117,6 +117,7 @@ public abstract class OAObjectDSService {
 	 * @return the DataSource for the object’s class, or {@code null}
 	 */
 	public OADataSource getDataSource(Object obj) {
+		if (obj == null) return null;
 		return OADataSource.getDataSource(obj.getClass());
 	}
 
@@ -365,21 +366,14 @@ public abstract class OAObjectDSService {
 	 */
 	public Object getObject(OAObject oaObj) {
 		OADataSource ds = OADataSource.getDataSource(oaObj.getClass());
+		if (ds == null) return null;
 		// todo, check if needed:  if (ds == null || ds.isAssigningId(oaObj)) return null;  // datasource could be assigning the Id to a unique value
 		return ds.getObject(oaObj.getClass(), callKeyGetKey(oaObj));
 	}
 
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz); 
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectGuidService().getGuid(obj)")
 	public abstract UUID callGuidGetGuid(OAObject oaObj);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectKeyService().createObjectKey(clazz, key)")
 	public abstract OAObjectKey callKeyCreateObjectKey(final Class<? extends OAObject> c, final Object ...ids);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectKeyService().getKey(obj)")
 	public abstract OAObjectKey callKeyGetKey(OAObject oaObj); 
 }
 

@@ -7,6 +7,7 @@ import com.viaoa.datasource.jdbc.db.*;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAPropertyInfo;
+import com.viaoa.text.OATextCode;
 import com.viaoa.util.*;
 
 public abstract class OAObjectDatabaseService {
@@ -27,10 +28,10 @@ public abstract class OAObjectDatabaseService {
 		if (classes == null) {
 			return;
 		}
-		for (Class c : classes) {
+		for (Class<? extends OAObject> c : classes) {
 			_createColumns(database, c);
 		}
-		for (Class c : classes) {
+		for (Class<? extends OAObject> c : classes) {
 			_updateTable(database, c);
 		}
 	}
@@ -80,7 +81,7 @@ public abstract class OAObjectDatabaseService {
 
 			OAId oaid = (OAId) m.getAnnotation(OAId.class);
 
-			String name = getPropertyName(m.getName());
+			String name = OATextCode.getPropertyName(m.getName());
 
 			String colName = dbcol.name(); // will be "", if the property name should be used.
 			if (colName == null || colName.length() == 0) {
@@ -122,7 +123,7 @@ public abstract class OAObjectDatabaseService {
 	 * @param clazz    the class whose annotations define table-level metadata
 	 * @throws Exception if required table or column annotations are missing or inconsistent
 	 */
-	private void _updateTable(Database database, Class<? extends OAObject> clazz) throws Exception {
+	private void _updateTable(final Database database, final Class<? extends OAObject> clazz) throws Exception {
 
 		Method[] methods = clazz.getDeclaredMethods(); // need to get all access types, since some could be private. does not get superclass methods
 
@@ -168,7 +169,7 @@ public abstract class OAObjectDatabaseService {
 					throw new Exception("method with fkey should not have a Many annotation defined, method is " + m.getName());
 				}
 
-				Class returnClass = m.getReturnType();
+				Class<?> returnClass = m.getReturnType();
 				if (returnClass == null) {
 					throw new Exception("method with fkey does not have a return class type, method is " + m.getName());
 				}
@@ -205,7 +206,7 @@ public abstract class OAObjectDatabaseService {
 						table.addColumn(c);
 					}
 				}
-				table.addLink(getPropertyName(m.getName()), fkTable, oaone.reverseName(), poss);
+				table.addLink(OATextCode.getPropertyName(m.getName()), fkTable, oaone.reverseName(), poss);
 			} else if (oalt != null) {
 				Table linkTable = database.getTable(oalt.name());
 				if (linkTable == null) {
@@ -228,7 +229,7 @@ public abstract class OAObjectDatabaseService {
 					poss = OAArray.add(poss, i);
 					poss2 = OAArray.add(poss2, linkTable.getColumns().length);
 
-					if (j > oalt.columns().length) {
+					if (j >= oalt.columns().length) {
 						throw new Exception(
 								"mismatch between linktable fkey columns and pkey columns, more pkeys. method is " + m.getName());
 					}
@@ -245,15 +246,15 @@ public abstract class OAObjectDatabaseService {
 				}
 
 				if (oamany != null) {
-					table.addLink(getPropertyName(m.getName()), linkTable, oamany.reverseName(), poss);
+					table.addLink(OATextCode.getPropertyName(m.getName()), linkTable, oamany.reverseName(), poss);
 				} else {
-					table.addLink(getPropertyName(m.getName()), linkTable, oaone.reverseName(), poss);
+					table.addLink(OATextCode.getPropertyName(m.getName()), linkTable, oaone.reverseName(), poss);
 				}
 
 				if (oamany != null) {
-					linkTable.addLink(oamany.reverseName(), table, getPropertyName(m.getName()), poss2);
+					linkTable.addLink(oamany.reverseName(), table, OATextCode.getPropertyName(m.getName()), poss2);
 				} else {
-					linkTable.addLink(oaone.reverseName(), table, getPropertyName(m.getName()), poss2);
+					linkTable.addLink(oaone.reverseName(), table, OATextCode.getPropertyName(m.getName()), poss2);
 				}
 
 				String s = oalt.indexName();
@@ -277,7 +278,7 @@ public abstract class OAObjectDatabaseService {
 				}
 				Table tt = database.getTable(m.getReturnType());
 				if (tt != null) {
-					table.addLink(getPropertyName(m.getName()), tt, oaone.reverseName(), poss);
+					table.addLink(OATextCode.getPropertyName(m.getName()), tt, oaone.reverseName(), poss);
 				}
 			} else if (oamany != null) {
 				Column[] cols = table.getColumns();
@@ -288,10 +289,10 @@ public abstract class OAObjectDatabaseService {
 					}
 					poss = OAArray.add(poss, i);
 				}
-				Class c = callAnnotationGetHubObjectClass(oamany, m);
+				Class<? extends OAObject> c = callAnnotationGetHubObjectClass(oamany, m);
 				Table tt = database.getTable(c);
 				if (tt != null) {
-					table.addLink(getPropertyName(m.getName()), tt, oamany.reverseName(), poss);
+					table.addLink(OATextCode.getPropertyName(m.getName()), tt, oamany.reverseName(), poss);
 				}
 			}
 		}
@@ -308,59 +309,8 @@ public abstract class OAObjectDatabaseService {
 		}
 	}
 	
-	
-
-//qqqqqq might want to put in a Util class	
-	
-	/**
-	 * Extracts a property name from a getter/setter-style method name.
-	 * <p>
-	 * Recognizes prefixes {@code get}, {@code is}, {@code has}, and {@code set},
-	 * removing the prefix and converting the first character to lowercase.
-	 *
-	 * @param s the method name
-	 * @return the derived property name
-	 */
-	public String getPropertyName(String s) {
-		return getPropertyName(s, true);
-	}
-
-	/**
-	 * Extracts a property name from a method name using JavaBean-style prefix rules.
-	 * <p>
-	 * Recognizes prefixes {@code get}, {@code is}, {@code has}, and {@code set}.
-	 * If {@code bToLower} is true, the resulting name begins with a lowercase letter.
-	 *
-	 * @param s        the method name
-	 * @param bToLower whether to lowercase the first character of the extracted name
-	 * @return the derived property name
-	 */
-	public String getPropertyName(String s, boolean bToLower) {
-		boolean b = true;
-		if (s.startsWith("get")) {
-			s = s.substring(3);
-		} else if (s.startsWith("is")) {
-			s = s.substring(2);
-		} else if (s.startsWith("has")) {
-			s = s.substring(3);
-		} else if (s.startsWith("set")) {
-			s = s.substring(3);
-		} else {
-			b = false;
-		}
-		if (bToLower && b && s.length() > 1) {
-			s = Character.toLowerCase(s.charAt(0)) + s.substring(1);
-		}
-		return s;
-	}
-	
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz);	
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().getHubObjectClass(oamany, m)")
-	public abstract Class<?> callAnnotationGetHubObjectClass(OAMany annotation, Method method);	
-    
+	public abstract Class<? extends OAObject> callAnnotationGetHubObjectClass(OAMany annotation, Method method);	
 }
 
 

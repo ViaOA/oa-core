@@ -25,7 +25,7 @@ public abstract class HubXMLService {
 	 * @param bKeyOnly true to write only object keys, false for full serialization
 	 * @param cascade  cascade options controlling nested object serialization
 	 */
-	public void write(Hub thisHub, OAXMLWriter ow, final String tagName, boolean bKeyOnly, OACascade cascade) {
+	public void write(Hub<?> thisHub, OAXMLWriter ow, final String tagName, boolean bKeyOnly, OACascade cascade) {
 		write(thisHub, ow, tagName, bKeyOnly ? OAXMLWriter.WRITE_KEYONLY : OAXMLWriter.WRITE_YES, cascade);
 	}
 
@@ -41,7 +41,7 @@ public abstract class HubXMLService {
 	 * @param writeType configuration flag determining full or key-only output
 	 * @param cascade   cascade settings for nested OAObject serialization
 	 */
-    public void write(Hub thisHub, OAXMLWriter ow, final String tagName, int writeType, OACascade cascade) {
+    public void write(Hub<?> thisHub, OAXMLWriter ow, final String tagName, int writeType, OACascade cascade) {
         if (thisHub == null || ow == null) return;
         try {
             if (tagName != null) ow.push(tagName);
@@ -65,7 +65,7 @@ public abstract class HubXMLService {
      * @param writeType determines full, key-only, or conditional key-only output
      * @param cascade   cascade options governing nested serialization
      */
-	private void _write(Hub thisHub, OAXMLWriter ow, final String tagName, int writeType, OACascade cascade) {
+	private void _write(Hub<?> thisHub, OAXMLWriter ow, final String tagName, int writeType, OACascade cascade) {
 	    boolean bKeyOnly = (writeType == OAXMLWriter.WRITE_KEYONLY || writeType == OAXMLWriter.WRITE_NONEW_KEYONLY);
 	    ow.indent();
 	    
@@ -104,7 +104,6 @@ public abstract class HubXMLService {
         else ow.println("</"+tagName+">");
     }
 
-	// @OAParentProvided (example = "srvcObject.getOAObjectXMLService().write")
 	public abstract void callObjectXMLWrite(final OAObject oaObj, final OAXMLWriter ow, final String tagName, boolean bKeyOnly, final OACascade cascade);
 
 }

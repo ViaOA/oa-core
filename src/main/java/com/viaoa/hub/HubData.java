@@ -254,7 +254,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
      *
      * @return the sort listener, or {@code null}
      */
-    public HubSortListener getSortListener() {
+    public HubSortListener<TYPE> getSortListener() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return null;
         return hdx.sortListener;

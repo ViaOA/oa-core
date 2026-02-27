@@ -26,31 +26,7 @@ import com.viaoa.xml.OAXMLWriter;
 public class HubService extends HubParentService implements HubsOps, HubsInternalOps {
 	private final Logger LOG = Logger.getLogger(HubService.class.getName());
 
-	private boolean bInitialized;
-	public static final Boolean TRUE = Boolean.valueOf(true);
-	public static final Boolean FALSE = Boolean.valueOf(false);
-	
-
-	
-	// Hub =========================
-	@Override
-	public <T extends OAObject> void callHubHubSetObjectClass(Hub<T> hubDetail, Class<T> clazz) {
-		getHubDataService().setObjectClass(hubDetail, clazz);
-	}
-
-	@Override
-	public boolean callHubStatusIsValid(Hub<?> hub) {
-	    return getHubStatusService().isValid(hub);
-	}
-
-	@Override
-	public boolean callHubStatusGetChanged(Hub<?> thisHub, int iCascadeRule, OACascade cascade) {
-	    return getHubStatusService().getChanged(thisHub, iCascadeRule, cascade);
-	}
-	
-	
 	// AddRemove =========================
-
 	@Override
 	public <T extends OAObject> boolean callHubAddRemoveAdd(Hub<T> hub, T obj) {
 	    return getHubAddRemoveService().add(hub, obj);
@@ -179,6 +155,10 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	}
 
 	// Data =========================
+	@Override
+	public <T extends OAObject> void callHubDataSetObjectClass(Hub<T> hubDetail, Class<T> clazz) {
+		getHubDataService().setObjectClass(hubDetail, clazz);
+	}
 
 	@Override
 	public void callHubDataEnsureCapacity(Hub<?> hub, int size) {
@@ -188,11 +168,6 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	@Override
 	public void callHubDataResizeToFit(Hub<?> hub) {
 	    getHubDataService().resizeToFit(hub);
-	}
-
-	@Override
-	public void callHubStatusSetChanged(Hub<?> hub, boolean bIsChanged) {
-	    getHubStatusService().setChanged(hub, bIsChanged);
 	}
 
 	@Override
@@ -691,10 +666,6 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	    return getHubSizeService().getLoadedSize(hub);
 	}
 	
-	@Override
-	public <T extends OAObject> HubCurrentStateEnum callHubStatusGetCurrentState(Hub<T> thisHub, Hub<T> hubNew, ArrayList<T> alNew) {
-	    return getHubStatusService().getCurrentState(thisHub, hubNew, alNew);
-	}
 	
 	
 	// Sort =========================
@@ -728,6 +699,29 @@ public class HubService extends HubParentService implements HubsOps, HubsInterna
 	    getHubSortService().resort(hub);
 	}
 
+	
+	// Status =========================
+	@Override
+	public boolean callHubStatusIsValid(Hub<?> hub) {
+	    return getHubStatusService().isValid(hub);
+	}
+	
+	@Override
+	public boolean callHubStatusGetChanged(Hub<?> thisHub, int iCascadeRule, OACascade cascade) {
+	    return getHubStatusService().getChanged(thisHub, iCascadeRule, cascade);
+	}
+	
+	@Override
+	public void callHubStatusSetChanged(Hub<?> hub, boolean bIsChanged) {
+	    getHubStatusService().setChanged(hub, bIsChanged);
+	}
+
+	@Override
+	public <T extends OAObject> HubCurrentStateEnum callHubStatusGetCurrentState(Hub<T> thisHub, Hub<T> hubNew, ArrayList<T> alNew) {
+	    return getHubStatusService().getCurrentState(thisHub, hubNew, alNew);
+	}
+	
+	
 	// XML =========================
 	@Override
 	public void callHubXMLWrite(Hub<?> hub, OAXMLWriter ow, String tagName, boolean bKeyOnly, OACascade cascade) {

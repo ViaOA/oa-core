@@ -113,6 +113,38 @@ public abstract class OAObjectParentService {
 		this.srvcSync = srvcSync;
 		this.srvcThreadLocal = srvcThreadLocal;
 		this.srvcRemoteThread = srvcRemoteThread;
+		
+	    getOAObjectAnnotationService();
+	    getOAObjectAutoAddService();
+	    getOAObjectCacheService();
+	    getOAObjectChangeService();
+	    getOAObjectCallbackService();
+	    getOAObjectCSService();
+	    getOAObjectDatabaseService();
+	    getOAObjectDeleteService();
+	    getOAObjectDSService();
+	    getOAObjectEnumService();
+	    getOAObjectEmptyHubService();
+	    getOAObjectEventService();
+	    getOAObjectFindService();
+	    getOAObjectGuidService();
+	    getOAObjectHubService();
+	    getOAObjectImportMatchService();
+	    getOAObjectInfoService(); 
+	    getOAObjectInitializeService(); 
+	    getOAObjectKeyService();
+	    getOAObjectLockService();
+	    getOAObjectLogService();
+	    getOAObjectPropertyService();
+	    getOAObjectRecurseService();
+	    getOAObjectReflectService();
+	    getOAObjectSaveService();
+	    getOAObjectSchedulerService();
+	    getOAObjectSerializeService();
+	    getOAObjectSiblingService();
+	    getOAObjectUniqueService();
+	    getOAObjectXMLService();
+		
 	}
 	
 
@@ -418,7 +450,7 @@ public abstract class OAObjectParentService {
 				return OAObjectParentService.this.getOAObjectInfoService().getOAObjectInfo(clazz);
 			}
 			@Override
-			public Class<?> callAnnotationGetHubObjectClass(OAMany annotation, Method method) {
+			public Class<? extends OAObject> callAnnotationGetHubObjectClass(OAMany annotation, Method method) {
 				return OAObjectParentService.this.getOAObjectAnnotationService().getHubObjectClass(annotation, method);
 			}
     	};

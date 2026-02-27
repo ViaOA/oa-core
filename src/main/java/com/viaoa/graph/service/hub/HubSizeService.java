@@ -50,29 +50,18 @@ public abstract class HubSizeService {
 	 * @param thisHub the hub whose fully loaded size is requested
 	 * @return the loaded size of the hub
 	 */
-	public int getLoadedSize(Hub thisHub) {
+	public int getLoadedSize(Hub<?> thisHub) {
 		if (thisHub == null) {
 			return 0;
 		}
-		thisHub.loadAllData();
+		callHubSelectLoadAllData(thisHub);
 		return getSize(thisHub);
 	}
 
-	private int cntLoadedSizeError;
-
-	
-	
 	public abstract boolean callHubSelectIsMoreData(Hub<?> thisHub);
 	public abstract <T extends OAObject> boolean callHubSelectIsCounted(Hub<T> thisHub);
 	public abstract int callHubDataGetCurrentSize(Hub<?> thisHub);
 	public abstract <T extends OAObject> int callHubSelectFetchMore(Hub<T> thisHub);	
 	public abstract <T extends OAObject> int callHubSelectGetCount(Hub<T> thisHub);
-
-	
-	
-	
-	
-	
-	
-	
+	public abstract void callHubSelectLoadAllData(Hub<?> hub);	
 }

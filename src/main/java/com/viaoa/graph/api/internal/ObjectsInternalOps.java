@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.viaoa.annotation.OAMany;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubChangeListener;
+import com.viaoa.model.oa.VEnum;
 import com.viaoa.model.oa.VString;
 import com.viaoa.object.OACalcInfo;
 import com.viaoa.object.OACallback;
@@ -49,7 +50,6 @@ public interface ObjectsInternalOps {
 	public Object[] callObjectFind(OAObject oaObjBase, String propertyPath, Object findValue, boolean bFindAll);
 
 	// Annotation
-	public String callObjectAnnotationGetPropertyName(String methodName);
 	public Class<? extends OAObject> callObjectAnnotationGetHubObjectClass(OAMany annotation, Method method);
 	
 	// Cache
@@ -132,8 +132,7 @@ public interface ObjectsInternalOps {
 
 	
 	// Enum
-	public Hub<VString> callObjectEnumGetNameValues(Class<? extends OAObject> clazz, String propertyName);
-	public Hub<VString> callObjectEnumGetDisplayNameValues(Class<? extends OAObject> clazz, String propertyName);
+	public Hub<VEnum> callObjectEnumGetVEnums(Class<? extends OAObject> clazz, String propertyName);
 	
 	// Event
 	public void callObjectEventFireBeforePropertyChange(OAObject oaObj, String propertyName, Object oldObj, Object newObj, boolean bLocalOnly, boolean bSetChanged);
@@ -251,6 +250,4 @@ public interface ObjectsInternalOps {
 
 	// XML
 	public void callObjectXMLWrite(OAObject obj, OAXMLWriter oaxmlWriter, String tagName, boolean bKeyOnly, OACascade cascade);
-
-
 }

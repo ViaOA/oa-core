@@ -97,9 +97,9 @@ public abstract class OAObjectChangeService {
 
 		// check link cascade objects
 		OAObjectInfo oi = callObjectInfoGetOAObjectInfo(oaObj);
-		List al = oi.getLinkInfos();
+		List<OALinkInfo> al = oi.getLinkInfos();
 		for (int i = 0; i < al.size(); i++) {
-			OALinkInfo li = (OALinkInfo) al.get(i);
+			OALinkInfo li = al.get(i);
 			String prop = li.getName();
 			if (prop == null || prop.length() < 1) {
 				continue;
@@ -162,10 +162,10 @@ public abstract class OAObjectChangeService {
 
 	public abstract OAObjectInfo callObjectInfoGetOAObjectInfo(OAObject oaObj);
 	public abstract boolean callObjectInfoIsMany2Many(OALinkInfo li);
-	public abstract boolean callHubStatusGetChanged(Hub hub, int type, OACascade cascade);
+	public abstract boolean callHubStatusGetChanged(Hub<?> hub, int type, OACascade cascade);
 	public abstract Object callObjectReflectGetRawReference(OAObject oaObj, String prop);
     public abstract Object callObjectReflectGetProperty(OAObject oaObj, String prop);
-    public abstract boolean callObjectHubGetChanged(Hub hub, int cascadeRule, OACascade cascade);	
+    public abstract boolean callObjectHubGetChanged(Hub<?> hub, int cascadeRule, OACascade cascade);	
     public abstract boolean callObjectReflectIsReferenceNullOrNotLoaded(OAObject oaObj, String prop);
 	
 }

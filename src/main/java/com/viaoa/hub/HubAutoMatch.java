@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.model.oa.VEnum;
 import com.viaoa.model.oa.VString;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
@@ -419,7 +420,7 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 					Object o = hubx.elementAt(j);
 					if (o == null) {
 //qqqqqqqqqqqqq needs VEnum support						
-						if (hubx.getAllowAdd(OAObjectCallback.CHECK_AllButProcessed, obj)) {
+						if (hubx.getAllowAdd(OAObjectCallback.CHECK_AllButProcessed, (TYPE) obj)) {
 							createNewObject((TYPE2) obj);
 						}
 						break;
@@ -490,16 +491,21 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 		}
 		*/
 
-		Class cz = hub.getObjectClass();
+		Class<? extends OAObject> cz = hub.getObjectClass();
 
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(cz);
-		Hub<VString> hubEnumValues = og.objectsInternal().callObjectEnumGetDisplayNameValues(cz, property);
-		int max = hubEnumValues.size();
+		Hub<VEnum> hubEnums = og.objectsInternal().callObjectEnumGetVEnums(cz, property);
+		int max = hubEnums.size();
 		
 		
 		for (int i = hub.getSize(); i < max; i++) {
+			
+			// TOdo: qqqqqqqqqqqq
+			//qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq			
+			//qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq			
+//qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq			
 //qqqqqqqq  needs VEnum support			
-			createNewObject(i);
+//			createNewObject(i);
 		}
 	}
 

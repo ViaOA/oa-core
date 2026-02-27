@@ -351,7 +351,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			String pp = "(" + classFrom.getName() + ") " + OAGroupBy.P_Hub;
 			hubDetail = getCombinedHub().getDetailHub(pp);
 			final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hubFrom);
-			og.hubsInternal().callHubHubSetObjectClass(hubDetail, classFrom);
+			og.hubsInternal().callHubDataSetObjectClass(hubDetail, classFrom);
 			hubDetail.addHubListener(new HubListenerAdapter() {
 				@Override
 				public void afterChangeActiveObject(HubEvent e) {
@@ -2078,7 +2078,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			gb.setGroupBy(grpBy);
 		}
 		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hubFrom);
-		og.hubsInternal().callHubHubSetObjectClass(gb.getHub(), classFrom);
+		og.hubsInternal().callHubDataSetObjectClass(gb.getHub(), classFrom);
 
 		// 20190418 if hubPropertyName!=null, then use a HubCopy
 		if (OAString.isNotEmpty(hubPropertyName)) {

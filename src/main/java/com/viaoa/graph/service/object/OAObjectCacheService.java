@@ -20,7 +20,6 @@ import com.viaoa.datasource.objectcache.OADataSourceObjectCache;
 import com.viaoa.filter.OAEqualFilter;
 import com.viaoa.filter.OAFilterDelegate;
 import com.viaoa.filter.OAFilterDelegate.FinderInfo;
-import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubTemp;
 import com.viaoa.object.OACallback;
@@ -31,9 +30,6 @@ import com.viaoa.object.OAObjectCache;
 import com.viaoa.object.OAObjectCacheListener;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
@@ -163,7 +159,7 @@ public abstract class OAObjectCacheService {
 	 * @return the first matching Hub, or {@code null} if none exist
 	 */
 	public <T extends OAObject> Hub<T> getSelectAllHub(Class<T> clazz) {
-		Hub<?>[] hs = getSelectAllHubs(clazz);
+		Hub<T>[] hs = getSelectAllHubs(clazz);
 		if (hs != null && hs.length > 0) {
 			return (Hub<T>) hs[0];
 		}
@@ -291,7 +287,7 @@ public abstract class OAObjectCacheService {
 			return;
 		}
 		synchronized (hmCacheNamedHub) {
-			hmCacheNamedHub.put(name.toUpperCase(), new WeakReference(hub));
+			hmCacheNamedHub.put(name.toUpperCase(), new WeakReference<Hub<?>>(hub));
 			LOG.fine("total named Hubs is now =" + hmCacheNamedHub.size());
 		}
 	}
@@ -312,7 +308,7 @@ public abstract class OAObjectCacheService {
 		
 		Hub<?> hub = null;
 		synchronized (hmCacheNamedHub) {
-			WeakReference ref = (WeakReference) hmCacheNamedHub.get(name.toUpperCase());
+			WeakReference<?> ref = (WeakReference) hmCacheNamedHub.get(name.toUpperCase());
 			if (ref != null) {
 				hub = (Hub) ref.get();
 				if (hub == null) {
@@ -527,7 +523,7 @@ public abstract class OAObjectCacheService {
 	 */
 	public void removeAllObjects() {
 		LOG.warning("removing all Objects was called (fyi only)");
-		for (Class c : objectCache.getClasses()) {
+		for (Class<? extends OAObject> c : objectCache.getClasses()) {
 			removeAllObjects(c);
 		}
 	}
@@ -865,7 +861,7 @@ public abstract class OAObjectCacheService {
 		}
 
 		if (bAddToSelectAll) {
-			Hub[] hs = getSelectAllHubs(obj.getClass());
+			Hub<T>[] hs = getSelectAllHubs( (Class<T>) obj.getClass());
 			for (int i = 0; hs != null && i < hs.length; i++) {
 				hs[i].add(obj);
 			}
@@ -948,8 +944,8 @@ public abstract class OAObjectCacheService {
 	 *
 	 * @param obj the object to add to all select-all Hubs
 	 */
-	public void addToSelectAllHubs(OAObject obj) {
-		Hub[] hs = getSelectAllHubs(obj.getClass());
+	public <T extends OAObject> void addToSelectAllHubs(T obj) {
+		Hub<T>[] hs = getSelectAllHubs( (Class<T>) obj.getClass());
 		for (int i = 0; hs != null && i < hs.length; i++) {
 			LOG.finer("adding to selectAll Hub=" + hs[i]);
 			if (!hs[i].contains(obj)) {
@@ -1430,13 +1426,12 @@ public abstract class OAObjectCacheService {
 	 *
 	 * @param clazz the class of objects to refresh; if null, no action is taken
 	 */
-	public void refresh(Class clazz) {
+	public void refresh(Class<? extends OAObject> clazz) {
 		if (clazz == null) {
 			return;
 		}
 		LOG.fine("refreshing " + clazz.getSimpleName());
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(clazz);
 		if (!callSyncIsServer()) {
 			callSyncRemoteServerRefreshCache(clazz);
 			LOG.fine("refreshing " + clazz.getSimpleName() + " will be ran on the server");
@@ -1498,7 +1493,7 @@ public abstract class OAObjectCacheService {
 
 		int cntHubs = 0;
 		int cntInHubs = 0;
-		for (Hub h : hsHub) {
+		for (Hub<?> h : hsHub) {
 			callHubSelectRefreshSelect(h);
 			cntHubs++;
 			cntInHubs += h.getSize();
@@ -1537,41 +1532,14 @@ public abstract class OAObjectCacheService {
 		return objectCache.getRandom(clazz, max);
 	}	
 
-
-
-
 	public abstract OAObjectKey callKeyCreateObjectKey(OAObject obj);
-
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class<? extends OAObject> clazz);	
-	
 	public abstract OAObjectKey callKeyGetKey(OAObject oaObj);	
-	
 	public abstract OAObjectKey callKeyCreateObjectKey(final Class<? extends OAObject> c, final Object ...ids);	
-
 	public abstract <T extends OAObject> Hub<T>[] callHubGetHubReferences(T oaObj);	
-	
 	public abstract OALinkInfo callDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
-
 	public abstract boolean callHubSelectRefreshSelect(Hub<?> thisHub);
-	
 	public abstract boolean callSyncIsServer();	
 	public abstract void callSyncRemoteServerRefreshCache(Class<? extends OAObject> clazz);	
-
 	public abstract int callThreadLocalGetObjectCacheAddMode();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

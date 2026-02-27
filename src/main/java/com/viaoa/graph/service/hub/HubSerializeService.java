@@ -2,6 +2,7 @@ package com.viaoa.graph.service.hub;
 
 import java.io.IOException;
 import java.io.ObjectStreamException;
+import java.util.Vector;
 import java.util.logging.Logger;
 
 import com.viaoa.hub.*;
@@ -34,31 +35,32 @@ public abstract class HubSerializeService {
 	}
 
 	public <T extends OAObject> int replaceObject(Hub<T> thisHub, T objFrom, T objTo) {
-		if (thisHub == null)
-			return -1;
-		if (faHub.getHubData(thisHub) == null)
-			return -1;
-		if (faHub.getHubData(thisHub).getVector() == null)
-			return -1;
-		int pos = faHub.getHubData(thisHub).getVector().indexOf(objFrom);
-		if (pos >= 0)
-			faHub.getHubData(thisHub).getVector().setElementAt(objTo, pos);
+		if (thisHub == null) return -1;
+		//qqqqq not thread safe
+		HubData<T> hd = faHub.getHubData(thisHub);
+		if (hd == null) return -1;
+		Vector<T> vec = hd.getVector(); 
+		if (vec == null) return -1;
+		int pos = vec.indexOf(objFrom);
+		if (pos >= 0) vec.setElementAt(objTo, pos);
 		return pos;
 	}
 
-	public void replaceMasterObject(Hub thisHub, OAObject objFrom, OAObject objTo) {
-		if (thisHub == null)
-			return;
-		if (faHub.getHubDataMaster(thisHub).getMasterObject() == objFrom) {
-			faHub.getHubDataMaster(thisHub).setMasterObject(objTo);
+	public <T extends OAObject> void replaceMasterObject(Hub<T> thisHub, T objFrom, T objTo) {
+		if (thisHub == null) return;
+		HubDataMaster dm = faHub.getHubDataMaster(thisHub); 
+		if (dm.getMasterObject() == objFrom) {
+			dm.setMasterObject(objTo);
 		}
 	}
 
 	/**
 	 * Used by OAObjectSerializeDelegate
 	 */
-	public boolean isResolved(Hub<?> thisHub) {
-		return (thisHub != null && faHub.getHubData(thisHub) != null && faHub.getHubData(thisHub).getVector() != null);
+	public <T extends OAObject> boolean isResolved(Hub<T> thisHub) {
+		if (thisHub == null) return false;
+		HubData<T> hd = faHub.getHubData(thisHub);
+		return (hd != null && hd.getVector() != null);
 	}
 
 	/**
@@ -84,19 +86,10 @@ public abstract class HubSerializeService {
 		return thisHub;
 	}
 
-	// @OAParentProvided (example = "srvcObject.getOAObjectHubService().isAlreadyInHub")
 	public abstract boolean callObjectHubIsAlreadyInHub(OAObject oaObj, OALinkInfo li);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectHubService().addHub")
 	public abstract <T extends OAObject> boolean callObjectHubAddHub(T oaObj, Hub<T> hub);
-
-	// @OAParentProvided (example = "srvcHub.getHubSelectService().isMoreData")
 	public abstract boolean callHubSelectIsMoreData(Hub<?> thisHub);
-
-	// @OAParentProvided (example = "srvcHub.getHubSelectService().loadAllData")
 	public abstract void callHubSelectLoadAllData(Hub<?> thisHub);
-
-	// @OAParentProvided (example = "srvcThreadLocal.setSuppressCSMessages")
 	public abstract void callThreadLocalSetSuppressCSMessages(boolean b);
 }
 

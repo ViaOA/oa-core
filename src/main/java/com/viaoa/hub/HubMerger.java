@@ -917,7 +917,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         }
         // verify that last property is same class as hubCombined
         if (hubCombined != null && hubCombined.getObjectClass() == null) {
-            og.hubsInternal().callHubHubSetObjectClass(hubCombined, clazz);
+            og.hubsInternal().callHubDataSetObjectClass(hubCombined, clazz);
         }
         if (hubCombined != null && !hubCombined.getObjectClass().equals(clazz)) {
             if (!clazz.equals(Hub.class)) {

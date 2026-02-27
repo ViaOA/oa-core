@@ -1,13 +1,10 @@
 package com.viaoa.graph.service.object;
 
-import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OACallback;
-import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
@@ -32,7 +29,7 @@ public abstract class OAObjectAutoAddService {
 	 * Tracks OAObjects for which automatic reverse-link insertion is disabled.
 	 * Presence of a GUID in this map indicates auto-add is turned off.
 	 */
-	private static final ConcurrentHashMap<UUID, Long> hmAutoAdd = new ConcurrentHashMap();
+	private static final ConcurrentHashMap<UUID, Long> hmAutoAdd = new ConcurrentHashMap<>();
 	
 	/**
 	 * Enables or disables automatic reverse-link insertion for the specified

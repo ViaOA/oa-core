@@ -95,7 +95,7 @@ public class HubSortListener<TYPE extends OAObject> extends HubListenerAdapter<T
      * Comparator used for sorting Hub contents. If null, an OAComparator
      * will be created automatically based on the property paths.
      */
-    Comparator<?> comparator;
+    Comparator<TYPE> comparator;
     
     /**
      * Indicates whether sorting is ascending (true) or descending (false),
@@ -135,7 +135,7 @@ public class HubSortListener<TYPE extends OAObject> extends HubListenerAdapter<T
      * @param bAscending true if the comparator’s natural ordering should be
      *                   treated as ascending
      */
-    public HubSortListener(Hub<TYPE> hub, Comparator<?> comparator, boolean bAscending) {
+    public HubSortListener(Hub<TYPE> hub, Comparator<TYPE> comparator, boolean bAscending) {
         this(hub, comparator, null, bAscending);
     }
 
@@ -146,7 +146,7 @@ public class HubSortListener<TYPE extends OAObject> extends HubListenerAdapter<T
      * @param hub        the Hub to keep sorted
      * @param comparator explicit Comparator for sorting
      */
-    public HubSortListener(Hub<TYPE> hub, Comparator<?> comparator) {
+    public HubSortListener(Hub<TYPE> hub, Comparator<TYPE> comparator) {
         this(hub, comparator, null, true);
     }
 
@@ -160,7 +160,7 @@ public class HubSortListener<TYPE extends OAObject> extends HubListenerAdapter<T
      * @param propertyPaths property-path expression for sorting
      * @param bAscending    true for ascending sort, false for descending
      */
-    public HubSortListener(Hub<TYPE> hub, Comparator<?> comparator, String propertyPaths, boolean bAscending) {
+    public HubSortListener(Hub<TYPE> hub, Comparator<TYPE> comparator, String propertyPaths, boolean bAscending) {
         this.hub = hub;
         this.comparator = comparator;
         this.propertyPaths = propertyPaths;
@@ -323,7 +323,7 @@ public class HubSortListener<TYPE extends OAObject> extends HubListenerAdapter<T
         }
     }
     
-    public Comparator<?> getComparator() {
+    public Comparator<TYPE> getComparator() {
     	return comparator;
     }
 }

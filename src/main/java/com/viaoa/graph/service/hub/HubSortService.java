@@ -6,9 +6,10 @@ import java.util.Comparator;
 import java.util.ConcurrentModificationException;
 import java.util.logging.Logger;
 
+import com.viaoa.concurrent.OAThread;
 import com.viaoa.hub.*;
+import com.viaoa.object.OAObject;
 import com.viaoa.object.OASiblingHelper;
-import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAComparator;
 import com.viaoa.util.OAString;
 
@@ -32,7 +33,7 @@ public abstract class HubSortService {
 	 * @param bAscending    true for ascending order, false for descending
 	 * @param comp          optional Comparator; if null, property-based sorting is used
 	 */
-    public void sort(Hub thisHub, String propertyPaths, boolean bAscending, Comparator comp) {
+    public void sort(Hub<?> thisHub, String propertyPaths, boolean bAscending, Comparator<?> comp) {
         sort(thisHub, propertyPaths, bAscending, comp, false);
     }
 
@@ -45,7 +46,7 @@ public abstract class HubSortService {
      * @param propertyPaths property path(s) used for sorting
      * @param bAscending    true for ascending order, false for descending
      */
-    public void sort(Hub thisHub, String propertyPaths, boolean bAscending) {
+    public void sort(Hub<?> thisHub, String propertyPaths, boolean bAscending) {
         sort(thisHub, propertyPaths, bAscending, null, false);
     }
     
@@ -61,7 +62,7 @@ public abstract class HubSortService {
      * @param bAlreadySortedAndLocalOnly  true to skip performing sort (local-only sorted Hub)
      * @return true if sort parameters changed and sorting should be performed
      */
-    public void sort(Hub thisHub, String propertyPaths, boolean bAscending, Comparator comp, boolean bAlreadySortedAndLocalOnly) {
+    public void sort(Hub<?> thisHub, String propertyPaths, boolean bAscending, Comparator<?> comp, boolean bAlreadySortedAndLocalOnly) {
         if (thisHub == null) return;
         boolean b = false;
         try {
@@ -81,7 +82,7 @@ public abstract class HubSortService {
      * @param thisHub the Hub to inspect
      * @return the active HubSortListener, or null
      */
-    public HubSortListener getSortListener(Hub thisHub) {
+    public <T extends OAObject> HubSortListener<T> getSortListener(Hub<T> thisHub) {
         if (thisHub == null) return null;
         return faHub.getHubData(thisHub).getSortListener();
     }
@@ -98,7 +99,7 @@ public abstract class HubSortService {
      * @param bAlreadySortedAndLocalOnly  true to skip performing sort
      * @return true if sorting parameters changed
      */
-    private boolean _sort(Hub thisHub, String propertyPaths, final boolean bAscending, Comparator comp, boolean bAlreadySortedAndLocalOnly) {
+    private <T extends OAObject> boolean _sort(Hub<T> thisHub, String propertyPaths, final boolean bAscending, Comparator<?> comp, boolean bAlreadySortedAndLocalOnly) {
         callRemoteThreadStartNextThread(); // if this is OAClientThread, so that OAClientMessageHandler can continue with next message
 
         if (comp != null && !(comp instanceof Serializable)) {
@@ -108,7 +109,7 @@ public abstract class HubSortService {
         }
         
         boolean bSame = false;
-        HubSortListener hsl = faHub.getHubData(thisHub).getSortListener();
+        HubSortListener<T> hsl = faHub.getHubData(thisHub).getSortListener();
         if (OAString.isEqual(propertyPaths, faHub.getHubData(thisHub).getSortProperty(),true)) {
             if (bAscending == faHub.getHubData(thisHub).isSortAsc()) {
                 bSame = true;
@@ -166,7 +167,7 @@ public abstract class HubSortService {
      *
      * @param thisHub the Hub to re-sort
      */
-	public void resort(Hub thisHub) {
+	public <T extends OAObject> void resort(Hub<T> thisHub) {
 		sort(thisHub);
 	}
 	
@@ -176,7 +177,7 @@ public abstract class HubSortService {
 	 *
 	 * @param thisHub the Hub to sort
 	 */
-	public void sort(Hub thisHub) {
+	public <T extends OAObject> void sort(Hub<T> thisHub) {
         if (thisHub == null) return;
 
         try {
@@ -196,10 +197,10 @@ public abstract class HubSortService {
 	 *
 	 * @param thisHub the Hub to sort
 	 */
-    private void _performSort(Hub thisHub) {
-        OASiblingHelper siblingHelper = new OASiblingHelper(thisHub);
+    private <T extends OAObject> void _performSort(Hub<T> thisHub) {
+        OASiblingHelper<T> siblingHelper = new OASiblingHelper<>(thisHub);
         siblingHelper.setUseSameThread(true);
-        HubSortListener hsl = faHub.getHubData(thisHub).getSortListener();
+        HubSortListener<T> hsl = faHub.getHubData(thisHub).getSortListener();
         if (hsl != null) {
             String[] props = hsl.getPropeties();
             if (props != null) {
@@ -224,17 +225,21 @@ public abstract class HubSortService {
      *
      * @param thisHub the Hub whose contents are sorted
      */
-	private void _performSortX(Hub thisHub) {
+    @SuppressWarnings("unchecked")
+	private <T extends OAObject> void _performSortX(Hub<T> thisHub) {
 		if (faHub.getHubData(thisHub).getSortListener() == null) return;
 		callHubSelectLoadAllData(thisHub);
-	    faHub.getHubData(thisHub).incrementChangeCount();
+		
+		final HubData<T> hd = faHub.getHubData(thisHub);
+	    hd.incrementChangeCount();
 	    
-	    for (int i=0; i<5; i++) {
+	    for (int i=0; i<25; i++) {
 	        try {
-    	        Collections.sort(faHub.getHubData(thisHub).getVector(), faHub.getHubData(thisHub).getSortListener().getComparator());
+    	        Collections.sort(hd.getVector(), hd.getSortListener().getComparator());
     	        break;
 	        }
 	        catch (ConcurrentModificationException e) {
+	        	OAThread.delay(1);
 	        }
 	    }
 	}
@@ -244,7 +249,7 @@ public abstract class HubSortService {
 	 *
 	 * @param thisHub the Hub that was sorted
 	 */
-    private void afterPerformSort(Hub thisHub) {
+    private void afterPerformSort(Hub<?> thisHub) {
     	callHubEventFireAfterSortEvent(thisHub);
     }
 	
@@ -255,7 +260,7 @@ public abstract class HubSortService {
      *
      * @param thisHub the Hub whose sort state is being cancelled
      */
-	public void cancelSort(Hub thisHub) {
+	public void cancelSort(Hub<?> thisHub) {
 	    if (isSorted(thisHub)) {
 	        sort(thisHub, null, false, null);
 	    }
@@ -287,7 +292,7 @@ public abstract class HubSortService {
 	 * @param thisHub the Hub to check
 	 * @return true if the Hub is maintained in sorted order
 	 */
-	public boolean isSorted(Hub thisHub) {
+	public boolean isSorted(Hub<?> thisHub) {
         return (faHub.getHubData(thisHub).getSortListener() != null);
     }
 
@@ -298,7 +303,7 @@ public abstract class HubSortService {
 	 * @param thisHub the Hub to inspect
 	 * @return the configured sort property path(s), or null
 	 */
-    public String getSortProperty(Hub thisHub) {
+    public String getSortProperty(Hub<?> thisHub) {
         String s = faHub.getHubData(thisHub).getSortProperty();
         if (s == null) s = faHub.getHubDataMaster(thisHub).getSortProperty();
         return s;
@@ -311,9 +316,10 @@ public abstract class HubSortService {
      * @param thisHub the Hub to inspect
      * @return true if ascending, otherwise false
      */
-    public boolean getSortAsc(Hub thisHub) {
-        boolean b = faHub.getHubData(thisHub).isSortAsc();
-        b = b || faHub.getHubDataMaster(thisHub).isSortAsc();
+    public <T extends OAObject> boolean getSortAsc(Hub<T> thisHub) {
+    	if (thisHub == null) return false;
+		final HubData<T> hd = faHub.getHubData(thisHub);
+        boolean b = hd != null && hd.isSortAsc();
         return b;
     }
 
@@ -325,33 +331,19 @@ public abstract class HubSortService {
      * @param thisHub the Hub to inspect
      * @return the sequence property name, or null
      */
-    public String getSeqProperty(Hub thisHub) {
+    public String getSeqProperty(Hub<?> thisHub) {
+    	if (thisHub == null) return null;
         String s = faHub.getHubDataMaster(thisHub).getSeqProperty();
         return s;
     }
 
-	// @OAParentProvided (example = "srvcHub.getHubCSService().sort")
 	public abstract void callHubCSSort(Hub<?> thisHub, String propertyPaths, boolean bAscending, Comparator<?> comp);
-
-	// @OAParentProvided (example = "srvcHub.getHubSelectService().loadAllData")
 	public abstract void callHubSelectLoadAllData(Hub<?> thisHub);
-
-	// @OAParentProvided (example = "srvcHub.getHubEventService().fireAfterSortEvent")
 	public abstract void callHubEventFireAfterSortEvent(Hub<?> thisHub);
-
-	// @OAParentProvided (example = "srvcThreadLocal.lock")
 	public abstract void callThreadLocalLock(Object object);
-	
-	// @OAParentProvided (example = "srvcThreadLocal.unlock")
 	public abstract void callThreadLocalUnlock(Object object);
-	
-	// @OAParentProvided (example = "srvcRemoteThread.startNextThread")
 	public abstract void callRemoteThreadStartNextThread();
-
-	// @OAParentProvided (example = "srvcThreadLocal.addSiblingHelper")
 	public abstract boolean callThreadLocalAddSiblingHelper(OASiblingHelper<?> sh);
-
-	// @OAParentProvided (example = "srvcThreadLocal.removeSiblingHelper")
 	public abstract void callThreadLocalRemoveSiblingHelper(OASiblingHelper<?> sh);
     
 }

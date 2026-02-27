@@ -47,6 +47,7 @@ import com.viaoa.graph.service.object.OAObjectHubService;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.hub.Hub;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.text.OATextCode;
 import com.viaoa.util.OAArray;
 
 /**
@@ -138,7 +139,7 @@ public class OAAnnotationVerifier {
 			if (oaid == null) {
 				continue;
 			}
-			s = og.objectsInternal().callObjectAnnotationGetPropertyName(m.getName());
+			s = OATextCode.getPropertyName(m.getName());
 
 			
 			
@@ -169,7 +170,7 @@ public class OAAnnotationVerifier {
 			if (oaprop == null) {
 				continue;
 			}
-			String name = og.objectsInternal().callObjectAnnotationGetPropertyName(m.getName());
+			String name = OATextCode.getPropertyName(m.getName());
 
 			int x = 0;
 			for (OAPropertyInfo pi : al) {
@@ -225,7 +226,7 @@ public class OAAnnotationVerifier {
 				continue;
 			}
 
-			String name = og.objectsInternal().callObjectAnnotationGetPropertyName(m.getName());
+			String name = OATextCode.getPropertyName(m.getName());
 
 			OACalcInfo ci = og.objectsInternal().callObjectInfoGetCalcInfo(oi, name);
 
@@ -281,7 +282,7 @@ public class OAAnnotationVerifier {
 				bResult = false;
 			}
 
-			String name = og.objectsInternal().callObjectAnnotationGetPropertyName(m.getName());
+			String name = OATextCode.getPropertyName(m.getName());
 
 			OALinkInfo li = og.objectsInternal().callObjectInfoGetLinkInfo(oi, name);
 			if (li == null) {
@@ -335,7 +336,7 @@ public class OAAnnotationVerifier {
 				bResult = false;
 			}
 
-			String name = og.objectsInternal().callObjectAnnotationGetPropertyName(m.getName());
+			String name = OATextCode.getPropertyName(m.getName());
 			OALinkInfo li = og.objectsInternal().callObjectInfoGetLinkInfo(oi, name);
 			if (li == null) {
 				p("link does not exist");
@@ -424,7 +425,7 @@ public class OAAnnotationVerifier {
 			if (col != null) {
 				String name = col.name();
 				if (name == null || name.length() == 0) {
-					name = og.objectsInternal().callObjectAnnotationGetPropertyName(m.getName());
+					name = OATextCode.getPropertyName(m.getName());
 				}
 
 				boolean b = false;
@@ -437,7 +438,7 @@ public class OAAnnotationVerifier {
 							p("column sql type mismatch");
 							bResult = false;
 						}
-						s = og.objectsInternal().callObjectAnnotationGetPropertyName(m.getName());
+						s = OATextCode.getPropertyName(m.getName());
 						if (!s.equalsIgnoreCase(columns[i].propertyName)) {
 							p("column prop name mismatch");
 							bResult = false;

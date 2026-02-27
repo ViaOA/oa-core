@@ -46,7 +46,7 @@ public abstract class HubStatusService {
 	 * @return {@code true} if the hub or any contained OAObject is changed;
 	 *         otherwise {@code false}
 	 */
-	public boolean getChanged(Hub thisHub, int iCascadeRule, OACascade cascade) {
+	public <T extends OAObject> boolean getChanged(Hub<T> thisHub, int iCascadeRule, OACascade cascade) {
 		if (cascade.wasCascaded(thisHub, true)) {
 			return false;
 		}
@@ -58,16 +58,9 @@ public abstract class HubStatusService {
 			return false;
 		}
 
-		for (int i = 0;; i++) {
-			Object object = callHubDataGetObjectAt(thisHub, i);
-			if (object == null) {
-				break;
-			}
-			if (object instanceof OAObject) {
-				OAObject obj = (OAObject) object;
-				if (callObjectChangeGetChanged(obj, iCascadeRule, cascade)) {
-					return true;
-				}
+		for (T obj : thisHub) {
+			if (callObjectChangeGetChanged(obj, iCascadeRule, cascade)) {
+				return true;
 			}
 		}
 		return false;
@@ -84,12 +77,14 @@ public abstract class HubStatusService {
 	 * @param thisHub   the hub whose changed state is being updated
 	 * @param bChanged  the new changed value
 	 */
-	public void setChanged(Hub<?> thisHub, boolean bChanged) {
+	public <T extends OAObject> void setChanged(Hub<T> thisHub, boolean bChanged) {
 	    if (thisHub == null) return;
-        boolean old = faHub.getHubData(thisHub).getChanged();
+	    
+	    final HubData<T> hd = faHub.getHubData(thisHub);
+        boolean old = hd.getChanged();
         if (bChanged == old) return;
-        faHub.getHubData(thisHub).setChanged(bChanged);
-        if (bChanged != old) faHub.getHubData(thisHub).incrementChangeCount();
+        hd.setChanged(bChanged);
+        if (bChanged != old) hd.incrementChangeCount();
         if (!bChanged) {
         	callHubDataClearHubChanges(thisHub);
         }
@@ -151,8 +146,9 @@ public abstract class HubStatusService {
 	 * @param alNew   optional list to receive corrected state contents
 	 * @return the hub’s synchronization status
 	 */
+	@SuppressWarnings({"unchecked","rawtypes"})
     public <T extends OAObject> HubCurrentStateEnum getCurrentState(final Hub<T> thisHub, final Hub<T> hubNew, final ArrayList<T> alNew) {
-        return _getCurrentState(thisHub, hubNew, alNew, new HashSet<Hub<T>>());
+        return _getCurrentState(thisHub, hubNew, alNew, new HashSet<Hub>());
     }
 
     /**
@@ -168,7 +164,8 @@ public abstract class HubStatusService {
      * @return the computed synchronization status, or {@code null} when a cycle is
      *         detected
      */
-    public <T extends OAObject> HubCurrentStateEnum _getCurrentState(final Hub<T> thisHub, final Hub<T> hubNew, final ArrayList<T> alNew, final Set<Hub<T>> hmHub) {
+	@SuppressWarnings({"unchecked","rawtypes"})
+    public <T extends OAObject> HubCurrentStateEnum _getCurrentState(final Hub<T> thisHub, final Hub<T> hubNew, final ArrayList<T> alNew, final Set<Hub> hmHub) {
 		if (thisHub == null) {
 			return HubCurrentStateEnum.InSync;
 		}
@@ -177,8 +174,8 @@ public abstract class HubStatusService {
 		}
 		hmHub.add(thisHub);
 
-		Hub hub = thisHub;
-		Hub hubMaster;
+		Hub<?> hub = thisHub;
+		Hub<?> hubMaster;
 		boolean bHasMaster = false;
 		for (int i = 0;; i++, hub = hubMaster) {
 			HubDataMaster dm = callHubDetailGetDataMaster(hub, true);
@@ -230,22 +227,22 @@ public abstract class HubStatusService {
 			return HubCurrentStateEnum.DetailHubNotSameAsMasterObject;
 		}
 
-		// check to see if hub is derived from another Hub, and check it
+		// check to see if hub is derived from another Hub, then check it
 
 		hub = callHubShareGetMainSharedHub(hub);
 
-		HubMerger hubMerger = null;
-		HubCombined hubCombined = null;
-		HubFilter hubFilter = null;
+		HubMerger<?, ?> hubMerger = null;
+		HubCombined<T> hubCombined = null;
+		HubFilter<T> hubFilter = null;
 
-		HubListener[] hls = callHubEventGetAllListeners(hub);
+		HubListener<?>[] hls = callHubEventGetAllListeners(hub);
 		
 		if (hls != null) {
-			for (HubListener hl : hls) {
+			for (HubListener<?> hl : hls) {
 				if (!(hl instanceof HubListenerAdapter)) {
 					continue;
 				}
-				HubListenerAdapter hla = (HubListenerAdapter) hl;
+				HubListenerAdapter<?> hla = (HubListenerAdapter<?>) hl;
 				Object listener = hla.getListener();
 				if (listener instanceof HubMerger) {
 					hubMerger = (HubMerger) hla.getListener();
@@ -274,7 +271,7 @@ public abstract class HubStatusService {
 		}
 
 		if (hubFilter != null) {
-			Hub hubx = hubFilter.getMasterHub();
+			Hub<?> hubx = hubFilter.getMasterHub();
 
 			HubCurrentStateEnum hcs = _getCurrentState(hubx, null, null, hmHub);
 			if (hcs == HubCurrentStateEnum.InSync) {
@@ -284,26 +281,26 @@ public abstract class HubStatusService {
 				return hcs;
 			}
 
-			Hub hubTemp = new Hub();
-			_getCurrentState(hubx, hubTemp, null, hmHub);
+			Hub<T> hubTemp = new Hub<T>();
+			_getCurrentState( (Hub<OAObject>) hubx, (Hub<OAObject>) hubTemp, null, hmHub);
 
-			for (Object objx : hubTemp) {
-				if (!hubFilter.isUsed((OAObject) objx)) {
+			for (T objx : hubTemp) {
+				if (!hubFilter.isUsed(objx)) {
 					continue;
 				}
 				if (hubNew != null) {
-					hubNew.add((T) objx);
+					hubNew.add(objx);
 				}
 				if (alNew != null) {
-					alNew.add((T) objx);
+					alNew.add(objx);
 				}
 			}
 
 		} else if (hubCombined != null) {
-			ArrayList<Hub> al = hubCombined.getHubs();
+			ArrayList<Hub<T>> al = hubCombined.getHubs();
 			if (al != null) {
 				HubCurrentStateEnum hcs = null;
-				for (Hub hubx : al) {
+				for (Hub<T> hubx : al) {
 					hcs = _getCurrentState(hubx, null, null, hmHub);
 					if (hcs != HubCurrentStateEnum.InSync) {
 						break;
@@ -337,7 +334,7 @@ public abstract class HubStatusService {
 				return HubCurrentStateEnum.HubMergerNotUpdated;
 			}
 
-			Hub hubTemp = new Hub();
+			Hub<T> hubTemp = new Hub<T>();
 
 			_getCurrentState(hubx, hubTemp, null, hmHub);
 
@@ -373,16 +370,16 @@ public abstract class HubStatusService {
 	 * @param thisHub the hub being evaluated
 	 * @return {@code true} if the hub is valid; otherwise {@code false}
 	 */
-	public boolean isValid(final Hub thisHub) {
+	public boolean isValid(final Hub<?> thisHub) {
 		HubDataMaster dm = callHubDetailGetDataMaster(thisHub, true);
 		if (dm.getMasterHub() != null && dm.getMasterObject() == null) {
 			return false;
 		}
 
 		// 20181119 reworked to check other hubs for hubWithLink
-		Hub h = callHubLinkGetHubWithLink(thisHub, true);
+		Hub<?> h = callHubLinkGetHubWithLink(thisHub, true);
 		if (h != null) {
-			Hub hx = faHub.getHubDataUnique(h).getLinkToHub();
+			Hub<?> hx = faHub.getHubDataUnique(h).getLinkToHub();
 			if (hx != null) {
 				if (!isValid(hx)) {
 					return false;
@@ -396,7 +393,7 @@ public abstract class HubStatusService {
 			}
 		}
 
-		HubDataUnique hdu = faHub.getHubDataUnique(thisHub);
+		HubDataUnique<?> hdu = faHub.getHubDataUnique(thisHub);
 		if (hdu.getAddHub() != null) {
 			return isValid(hdu.getAddHub());
 		}
@@ -416,7 +413,7 @@ public abstract class HubStatusService {
 	 * @param bReferenceable whether objects referenced by this hub should remain
 	 *                       strongly referenceable
 	 */
-	public void setReferenceable(Hub hub, boolean bReferenceable) {
+	public void setReferenceable(Hub<?> hub, boolean bReferenceable) {
 		if (hub == null) {
 			return;
 		}
@@ -430,7 +427,7 @@ public abstract class HubStatusService {
 		}
 		boolean bSupportStorage = oi.getSupportsStorage();
 
-		Object master = callHubMasterGetMasterObject(hub);
+		OAObject master = callHubMasterGetMasterObject(hub);
 		if (master == null) return;
 
 		OALinkInfo li = callHubDetailGetLinkInfoFromDetailToMaster(hub);
@@ -444,7 +441,7 @@ public abstract class HubStatusService {
 
 		if (liRev.getCacheSize() > 0) {
 			if (bReferenceable || bSupportStorage) {
-				boolean b = callObjectPropertySetPropertyWeakRef((OAObject) master, liRev.getName(), !bReferenceable, hub);
+				boolean b = callObjectPropertySetPropertyWeakRef(master, liRev.getName(), !bReferenceable, hub);
 				if (!b) {
 					return; // already done, dont need to check/change parents
 				}
@@ -453,7 +450,7 @@ public abstract class HubStatusService {
 
 		if (bReferenceable) {
 			// make parents referenceable
-			callObjectPropertySetReferenceable((OAObject) master, bReferenceable);
+			callObjectPropertySetReferenceable(master, bReferenceable);
 		}
 	}
 	
@@ -464,7 +461,6 @@ public abstract class HubStatusService {
 	public abstract boolean callThreadLocalIsHubMergerChanging();
 
 	public abstract <T extends OAObject> Hub<T> callHubLinkGetHubWithLink(final Hub<T> thisHub, boolean bIncludeCopiedHubs);
-	public abstract <T extends OAObject> T callHubDataGetObjectAt(Hub<T> thisHub, int pos);
 	public abstract boolean callObjectChangeGetChanged(final OAObject oaObj, int iCascadeRule, OACascade cascade);
     
 	public abstract boolean callSyncIsServer();

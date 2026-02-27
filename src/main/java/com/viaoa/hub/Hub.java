@@ -3272,7 +3272,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			hub.data = data;
 		}
 
-		public <T extends OAObject> HubDataActive getHubDataActive(Hub<T> hub) {
+		public <T extends OAObject> HubDataActive<T> getHubDataActive(Hub<T> hub) {
 			return hub.dataa;
 		}
 		public void setHubDataActive(Hub<?> hub, HubDataActive dataa) {

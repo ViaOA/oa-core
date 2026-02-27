@@ -117,7 +117,7 @@ public abstract class OAObjectDeleteService {
 	 * @param cascade the cascade-tracking object used to prevent
 	 *                re-entrant deletions
 	 */
-	public void delete(final OAObject oaObj, OACascade cascade) {
+	public <T extends OAObject> void delete(final T oaObj, OACascade cascade) {
 		if (oaObj == null) {
 			return;
 		}
@@ -127,9 +127,9 @@ public abstract class OAObjectDeleteService {
 		
 		final boolean bIsSyncClient = callSyncIsClient();
 
-		final Hub[] hubs = callObjectHubGetHubReferences(oaObj);
+		final Hub<T>[] hubs = callObjectHubGetHubReferences(oaObj);
 		if (!bIsSyncClient && hubs != null) {
-			for (Hub h : hubs) {
+			for (Hub<T> h : hubs) {
 				if (h == null) {
 					continue;
 				}
@@ -209,7 +209,7 @@ public abstract class OAObjectDeleteService {
                             protected boolean isUsed(OAObject obj) {
                                 Object objx = liRev.getValue(obj);
                                 if (objx instanceof Hub) {
-                                    Hub hx = (Hub) objx;
+                                    Hub<?> hx = (Hub<?>) objx;
                                     hx.remove(oaObj);
                                 }
                                 return false;
@@ -229,7 +229,7 @@ public abstract class OAObjectDeleteService {
         						if (!(objx instanceof Hub)) {
         							return true;
         						}
-        						Hub hx = (Hub) objx;
+        						Hub<?> hx = (Hub<?>) objx;
         						hx.remove(oaObj);
         						return true;
         					}
@@ -257,7 +257,7 @@ public abstract class OAObjectDeleteService {
                         continue;
                     }
                     if (liRev.getPrivateMethod()) {
-                        Hub hubx = (Hub) li.getValue(oaObj);
+                        Hub<?> hubx = (Hub<?>) li.getValue(oaObj);
                         hubx.clear();
                     }
                 }
@@ -308,7 +308,7 @@ public abstract class OAObjectDeleteService {
     				}
     				
                     if (OAStr.isNotEmpty(spp)) {
-                        OAFinder f = new OAFinder(spp) {
+                        OAFinder<T,?> f = new OAFinder(spp) {
                             protected boolean isUsed(OAObject obj) {
                                 Object objx = liRev.getValue(obj);
                                 if (objx instanceof OAObjectKey) {
@@ -355,7 +355,7 @@ public abstract class OAObjectDeleteService {
 			
             // remove from all hubs (needs to be after above code)
             if (hubs != null) {
-                for (Hub h : hubs) {
+                for (Hub<T> h : hubs) {
                     if (h != null) {
                     	callHubRemove(h, oaObj, true, true, true, true, true, false); // force, send, deleting, setAO
                     }
@@ -371,7 +371,7 @@ public abstract class OAObjectDeleteService {
         if (!bIsSyncClient) callCSSendDeleteToClients(oaObj);
 		
 		if (hubs != null) {
-			for (Hub h : hubs) {
+			for (Hub<T> h : hubs) {
 				if (h != null) {
 					callHubEventFireAfterDeleteEvent(h, oaObj);
 				}
@@ -480,10 +480,10 @@ public abstract class OAObjectDeleteService {
 	private void deleteChildren(OAObject oaObj, OACascade cascade) {
 		if (oaObj == null) return;
 		OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
-		List al = oi.getLinkInfos();
+		List<OALinkInfo> al = oi.getLinkInfos();
 		boolean bIsNew = oaObj.isNew();
 		for (int i = 0; i < al.size(); i++) {
-			final OALinkInfo li = (OALinkInfo) al.get(i);
+			final OALinkInfo li = al.get(i);
 			if (li.getCalculated()) {
 				continue;
 			}
@@ -542,7 +542,7 @@ public abstract class OAObjectDeleteService {
 				//  it uses a LinkTable. Need to remove from liRev Hub and remove from link table
 
 				OAObject masterObj;
-				Hub hubx = callHubGetHub(oaObj, li);
+				Hub<?> hubx = callHubGetHub(oaObj, li);
 				if (hubx != null) {
 					masterObj = callHubMasterGetMasterObject(hubx);
 				} else {
@@ -565,7 +565,7 @@ public abstract class OAObjectDeleteService {
 				}
 				if (hubx != null) {
 					hubx.remove(oaObj);
-					callHubDataRemoveFromRemovedList(hubx, oaObj);
+					callHubDataRemoveFromRemovedList( (Hub<OAObject>) hubx, oaObj);
 				}
 				oaObj.removeProperty(li.getName());
 				continue;
@@ -583,7 +583,7 @@ public abstract class OAObjectDeleteService {
 			if (!(obj instanceof Hub)) {
 				continue;
 			}
-			Hub hub = (Hub) obj;
+			Hub<?> hub = (Hub<?>) obj;
 			hub.loadAllData();
 
 			// 20120612 need to remove link table records
@@ -648,152 +648,48 @@ public abstract class OAObjectDeleteService {
 		oaObj.afterDelete();
 	}
 	
-	
-	
-	// @OAParentProvided (example = "srvcObject.setNew(oaObj, true)")
 	public abstract void callObjectSetNew(final OAObject oaObj, final boolean b);
-
-	
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().add(..)")
 	public abstract OAObject callCacheAdd(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().callback(..)")
 	public abstract <T extends OAObject> void callCacheCallback(OACallback<T> callback, Class<T> clazz);
-	
-	
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectCSService().delete(oaObj)")
 	public abstract boolean callCSDelete(OAObject obj);	
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectCSService().sendDeleteToClients(oaObj)")
 	public abstract void callCSSendDeleteToClients(OAObject obj);	
-	
-	
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectDSService().getDataSource(masterObject).updateMany2ManyLinks(..)")
 	public abstract void callDSUpdateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propFromMaster);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectDSService().getDataSource(obj).supportsStorage()")
 	public abstract boolean callDSSupportsStorage(OAObject obj);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectDSService().delete(oaObj)")
 	public abstract void callDSDelete(OAObject obj);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectDSService().removeReference(..)")
 	public abstract void callDSRemoveReference(OAObject oaObj, OALinkInfo li);	
-	
-		
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectEventService().fireBeforePropertyChange(..)")
 	public abstract void callEventFireBeforePropertyChange(final OAObject oaObj, final String propertyName,
 			Object oldObj, final Object newObj, final boolean bLocalOnly, final boolean bSetChanged);	
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectEventService().firePropertyChange(..)")
 	public abstract void callEventFirePropertyChange(final OAObject oaObj, final String propertyName, Object oldObj, Object newObj,
 			boolean bLocalOnly, boolean bSetChanged);
-
-	
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectHubService().getHubReferences(oaObj)")
 	public abstract <T extends OAObject> Hub<T>[] callObjectHubGetHubReferences(T oaObj);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectHubService().deleteAll(hub, cascade)")
 	public abstract void callObjectHubDeleteAll(Hub<?> hub, OACascade cascade);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectHubService().getHub(..)")
-	public abstract Hub callHubGetHub(OAObject oaObj, OALinkInfo li);
-	
-	
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
+	public abstract Hub<?> callHubGetHub(OAObject oaObj, OALinkInfo li);
 	public abstract OAObjectInfo getOAObjectInfo(Class<?> clazz);	
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().isMany2Many(li)")
 	public abstract boolean callInfoIsMany2Many(OALinkInfo li);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo(li)")
 	public abstract OALinkInfo callInfoGetReverseLinkInfo(OALinkInfo thisLi);
-	
-		
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectKeyService().verifyKeyChange(..)")
 	public abstract String callKeyVerifyKeyChange(final OAObject oaObj, final OAObjectKey newObjectKey);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectKeyService().isForSameOAObject")
 	public abstract boolean callKeyIsForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey ok1, final OAObjectKey ok2);
-	
-	
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectLogService().logToXmlFile(..)")
 	public abstract void callLogToXmlFile(OAObject oaObj, boolean bSave);
-	
-	
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().isReferenceNullOrNotLoadedOrEmptyHub(..)")
 	public abstract boolean callReflectIsReferenceNullOrNotLoadedOrEmptyHub(OAObject oaObj, String propertyName);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().getProperty(..)")
 	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().getReferenceHub(..)")
-	public abstract Hub callReflectGetReferenceHub(final OAObject oaObj, final String linkPropertyName, String sortOrder, boolean bSequence, Hub hubMatch);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().getReferenceObject(..)")
+	public abstract Hub<?> callReflectGetReferenceHub(final OAObject oaObj, final String linkPropertyName, String sortOrder, boolean bSequence, Hub<?> hubMatch);
 	public abstract Object callReflectGetReferenceObject(final OAObject oaObj, final String linkPropertyName);	
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().setProperty(..)")
 	public abstract void callReflectSetProperty(final OAObject oaObj, String propName, Object value, final String fmt);
-	
-	
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().removeProperty(..)")
 	public abstract void callPropertyRemoveProperty(OAObject oaObj, String name, boolean bFirePropertyChange);	
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getProperty(..)")
 	public abstract Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef);	
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getProperty(..)")
 	public abstract Object callPropertyGetProperty(OAObject oaObj, String name);
-
-
-	
-	// @OAParentProvided (example = "srvcHub.getHubAddRemoveService().remove(..)")
 	public abstract <T extends OAObject> T callHubRemove(final Hub<T> thisHub, Object obj, final boolean bForce,
 			final boolean bSendEvent, final boolean bDeleting, final boolean bSetAO,
 			final boolean bSetPropToMaster, final boolean bIsRemovingAll);
-
-	// @OAParentProvided (example = "srvcHub.getHubCSService().removeAllFromHub(hub)")
 	public abstract void callHubCSRemoveAllFromHub(Hub<?> thisHub);	
-	
-	// @OAParentProvided (example = "srvcHub.getHubDataService().removeFromRemovedList(hub, oaObj)")
 	public abstract <T extends OAObject> void callHubDataRemoveFromRemovedList(Hub<T> thisHub, T obj);
-
-	// @OAParentProvided (example = "srvcHub.getHubDSService().removeMany2ManyLinks(hub)")
 	public abstract void callHubDSRemoveMany2ManyLinks(Hub<?> hub);
-
-	// @OAParentProvided (example = "srvcHub.getHubEventService().fireBeforeDeleteEvent(h, oaObj)")
 	public abstract <T extends OAObject> void callHubEventFireBeforeDeleteEvent(Hub<T> hub, T obj);
-
-	// @OAParentProvided (example = "srvcHub.getHubEventService().fireAfterDeleteEvent(h, oaObj)")
 	public abstract <T extends OAObject> void callHubEventFireAfterDeleteEvent(Hub<T> thisHub, T obj);
-	
-	// @OAParentProvided (example = "srvcHub.getMasterObject(..)")
 	public abstract OAObject callHubMasterGetMasterObject(Hub<?> hub);
-
-	
-	
-	// @OAParentProvided (example = "srvcSync.isServer()")
 	public abstract boolean callSyncIsServer();
-
-	// @OAParentProvided (example = "srvcSync.isClient()")
 	public abstract boolean callSyncIsClient();
-	
-	
-	// @OAParentProvided (example = "srvcOAThreadLocal.setDeleting(..)")
 	public abstract void callLocalThreadSetDeleting(Object obj, boolean b);
-	
-	// @OAParentProvided (example = "srvcOARemoteThread.startNextThread()")
 	public abstract void callRemoteTheadStartNextThread();
 
 }

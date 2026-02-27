@@ -378,7 +378,7 @@ public abstract class HubDetailService {
 			return;
 		}
 
-		HubDataUnique hdu = faHub.getHubDataUnique(detailHub);
+		HubDataUnique<U> hdu = faHub.getHubDataUnique(detailHub);
 		if (hdu.getSharedHub() != null) {
 			if (faHub.getHubDataMaster(hdu.getSharedHub()) == faHub.getHubDataMaster(detailHub)) {
 				faHub.setHubDataMaster(detailHub, new HubDataMaster());
@@ -504,7 +504,7 @@ public abstract class HubDetailService {
 		}
 
 		callHubDataIncChangeCount(detailHub);
-		OAObject aoHold = faHub.getHubDataActive(detailHub).getActiveObject();
+		U aoHold = faHub.getHubDataActive(detailHub).getActiveObject();
 		HubData hd = faHub.getHubData(detailHub);
 		faHub.getHubDataActive(detailHub).setActiveObject(null);
 		

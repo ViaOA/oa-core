@@ -135,18 +135,18 @@ public class HubDatax<TYPE extends OAObject> implements java.io.Serializable {
 	/**
 	 * Tracks objects added to the Hub when change tracking is enabled.
 	 */
-	protected transient Vector vecAdd;
+	protected transient Vector<TYPE> vecAdd;
 
 	/**
 	 * Tracks objects removed from the Hub when change tracking is enabled.
 	 */
-	protected transient Vector vecRemove;
+	protected transient Vector<TYPE> vecRemove;
 
 	/**
 	 * Listener responsible for maintaining sorted order when sorting
 	 * is enabled for this Hub.
 	 */
-	protected transient HubSortListener sortListener;
+	protected transient HubSortListener<TYPE> sortListener;
 	
 	//  info to keep Hub objects sorted when sent to other computers, see HubSerializerDelegate._readResolve - it will set up sorting when received
 	

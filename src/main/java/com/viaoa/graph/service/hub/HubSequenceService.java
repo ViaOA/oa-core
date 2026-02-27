@@ -39,7 +39,8 @@ public abstract class HubSequenceService {
 		if (hd.getAutoSequence() != null) {
 			hd.getAutoSequence().close();
 		}
-		thisHub.cancelSort(); // 20090801 need to remove any sorters
+		
+		callHubSortCancelSort(thisHub); // 20090801 need to remove any sorters
 		hd.setAutoSequence(new HubAutoSequence(thisHub, property, startNumber, bKeepSeq, bServerOnly));
 	}
 
@@ -68,5 +69,7 @@ public abstract class HubSequenceService {
 		}
 	}
 
-	public abstract boolean callHubCSIsServer(Hub<?> thisHub);	
+	public abstract boolean callHubCSIsServer(Hub<?> thisHub);
+	public abstract void callHubSortCancelSort(Hub<?> hub);
+
 }

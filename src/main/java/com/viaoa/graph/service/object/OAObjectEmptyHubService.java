@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import com.viaoa.object.OACallback;
@@ -28,7 +29,7 @@ public abstract class OAObjectEmptyHubService {
      * arrays of property names representing reference hubs that were
      * recorded as loaded and empty.
      */
-    private static HashMap<String, HashMap<Integer, String[]>> map;    
+    private static Map<String, Map<Integer, String[]>> map;    
 
     /**
      * Flag indicating whether empty-hub tracking is enabled.
@@ -51,7 +52,7 @@ public abstract class OAObjectEmptyHubService {
         
         Class<? extends OAObject> clazz = obj.getClass();
 
-        HashMap<Integer, String[]> hm = map.get(clazz.getName());
+        Map<Integer, String[]> hm = map.get(clazz.getName());
         if (hm == null) return;
         
         OAObjectKey key = callKeyGetKey(obj);
@@ -80,6 +81,7 @@ public abstract class OAObjectEmptyHubService {
      * @param file the file containing the serialized metadata
      * @throws Exception if the file cannot be read or deserialized
      */
+    @SuppressWarnings("unchecked")
     public void load(File file) throws Exception {
         if (file == null || !file.exists()) {
             LOG.fine("file does not exist");
@@ -91,7 +93,7 @@ public abstract class OAObjectEmptyHubService {
         
         OADateTime dt = (OADateTime) ois.readObject();
         
-        map = (HashMap<String, HashMap<Integer, String[]>>) ois.readObject();
+        map = (Map<String, Map<Integer, String[]>>) ois.readObject();
         
         ois.close();
         fis.close();
@@ -112,7 +114,7 @@ public abstract class OAObjectEmptyHubService {
         ObjectOutputStream oos = new ObjectOutputStream(fos);
         oos.writeObject(new OADateTime());
         
-        final HashMap<String, HashMap<Integer, String[]>> mapx = new HashMap<String, HashMap<Integer,String[]>>();
+        final Map<String, Map<Integer, String[]>> mapx = new HashMap<>();
         
         callCacheCallback(new OACallback<OAObject>() {
             int cnt = 0;
@@ -143,10 +145,10 @@ public abstract class OAObjectEmptyHubService {
                     
                 int keyId = (Integer) keys[0];
                 
-                Class clazz = obj.getClass();
-                HashMap<Integer, String[]> hm = mapx.get(clazz.getName());
+                Class<? extends OAObject> clazz = obj.getClass();
+                Map<Integer, String[]> hm = mapx.get(clazz.getName());
                 if (hm == null) {
-                    hm = new HashMap<Integer, String[]>();
+                    hm = new HashMap<>();
                     mapx.put(clazz.getName(), hm);
                 }
                 hm.put(keyId, ssNew);
@@ -158,18 +160,9 @@ public abstract class OAObjectEmptyHubService {
         oos.close();
     }
 
-	// @OAParentProvided (example = "srvcObject.getOAObjectKeyService().getKey(obj)")
 	public abstract OAObjectKey callKeyGetKey(OAObject oaObj); 
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().setProperty(..)")
 	public abstract void callPropertySetProperty(OAObject oaObj, String name, Object value); 
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().callback(..)")
 	public abstract void callCacheCallback(OACallback<OAObject> callback); 
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getPropertyNames((OAObject) obj)")
 	public abstract String[] callPropertyGetPropertyNames(OAObject oaObj);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().isReferenceHubLoadedAndEmpty((OAObject) obj, propName)")
 	public abstract boolean callReflectIsReferenceHubLoadedAndEmpty(OAObject oaObj, String propertyName);
 }

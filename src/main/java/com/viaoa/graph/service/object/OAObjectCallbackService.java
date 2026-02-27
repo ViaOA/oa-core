@@ -7,7 +7,6 @@ import javax.swing.JLabel;
 
 import com.viaoa.context.OAContext;
 import com.viaoa.context.OAUserAccess;
-import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubChangeListener;
 import com.viaoa.hub.HubEvent;
@@ -22,7 +21,6 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectModel;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OAObjectCallback.Type;
-import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAString;
 import com.viaoa.util.OAUnknownObject;
@@ -881,7 +879,7 @@ public abstract class OAObjectCallbackService {
 		OAObjectCallback objectCallback = null;
 
 		if (li == null || (li.getPrivateMethod() && objMaster == null)) {
-			objectCallback = new OAObjectCallback(Type.AllowRemove, checkType, hub, null, null, null, objRemove);
+			objectCallback = new OAObjectCallback(Type.VerifyRemove, checkType, hub, null, null, null, objRemove);
 			if ((checkType & OAObjectCallback.CHECK_Processed) != 0) {
 				if (hub.getOAObjectInfo().getProcessed()) {
 					updateEditProcessed(objectCallback);
@@ -891,12 +889,12 @@ public abstract class OAObjectCallbackService {
 		} else {
 			OALinkInfo liRev = li.getReverseLinkInfo();
 			if (liRev != null && !li.getCalculated()) {
-				objectCallback = new OAObjectCallback(Type.AllowRemove, checkType, hub, null, objMaster, liRev.getName(), objRemove);
+				objectCallback = new OAObjectCallback(Type.VerifyRemove, checkType, hub, null, objMaster, liRev.getName(), objRemove);
 				processObjectCallback(objectCallback);
 			}
 		}
 		if (objectCallback == null) {
-			objectCallback = new OAObjectCallback(Type.AllowRemove, checkType, hub, null, null, null, objRemove);
+			objectCallback = new OAObjectCallback(Type.VerifyRemove, checkType, hub, null, null, null, objRemove);
 		}
 		return objectCallback;
 	}
@@ -1402,7 +1400,6 @@ public abstract class OAObjectCallbackService {
 		final Object oldValue = objectCallback.getOldValue();
 		final Object value = objectCallback.getValue();
 		final int checkType = objectCallback.getCheckType();
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
 
 		final boolean bCheckProcessedCheck = (objectCallback.getCheckType() & OAObjectCallback.CHECK_Processed) != 0;
 		final boolean bCheckEnabledProperty = (objectCallback.getCheckType() & OAObjectCallback.CHECK_EnabledProperty) != 0;
@@ -1766,8 +1763,6 @@ public abstract class OAObjectCallbackService {
 			}
 		}
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(oaObj);
-		
 		String pp;
 		boolean b;
 		Object valx;

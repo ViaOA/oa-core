@@ -28,7 +28,6 @@ import com.viaoa.xml.OAXMLWriter;
  */
 
 public interface HubsInternalOps {
-
 	
  	// AddRemove
 	public <T extends OAObject> boolean callHubAddRemoveAdd(Hub<T> hub, T obj);
@@ -45,10 +44,8 @@ public interface HubsInternalOps {
 	public <T extends OAObject> T callHubAddRemoveRemove(Hub<T> hub, int pos);
 	public <T extends OAObject> boolean callHubAddRemoveRemove(Hub<T> hub, Object obj);
 	public <T extends OAObject> void callHubAddRemoveRemove(Hub<T> thisHub, T obj, boolean bForce, boolean bSendEvent, boolean bDeleting, boolean bSetAO, boolean bSetPropToMaster, boolean bIsRemovingAll);
-	
 	public <T extends OAObject> void callHubAddRemoveSortMove(Hub<T> hub, T object);
 	public <T extends OAObject> void callHubAddRemoveRefresh(Hub<T> hub, Hub<T> hubNew);
-
  	
 	// AO
 	public <T extends OAObject> T callHubAOSetActiveObject(Hub<T> hub, int pos);
@@ -64,8 +61,8 @@ public interface HubsInternalOps {
 	public void callHubCSSendRefresh(Hub<?> hub);
 	public boolean callHubCSIsServer(Hub<?> hub);
 	
-	
 	// Data
+	public <T extends OAObject> void callHubDataSetObjectClass(Hub<T> hubDetail, Class<T> clazz);
 	public void callHubDataEnsureCapacity(Hub<?> hub, int size);
 	public void callHubDataResizeToFit(Hub<?> hub);
 	public void callHubStatusSetChanged(Hub<?> hub, boolean bIsChanged);
@@ -100,7 +97,6 @@ public interface HubsInternalOps {
 	public <T extends OAObject> Hub<T> callHubDetailGetDetailHub(Hub<?> hub, Class<T> clazz, boolean bShareActive, String selectOrder);
 	public Hub<?> callHubDetailGetDetailHub(Hub<?> hub, Class<? extends OAObject>[] classes);
 	
-	
 	public void callHubDetailSetMasterHub(Hub<?> thisHub, Hub<?> masterHub, String path, boolean bShared, String selectOrder);
 	public Hub<? extends OAObject> callHubDetailGetMasterHub(Hub<?> hub);
 	public OAObject callHubDetailGetMasterObject(Hub<?> hub);
@@ -112,7 +108,6 @@ public interface HubsInternalOps {
 	public String callHubDetailGetPropertyFromDetailToMaster(Hub<?> hub);
 	public OALinkInfo callHubDetailGetLinkInfoFromMasterToDetail(Hub<?> hub);
 	
-
  	// Event
 	public void callHubEventFireOnNewListEvent(Hub<?> hub, boolean bAll);
 	public <T extends OAObject> void callHubEventAddHubListener(Hub<T> hub, HubListener<T> hl, String property);
@@ -125,18 +120,8 @@ public interface HubsInternalOps {
 	public <T extends OAObject> void callHubEventRemoveHubListener(Hub<T> hub, HubListener<T> hl);
 	public <T extends OAObject> void callHubEventFireCalcPropertyChange(Hub<T> hub, T obj, String propertyName);
 
-	
 	// Find
 	public <T extends OAObject> T callHubFindFindFirst(Hub<T> hub, String propertyPath, Object findValue, boolean bSetAO, T lastFoundObject);
-	
-//qqqqqqqqqqq transfer these qqqqqqqqqqqqqq	
-//qqqqqqqq ?? maybe put in Hub	
-	// HubHub
-
-	public <T extends OAObject> HubCurrentStateEnum callHubStatusGetCurrentState(Hub<T> thisHub, Hub<T> hubNew, ArrayList<T> alNew);
-	public <T extends OAObject> void callHubHubSetObjectClass(Hub<T> hubDetail, Class<T> clazz);
-	public boolean callHubStatusIsValid(Hub<?> hub);
-	public boolean callHubStatusGetChanged(Hub<?> thisHub, int iCascadeRule, OACascade cascade); 
 
 	// Link
 	public <T extends OAObject> Hub<T> callHubLinkGetHubWithLink(Hub<T> hub, boolean bIncludeCopiedHubs);
@@ -211,7 +196,12 @@ public interface HubsInternalOps {
 	public void callHubSortCancelSort(Hub<?> hub);
 	public void callHubSortSort(Hub<?> hub);
 	public void callHubSortResort(Hub<?> hub);
- 	
+
+	// Status
+	public boolean callHubStatusIsValid(Hub<?> hub);
+	public boolean callHubStatusGetChanged(Hub<?> thisHub, int iCascadeRule, OACascade cascade); 
+	public <T extends OAObject> HubCurrentStateEnum callHubStatusGetCurrentState(Hub<T> thisHub, Hub<T> hubNew, ArrayList<T> alNew);
+	
 	// XML
 	public void callHubXMLWrite(Hub<?> hub, OAXMLWriter ow, final String tagName, boolean bKeyOnly, OACascade cascade);
 }
