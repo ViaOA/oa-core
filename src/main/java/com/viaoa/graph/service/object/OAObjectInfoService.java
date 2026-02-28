@@ -50,13 +50,13 @@ public abstract class OAObjectInfoService {
 	 * Cache of reflected methods for each class, keyed by uppercase method
 	 * name. Used to accelerate method lookup and avoid repeated reflection.
 	 */
-    private final Map<Class, Map<String, Method>> hmClassMethod = new ConcurrentHashMap<>(151, 0.75F);
+    private final Map<Class<?>, Map<String, Method>> hmClassMethod = new ConcurrentHashMap<>(151, 0.75F);
     
     /**
      * Tracks method names that were previously searched for but not found
      * on a per-class basis, preventing redundant failed lookups.
      */
-    private final Map<Class, Set<String>> hmClassMethodNotFound = new ConcurrentHashMap<>(151, 0.75F);
+    private final Map<Class<?>, Set<String>> hmClassMethodNotFound = new ConcurrentHashMap<>(151, 0.75F);
     
     /**
      * Per-link read/write locks used to coordinate safe concurrent access
@@ -68,13 +68,13 @@ public abstract class OAObjectInfoService {
      * Ordered list-based cache used for each link’s Hub instances, storing
      * Hubs in insertion order to support trimming by cache size.
      */
-    private final Map<OALinkInfo, List> hmLinkInfoCacheList = new ConcurrentHashMap<OALinkInfo, List>(47,0.75f);
+    private final Map<OALinkInfo, List<Hub<?>>> hmLinkInfoCacheList = new ConcurrentHashMap<>(47,0.75f);
     
     /**
      * Set used for rapid membership checks for each link’s Hub cache,
      * ensuring efficient duplicate-prevention.
      */
-    private final Map<OALinkInfo, Set> hmLinkInfoCacheSet = new ConcurrentHashMap<OALinkInfo, Set>(47,0.75f);
+    private final Map<OALinkInfo, Set<Hub<?>>> hmLinkInfoCacheSet = new ConcurrentHashMap<>(47,0.75f);
 	
     /**
      * Maps each OAObjectInfo to its assigned root Hub when the type is
@@ -187,7 +187,7 @@ public abstract class OAObjectInfoService {
 			if (liRev != null) {
 				continue;
 			}
-			Class c = li.getToClass();
+			Class<?> c = li.getToClass();
 			if (c == null) {
 				continue;
 			}
@@ -259,7 +259,7 @@ public abstract class OAObjectInfoService {
 
 				initialize(oi, clazz); // this will load all props/links/primitives
 
-				Class superClass = clazz.getSuperclass(); // if there is a superclass, then combine with oaobjectinfo
+				Class<?> superClass = clazz.getSuperclass(); // if there is a superclass, then combine with oaobjectinfo
 				if (superClass != null && !superClass.equals(OAObject.class)) {
 					OAObjectInfo oi2 = getOAObjectInfo(superClass);
 					oi = createCombinedObjectInfo(oi, oi2);
@@ -652,7 +652,7 @@ public abstract class OAObjectInfoService {
 		// combine CalcInfos
 		alThis = thisOI.getCalcInfos();
 		for (int x = 0; x < 2; x++) {
-			ArrayList al;
+			ArrayList<?> al;
 			if (x == 0) {
 				al = child.getCalcInfos();
 			} else {
@@ -905,8 +905,8 @@ public abstract class OAObjectInfoService {
 		}
 
 		ReentrantReadWriteLock rwLock = hmLinkInfoCacheLock.computeIfAbsent(li,  k -> new ReentrantReadWriteLock());
-		List alCache = hmLinkInfoCacheList.computeIfAbsent(li, k -> new ArrayList(li.getCacheSize() + 1));
-		Set hsCache = hmLinkInfoCacheSet.computeIfAbsent(li, k -> new HashSet(li.getCacheSize() + 3, .85f)); 
+		List<Hub<?>> alCache = hmLinkInfoCacheList.computeIfAbsent(li, k -> new ArrayList<>(li.getCacheSize() + 1));
+		Set<Hub<?>> hsCache = hmLinkInfoCacheSet.computeIfAbsent(li, k -> new HashSet<>(li.getCacheSize() + 3, .85f)); 
 
 		try {
 			rwLock.writeLock().lock();
@@ -928,7 +928,7 @@ public abstract class OAObjectInfoService {
 	 * @param hsCache the membership check set.
 	 * @return true if the Hub was added or already cached.
 	 */
-	private boolean _cacheHub(OALinkInfo li, Hub<?> hub, List alCache, Set hsCache) {
+	private boolean _cacheHub(OALinkInfo li, Hub<?> hub, List<Hub<?>> alCache, Set<Hub<?>> hsCache) {
 		if (hsCache.contains(hub)) {
 			return true;
 		}
@@ -1096,7 +1096,7 @@ public abstract class OAObjectInfoService {
 
 		boolean bRecalc = false;
 		if (method != null && argumentCount >= 0) {
-			Class[] cs = method.getParameterTypes();
+			Class<?>[] cs = method.getParameterTypes();
 			if (cs.length != argumentCount) {
 				bRecalc = true;
 				method = null;
@@ -1131,11 +1131,11 @@ public abstract class OAObjectInfoService {
 			return null;
 		}
 		methodName = methodName.toUpperCase();
-		Class clazz = oi.getForClass();
+		Class<?> clazz = oi.getForClass();
 		final Map<String, Method> map = getClassMethodMap(clazz);
 		Method method = map.get(methodName);
 		if (method != null) {
-			Class[] cs = method.getParameterTypes();
+			Class<?>[] cs = method.getParameterTypes();
 			if (cs != null && cs.length == 1 && OAReflect.isEqualEvenIfWrapper(classParam, cs[0])) {
 				return method;
 			}
@@ -1170,7 +1170,7 @@ public abstract class OAObjectInfoService {
 	 * @return array of all cached methods.
 	 */
 	public Method[] getAllMethods(OAObjectInfo oi) {
-		Class clazz = oi.getForClass();
+		Class<?> clazz = oi.getForClass();
 		Map<String, Method> map = getClassMethodMap(clazz);
 		Method[] ms = new Method[map.size()];
 		int i = 0;
@@ -1411,7 +1411,7 @@ public abstract class OAObjectInfoService {
 		Method m = getMethod(oi.getForClass(), "get" + propertyName);
 		if (m == null) return false;
 		
-		Class c = m.getReturnType();
+		Class<?> c = m.getReturnType();
 		if (c == null) return false;
 		return (c.equals(Hub.class));
 	}
@@ -1837,7 +1837,6 @@ public abstract class OAObjectInfoService {
 	 * @return the method cache map.
 	 */
 	public Map<String, Method> getClassMethodMap(Class<?> clazz) {
-    	//qqqqqqqqqq method was protected
 		Map<String, Method> map = hmClassMethod.computeIfAbsent(clazz, k -> new ConcurrentHashMap<>());
     	return map;
 	}
@@ -1851,7 +1850,6 @@ public abstract class OAObjectInfoService {
 	 * @return the not-found method-name set.
 	 */
     public Set<String> getClassMethodNotFoundMap(Class<?> clazz) {
-    	//qqqqqqqqqq method was protected
         Set<String> map = hmClassMethodNotFound.computeIfAbsent(clazz, k -> new HashSet<String>(3, .75f));
         return map;
     }
@@ -1867,24 +1865,11 @@ public abstract class OAObjectInfoService {
     	return hmObjectInfo;
     }
     
-	// @OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().update2")
 	public abstract void callAnnotationUpdate2(OAObjectInfo oi, Class<?> clazz);
-    
-	// @OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().updateImportMatches")
 	public abstract void callAnnotationUpdateImportMatches(OAObjectInfo oi); 
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().updateLinkFkeys")
 	public abstract void callAnnotationUpdateLinkFkeys(final OAObjectInfo oi);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectAnnotationService().update")
 	public abstract void callAnnotationUpdate(OAObjectInfo oi, Class<?> clazz); 
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().getRawReference")
 	public abstract Object callReflectGetRawReference(OAObject oaObj, String name);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().getProperty")
 	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath);
-	
-	// @OAParentProvided (example = "srvcSync.isServer(..)")
 	public abstract boolean callSyncIsServer();
 }

@@ -1,16 +1,15 @@
 package com.viaoa.graph.service.object;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.service.OAObjectService;
-import com.viaoa.graph.service.OASyncService;
 import com.viaoa.object.OALock;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.runtime.OARuntime;
-import com.viaoa.sync.remote.RemoteSessionInterface;
 
 public abstract class OAObjectLockService {
 	private static final Logger LOG = Logger.getLogger(OAObjectLockService.class.getName());
@@ -24,8 +23,23 @@ public abstract class OAObjectLockService {
 	 * enabling local, non-distributed locking when no remote sync session
 	 * is active.
 	 */
-    private final Map<Object, Object> hmLock = new HashMap<>(11, 0.75F);
+    private final Map<OAObject, OALock> hmObjectLock = new HashMap<>(11, 0.75F);
 
+    
+	// property locking
+	private final Map<String, PropertyLock> hmPropertyLock = new ConcurrentHashMap<>();
+	private final Map<Thread, Thread> hmWaitingOnPropertyLock = new ConcurrentHashMap<>();
+
+	private static final class PropertyLock {
+		final Thread thread;
+		boolean done;
+		boolean hasWait;
+		public PropertyLock(Thread thread) {
+			this.thread = thread;
+		}
+	}
+    
+    
     /**
      * Attempts to acquire a lock for the specified {@link OAObject}.  
      * <p>
@@ -55,19 +69,21 @@ public abstract class OAObjectLockService {
 	    }
 	            
 	    OALock newLock = new OALock(object, null, null);
-	    synchronized (hmLock) {
+	    synchronized (hmObjectLock) {
 	        for (;;) {
-	            OALock lock = (OALock) hmLock.get(object);
+	            OALock lock = hmObjectLock.get(object);
 	            if (lock == null) break;
 	            try {
 	                int x = lock.getWaitCount();
 	                lock.setWaitCount(x + 1);
-	                hmLock.wait();
+	                hmObjectLock.wait();
 	            }
 	            catch (InterruptedException e) {
+	            	Thread.currentThread().interrupt();	            	
+	            	return;
 	            }
 	        }
-	        hmLock.put(object, newLock);
+	        hmObjectLock.put(object, newLock);
 	    }
 	}
 
@@ -97,9 +113,9 @@ public abstract class OAObjectLockService {
 	    	return;
 	    }
 	    
-	    synchronized (hmLock) {
-	    	hmLock.remove(object);
-	    	hmLock.notifyAll();
+	    synchronized (hmObjectLock) {
+	    	hmObjectLock.remove(object);
+	    	hmObjectLock.notifyAll();
 	    }
 	}
 
@@ -125,21 +141,171 @@ public abstract class OAObjectLockService {
 	    	return callSyncIsLocked(object.getClass(), object.getObjectKey());
 	    }
 	    
-        synchronized (hmLock) {
-            return (hmLock.get(object) != null);
+        synchronized (hmObjectLock) {
+            return (hmObjectLock.get(object) != null);
         }
 	}
 
-	// @OAParentProvided (example = "srvcSync.isClient")
-	public abstract boolean callSyncIsClient();
 	
-	// @OAParentProvided (example = "srvcSync.isServer")
+	
+	/**
+	 * Attempts to acquire an exclusive lock for the specified property.  
+	 * This call will wait if necessary until the lock becomes available.
+	 *
+	 * @param oaObj the target object
+	 * @param name  the property name to lock
+	 * @return true if the lock is successfully acquired; false otherwise
+	 */
+	public boolean setPropertyLock(OAObject oaObj, String name) {
+		return _setPropertyLock(oaObj, name, true);
+	}
+
+	/**
+	 * Attempts to acquire an exclusive lock for the specified property
+	 * without waiting.  
+	 * If the lock is already held by another thread, this method returns
+	 * immediately with {@code false}.
+	 *
+	 * @param oaObj the target object
+	 * @param name  the property name to lock
+	 * @return true if the lock is acquired; false if it is already held
+	 */
+	public boolean attemptPropertyLock(OAObject oaObj, String name) {
+		return _setPropertyLock(oaObj, name, false);
+	}
+
+	/**
+	 * Core implementation for acquiring a property-level lock.  
+	 * Creates or reuses a lock entry and manages waiting behavior, deadlock
+	 * detection, and re-entry checks depending on the supplied flags.
+	 *
+	 * @param oaObj              the target object
+	 * @param name               the property name to lock
+	 * @param bWaitIfNeeded      true to wait until the lock becomes available;
+	 *                           false to return immediately if locked
+	 * @return true if the lock is acquired according to the requested rules;
+	 *         false otherwise
+	 */
+	private boolean _setPropertyLock(final OAObject oaObj, final String name, final boolean bWaitIfNeeded) {
+		if (oaObj == null || name == null) {
+			return false;
+		}
+
+		final Thread threadThis = Thread.currentThread();
+		final String key = oaObj.getGuid() + "." + name.toUpperCase(Locale.ROOT);
+
+		for (int iOuter=0;; iOuter++) {
+			PropertyLock lock = hmPropertyLock.computeIfAbsent(key, k -> new PropertyLock(threadThis));
+			if (lock.thread == threadThis) {
+				return true;
+			}
+	
+			try {
+				hmWaitingOnPropertyLock.put(threadThis, lock.thread);
+				if (iOuter == 0) callRemoteThreadStartNextThread();
+				synchronized (lock) {
+					if (!bWaitIfNeeded) {
+						return false;
+					}
+					long ms = 0;
+					for (int i = 0;; i++) {
+						if (i > 3) {
+							// see if the thread that thisThread is waiting on is waiting on another thread (possible deadlock)
+							Thread tx = hmWaitingOnPropertyLock.get(lock.thread);
+							if (tx != null) {
+								if (OAObject.getDebugMode()) {
+									String s = oaObj.getObjectKey().toString();
+									s = "thread with lock is waiting on a lock, obj=" + oaObj + ", key=" + s + ", prop=" + name
+											+ ", this.Thread=" + Thread.currentThread().getName() + ", waiting on Thread="
+											+ lock.thread.getName() + " (see next stacktrace), will continue";
+									LOG.log(Level.WARNING, s, new Exception("fyi: avoiding deadlock, will continue"));
+									StackTraceElement[] stes = lock.thread.getStackTrace();
+									Exception ex = new Exception();
+									ex.setStackTrace(stes);
+									LOG.log(Level.WARNING, "... waiting on this Thread=" + lock.thread.getName(), ex);
+								}
+								break; // retry
+							}
+	
+							if (ms == 0) {
+								ms = System.currentTimeMillis();
+							} else if (System.currentTimeMillis() - ms > 60000) {
+								if (OAObject.getDebugMode()) {
+									String s = oaObj.getObjectKey().toString();
+									s = "wait time exceeded for lock, obj=" + oaObj + ", key=" + s + ", prop=" + name + ", this.Thread="
+											+ Thread.currentThread().getName() + ", waiting on Thread=" + lock.thread.getName()
+											+ " (see next stacktrace), will continue";
+									LOG.log(Level.WARNING, s, new Exception("fyi: wait time exceeded, will continue"));
+									StackTraceElement[] stes = lock.thread.getStackTrace();
+									Exception ex = new Exception();
+									ex.setStackTrace(stes);
+									LOG.log(Level.WARNING, "... waiting on this Thread=" + lock.thread.getName(), ex);
+								}
+								return false; // bail out, ouch
+							}
+						}
+						if (lock.done) {
+							break;  // retry getting lock
+						}
+						lock.hasWait = true;
+						try {
+							lock.wait(100);
+						}
+			            catch (InterruptedException e) {
+			            	threadThis.interrupt();
+			            	return false;
+						}
+					}
+				}
+			} finally {
+				hmWaitingOnPropertyLock.remove(threadThis);
+			}
+		}
+	}
+	
+	/**
+	 * Releases the lock associated with the specified property, if one exists.
+	 * Any threads waiting on the lock are notified so they may attempt to
+	 * acquire it.
+	 *
+	 * @param oaObj the target object
+	 * @param name  the property name whose lock should be released
+	 */
+	public void releasePropertyLock(OAObject oaObj, String name) {
+		if (oaObj == null || name == null) {
+			return;
+		}
+		final String key = oaObj.getGuid() + "." + name.toUpperCase(Locale.ROOT);
+		PropertyLock lock = hmPropertyLock.remove(key);
+		if (lock != null) {
+			synchronized (lock) {
+				lock.done = true;
+				if (lock.hasWait) {
+					lock.notifyAll();
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Checks whether a lock exists for the specified property.
+	 *
+	 * @param oaObj the target object
+	 * @param name  the property name to check
+	 * @return true if the property is currently locked; false otherwise
+	 */
+	public boolean isPropertyLocked(OAObject oaObj, String name) {
+		if (oaObj == null || name == null) {
+			return false;
+		}
+		String key = oaObj.getGuid() + "." + name.toUpperCase(Locale.ROOT);
+		return (hmPropertyLock.get(key) != null);
+	}
+	
+	public abstract boolean callSyncIsClient();
 	public abstract boolean callSyncIsServer();
-
-	// @OAParentProvided (example = "srvcSync.setLock")
-	public abstract boolean callSyncSetLock(Class objectClass, OAObjectKey objectKey, boolean bLock);
-
-	// @OAParentProvided (example = "srvcSync.setLock")
-	public abstract boolean callSyncIsLocked(Class objectClass, OAObjectKey objectKey);
+	public abstract boolean callSyncSetLock(Class<? extends OAObject> objectClass, OAObjectKey objectKey, boolean bLock);
+	public abstract boolean callSyncIsLocked(Class<? extends OAObject> objectClass, OAObjectKey objectKey);
+	public abstract void callRemoteThreadStartNextThread();
 	
 }

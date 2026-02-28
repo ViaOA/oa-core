@@ -120,8 +120,6 @@ public abstract class OAObjectSchedulerService {
         }
     }
 
-    
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getObjectInfo")
 	public abstract OAObjectInfo callInfoGetObjectInfo(OAObject obj); 
 
 }

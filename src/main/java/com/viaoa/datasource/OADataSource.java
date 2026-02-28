@@ -15,12 +15,9 @@
  */
 package com.viaoa.datasource;
 
-import java.util.Iterator;
 import java.util.Vector;
 
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectInfoService;
-import com.viaoa.graph.service.object.OAObjectKeyService;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
@@ -288,8 +285,8 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 *
 	 * @return vector containing DataSource info
 	 */
-	public static Vector getInfo() {
-		Vector vec = new Vector(20, 20);
+	public static Vector<String> getInfo() {
+		Vector<String> vec = new Vector<>(20, 20);
 		vec.addElement("OADataSource Info --- ");
 		OADataSource[] dss = getDataSources();
 		for (int i = 0; i < dss.length; i++) {

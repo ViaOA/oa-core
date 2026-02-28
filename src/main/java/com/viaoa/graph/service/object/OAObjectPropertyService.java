@@ -2,9 +2,6 @@ package com.viaoa.graph.service.object;
 
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.hub.Hub;
@@ -49,6 +46,7 @@ public abstract class OAObjectPropertyService {
 	 * @return true if the property value is fully loaded and available;
 	 *         false if it is missing, unresolved, or not yet loaded
 	 */
+	@SuppressWarnings({"unchecked","rawtypes"})
 	public boolean isPropertyLoaded(OAObject oaObj, String name) {
 		if (oaObj == null || name == null) {
 			return false;
@@ -65,7 +63,7 @@ public abstract class OAObjectPropertyService {
 
 			Object objx = props[i + 1];
 			if (objx instanceof WeakReference) {
-				objx = ((WeakReference) objx).get();
+				objx = ((WeakReference<?>) objx).get();
 				if (objx == null) {
 					return false;
 				}
@@ -151,7 +149,6 @@ public abstract class OAObjectPropertyService {
 	 * @param value the value to store
 	 */
 	public void unsafeAddProperty(OAObject oaObj, String name, Object value) {
-		//qqqqqqqq method was protected
 		unsafeSetProperty(oaObj, name, value, false, false);
 	}
 	
@@ -165,7 +162,6 @@ public abstract class OAObjectPropertyService {
 	 * @param value the value to assign
 	 */
 	public void unsafeSetProperty(OAObject oaObj, String name, Object value) {
-		//qqqqqqqq method was protected
 		unsafeSetProperty(oaObj, name, value, true, false);
 	}
 
@@ -178,7 +174,6 @@ public abstract class OAObjectPropertyService {
 	 * @param value the value to assign if the property is not already defined
 	 */
 	public void unsafeSetPropertyIfEmpty(OAObject oaObj, String name, Object value) {
-		//qqqqqqqq method was protected
 		unsafeSetProperty(oaObj, name, value, true, true);
 	}
 
@@ -198,7 +193,7 @@ public abstract class OAObjectPropertyService {
 	 * @param bOnlyIfNotFound if true, the value is stored only when the
 	 *                        property does not already exist
 	 */
-	private void unsafeSetProperty(OAObject oaObj, String name, Object value, boolean bCheckFirst, boolean bOnlyIfNotFound) {
+	private void unsafeSetProperty(final OAObject oaObj, String name, Object value, boolean bCheckFirst, boolean bOnlyIfNotFound) {
 		int pos;
 		Object[] properties = faObject.getProperties(oaObj);
 		if (properties == null) {
@@ -472,9 +467,9 @@ public abstract class OAObjectPropertyService {
 			objx = ((WeakReference) objx).get();
 		}
 		if (objx instanceof Hub) {
-			Hub hub = (Hub) objx;
+			Hub<?> hub = (Hub<?>) objx;
 			if (hub.getMasterObject() == null) {
-				callHubSetMasterObject((Hub) objx, oaObj, name);
+				callHubSetMasterObject(hub, oaObj, name);
 			}
 		}
 	}
@@ -668,7 +663,7 @@ public abstract class OAObjectPropertyService {
 			}
 			Object objx = objs[i + 1];
 			if (bConvertWeakRef && objx instanceof WeakReference) {
-				objx = ((WeakReference) objx).get();
+				objx = ((WeakReference<?>) objx).get();
 				if (objx == null) {
 					if (bReturnNotExist) {
 						return OANotExist.instance;
@@ -685,181 +680,14 @@ public abstract class OAObjectPropertyService {
 	}
 
 	
-	// property locking
-	private final ConcurrentHashMap<String, PropertyLock> hmLock = new ConcurrentHashMap<String, PropertyLock>();
-	private final ConcurrentHashMap<Thread, Thread> hmLockedThread = new ConcurrentHashMap<Thread, Thread>();
-
-	private static class PropertyLock {
-		final Thread thread;
-		boolean done;
-		boolean hasWait;
-
-		public PropertyLock(Thread thread) {
-			this.thread = thread;
-		}
-
-	}
 	
-	/**
-	 * Attempts to acquire an exclusive lock for the specified property.  
-	 * This call will wait if necessary until the lock becomes available.
-	 *
-	 * @param oaObj the target object
-	 * @param name  the property name to lock
-	 * @return true if the lock is successfully acquired; false otherwise
-	 */
-	public boolean setPropertyLock(OAObject oaObj, String name) {
-		return _setPropertyLock(oaObj, name, true, false);
-	}
-
-	/**
-	 * Attempts to acquire an exclusive lock for the specified property
-	 * without waiting.  
-	 * If the lock is already held by another thread, this method returns
-	 * immediately with {@code false}.
-	 *
-	 * @param oaObj the target object
-	 * @param name  the property name to lock
-	 * @return true if the lock is acquired; false if it is already held
-	 */
-	public boolean attemptPropertyLock(OAObject oaObj, String name) {
-		return _setPropertyLock(oaObj, name, false, true);
-	}
-
-	/**
-	 * Core implementation for acquiring a property-level lock.  
-	 * Creates or reuses a lock entry and manages waiting behavior, deadlock
-	 * detection, and re-entry checks depending on the supplied flags.
-	 *
-	 * @param oaObj              the target object
-	 * @param name               the property name to lock
-	 * @param bWaitIfNeeded      true to wait until the lock becomes available;
-	 *                           false to return immediately if locked
-	 * @param bCheckIfThisThread true to return true only when the current
-	 *                           thread already owns the lock
-	 * @return true if the lock is acquired according to the requested rules;
-	 *         false otherwise
-	 */
-	private boolean _setPropertyLock(final OAObject oaObj, final String name, final boolean bWaitIfNeeded,
-			final boolean bCheckIfThisThread) {
-		if (oaObj == null || name == null) {
-			return false;
-		}
-		String key = callGuidGetGuid(oaObj) + "." + name.toUpperCase();
-		PropertyLock lock;
-		final Thread threadThis = Thread.currentThread();
-		
-		
-		lock = hmLock.computeIfAbsent(key, k -> new PropertyLock(threadThis));
-		if (lock.thread == threadThis) {
-			return true;
-		}
-
-		hmLockedThread.put(threadThis, lock.thread);
-		try {
-			callRemoteThreadStartNextThread();
-			synchronized (lock) {
-				if (lock.thread == Thread.currentThread()) {
-					return bCheckIfThisThread;
-				}
-				if (!bWaitIfNeeded) {
-					return false;
-				}
-				long ms = 0;
-				for (int i = 0;; i++) {
-					if (i > 3) {
-
-						// see if the thread that thisThread is waiting on is waiting on another thread
-						Thread tx = hmLockedThread.get(lock.thread);
-						if (tx != null) {
-							if (OAObject.getDebugMode()) {
-								String s = oaObj.getObjectKey().toString();
-								s = "thread with lock is waiting on a lock, obj=" + oaObj + ", key=" + s + ", prop=" + name
-										+ ", this.Thread=" + Thread.currentThread().getName() + ", waiting on Thread="
-										+ lock.thread.getName() + " (see next stacktrace), will continue";
-								LOG.log(Level.WARNING, s, new Exception("fyi: avoiding deadlock, will continue"));
-								StackTraceElement[] stes = lock.thread.getStackTrace();
-								Exception ex = new Exception();
-								ex.setStackTrace(stes);
-								LOG.log(Level.WARNING, "... waiting on this Thread=" + lock.thread.getName(), ex);
-							}
-							break;
-						}
-
-						if (ms == 0) {
-							ms = System.currentTimeMillis();
-						} else if (System.currentTimeMillis() - ms > 60000) {
-							if (OAObject.getDebugMode()) {
-								String s = oaObj.getObjectKey().toString();
-								s = "wait time exceeded for lock, obj=" + oaObj + ", key=" + s + ", prop=" + name + ", this.Thread="
-										+ Thread.currentThread().getName() + ", waiting on Thread=" + lock.thread.getName()
-										+ " (see next stacktrace), will continue";
-								LOG.log(Level.WARNING, s, new Exception("fyi: wait time exceeded, will continue"));
-								StackTraceElement[] stes = lock.thread.getStackTrace();
-								Exception ex = new Exception();
-								ex.setStackTrace(stes);
-								LOG.log(Level.WARNING, "... waiting on this Thread=" + lock.thread.getName(), ex);
-							}
-							return false; // bail out, ouch
-						}
-					}
-					if (lock.done) {
-						break;
-					}
-					lock.hasWait = true;
-					try {
-						lock.wait(100);
-					} catch (Exception e) {
-					}
-				}
-			}
-		} finally {
-			hmLockedThread.remove(threadThis);
-		}
-		return _setPropertyLock(oaObj, name, bWaitIfNeeded, bCheckIfThisThread); // create a new one
-	}
 	
-	/**
-	 * Releases the lock associated with the specified property, if one exists.
-	 * Any threads waiting on the lock are notified so they may attempt to
-	 * acquire it.
-	 *
-	 * @param oaObj the target object
-	 * @param name  the property name whose lock should be released
-	 */
-	public void releasePropertyLock(OAObject oaObj, String name) {
-		if (oaObj == null || name == null) {
-			return;
-		}
-		String key = callGuidGetGuid(oaObj) + "." + name.toUpperCase();
-		PropertyLock lock;
-		synchronized (oaObj) {
-			lock = hmLock.remove(key);
-		}
-		if (lock != null) {
-			synchronized (lock) {
-				lock.done = true;
-				if (lock.hasWait) {
-					lock.notifyAll();
-				}
-			}
-		}
-	}
 	
-	/**
-	 * Checks whether a lock exists for the specified property.
-	 *
-	 * @param oaObj the target object
-	 * @param name  the property name to check
-	 * @return true if the property is currently locked; false otherwise
-	 */
-	public boolean isPropertyLocked(OAObject oaObj, String name) {
-		if (oaObj == null || name == null) {
-			return false;
-		}
-		String key = callKeyGetKey(oaObj).getGuid() + "." + name.toUpperCase();
-		return (hmLock.get(key) != null);
-	}
+	
+	
+
+	
+	
 	
 	/**
 	 * Converts the stored value for the specified property to or from a
@@ -1044,35 +872,12 @@ public abstract class OAObjectPropertyService {
 		}
 	}
 
-	
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().get")
 	public abstract <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectGuidService().getGuid")
-	public abstract UUID callGuidGetGuid(OAObject oaObj);
-		
-	// @OAParentProvided (example = "srvcObject.getOAObjectHubService().setMasterObject")
 	public abstract void callHubSetMasterObject(Hub<?> hub, OAObject oaObj, String nameFromMasterToDetail);
-		
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz); 
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().isWeakReferenceable")
 	public abstract boolean callInfoIsWeakReferenceable(OAObjectInfo oi);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
 	public abstract OALinkInfo callInfoGetLinkInfo(Class<? extends OAObject> clazz, String propertyName);	
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectKeyService().isForSameOAObject")
 	public abstract boolean callKeyIsForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey ok1, final OAObjectKey ok2);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectKeyService().getKey")
 	public abstract OAObjectKey callKeyGetKey(OAObject oaObj);
-	
-	// @OAParentProvided (example = "srvcSync.isServer()")
 	public abstract boolean callSyncIsServer();
-
-	// @OAParentProvided (example = "srvcOARemoteThread.startNextThread")
-	public abstract void callRemoteThreadStartNextThread();
 }

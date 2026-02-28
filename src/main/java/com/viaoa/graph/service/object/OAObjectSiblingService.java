@@ -614,38 +614,16 @@ public abstract class OAObjectSiblingService {
 		return siblingHub;
 	}
 
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
 	public abstract OALinkInfo callInfoGetLinkInfo(Class<?> clazz, String propertyName);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
 	public abstract OALinkInfo callInfoGetLinkInfo(Class<?> fromClass, Class<?> toClass); 
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getProperty")
 	public abstract Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().get")
 	public abstract <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectHubService().getHubReferences")
 	public abstract Hub[] callHubGetHubReferences(OAObject oaObj); 
-
-	// @OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster")
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
-
-	// @OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromMasterHubToDetail")
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub<?> thisDetailHub);
-	
-	// @OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromMasterToDetail")
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterToDetail(Hub<?> thisDetailHub);
-
-	
-	// @OAParentProvided (example = "srvcOAThreadLocal.getSiblingHelpers")
 	public abstract ArrayList<OASiblingHelper> callThreadLocalGetSiblingHelpers();
-	
-	// @OAParentProvided (example = "srvcOAThreadLocal.callThreadLocalGetAndIncrementGetSiblingCalledCount")
 	public abstract int callThreadLocalGetAndIncrementGetSiblingCalledCount();
-	
-	// @OAParentProvided (example = "srvcOAThreadLocal.clearGetSiblingCalledCount")
 	public abstract void callThreadLocalClearGetSiblingCalledCount();
 	
 }

@@ -90,14 +90,14 @@ import com.viaoa.runtime.OARuntime;
  * @see com.viaoa.filter.OAFilter
  * @see OAPropertyPathInfo
  */
-public class OAPropertyPath<F extends OAObject> {
+public class OAPropertyPath<TYPE extends OAObject> {
 
 	/**
 	 * The starting class used to resolve the property path.
 	 *
 	 * <p>This defines the root type from which property resolution begins.</p>
 	 */
-	private Class<F> fromClass;
+	private Class<TYPE> fromClass;
 	
 	/**
 	 * The raw property path string as provided to the constructor.
@@ -249,7 +249,7 @@ public class OAPropertyPath<F extends OAObject> {
 	 * @param fromClass    the starting class used to resolve the property path
 	 * @param propertyPath the raw property path string to parse
 	 */
-	public OAPropertyPath(Class<F> fromClass, String propertyPath) {
+	public OAPropertyPath(Class<TYPE> fromClass, String propertyPath) {
 		this(fromClass, propertyPath, false);
 	}
 
@@ -262,7 +262,7 @@ public class OAPropertyPath<F extends OAObject> {
 	 * @param propertyPath  the raw property path string to parse
 	 * @param bIgnoreError  if true, setup errors are ignored
 	 */
-	public OAPropertyPath(Class<F> fromClass, String propertyPath, boolean bIgnoreError) {
+	public OAPropertyPath(Class<TYPE> fromClass, String propertyPath, boolean bIgnoreError) {
 		this.propertyPath = propertyPath;
 		this.fromClass = fromClass;
 
@@ -543,7 +543,7 @@ public class OAPropertyPath<F extends OAObject> {
 	 * @param fromObject the object to evaluate the property path against
 	 * @return the resolved value, or {@code null} if evaluation fails or encounters {@code null}
 	 */
-	public Object getValue(F fromObject) {
+	public Object getValue(TYPE fromObject) {
 		return getValue(null, fromObject);
 	}
 
@@ -553,7 +553,7 @@ public class OAPropertyPath<F extends OAObject> {
 	 * @param fromObject the object to evaluate the property path against
 	 * @return the formatted string value, or {@code null}
 	 */
-	public String getValueAsString(F fromObject) {
+	public String getValueAsString(TYPE fromObject) {
 		return getValueAsString(null, fromObject);
 	}
 
@@ -563,7 +563,7 @@ public class OAPropertyPath<F extends OAObject> {
 	 * @param fromObject the object to evaluate the property path against
 	 * @return the value of the last link, or {@code null}
 	 */
-	public Object getLastLinkValue(F fromObject) {
+	public Object getLastLinkValue(TYPE fromObject) {
 		return getValue(null, fromObject, true);
 	}
 
@@ -607,7 +607,7 @@ public class OAPropertyPath<F extends OAObject> {
 	 * @param fromObject the object to evaluate the property path against
 	 * @return the resolved value, or {@code null}
 	 */
-	public Object getValue(Hub<F> hub, F fromObject) {
+	public Object getValue(Hub<TYPE> hub, TYPE fromObject) {
 		return getValue(hub, fromObject, false);
 	}
 
@@ -619,12 +619,12 @@ public class OAPropertyPath<F extends OAObject> {
 	 * @param bLinksOnly  if true, traversal stops after link segments
 	 * @return the resolved value, or {@code null}
 	 */
-	public Object getValue(Hub<F> hub, F fromObject, boolean bLinksOnly) {
+	public Object getValue(Hub<TYPE> hub, TYPE fromObject, boolean bLinksOnly) {
 		if (fromObject == null) {
 			return null;
 		}
 		if (this.fromClass == null) {
-			setup((Class<F>) fromObject.getClass());
+			setup((Class<TYPE>) fromObject.getClass());
 		}
 		if (methods == null || methods.length == 0) {
 			return fromObject; // ex: could be pp="."
@@ -672,7 +672,7 @@ public class OAPropertyPath<F extends OAObject> {
 	 * @param fromObject the object to evaluate the property path against
 	 * @return the formatted string value, or {@code null}
 	 */
-	public String getValueAsString(Hub<F> hub, F fromObject) {
+	public String getValueAsString(Hub<TYPE> hub, TYPE fromObject) {
 		Object obj = getValue(hub, fromObject);
 		String s = OAConv.toString(obj, getFormat());
 		return s;
@@ -686,7 +686,7 @@ public class OAPropertyPath<F extends OAObject> {
 	 * @param format     the format string to apply
 	 * @return the formatted string value, or {@code null}
 	 */
-	public String getValueAsString(Hub<F> hub, F fromObject, String format) {
+	public String getValueAsString(Hub<TYPE> hub, TYPE fromObject, String format) {
 		Object obj = getValue(hub, fromObject);
 		String s = OAConv.toString(obj, format);
 		return s;
@@ -697,7 +697,7 @@ public class OAPropertyPath<F extends OAObject> {
 	 *
 	 * @return the starting class
 	 */
-	public Class<F> getFromClass() {
+	public Class<TYPE> getFromClass() {
 		return fromClass;
 	}
 

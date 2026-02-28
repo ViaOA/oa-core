@@ -293,7 +293,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * List of hub references in which this object is a member. Stored as weak
 	 * references so unused hubs can be garbage-collected.
 	 */
-	protected transient volatile WeakReference<Hub<? extends OAObject>>[] weakhubs;
+	protected transient volatile WeakReference<Hub<?>>[] weakhubs;
 
 	/**
 	 * Link/reference properties that have been loaded. Stores uppercase name of property. Possible values: ONE: OAObjectKey (by calling
@@ -1542,7 +1542,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 				og.objectsInternal().callObjectPropertySetReferenceable(this, true);
 
 				// 20180520 notify owner
-				WeakReference<Hub<? extends OAObject>>[] refs = og.objectsInternal().callObjectHubGetHubReferencesNoCopy(this);
+				WeakReference<Hub<?>>[] refs = og.objectsInternal().callObjectHubGetHubReferencesNoCopy(this);
 				if (refs != null) {
 					for (WeakReference wr : refs) {
 						if (wr == null) {
@@ -4078,10 +4078,10 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 			obj.changedFlag = b;;
 		}
 
-		public WeakReference<Hub<? extends OAObject>>[] getWeakHubs(OAObject obj) {
+		public WeakReference<Hub<?>>[] getWeakHubs(OAObject obj) {
 			return obj.weakhubs;
 		}
-		public void setWeakHubs(OAObject obj, WeakReference<Hub<? extends OAObject>>[] refs) {
+		public void setWeakHubs(OAObject obj, WeakReference<Hub<?>>[] refs) {
 			obj.weakhubs = refs;
 		}
 		

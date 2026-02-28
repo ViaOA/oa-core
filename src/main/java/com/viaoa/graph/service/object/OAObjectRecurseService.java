@@ -13,10 +13,6 @@ import com.viaoa.object.OAObjectInfo;
 public abstract class OAObjectRecurseService {
 	private static final Logger LOG = Logger.getLogger(OAObjectRecurseService.class.getName());
 
-	public OAObjectRecurseService() {
-	}
-
-
 	/**
 	 * Convenience method that initiates a recursive traversal of the object graph
 	 * starting from the specified {@link OAObject}. This variant simply allocates a
@@ -30,7 +26,7 @@ public abstract class OAObjectRecurseService {
 	 * @param oaObj the root object to traverse; may be {@code null}.
 	 * @param callback the callback invoked for each visited object; must not be {@code null}.
 	 */
-	public void recurse(OAObject oaObj, OACallback callback) {
+	public <T extends OAObject> void recurse(T oaObj, OACallback<OAObject> callback) {
 		OACascade cascade = new OACascade();
 		recurse(oaObj, callback, cascade);
 	}
@@ -65,8 +61,8 @@ public abstract class OAObjectRecurseService {
 	 * @param cascade  the cascade context used to record visited objects and prevent
 	 *                 revisiting or infinite recursion; must not be {@code null}.
 	 */
-	public void recurse(OAObject oaObj, OACallback callback, OACascade cascade) {
-		if (cascade.wasCascaded(oaObj, true)) {
+	public void recurse(final OAObject oaObj, final OACallback<OAObject> callback, OACascade cascade) {
+		if (oaObj == null || cascade == null || cascade.wasCascaded(oaObj, true)) {
 			return;
 		}
 
@@ -74,12 +70,8 @@ public abstract class OAObjectRecurseService {
 			callback.updateObject(oaObj);
 		}
 		OAObjectInfo oi = callObjectInfoGetOAObjectInfo(oaObj);
-
-				
-		
-		List al = oi.getLinkInfos();
-		for (int i = 0; i < al.size(); i++) {
-			OALinkInfo li = (OALinkInfo) al.get(i);
+		List<OALinkInfo> al = oi.getLinkInfos();
+		for (OALinkInfo li : al) {
 			if (li.getCalculated()) {
 				continue;
 			}
@@ -89,41 +81,26 @@ public abstract class OAObjectRecurseService {
 			if (!li.getUsed()) {
 				continue;
 			}
-			String prop = li.getName();
 
-			Object obj = callObjectReflectGetProperty(oaObj, li.getName()); // select all
-			
+			Object obj = callObjectReflectGetProperty(oaObj, li.getName());
 			if (obj == null) {
 				continue;
 			}
-
 			if (obj instanceof Hub) {
-				Hub h = (Hub) obj;
+				Hub<?> h = (Hub<?>) obj;
 				for (int j = 0;; j++) {
-					Object o = h.elementAt(j);
+					OAObject o = h.elementAt(j);
 					if (o == null) {
 						break;
 					}
-					if (o instanceof OAObject) {
-						recurse((OAObject) o, callback, cascade);
-					} else {
-						if (callback != null) {
-							callback.updateObject(o);
-						}
-					}
+					recurse(o, callback, cascade);
 					Object o2 = h.elementAt(j);
 					if (o != o2) {
 						j--;
 					}
 				}
 			} else {
-				if (obj instanceof OAObject) {
-					recurse((OAObject) obj, callback, cascade);
-				} else {
-					if (callback != null) {
-						callback.updateObject(obj);
-					}
-				}
+				recurse((OAObject) obj, callback, cascade);
 			}
 		}
 	}

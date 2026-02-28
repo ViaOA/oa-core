@@ -288,7 +288,7 @@ public abstract class OAObjectSerializeService {
 	 * @param value the relationship value being inspected or rewritten
 	 * @return {@code true} if reference replacement should continue; {@code false} otherwise
 	 */
-	private boolean replaceReferences(final OAObject oaObjFrom, final OAObject oaObjTo, final OALinkInfo linkInfo, Object value) {
+	private <T extends OAObject> boolean replaceReferences(final T oaObjFrom, final T oaObjTo, final OALinkInfo linkInfo, Object value) {
 		if (linkInfo == null) {
 			return false;
 		}
@@ -316,7 +316,7 @@ public abstract class OAObjectSerializeService {
 			}
 
 			// this will only replace if current masterObj = oaObjOrig
-			callHubSerializeReplaceMasterObject((Hub) value, oaObjFrom, oaObjTo);
+			callHubSerializeReplaceMasterObject((Hub<OAObject>) value, oaObjFrom, oaObjTo);
 
 			for (int i = 0; revName != null; i++) {
 				OAObject objx = (OAObject) hub.getAt(i);
@@ -594,78 +594,29 @@ public abstract class OAObjectSerializeService {
 		}
 	}
 
-	// @OAParentProvided (example = "srvcObject.getOAObjectGuidService().setGuid")
 	public abstract void callGuidSetGuid(OAObject oaObj, UUID guid);    
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().unsafeSetPropertyIfEmpty")
 	public abstract void callPropertyUnsafeSetPropertyIfEmpty(OAObject oaObj, String name, Object value);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectGuidService().getGuid")
 	public abstract UUID callGuidGetGuid(OAObject oaObj);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectGuidService().assignGuid")
 	public abstract void callGuiAssignGuid(OAObject obj);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
 	public abstract OAObjectInfo callInfoGetObjectInfo(OAObject obj); 
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().add")
 	public abstract OAObject callCacheAdd(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll, boolean bSendAddEventInAnotherThread);
-
-	// @OAParentProvided (example = "srvcObject.getProperties")
 	public abstract Object[] callGetProperties(OAObject obj);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getProperty")
 	public abstract Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef); 
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectKeyService().getKey")
 	public abstract OAObjectKey callKeyGetKey(OAObject oaObj);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectKeyService().isForSameOAObject")
 	public abstract boolean callKeyIsForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey ok1, final OAObjectKey ok2);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().setPropertyCAS")
 	public abstract Object callPropertySetPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue); 
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
 	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().attemptPropertyLock")
 	public abstract boolean callPropertyAttemptPropertyLock(OAObject oaObj, String name);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().setPropertyCAS")
 	public abstract Object callPropertySetPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue, boolean bMustNotExist, boolean bReturnNotExist); 
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().releasePropertyLock")
 	public abstract void callPropertyReleasePropertyLock(OAObject oaObj, String name);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().cacheHub")
-	public abstract boolean callInfoCacheHub(OALinkInfo li, final Hub hub);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectCSService().isServer")
+	public abstract boolean callInfoCacheHub(OALinkInfo li, final Hub<?> hub);
 	public abstract boolean callCSIsServer();
-	
-	
-	// @OAParentProvided (example = "srvcHub.getHubSerializeService().replaceObject")
 	public abstract int callHubSerializeReplaceObject(Hub<?> thisHub, OAObject objFrom, OAObject objTo);
-	
-	// @OAParentProvided (example = "srvcHub.getHubSerializeService().isResolved")
 	public abstract boolean callHubSerializeIsResolved(Hub<?> thisHub); 
-
-	// @OAParentProvided (example = "srvcHub.getHubSerializeService().replaceMasterObject")
-	public abstract void callHubSerializeReplaceMasterObject(Hub<?> thisHub, OAObject objFrom, OAObject objTo);
-	
-	// @OAParentProvided (example = "srvcHub.getAutoMatch")
+	public abstract <T extends OAObject> void callHubSerializeReplaceMasterObject(Hub<T> thisHub, T objFrom, T objTo);
 	public abstract HubAutoMatch callHubGetAutoMatch(Hub<?> thisHub);
-	
-	
-	// @OAParentProvided (example = "srvcSync.getSyncClient().isObjectOnServer(..)")
 	public abstract boolean callSyncClientIsObjectOnServer(OAObject obj);
-
-	// @OAParentProvided (example = "srvcSync.getSyncClient().objectSentToServer")
 	public abstract void callSyncClientObjectSentToServer(OAObject obj);
 	
 }

@@ -277,10 +277,10 @@ public abstract class OAObjectImportMatchService {
 	 * @param propertyPath  full path leading to the property to set.
 	 * @param value         value to assign at the end of the path.
 	 */
-	protected void createHierObjects(final OAObject objThis, final OAObjectInfo oiThis, final String propertyPath,
+	protected <T extends OAObject> void createHierObjects(final T objThis, final OAObjectInfo oiThis, final String propertyPath,
 			final Object value) {
 
-		OAPropertyPath pp = new OAPropertyPath(oiThis.getForClass(), propertyPath);
+		OAPropertyPath<T> pp = new OAPropertyPath<T>(oiThis.getForClass(), propertyPath);
 		OALinkInfo[] linkInfos = pp.getLinkInfos();
 
 		if (linkInfos == null || linkInfos.length == 0) {
@@ -295,7 +295,7 @@ public abstract class OAObjectImportMatchService {
 		final String sql = propertyPathNext + " = ?";
 		final Object[] params = new Object[] { value };
 
-		OASelect sel = new OASelect(oiNext.getForClass(), propertyPathNext + " = ?", params, "");
+		OASelect<?> sel = new OASelect<>(oiNext.getForClass(), propertyPathNext + " = ?", params, "");
 		sel.select();
 		OAObject objNext = sel.next();
 		sel.close();
@@ -319,29 +319,18 @@ public abstract class OAObjectImportMatchService {
 				callThreadLocalSetLoading(true);
 			}
 
-			final OAJson oaj = callThreadLocalGetOAJackson();
+			// final OAJson oaj = callThreadLocalGetOAJackson();
 
 			createHierObjects(objNext, oiNext, propertyPathNext, value);
 		}
 		objThis.setProperty(liNext.getName(), objNext);
 	}
 
-    // @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(c)")
 	public abstract OAObjectInfo callInfogetObjectInfo(Class<? extends OAObject> clazz);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().find(..)")
 	public abstract <T extends OAObject> T callCacheFind(Class<T> clazz, OAFinder<T, T> finder); 
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().createNewObject(..)")
 	public abstract <T extends OAObject> T callReflectCreateNewObject(Class<T> clazz);
-	
-	// @OAParentProvided (example = "srvcOAThreadLocal.isLoading")
 	public abstract boolean callThreadLocalIsLoading();
-
-	// @OAParentProvided (example = "srvcOAThreadLocal.setLoading(..)")
 	public abstract boolean callThreadLocalSetLoading(boolean b);
-
-	// @OAParentProvided (example = "srvcOAThreadLocal.getOAJackson()")
 	public abstract OAJson callThreadLocalGetOAJackson();
 }
 

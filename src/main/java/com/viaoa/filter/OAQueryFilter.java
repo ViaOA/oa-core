@@ -93,14 +93,14 @@ import com.viaoa.util.OAPropertyPath;
  * components that convert query expressions into reusable filters.
  * </p>
  */
-public class OAQueryFilter<T> implements OAFilter<T> {
+public class OAQueryFilter<TYPE> implements OAFilter<TYPE> {
     private static final long serialVersionUID = 1L;
 
     /**
      * The root class type for which the query expression is evaluated.
      * Used when creating {@link OAPropertyPath} instances.
      */
-	private Class<T> clazz;
+	private Class<TYPE> clazz;
 
 	/**
 	 * The raw query expression string to be parsed into a filter tree.
@@ -150,7 +150,7 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 	 * @param clazz the class for which the filter is evaluated
 	 * @param query the query expression to parse
 	 */
-	public OAQueryFilter(Class<T> clazz, String query) {
+	public OAQueryFilter(Class<TYPE> clazz, String query) {
 		this(clazz, query, null);
 	}
 
@@ -163,7 +163,7 @@ public class OAQueryFilter<T> implements OAFilter<T> {
 	 * @param query the query expression to parse
 	 * @param args  optional argument array for placeholder substitution
 	 */
-	public OAQueryFilter(Class<T> clazz, String query, Object[] args) {
+	public OAQueryFilter(Class<TYPE> clazz, String query, Object[] args) {
 		this.clazz = clazz;
 		this.query = query;
 		this.args = args;

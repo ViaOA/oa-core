@@ -672,7 +672,7 @@ public class OAObjectService extends OAObjectParentService implements ObjectsOps
 
 	@Override
 	public boolean callObjectPropertyIsPropertyLocked(OAObject oaObj, String prop) {
-	    return getOAObjectPropertyService().isPropertyLocked(oaObj, prop);
+	    return getOAObjectLockService().isPropertyLocked(oaObj, prop);
 	}
 
 	@Override

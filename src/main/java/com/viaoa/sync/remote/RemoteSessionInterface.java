@@ -17,6 +17,7 @@ package com.viaoa.sync.remote;
 
 import java.util.UUID;
 
+import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.remote.multiplexer.annotation.OARemoteInterface;
 import com.viaoa.remote.multiplexer.annotation.OARemoteMethod;
@@ -76,7 +77,7 @@ public interface RemoteSessionInterface {
      * @param bIsInHub {@code true} if the object is in a hub, {@code false} otherwise
      */
     @OARemoteMethod(noReturnValue=true, dontUseQueue=true)
-    void updateObjectsWithoutHubs(Class c, OAObjectKey ok, boolean bIsInHub);
+    void updateObjectsWithoutHubs(Class<? extends OAObject> c, OAObjectKey ok, boolean bIsInHub);
     
     /**
      * Sets or clears a lock on an object for this client session.
@@ -86,7 +87,7 @@ public interface RemoteSessionInterface {
      * @param bLock {@code true} to lock, {@code false} to unlock
      * @return {@code true} if the object was found and the lock state was applied
      */
-    boolean setLock(Class objectClass, OAObjectKey objectKey, boolean bLock);
+    boolean setLock(Class<? extends OAObject> objectClass, OAObjectKey objectKey, boolean bLock);
 
     /**
      * Determines whether an object is locked by any client.
@@ -95,7 +96,7 @@ public interface RemoteSessionInterface {
      * @param objectKey the key identifying the object
      * @return {@code true} if the object is locked, otherwise {@code false}
      */
-    boolean isLocked(Class objectClass, OAObjectKey objectKey);
+    boolean isLocked(Class<? extends OAObject> objectClass, OAObjectKey objectKey);
     
     /**
      * Determines whether an object is locked by a different client session.
@@ -104,7 +105,7 @@ public interface RemoteSessionInterface {
      * @param objectKey the key identifying the object
      * @return {@code true} if locked by another client, otherwise {@code false}
      */
-    boolean isLockedByAnotherClient(Class objectClass, OAObjectKey objectKey);
+    boolean isLockedByAnotherClient(Class<? extends OAObject> objectClass, OAObjectKey objectKey);
     
     /**
      * Determines whether an object is locked by this client session.
@@ -113,7 +114,7 @@ public interface RemoteSessionInterface {
      * @param objectKey the key identifying the object
      * @return {@code true} if locked by this client, otherwise {@code false}
      */
-    boolean isLockedByThisClient(Class objectClass, OAObjectKey objectKey);
+    boolean isLockedByThisClient(Class<? extends OAObject> objectClass, OAObjectKey objectKey);
 
     /**
      * Updates this server-side session with client information.

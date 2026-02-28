@@ -46,6 +46,7 @@ import com.viaoa.util.OANotExist;
 import com.viaoa.util.OANullObject;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAReflect;
+import com.viaoa.util.OAStr;
 import com.viaoa.util.OAString;
 
 public abstract class OAObjectReflectService {
@@ -253,7 +254,7 @@ public abstract class OAObjectReflectService {
 				m = callInfoGetMethod(oi, "is" + propName, 0);
 			}
 			if (m != null && (m.getModifiers() & Modifier.PRIVATE) == 0) {
-				Class c = m.getReturnType();
+				Class<?> c = m.getReturnType();
 				if (c != null && c.isPrimitive() && getPrimitiveNull(oaObj, propName)) {
 					return null;
 				}
@@ -329,7 +330,7 @@ public abstract class OAObjectReflectService {
 			m = callInfoGetMethod(oi, "SET" + propNameU, 1);
 		}
 
-		Class clazz = null;
+		Class<?> clazz = null;
 		if (m != null) {
 			clazz = m.getParameterTypes()[0];
 		}
@@ -593,7 +594,7 @@ public abstract class OAObjectReflectService {
 			return;
 		}
 
-		Hub hub;
+		Hub<?> hub;
 		Object objOrig = callPropertyGetProperty(oaObj, propName, false, true);
 
 		if (value instanceof Hub) {
@@ -611,13 +612,13 @@ public abstract class OAObjectReflectService {
 			if (!(objOrig instanceof Hub)) {
 				throw new RuntimeException("stored object for " + propName + " is not a hub");
 			}
-			hub = (Hub) objOrig;
+			hub = (Hub<?>) objOrig;
 		} else {
-			hub = new Hub(OAObjectKey.class);
+			hub = new Hub<>((Class<? extends OAObject>) li.getToClass());
 			callPropertySetProperty(oaObj, propName, hub);
 		}
 
-		Class c = hub.getObjectClass();
+		Class<? extends OAObject> c = hub.getObjectClass();
 		boolean bKeyOnly = (c.equals(OAObjectKey.class));
 
 		if (!(value instanceof OAObject)) {
@@ -639,7 +640,7 @@ public abstract class OAObjectReflectService {
 			}
 		}
 		if (value instanceof OAObject && value != null && hub.getObject(value) == null) {
-			hub.add((OAObject) value);
+			((Hub<OAObject>)hub).add((OAObject) value);
 		}
 	}
 
@@ -720,7 +721,7 @@ public abstract class OAObjectReflectService {
 		}
 		callSiblingOnGetObjectReference(oaObj, linkPropertyName);
 
-		Hub hub = null;
+		Hub<T> hub = null;
 		final OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
 		final OALinkInfo linkInfo = callInfoGetLinkInfo(oi, linkPropertyName);
 
@@ -728,7 +729,7 @@ public abstract class OAObjectReflectService {
 
 		if (obj instanceof Hub) {
 			// 20141215 could be server side, that deserialized the object+references without setting up.
-			hub = (Hub) obj;
+			hub = (Hub<T>) obj;
 
 			// sort, seq, asc
 			boolean bSortAsc = true;
@@ -759,8 +760,8 @@ public abstract class OAObjectReflectService {
 
 			if (callCSIsServer()) {
 				// 20150130 the same thread that is loading it could be accessing it again. (ex: matching and hubmerger during getReferenceHub)
-				if (callPropertyIsPropertyLocked(oaObj, linkPropertyName)) {
-					return hub;
+				if (callLockIsPropertyLocked(oaObj, linkPropertyName)) {
+					return (Hub<T>) hub;
 				}
 
 				// check to see if there needs to be an autoMatch set up
@@ -787,7 +788,7 @@ public abstract class OAObjectReflectService {
 							}
 						} else {
 							// 20220802
-							String autoCreatProperty = linkInfo.getAutoCreateProperty();
+							String autoCreatProperty = linkInfo == null ? null : linkInfo.getAutoCreateProperty();
 							if (OAString.isNotEmpty(autoCreatProperty)) {
 								// get enum property getter method, get return value that is Enum and then number of values 0..n
 								hub.setAutoMatch(autoCreatProperty, null, true, oaObj, linkInfo.getMatchStopProperty()); // serverSide only
@@ -833,28 +834,28 @@ public abstract class OAObjectReflectService {
 		} else {
 			boolean b = false;
 			try {
-				b = callPropertySetPropertyLock(oaObj, linkPropertyName);
+				b = callLockSetPropertyLock(oaObj, linkPropertyName);
 
 				obj = callPropertyGetProperty(oaObj, linkPropertyName, false, true);
 				if (obj instanceof Hub) {
 					return (Hub) obj;
 				}
 
-				hub = _getReferenceHub(oaObj, linkPropertyName, sortOrder, bSequence, hubMatch, oi, linkInfo);
+				hub = (Hub<T>) _getReferenceHub(oaObj, linkPropertyName, sortOrder, bSequence, hubMatch, oi, linkInfo);
 			} finally {
 				if (b) {
-					callPropertyReleasePropertyLock(oaObj, linkPropertyName);
+					callLockReleasePropertyLock(oaObj, linkPropertyName);
 				}
 			}
 		}
 
 		// 20160811 check to see if hub uses a pp
-		if (OAString.notEmpty(linkInfo.getMergerPropertyPath())) {
-			String spp = linkInfo.getMergerPropertyPath();
+		String spp = linkInfo == null ? null : linkInfo.getMergerPropertyPath();
+		if (OAStr.notEmpty(spp)) {
 			new HubMerger(oaObj, hub, spp);
 		}
 
-		return hub;
+		return (Hub<T>) hub;
 	}
 
 	// keeps track of siblings that are "in flight"
@@ -876,7 +877,7 @@ public abstract class OAObjectReflectService {
 	 * @return the initialized Hub
 	 */
 	private Hub<?> _getReferenceHub(final OAObject oaObj, final String linkPropertyName, String sortOrder,
-			boolean bSequence, Hub hubMatch, final OAObjectInfo oi, final OALinkInfo linkInfo) {
+			boolean bSequence, Hub<?> hubMatch, final OAObjectInfo oi, final OALinkInfo linkInfo) {
 
 		Object propertyValue = callPropertyGetProperty(oaObj, linkPropertyName, true, true);
 		final boolean bThisIsServer = callCSIsServer();
@@ -927,8 +928,8 @@ public abstract class OAObjectReflectService {
 		}
 
 		if (propertyValue instanceof Hub) {
-			hub = (Hub) propertyValue;
-			Class c = hub.getObjectClass();
+			hub = (Hub<?>) propertyValue;
+			Class<? extends OAObject> c = hub.getObjectClass();
 			if (!bThisIsServer) {
 				boolean bAsc = true;
 				String s = callHubSortGetSortProperty(hub); // use sort order from orig hub
@@ -960,8 +961,8 @@ public abstract class OAObjectReflectService {
 		OASelect<?> select = null;
 		//String sibIds = null;
 		OAObjectKey[] siblingKeys = null;
-		HashMap<OAObjectKey, Hub> hmSiblingHub = null;
-		final String matchProperty = linkInfo.getMatchProperty();
+		HashMap<OAObjectKey, Hub<?>> hmSiblingHub = null;
+		final String matchProperty = linkInfo == null ? null : linkInfo.getMatchProperty();
 
 		if (hub != null) {
 			// no-op
@@ -974,7 +975,7 @@ public abstract class OAObjectReflectService {
 				if (linkInfo == null) {
 					return null;
 				}
-				Class linkClass = linkInfo.getToClass();
+				Class<? extends OAObject> linkClass = linkInfo.getToClass();
 				hub = new Hub(linkClass, oaObj, callInfoGetReverseLinkInfo(linkInfo), false);
 				// throw new RuntimeException("getHub from Server failed, this.oaObj="+oaObj+", linkPropertyName="+linkPropertyName);
 			}
@@ -984,7 +985,7 @@ public abstract class OAObjectReflectService {
 					if (linkInfo == null) {
 						return null;
 					}
-					Class linkClass = linkInfo.getToClass();
+					Class<? extends OAObject> linkClass = linkInfo.getToClass();
 					hub = new Hub(linkClass, oaObj, callInfoGetReverseLinkInfo(linkInfo), false);
 				}
 			}
@@ -992,7 +993,7 @@ public abstract class OAObjectReflectService {
 			if (linkInfo == null) {
 				return null;
 			}
-			Class linkClass = linkInfo.getToClass();
+			Class<? extends OAObject> linkClass = linkInfo.getToClass();
 			OALinkInfo liReverse = callInfoGetReverseLinkInfo(linkInfo);
 			if (liReverse != null) {
 
@@ -1031,7 +1032,7 @@ public abstract class OAObjectReflectService {
 							if (objx == null) {
 								continue;
 							}
-							if (!callPropertyAttemptPropertyLock(objx, linkPropertyName)) {
+							if (!callLockAttemptPropertyLock(objx, linkPropertyName)) {
 								continue;
 							}
 							alOk.add(keyx);
@@ -1166,8 +1167,8 @@ public abstract class OAObjectReflectService {
 						hub.setAutoSequence(seqProperty); // server will keep autoSequence property updated - clients dont need autoSeq (server side managed)
 						if (hmSiblingHub != null) {
 							// need to loop thru and set Hubs for siblings
-							for (Entry<OAObjectKey, Hub> entry : hmSiblingHub.entrySet()) {
-								Hub hx = entry.getValue();
+							for (Entry<OAObjectKey, Hub<?>> entry : hmSiblingHub.entrySet()) {
+								Hub<?> hx = entry.getValue();
 								hx.setAutoSequence(seqProperty, 0, false); // server will keep autoSequence property updated - clients dont need autoSeq (server side managed)
 							}
 						}
@@ -1183,8 +1184,8 @@ public abstract class OAObjectReflectService {
 
 					if (hmSiblingHub != null) {
 						// need to loop thru and set Hubs for siblings
-						for (Entry<OAObjectKey, Hub> entry : hmSiblingHub.entrySet()) {
-							Hub hx = entry.getValue();
+						for (Entry<OAObjectKey, Hub<?>> entry : hmSiblingHub.entrySet()) {
+							Hub<?> hx = entry.getValue();
 							callHubSortSort(hx, sortOrder, bSortAsc, null, true);
 						}
 					}
@@ -1247,7 +1248,7 @@ public abstract class OAObjectReflectService {
 
 		if (bThisIsServer || (bIsCalc && !bIsServerSideCalc)) {
 			// 20220802
-			String autoCreatProperty = linkInfo.getAutoCreateProperty();
+			String autoCreatProperty = linkInfo == null ? null : linkInfo.getAutoCreateProperty();
 			if (OAString.isNotEmpty(autoCreatProperty)) {
 				// get enum property getter method, get return value that is Enum and then number of values 0..n
 				hub.setAutoMatch(autoCreatProperty, null, true, oaObj, linkInfo.getMatchStopProperty()); // serverSide only
@@ -1256,19 +1257,19 @@ public abstract class OAObjectReflectService {
 
 		if (hmSiblingHub != null) {
 			// need to loop thru and set Hubs for siblings
-			for (Entry<OAObjectKey, Hub> entry : hmSiblingHub.entrySet()) {
+			for (Entry<OAObjectKey, Hub<?>> entry : hmSiblingHub.entrySet()) {
 				OAObjectKey ok = entry.getKey();
 				OAObject obj = callCacheGet(oaObj.getClass(), ok);
 				if (obj == null) {
 					continue;
 				}
-				Hub hx = entry.getValue();
+				Hub<?> hx = entry.getValue();
 				if (callInfoCacheHub(linkInfo, hx)) {
 					callPropertySetPropertyHubIfNotSet(obj, linkPropertyName, new WeakReference(hx));
 				} else {
 					callPropertySetPropertyHubIfNotSet(obj, linkPropertyName, hx);
 				}
-				callPropertyReleasePropertyLock(obj, linkPropertyName);
+				callLockReleasePropertyLock(obj, linkPropertyName);
 			}
 		}
 		if (siblingKeys != null) {
@@ -1538,7 +1539,7 @@ public abstract class OAObjectReflectService {
 		List<OALinkInfo> al = io.getLinkInfos();
 		boolean bIsServer = callCSIsServer();
 		for (OALinkInfo li : al) {
-			if (al == null) {
+			if (li == null) {
 				continue;
 			}
 			if (!bIncludeCalc && li.getCalculated()) {
@@ -1560,7 +1561,7 @@ public abstract class OAObjectReflectService {
 				return false;
 			}
 			if (val instanceof Hub && bIsServer) {
-				Hub hubx = (Hub) val;
+				Hub<?> hubx = (Hub) val;
 				// see if autoMatch (if used) is set up
 				String matchProperty = li.getMatchProperty();
 				if (matchProperty != null && matchProperty.length() > 0) {
@@ -2214,7 +2215,7 @@ public abstract class OAObjectReflectService {
 		}
 
 		try {
-			callPropertySetPropertyLock(oaObj, propertyName);
+			callLockSetPropertyLock(oaObj, propertyName);
 
 			Object val = callPropertyGetProperty(oaObj, propertyName, true, true);
 			if (val instanceof byte[]) {
@@ -2239,7 +2240,7 @@ public abstract class OAObjectReflectService {
 			}
 
 		} finally {
-			callPropertyReleasePropertyLock(oaObj, propertyName);
+			callLockReleasePropertyLock(oaObj, propertyName);
 		}
 		return null;
 	}
@@ -2264,6 +2265,7 @@ public abstract class OAObjectReflectService {
 
 		OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
 		OALinkInfo li = callInfoGetLinkInfo(oi, linkPropertyName);
+		if (li == null) return null;
 
 		if (objOriginal == null) { // else !null or notExist
 			// it is stored as null value
@@ -2282,13 +2284,14 @@ public abstract class OAObjectReflectService {
 
 		Object result = null;
 		try {
-			callPropertySetPropertyLock(oaObj, linkPropertyName);
+			callLockSetPropertyLock(oaObj, linkPropertyName);
 			result = _getReferenceObject(oaObj, linkPropertyName, oi, li);
 			if (result != null || objOriginal == null) {
 				callPropertySetPropertyCAS(oaObj, linkPropertyName, result, objOriginal, bDidNotExist, false);
 			}
 		} finally {
-			callPropertyReleasePropertyLock(oaObj, linkPropertyName);
+			callLockReleasePropertyLock(oaObj, linkPropertyName);
+//qqqqqqqqqq makes Chat nervous qqqqqqqq recursive, keep trying to get oabjectKey			
 			if (result instanceof OAObjectKey) {
 				result = getReferenceObject(oaObj, linkPropertyName);
 			}
@@ -2457,7 +2460,7 @@ public abstract class OAObjectReflectService {
 								continue;
 							}
 
-							if (callPropertyIsPropertyLocked(objx, linkPropertyName)) {
+							if (callLockIsPropertyLocked(objx, linkPropertyName)) {
 								continue;
 							}
 
@@ -2606,8 +2609,8 @@ public abstract class OAObjectReflectService {
 			return true;
 		}
 		if (obj instanceof Hub) {
-			Hub h = (Hub) obj;
-			Class c = h.getObjectClass();
+			Hub<?> h = (Hub) obj;
+			Class<? extends OAObject> c = h.getObjectClass();
 			if (c.equals(OAObjectKey.class)) {
 				return false;
 			}
@@ -2960,7 +2963,7 @@ public abstract class OAObjectReflectService {
 				}
 			}
 		} else if (object instanceof Hub) {
-			Hub h = (Hub) object;
+			Hub<?> h = (Hub) object;
 			if (!OAObject.class.isAssignableFrom(h.getObjectClass())) {
 				return;
 			}
@@ -3191,8 +3194,8 @@ public abstract class OAObjectReflectService {
 			if (!bCopy) {
 				continue;
 			}
-			Hub hub = (Hub) getProperty(oaObj, li.getName());
-			Hub hubNew = (Hub) getProperty(newObject, li.getName());
+			Hub hub = (Hub<?>) getProperty(oaObj, li.getName());
+			Hub hubNew = (Hub<?>) getProperty(newObject, li.getName());
 			for (int j = 0; hub != null && hubNew != null; j++) {
 				OAObject obj = (OAObject) hub.elementAt(j);
 				if (obj == null) {
@@ -3364,7 +3367,7 @@ public abstract class OAObjectReflectService {
 			}
 
 			if (li.getType() == li.MANY) {
-				Hub hub = (Hub) getProperty(oaObj, li.getName());
+				Hub<?> hub = (Hub) getProperty(oaObj, li.getName());
 				for (int j = 0; hub != null; j++) {
 					OAObject obj = (OAObject) hub.elementAt(j);
 					if (obj == null) {
@@ -3401,7 +3404,7 @@ public abstract class OAObjectReflectService {
 	}
 
 	public Class<?> getHubObjectClass(Method method) {
-		Class cx = null;
+		Class<? extends OAObject> cx = null;
 		Type rt = method.getGenericReturnType();
 		if (rt instanceof ParameterizedType) {
 			ParameterizedType pt = (ParameterizedType) rt;
@@ -3454,7 +3457,7 @@ public abstract class OAObjectReflectService {
 
 		Hub[] hubs = callHubGetHubReferences(obj1);
 		for (int i = 0; hubs != null && i < hubs.length; i++) {
-			Hub nextHub = hubs[i];
+			Hub<?> nextHub = hubs[i];
 			if (nextHub == null) {
 				continue;
 			}
@@ -3464,7 +3467,7 @@ public abstract class OAObjectReflectService {
 			}
 
 			OAObject objMaster = nextHub.getMasterObject();
-			Hub h = findCommonHierarchyHub(objMaster, obj2, currentLevel + 1, maxLevelsToCheck);
+			Hub<?> h = findCommonHierarchyHub(objMaster, obj2, currentLevel + 1, maxLevelsToCheck);
 			if (h != null) {
 				return h;
 			}
@@ -3510,7 +3513,7 @@ public abstract class OAObjectReflectService {
 
 		Hub[] hubs = callHubGetHubReferences(fromObj);
 		for (int i = 0; hubs != null && i < hubs.length; i++) {
-			Hub hub = hubs[i];
+			Hub<?> hub = hubs[i];
 			if (hub == null) {
 				continue;
 			}
@@ -3559,9 +3562,9 @@ public abstract class OAObjectReflectService {
 
 		// see if there is a link path
 		pathFromParent = null;
-		Hub h = hubChild;
+		Hub<?> h = hubChild;
 		for (; !b;) {
-			Hub hx = callHubLinkGetLinkToHub(h, true);
+			Hub<?> hx = callHubLinkGetLinkToHub(h, true);
 			if (hx == null) {
 				pathFromParent = null;
 				break;
@@ -3589,7 +3592,7 @@ public abstract class OAObjectReflectService {
 		// see if if there is a detail path using masterHub
 		h = hubChild;
 		for (;;) {
-			Hub hx = h.getMasterHub();
+			Hub<?> hx = h.getMasterHub();
 			if (hx == null) {
 				return null;
 			}
@@ -3632,7 +3635,7 @@ public abstract class OAObjectReflectService {
 			return null;
 		}
 		String pathFromParent = null;
-		final Class parentClass = objParent.getClass();
+		final Class<? extends OAObject> parentClass = objParent.getClass();
 
 		boolean b = false;
 		if (callHubLinkGetLinkedOnPos(hubChild, true)) {
@@ -3647,9 +3650,9 @@ public abstract class OAObjectReflectService {
 
 		// see if there is a link path
 		pathFromParent = null;
-		Hub h = hubChild;
+		Hub<?> h = hubChild;
 		for (; !b;) {
-			Hub hx = callHubLinkGetLinkToHub(h, true);
+			Hub<?> hx = callHubLinkGetLinkToHub(h, true);
 			if (hx == null) {
 				pathFromParent = null;
 				break;
@@ -3670,7 +3673,7 @@ public abstract class OAObjectReflectService {
 		// see if if there is a detail path using masterHub
 		h = hubChild;
 		for (;;) {
-			Hub hx = h.getMasterHub();
+			Hub<?> hx = h.getMasterHub();
 			if (hx == null) {
 				return null;
 			}
@@ -3712,16 +3715,16 @@ public abstract class OAObjectReflectService {
 			return fromObject;
 		}
 
-		Hub hubPosValue = callHubLinkGetLinkToHub(hubChild, false);
+		Hub<?> hubPosValue = callHubLinkGetLinkToHub(hubChild, false);
 		if (hubPosValue == null) {
 			return fromObject;
 		}
 
 		// see if there is a link path
 		String pathFromParent = null;
-		Hub h = hubPosValue;
+		Hub<?> h = hubPosValue;
 		for (;;) {
-			Hub hx = callHubLinkGetLinkToHub(h, true);
+			Hub<?> hx = callHubLinkGetLinkToHub(h, true);
 			if (hx == null) {
 				pathFromParent = null;
 				break;
@@ -3807,7 +3810,7 @@ public abstract class OAObjectReflectService {
 			return null;
 		}
 
-		Hub hx;
+		Hub<?> hx;
 		if (bCheckLink) {
 			hx = callHubLinkGetLinkToHub(hubChild, true);
 			if (hx != null) {
@@ -3884,261 +3887,85 @@ public abstract class OAObjectReflectService {
 		return null;
 	}
 	
-	
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().get")
 	public abstract <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectCacheService().add")
 	public abstract OAObject callCacheAdd(OAObject obj);
-	
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectCSService().createCopy")
 	public abstract OAObject callCSCreateCopy(OAObject oaObj, String[] excludeProperties);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectCSService().isServer")
 	public abstract boolean callCSIsServer();
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectCSService().isClient)")
 	public abstract boolean callCSIsClient();
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectCSService().getServerObject")
 	public abstract <T extends OAObject> T callCSGetServerObject(Class<T> clazz, OAObjectKey key);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectCSService().getServerReferenceHub")
 	public abstract Hub<?> getCSGetServerReferenceHub(OAObject oaObj, String linkPropertyName);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectCSService().getServerReferenceBlob")
 	public abstract byte[] callCSGetServerReferenceBlob(OAObject oaObj, String propertyName);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectCSService().loadReferenceHubDataOnServer")
 	public abstract boolean callCSLoadReferenceHubDataOnServer(Hub<?> thisHub, OASelect select);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectCSService().getServerReference")
 	public abstract Object callCSGetServerReference(OAObject oaObj, String linkPropertyName);
-
-	
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectDSService().getObject")
 	public abstract <T extends OAObject> T callDSGetObject(Class<T> clazz, OAObjectKey key);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectDSService().getObject")
 	public abstract <T extends OAObject> T callDSGetObject(OAObjectInfo oi, Class<T> clazz, OAObjectKey key);
-	
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectEventService().fireBeforePropertyChange")
 	public abstract void callEventFireBeforePropertyChange(final OAObject oaObj, final String propertyName,
 			Object oldObj, final Object newObj, final boolean bLocalOnly, final boolean bSetChanged);	
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectEventService().firePropertyChange")
 	public abstract void callEventFirePropertyChange(final OAObject oaObj, final String propertyName, Object oldObj, Object newObj,
 			boolean bLocalOnly, boolean bSetChanged);
-
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectGuidService().getGuid")
 	public abstract UUID callGuidGetGuid(OAObject oaObj);
-	
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectHubService().getHub")
-	public abstract Hub callHubGetHub(OAObject oaObj, OALinkInfo li);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectHubService().getHubReferences")
+	public abstract Hub<?> callHubGetHub(OAObject oaObj, OALinkInfo li);
 	public abstract Hub[] callHubGetHubReferences(OAObject oaObj);
-
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
 	public abstract OAObjectInfo getOAObjectInfo(Class<?> clazz); 
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getMethod(oi, name, 0)")
 	public abstract Method callInfoGetMethod(OAObjectInfo oi, String methodName, int argumentCount);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getMethod")
-	public abstract Method callInfoGetMethod(OAObjectInfo oi, String methodName, final Class classParam); 
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo(..)")
+	public abstract Method callInfoGetMethod(OAObjectInfo oi, String methodName, final Class<?> classParam); 
 	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().isPrimitiveNull")
 	public abstract boolean callInfoIsPrimitiveNull(OAObject oaObj, String propertyName); 
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().setPrimitiveNull")
 	public abstract void callInfoSetPrimitiveNull(OAObject oaObj, String propertyName, boolean bSetToNull);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
 	public abstract OALinkInfo callInfoGetReverseLinkInfo(OALinkInfo li);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().cacheHub")
 	public abstract boolean callInfoCacheHub(OALinkInfo li, final Hub<?> hub);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getRecursiveLinkInfo")
 	public abstract OALinkInfo callInfoGetRecursiveLinkInfo(OAObjectInfo thisOI, int type);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().isOne2One")
 	public abstract boolean callInfoIsOne2One(OALinkInfo thisLi);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
 	public abstract OALinkInfo callInfoGetLinkInfo(Class<?> clazz, String propertyName);
-	
-	
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectInitializeService().initialize")
-	public abstract void callInitializeInitialize(
-	        OAObject oaObj,
-	        OAObjectInfo oi,
-	        boolean bInitializeNulls,
-	        boolean bInitializeWithDS,
-	        boolean bAddToCache,
-	        boolean bInitializeWithCS,
-	        boolean bSetChangedToFalse);
-	
-	
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectKeyService().createObjectKey")
-	public abstract OAObjectKey callKeyCreateObjectKey(final Class c, final Object ...ids);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectKeyService().getKey")
+	public abstract void callInitializeInitialize(OAObject oaObj, OAObjectInfo oi, boolean bInitializeNulls,
+			boolean bInitializeWithDS, boolean bAddToCache, boolean bInitializeWithCS, boolean bSetChangedToFalse);
+	public abstract OAObjectKey callKeyCreateObjectKey(final Class<? extends OAObject> c, final Object ...ids);
 	public abstract OAObjectKey callKeyGetKey(OAObject oaObj); 
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectKeyService().isForSameOAObject")
 	public abstract boolean callKeyIsForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey ok1, final OAObjectKey ok2);
-
-	
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getProperty")
 	public abstract Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef);	
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().setProperty")
 	public abstract void callPropertySetProperty(OAObject oaObj, String name, Object value);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().setPropertyCAS")
 	public abstract Object callPropertySetPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().setPropertyCAS")
 	public abstract Object callPropertySetPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue, boolean bMustNotExist, boolean bReturnNotExist);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().isPropertyLocked")
-	public abstract boolean callPropertyIsPropertyLocked(OAObject oaObj, String name);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().setPropertyLock")
-	public abstract boolean callPropertySetPropertyLock(OAObject oaObj, String name);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().releasePropertyLock")
-	public abstract void callPropertyReleasePropertyLock(OAObject oaObj, String name);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().attemptPropertyLock")
-	public abstract boolean callPropertyAttemptPropertyLock(OAObject oaObj, String name);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().setPropertyHubIfNotSet")
+	public abstract boolean callLockIsPropertyLocked(OAObject oaObj, String name);
+	public abstract boolean callLockSetPropertyLock(OAObject oaObj, String name);
+	public abstract void callLockReleasePropertyLock(OAObject oaObj, String name);
+	public abstract boolean callLockAttemptPropertyLock(OAObject oaObj, String name);
 	public abstract void callPropertySetPropertyHubIfNotSet(OAObject oaObj, String name, Object value);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().isPropertyLoaded")
 	public abstract boolean callPropertyIsPropertyLoaded(OAObject oaObj, String name);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().unsafeSetProperty")
 	public abstract void callPropertyUnsafeSetProperty(OAObject oaObj, String name, Object value);
-	
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectSiblingService().onGetObjectReference")
 	public abstract void callSiblingOnGetObjectReference(final OAObject obj, final String linkPropertyName);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectSiblingService().getSiblings")
 	public abstract OAObjectKey[] callSiblingGetSiblings(final OAObject mainObject, final String property, final int maxAmount,
 			ConcurrentHashMap<UUID, Boolean> hmIgnore);
-	
-	
-	// @OAParentProvided (example = "srvcHub.getAutoMatch")
 	public abstract HubAutoMatch callHubGetAutoMatch(Hub<?> thisHub);
-	
-	// @OAParentProvided (example = "srvcHub.getAutoSequence")
 	public abstract HubAutoSequence callHubGetAutoSequence(Hub<?> thisHub);
-
-	// @OAParentProvided (example = "srvcHub.getHubSortService().getSortListener")
 	public abstract HubSortListener callHubSortGetSortListener(Hub<?> thisHub);
-
-	// @OAParentProvided (example = "srvcHub.getHubSortService().sort")
 	public abstract void callHubSortSort(Hub<?> thisHub, String propertyPaths, boolean bAscending, Comparator comp, boolean bAlreadySortedAndLocalOnly);
-
-	// @OAParentProvided (example = "srvcHub.getHubSortService().getSortProperty")
 	public abstract String callHubSortGetSortProperty(Hub<?> thisHub);
-
-	// @OAParentProvided (example = "srvcHub.getHubSortService().getSortAsc")
 	public abstract boolean callHubSortGetSortAsc(Hub<?> thisHub);
-	
-	// @OAParentProvided (example = "srvcHub.getHubSortService().isSorted")
 	public abstract boolean callHubSortIsSorted(Hub<?> thisHub);
-
-	// @OAParentProvided (example = "srvcHub.getMasterObject")
 	public abstract OAObject callHubMasterGetMasterObject(Hub<?> hub);
-
-	// @OAParentProvided (example = "srvcHub.getHubSelectService().loadAllData")
 	public abstract void callHubSelectLoadAllData(Hub<?> thisHub, OASelect select);
-
-	// @OAParentProvided (example = "srvcHub.getHubDataService().resizeToFit")
 	public abstract void callHubDataResizeToFit(Hub<?> thisHub);
-
-	// @OAParentProvided (example = "srvcHub.getHubDetailService().getPropertyFromDetailToMaster")
 	public abstract String callHubDetailGetPropertyFromDetailToMaster(Hub<?> thisHub);
-	
-	// @OAParentProvided (example = "srvcHub.getHubLinkService().getLinkedOnPos")
 	public abstract boolean callHubLinkGetLinkedOnPos(final Hub<?> thisHub, boolean bIncludeCopiedHubs);
-
-	// @OAParentProvided (example = "srvcHub.getHubLinkService().getLinkFromProperty")
 	public abstract String callHubLinkGetLinkFromProperty(final Hub<?> thisHub, boolean bIncludeCopiedHubs);
-
-	// @OAParentProvided (example = "srvcHub.getHubLinkService().getLinkToHub")
-	public abstract Hub callHubLinkGetLinkToHub(final Hub<?> thisHub, boolean bIncludeCopiedHubs);
-
-	// @OAParentProvided (example = "srvcHub.getHubLinkService().getLinkHubPath")
+	public abstract Hub<?> callHubLinkGetLinkToHub(final Hub<?> thisHub, boolean bIncludeCopiedHubs);
 	public abstract String callHubLinkGetLinkHubPath(final Hub<?> thisHub, boolean bIncludeCopiedHubs);
-
-	// @OAParentProvided (example = "srvcHub.getHubShareService().isUsingSameSharedAO")
 	public abstract boolean callHubShareIsUsingSameSharedAO(Hub<?> hub1, Hub<?> hub2, boolean bIncludeFilteredHubs);
-
-	// @OAParentProvided (example = "srvcHub.getHubDetailService().getPropertyFromMasterToDetail")
 	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub<?> thisHub);
-
-	// @OAParentProvided (example = "srvcHub.getHubLinkService().getLinkToProperty")
 	public abstract String callHubLinkGetLinkToProperty(Hub<?> thisHub);
-
-	// @OAParentProvided (example = "srvcHub.getHubShareService().isUsingSameSharedHub")
 	public abstract boolean callHubShareIsUsingSameSharedHub(Hub<?> hub1, Hub<?> hub2);
-
-	// @OAParentProvided (example = "srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster")
-	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub hub);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectDSService().getDataSource")
+	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
 	public abstract OADataSource callDSGetDataSource(Class<?> c);
-	
-
-	// @OAParentProvided (example = "srvcSync.getSyncClient().isObjectOnServer")
 	public abstract boolean callSyncIsObjectOnServer(OAObject obj);
-	
-	
-	
-	// @OAParentProvided (example = "srvcOAThreadLocal.isLoading")
 	public abstract boolean callThreadLocalIsLoading();
-
-	// @OAParentProvided (example = "srvcOAThreadLocal.isDeleting")
 	public abstract boolean callThreadLocalIsDeleting();
-	
-	// @OAParentProvided (example = "srvcOAThreadLocal.getObjectCacheAddMode")
 	public abstract int callThreadLocalGetObjectCacheAddMode();
-	
-	// @OAParentProvided (example = "srvcOAThreadLocal.addSiblingHelper")
 	public abstract boolean callThreadLocalAddSiblingHelper(OASiblingHelper sh);
-
-	// @OAParentProvided (example = "srvcOAThreadLocal.removeSiblingHelper")
 	public abstract void callThreadLocalRemoveSiblingHelper(OASiblingHelper sh);
-
-	// @OAParentProvided (example = "srvcOAThreadLocal.setSuppressCSMessages")
 	public abstract void callThreadLocalSetSuppressCSMessages(boolean b);
-
-	// @OAParentProvided (example = "srvcOAThreadLocal.setLoading")
 	public abstract void callThreadLocalSetLoading(boolean b);
-	
-	// @OAParentProvided (example = "srvcOARemoteThread.isRemoteThread")
 	public abstract boolean callRemoteThreadIsRemoteThread();
-
 }
 
 class LoadPropertyNode {

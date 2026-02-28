@@ -56,12 +56,11 @@ public abstract class OAObjectLogService {
                     if (obj instanceof OALogRecord) return OAXMLWriter.WRITE_YES;
                     
                     if (value instanceof OAObject) return OAXMLWriter.WRITE_KEYONLY;
-                    if (!(value instanceof Hub)) return OAXMLWriter.WRITE_YES;
+                    if (!(value instanceof Hub<?>)) return OAXMLWriter.WRITE_YES;
                     
                     OAObjectInfo oi = callInfoGetObjectInfo(obj.getClass());
                     OALinkInfo li = callInfoGetLinkInfo(oi, propertyName);
                     if (li != null && li.getType() == OALinkInfo.MANY) {
-                        li = callInfoGetLinkInfo(oi, propertyName);
                         li = callInfoGetReverseLinkInfo(li);
                         if (li != null && li.getType() == OALinkInfo.MANY) {
                             // M2M dont write any new object, since it does not exist when this file is restored.
@@ -100,7 +99,6 @@ public abstract class OAObjectLogService {
      * @param bSave true to log a SAVE command, false to log a DELETE
      */
      public void logToXmlFile(OAObject oaObj, boolean bSave) {
-    	//qqqqqqqqqq method was protected
         if (writerXml == null) return;
         OALogRecord rec = new OALogRecord();
         rec.setObject(oaObj);
@@ -152,13 +150,8 @@ public abstract class OAObjectLogService {
         }
     }
 
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz); 
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
 	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getReverseLinkInfo")
 	public abstract OALinkInfo callInfoGetReverseLinkInfo(OALinkInfo thisLi); 
 	
 }

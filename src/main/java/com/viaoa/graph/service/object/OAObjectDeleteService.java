@@ -672,7 +672,7 @@ public abstract class OAObjectDeleteService {
 	public abstract void callLogToXmlFile(OAObject oaObj, boolean bSave);
 	public abstract boolean callReflectIsReferenceNullOrNotLoadedOrEmptyHub(OAObject oaObj, String propertyName);
 	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath);
-	public abstract Hub<?> callReflectGetReferenceHub(final OAObject oaObj, final String linkPropertyName, String sortOrder, boolean bSequence, Hub<?> hubMatch);
+	public abstract <T extends OAObject> Hub<T> callReflectGetReferenceHub(final OAObject oaObj, final String linkPropertyName, String sortOrder, boolean bSequence, Hub<T> hubMatch);
 	public abstract Object callReflectGetReferenceObject(final OAObject oaObj, final String linkPropertyName);	
 	public abstract void callReflectSetProperty(final OAObject oaObj, String propName, Object value, final String fmt);
 	public abstract void callPropertyRemoveProperty(OAObject oaObj, String name, boolean bFirePropertyChange);	

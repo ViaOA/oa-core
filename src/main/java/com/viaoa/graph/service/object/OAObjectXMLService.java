@@ -323,24 +323,11 @@ public abstract class OAObjectXMLService {
 		return false;
 	}
 
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo")
 	public abstract OAObjectInfo callInfoGetOAObjectInfo(OAObject obj);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectGuidService().getGuid")
 	public abstract UUID callGuidGetGuid(OAObject oaObj); 
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectReflectService().getProperty")
 	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath);
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getPropertyNames")
 	public abstract String[] callPropertyGetPropertyNames(OAObject oaObj);
-	
-	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getLinkInfo")
 	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName); 
-
-	// @OAParentProvided (example = "srvcObject.getOAObjectPropertyService().getProperty")
 	public abstract Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef);
-
-	// @OAParentProvided (example = "srvcHub.getHubXMLService().write")
-	public abstract void callHubXMLWrite(Hub thisHub, OAXMLWriter ow, final String tagName, int writeType, OACascade cascade);
+	public abstract void callHubXMLWrite(Hub<?> thisHub, OAXMLWriter ow, final String tagName, int writeType, OACascade cascade);
 }

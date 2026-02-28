@@ -69,7 +69,7 @@ public class OAObjectFindService {
 	 * @param bFindAll     if {@code true}, collect all matches; otherwise stop at the first match.
 	 * @return an array containing matched values (or objects), never {@code null}.
 	 */
-	public Object[] find(OAObject base, String propertyPath, Object findValue, boolean bFindAll) {
+	public OAObject[] find(OAObject base, String propertyPath, Object findValue, boolean bFindAll) {
 		if (propertyPath == null || propertyPath.length() == 0) {
 			return null;
 		}
@@ -83,7 +83,7 @@ public class OAObjectFindService {
 			if (!st.hasMoreTokens()) {
 				// last property, check against findValue
 				if (result == findValue || (result != null && OACompare.compare(result, findValue) == 0)) {
-					Object[] objs = new Object[] { base };
+					OAObject[] objs = new OAObject[] { base };
 					return objs;
 				}
 				return null;
@@ -103,20 +103,20 @@ public class OAObjectFindService {
 						pp += "." + s;
 					}
 				}
-				ArrayList al = null;
-				Hub h = (Hub) result;
+				ArrayList<OAObject> al = null;
+				Hub<?> h = (Hub) result;
 				for (int ii = 0;; ii++) {
-					Object obj = h.elementAt(ii);
+					OAObject obj = h.elementAt(ii);
 					if (obj == null) {
 						break;
 					}
-					Object[] objs = find((OAObject) obj, pp, findValue, bFindAll);
+					OAObject[] objs = find((OAObject) obj, pp, findValue, bFindAll);
 					if (objs != null) {
 						if (!bFindAll) {
 							return objs;
 						}
 						if (al == null) {
-							al = new ArrayList(10);
+							al = new ArrayList<OAObject>(10);
 						}
 						for (int i3 = 0; i3 < objs.length; i3++) {
 							al.add(objs[i3]);
@@ -126,7 +126,7 @@ public class OAObjectFindService {
 				if (al == null) {
 					return null;
 				}
-				Object[] objs = new Object[al.size()];
+				OAObject[] objs = new OAObject[al.size()];
 				objs = al.toArray(objs);
 				return objs;
 			}
