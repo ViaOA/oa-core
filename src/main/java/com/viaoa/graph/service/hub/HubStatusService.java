@@ -340,7 +340,7 @@ public abstract class HubStatusService {
 
 			OAFinder finder = new OAFinder(hubMerger.getPath());
 
-			ArrayList al;
+			List al;
 			if (hubMerger.getUseAll()) {
 				al = finder.find(hubTemp);
 			} else {

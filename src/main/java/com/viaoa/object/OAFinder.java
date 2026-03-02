@@ -214,7 +214,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	/**
 	 * The list of objects that have been found and accepted during the search.
 	 */
-	private ArrayList<T> alFound;
+	private List<T> alFound;
 
 	/**
 	 * Flag indicating whether the diagnostic traversal stack should be
@@ -481,7 +481,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	 *
 	 * @return the list of matching objects, or {@code null} if no root is available
 	 */
-	public ArrayList<T> find() {
+	public List<T> find() {
 		if (fromObject != null) {
 			return find(fromObject);
 		}
@@ -522,8 +522,8 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	 * @param hubRoot the Hub supplying root objects for the search
 	 * @return the list of matching objects
 	 */
-	public ArrayList<T> find(Hub<F> hubRoot) {
-		ArrayList<T> al = find(hubRoot, null);
+	public List<T> find(Hub<F> hubRoot) {
+		List<T> al = find(hubRoot, null);
 		return al;
 	}
 
@@ -534,7 +534,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	 * @param alRoot the list of root objects to evaluate
 	 * @return the list of matching objects
 	 */
-	public ArrayList<T> find(ArrayList<F> alRoot) {
+	public List<T> find(List<F> alRoot) {
 		return find(alRoot, null);
 	}
 
@@ -547,7 +547,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	 *                       may be {@code null} to start at the beginning
 	 * @return the list of matching objects
 	 */
-	public ArrayList<T> find(ArrayList<F> alRoot, F objectLastUsed) {
+	public List<T> find(List<F> alRoot, F objectLastUsed) {
 		if (!bEnableRecursiveRootWasCalled) {
 			bEnableRecursiveRoot = false;
 		}
@@ -588,7 +588,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 				break;
 			}
 		}
-		ArrayList<T> al = alFound;
+		List<T> al = alFound;
 		this.alFound = null;
 		this.stack = null;
 		this.stackPos = 0;
@@ -609,7 +609,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	 *                       may be {@code null} to start at the beginning
 	 * @return the list of matching objects
 	 */
-	public ArrayList<T> find(Hub<F> hubRoot, F objectLastUsed) {
+	public List<T> find(Hub<F> hubRoot, F objectLastUsed) {
 		if (!bEnableRecursiveRootWasCalled) {
 			if (hubRoot != null) {
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubRoot);
@@ -621,7 +621,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 				bEnableRecursiveRoot = true;
 			}
 		}
-		ArrayList<T> al = null;
+		List<T> al = null;
 
 		OASiblingHelper<F> siblingHelper = null;
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
@@ -647,7 +647,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	/**
 	 * Given the propertyPath, find all of the objects from a Hub, starting after objectLastFound
 	 */
-	protected ArrayList<T> _find(Hub<F> hubRoot, F objectLastUsed) {
+	protected List<T> _find(Hub<F> hubRoot, F objectLastUsed) {
 		alFound = new ArrayList<T>();
 		if (bEnableStack) {
 			stack = new StackValue[5];
@@ -678,7 +678,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 				break;
 			}
 		}
-		ArrayList<T> al = alFound;
+		List<T> al = alFound;
 		this.alFound = null;
 		this.stack = null;
 		this.stackPos = 0;
@@ -717,7 +717,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	public boolean canFindFirst(F objectRoot) {
 		int holdMax = getMaxFound();
 		setMaxFound(1);
-		ArrayList<T> al = find(objectRoot);
+		List<T> al = find(objectRoot);
 		if (getMaxFound() == 1) {
 			setMaxFound(holdMax);
 		}
@@ -750,7 +750,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		}
 		int holdMax = getMaxFound();
 		setMaxFound(1);
-		ArrayList<T> al = find(objectRoot);
+		List<T> al = find(objectRoot);
 		T obj;
 		if (al != null && al.size() > 0) {
 			obj = al.get(0);
@@ -766,7 +766,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	public T findFirst(Hub<F> hub) {
 		int holdMax = getMaxFound();
 		setMaxFound(1);
-		ArrayList<T> al = find(hub);
+		List<T> al = find(hub);
 		T obj;
 		if (al.size() > 0) {
 			obj = al.get(0);
@@ -782,7 +782,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	public T findNext(Hub<F> hub, F objectLastUsed) {
 		int holdMax = getMaxFound();
 		setMaxFound(1);
-		ArrayList<T> al = find(hub, objectLastUsed);
+		List<T> al = find(hub, objectLastUsed);
 		T obj;
 		if (al.size() > 0) {
 			obj = al.get(0);
@@ -797,21 +797,21 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 
 	
     public T findLast() {
-        ArrayList<T> al = find();
+        List<T> al = find();
         if (al == null) return null;
         int x = al.size();
         if (x == 0) return null;
         return al.get(x-1);
     }
     public T findLast(F objectRoot) {
-        ArrayList<T> al = find(objectRoot);
+        List<T> al = find(objectRoot);
         if (al == null) return null;
         int x = al.size();
         if (x == 0) return null;
         return al.get(x-1);
     }
     public T findLast(Hub<F> hub) {
-        ArrayList<T> al = find(hub);
+        List<T> al = find(hub);
         if (al == null) return null;
         int x = al.size();
         if (x == 0) return null;
@@ -965,10 +965,10 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
      * Returns all objects that have another object with a duplicate value for a property (path).<br>
      * Note: null values are not included.
      */
-    public ArrayList<T> findDuplicates(F objectRoot, String pp) {
+    public List<T> findDuplicates(F objectRoot, String pp) {
         DuplicateFilter f = new DuplicateFilter(pp);
         addFilter(f);
-        ArrayList<T> al = find(objectRoot);
+        List<T> al = find(objectRoot);
         f.cancel();
         f.hm.clear();
         
@@ -984,7 +984,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	 *
 	 * @param objectRoot starting object to begin navigating through the propertyPath.
 	 */
-	public ArrayList<T> find(F objectRoot) {
+	public List<T> find(F objectRoot) {
 		if (objectRoot == null) {
 			return null;
 		}
@@ -1001,7 +1001,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		bStop = false;
 		setup(objectRoot.getClass());
 		performFind(objectRoot);
-		ArrayList<T> al = alFound;
+		List<T> al = alFound;
 		this.alFound = null;
 		this.stack = null;
 		this.stackPos = 0;

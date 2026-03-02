@@ -17,9 +17,6 @@ import com.viaoa.object.OAObjectSerializer;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.remote.multiplexer.io.RemoteObjectInputStream;
 import com.viaoa.remote.multiplexer.io.RemoteObjectOutputStream;
-import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OANotExist;
 import com.viaoa.util.OANullObject;
 
@@ -69,7 +66,6 @@ public abstract class OAObjectSerializeService {
 	 * @throws ClassNotFoundException if a property value refers to an unknown type
 	 */
 	public void _readObject(OAObject oaObj, java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-		//qqqqqqqq method was protected
 		// client only needs to send the key to the server
 		if (in instanceof RemoteObjectInputStream) {
 			byte bx = in.readByte();
@@ -77,8 +73,8 @@ public abstract class OAObjectSerializeService {
 				OAObjectKey ok = (OAObjectKey) in.readObject();
 				callGuidSetGuid(oaObj, ok.getGuid());
 
-				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
-				final OAObjectSerializer serializer = srvcOAThreadLocal.getCurrentObjectSerializer();
+				final OAObjectSerializer serializer = callThreadLocalGetCurrentObjectSerializer();
+				
 				if (serializer != null) serializer.dupCount--;
 				return;
 			} else if (bx == 2) {
@@ -136,6 +132,7 @@ public abstract class OAObjectSerializeService {
 		//was:  srvcObject.getOAObjectGuidService().updateGuid(srvcObject.getOAObjectGuidService().getGuid(oaObj));
 	}
 
+
 	/**
 	 * Resolves the deserialized {@link OAObject} to the authoritative instance in
 	 * the runtime cache. This prevents duplicate object instances after
@@ -164,7 +161,6 @@ public abstract class OAObjectSerializeService {
 	 * @throws ObjectStreamException if resolution fails
 	 */
 	public Object _readResolve(final OAObject oaObjRead) throws ObjectStreamException {
-		//qqqqqqqqq method was protected
 		OAObject oaObjUse;
 
 		/* 20151029 on hold
@@ -190,8 +186,7 @@ public abstract class OAObjectSerializeService {
 			bDup = false;
 		}
 
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
-		final OAObjectSerializer serializer = srvcOAThreadLocal.getCurrentObjectSerializer();
+		final OAObjectSerializer serializer = callThreadLocalGetCurrentObjectSerializer();
 		if (!bDup) {
 			if (serializer != null) serializer.newCount++;
 			return oaObjUse;
@@ -239,7 +234,7 @@ public abstract class OAObjectSerializeService {
 						}
 					} finally {
 						if (b) {
-							callPropertyReleasePropertyLock(oaObjUse, linkInfo.getName());
+							callPropertyReleasePropertyLock(oaObjUse, key);
 						}
 					}
 				} else {
@@ -288,6 +283,7 @@ public abstract class OAObjectSerializeService {
 	 * @param value the relationship value being inspected or rewritten
 	 * @return {@code true} if reference replacement should continue; {@code false} otherwise
 	 */
+	@SuppressWarnings({"unchecked","rawtypes"})
 	private <T extends OAObject> boolean replaceReferences(final T oaObjFrom, final T oaObjTo, final OALinkInfo linkInfo, Object value) {
 		if (linkInfo == null) {
 			return false;
@@ -304,12 +300,12 @@ public abstract class OAObjectSerializeService {
 
 		Object origValue = value;
 		if (value instanceof WeakReference) {
-			value = ((WeakReference) value).get();
+			value = ((WeakReference<?>) value).get();
 		}
 
 		if (value instanceof Hub) {
 			// handles M-1, M-M
-			Hub hub = (Hub) value;
+			Hub<?> hub = (Hub<?>) value;
 			if (!callHubSerializeIsResolved(hub)) {
 				// not fully loaded
 				return false;
@@ -318,11 +314,7 @@ public abstract class OAObjectSerializeService {
 			// this will only replace if current masterObj = oaObjOrig
 			callHubSerializeReplaceMasterObject((Hub<OAObject>) value, oaObjFrom, oaObjTo);
 
-			for (int i = 0; revName != null; i++) {
-				OAObject objx = (OAObject) hub.getAt(i);
-				if (objx == null) {
-					break;
-				}
+			for (OAObject objx : hub) {
 				Object ref = callPropertyGetProperty(objx, revName, false, true);
 				if (ref == null) {
 				} else if (ref == oaObjFrom || ref instanceof OAObjectKey) {
@@ -378,13 +370,11 @@ public abstract class OAObjectSerializeService {
 	 * @throws IOException if the object cannot be written
 	 */
 	public void _writeObject(final OAObject oaObj, java.io.ObjectOutputStream stream) throws IOException {
-		//qqqqqqqq method was protected
 		//if (xxx % 1000 == 0) System.out.println((xxx)+") writeObject "+oaObj);
 		if (oaObj == null) {
 			return;
 		}
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
-		final OAObjectSerializer serializer = srvcOAThreadLocal.getCurrentObjectSerializer();
+		final OAObjectSerializer serializer = callThreadLocalGetCurrentObjectSerializer();
 		if (serializer != null) {
 			faObjectSerializer.beforeSerialize(oaObj, serializer);
 		}
@@ -513,14 +503,14 @@ public abstract class OAObjectSerializeService {
 			}
 
 			if (obj instanceof WeakReference) {
-				obj = ((WeakReference) obj).get();
+				obj = ((WeakReference<?>) obj).get();
 				if (obj == null) {
 					continue;
 				}
 			}
 
 			if (obj instanceof Hub) {
-				if (((Hub) obj).getObjectClass().equals(IODummy.class)) {
+				if (((Hub<?>) obj).getObjectClass().equals(IODummy.class)) {
 					continue;
 				}
 			}
@@ -618,5 +608,5 @@ public abstract class OAObjectSerializeService {
 	public abstract HubAutoMatch callHubGetAutoMatch(Hub<?> thisHub);
 	public abstract boolean callSyncClientIsObjectOnServer(OAObject obj);
 	public abstract void callSyncClientObjectSentToServer(OAObject obj);
-	
+	public abstract OAObjectSerializer callThreadLocalGetCurrentObjectSerializer();
 }

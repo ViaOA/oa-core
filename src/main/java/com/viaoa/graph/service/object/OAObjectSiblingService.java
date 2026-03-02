@@ -4,6 +4,7 @@ package com.viaoa.graph.service.object;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
@@ -47,12 +48,12 @@ public abstract class OAObjectSiblingService {
 	 * @param linkPropertyName  the accessed link-property name
 	 */
 	public void onGetObjectReference(final OAObject obj, final String linkPropertyName) {
-		ArrayList<OASiblingHelper> al = callThreadLocalGetSiblingHelpers();
+		List<OASiblingHelper<?>> al = callThreadLocalGetSiblingHelpers();
 		if (al == null) {
 			return;
 		}
 
-		for (OASiblingHelper sh : al) {
+		for (OASiblingHelper<?> sh : al) {
 			sh.onGetReference(obj, linkPropertyName);
 		}
 
@@ -138,7 +139,7 @@ public abstract class OAObjectSiblingService {
 		 * The sibling helper instance that produced the property-path used for
 		 * sibling discovery. Provides context for resolving detail paths.
 		 */
-		OASiblingHelper siblingHelper;
+		OASiblingHelper<?> siblingHelper;
 
 		/**
 		 * Property-path expression returned by the associated sibling helper.
@@ -147,7 +148,7 @@ public abstract class OAObjectSiblingService {
 		 */
 		String getDetailPropertyPath;
 
-		DetailInfo(OASiblingHelper siblingHelper, String getDetailPropertyPath) {
+		DetailInfo(OASiblingHelper<?> siblingHelper, String getDetailPropertyPath) {
 			this.siblingHelper = siblingHelper;
 			this.getDetailPropertyPath = getDetailPropertyPath;
 		}
@@ -177,18 +178,18 @@ public abstract class OAObjectSiblingService {
 
 		// set by Finder, HubMerger, HubGroupBy, LoadReferences, etc - where it will be loading from a Root Hub using a PropertyPath
 
-		Hub getDetailHub = null;
+		Hub<?> getDetailHub = null;
 		String getDetailPropertyPath = null;
 
-		OAPropertyPath ppGetDetailPropertyPath = null;
+		OAPropertyPath<?> ppGetDetailPropertyPath = null;
 
 		// 20180704
-		ArrayList<OASiblingHelper> al = callThreadLocalGetSiblingHelpers();
+		List<OASiblingHelper<?>> al = callThreadLocalGetSiblingHelpers();
 
 		// 20180807 find all pp to use, instead of just the first one.
 		ArrayList<DetailInfo> alDetailInfo = new ArrayList<>();
 		if (al != null) {
-			for (OASiblingHelper sh : al) {
+			for (OASiblingHelper<?> sh : al) {
 				for (int i = 0;; i++) {
 					String s = sh.getPropertyPath(mainObject, property, i > 0);
 					if (s == null) {
@@ -220,7 +221,7 @@ public abstract class OAObjectSiblingService {
 				DetailInfo di = alDetailInfo.get(cntDetailInfo);
 				getDetailHub = di.siblingHelper.getHub();
 				getDetailPropertyPath = di.getDetailPropertyPath;
-				ppGetDetailPropertyPath = new OAPropertyPath(di.siblingHelper.getHub().getObjectClass(), getDetailPropertyPath);
+				ppGetDetailPropertyPath = new OAPropertyPath<>(di.siblingHelper.getHub().getObjectClass(), getDetailPropertyPath);
 			}
 
 			String ppPrefix = null;
@@ -265,7 +266,7 @@ public abstract class OAObjectSiblingService {
 					// see if property is off of the detailPP
 					ppPrefix = null;
 					for (OALinkInfo li : ppGetDetailPropertyPath.getLinkInfos()) {
-						Class c = li.getToClass();
+						Class<?> c = li.getToClass();
 						OALinkInfo lix = callInfoGetLinkInfo(c, mainObject.getClass());
 						if (lix != null) {
 							if (!lix.getPrivateMethod()) {
@@ -284,7 +285,7 @@ public abstract class OAObjectSiblingService {
 
 			if (!bValid && getDetailHub != null && !getDetailHub.getObjectClass().equals(mainObject.getClass())) {
 				// need to get to mainObject.class
-				Class c = getDetailHub.getObjectClass();
+				Class<?> c = getDetailHub.getObjectClass();
 				OALinkInfo li = callInfoGetLinkInfo(c, mainObject.getClass());
 				if (li == null || li.getPrivateMethod()) {
 					getDetailHub = null;
@@ -300,7 +301,7 @@ public abstract class OAObjectSiblingService {
 			OAPropertyPath ppReverse = null;
 
 			if (getDetailHub != null && ppPrefix != null) {
-				OAPropertyPath ppForward = new OAPropertyPath(getDetailHub.getObjectClass(), ppPrefix);
+				OAPropertyPath<?> ppForward = new OAPropertyPath<>(getDetailHub.getObjectClass(), ppPrefix);
 				OALinkInfo[] lis = ppForward.getLinkInfos();
 				boolean b = true;
 				if (lis != null) {
@@ -422,7 +423,7 @@ public abstract class OAObjectSiblingService {
 
 					objInHub = hub.getMasterObject();
 
-					Hub hubx = null;
+					Hub<?> hubx = null;
 					if (ppReverse != null && objInHub != null) {
 						OALinkInfo[] lis = ppReverse.getLinkInfos();
 						OALinkInfo liz = (lis == null || lis.length <= ppReversePos) ? null : lis[ppReversePos];
@@ -481,6 +482,7 @@ public abstract class OAObjectSiblingService {
 	 * @param msStarted        start time for enforcing time limits
 	 * @param runCount         recursion/iteration counter
 	 */
+	@SuppressWarnings({"unchecked","rawtypes"})
 	public void findSiblings(
 			final ArrayList<OAObjectKey> alFoundObjectKey,
 			final Hub<?> hubRoot, final int startPosHubRoot, final String finderPropertyPath, final String origProperty,
@@ -491,7 +493,6 @@ public abstract class OAObjectSiblingService {
 			final int maxAmount,
 			final long msStarted,
 			final int runCount) {
-//qqqqqqqq method was protected
 		final String property = origProperty.toUpperCase();
 		final boolean bIsMany = (linkInfo != null) && (linkInfo.getType() == OALinkInfo.TYPE_MANY);
 		boolean b = !bIsMany && (linkInfo != null) && (linkInfo.isOne2One());
@@ -503,7 +504,7 @@ public abstract class OAObjectSiblingService {
 		}
 		final boolean bNormalOne2One = b;
 
-		final Class clazz = (linkInfo == null) ? null : linkInfo.getToClass();
+		final Class<? extends OAObject> clazz = (linkInfo == null) ? null : linkInfo.getToClass();
 
 		OAFinder f = new OAFinder(finderPropertyPath) {
 			@Override
@@ -566,6 +567,7 @@ public abstract class OAObjectSiblingService {
 		if (startPosHubRoot > 0) {
 			objx = (OAObject) hubRoot.getAt(startPosHubRoot - 1);
 		}
+		
 		f.find(hubRoot, objx);
 	}
 
@@ -622,7 +624,7 @@ public abstract class OAObjectSiblingService {
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub<?> thisDetailHub);
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterToDetail(Hub<?> thisDetailHub);
-	public abstract ArrayList<OASiblingHelper> callThreadLocalGetSiblingHelpers();
+	public abstract List<OASiblingHelper<?>> callThreadLocalGetSiblingHelpers();
 	public abstract int callThreadLocalGetAndIncrementGetSiblingCalledCount();
 	public abstract void callThreadLocalClearGetSiblingCalledCount();
 	

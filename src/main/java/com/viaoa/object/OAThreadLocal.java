@@ -432,7 +432,7 @@ public class OAThreadLocal {
 	 * and cache sibling property-path resolutions during object graph
 	 * navigation.
 	 */
-	public ArrayList<OASiblingHelper> alSiblingHelper;
+	public List<OASiblingHelper<?>> alSiblingHelper;
 
 	/**
 	 * Counter tracking how many times sibling lookup has been requested

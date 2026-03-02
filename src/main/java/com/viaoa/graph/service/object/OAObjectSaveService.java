@@ -18,7 +18,6 @@ public abstract class OAObjectSaveService {
 	}
 
 	public void save(OAObject oaObj, int iCascadeRule) {
-    	//qqqqqqqqqq method was protected
 		if (oaObj == null) {
 			return;
 		}
@@ -36,7 +35,7 @@ public abstract class OAObjectSaveService {
 		save(oaObj, iCascadeRule, cascade, false, true);
 	}
 
-	private void save(OAObject oaObj, int iCascadeRule, OACascade cascade, boolean bIsFirst, boolean bCheckDepth) {
+	private <T extends OAObject> void save(final T oaObj, int iCascadeRule, OACascade cascade, boolean bIsFirst, boolean bCheckDepth) {
 		if (callThreadLocalIsDeleting()) {
 			return;
 		}
@@ -58,11 +57,11 @@ public abstract class OAObjectSaveService {
 		_save(oaObj, true, iCascadeRule, cascade); // "ONE" relationships
 		// cascadeSave() will check hash to see if object has already been checked
 		if (b) {
-			Hub<?>[] hubs = callHubGetHubReferences(oaObj);
+			Hub<T>[] hubs = callHubGetHubReferences(oaObj);
 			if (hubs != null) {
-				for (Hub<?> h : hubs) {
+				for (Hub<T> h : hubs) {
 					if (h != null) {
-						callHubEventFireBeforeSaveEvent((Hub<OAObject>) h, oaObj);
+						callHubEventFireBeforeSaveEvent(h, oaObj);
 					}
 				}
 			}
@@ -97,7 +96,7 @@ public abstract class OAObjectSaveService {
 			}
 
 			if (hubs != null) {
-				for (Hub h : hubs) {
+				for (Hub<T> h : hubs) {
 					if (h != null) {
 						callHubEventFireAfterSaveEvent(h, oaObj);
 					}
@@ -140,10 +139,11 @@ public abstract class OAObjectSaveService {
 	 * @return null if all objects can be saved
 	 */
 	private void _save(OAObject oaObj, boolean bOne, int iCascadeRule, OACascade cascade) {
+		if (oaObj == null) return;
 		OAObjectInfo oi = callInfoGetObjectInfo(oaObj);
-		List al = oi.getLinkInfos();
+		List<OALinkInfo> al = oi.getLinkInfos();
 		for (int i = 0; i < al.size(); i++) {
-			OALinkInfo li = (OALinkInfo) al.get(i);
+			OALinkInfo li = al.get(i);
 
 			if (bOne != (li.getType() == OALinkInfo.ONE)) {
 				continue;
@@ -250,7 +250,7 @@ public abstract class OAObjectSaveService {
 					continue;
 				}
 				if (bValidCascade) {
-					Hub hub = (Hub) callReflectGetProperty(oaObj, li.getName()); // get/load "real" objects
+					Hub<?> hub = (Hub) callReflectGetProperty(oaObj, li.getName()); // get/load "real" objects
 					callHubSaveAll(hub, iCascadeRule, cascade);
 				} else {
 					// save all adds/removes from hub.
@@ -262,13 +262,12 @@ public abstract class OAObjectSaveService {
 		}
 	}
 
-	private final Map<UUID, Thread> hmSaveNewLock = new HashMap(11);
+	private final Map<UUID, Thread> hmSaveNewLock = new HashMap<>(11);
 
 	/**
 
 	*/
 	public boolean onSave(OAObject oaObj) {
-    	//qqqqqqqqqq method was protected
 		OAObjectInfo oi = callInfoGetOAObjectInfo(oaObj.getClass());
 
 		//LOG.fine(oaObj.getClass().getSimpleName()+", isNew="+oaObj.isNew());        
@@ -334,7 +333,7 @@ public abstract class OAObjectSaveService {
 
 	public abstract boolean callCSIsWorkstation(); 
 	public abstract boolean callCSSave(OAObject oaObj, int iCascadeRule);
-	public abstract Hub<?>[] callHubGetHubReferences(OAObject oaObj); 
+	public abstract <T extends OAObject> Hub<T>[] callHubGetHubReferences(T oaObj); 
 	public abstract OAObjectInfo callInfoGetObjectInfo(OAObject obj); 
 	public abstract boolean callReflectIsReferenceNullOrNotLoaded(OAObject oaObj, String propertyName);
 	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath); 
@@ -348,7 +347,4 @@ public abstract class OAObjectSaveService {
 	public abstract <T extends OAObject> void callHubEventFireBeforeSaveEvent(Hub<T> thisHub, T obj);
 	public abstract <T extends OAObject> void callHubEventFireAfterSaveEvent(Hub<T> thisHub, T obj);
 	public abstract boolean callThreadLocalIsDeleting();
-	
 }
-
-

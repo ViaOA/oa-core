@@ -3,6 +3,7 @@ package com.viaoa.graph.service.object;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
@@ -28,6 +29,7 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCallback;
 import com.viaoa.object.OAObjectInternalBridge;
 import com.viaoa.object.OAObjectKey;
+import com.viaoa.object.OAObjectSerializer;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.object.OASiblingHelper;
 import com.viaoa.object.OAObjectInfo;
@@ -1846,6 +1848,10 @@ public abstract class OAObjectParentService {
 			public void callSyncClientObjectSentToServer(OAObject obj) {
 				OAObjectParentService.this.srvcSync.getSyncClient().objectSentToServer(obj);				
 			}
+			@Override
+			public OAObjectSerializer callThreadLocalGetCurrentObjectSerializer() {
+				return OAObjectParentService.this.srvcThreadLocal.getCurrentObjectSerializer();
+			}
     	};
     	return srvcOAObjectSerialize;
     }
@@ -1856,7 +1862,7 @@ public abstract class OAObjectParentService {
     	
     	srvcOAObjectSibling = new OAObjectSiblingService() {
 			@Override
-			public ArrayList<OASiblingHelper> callThreadLocalGetSiblingHelpers() {
+			public List<OASiblingHelper<?>> callThreadLocalGetSiblingHelpers() {
 				return OAObjectParentService.this.srvcThreadLocal.getSiblingHelpers();
 			}
 			@Override

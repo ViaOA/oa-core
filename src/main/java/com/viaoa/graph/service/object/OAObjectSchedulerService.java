@@ -27,7 +27,7 @@ public abstract class OAObjectSchedulerService {
 	 * @param date the date used to initialize the scheduler range
 	 * @return the created scheduler, or {@code null} if required arguments are missing
 	 */
-    public OAScheduler getScheduler(OAObject objThis, String property, OADate date) {
+    public <T extends OAObject> OAScheduler<T> getScheduler(T objThis, String property, OADate date) {
         return getScheduler(objThis, property, null, date);
     }
     
@@ -55,7 +55,7 @@ public abstract class OAObjectSchedulerService {
      * @param date       the date used to initialize the scheduler instance
      * @return the populated scheduler, or {@code null} if any required metadata is not found
      */
-    public OAScheduler getScheduler(OAObject objThis, String property, OAObject objSearch, OADate date) {
+    public <T extends OAObject> OAScheduler<T> getScheduler(T objThis, String property, OAObject objSearch, OADate date) {
         if (objThis == null || OAString.isEmpty(property)) return null;
 
         OAObjectInfo oi = callInfoGetObjectInfo(objThis);
@@ -101,7 +101,7 @@ public abstract class OAObjectSchedulerService {
      * @param objThis   the object whose callback method should be invoked
      * @param property  the property identifying which scheduler callback to execute
      */
-    public void invokeCallback(OAScheduler scheduler, OAObject objThis, String property) {
+    public <T extends OAObject> void invokeCallback(OAScheduler<T> scheduler, T objThis, String property) {
         if (scheduler == null || objThis == null || OAString.isEmpty(property)) return;
 
         OAObjectInfo oi = callInfoGetObjectInfo(objThis);

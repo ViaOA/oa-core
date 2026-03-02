@@ -19,6 +19,7 @@ import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
@@ -1025,7 +1026,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	 * selection is used. Iteration proceeds from this list instead of from
 	 * a DataSource iterator.
 	 */
-	private volatile ArrayList<TYPE> alFinderResults;
+	private volatile List<TYPE> alFinderResults;
 
 	/**
 	 * Cursor used when iterating through {@link #alFinderResults}. Tracks the

@@ -112,7 +112,7 @@ public abstract class OAObjectXMLService {
 	 */
 	private void _write(final OAObject oaObj, final OAXMLWriter ow, String tagName, boolean bKeyOnly, final OACascade cascade,
 			final boolean bWriteClassName) {
-		Class c = oaObj.getClass();
+		Class<? extends OAObject> c = oaObj.getClass();
 		OAObjectInfo oi = callInfoGetOAObjectInfo(oaObj);
 
 		// 20150909
@@ -155,9 +155,8 @@ public abstract class OAObjectXMLService {
 
 		ow.indent++;
 
-		ArrayList alProp = oi.getPropertyInfos(); // reg props, not link props
-		for (int i = 0; i < alProp.size(); i++) {
-			OAPropertyInfo pi = (OAPropertyInfo) alProp.get(i);
+		List<OAPropertyInfo> alProp = oi.getPropertyInfos(); // reg props, not link props
+		for (OAPropertyInfo pi : alProp) {
 
 			String propName = pi.getName();
 			Object value = callReflectGetProperty(oaObj, propName);
@@ -206,9 +205,8 @@ public abstract class OAObjectXMLService {
 		}
 
 		// Save link properties
-		List alLink = oi.getLinkInfos();
-		for (int i = 0; i < alLink.size(); i++) {
-			OALinkInfo li = (OALinkInfo) alLink.get(i);
+		List<OALinkInfo> alLink = oi.getLinkInfos();
+		for (OALinkInfo li : alLink) {
 			if (li.getTransient()) {
 				continue;
 			}
@@ -240,7 +238,7 @@ public abstract class OAObjectXMLService {
 					boolean b = Modifier.isAbstract(li.getToClass().getModifiers());
 					write(((OAObject) obj), ow, li.getName(), (x == ow.WRITE_KEYONLY), cascade, b);
 				} else if (obj instanceof Hub) {
-					Hub h = (Hub) obj;
+					Hub<?> h = (Hub) obj;
 					if (h.getSize() > 0 || ow.getIncludeEmptyHubs()) {
 						callHubXMLWrite(h, ow, li.getName(), x, cascade); // 2006/09/26
 					}
@@ -263,7 +261,7 @@ public abstract class OAObjectXMLService {
 					continue;
 				}
 
-				Class cval = value.getClass();
+				Class<?> cval = value.getClass();
 				if (value instanceof String) {
 					;
 				} else if (value instanceof OADate) {

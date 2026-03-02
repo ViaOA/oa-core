@@ -18,6 +18,7 @@ package com.viaoa.hub;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -244,7 +245,7 @@ public class HubListenerTree {
 			}
 			if (objs == null && spp != null) {
 				// 20200407
-				ArrayList al = null;
+				List al = null;
 				if (pp != null) {
 					OALinkInfo[] lis = pp.getLinkInfos();
 					if (lis != null && lis.length == 1 && pp.getEndLinkInfo() != null) {

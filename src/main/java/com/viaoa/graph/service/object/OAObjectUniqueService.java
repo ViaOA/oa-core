@@ -12,6 +12,7 @@ public abstract class OAObjectUniqueService {
     public OAObjectUniqueService() {
     }
     
+    // qqqq could be too heavy, rework new solution
     private final Object Lock = new Object();
 
     /**
@@ -54,8 +55,6 @@ public abstract class OAObjectUniqueService {
         
         // not found
         if (callCSIsClient()) {
-        	
-        	
             try {
             	oaObj = callSyncClientGetUnique(clazz, propertyName, uniqueKey, bAutoCreate);
                 return oaObj;
@@ -65,7 +64,7 @@ public abstract class OAObjectUniqueService {
             }
         }
         
-        OASelect select = new OASelect(clazz);
+        OASelect<?> select = new OASelect<>(clazz);
         select.setWhere(propertyName+" = ?", new Object[] {uniqueKey});
         oaObj = select.next();
         if (oaObj != null) {

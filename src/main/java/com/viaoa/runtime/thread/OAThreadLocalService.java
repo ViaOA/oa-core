@@ -1633,7 +1633,7 @@ public class OAThreadLocalService {
 	 *
 	 * @return the list of sibling helpers, or null
 	 */
-	public ArrayList<OASiblingHelper> getSiblingHelpers() {
+	public List<OASiblingHelper<?>> getSiblingHelpers() {
 		if (aiTotalSiblingHelper.get() == 0) {
 			return null;
 		}
@@ -1646,7 +1646,7 @@ public class OAThreadLocalService {
 	 * @param ti the thread-local instance
 	 * @return the list of sibling helpers, or null
 	 */
-	public ArrayList<OASiblingHelper> getSiblingHelpers(OAThreadLocal ti) {
+	public List<OASiblingHelper<?>> getSiblingHelpers(OAThreadLocal ti) {
 		if (ti == null) {
 			return null;
 		}
@@ -1662,7 +1662,7 @@ public class OAThreadLocalService {
 		if (aiTotalSiblingHelper.get() == 0) {
 			return false;
 		}
-		ArrayList<OASiblingHelper> al = getSiblingHelpers(getThreadLocal(true));
+		List<OASiblingHelper<?>> al = getSiblingHelpers(getThreadLocal(true));
 		return (al != null && al.size() > 0);
 	}
 
@@ -1673,7 +1673,7 @@ public class OAThreadLocalService {
 		if (aiTotalSiblingHelper.get() == 0) {
 			return;
 		}
-		ArrayList<OASiblingHelper> al = getSiblingHelpers(getThreadLocal(true));
+		List<OASiblingHelper<?>> al = getSiblingHelpers(getThreadLocal(true));
 		if (al != null) {
 			al.clear();
 		}
