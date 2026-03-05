@@ -6,8 +6,6 @@ import java.io.StringReader;
 import java.util.logging.Logger;
 
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectPropertyDelegate;
-import com.viaoa.sync.OASync;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAFile;
 import com.viaoa.util.OAString;
@@ -16,6 +14,8 @@ import com.viaoa.util.OAYamlReader;
 import test.xice.tsam.delegate.ModelDelegate;
 import test.xice.tsam.delegate.oa.ApplicationTypeDelegate;
 import test.xice.tsam.delegate.oa.PackageTypeDelegate;
+import test.xice.tsam.model.delegate.OAObjectPropertyDelegate;
+import test.xice.tsam.model.delegate.OASyncDelegate;
 import test.xice.tsam.model.oa.ApplicationType;
 import test.xice.tsam.model.oa.PackageType;
 
@@ -125,7 +125,7 @@ public class ApplicationTypeDelegate {
     public static void initialize() {
         if (bInit) return;
         bInit = true;
-        if (!OASync.callSyncIsServer()) return;
+        if (!OASyncDelegate.callSyncIsServer()) return;
 
         // https://icespace.cpex.com/docs/DOC-24614
         

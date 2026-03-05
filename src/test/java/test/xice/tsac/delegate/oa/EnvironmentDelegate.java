@@ -7,7 +7,6 @@ import javax.swing.JFileChooser;
 import com.viaoa.hub.Hub;
 import com.viaoa.undo.OAUndoManager;
 import com.viaoa.object.OAFinder;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.util.OAString;
 import com.viaoa.xml.OAXMLReader;
 import com.viaoa.xml.OAXMLWriter;

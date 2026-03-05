@@ -2,6 +2,7 @@
 
 package com.messagedesigner.model;
 
+
 import java.util.logging.*;
 import com.viaoa.object.*;
 import com.messagedesigner.delegate.ModelDelegate;
@@ -19,6 +20,7 @@ import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import com.viaoa.filter.*;
 import com.viaoa.datasource.*;
+import com.messagedesigner.model.delegate.*;
 
 public class JsonTypeModel extends OAObjectModel {
     private static Logger LOG = Logger.getLogger(JsonTypeModel.class.getName());

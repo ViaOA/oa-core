@@ -1,11 +1,11 @@
 package test.xice.tsac.delegate.oa;
 
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectPropertyDelegate;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.*;
 
 import test.xice.tsac.delegate.RemoteDelegate;
+import test.xice.tsac.model.delegate.OAObjectPropertyDelegate;
+import test.xice.tsac.model.delegate.OASyncDelegate;
 import test.xice.tsac.model.oa.*;
 
 public class RCServerListDelegate {

@@ -14,6 +14,10 @@ import com.cdi.model.oa.propertypath.*;
 import com.cdi.model.oa.search.*;
 import com.cdi.model.oa.filter.*;
 import com.cdi.model.search.*;
+import com.cdi.model.delegate.HubDelegate;
+import com.cdi.model.delegate.HubDetailDelegate;
+import com.cdi.model.delegate.HubSelectDelegate;
+import com.cdi.model.delegate.OAObjectCallbackDelegate;
 import com.cdi.model.filter.*;
 import com.cdi.delegate.ModelDelegate;
 import com.cdi.resource.Resource;
@@ -182,7 +186,7 @@ public class OrderItemModel extends OAObjectModel {
         modelOrder.setAllowSearch(false);
         modelOrder.setAllowHubSearch(true);
         modelOrder.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
         modelOrder.setCreateUI(li == null || !OrderItem.P_Order.equalsIgnoreCase(li.getName()) );
         modelOrder.setViewOnly(getViewOnly());
         // call OrderItem.orderModelCallback(OrderModel) to be able to customize this model

@@ -13,6 +13,7 @@ import com.corptostore.model.oa.search.*;
 import com.corptostore.model.search.*;
 import com.corptostore.resource.Resource;
 import com.corptostore.model.ImageStoreModel;
+import com.corptostore.model.delegate.HubDelegate;
 import com.corptostore.model.oa.ImageStore;
 import com.viaoa.annotation.*;
 import com.viaoa.hub.*;

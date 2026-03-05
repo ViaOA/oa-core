@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
+import com.viaoa.annotation.OACalculatedProperty;
 import com.viaoa.annotation.OAClass;
 import com.viaoa.annotation.OAColumn;
 import com.viaoa.annotation.OAId;
@@ -13,8 +14,11 @@ import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATable;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.util.OADate;
+import com.viaoa.util.OAString;
+
+import test.xice.tsam.model.delegate.OAObjectInfoDelegate;
+import test.xice.tsam.model.oa.ApplicationStatus.Type;
 
 @OAClass(shortName = "com", displayName = "Command", isLookup = true, isPreSelect = true, displayProperty = "name")
 @OATable()
@@ -33,10 +37,6 @@ public class Command extends OAObject {
 	public static final String P_Description = "Description";
 	public static final String PROPERTY_CommandLine = "CommandLine";
 	public static final String P_CommandLine = "CommandLine";
-	public static final String PROPERTY_Type = "Type";
-	public static final String P_Type = "Type";
-	public static final String PROPERTY_TypeAsString = "TypeAsString";
-	public static final String P_TypeAsString = "TypeAsString";
 	public static final String PROPERTY_InAPI = "InAPI";
 	public static final String P_InAPI = "InAPI";
 
@@ -51,6 +51,11 @@ public class Command extends OAObject {
 	protected String name;
 	protected String description;
 	protected String commandLine;
+
+    public static final String P_Type = "type";
+    public static final String P_TypeString = "typeString";
+    public static final String P_TypeEnum = "typeEnum";
+    public static final String P_TypeDisplay = "typeDisplay";
 	protected int type;
 	public static final int TYPE_UNKNOWN = 0;
 	public static final int TYPE_START = 1;
@@ -65,23 +70,72 @@ public class Command extends OAObject {
 	public static final int TYPE_LOGCLEANUP = 10;
 	public static final int TYPE_CUSTOM = 11;
 	public static final int TYPE_GETHOSTINFO = 12;
-	public static final Hub<String> hubType;
-	static {
-		hubType = new Hub<String>(String.class);
-		hubType.addElement("Unknown");
-		hubType.addElement("SSH Start");
-		hubType.addElement("Start Snapshot");
-		hubType.addElement("Stop");
-		hubType.addElement("SSH Stop");
-		hubType.addElement("Suspend");
-		hubType.addElement("Resume");
-		hubType.addElement("Ping");
-		hubType.addElement("Update");
-		hubType.addElement("Install");
-		hubType.addElement("Log Cleanup");
-		hubType.addElement("Custom");
-		hubType.addElement("Get Host Information");
-	}
+    public static enum Type {
+    	UNKNOWN("UNKNOWN"),
+    	START("START"),
+    	STARTSNAPSHOT("STARTSNAPSHOT"),
+    	STOP("STOP");
+
+        private String display;
+        Type(String display) {
+            this.display = display;
+        }
+
+        public String getDisplay() {
+            return display;
+        }
+    }
+	@OAProperty(displayLength = 5, isNameValue = true, importMatch = true)
+	@OAColumn(sqlType = java.sql.Types.INTEGER)
+    public int getType() {
+        return type;
+    }
+    public void setType(int newValue) {
+        int old = type;
+        fireBeforePropertyChange(P_Type, old, newValue);
+        this.type = newValue;
+        firePropertyChange(P_Type, old, this.type);
+    }
+    @OAProperty(enumPropertyName = P_Type)
+    public String getTypeString() {
+        Type type = getTypeEnum();
+        if (type == null) return null;
+        return type.name();
+    }
+    public void setTypeString(String val) {
+        int x = -1;
+        if (OAString.isNotEmpty(val)) {
+            Type type = Type.valueOf(val);
+            if (type != null) x = type.ordinal();
+        }
+        if (x < 0) setNull(P_Type);
+        else setType(x);
+    }
+    @OAProperty(enumPropertyName = P_Type)
+    public Type getTypeEnum() {
+        if (isNull(P_Type)) return null;
+        final int val = getType();
+        if (val < 0 || val >= Type.values().length) return null;
+        return Type.values()[val];
+    }
+    public void setTypeEnum(Type val) {
+        if (val == null) {
+            setNull(P_Type);
+        }
+        else {
+            setType(val.ordinal());
+        }
+    }
+    @OACalculatedProperty(enumPropertyName = P_Type, displayName = "Type", displayLength = 14, columnLength = 6, properties = {P_Type} )
+    public String getTypeDisplay() {
+        Type type = getTypeEnum();
+        if (type == null) return null;
+        return type.getDisplay();
+    }
+    
+    
+    
+    
 	protected boolean inAPI;
 
 	// Links to other objects.
@@ -176,29 +230,6 @@ public class Command extends OAObject {
 		firePropertyChange(P_CommandLine, old, this.commandLine);
 	}
 
-	@OAProperty(displayLength = 5, isNameValue = true, importMatch = true)
-	@OAColumn(sqlType = java.sql.Types.INTEGER)
-	public int getType() {
-		return type;
-	}
-
-	public void setType(int newValue) {
-		fireBeforePropertyChange(P_Type, this.type, newValue);
-		int old = type;
-		this.type = newValue;
-		firePropertyChange(P_Type, old, this.type);
-	}
-
-	public String getTypeAsString() {
-		if (isNull(P_Type)) {
-			return "";
-		}
-		String s = hubType.getAt(getType());
-		if (s == null) {
-			s = "";
-		}
-		return s;
-	}
 
 	@OAProperty(displayName = "In API", displayLength = 5)
 	@OAColumn(sqlType = java.sql.Types.BOOLEAN)

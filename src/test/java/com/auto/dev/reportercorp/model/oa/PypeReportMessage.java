@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.logging.Logger;
 
 import com.auto.dev.reportercorp.delegate.oa.PypeReportMessageDelegate;
+import com.auto.dev.reportercorp.model.delegate.OAObjectInfoDelegate;
 import com.viaoa.annotation.OAClass;
 import com.viaoa.annotation.OAColumn;
 import com.viaoa.annotation.OAFkey;
@@ -17,7 +18,6 @@ import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATable;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
 

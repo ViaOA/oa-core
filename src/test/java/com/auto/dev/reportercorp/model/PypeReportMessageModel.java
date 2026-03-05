@@ -2,14 +2,14 @@ package com.auto.dev.reportercorp.model;
 
 import java.util.logging.Logger;
 
+import com.auto.dev.reportercorp.model.delegate.HubDelegate;
+import com.auto.dev.reportercorp.model.delegate.HubSelectDelegate;
+import com.auto.dev.reportercorp.model.delegate.OAObjectCallbackDelegate;
 import com.auto.dev.reportercorp.model.oa.PypeReportMessage;
 import com.auto.dev.reportercorp.model.oa.ReportInstance;
 import com.auto.dev.reportercorp.model.search.ReportInstanceSearchModel;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubCopy;
-import com.viaoa.hub.HubDelegate;
-import com.viaoa.hub.HubSelectDelegate;
-import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectModel;
 
 public class PypeReportMessageModel extends OAObjectModel {

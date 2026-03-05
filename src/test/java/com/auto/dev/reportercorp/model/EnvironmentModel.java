@@ -3,16 +3,16 @@ package com.auto.dev.reportercorp.model;
 import java.util.logging.Logger;
 
 import com.auto.dev.reportercorp.delegate.ModelDelegate;
+import com.auto.dev.reportercorp.model.delegate.HubDelegate;
+import com.auto.dev.reportercorp.model.delegate.HubDetailDelegate;
+import com.auto.dev.reportercorp.model.delegate.OAObjectCallbackDelegate;
 import com.auto.dev.reportercorp.model.oa.Environment;
 import com.auto.dev.reportercorp.model.oa.EnvironmentSnapshot;
 import com.auto.dev.reportercorp.model.oa.ReporterCorp;
 import com.auto.dev.reportercorp.model.search.ReporterCorpSearchModel;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubCopy;
-import com.viaoa.hub.HubDelegate;
-import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.hub.HubMakeCopy;
-import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectModel;
 
 public class EnvironmentModel extends OAObjectModel {

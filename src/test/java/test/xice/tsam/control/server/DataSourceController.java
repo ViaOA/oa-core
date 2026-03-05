@@ -28,18 +28,12 @@ import com.viaoa.datasource.jdbc.OADataSourceJDBC;
 import com.viaoa.datasource.jdbc.db.DBMetaData;
 import com.viaoa.datasource.objectcache.OADataSourceObjectCache;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubSaveDelegate;
 import com.viaoa.object.OACallback;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.object.OAObjectDelegate;
-import com.viaoa.object.OAObjectEmptyHubDelegate;
-import com.viaoa.object.OAObjectSaveDelegate;
 import com.viaoa.object.OAObjectSerializer;
 import com.viaoa.object.OAObjectSerializerCallback;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.sync.OASyncServer;
 import com.viaoa.transaction.OATransaction;
 import com.viaoa.util.OADate;
@@ -55,6 +49,7 @@ import test.xice.tsam.datasource.DataSource;
 import test.xice.tsam.delegate.ModelDelegate;
 import test.xice.tsam.delegate.oa.ApplicationTypeDelegate;
 import test.xice.tsam.delegate.oa.PackageTypeDelegate;
+import test.xice.tsam.model.delegate.OAObjectCacheDelegate;
 import test.xice.tsam.model.oa.AdminUser;
 import test.xice.tsam.model.oa.Application;
 import test.xice.tsam.model.oa.ApplicationStatus;
@@ -118,6 +113,7 @@ public class DataSourceController {
 			}
 		}
 
+/*qqqqqqqqqqq		
 		if (!OAString.isEmpty(cacheFileName)) {
 			cacheFileName = OAFile.convertFileName(cacheFileName);
 			File file = new File(cacheFileName);
@@ -131,6 +127,7 @@ public class DataSourceController {
 				file.delete();
 			}
 		}
+*/		
 	}
 
 	public OADataSourceJDBC getOADataSourceJDBC() {
@@ -174,7 +171,8 @@ public class DataSourceController {
 		/*$$End: DatasourceController.loadServerRoot $$*/
 
 		// dont need to have these Hubs as selectAll in objectCache
-		OAObjectCacheDelegate.removeSelectAllHub(serverRoot.getAdminUsers());
+//qqqqqqqqqqqqqqqqqqqqqqqq		
+//		OAObjectCacheDelegate.removeSelectAllHub(serverRoot.getAdminUsers());
 
 		return true;
 	}
@@ -184,6 +182,8 @@ public class DataSourceController {
 		hubClientRoot.saveAll(OAObject.CASCADE_ALL_LINKS);
 
 		OACascade cascade = new OACascade();
+		
+/*qqqqqqqqqq		
 		OAObjectSaveDelegate.save(serverRoot, OAObject.CASCADE_ALL_LINKS, cascade);
 
 		HubSaveDelegate.saveAll(hubClientRoot, OAObject.CASCADE_ALL_LINKS, cascade);
@@ -193,6 +193,7 @@ public class DataSourceController {
 			OASyncDelegate.getSyncServer().saveCache(cascade, OAObject.CASCADE_ALL_LINKS);
 			OASyncDelegate.getSyncServer().performDGC();
 		}
+*/		
 	}
 
 	// custom
@@ -625,6 +626,8 @@ public class DataSourceController {
 		if (dataSource != null) {
 			dataSource.close(); // this will call JavaDB shutdown, and remove datasource from list of available datasources
 		}
+		
+/*qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq		
 		if (!OAString.isEmpty(cacheFileName)) {
 			try {
 				LOG.config("saving " + cacheFileName);
@@ -635,6 +638,7 @@ public class DataSourceController {
 				LOG.log(Level.WARNING, "error while saving " + cacheFileName, e);
 			}
 		}
+*/			
 	}
 
 	public boolean verifyDataSource() throws Exception {
@@ -692,6 +696,7 @@ public class DataSourceController {
 	public void insertAllObjectsToDatabase() throws Exception {
 		LOG.config("Loading database");
 
+/*qqqqqqqqqqq		
 		final HashMap<Class, Integer> hash = new HashMap<Class, Integer>();
 		OAObjectCacheDelegate.callback(new OACallback() {
 			@Override
@@ -727,6 +732,7 @@ public class DataSourceController {
 			tran.rollback();
 			throw e;
 		}
+*/		
 	}
 
 	/**

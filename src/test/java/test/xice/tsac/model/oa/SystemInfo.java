@@ -8,6 +8,7 @@ import com.viaoa.hub.*;
 import com.viaoa.util.*;
 
 import test.xice.tsac.delegate.RemoteDelegate;
+import test.xice.tsac.model.delegate.OAObjectCacheDelegate;
 
 import com.viaoa.annotation.*;
  
@@ -74,7 +75,7 @@ public class SystemInfo extends OAObject {
     public void refreshClassFromDatasource() {
         try {
             Class c = Class.forName(name);
-            OAObjectCacheDelegate.refresh(c);
+//qqqqq      OAObjectCacheDelegate.refresh(c);
         }
         catch (Exception e) {
             throw new RuntimeException("error calling refreshClassFromDatasource", e);

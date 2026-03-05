@@ -11,7 +11,6 @@
 package test.hifive.delegate;
 
 import com.viaoa.hub.*;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.OAString;
 
 import test.hifive.model.oa.*;

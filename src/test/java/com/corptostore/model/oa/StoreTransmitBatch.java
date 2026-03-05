@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
+import com.corptostore.model.delegate.OAObjectInfoDelegate;
 import com.viaoa.annotation.OAClass;
 import com.viaoa.annotation.OAColumn;
 import com.viaoa.annotation.OAFkey;
@@ -19,7 +20,6 @@ import com.viaoa.annotation.OATable;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
@@ -260,6 +260,7 @@ public class StoreTransmitBatch extends OAObject {
 	}
 
 	public static void main(String[] args) {
+/*		
 		boolean b;
 		StoreTransmitBatch stb = new StoreTransmitBatch();
 		b = stb.getNull(P_StoreNumber);
@@ -292,7 +293,7 @@ public class StoreTransmitBatch extends OAObject {
 
 		int i = 44;
 		i++;
-
+*/
 	}
 
 }

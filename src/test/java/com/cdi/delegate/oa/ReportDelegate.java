@@ -1,6 +1,7 @@
 // Copied from OATemplate project by OABuilder 04/01/25 01:43 PM
 package com.cdi.delegate.oa;
 
+import com.cdi.model.delegate.OAObjectInfoDelegate;
 import com.cdi.model.oa.*;
 import com.viaoa.object.*;
 import com.viaoa.template.OATemplate;
@@ -15,7 +16,7 @@ public class ReportDelegate {
         if (report == null) return null;
         
         ReportClass rc = null; 
-        final OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Report.class);
+        final OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(Report.class);
         for (OALinkInfo li : oi.getLinkInfos()) {
             if (li.getType() != OALinkInfo.TYPE_ONE) continue;
             if (!li.getOneAndOnlyOne()) continue;
@@ -38,7 +39,7 @@ public class ReportDelegate {
         ot.setTemplate(cdiScheduler);
         
         OAObject ref = null;
-        final OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Report.class);
+        final OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(Report.class);
         for (OALinkInfo li : oi.getLinkInfos()) {
             if (li.getType() != OALinkInfo.TYPE_ONE) continue;
             if (!li.getOneAndOnlyOne()) continue;

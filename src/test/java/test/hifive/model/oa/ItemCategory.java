@@ -6,8 +6,9 @@ import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADate;
 
+import test.hifive.model.delegate.OAObjectInfoDelegate;
+import test.hifive.model.oa.AwardCardOrder.CardType;
 import test.hifive.model.oa.filter.*;
 import test.hifive.model.oa.propertypath.*;
  
@@ -34,10 +35,6 @@ public class ItemCategory extends OAObject {
     public static final String P_Code = "Code";
     public static final String PROPERTY_Seq = "Seq";
     public static final String P_Seq = "Seq";
-    public static final String PROPERTY_HifiveRating = "HifiveRating";
-    public static final String P_HifiveRating = "HifiveRating";
-    public static final String PROPERTY_HifiveRatingAsString = "HifiveRatingAsString";
-    public static final String P_HifiveRatingAsString = "HifiveRatingAsString";
     public static final String PROPERTY_HifiveRatingDate = "HifiveRatingDate";
     public static final String P_HifiveRatingDate = "HifiveRatingDate";
     public static final String PROPERTY_HifiveRatingNote = "HifiveRatingNote";
@@ -55,19 +52,39 @@ public class ItemCategory extends OAObject {
     protected String name;
     protected String code;
     protected int seq;
-    protected int hifiveRating;
+    
+    
+    
+    
+    
+
+    public static final String P_HifiveRating = "hifiveRating";
+    public static final String P_HifiveRatingString = "hifiveRatingString";
+    public static final String P_HifiveRatingEnum = "hifiveRatingEnum";
+    public static final String P_HifiveRatingDisplay = "hifiveRatingDisplay";
+    
+    protected volatile int hifiveRating;
+    public static enum HifiveRating {
+    	Digital("Unknown"),
+    	Traditional("Approved"),
+        Business("Unapproved"),
+        SecondHome("Some Programs");
+
+        private String display;
+        HifiveRating(String display) {
+            this.display = display;
+        }
+
+        public String getDisplay() {
+            return display;
+        }
+    }
     public static final int HIFIVERATING_unknown = 0;
     public static final int HIFIVERATING_approved = 1;
     public static final int HIFIVERATING_unapproved = 2;
     public static final int HIFIVERATING_somePrograms = 3;
-    public static final Hub<String> hubHifiveRating;
-    static {
-        hubHifiveRating = new Hub<String>(String.class);
-        hubHifiveRating.addElement("Unknown");
-        hubHifiveRating.addElement("Approved");
-        hubHifiveRating.addElement("Unapproved");
-        hubHifiveRating.addElement("Some Programs");
-    }
+    
+    
     protected OADate hifiveRatingDate;
     protected String hifiveRatingNote;
      
@@ -132,24 +149,6 @@ public class ItemCategory extends OAObject {
         int old = seq;
         this.seq = newValue;
         firePropertyChange(P_Seq, old, this.seq);
-    }
-    @OAProperty(displayName = "Hifive Rating", displayLength = 5, isNameValue = true)
-    @OAColumn(sqlType = java.sql.Types.INTEGER)
-    public int getHifiveRating() {
-        return hifiveRating;
-    }
-    
-    public void setHifiveRating(int newValue) {
-        fireBeforePropertyChange(P_HifiveRating, this.hifiveRating, newValue);
-        int old = hifiveRating;
-        this.hifiveRating = newValue;
-        firePropertyChange(P_HifiveRating, old, this.hifiveRating);
-    }
-    public String getHifiveRatingAsString() {
-        if (isNull(P_HifiveRating)) return "";
-        String s = hubHifiveRating.getAt(getHifiveRating());
-        if (s == null) s = "";
-        return s;
     }
     @OAProperty(displayName = "Hifive Rating Date", displayLength = 8)
     @OAColumn(sqlType = java.sql.Types.DATE)
@@ -225,6 +224,57 @@ public class ItemCategory extends OAObject {
         this.parentItemCategory = newValue;
         firePropertyChange(P_ParentItemCategory, old, this.parentItemCategory);
     }
+
+    
+    
+    @OAProperty(lowerName = "hifiveRating", displayLength = 14, uiColumnLength = 6, isNameValue = true)
+    @OAColumn(name = "HifiveRating", sqlType = java.sql.Types.INTEGER)
+    public int getHifiveRating() {
+        return hifiveRating;
+    }
+    public void setHifiveRating(int newValue) {
+        int old = hifiveRating;
+        fireBeforePropertyChange(P_HifiveRating, old, newValue);
+        this.hifiveRating = newValue;
+        firePropertyChange(P_HifiveRating, old, this.hifiveRating);
+    }
+    @OAProperty(enumPropertyName = P_HifiveRating)
+    public String getHifiveRatingString() {
+        HifiveRating hifiveRating = getHifiveRatingEnum();
+        if (hifiveRating == null) return null;
+        return hifiveRating.name();
+    }
+    public void setHifiveRatingString(String val) {
+        int x = -1;
+        if (OAString.isNotEmpty(val)) {
+            HifiveRating hifiveRating = HifiveRating.valueOf(val);
+            if (hifiveRating != null) x = hifiveRating.ordinal();
+        }
+        if (x < 0) setNull(P_HifiveRating);
+        else setHifiveRating(x);
+    }
+    @OAProperty(enumPropertyName = P_HifiveRating)
+    public HifiveRating getHifiveRatingEnum() {
+        if (isNull(P_HifiveRating)) return null;
+        final int val = getHifiveRating();
+        if (val < 0 || val >= HifiveRating.values().length) return null;
+        return HifiveRating.values()[val];
+    }
+    public void setHifiveRatingEnum(HifiveRating val) {
+        if (val == null) {
+            setNull(P_HifiveRating);
+        }
+        else {
+            setHifiveRating(val.ordinal());
+        }
+    }
+    @OACalculatedProperty(enumPropertyName = P_HifiveRating, displayName = "HifiveRating", displayLength = 14, columnLength = 6, properties = {P_HifiveRating} )
+    public String getHifiveRatingDisplay() {
+        HifiveRating hifiveRating = getHifiveRatingEnum();
+        if (hifiveRating == null) return null;
+        return hifiveRating.getDisplay();
+    }
+    
     
     public void load(ResultSet rs, int id) throws SQLException {
         this.id = id;
@@ -253,5 +303,7 @@ public class ItemCategory extends OAObject {
         changedFlag = false;
         newFlag = false;
     }
+
+
 }
  

@@ -11,6 +11,7 @@ import com.viaoa.scheduler.*;
 import com.viaoa.util.*;
 import com.viaoa.annotation.*;
 import com.cdi.delegate.oa.*;
+import com.cdi.model.delegate.OAObjectInfoDelegate;
 import com.cdi.model.oa.filter.*;
 import com.cdi.model.oa.propertypath.*;
 

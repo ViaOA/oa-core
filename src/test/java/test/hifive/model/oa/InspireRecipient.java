@@ -8,6 +8,7 @@ import com.viaoa.util.*;
 import com.viaoa.annotation.*;
 import com.viaoa.util.OADate;
 
+import test.hifive.model.delegate.OAObjectInfoDelegate;
 import test.hifive.model.oa.filter.*;
 import test.hifive.model.oa.propertypath.*;
  
@@ -168,7 +169,8 @@ public class InspireRecipient extends OAObject {
     @OACalculatedProperty(displayName = "Approval Status", displayLength = 22, properties = {P_ApprovalStatus})
     public String getApprovalStatusAsString() {
         int x = getApprovalStatus();
-        return InspireApproval.hubStatus.getAt(x);
+        return "qqqqqqqqq";
+        //qqqqqqq return InspireApproval.hubStatus.getAt(x);
     }
      
     @OAOne(

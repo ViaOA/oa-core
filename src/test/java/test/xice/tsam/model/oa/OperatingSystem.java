@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
+import com.viaoa.annotation.OACalculatedProperty;
 import com.viaoa.annotation.OAClass;
 import com.viaoa.annotation.OAColumn;
 import com.viaoa.annotation.OAId;
@@ -13,7 +14,10 @@ import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATable;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfoDelegate;
+import com.viaoa.util.OAString;
+
+import test.xice.tsac.model.oa.OperatingSystem.Type;
+import test.xice.tsam.model.delegate.OAObjectInfoDelegate;
 
 @OAClass(shortName = "os", displayName = "Operating System", isLookup = true, isPreSelect = true, displayProperty = "name")
 @OATable()
@@ -24,10 +28,6 @@ public class OperatingSystem extends OAObject {
 	public static final String P_Id = "Id";
 	public static final String PROPERTY_Name = "Name";
 	public static final String P_Name = "Name";
-	public static final String PROPERTY_Type = "Type";
-	public static final String P_Type = "Type";
-	public static final String PROPERTY_TypeAsString = "TypeAsString";
-	public static final String P_TypeAsString = "TypeAsString";
 	public static final String PROPERTY_UserId = "UserId";
 	public static final String P_UserId = "UserId";
 
@@ -36,21 +36,84 @@ public class OperatingSystem extends OAObject {
 
 	protected int id;
 	protected String name;
-	protected int type;
-	public static final int TYPE_Unknown = 0;
-	public static final int TYPE_Solaris = 1;
-	public static final int TYPE_Linux = 2;
-	public static final int TYPE_Windows = 3;
-	public static final int TYPE_Other = 4;
-	public static final Hub<String> hubType;
-	static {
-		hubType = new Hub<String>(String.class);
-		hubType.addElement("Unknown");
-		hubType.addElement("Solaris");
-		hubType.addElement("Linux");
-		hubType.addElement("Windows");
-		hubType.addElement("Other");
-	}
+
+    public static final String P_Type = "type";
+    public static final String P_TypeString = "typeString";
+    public static final String P_TypeEnum = "typeEnum";
+    public static final String P_TypeDisplay = "typeDisplay";
+    protected volatile int type;
+    
+    public static final int TYPE_Unknown = 0;
+    public static final int TYPE_Solaris = 1;
+    public static final int TYPE_Linux = 2;
+    public static final int TYPE_Windows = 3;
+    public static final int TYPE_Other = 4;
+
+    public static enum Type {
+    	Unknown("Unknown"),
+    	Solaris("Solaris"),
+    	Linux("Linux"),
+    	Windows("Windows"),
+    	Other("Other");
+
+        private String display;
+        Type(String display) {
+            this.display = display;
+        }
+
+        public String getDisplay() {
+            return display;
+        }
+    }
+    @OAProperty(displayLength = 5, isNameValue = true)
+    @OAColumn(sqlType = java.sql.Types.INTEGER)
+    public int getType() {
+        return type;
+    }
+    public void setType(int newValue) {
+        int old = type;
+        fireBeforePropertyChange(P_Type, old, newValue);
+        this.type = newValue;
+        firePropertyChange(P_Type, old, this.type);
+    }
+    @OAProperty(enumPropertyName = P_Type)
+    public String getTypeString() {
+        Type type = getTypeEnum();
+        if (type == null) return null;
+        return type.name();
+    }
+    public void setTypeString(String val) {
+        int x = -1;
+        if (OAString.isNotEmpty(val)) {
+            Type type = Type.valueOf(val);
+            if (type != null) x = type.ordinal();
+        }
+        if (x < 0) setNull(P_Type);
+        else setType(x);
+    }
+    @OAProperty(enumPropertyName = P_Type)
+    public Type getTypeEnum() {
+        if (isNull(P_Type)) return null;
+        final int val = getType();
+        if (val < 0 || val >= Type.values().length) return null;
+        return Type.values()[val];
+    }
+    public void setTypeEnum(Type val) {
+        if (val == null) {
+            setNull(P_Type);
+        }
+        else {
+            setType(val.ordinal());
+        }
+    }
+    @OACalculatedProperty(enumPropertyName = P_Type, displayName = "Type", displayLength = 14, columnLength = 6, properties = {P_Type} )
+    public String getTypeDisplay() {
+        Type type = getTypeEnum();
+        if (type == null) return null;
+        return type.getDisplay();
+    }
+	
+	
 	protected String userId;
 
 	// Links to other objects.
@@ -89,30 +152,6 @@ public class OperatingSystem extends OAObject {
 		String old = name;
 		this.name = newValue;
 		firePropertyChange(P_Name, old, this.name);
-	}
-
-	@OAProperty(displayLength = 12, columnLength = 7, isNameValue = true, importMatch = true)
-	@OAColumn(sqlType = java.sql.Types.INTEGER)
-	public int getType() {
-		return type;
-	}
-
-	public void setType(int newValue) {
-		fireBeforePropertyChange(P_Type, this.type, newValue);
-		int old = type;
-		this.type = newValue;
-		firePropertyChange(P_Type, old, this.type);
-	}
-
-	public String getTypeAsString() {
-		if (isNull(P_Type)) {
-			return "";
-		}
-		String s = hubType.getAt(getType());
-		if (s == null) {
-			s = "";
-		}
-		return s;
 	}
 
 	@OAProperty(displayName = "User Id", maxLength = 12, displayLength = 10)

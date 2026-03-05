@@ -13,6 +13,7 @@ import com.remodel.model.oa.filter.*;
 import com.remodel.model.oa.propertypath.*;
 import com.viaoa.annotation.*;
 import com.viaoa.util.OADateTime;
+import com.remodel.model.delegate.OAObjectInfoDelegate;
  
 @OAClass(
     lowerName = "jsonObject",
@@ -66,12 +67,6 @@ public class JsonObject extends OAObject {
     }
     public static final int TYPE_ONE = 0;
     public static final int TYPE_MANY = 1;
-    public static final Hub<String> hubType;
-    static {
-        hubType = new Hub<String>(String.class);
-        hubType.addElement("One");
-        hubType.addElement("Many");
-    }
     protected volatile String fileName;
     protected volatile String packageName;
     protected volatile String matchValue;

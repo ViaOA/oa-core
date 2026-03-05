@@ -1,11 +1,9 @@
 package test.hifive.model.oa;
  
-import java.sql.*;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADateTime;
  
 @OAClass(
     shortName = "ci",
@@ -28,9 +26,10 @@ public class ConnectionInfo extends OAObject {
     public static final String PROPERTY_CloseDateTime = "CloseDateTime";
     public static final String PROPERTY_TotalMemory = "TotalMemory";
     public static final String PROPERTY_FreeMemory = "FreeMemory";
-    public static final String PROPERTY_Status = "Status";
-     
-     
+    public static final String P_Status = "status";
+    public static final String P_StatusString = "statusString";
+    public static final String P_StatusEnum = "statusEnum";
+    public static final String P_StatusDisplay = "statusDisplay";
     public static final String PROPERTY_ErrorInfos = "ErrorInfos";
      
     protected int id;
@@ -43,18 +42,25 @@ public class ConnectionInfo extends OAObject {
     protected OADateTime closeDateTime;
     protected long totalMemory;
     protected long freeMemory;
-    protected int status;
+    protected volatile int status;
+
+    public static enum Status {
+    	Connected("Connected"),
+    	ClosedByUser("Closed By User"),
+    	Disconected("Disconected");
+    	
+        private String display;
+        Status(String display) {
+            this.display = display;
+        }
+        public String getDisplay() {
+            return display;
+        }
+    }
     public static final int STATUS_Connected = 0;
     public static final int STATUS_ClosedByUser = 1;
     public static final int STATUS_Disconected = 2;
-    public static final Hub hubStatus;
-    static {
-        hubStatus = new Hub(String.class);
-        hubStatus.addElement("Connected");
-        hubStatus.addElement("Closed By User");
-        hubStatus.addElement("Disconected");
-    }
-     
+
     // Links to other objects.
     protected transient Hub<ErrorInfo> hubErrorInfos;
      
@@ -196,17 +202,6 @@ public class ConnectionInfo extends OAObject {
     }
     
      
-    @OAProperty(displayLength = 18, columnLength = 12, isProcessed = true)
-    @OAColumn(sqlType = java.sql.Types.INTEGER)
-    public int getStatus() {
-        return status;
-    }
-    
-    public void setStatus(int newValue) {
-        int old = status;
-        this.status = newValue;
-        firePropertyChange(PROPERTY_Status, old, this.status);
-    }
     
      
     @OAMany(
@@ -224,7 +219,54 @@ public class ConnectionInfo extends OAObject {
         return hubErrorInfos;
     }
     
-     
+    @OAProperty(lowerName = "status", displayLength = 14, uiColumnLength = 6, isNameValue = true)
+    @OAColumn(name = "Status", sqlType = java.sql.Types.INTEGER)
+    public int getStatus() {
+        return status;
+    }
+    public void setStatus(int newValue) {
+        int old = status;
+        fireBeforePropertyChange(P_Status, old, newValue);
+        this.status = newValue;
+        firePropertyChange(P_Status, old, this.status);
+    }
+    @OAProperty(enumPropertyName = P_Status)
+    public String getStatusString() {
+        Status status = getStatusEnum();
+        if (status == null) return null;
+        return status.name();
+    }
+    public void setStatusString(String val) {
+        int x = -1;
+        if (OAString.isNotEmpty(val)) {
+            Status status = Status.valueOf(val);
+            if (status != null) x = status.ordinal();
+        }
+        if (x < 0) setNull(P_Status);
+        else setStatus(x);
+    }
+    @OAProperty(enumPropertyName = P_Status)
+    public Status getStatusEnum() {
+        if (isNull(P_Status)) return null;
+        final int val = getStatus();
+        if (val < 0 || val >= Status.values().length) return null;
+        return Status.values()[val];
+    }
+    public void setStatusEnum(Status val) {
+        if (val == null) {
+            setNull(P_Status);
+        }
+        else {
+            setStatus(val.ordinal());
+        }
+    }
+    @OACalculatedProperty(enumPropertyName = P_Status, displayName = "Status", displayLength = 14, columnLength = 6, properties = {P_Status} )
+    public String getStatusDisplay() {
+        Status status = getStatusEnum();
+        if (status == null) return null;
+        return status.getDisplay();
+    }
+ 
      
 }
  

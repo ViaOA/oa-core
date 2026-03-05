@@ -4,12 +4,12 @@ import java.io.BufferedReader;
 import java.io.StringReader;
 
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectPropertyDelegate;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAString;
 
 import test.xice.tsac.delegate.RemoteDelegate;
+import test.xice.tsac.model.delegate.OAObjectPropertyDelegate;
+import test.xice.tsac.model.delegate.OASyncDelegate;
 import test.xice.tsac.model.oa.PackageType;
 import test.xice.tsac.model.oa.RCCommand;
 import test.xice.tsac.model.oa.RCExecute;

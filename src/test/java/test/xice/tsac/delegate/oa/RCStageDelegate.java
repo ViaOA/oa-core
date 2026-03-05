@@ -4,12 +4,12 @@ import java.util.ArrayList;
 
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectPropertyDelegate;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.*;
 
 import test.xice.tsac.delegate.ModelDelegate;
 import test.xice.tsac.delegate.RemoteDelegate;
+import test.xice.tsac.model.delegate.OAObjectPropertyDelegate;
+import test.xice.tsac.model.delegate.OASyncDelegate;
 import test.xice.tsac.model.oa.*;
 import test.xice.tsac.model.oa.propertypath.*;
 

@@ -7,12 +7,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
+import com.cdi.model.delegate.HubAODelegate;
 import com.cdi.model.oa.*;
 import com.cdi.model.oa.cs.ClientRoot;
 import com.cdi.model.oa.cs.ServerRoot;
 import com.cdi.model.oa.filter.*;
 import com.viaoa.hub.*;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.OAString;
 
 /**

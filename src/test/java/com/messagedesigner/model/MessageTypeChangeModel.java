@@ -22,6 +22,8 @@ import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import com.viaoa.filter.*;
 import com.viaoa.datasource.*;
+import com.messagedesigner.model.delegate.*;
+
 
 public class MessageTypeChangeModel extends OAObjectModel {
     private static Logger LOG = Logger.getLogger(MessageTypeChangeModel.class.getName());

@@ -5,8 +5,6 @@ import java.util.ArrayList;
 
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectPropertyDelegate;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.*;
 
 import test.xice.tsac.delegate.ModelDelegate;
@@ -22,12 +20,14 @@ import test.xice.tsac.model.oa.propertypath.SiloPP;
 public class RCDownloadDelegate {
 
     public static void run(final RCDownload download) throws Exception {
+    	/*qqqqqqqqqq    	
         if (OASyncDelegate.callSyncIsServer()) {
             _run(download);
         }
         else {
             // send to server
         }
+        */
     }
 
     protected static boolean _run(final RCDownload rcDownload) throws Exception {
@@ -77,12 +77,14 @@ public class RCDownloadDelegate {
     
     
     public static void process(final RCDownload download) throws Exception {
+    	/*qqqqqqqqqq    	
         if (OASyncDelegate.callSyncIsServer()) {
             _process(download);
         }
         else {
             // send to server
         }
+        */
     }
     protected static void _process(final RCDownload rcDownload) throws Exception {
         if (rcDownload == null) throw new RuntimeException("download can not be null");
@@ -115,6 +117,8 @@ public class RCDownloadDelegate {
             if (!(obj instanceof OAObject)) continue;
             OAObject oaObj = (OAObject) obj;
 
+            /*qqqqqqqqqq    	
+            
             String objectName = (String) OAObjectPropertyDelegate.getProperty(oaObj, RCExecuteDelegate.JsonObjectName);
             if (objectName == null || !objectName.equalsIgnoreCase("DeployDownloadOutput"))  {
                 continue;
@@ -133,6 +137,7 @@ public class RCDownloadDelegate {
                 msg += "\n  error: "+detail.getInvalidMessage(); 
             }
             else detail.setSelected(true);
+            */
         }
         if (msg == null) msg = "";
         else msg += "\n";;
@@ -141,9 +146,12 @@ public class RCDownloadDelegate {
     }
 
     private static String getValue(OAObject oaObj, String propName) {
+    	/*qqqqqqqqqq    	
         String prop = (String) OAObjectPropertyDelegate.getProperty(oaObj, propName);
         if ("null".equals(prop)) prop = null;
         return prop;
+        */
+    	return "qqq";
     }
     
     private static RCDownloadDetail _process3(final Environment env, final RCDeploy rcDeploy, final RCDownload rcDownload, final OAObject oaObj) {
@@ -235,12 +243,14 @@ public class RCDownloadDelegate {
 
 
     public static void load(final RCDownload download) throws Exception {
+    	/*qqqqqqqqqq    	
         if (OASyncDelegate.callSyncIsServer()) {
             _load(download);
         }
         else {
             // send to server
         }
+        */
     }
 
     private static void _load(final RCDownload rcDownload) throws Exception {

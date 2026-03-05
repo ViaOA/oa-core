@@ -2,6 +2,10 @@ package com.auto.dev.reportercorp.model;
 
 import java.util.logging.Logger;
 
+import com.auto.dev.reportercorp.model.delegate.HubDelegate;
+import com.auto.dev.reportercorp.model.delegate.HubDetailDelegate;
+import com.auto.dev.reportercorp.model.delegate.HubSelectDelegate;
+import com.auto.dev.reportercorp.model.delegate.OAObjectCallbackDelegate;
 import com.auto.dev.reportercorp.model.oa.EnvironmentSnapshot;
 import com.auto.dev.reportercorp.model.oa.SnapshotReport;
 import com.auto.dev.reportercorp.model.oa.SnapshotReportTemplate;
@@ -10,11 +14,7 @@ import com.auto.dev.reportercorp.model.search.SnapshotReportSearchModel;
 import com.auto.dev.reportercorp.model.search.SnapshotReportTemplateSearchModel;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubCopy;
-import com.viaoa.hub.HubDelegate;
-import com.viaoa.hub.HubDetailDelegate;
-import com.viaoa.hub.HubSelectDelegate;
 import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectModel;
 
 public class SnapshotReportModel extends OAObjectModel {
@@ -156,7 +156,7 @@ public class SnapshotReportModel extends OAObjectModel {
 		modelParentSnapshotReport.setAllowSearch(false);
 		modelParentSnapshotReport.setAllowHubSearch(true);
 		modelParentSnapshotReport.setAllowGotoEdit(true);
-		OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
+		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
 		modelParentSnapshotReport.setCreateUI(li == null || !SnapshotReport.P_ParentSnapshotReport.equalsIgnoreCase(li.getName()));
 		modelParentSnapshotReport.setViewOnly(getViewOnly());
 		// call SnapshotReport.parentSnapshotReportModelCallback(SnapshotReportModel) to be able to customize this model

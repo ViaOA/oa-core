@@ -21,10 +21,10 @@ import com.viaoa.annotation.OATable;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCallback;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAString;
+import com.remodel.model.delegate.OAObjectInfoDelegate;
 
 @OAClass(lowerName = "repository", pluralName = "Repositories", shortName = "rps", displayName = "Repository", displayProperty = "fileName", rootTreePropertyPaths = {
 		"[Project]." + Project.P_Repositories

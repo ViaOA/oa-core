@@ -15,6 +15,9 @@ import com.corptostore.resource.Resource;
 import com.corptostore.model.DashboardLineModel;
 import com.corptostore.model.DashboardModel;
 import com.corptostore.model.EnvironmentModel;
+import com.corptostore.model.delegate.HubDelegate;
+import com.corptostore.model.delegate.HubDetailDelegate;
+import com.corptostore.model.delegate.OAObjectCallbackDelegate;
 import com.corptostore.model.oa.Dashboard;
 import com.corptostore.model.oa.DashboardLine;
 import com.corptostore.model.oa.Environment;
@@ -117,7 +120,7 @@ public class DashboardLineModel extends OAObjectModel {
         modelDashboard.setAllowSearch(false);
         modelDashboard.setAllowHubSearch(false);
         modelDashboard.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
         modelDashboard.setCreateUI(li == null || !DashboardLine.P_Dashboard.equalsIgnoreCase(li.getName()) );
         modelDashboard.setViewOnly(getViewOnly());
         // call DashboardLine.dashboardModelCallback(DashboardModel) to be able to customize this model

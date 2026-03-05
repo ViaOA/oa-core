@@ -3,6 +3,9 @@ package com.auto.dev.reportercorp.model;
 import java.util.logging.Logger;
 
 import com.auto.dev.reportercorp.delegate.ModelDelegate;
+import com.auto.dev.reportercorp.model.delegate.HubDelegate;
+import com.auto.dev.reportercorp.model.delegate.HubDetailDelegate;
+import com.auto.dev.reportercorp.model.delegate.OAObjectCallbackDelegate;
 import com.auto.dev.reportercorp.model.oa.AppServer;
 import com.auto.dev.reportercorp.model.oa.AppUser;
 import com.auto.dev.reportercorp.model.oa.AppUserError;
@@ -11,10 +14,7 @@ import com.auto.dev.reportercorp.model.search.AppServerSearchModel;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubCombined;
 import com.viaoa.hub.HubCopy;
-import com.viaoa.hub.HubDelegate;
-import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectModel;
 
 public class AppUserLoginModel extends OAObjectModel {
@@ -139,7 +139,7 @@ public class AppUserLoginModel extends OAObjectModel {
 		modelAppUser.setAllowSearch(false);
 		modelAppUser.setAllowHubSearch(false);
 		modelAppUser.setAllowGotoEdit(false);
-		OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
+		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
 		modelAppUser.setCreateUI(li == null || !AppUserLogin.P_AppUser.equalsIgnoreCase(li.getName()));
 		modelAppUser.setViewOnly(getViewOnly());
 		// call AppUserLogin.appUserModelCallback(AppUserModel) to be able to customize this model

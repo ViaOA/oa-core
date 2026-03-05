@@ -5,7 +5,6 @@ import java.util.logging.Logger;
 
 import com.cdi.model.oa.*;
 import com.viaoa.hub.Hub;
-import com.viaoa.sync.OASync;
 import com.viaoa.util.*;
 
 public class ProductionDateDelegate {

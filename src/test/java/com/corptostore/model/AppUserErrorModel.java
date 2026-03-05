@@ -14,6 +14,9 @@ import com.corptostore.model.search.*;
 import com.corptostore.resource.Resource;
 import com.corptostore.model.AppUserErrorModel;
 import com.corptostore.model.AppUserLoginModel;
+import com.corptostore.model.delegate.HubDelegate;
+import com.corptostore.model.delegate.HubDetailDelegate;
+import com.corptostore.model.delegate.OAObjectCallbackDelegate;
 import com.corptostore.model.oa.AppUserError;
 import com.corptostore.model.oa.AppUserLogin;
 import com.viaoa.annotation.*;
@@ -94,7 +97,7 @@ public class AppUserErrorModel extends OAObjectModel {
         modelAppUserLogin.setAllowSearch(false);
         modelAppUserLogin.setAllowHubSearch(false);
         modelAppUserLogin.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
         modelAppUserLogin.setCreateUI(li == null || !AppUserError.P_AppUserLogin.equalsIgnoreCase(li.getName()) );
         modelAppUserLogin.setViewOnly(getViewOnly());
         // call AppUserError.appUserLoginModelCallback(AppUserLoginModel) to be able to customize this model

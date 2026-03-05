@@ -10,7 +10,7 @@ import com.viaoa.util.*;
 import test.xice.tsam.delegate.oa.*;
 import test.xice.tsam.model.oa.filter.*;
 import test.xice.tsam.model.oa.propertypath.*;
-
+import test.xice.tsam.model.delegate.OAObjectInfoDelegate;
 import test.xice.tsam.model.oa.ApplicationType;
 import test.xice.tsam.model.oa.Silo;
 import test.xice.tsam.model.oa.SiloConfig;

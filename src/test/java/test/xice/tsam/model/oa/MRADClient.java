@@ -6,6 +6,8 @@ import java.sql.*;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
+
+import test.xice.tsam.model.delegate.OAObjectInfoDelegate;
 import test.xice.tsam.model.oa.Application;
 import test.xice.tsam.model.oa.ApplicationType;
 import test.xice.tsam.model.oa.HostInfo;

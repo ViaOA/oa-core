@@ -6,8 +6,8 @@ import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADate;
 
+import test.hifive.model.delegate.OAObjectInfoDelegate;
 import test.hifive.model.oa.filter.*;
 import test.hifive.model.oa.propertypath.*;
  
@@ -41,10 +41,6 @@ public class PointsRequest extends OAObject {
     public static final String P_Filename = "Filename";
     public static final String PROPERTY_ApprovedDate = "ApprovedDate";
     public static final String P_ApprovedDate = "ApprovedDate";
-    public static final String PROPERTY_RequestType = "RequestType";
-    public static final String P_RequestType = "RequestType";
-    public static final String PROPERTY_RequestTypeAsString = "RequestTypeAsString";
-    public static final String P_RequestTypeAsString = "RequestTypeAsString";
      
     public static final String PROPERTY_TotalValue = "TotalValue";
     public static final String P_TotalValue = "TotalValue";
@@ -75,7 +71,35 @@ public class PointsRequest extends OAObject {
     protected String errorNotes;
     protected String filename;
     protected OADate approvedDate;
-    protected int requestType;
+
+    
+    
+    public static final String P_RequestType = "requestType";
+    public static final String P_RequestTypeString = "requestTypeString";
+    public static final String P_RequestTypeEnum = "requestTypeEnum";
+    public static final String P_RequestTypeDisplay = "requestTypeDisplay";
+    
+    protected volatile int requestType;
+    public static enum RequestType {
+    	Unknown("Unknown"),
+    	Shopping("Shopping"),
+    	newPointsPurchase("newPointsPurchase"),
+    	discretionaryRequest("discretionaryRequest"),
+    	discretionaryDistribute("discretionaryDistribute"),
+    	recognition("recognition"),
+    	transfer("transfer"),
+    	upload("upload"),
+    	nomination("nomination");
+
+        private String display;
+        RequestType(String display) {
+            this.display = display;
+        }
+
+        public String getDisplay() {
+            return display;
+        }
+    }
     public static final int REQUESTTYPE_unknown = 0;
     public static final int REQUESTTYPE_shopping = 1;
     public static final int REQUESTTYPE_newPointsPurchase = 2;
@@ -85,20 +109,7 @@ public class PointsRequest extends OAObject {
     public static final int REQUESTTYPE_transfer = 6;
     public static final int REQUESTTYPE_upload = 7;
     public static final int REQUESTTYPE_nomination = 8;
-    public static final Hub<String> hubRequestType;
-    static {
-        hubRequestType = new Hub<String>(String.class);
-        hubRequestType.addElement("Unknown");
-        hubRequestType.addElement("shopping");
-        hubRequestType.addElement("New Points Purchase");
-        hubRequestType.addElement("Discretionary Request");
-        hubRequestType.addElement("Discretionary Distribute");
-        hubRequestType.addElement("Recognition");
-        hubRequestType.addElement("Transfer");
-        hubRequestType.addElement("Upload");
-        hubRequestType.addElement("Nomination");
-    }
-     
+    
     // Links to other objects.
     protected transient Employee approvingEmployee;
     protected transient User approvingUser;
@@ -243,27 +254,7 @@ public class PointsRequest extends OAObject {
         this.approvedDate = newValue;
         firePropertyChange(P_ApprovedDate, old, this.approvedDate);
     }
-    @OAProperty(displayName = "Request Type", description = "The type of request", displayLength = 5, isNameValue = true)
-    @OAColumn(sqlType = java.sql.Types.INTEGER)
-    /**
-      The type of request
-    */
-    public int getRequestType() {
-        return requestType;
-    }
-    
-    public void setRequestType(int newValue) {
-        fireBeforePropertyChange(P_RequestType, this.requestType, newValue);
-        int old = requestType;
-        this.requestType = newValue;
-        firePropertyChange(P_RequestType, old, this.requestType);
-    }
-    public String getRequestTypeAsString() {
-        if (isNull(P_RequestType)) return "";
-        String s = hubRequestType.getAt(getRequestType());
-        if (s == null) s = "";
-        return s;
-    }
+
     @OACalculatedProperty(displayName = "Total Value", description = "The total value of this points upload", decimalPlaces = 2, isCurrency = true, displayLength = 7, properties = {P_PointsRecords+"."+PointsRecord.P_Points, P_RequestingEmployee+"."+Employee.P_Program+"."+Program.P_PointValue})
     /**
       The total value of this points request
@@ -436,6 +427,55 @@ public class PointsRequest extends OAObject {
         }
         return requestingEmployee;
     }
+
+    @OAProperty(displayName = "Request Type", description = "The type of request", displayLength = 5, isNameValue = true)
+    @OAColumn(sqlType = java.sql.Types.INTEGER)
+    public int getRequestType() {
+        return requestType;
+    }
+    public void setRequestType(int newValue) {
+        int old = requestType;
+        fireBeforePropertyChange(P_RequestType, old, newValue);
+        this.requestType = newValue;
+        firePropertyChange(P_RequestType, old, this.requestType);
+    }
+    @OAProperty(enumPropertyName = P_RequestType)
+    public String getRequestTypeString() {
+        RequestType requestType = getRequestTypeEnum();
+        if (requestType == null) return null;
+        return requestType.name();
+    }
+    public void setRequestTypeString(String val) {
+        int x = -1;
+        if (OAString.isNotEmpty(val)) {
+            RequestType requestType = RequestType.valueOf(val);
+            if (requestType != null) x = requestType.ordinal();
+        }
+        if (x < 0) setNull(P_RequestType);
+        else setRequestType(x);
+    }
+    @OAProperty(enumPropertyName = P_RequestType)
+    public RequestType getRequestTypeEnum() {
+        if (isNull(P_RequestType)) return null;
+        final int val = getRequestType();
+        if (val < 0 || val >= RequestType.values().length) return null;
+        return RequestType.values()[val];
+    }
+    public void setRequestTypeEnum(RequestType val) {
+        if (val == null) {
+            setNull(P_RequestType);
+        }
+        else {
+            setRequestType(val.ordinal());
+        }
+    }
+    @OACalculatedProperty(enumPropertyName = P_RequestType, displayName = "RequestType", displayLength = 14, columnLength = 6, properties = {P_RequestType} )
+    public String getRequestTypeDisplay() {
+        RequestType requestType = getRequestTypeEnum();
+        if (requestType == null) return null;
+        return requestType.getDisplay();
+    }
+    
     
     public void setRequestingEmployee(Employee newValue) {
         fireBeforePropertyChange(P_RequestingEmployee, this.requestingEmployee, newValue);

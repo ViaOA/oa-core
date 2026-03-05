@@ -2,7 +2,6 @@ package test.xice.tsac.delegate.oa;
 
 
 import com.viaoa.hub.Hub;
-import com.viaoa.sync.OASyncDelegate;
 
 import test.xice.tsac.delegate.RemoteDelegate;
 import test.xice.tsac.model.oa.*;

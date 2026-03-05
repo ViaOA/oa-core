@@ -3,7 +3,6 @@ package test.xice.tsac.model.oa;
  
 import java.sql.*;
 import com.viaoa.object.*;
-import com.viaoa.remote.OARemoteThreadDelegate;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import com.viaoa.annotation.*;
@@ -105,13 +104,14 @@ public class LLADServer extends OAObject {
         if (newValue != null || !isServer()) return;
         
         try {
-            OARemoteThreadDelegate.sendMessages(true);
+        	//qqqqqqqq
+            //OARemoteThreadDelegate.sendMessages(true);
             for (LLADClient c : getLLADClients()) {
                 c.getUserLogins().deleteAll();
             }
         }
         finally {
-            OARemoteThreadDelegate.sendMessages(false);
+            //OARemoteThreadDelegate.sendMessages(false);
         }
     }
     @OACalculatedProperty(displayName = "Enable LLADCommands", displayLength = 5)

@@ -75,22 +75,6 @@ public class TesterStepType extends OAObject {
     public static final int TYPE_getResults = 8;
     public static final int TYPE_cancel = 9;
     public static final int TYPE_resetEnvironment = 10;
-    public static final Hub<String> hubType;
-    static {
-        hubType = new Hub<String>(String.class);
-        hubType.addElement("Get Environment Info");
-        hubType.addElement("Pause Environment");
-        hubType.addElement("Select Stores");
-        hubType.addElement("Create Transmit Batch");
-        hubType.addElement("Create Transmit Data");
-        hubType.addElement("Set Batch As Completed");
-        hubType.addElement("Continue Environment");
-        hubType.addElement("Verify");
-        hubType.addElement("Get Results");
-        hubType.addElement("Cancel");
-        hubType.addElement("Reset Environment");
-    }
-     
      
     public TesterStepType() {
         if (!isLoading()) setObjectDefaults();

@@ -1391,7 +1391,7 @@ public abstract class HubDetailService {
 	 * @param hub2 the second hub
 	 * @return true if both hubs share the same master link info, otherwise false
 	 */
-	public <T extends OAObject> boolean getIsFromSameMasterHub(Hub<T> hub1, Hub<T> hub2) {
+	public boolean getIsFromSameMasterHub(Hub<?> hub1, Hub<?> hub2) {
 		// if (getLinkInfoFromMasterToDetail(getOriginalHub().getMasterHub()) == getLinkInfoFromMasterToDetail(getPlatformCampaigns())) {
 		if (hub1 == null || hub2 == null) {
 			return false;

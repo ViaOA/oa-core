@@ -15,7 +15,6 @@ import test.xice.tsam.delegate.oa.EnvironmentTypeDelegate;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.util.OAString;
 import com.viaoa.xml.OAXMLReader;
 import com.viaoa.xml.OAXMLReader1;

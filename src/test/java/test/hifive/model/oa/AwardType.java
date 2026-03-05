@@ -6,6 +6,7 @@ import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 
+import test.hifive.model.delegate.OAObjectInfoDelegate;
 import test.hifive.model.oa.filter.*;
 import test.hifive.model.oa.propertypath.*;
 
@@ -594,9 +595,9 @@ public class AwardType extends OAObject {
     public Hub<Item> getAvailableHelpingHandItems() {
         if (hubAvailableHelpingHandItems == null) {
             hubAvailableHelpingHandItems = (Hub<Item>) getHub(PROPERTY_AvailableHelpingHandItems);
-            HubFilter hf = new HubFilter(getAvailableItems(), hubAvailableHelpingHandItems, Item.PROPERTY_ItemTypes) {
+            HubFilter<Item> hf = new HubFilter<>(getAvailableItems(), hubAvailableHelpingHandItems, Item.PROPERTY_ItemTypes) {
                 @Override
-                public boolean isUsed(Object object) {
+                public boolean isUsed(Item object) {
                     Item item = (Item) object;
                     for (ItemType it : item.getItemTypes()) {
                         if (it.getType() == ItemType.TYPE_HELPINGHANDS) return true;

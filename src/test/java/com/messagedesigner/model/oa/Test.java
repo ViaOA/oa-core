@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 
 import com.messagedesigner.model.oa.method.MessageSourceSaveAsCSVMethod;
 import com.messagedesigner.model.oa.method.MessageSourceSaveAsJsonResourceMethod;
+import com.messagedesigner.model.delegate.OAObjectInfoDelegate;
 import com.messagedesigner.model.oa.Message;
 import com.messagedesigner.model.oa.MessageType;
 import com.messagedesigner.model.oa.MessageTypeRecord;
@@ -25,7 +26,6 @@ import com.viaoa.datasource.OADataSource;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCallback;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAString;
 
@@ -107,14 +107,6 @@ public class Test extends OAObject {
 	public static final int SOURCE_Jcomm = 1;
 	public static final int SOURCE_Jposnd = 2;
 	public static final int SOURCE_Jtrsmt = 3;
-	public static final Hub<String> hubSource;
-	static {
-		hubSource = new Hub<String>(String.class);
-		hubSource.addElement("Unknown");
-		hubSource.addElement("Jcomm");
-		hubSource.addElement("Jposnd");
-		hubSource.addElement("Jtrsmt");
-	}
 	protected volatile String console;
 	protected volatile String rpgMessageDefinitionFile;
 	protected volatile String commonApiRootDirectory;

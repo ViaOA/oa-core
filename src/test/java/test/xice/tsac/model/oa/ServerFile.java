@@ -6,10 +6,11 @@ import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADateTime;
 
 import test.xice.tsac.delegate.RemoteDelegate;
 import test.xice.tsac.delegate.ServerModelDelegate;
+import test.xice.tsac.model.delegate.OAObjectInfoDelegate;
+import test.xice.tsac.model.oa.MRADServerCommand.Type;
 import test.xice.tsac.model.oa.filter.*;
 import test.xice.tsac.model.oa.propertypath.*;
 
@@ -32,11 +33,6 @@ public class ServerFile extends OAObject {
     public static final String PROPERTY_Created = "Created";
     public static final String P_Created = "Created";
     public static final String PROPERTY_FileName = "FileName";
-    public static final String P_FileName = "FileName";
-    public static final String PROPERTY_FileType = "FileType";
-    public static final String P_FileType = "FileType";
-    public static final String PROPERTY_FileTypeAsString = "FileTypeAsString";
-    public static final String P_FileTypeAsString = "FileTypeAsString";
     public static final String PROPERTY_DateTime = "DateTime";
     public static final String P_DateTime = "DateTime";
     public static final String PROPERTY_Length = "Length";
@@ -55,21 +51,85 @@ public class ServerFile extends OAObject {
     protected int id;
     protected OADateTime created;
     protected String fileName;
+
+    
+    public static final String P_FileName = "fileName";
+    
+    public static final String P_FileType = "fileType";
+    public static final String P_FileTypeString = "fileTypeString";
+    public static final String P_FileTypeEnum = "fileTypeEnum";
+    public static final String P_FileTypeDisplay = "fileTypeDisplay";
     protected int fileType;
     public static final int FILETYPE_OTHER = 0;
     public static final int FILETYPE_ICEMESSAGE = 1;
     public static final int FILETYPE_TEXT = 2;
     public static final int FILETYPE_BINARY = 3;
     public static final int FILETYPE_CSV = 4;
-    public static final Hub<String> hubFileType;
-    static {
-        hubFileType = new Hub<String>(String.class);
-        hubFileType.addElement("Other");
-        hubFileType.addElement("ICE Messsage");
-        hubFileType.addElement("Text");
-        hubFileType.addElement("Binary");
-        hubFileType.addElement("Comma separated");
+    public static enum FileType {
+    	Other("Other"),
+    	ICEMESSAGE("ICEMESSAGE"),
+    	TEXT("TEXT"),
+    	Binary("Binary"),
+    	CSV("CSV");
+        private String display;
+        FileType(String display) {
+            this.display = display;
+        }
+        public String getDisplay() {
+            return display;
+        }
     }
+    @OAProperty(displayName = "File Type", displayLength = 16, columnLength = 12, isProcessed = true, isNameValue = true)
+    @OAColumn(sqlType = java.sql.Types.INTEGER)
+    public int getFileType() {
+        return fileType;
+    }
+    public void setFileType(int newValue) {
+        int old = fileType;
+        fireBeforePropertyChange(P_FileType, old, newValue);
+        this.fileType = newValue;
+        firePropertyChange(P_FileType, old, this.fileType);
+    }
+    @OAProperty(enumPropertyName = P_FileType)
+    public String getFileTypeString() {
+        FileType fileType = getFileTypeEnum();
+        if (fileType == null) return null;
+        return fileType.name();
+    }
+    public void setFileTypeString(String val) {
+        int x = -1;
+        if (OAString.isNotEmpty(val)) {
+            FileType fileType = FileType.valueOf(val);
+            if (fileType != null) x = fileType.ordinal();
+        }
+        if (x < 0) setNull(P_FileType);
+        else setFileType(x);
+    }
+    @OAProperty(enumPropertyName = P_FileType)
+    public FileType getFileTypeEnum() {
+        if (isNull(P_FileType)) return null;
+        final int val = getFileType();
+        if (val < 0 || val >= FileType.values().length) return null;
+        return FileType.values()[val];
+    }
+    public void setFileTypeEnum(FileType val) {
+        if (val == null) {
+            setNull(P_FileType);
+        }
+        else {
+            setFileType(val.ordinal());
+        }
+    }
+    @OACalculatedProperty(enumPropertyName = P_FileType, displayName = "FileType", displayLength = 14, columnLength = 6, properties = {P_FileType} )
+    public String getFileTypeDisplay() {
+        FileType fileType = getFileTypeEnum();
+        if (fileType == null) return null;
+        return fileType.getDisplay();
+    }
+
+    
+    
+    
     protected OADateTime dateTime;
     protected long length;
     protected long currentFilePos;
@@ -125,24 +185,6 @@ public class ServerFile extends OAObject {
         String old = fileName;
         this.fileName = newValue;
         firePropertyChange(P_FileName, old, this.fileName);
-    }
-    @OAProperty(displayName = "File Type", displayLength = 16, columnLength = 12, isProcessed = true, isNameValue = true)
-    @OAColumn(sqlType = java.sql.Types.INTEGER)
-    public int getFileType() {
-        return fileType;
-    }
-    
-    public void setFileType(int newValue) {
-        fireBeforePropertyChange(P_FileType, this.fileType, newValue);
-        int old = fileType;
-        this.fileType = newValue;
-        firePropertyChange(P_FileType, old, this.fileType);
-    }
-    public String getFileTypeAsString() {
-        if (isNull(P_FileType)) return "";
-        String s = hubFileType.getAt(getFileType());
-        if (s == null) s = "";
-        return s;
     }
     @OAProperty(displayName = "Date Time", displayLength = 15, isProcessed = true)
     @OAColumn(name = "DateTimeValue", sqlType = java.sql.Types.TIMESTAMP)

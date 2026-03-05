@@ -14,6 +14,10 @@ import com.cdi.model.oa.propertypath.*;
 import com.cdi.model.oa.search.*;
 import com.cdi.model.oa.filter.*;
 import com.cdi.model.search.*;
+import com.cdi.model.delegate.HubDelegate;
+import com.cdi.model.delegate.HubDetailDelegate;
+import com.cdi.model.delegate.HubSelectDelegate;
+import com.cdi.model.delegate.OAObjectCallbackDelegate;
 import com.cdi.model.filter.*;
 import com.cdi.delegate.ModelDelegate;
 import com.cdi.resource.Resource;
@@ -111,7 +115,7 @@ public class ContactModel extends OAObjectModel {
         modelCustomer.setAllowSearch(false);
         modelCustomer.setAllowHubSearch(true);
         modelCustomer.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
         modelCustomer.setCreateUI(li == null || !Contact.P_Customer.equalsIgnoreCase(li.getName()) );
         modelCustomer.setViewOnly(getViewOnly());
         // call Contact.customerModelCallback(CustomerModel) to be able to customize this model

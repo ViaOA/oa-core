@@ -8,6 +8,7 @@ import com.cdi.model.oa.propertypath.*;
 import com.viaoa.annotation.*;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
+import com.viaoa.model.oa.VString;
 import com.viaoa.util.*;
 import com.viaoa.datasource.*;
 import com.viaoa.filter.*;
@@ -57,14 +58,6 @@ public class MoldSearch extends OAObject {
     public static final int SORTBYTYPE_code = 1;
     public static final int SORTBYTYPE_name = 2;
     public static final int SORTBYTYPE_onHand = 3;
-    public static final Hub<String> hubSortByType;
-    static {
-        hubSortByType = new Hub<String>(String.class);
-        hubSortByType.add("None");
-        hubSortByType.add("Code");
-        hubSortByType.add("Name");
-        hubSortByType.add("On Hand");
-    }
 
     public MoldSearch() {
         reset();

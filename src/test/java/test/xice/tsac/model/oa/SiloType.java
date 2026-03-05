@@ -6,6 +6,8 @@ import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 
+import test.xice.tsac.model.delegate.OAObjectInfoDelegate;
+import test.xice.tsac.model.oa.MRADServerCommand.Type;
 import test.xice.tsac.model.oa.filter.*;
 import test.xice.tsac.model.oa.propertypath.*;
 
@@ -26,10 +28,6 @@ public class SiloType extends OAObject {
     public static final String P_Id = "Id";
     public static final String PROPERTY_Name = "Name";
     public static final String P_Name = "Name";
-    public static final String PROPERTY_Type = "Type";
-    public static final String P_Type = "Type";
-    public static final String PROPERTY_TypeAsString = "TypeAsString";
-    public static final String P_TypeAsString = "TypeAsString";
      
      
     public static final String PROPERTY_ApplicationTypes = "ApplicationTypes";
@@ -39,18 +37,82 @@ public class SiloType extends OAObject {
      
     protected int id;
     protected String name;
+
+    
+    
+    public static final String P_Type = "type";
+    public static final String P_TypeString = "typeString";
+    public static final String P_TypeEnum = "typeEnum";
+    public static final String P_TypeDisplay = "typeDisplay";
     protected int type;
     public static final int TYPE_ICE = 0;
     public static final int TYPE_Endex = 1;
     public static final int TYPE_Liffe = 2;
-    public static final Hub<String> hubType;
-    static {
-        hubType = new Hub<String>(String.class);
-        hubType.addElement("ICE IX");
-        hubType.addElement("Endex EX");
-        hubType.addElement("Liffe LX");
+    public static enum Type {
+    	ICE("ICE"),
+    	Endex("Endex"),
+    	LIffe("LIffe");
+
+        private String display;
+        Type(String display) {
+            this.display = display;
+        }
+
+        public String getDisplay() {
+            return display;
+        }
     }
-     
+    @OAProperty(displayLength = 5, columnLength = 15, isProcessed = true, isNameValue = true)
+    @OAColumn(sqlType = java.sql.Types.INTEGER)
+    public int getType() {
+        return type;
+    }
+    public void setType(int newValue) {
+        int old = type;
+        fireBeforePropertyChange(P_Type, old, newValue);
+        this.type = newValue;
+        firePropertyChange(P_Type, old, this.type);
+    }
+    @OAProperty(enumPropertyName = P_Type)
+    public String getTypeString() {
+        Type type = getTypeEnum();
+        if (type == null) return null;
+        return type.name();
+    }
+    public void setTypeString(String val) {
+        int x = -1;
+        if (OAString.isNotEmpty(val)) {
+            Type type = Type.valueOf(val);
+            if (type != null) x = type.ordinal();
+        }
+        if (x < 0) setNull(P_Type);
+        else setType(x);
+    }
+    @OAProperty(enumPropertyName = P_Type)
+    public Type getTypeEnum() {
+        if (isNull(P_Type)) return null;
+        final int val = getType();
+        if (val < 0 || val >= Type.values().length) return null;
+        return Type.values()[val];
+    }
+    public void setTypeEnum(Type val) {
+        if (val == null) {
+            setNull(P_Type);
+        }
+        else {
+            setType(val.ordinal());
+        }
+    }
+    @OACalculatedProperty(enumPropertyName = P_Type, displayName = "Type", displayLength = 14, columnLength = 6, properties = {P_Type} )
+    public String getTypeDisplay() {
+        Type type = getTypeEnum();
+        if (type == null) return null;
+        return type.getDisplay();
+    }
+
+    
+    
+    
     // Links to other objects.
     protected transient Hub<ApplicationType> hubApplicationTypes;
      
@@ -86,24 +148,6 @@ public class SiloType extends OAObject {
         String old = name;
         this.name = newValue;
         firePropertyChange(P_Name, old, this.name);
-    }
-    @OAProperty(displayLength = 5, columnLength = 15, isProcessed = true, isNameValue = true)
-    @OAColumn(sqlType = java.sql.Types.INTEGER)
-    public int getType() {
-        return type;
-    }
-    
-    public void setType(int newValue) {
-        fireBeforePropertyChange(P_Type, this.type, newValue);
-        int old = type;
-        this.type = newValue;
-        firePropertyChange(P_Type, old, this.type);
-    }
-    public String getTypeAsString() {
-        if (isNull(P_Type)) return "";
-        String s = hubType.getAt(getType());
-        if (s == null) s = "";
-        return s;
     }
     @OAMany(
         displayName = "Application Types", 

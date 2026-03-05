@@ -7,6 +7,7 @@ import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import test.xice.tsam.delegate.oa.EnvironmentTypeDelegate;
+import test.xice.tsam.model.delegate.OAObjectInfoDelegate;
 import test.xice.tsam.model.oa.Environment;
 import test.xice.tsam.model.oa.EnvironmentType;
 import test.xice.tsam.model.oa.IDL;

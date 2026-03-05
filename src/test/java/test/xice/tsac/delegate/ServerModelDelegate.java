@@ -4,7 +4,6 @@ package test.xice.tsac.delegate;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.viaoa.hub.*;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.util.*;
 
@@ -118,7 +117,8 @@ public class ServerModelDelegate {
      * then this will return the UserId for the client that is making the call.
      */
     public static AdminUser getRemoteAdminUser() {
-        RequestInfo ri = OAThreadLocalDelegate.getRemoteRequestInfo();
+    	if (true || false) return null;
+        RequestInfo ri = null;//qqqqqqqqq OAThreadLocalDelegate.getRemoteRequestInfo();
         ConnectionInfo ci = null;
         if (ri != null) ci = connectionInfo;
         if (ci == null) {

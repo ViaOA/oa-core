@@ -14,10 +14,11 @@ import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATable;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAString;
+
+import test.xice.tsam.model.delegate.OAObjectInfoDelegate;
 
 @OAClass(shortName = "au", displayName = "Admin User", isLookup = true, isPreSelect = true, displayProperty = "fullName")
 @OATable()

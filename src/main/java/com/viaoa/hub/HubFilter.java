@@ -506,7 +506,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	 *
 	 * @param hub the Hub to monitor
 	 */
-	public void addDependentProperty(Hub<TYPE> hub) {
+	public <T extends OAObject> void addDependentProperty(Hub<t> hub) {
 		if (bClosed) {
 			return;
 		}
@@ -515,9 +515,9 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 		}
 
 		//todo: need to all remove hl on close
-		hub.addHubListener(new HubListenerAdapter() {
+		hub.addHubListener(new HubListenerAdapter<T>() {
 			@Override
-			public void afterChangeActiveObject(HubEvent e) {
+			public void afterChangeActiveObject(HubEvent<T> e) {
 				HubFilter.this.refresh();
 			}
 		});
@@ -530,7 +530,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	 * @param hub  the Hub to monitor
 	 * @param prop the property name or path
 	 */
-	public void addDependentProperty(final Hub<TYPE> hub, String prop) {
+	public void addDependentProperty(final Hub<?> hub, String prop) {
 		addDependentProperty(hub, prop, true);
 	}
 
@@ -542,7 +542,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	 * @param prop              the property name or path
 	 * @param bActiveObjectOnly true to monitor only the active object
 	 */
-	public void addDependentProperty(final Hub<TYPE> hub, String prop, final boolean bActiveObjectOnly) {
+	public <T extends OAObject> void addDependentProperty(final Hub<T> hub, String prop, final boolean bActiveObjectOnly) {
 		if (bClosed) {
 			return;
 		}
@@ -563,14 +563,14 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 		final String propName = s;
 
 		//todo:  need to add remove hl on close
-		HubListener hl = new HubListenerAdapter() {
+		HubListener<T> hl = new HubListenerAdapter<T>() {
 			@Override
-			public void afterChangeActiveObject(HubEvent e) {
+			public void afterChangeActiveObject(HubEvent<T> e) {
 				HubFilter.this.refresh();
 			}
 
 			@Override
-			public void afterPropertyChange(HubEvent e) {
+			public void afterPropertyChange(HubEvent<T> e) {
 				if (bActiveObjectOnly && e.getObject() != hub.getAO()) {
 					return;
 				}

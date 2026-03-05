@@ -10,6 +10,7 @@ import test.xice.tsac.delegate.ModelDelegate;
 import test.xice.tsac.delegate.RemoteDelegate;
 import test.xice.tsac.delegate.ServerModelDelegate;
 import test.xice.tsac.delegate.oa.RemoteClientDelegate;
+import test.xice.tsac.model.delegate.OAObjectInfoDelegate;
 import test.xice.tsac.model.oa.filter.*;
 import test.xice.tsac.model.oa.propertypath.*;
 

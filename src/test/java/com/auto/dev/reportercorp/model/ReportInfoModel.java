@@ -3,6 +3,10 @@ package com.auto.dev.reportercorp.model;
 import java.util.logging.Logger;
 
 import com.auto.dev.reportercorp.delegate.ModelDelegate;
+import com.auto.dev.reportercorp.model.delegate.HubDelegate;
+import com.auto.dev.reportercorp.model.delegate.HubDetailDelegate;
+import com.auto.dev.reportercorp.model.delegate.HubSelectDelegate;
+import com.auto.dev.reportercorp.model.delegate.OAObjectCallbackDelegate;
 import com.auto.dev.reportercorp.model.oa.Report;
 import com.auto.dev.reportercorp.model.oa.ReportInfo;
 import com.auto.dev.reportercorp.model.oa.ReportInstanceProcess;
@@ -15,11 +19,7 @@ import com.viaoa.filter.OAEqualPathFilter;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubCombined;
 import com.viaoa.hub.HubCopy;
-import com.viaoa.hub.HubDelegate;
-import com.viaoa.hub.HubDetailDelegate;
-import com.viaoa.hub.HubSelectDelegate;
 import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectModel;
 import com.viaoa.util.OAFilter;
 
@@ -167,7 +167,7 @@ public class ReportInfoModel extends OAObjectModel {
 		modelReportInstanceProcessorInfo.setAllowSearch(false);
 		modelReportInstanceProcessorInfo.setAllowHubSearch(false);
 		modelReportInstanceProcessorInfo.setAllowGotoEdit(true);
-		OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
+		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
 		modelReportInstanceProcessorInfo
 				.setCreateUI(li == null || !ReportInfo.P_ReportInstanceProcessorInfo.equalsIgnoreCase(li.getName()));
 		modelReportInstanceProcessorInfo.setViewOnly(getViewOnly());

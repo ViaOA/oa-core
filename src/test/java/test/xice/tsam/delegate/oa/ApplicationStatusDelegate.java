@@ -9,12 +9,11 @@ public class ApplicationStatusDelegate {
 
     
     public static ApplicationStatus getApplicationStatus(int type) {
-        ApplicationStatus ss = ModelDelegate.getApplicationStatuses().find(ApplicationStatus.PROPERTY_Type, type);
+        ApplicationStatus ss = ModelDelegate.getApplicationStatuses().find(ApplicationStatus.P_Type, type);
         return ss;
     }
  
     public static void setDefaultColors() {
-        int x = ApplicationStatus.hubType.getSize();
         for (ApplicationStatus ss : ModelDelegate.getApplicationStatuses()) {
             ss.getColor();
         }

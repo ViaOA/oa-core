@@ -14,6 +14,7 @@ import com.messagedesigner.model.oa.filter.*;
 import com.messagedesigner.model.oa.propertypath.*;
 import com.messagedesigner.delegate.ModelDelegate;
 import com.messagedesigner.delegate.oa.MessageTypeRecordDelegate;
+import com.messagedesigner.model.delegate.OAObjectInfoDelegate;
 import com.messagedesigner.model.oa.JsonType;
 import com.messagedesigner.model.oa.MessageRecord;
 import com.messagedesigner.model.oa.MessageSource;
@@ -106,14 +107,6 @@ public class MessageTypeRecord extends OAObject {
     public static final int STATUSTYPE_Mapped = 1;
     public static final int STATUSTYPE_Testing = 2;
     public static final int STATUSTYPE_Verified = 3;
-    public static final Hub<String> hubStatusType;
-    static {
-        hubStatusType = new Hub<String>(String.class);
-        hubStatusType.addElement("Unknown");
-        hubStatusType.addElement("Mapped");
-        hubStatusType.addElement("Testing");
-        hubStatusType.addElement("Verified");
-    }
     protected volatile String notes;
     protected volatile boolean disable;
     protected volatile int seq;

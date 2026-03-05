@@ -6,6 +6,8 @@ import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 
+import test.xice.tsac.model.delegate.OAObjectInfoDelegate;
+import test.xice.tsac.model.oa.MRADServerCommand.Type;
 import test.xice.tsac.model.oa.filter.*;
 import test.xice.tsac.model.oa.propertypath.*;
 
@@ -28,10 +30,6 @@ public class RCCommand extends OAObject {
     public static final String P_Description = "Description";
     public static final String PROPERTY_CommandLine = "CommandLine";
     public static final String P_CommandLine = "CommandLine";
-    public static final String PROPERTY_Type = "Type";
-    public static final String P_Type = "Type";
-    public static final String PROPERTY_TypeAsString = "TypeAsString";
-    public static final String P_TypeAsString = "TypeAsString";
      
      
     public static final String PROPERTY_RCExecutes = "RCExecutes";
@@ -40,7 +38,14 @@ public class RCCommand extends OAObject {
     protected int id;
     protected String description;
     protected String commandLine;
-    protected int type;
+
+    
+    
+    public static final String P_Type = "type";
+    public static final String P_TypeString = "typeString";
+    public static final String P_TypeEnum = "typeEnum";
+    public static final String P_TypeDisplay = "typeDisplay";
+    protected volatile int type;
     public static final int TYPE_download = 0;
     public static final int TYPE_stage = 1;
     public static final int TYPE_install = 2;
@@ -51,21 +56,73 @@ public class RCCommand extends OAObject {
     public static final int TYPE_getPackageList = 7;
     public static final int TYPE_start = 8;
     public static final int TYPE_stop = 9;
-    public static final Hub<String> hubType;
-    static {
-        hubType = new Hub<String>(String.class);
-        hubType.addElement("Download");
-        hubType.addElement("Stage");
-        hubType.addElement("Install");
-        hubType.addElement("Get Repo Versions");
-        hubType.addElement("Get Installed Versions");
-        hubType.addElement("Get Service List");
-        hubType.addElement("Get Server List");
-        hubType.addElement("Get Package List");
-        hubType.addElement("Start");
-        hubType.addElement("Stop");
+    public static enum Type {
+    	Download("Download"),
+    	Stage("Stage"),
+    	Install("Install"),
+    	GetRepoVersions("getRepoVersions");
+
+        private String display;
+        Type(String display) {
+            this.display = display;
+        }
+
+        public String getDisplay() {
+            return display;
+        }
+    }    
+    
+    @OAProperty(displayLength = 20, columnLength = 18, isNameValue = true)
+    @OAColumn(sqlType = java.sql.Types.INTEGER)
+    public int getType() {
+        return type;
     }
-     
+    public void setType(int newValue) {
+        int old = type;
+        fireBeforePropertyChange(P_Type, old, newValue);
+        this.type = newValue;
+        firePropertyChange(P_Type, old, this.type);
+    }
+    @OAProperty(enumPropertyName = P_Type)
+    public String getTypeString() {
+        Type type = getTypeEnum();
+        if (type == null) return null;
+        return type.name();
+    }
+    public void setTypeString(String val) {
+        int x = -1;
+        if (OAString.isNotEmpty(val)) {
+            Type type = Type.valueOf(val);
+            if (type != null) x = type.ordinal();
+        }
+        if (x < 0) setNull(P_Type);
+        else setType(x);
+    }
+    @OAProperty(enumPropertyName = P_Type)
+    public Type getTypeEnum() {
+        if (isNull(P_Type)) return null;
+        final int val = getType();
+        if (val < 0 || val >= Type.values().length) return null;
+        return Type.values()[val];
+    }
+    public void setTypeEnum(Type val) {
+        if (val == null) {
+            setNull(P_Type);
+        }
+        else {
+            setType(val.ordinal());
+        }
+    }
+    @OACalculatedProperty(enumPropertyName = P_Type, displayName = "Type", displayLength = 14, columnLength = 6, properties = {P_Type} )
+    public String getTypeDisplay() {
+        Type type = getTypeEnum();
+        if (type == null) return null;
+        return type.getDisplay();
+    }
+
+    
+    
+    
     // Links to other objects.
      
     public RCCommand() {
@@ -112,24 +169,6 @@ public class RCCommand extends OAObject {
         String old = commandLine;
         this.commandLine = newValue;
         firePropertyChange(P_CommandLine, old, this.commandLine);
-    }
-    @OAProperty(displayLength = 20, columnLength = 18, isNameValue = true)
-    @OAColumn(sqlType = java.sql.Types.INTEGER)
-    public int getType() {
-        return type;
-    }
-    
-    public void setType(int newValue) {
-        fireBeforePropertyChange(P_Type, this.type, newValue);
-        int old = type;
-        this.type = newValue;
-        firePropertyChange(P_Type, old, this.type);
-    }
-    public String getTypeAsString() {
-        if (isNull(P_Type)) return "";
-        String s = hubType.getAt(getType());
-        if (s == null) s = "";
-        return s;
     }
     @OAMany(
         toClass = RCExecute.class, 

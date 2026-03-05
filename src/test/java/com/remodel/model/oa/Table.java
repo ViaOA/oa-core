@@ -13,6 +13,7 @@ import com.remodel.model.oa.filter.*;
 import com.remodel.model.oa.propertypath.*;
 import com.viaoa.annotation.*;
 import com.viaoa.util.OADateTime;
+import com.remodel.model.delegate.OAObjectInfoDelegate;
  
 @OAClass(
     lowerName = "table",
@@ -80,14 +81,6 @@ public class Table extends OAObject {
     public static final int USETYPE_NotUsed = 1;
     public static final int USETYPE_WillUse = 2;
     public static final int USETYPE_Use = 3;
-    public static final Hub<String> hubUseType;
-    static {
-        hubUseType = new Hub<String>(String.class);
-        hubUseType.addElement("Unknown");
-        hubUseType.addElement("Not Used");
-        hubUseType.addElement("Will Use");
-        hubUseType.addElement("Use");
-    }
     protected volatile String notes;
      
     // Links to other objects.

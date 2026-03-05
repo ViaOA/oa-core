@@ -98,9 +98,9 @@ public class CardFilter extends OAObject {
         return createDigitalOnlyFilter(hubMaster, hub, false);
     }
     public HubFilter createDigitalOnlyFilter(final Hub<Card> hubMaster, Hub<Card> hub, boolean bAllHubs) {
-        HubFilter filter = new HubFilter(hubMaster, hub) {
+        HubFilter<Card> filter = new HubFilter<>(hubMaster, hub) {
             @Override
-            public boolean isUsed(Object object) {
+            public boolean isUsed(Card object) {
                 Card card = (Card) object;
                 return isUsedForDigitalOnlyFilter(card);
             }

@@ -6,8 +6,9 @@ import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADate;
 
+import test.hifive.model.delegate.OAObjectInfoDelegate;
+import test.hifive.model.delegate.OAObjectPropertyDelegate;
 import test.hifive.model.oa.filter.*;
 import test.hifive.model.oa.propertypath.*;
  
@@ -34,10 +35,6 @@ public class AwardCardOrder extends OAObject {
     public static final String P_SentDate = "SentDate";
     public static final String PROPERTY_ShippingInfo = "ShippingInfo";
     public static final String P_ShippingInfo = "ShippingInfo";
-    public static final String PROPERTY_CardType = "CardType";
-    public static final String P_CardType = "CardType";
-    public static final String PROPERTY_CardTypeAsString = "CardTypeAsString";
-    public static final String P_CardTypeAsString = "CardTypeAsString";
     public static final String PROPERTY_LastStatusDate = "LastStatusDate";
     public static final String P_LastStatusDate = "LastStatusDate";
     public static final String PROPERTY_LastStatus = "LastStatus";
@@ -74,17 +71,93 @@ public class AwardCardOrder extends OAObject {
     protected double value;
     protected OADate sentDate;
     protected String shippingInfo;
-    protected int cardType;
+    
+    
+    
+//qqqqqqqqqqqqq NEW     
+    
+    public static final String P_CardType = "cardType";
+    public static final String P_CardTypeString = "cardTypeString";
+    public static final String P_CardTypeEnum = "cardTypeEnum";
+    public static final String P_CardTypeDisplay = "cardTypeDisplay";
+    
+    protected volatile int cardType;
+    public static enum CardType {
+    	Digital("Digital"),
+    	Traditional("Traditional"),
+        SecondHome("Imagine");
+
+        private String display;
+        CardType(String display) {
+            this.display = display;
+        }
+
+        public String getDisplay() {
+            return display;
+        }
+    }
     public static final int CARDTYPE_Digital = 0;
     public static final int CARDTYPE_Traditional = 1;
     public static final int CARDTYPE_Imagine = 2;
-    public static final Hub<String> hubCardType;
-    static {
-        hubCardType = new Hub<String>(String.class);
-        hubCardType.addElement("Digital");
-        hubCardType.addElement("Traditional");
-        hubCardType.addElement("Imagine");
+    
+    
+    @OAProperty(lowerName = "cardType", displayLength = 14, uiColumnLength = 6, isNameValue = true)
+    @OAColumn(name = "CardType", sqlType = java.sql.Types.INTEGER)
+    public int getCardType() {
+        return cardType;
     }
+    public void setCardType(int newValue) {
+        int old = cardType;
+        fireBeforePropertyChange(P_CardType, old, newValue);
+        this.cardType = newValue;
+        firePropertyChange(P_CardType, old, this.cardType);
+    }
+    @OAProperty(enumPropertyName = P_CardType)
+    public String getCardTypeString() {
+        CardType cardType = getCardTypeEnum();
+        if (cardType == null) return null;
+        return cardType.name();
+    }
+    public void setCardTypeString(String val) {
+        int x = -1;
+        if (OAString.isNotEmpty(val)) {
+            CardType cardType = CardType.valueOf(val);
+            if (cardType != null) x = cardType.ordinal();
+        }
+        if (x < 0) setNull(P_CardType);
+        else setCardType(x);
+    }
+    @OAProperty(enumPropertyName = P_CardType)
+    public CardType getCardTypeEnum() {
+        if (isNull(P_CardType)) return null;
+        final int val = getCardType();
+        if (val < 0 || val >= CardType.values().length) return null;
+        return CardType.values()[val];
+    }
+    public void setCardTypeEnum(CardType val) {
+        if (val == null) {
+            setNull(P_CardType);
+        }
+        else {
+            setCardType(val.ordinal());
+        }
+    }
+    @OACalculatedProperty(enumPropertyName = P_CardType, displayName = "CardType", displayLength = 14, columnLength = 6, properties = {P_CardType} )
+    public String getCardTypeDisplay() {
+        CardType cardType = getCardTypeEnum();
+        if (cardType == null) return null;
+        return cardType.getDisplay();
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
     protected OADate lastStatusDate;
     protected String lastStatus;
     protected OADate completedDate;
@@ -210,24 +283,6 @@ public class AwardCardOrder extends OAObject {
         String old = shippingInfo;
         this.shippingInfo = newValue;
         firePropertyChange(P_ShippingInfo, old, this.shippingInfo);
-    }
-    @OAProperty(displayName = "Card Type", displayLength = 5, isNameValue = true)
-    @OAColumn(sqlType = java.sql.Types.INTEGER)
-    public int getCardType() {
-        return cardType;
-    }
-    
-    public void setCardType(int newValue) {
-        fireBeforePropertyChange(P_CardType, this.cardType, newValue);
-        int old = cardType;
-        this.cardType = newValue;
-        firePropertyChange(P_CardType, old, this.cardType);
-    }
-    public String getCardTypeAsString() {
-        if (isNull(P_CardType)) return "";
-        String s = hubCardType.getAt(getCardType());
-        if (s == null) s = "";
-        return s;
     }
     @OAProperty(displayName = "Last Status Date", displayLength = 8)
     @OAColumn(sqlType = java.sql.Types.DATE)
@@ -447,9 +502,9 @@ public class AwardCardOrder extends OAObject {
         h.add(this);
         h.setPos(0);
         
-        DetailHub dh = new DetailHub(h, OAString.cpp(PROPERTY_Card, Card.PROPERTY_Values));
-        HubFilter hf = new HubFilter(dh , hubInspireValues, true) {
-            public boolean isUsed(Object object) {
+        DetailHub<Value> dh = new DetailHub<>(h, OAString.cpp(PROPERTY_Card, Card.PROPERTY_Values));
+        HubFilter<Value> hf = new HubFilter<Value>(dh , hubInspireValues, true) {
+            public boolean isUsed(Value object) {
                 Value v = (Value) object;
                 InspireOrder io = getInspireOrder();
                 if (io == null) return false;

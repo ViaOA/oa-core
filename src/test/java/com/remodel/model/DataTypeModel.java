@@ -17,6 +17,10 @@ import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import com.viaoa.filter.*;
 import com.viaoa.datasource.*;
+import com.remodel.model.delegate.HubDelegate;
+import com.remodel.model.delegate.HubDetailDelegate;
+import com.remodel.model.delegate.HubSelectDelegate;
+import com.remodel.model.delegate.OAObjectCallbackDelegate;
 
 public class DataTypeModel extends OAObjectModel {
     private static Logger LOG = Logger.getLogger(DataTypeModel.class.getName());

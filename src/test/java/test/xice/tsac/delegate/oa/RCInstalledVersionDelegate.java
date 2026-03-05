@@ -1,15 +1,16 @@
 package test.xice.tsac.delegate.oa;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectPropertyDelegate;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.*;
 
 import test.xice.tsac.delegate.ModelDelegate;
 import test.xice.tsac.delegate.RemoteDelegate;
+import test.xice.tsac.model.delegate.OAObjectPropertyDelegate;
+import test.xice.tsac.model.delegate.OASyncDelegate;
 import test.xice.tsac.model.oa.*;
 import test.xice.tsac.model.oa.propertypath.ApplicationPP;
 import test.xice.tsac.model.oa.propertypath.ApplicationVersionPP;
@@ -18,12 +19,14 @@ import test.xice.tsac.model.oa.propertypath.SiloPP;
 public class RCInstalledVersionDelegate {
 
     public static void run(final RCInstalledVersion installedVersion) throws Exception {
+    	/*qqqqqqqq
         if (OASyncDelegate.callSyncIsServer()) {
             _run(installedVersion);
         }
         else {
             // send to server
         }
+        */
     }
 
     private static boolean _run(final RCInstalledVersion installedVersion) throws Exception {
@@ -51,7 +54,7 @@ public class RCInstalledVersionDelegate {
         
         
         OAFinder<Silo, Server> finder = new OAFinder<Silo, Server>(env.getSilos(), SiloPP.servers().pp);
-        ArrayList<Server> al = finder.find();
+        List<Server> al = finder.find();
 
         String text = null;
         for (Server server : al) {
@@ -92,12 +95,14 @@ public class RCInstalledVersionDelegate {
     
     
     public static void process(final RCInstalledVersion installedVersion) throws Exception {
+    	/*qqqqqqqq
         if (OASyncDelegate.callSyncIsServer()) {
             _process(installedVersion);
         }
         else {
             // send to server
         }
+        */
     }
     private static void _process(final RCInstalledVersion installedVersion) throws Exception {
         if (installedVersion == null) throw new RuntimeException("installedVersion can not be null");
@@ -132,7 +137,8 @@ public class RCInstalledVersionDelegate {
             if (!(obj instanceof OAObject)) continue;
             OAObject oaObj = (OAObject) obj;
 
-            String objectName = (String) OAObjectPropertyDelegate.getProperty(oaObj, RCExecuteDelegate.JsonObjectName);
+            String objectName = "qqqqq";
+            //qqqqqqString objectName = (String) OAObjectPropertyDelegate.getProperty(oaObj, RCExecuteDelegate.JsonObjectName);
             if (objectName == null || !objectName.equalsIgnoreCase("VersionOutput"))  {
                 continue;
             }

@@ -3,7 +3,6 @@ package com.corptostore.delegate.oa;
 import com.corptostore.model.oa.CorpToStore;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.remote.rest.OARestClient;
-import com.viaoa.sync.OASync;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAString;
 
@@ -25,9 +24,11 @@ public class CorpToStoreDelegate {
 		if (bUpdatingInfo) {
 			return;
 		}
+/*qqq		
 		if (!OASync.callSyncIsServer()) {
 			return;
 		}
+*/		
 
 		String url = corpToStore.getBaseUrl();
 		if (OAString.isEmpty(url)) {

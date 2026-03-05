@@ -27,10 +27,10 @@ public class ErrorInfo extends OAObject {
     protected OADateTime dateTime;
     protected String message;
     protected String stackTrace;
-     
+      
     // Links to other objects.
     protected transient ConnectionInfo connectionInfo;
-    protected transient ExceptionType exceptionType;
+	protected transient ExceptionType exceptionType;
      
      
     public ErrorInfo() {

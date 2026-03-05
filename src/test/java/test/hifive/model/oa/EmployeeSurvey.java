@@ -8,6 +8,7 @@ import com.viaoa.util.*;
 import com.viaoa.annotation.*;
 import com.viaoa.util.OADate;
 
+import test.hifive.model.delegate.OAObjectInfoDelegate;
 import test.hifive.model.oa.filter.*;
 import test.hifive.model.oa.propertypath.*;
  

@@ -2,14 +2,14 @@ package com.auto.dev.reportercorp.model;
 
 import java.util.logging.Logger;
 
+import com.auto.dev.reportercorp.model.delegate.HubDelegate;
+import com.auto.dev.reportercorp.model.delegate.HubDetailDelegate;
+import com.auto.dev.reportercorp.model.delegate.OAObjectCallbackDelegate;
 import com.auto.dev.reportercorp.model.oa.StatusInfo;
 import com.auto.dev.reportercorp.model.oa.StatusInfoMessage;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubCopy;
-import com.viaoa.hub.HubDelegate;
-import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectModel;
 
 public class StatusInfoMessageModel extends OAObjectModel {
@@ -92,7 +92,7 @@ public class StatusInfoMessageModel extends OAObjectModel {
 		modelStatusInfo.setAllowSearch(false);
 		modelStatusInfo.setAllowHubSearch(false);
 		modelStatusInfo.setAllowGotoEdit(true);
-		OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
+		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
 		modelStatusInfo.setCreateUI(li == null || !StatusInfoMessage.P_StatusInfo.equalsIgnoreCase(li.getName()));
 		modelStatusInfo.setViewOnly(getViewOnly());
 		// call StatusInfoMessage.statusInfoModelCallback(StatusInfoModel) to be able to customize this model

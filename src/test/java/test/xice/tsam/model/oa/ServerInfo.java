@@ -5,8 +5,10 @@ import java.sql.*;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
+
+import test.xice.tsac.model.oa.ServerInfo.Status;
+
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADateTime;
  
 @OAClass(
     shortName = "si",
@@ -21,26 +23,84 @@ public class ServerInfo extends OAObject {
     public static final String PROPERTY_DateTime = "DateTime";
     public static final String PROPERTY_SendMessage = "SendMessage";
     public static final String PROPERTY_SendMessageDateTime = "SendMessageDateTime";
-    public static final String PROPERTY_Status = "Status";
      
      
     protected OADateTime dateTime;
     protected String sendMessage;
     protected OADateTime sendMessageDateTime;
+
+    public static final String P_Status = "status";
+    public static final String P_StatusString = "statusString";
+    public static final String P_StatusEnum = "statusEnum";
+    public static final String P_StatusDisplay = "statusDisplay";
     protected int status;
     public static final int STATUS_Starting = 0;
     public static final int STATUS_Running = 1;
     public static final int STATUS_Stopping = 2;
     public static final int STATUS_Stopped = 3;
-    public static final Hub hubStatus;
-    static {
-        hubStatus = new Hub(String.class);
-        hubStatus.addElement("Starting");
-        hubStatus.addElement("Running");
-        hubStatus.addElement("Stopping");
-        hubStatus.addElement("Stopped");
+    public static enum Status {
+    	Starting("Starting"),
+    	Running("Running"),
+    	Stopping("Stopping"),
+    	Stopped("Stopped");
+
+        private String display;
+        Status(String display) {
+            this.display = display;
+        }
+
+        public String getDisplay() {
+            return display;
+        }
     }
-     
+    @OAProperty(displayLength = 14, isProcessed = true)
+    @OAColumn(sqlType = java.sql.Types.INTEGER)
+    public int getStatus() {
+        return status;
+    }
+    public void setStatus(int newValue) {
+        int old = status;
+        fireBeforePropertyChange(P_Status, old, newValue);
+        this.status = newValue;
+        firePropertyChange(P_Status, old, this.status);
+    }
+    @OAProperty(enumPropertyName = P_Status)
+    public String getStatusString() {
+        Status status = getStatusEnum();
+        if (status == null) return null;
+        return status.name();
+    }
+    public void setStatusString(String val) {
+        int x = -1;
+        if (OAString.isNotEmpty(val)) {
+            Status status = Status.valueOf(val);
+            if (status != null) x = status.ordinal();
+        }
+        if (x < 0) setNull(P_Status);
+        else setStatus(x);
+    }
+    @OAProperty(enumPropertyName = P_Status)
+    public Status getStatusEnum() {
+        if (isNull(P_Status)) return null;
+        final int val = getStatus();
+        if (val < 0 || val >= Status.values().length) return null;
+        return Status.values()[val];
+    }
+    public void setStatusEnum(Status val) {
+        if (val == null) {
+            setNull(P_Status);
+        }
+        else {
+            setStatus(val.ordinal());
+        }
+    }
+    @OACalculatedProperty(enumPropertyName = P_Status, displayName = "Status", displayLength = 14, columnLength = 6, properties = {P_Status} )
+    public String getStatusDisplay() {
+        Status status = getStatusEnum();
+        if (status == null) return null;
+        return status.getDisplay();
+    }
+    
      
     public ServerInfo() {
         if (!isLoading()) {
@@ -87,20 +147,6 @@ public class ServerInfo extends OAObject {
         fireBeforePropertyChange(PROPERTY_SendMessageDateTime, old, newValue);
         this.sendMessageDateTime = newValue;
         firePropertyChange(PROPERTY_SendMessageDateTime, old, this.sendMessageDateTime);
-    }
-    
-     
-    @OAProperty(displayLength = 14, isProcessed = true)
-    @OAColumn(sqlType = java.sql.Types.INTEGER)
-    public int getStatus() {
-        return status;
-    }
-    
-    public void setStatus(int newValue) {
-        int old = status;
-        fireBeforePropertyChange(PROPERTY_Status, old, newValue);
-        this.status = newValue;
-        firePropertyChange(PROPERTY_Status, old, this.status);
     }
     
      

@@ -11,6 +11,7 @@ import com.viaoa.util.*;
 import com.corptostore.delegate.oa.*;
 import com.corptostore.model.oa.filter.*;
 import com.corptostore.model.oa.propertypath.*;
+import com.corptostore.model.delegate.OAObjectInfoDelegate;
 import com.corptostore.model.oa.Batch;
 import com.corptostore.model.oa.Receive;
 import com.corptostore.model.oa.Store;

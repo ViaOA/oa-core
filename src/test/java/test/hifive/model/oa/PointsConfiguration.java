@@ -6,6 +6,8 @@ import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 
+import test.hifive.model.delegate.OAObjectInfoDelegate;
+import test.hifive.model.oa.AwardCardOrder.CardType;
 import test.hifive.model.oa.filter.*;
 import test.hifive.model.oa.propertypath.*;
 
@@ -32,10 +34,6 @@ public class PointsConfiguration extends OAObject {
     public static final String P_CertificateToRecipient = "CertificateToRecipient";
     public static final String PROPERTY_CertificateToRecipientManager = "CertificateToRecipientManager";
     public static final String P_CertificateToRecipientManager = "CertificateToRecipientManager";
-    public static final String PROPERTY_NominationApprovedBy = "NominationApprovedBy";
-    public static final String P_NominationApprovedBy = "NominationApprovedBy";
-    public static final String PROPERTY_NominationApprovedByAsString = "NominationApprovedByAsString";
-    public static final String P_NominationApprovedByAsString = "NominationApprovedByAsString";
     public static final String PROPERTY_DaysToDelayPoints = "DaysToDelayPoints";
     public static final String P_DaysToDelayPoints = "DaysToDelayPoints";
      
@@ -49,15 +47,33 @@ public class PointsConfiguration extends OAObject {
     protected boolean certificateToNominator;
     protected boolean certificateToRecipient;
     protected boolean certificateToRecipientManager;
-    protected int nominationApprovedBy;
+
+
+
+//qqqqqqqqqq top    
+    
+    public static final String P_NominationApprovedBy = "nominationApprovedBy";
+    public static final String P_NominationApprovedByString = "nominationApprovedByString";
+    public static final String P_NominationApprovedByEnum = "nominationApprovedByEnum";
+    public static final String P_NominationApprovedByDisplay = "nominationApprovedByDisplay";
+    
+    protected volatile int nominationApprovedBy;
+    public static enum NominationApprovedBy {
+    	RecipientsManager("Recipients Manager"),
+    	NominatorsManager("Nominators Manager");
+
+        private String display;
+        NominationApprovedBy(String display) {
+            this.display = display;
+        }
+
+        public String getDisplay() {
+            return display;
+        }
+    }
     public static final int NOMINATIONAPPROVEDBY_RecipientsManager = 0;
     public static final int NOMINATIONAPPROVEDBY_NominatorsManager = 1;
-    public static final Hub<String> hubNominationApprovedBy;
-    static {
-        hubNominationApprovedBy = new Hub<String>(String.class);
-        hubNominationApprovedBy.addElement("Recipient's Manager");
-        hubNominationApprovedBy.addElement("Nominator's Manager");
-    }
+    
     protected int daysToDelayPoints;
      
     // Links to other objects.
@@ -168,24 +184,57 @@ public class PointsConfiguration extends OAObject {
         this.certificateToRecipientManager = newValue;
         firePropertyChange(P_CertificateToRecipientManager, old, this.certificateToRecipientManager);
     }
-    @OAProperty(displayName = "Nomination Approved By", defaultValue = "0", displayLength = 5, isNameValue = true)
-    @OAColumn(name = "NominationApprovedByRecipientManagement", sqlType = java.sql.Types.INTEGER)
+
+
+    @OAProperty(lowerName = "nominationApprovedBy", displayLength = 14, uiColumnLength = 6, isNameValue = true)
+    @OAColumn(name = "NominationApprovedBy", sqlType = java.sql.Types.INTEGER)
     public int getNominationApprovedBy() {
         return nominationApprovedBy;
     }
-    
     public void setNominationApprovedBy(int newValue) {
-        fireBeforePropertyChange(P_NominationApprovedBy, this.nominationApprovedBy, newValue);
         int old = nominationApprovedBy;
+        fireBeforePropertyChange(P_NominationApprovedBy, old, newValue);
         this.nominationApprovedBy = newValue;
         firePropertyChange(P_NominationApprovedBy, old, this.nominationApprovedBy);
     }
-    public String getNominationApprovedByAsString() {
-        if (isNull(P_NominationApprovedBy)) return "";
-        String s = hubNominationApprovedBy.getAt(getNominationApprovedBy());
-        if (s == null) s = "";
-        return s;
+    @OAProperty(enumPropertyName = P_NominationApprovedBy)
+    public String getNominationApprovedByString() {
+        NominationApprovedBy nominationApprovedBy = getNominationApprovedByEnum();
+        if (nominationApprovedBy == null) return null;
+        return nominationApprovedBy.name();
     }
+    public void setNominationApprovedByString(String val) {
+        int x = -1;
+        if (OAString.isNotEmpty(val)) {
+            NominationApprovedBy nominationApprovedBy = NominationApprovedBy.valueOf(val);
+            if (nominationApprovedBy != null) x = nominationApprovedBy.ordinal();
+        }
+        if (x < 0) setNull(P_NominationApprovedBy);
+        else setNominationApprovedBy(x);
+    }
+    @OAProperty(enumPropertyName = P_NominationApprovedBy)
+    public NominationApprovedBy getNominationApprovedByEnum() {
+        if (isNull(P_NominationApprovedBy)) return null;
+        final int val = getNominationApprovedBy();
+        if (val < 0 || val >= NominationApprovedBy.values().length) return null;
+        return NominationApprovedBy.values()[val];
+    }
+    public void setNominationApprovedByEnum(NominationApprovedBy val) {
+        if (val == null) {
+            setNull(P_NominationApprovedBy);
+        }
+        else {
+            setNominationApprovedBy(val.ordinal());
+        }
+    }
+    @OACalculatedProperty(enumPropertyName = P_NominationApprovedBy, displayName = "NominationApprovedBy", displayLength = 14, columnLength = 6, properties = {P_NominationApprovedBy} )
+    public String getNominationApprovedByDisplay() {
+        NominationApprovedBy nominationApprovedBy = getNominationApprovedByEnum();
+        if (nominationApprovedBy == null) return null;
+        return nominationApprovedBy.getDisplay();
+    }
+    
+    
     @OAProperty(displayName = "Days To Delay Points", description = "the number of days to wait after a nomination is approved before distributing the points", defaultValue = "0", displayLength = 5)
     @OAColumn(sqlType = java.sql.Types.INTEGER)
     /**

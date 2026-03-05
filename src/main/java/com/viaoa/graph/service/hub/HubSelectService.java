@@ -796,7 +796,7 @@ public abstract class HubSelectService {
 	 * @param hubFrom  the Hub that may supply whereHub filtering rules
 	 * @return true if the whereHub was successfully adopted
 	 */
-	public <T extends OAObject> boolean adoptWhereHub(final Hub<T> thisHub, final String propName, final Hub<T> hubFrom) {
+	public boolean adoptWhereHub(final Hub<?> thisHub, final String propName, final Hub<?> hubFrom) {
 		if (hubFrom == null) {
 			return false;
 		}
@@ -806,7 +806,7 @@ public abstract class HubSelectService {
 		if (OAString.isEmpty(propName)) {
 			return false;
 		}
-		final Hub<T> hubSelectWhere = getSelectWhereHub(hubFrom);
+		final Hub<?> hubSelectWhere = getSelectWhereHub(hubFrom);
 		if (hubSelectWhere == null) {
 			return false;
 		}
@@ -814,7 +814,7 @@ public abstract class HubSelectService {
 		if (OAString.isEmpty(pp)) {
 			return false;
 		}
-		OAPropertyPath<T> propPath = new OAPropertyPath(hubSelectWhere.getObjectClass(), pp, true);
+		OAPropertyPath<?> propPath = new OAPropertyPath(hubSelectWhere.getObjectClass(), pp, true);
 		OAPropertyPath ppRev = propPath.getReversePropertyPath();
 
 		String s = ppRev.getFirstPropertyName();

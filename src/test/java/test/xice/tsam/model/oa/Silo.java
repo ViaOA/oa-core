@@ -6,6 +6,8 @@ import java.sql.*;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
+
+import test.xice.tsam.model.delegate.OAObjectPropertyDelegate;
 import test.xice.tsam.model.oa.ApplicationGroup;
 import test.xice.tsam.model.oa.Environment;
 import test.xice.tsam.model.oa.MRADServer;

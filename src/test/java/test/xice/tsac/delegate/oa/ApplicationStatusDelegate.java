@@ -36,7 +36,7 @@ public class ApplicationStatusDelegate {
     }
  
     public static void setDefaultColors() {
-        int x = ApplicationStatus.hubType.getSize();
+        // int x = ApplicationStatus.hubType.getSize();
         for (ApplicationStatus ss : ModelDelegate.getApplicationStatuses()) {
             ss.getColor();
         }

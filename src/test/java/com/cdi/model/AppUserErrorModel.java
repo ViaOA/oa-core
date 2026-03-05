@@ -14,6 +14,10 @@ import com.cdi.model.oa.propertypath.*;
 import com.cdi.model.oa.search.*;
 import com.cdi.model.oa.filter.*;
 import com.cdi.model.search.*;
+import com.cdi.model.delegate.HubDelegate;
+import com.cdi.model.delegate.HubDetailDelegate;
+import com.cdi.model.delegate.HubSelectDelegate;
+import com.cdi.model.delegate.OAObjectCallbackDelegate;
 import com.cdi.model.filter.*;
 import com.cdi.delegate.ModelDelegate;
 import com.cdi.resource.Resource;
@@ -93,7 +97,7 @@ public class AppUserErrorModel extends OAObjectModel {
         modelAppUserLogin.setAllowSearch(false);
         modelAppUserLogin.setAllowHubSearch(true);
         modelAppUserLogin.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
         modelAppUserLogin.setCreateUI(li == null || !AppUserError.P_AppUserLogin.equalsIgnoreCase(li.getName()) );
         modelAppUserLogin.setViewOnly(getViewOnly());
         // call AppUserError.appUserLoginModelCallback(AppUserLoginModel) to be able to customize this model

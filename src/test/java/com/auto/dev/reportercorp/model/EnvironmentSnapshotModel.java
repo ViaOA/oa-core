@@ -3,6 +3,9 @@ package com.auto.dev.reportercorp.model;
 import java.util.logging.Logger;
 
 import com.auto.dev.reportercorp.delegate.ModelDelegate;
+import com.auto.dev.reportercorp.model.delegate.HubDelegate;
+import com.auto.dev.reportercorp.model.delegate.HubDetailDelegate;
+import com.auto.dev.reportercorp.model.delegate.OAObjectCallbackDelegate;
 import com.auto.dev.reportercorp.model.oa.Environment;
 import com.auto.dev.reportercorp.model.oa.EnvironmentSnapshot;
 import com.auto.dev.reportercorp.model.oa.SnapshotReport;
@@ -10,10 +13,7 @@ import com.auto.dev.reportercorp.model.search.SnapshotReportSearchModel;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubCombined;
 import com.viaoa.hub.HubCopy;
-import com.viaoa.hub.HubDelegate;
-import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectModel;
 
 public class EnvironmentSnapshotModel extends OAObjectModel {
@@ -125,7 +125,7 @@ public class EnvironmentSnapshotModel extends OAObjectModel {
 		modelEnvironment.setAllowSearch(false);
 		modelEnvironment.setAllowHubSearch(false);
 		modelEnvironment.setAllowGotoEdit(true);
-		OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
+		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
 		modelEnvironment.setCreateUI(li == null || !EnvironmentSnapshot.P_Environment.equalsIgnoreCase(li.getName()));
 		modelEnvironment.setViewOnly(getViewOnly());
 		// call EnvironmentSnapshot.environmentModelCallback(EnvironmentModel) to be able to customize this model

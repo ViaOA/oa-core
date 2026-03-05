@@ -5,7 +5,6 @@ import test.xice.tsam.delegate.ServerModelDelegate;
 import test.xice.tsam.model.oa.*;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.hub.*;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.OAString;
 
 import test.xice.tsam.model.oa.*;

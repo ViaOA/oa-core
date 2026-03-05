@@ -11,6 +11,7 @@ import com.viaoa.scheduler.*;
 import com.messagedesigner.delegate.oa.*;
 import com.messagedesigner.model.oa.filter.*;
 import com.messagedesigner.model.oa.propertypath.*;
+import com.messagedesigner.model.delegate.OAObjectInfoDelegate;
 import com.messagedesigner.model.oa.JsonType;
 import com.messagedesigner.model.oa.MessageTypeColumn;
 import com.messagedesigner.model.oa.MessageTypeRecord;
@@ -99,15 +100,7 @@ public class MessageTypeColumn extends OAObject {
     public static final int SPECIALTYPE_InvoiceChange = 2;
     public static final int SPECIALTYPE_newPurchaseOrder = 3;
     public static final int SPECIALTYPE_purchaseOrderChange = 4;
-    public static final Hub<String> hubSpecialType;
-    static {
-        hubSpecialType = new Hub<String>(String.class);
-        hubSpecialType.addElement("Unknown");
-        hubSpecialType.addElement("New Invoice");
-        hubSpecialType.addElement("Invoice Change");
-        hubSpecialType.addElement("New Purchase Order");
-        hubSpecialType.addElement("Purchase Order Change");
-    }
+
     protected volatile int nullValueType;
     public static enum NullValueType {
         Default("Default"),
@@ -126,13 +119,7 @@ public class MessageTypeColumn extends OAObject {
     public static final int NULLVALUETYPE_Default = 0;
     public static final int NULLVALUETYPE_Zero = 1;
     public static final int NULLVALUETYPE_Empty = 2;
-    public static final Hub<String> hubNullValueType;
-    static {
-        hubNullValueType = new Hub<String>(String.class);
-        hubNullValueType.addElement("Default");
-        hubNullValueType.addElement("Zero");
-        hubNullValueType.addElement("Empty");
-    }
+
     protected volatile String docType;
     protected volatile boolean notUsed;
     protected volatile int seq;

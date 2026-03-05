@@ -6,6 +6,8 @@ import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 
+import test.hifive.model.oa.ServerInfo.Status;
+import test.xice.tsac.model.delegate.OAObjectInfoDelegate;
 import test.xice.tsac.model.oa.filter.*;
 import test.xice.tsac.model.oa.propertypath.*;
 
@@ -24,10 +26,6 @@ public class EnvironmentType extends OAObject {
     private static final long serialVersionUID = 1L;
     public static final String PROPERTY_Id = "Id";
     public static final String P_Id = "Id";
-    public static final String PROPERTY_Type = "Type";
-    public static final String P_Type = "Type";
-    public static final String PROPERTY_TypeAsString = "TypeAsString";
-    public static final String P_TypeAsString = "TypeAsString";
     public static final String PROPERTY_Name = "Name";
     public static final String P_Name = "Name";
      
@@ -36,7 +34,14 @@ public class EnvironmentType extends OAObject {
     public static final String P_Environments = "Environments";
      
     protected int id;
-    protected int type;
+
+    
+    public static final String P_Type = "type";
+    public static final String P_TypeString = "typeString";
+    public static final String P_TypeEnum = "typeEnum";
+    public static final String P_TypeDisplay = "typeDisplay";
+    
+    protected volatile int type;
     public static final int TYPE_UNKNOWN = 0;
     public static final int TYPE_AM = 1;
     public static final int TYPE_AM2 = 2;
@@ -76,49 +81,74 @@ public class EnvironmentType extends OAObject {
     public static final int TYPE_TR2 = 36;
     public static final int TYPE_TR3 = 37;
     public static final int TYPE_UT1 = 38;
-    public static final Hub<String> hubType;
-    static {
-        hubType = new Hub<String>(String.class);
-        hubType.addElement("Unknown");
-        hubType.addElement("AM");
-        hubType.addElement("AM2");
-        hubType.addElement("AP");
-        hubType.addElement("AT");
-        hubType.addElement("AT-MG");
-        hubType.addElement("CSI1");
-        hubType.addElement("DM");
-        hubType.addElement("DV1");
-        hubType.addElement("DV2");
-        hubType.addElement("DV3");
-        hubType.addElement("DV4");
-        hubType.addElement("DV5");
-        hubType.addElement("FT");
-        hubType.addElement("FT2");
-        hubType.addElement("FT3");
-        hubType.addElement("LT");
-        hubType.addElement("MRTest");
-        hubType.addElement("ORD");
-        hubType.addElement("ORD-MG");
-        hubType.addElement("PF");
-        hubType.addElement("PL");
-        hubType.addElement("PL2");
-        hubType.addElement("PMT");
-        hubType.addElement("PS");
-        hubType.addElement("SB1");
-        hubType.addElement("SB2");
-        hubType.addElement("SB3");
-        hubType.addElement("SB4");
-        hubType.addElement("SB5");
-        hubType.addElement("SB6");
-        hubType.addElement("SB7");
-        hubType.addElement("SB8");
-        hubType.addElement("ST");
-        hubType.addElement("TechTest");
-        hubType.addElement("TR1");
-        hubType.addElement("TR2");
-        hubType.addElement("TR3");
-        hubType.addElement("UT1");
+    public static enum Type {
+    	UNKNOWN("UNKNOWN"),
+    	AM("AM"),
+    	AM2("AM2"),
+    	AP("AP"),
+    	AT("AT");
+
+        private String display;
+        Type(String display) {
+            this.display = display;
+        }
+
+        public String getDisplay() {
+            return display;
+        }
     }
+    @OAProperty(displayLength = 5, isProcessed = true, isNameValue = true)
+    @OAColumn(sqlType = java.sql.Types.INTEGER)
+    public int getType() {
+        return type;
+    }
+    public void setType(int newValue) {
+        int old = type;
+        fireBeforePropertyChange(P_Type, old, newValue);
+        this.type = newValue;
+        firePropertyChange(P_Type, old, this.type);
+    }
+    @OAProperty(enumPropertyName = P_Type)
+    public String getTypeString() {
+        Type type = getTypeEnum();
+        if (type == null) return null;
+        return type.name();
+    }
+    public void setTypeString(String val) {
+        int x = -1;
+        if (OAString.isNotEmpty(val)) {
+            Type type = Type.valueOf(val);
+            if (type != null) x = type.ordinal();
+        }
+        if (x < 0) setNull(P_Type);
+        else setType(x);
+    }
+    @OAProperty(enumPropertyName = P_Type)
+    public Type getTypeEnum() {
+        if (isNull(P_Type)) return null;
+        final int val = getType();
+        if (val < 0 || val >= Type.values().length) return null;
+        return Type.values()[val];
+    }
+    public void setTypeEnum(Type val) {
+        if (val == null) {
+            setNull(P_Type);
+        }
+        else {
+            setType(val.ordinal());
+        }
+    }
+    @OACalculatedProperty(enumPropertyName = P_Type, displayName = "Type", displayLength = 14, columnLength = 6, properties = {P_Type} )
+    public String getTypeDisplay() {
+        Type type = getTypeEnum();
+        if (type == null) return null;
+        return type.getDisplay();
+    }
+
+    
+    
+    
+    
     protected String name;
      
     // Links to other objects.
@@ -143,24 +173,6 @@ public class EnvironmentType extends OAObject {
         int old = id;
         this.id = newValue;
         firePropertyChange(P_Id, old, this.id);
-    }
-    @OAProperty(displayLength = 5, isProcessed = true, isNameValue = true)
-    @OAColumn(sqlType = java.sql.Types.INTEGER)
-    public int getType() {
-        return type;
-    }
-    
-    public void setType(int newValue) {
-        fireBeforePropertyChange(P_Type, this.type, newValue);
-        int old = type;
-        this.type = newValue;
-        firePropertyChange(P_Type, old, this.type);
-    }
-    public String getTypeAsString() {
-        if (isNull(P_Type)) return "";
-        String s = hubType.getAt(getType());
-        if (s == null) s = "";
-        return s;
     }
     @OAProperty(maxLength = 35, displayLength = 15, columnLength = 12, isProcessed = true)
     @OAColumn(maxLength = 35)

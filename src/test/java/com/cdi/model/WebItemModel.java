@@ -14,7 +14,11 @@ import com.cdi.model.oa.propertypath.*;
 import com.cdi.model.oa.search.*;
 import com.cdi.model.oa.filter.*;
 import com.cdi.model.search.*;
+import com.cdi.model.delegate.HubDelegate;
+import com.cdi.model.delegate.HubDetailDelegate;
+import com.cdi.model.delegate.OAObjectCallbackDelegate;
 import com.cdi.model.filter.*;
+import com.auto.dev.reportercorp.model.delegate.HubSelectDelegate;
 import com.cdi.delegate.ModelDelegate;
 import com.cdi.resource.Resource;
 
@@ -122,7 +126,7 @@ public class WebItemModel extends OAObjectModel {
         modelWebPart.setAllowSearch(false);
         modelWebPart.setAllowHubSearch(true);
         modelWebPart.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
         modelWebPart.setCreateUI(li == null || !WebItem.P_WebPart.equalsIgnoreCase(li.getName()) );
         modelWebPart.setViewOnly(getViewOnly());
         // call WebItem.webPartModelCallback(WebPartModel) to be able to customize this model

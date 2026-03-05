@@ -43,7 +43,7 @@ public class DataGenerator {
 			}
 		}
 
-		for (int i = 0; i < ApplicationStatus.hubType.getSize(); i++) {
+		for (int i = 0; i <= ApplicationStatus.TYPE_MAXSIZE; i++) {
 			ApplicationStatus st = new ApplicationStatus();
 			st.setName("ApplicationStatus." + i);
 			st.setType(i);

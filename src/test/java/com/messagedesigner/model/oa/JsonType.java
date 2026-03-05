@@ -11,6 +11,7 @@ import com.viaoa.util.*;
 import com.messagedesigner.delegate.oa.*;
 import com.messagedesigner.model.oa.filter.*;
 import com.messagedesigner.model.oa.propertypath.*;
+import com.messagedesigner.model.delegate.OAObjectInfoDelegate;
 import com.messagedesigner.model.oa.JsonType;
 import com.messagedesigner.model.oa.RpgType;
 import com.viaoa.annotation.*;
@@ -78,20 +79,6 @@ public class JsonType extends OAObject {
     public static final int TYPE_Time = 7;
     public static final int TYPE_Timestamp = 8;
     public static final int TYPE_Other = 9;
-    public static final Hub<String> hubType;
-    static {
-        hubType = new Hub<String>(String.class);
-        hubType.addElement("Unassigned");
-        hubType.addElement("String");
-        hubType.addElement("Number");
-        hubType.addElement("Boolean");
-        hubType.addElement("Array");
-        hubType.addElement("Date Time");
-        hubType.addElement("Date");
-        hubType.addElement("Time");
-        hubType.addElement("Timestamp");
-        hubType.addElement("Other");
-    }
     protected volatile int seq;
      
      

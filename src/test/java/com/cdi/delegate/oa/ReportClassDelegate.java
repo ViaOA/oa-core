@@ -4,6 +4,7 @@ package com.cdi.delegate.oa;
 import java.util.*;
 
 import com.cdi.delegate.ModelDelegate;
+import com.cdi.model.delegate.OAObjectInfoDelegate;
 import com.cdi.model.oa.*;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
@@ -14,7 +15,7 @@ public class ReportClassDelegate {
     private static final Map<Class, ReportClass> hmClassReport = new HashMap<>();
     
     public static void createReportClasses() {
-        final OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Report.class);
+        final OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(Report.class);
         
         final Hub<ReportClass> hub = ModelDelegate.getReportClasses();
         
@@ -28,7 +29,7 @@ public class ReportClassDelegate {
             
             ReportClass rc = hub.find(ReportClass.P_ClassName, cn);
             if (rc == null) {
-                OAObjectInfo oiz = OAObjectInfoDelegate.callInfoGetObjectInfo(cz);
+                OAObjectInfo oiz = OAObjectInfoDelegate.getObjectInfo(cz);
                 rc = new ReportClass();
                 rc.setName(oiz.getDisplayName());
                 rc.setClassName(cn);

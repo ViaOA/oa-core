@@ -1,5 +1,6 @@
 package com.viaoa.util.file;
 
+
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -18,12 +19,6 @@ public class LoadDelimitedFileTest extends OAUnitTest {
         
     }
     
-
-
-
-
-
-
 
     public static void main(String[] args) throws Exception {
         final ArrayList<String> alTable = new ArrayList<String>();
@@ -78,7 +73,7 @@ public class LoadDelimitedFileTest extends OAUnitTest {
             }
         };
         File file = new File("c:\\temp\\M3TABLES_Columns.csv"); 
-        ldf.read(file, ",", false);
+//        ldf.read(file, ",", false);
     }
 }
 

@@ -10,6 +10,7 @@ import test.xice.tsam.remote.RemoteSpellCheckInterface;
 import com.viaoa.sync.*;
 
 import test.xice.tsam.delegate.RemoteDelegate;
+import test.xice.tsam.model.delegate.OASyncDelegate;
 import test.xice.tsam.remote.*;
 
 /**
@@ -33,6 +34,8 @@ public class RemoteDelegate {
     public static RemoteAppInterface getRemoteApp() {
         if (remoteApp != null) return remoteApp;
         
+        
+/*qqqqqqq        
         OASyncClient sc = OASyncDelegate.getSyncClient();
         try {
             remoteApp = (RemoteAppInterface) sc.lookup(RemoteAppInterface.BindName);
@@ -40,6 +43,7 @@ public class RemoteDelegate {
         catch (Exception e) {
             LOG.log(Level.WARNING, "exception getting remote object", e);
         }
+*/        
         return remoteApp;
     }
 
@@ -49,6 +53,7 @@ public class RemoteDelegate {
     }
     public static RemoteSpellCheckInterface getRemoteSpellCheck() {
         if (remoteSpellCheck != null) return remoteSpellCheck;
+        /*qqqqqqqqqqqqq
         OASyncClient sc = OASyncDelegate.getSyncClient();
         try {
             remoteSpellCheck = (RemoteSpellCheckInterface) sc.lookup(RemoteSpellCheckInterface.BindName);
@@ -56,6 +61,7 @@ public class RemoteDelegate {
         catch (Exception e) {
             LOG.log(Level.WARNING, "exception getting remote object", e);
         }
+        */
         return remoteSpellCheck;
     }
 	
@@ -65,6 +71,7 @@ public class RemoteDelegate {
     }
     public static RemoteFileInterface getRemoteFile() {
         if (remoteFile != null) return remoteFile;
+        /*qqqqq
         OASyncClient sc = OASyncDelegate.getSyncClient();
         try {
             remoteFile = (RemoteFileInterface) sc.lookup(RemoteFileInterface.BindName);
@@ -72,6 +79,7 @@ public class RemoteDelegate {
         catch (Exception e) {
             LOG.log(Level.WARNING, "exception getting remote object", e);
         }
+        */
         return remoteFile;
     }
     
@@ -82,6 +90,7 @@ public class RemoteDelegate {
     }
     public static RemoteModelInterface getRemoteModel() {
         if (remoteModel != null) return remoteModel;
+        /*qqqqqqqqq
         OASyncClient sc = OASyncDelegate.getSyncClient();
         try {
             remoteModel = (RemoteModelInterface) sc.lookup(RemoteModelInterface.BindName);
@@ -89,6 +98,7 @@ public class RemoteDelegate {
         catch (Exception e) {
             LOG.log(Level.WARNING, "exception getting remote object", e);
         }
+        */
         return remoteModel;
     }
 

@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
+import com.auto.dev.reportercorp.model.delegate.OAObjectInfoDelegate;
 import com.auto.dev.reportercorp.model.oa.filter.ReportMasterOnlyFilter;
 import com.auto.dev.reportercorp.model.oa.filter.ReportNeedsTemplateFilter;
 import com.viaoa.annotation.OACalculatedProperty;
@@ -21,7 +22,6 @@ import com.viaoa.annotation.OATable;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCallback;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAString;

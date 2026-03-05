@@ -68,7 +68,7 @@ public class SystemInfo extends OAObject {
     public void refreshClassFromDatasource() {
         try {
             Class c = Class.forName(name);
-            OAObjectCacheDelegate.refresh(c);
+            //qqqqqqqqq OAObjectCacheDelegate.refresh(c);
         }
         catch (Exception e) {
             throw new RuntimeException("error calling refreshClassFromDatasource", e);

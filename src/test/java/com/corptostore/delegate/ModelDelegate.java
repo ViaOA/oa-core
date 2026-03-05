@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
+import com.corptostore.model.delegate.HubAODelegate;
 import com.corptostore.model.oa.AppServer;
 import com.corptostore.model.oa.AppUser;
 import com.corptostore.model.oa.AppUserError;
@@ -28,7 +29,6 @@ import com.corptostore.model.oa.cs.ClientRoot;
 import com.corptostore.model.oa.cs.ServerRoot;
 import com.corptostore.delegate.ModelDelegate;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubAODelegate;
 
 /**
  * This is used to access all of the Root level Hubs. This is so that they will not have to be passed into and through the models. After

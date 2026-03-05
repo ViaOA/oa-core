@@ -81,15 +81,6 @@ public class Environment extends OAObject {
     public static final int TYPE_Dev = 2;
     public static final int TYPE_Test = 3;
     public static final int TYPE_Prod = 4;
-    public static final Hub<String> hubType;
-    static {
-        hubType = new Hub<String>(String.class);
-        hubType.addElement("Unknown");
-        hubType.addElement("Local");
-        hubType.addElement("Dev");
-        hubType.addElement("Test");
-        hubType.addElement("Prod");
-    }
     protected volatile String name;
     protected volatile String urlTemplate;
     protected volatile int nodeCount;

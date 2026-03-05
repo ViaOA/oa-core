@@ -2,6 +2,7 @@
 
 package com.corptostore.model;
 
+
 import java.util.logging.*;
 import com.viaoa.object.*;
 import com.corptostore.delegate.ModelDelegate;
@@ -17,6 +18,9 @@ import com.corptostore.model.StoreInfoModel;
 import com.corptostore.model.StoreLockInfoModel;
 import com.corptostore.model.StoreLockServiceInfoModel;
 import com.corptostore.model.ThreadInfoModel;
+import com.corptostore.model.delegate.HubDelegate;
+import com.corptostore.model.delegate.HubDetailDelegate;
+import com.corptostore.model.delegate.OAObjectCallbackDelegate;
 import com.corptostore.model.oa.StatusInfo;
 import com.corptostore.model.oa.StoreInfo;
 import com.corptostore.model.oa.StoreLockInfo;

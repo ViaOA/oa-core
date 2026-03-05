@@ -18,6 +18,10 @@ import com.viaoa.util.*;
 import com.viaoa.filter.*;
 import com.viaoa.datasource.*;
 import com.viaoa.model.oa.VInteger;
+import com.remodel.model.delegate.HubDelegate;
+import com.remodel.model.delegate.HubDetailDelegate;
+import com.remodel.model.delegate.HubSelectDelegate;
+import com.remodel.model.delegate.OAObjectCallbackDelegate;
 
 public class JsonObjectModel extends OAObjectModel {
     private static Logger LOG = Logger.getLogger(JsonObjectModel.class.getName());

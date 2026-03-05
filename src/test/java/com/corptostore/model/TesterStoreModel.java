@@ -27,6 +27,11 @@ import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import com.viaoa.filter.*;
 import com.viaoa.datasource.*;
+import com.corptostore.model.delegate.HubDelegate;
+import com.corptostore.model.delegate.HubDetailDelegate;
+import com.corptostore.model.delegate.HubSelectDelegate;
+import com.corptostore.model.delegate.OAObjectCallbackDelegate;
+
 
 public class TesterStoreModel extends OAObjectModel {
     private static Logger LOG = Logger.getLogger(TesterStoreModel.class.getName());

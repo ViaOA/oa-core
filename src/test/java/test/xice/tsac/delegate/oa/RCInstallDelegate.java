@@ -2,8 +2,6 @@ package test.xice.tsac.delegate.oa;
 
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectPropertyDelegate;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.*;
 
 import test.xice.tsac.delegate.RemoteDelegate;
@@ -13,12 +11,14 @@ import test.xice.tsac.model.oa.propertypath.*;
 public class RCInstallDelegate {
 
     public static void run(final RCInstall install) throws Exception {
-        if (OASyncDelegate.callSyncIsServer()) {
+    	/*qqqqqqqq
+    	if (OASyncDelegate.callSyncIsServer()) {
             _run(install);
         }
         else {
             // send to server
         }
+        */
     }
 
     protected static boolean _run(final RCInstall rcInstall) throws Exception {
@@ -65,12 +65,14 @@ public class RCInstallDelegate {
     }
 
     public static void process(final RCInstall rcInstall) throws Exception {
+    	/*qqqqqqqq
         if (OASyncDelegate.callSyncIsServer()) {
             _process(rcInstall);
         }
         else {
             // send to server
         }
+        */
     }
     protected static void _process(final RCInstall rcInstall) throws Exception {
         if (rcInstall == null) throw new RuntimeException("install can not be null");
@@ -103,7 +105,8 @@ public class RCInstallDelegate {
             if (!(obj instanceof OAObject)) continue;
             OAObject oaObj = (OAObject) obj;
 
-            String objectName = (String) OAObjectPropertyDelegate.getProperty(oaObj, RCExecuteDelegate.JsonObjectName);
+            String objectName = "qqqqqqqq";
+            // qqqqqqqqString objectName = (String) OAObjectPropertyDelegate.getProperty(oaObj, RCExecuteDelegate.JsonObjectName);
             if (objectName == null || !objectName.equalsIgnoreCase("DeployInstallOutput"))  {
                 continue;
             }
@@ -129,7 +132,8 @@ public class RCInstallDelegate {
     }
 
     private static String getValue(OAObject oaObj, String propName) {
-        String prop = (String) OAObjectPropertyDelegate.getProperty(oaObj, propName);
+//qqqqqqqqqq String prop = (String) OAObjectPropertyDelegate.getProperty(oaObj, propName);
+    	String prop = "qqqqq";
         if ("null".equals(prop)) prop = null;
         return prop;
     }
@@ -244,12 +248,14 @@ public class RCInstallDelegate {
     }
 
     public static void load(final RCInstall install) throws Exception {
+    	/*qqqqqqqq
         if (OASyncDelegate.callSyncIsServer()) {
             _load(install);
         }
         else {
             // send to server
         }
+        */
     }
 
     private static void _load(final RCInstall rcInstall) throws Exception {

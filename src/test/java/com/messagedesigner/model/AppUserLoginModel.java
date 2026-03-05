@@ -16,6 +16,9 @@ import com.messagedesigner.model.AppServerModel;
 import com.messagedesigner.model.AppUserErrorModel;
 import com.messagedesigner.model.AppUserLoginModel;
 import com.messagedesigner.model.AppUserModel;
+import com.messagedesigner.model.delegate.HubDelegate;
+import com.messagedesigner.model.delegate.HubDetailDelegate;
+import com.messagedesigner.model.delegate.OAObjectCallbackDelegate;
 import com.messagedesigner.model.oa.AppServer;
 import com.messagedesigner.model.oa.AppUser;
 import com.messagedesigner.model.oa.AppUserError;
@@ -133,7 +136,7 @@ public class AppUserLoginModel extends OAObjectModel {
         modelAppUser.setAllowSearch(false);
         modelAppUser.setAllowHubSearch(false);
         modelAppUser.setAllowGotoEdit(false);
-        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
         modelAppUser.setCreateUI(li == null || !AppUserLogin.P_AppUser.equals(li.getName()) );
         modelAppUser.setViewOnly(getViewOnly());
         // call AppUserLogin.appUserModelCallback(AppUserModel) to be able to customize this model

@@ -5,11 +5,11 @@ import java.io.InputStreamReader;
 import java.util.logging.Logger;
 
 import com.viaoa.hub.Hub;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.OADateTime;
 
 import test.xice.tsac.delegate.ModelDelegate;
 import test.xice.tsac.delegate.RemoteDelegate;
+import test.xice.tsac.model.delegate.OASyncDelegate;
 import test.xice.tsac.model.oa.RemoteClient;
 import test.xice.tsac.model.oa.RemoteMessage;
 
@@ -17,7 +17,7 @@ public class RemoteClientDelegate {
     private static Logger LOG = Logger.getLogger(RemoteClientDelegate.class.getName());
 
     public static RemoteClient getRemoteClient(int type) {
-        RemoteClient rc = ModelDelegate.getRemoteClients().find(RemoteClient.PROPERTY_Type, type);
+        RemoteClient rc = ModelDelegate.getRemoteClients().find(RemoteClient.P_Type, type);
 if (rc == null) {
     int xx = 4;
     xx++;

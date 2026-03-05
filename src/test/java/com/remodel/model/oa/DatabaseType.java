@@ -13,6 +13,7 @@ import com.remodel.model.oa.filter.*;
 import com.remodel.model.oa.propertypath.*;
 import com.viaoa.annotation.*;
 import com.viaoa.util.OADateTime;
+import com.remodel.model.delegate.OAObjectInfoDelegate;
  
 @OAClass(
     lowerName = "databaseType",
@@ -76,18 +77,6 @@ public class DatabaseType extends OAObject {
     public static final int TYPE_MySQL = 5;
     public static final int TYPE_Postgres = 6;
     public static final int TYPE_DB2 = 7;
-    public static final Hub<String> hubType;
-    static {
-        hubType = new Hub<String>(String.class);
-        hubType.addElement("Unassigned");
-        hubType.addElement("Unknown");
-        hubType.addElement("Derby");
-        hubType.addElement("SQL Server");
-        hubType.addElement("Oracle");
-        hubType.addElement("My SQL");
-        hubType.addElement("Postgres");
-        hubType.addElement("DB2");
-    }
      
     // Links to other objects.
     protected transient Hub<ColumnType> hubColumnTypes;

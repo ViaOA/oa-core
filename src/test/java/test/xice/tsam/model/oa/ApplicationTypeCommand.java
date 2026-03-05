@@ -15,9 +15,10 @@ import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATable;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.util.OADate;
+
+import test.xice.tsam.model.delegate.OAObjectInfoDelegate;
 
 @OAClass(shortName = "atc", displayName = "Application Type Command", displayProperty = "command")
 @OATable(indexes = {

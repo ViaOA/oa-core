@@ -16,13 +16,13 @@ import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATable;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OATime;
 
 import test.xice.tsac.delegate.oa.ScheduleDelegate;
+import test.xice.tsac.model.delegate.OAObjectInfoDelegate;
 import test.xice.tsac.model.oa.filter.ScheduleTodayFilter;
 
 @OAClass(shortName = "sch", displayName = "Schedule", filterClasses = { ScheduleTodayFilter.class })

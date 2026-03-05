@@ -2,7 +2,6 @@ package test.xice.tsam.delegate.oa;
 
 
 import com.viaoa.hub.Hub;
-import com.viaoa.sync.OASyncDelegate;
 
 import test.xice.tsam.model.oa.*;
 

@@ -13,6 +13,7 @@ import com.remodel.model.oa.filter.*;
 import com.remodel.model.oa.propertypath.*;
 import com.viaoa.annotation.*;
 import com.viaoa.util.OADate;
+import com.remodel.model.delegate.OAObjectInfoDelegate;
  
 @OAClass(
     lowerName = "appUser",

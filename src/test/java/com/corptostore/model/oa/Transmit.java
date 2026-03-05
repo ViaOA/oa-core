@@ -12,6 +12,7 @@ import com.corptostore.delegate.oa.*;
 import com.corptostore.model.oa.filter.*;
 import com.corptostore.model.oa.propertypath.*;
 import com.corptostore.delegate.oa.TransmitDelegate;
+import com.corptostore.model.delegate.OAObjectInfoDelegate;
 import com.corptostore.model.oa.Send;
 import com.corptostore.model.oa.Store;
 import com.corptostore.model.oa.Transmit;

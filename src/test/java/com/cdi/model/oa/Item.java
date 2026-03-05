@@ -12,6 +12,7 @@ import com.viaoa.annotation.*;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
 import com.cdi.delegate.oa.*;
+import com.cdi.model.delegate.OAObjectInfoDelegate;
 import com.cdi.model.oa.filter.*;
 import com.cdi.model.oa.propertypath.*;
 import com.viaoa.func.OAFunction;

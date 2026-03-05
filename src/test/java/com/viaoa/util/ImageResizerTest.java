@@ -15,7 +15,7 @@ public class ImageResizerTest extends OAUnitTest {
     }
 
     public static void main(String args[]) {
-        if (args.length != 3) {ImageResizer.usage();}
+//        if (args.length != 3) {ImageResizer.usage();}
         double factor = Double.parseDouble(args[2]);
         ImageResizer resizer = new ImageResizer();
         resizer.doResize(args[0], args[1], factor);

@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectPropertyDelegate;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAFile;
 import com.viaoa.util.OAString;
@@ -240,7 +239,7 @@ public class RCExecuteDelegate {
 			@Override
 			protected Object getValue(OAObject obj, String name, Object value) {
 				if (value instanceof String) {
-					OAObjectPropertyDelegate.unsafeSetProperty(obj, name, (String) value);
+					//qqqqqqqqqq OAObjectPropertyDelegate.unsafeSetProperty(obj, name, (String) value);
 				}
 				return super.getValue(obj, name, value);
 			}

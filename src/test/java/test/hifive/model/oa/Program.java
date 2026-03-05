@@ -6,8 +6,9 @@ import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADate;
 
+import test.hifive.model.delegate.OAObjectInfoDelegate;
+import test.hifive.model.oa.AwardCardOrder.CardType;
 import test.hifive.model.oa.filter.*;
 import test.hifive.model.oa.propertypath.*;
  
@@ -106,10 +107,6 @@ public class Program extends OAObject {
     public static final String P_SsoRedirectUrl = "SsoRedirectUrl";
     public static final String PROPERTY_UsesPoints = "UsesPoints";
     public static final String P_UsesPoints = "UsesPoints";
-    public static final String PROPERTY_PointsBillingType = "PointsBillingType";
-    public static final String P_PointsBillingType = "PointsBillingType";
-    public static final String PROPERTY_PointsBillingTypeAsString = "PointsBillingTypeAsString";
-    public static final String P_PointsBillingTypeAsString = "PointsBillingTypeAsString";
     public static final String PROPERTY_SsoLogoutUrl = "SsoLogoutUrl";
     public static final String P_SsoLogoutUrl = "SsoLogoutUrl";
     public static final String PROPERTY_UsesPeerToPeer = "UsesPeerToPeer";
@@ -228,17 +225,25 @@ public class Program extends OAObject {
     protected boolean usesInspire;
     protected boolean usesHifive;
     protected boolean usesSurveys;
-    protected int ecardType;
+    protected volatile int ecardType;
     public static final int ECARDTYPE_NotUsed = 0;
     public static final int ECARDTYPE_EmployeesOnly = 1;
     public static final int ECARDTYPE_Anyone = 2;
-    public static final Hub<String> hubEcardType;
-    static {
-        hubEcardType = new Hub<String>(String.class);
-        hubEcardType.addElement("Not Used");
-        hubEcardType.addElement("Employees Only");
-        hubEcardType.addElement("Anyone");
+    public static enum EcardType {
+    	NotUsed("NotUsed"),
+    	EmployeesOnly("EmployeesOnly"),
+    	Anyone("Anyone");
+
+        private String display;
+        EcardType(String display) {
+            this.display = display;
+        }
+
+        public String getDisplay() {
+            return display;
+        }
     }
+    
     protected String hifiveName;
     protected int birthdayDisplayDays;
     protected int anniversaryDisplayDays;
@@ -258,17 +263,31 @@ public class Program extends OAObject {
     protected String ssoCode;
     protected String ssoRedirectUrl;
     protected boolean usesPoints;
-    protected int pointsBillingType;
+
+    public static final String P_PointsBillingType = "pointsBillingType";
+    public static final String P_PointsBillingTypeString = "pointsBillingTypeString";
+    public static final String P_PointsBillingTypeEnum = "pointsBillingTypeEnum";
+    public static final String P_PointsBillingTypeDisplay = "pointsBillingTypeDisplay";
+    protected volatile int pointsBillingType;
     public static final int POINTSBILLINGTYPE_Unknown = 0;
     public static final int POINTSBILLINGTYPE_BillOnRedemption = 1;
     public static final int POINTSBILLINGTYPE_BillOnIssuance = 2;
-    public static final Hub<String> hubPointsBillingType;
-    static {
-        hubPointsBillingType = new Hub<String>(String.class);
-        hubPointsBillingType.addElement("Unknown");
-        hubPointsBillingType.addElement("Bill On Redemption");
-        hubPointsBillingType.addElement("Bill On Issuance");
+
+    public static enum PointsBillingType {
+    	Unknown("Unknown"),
+    	BillOnRedemption("BillOnRedemption"),
+    	BillOnIssuance("BillOnIssuance");
+
+        private String display;
+        PointsBillingType(String display) {
+            this.display = display;
+        }
+
+        public String getDisplay() {
+            return display;
+        }
     }
+    
     protected String ssoLogoutUrl;
     protected boolean usesPeerToPeer;
     protected boolean usesDiscretionary;
@@ -528,27 +547,6 @@ public class Program extends OAObject {
         this.usesSurveys = newValue;
         firePropertyChange(P_UsesSurveys, old, this.usesSurveys);
     }
-    @OAProperty(displayName = "Ecard Type", description = "who can receive ecards", displayLength = 5, isNameValue = true)
-    @OAColumn(sqlType = java.sql.Types.INTEGER)
-    /**
-      who can receive ecards
-    */
-    public int getEcardType() {
-        return ecardType;
-    }
-    
-    public void setEcardType(int newValue) {
-        fireBeforePropertyChange(P_EcardType, this.ecardType, newValue);
-        int old = ecardType;
-        this.ecardType = newValue;
-        firePropertyChange(P_EcardType, old, this.ecardType);
-    }
-    public String getEcardTypeAsString() {
-        if (isNull(P_EcardType)) return "";
-        String s = hubEcardType.getAt(getEcardType());
-        if (s == null) s = "";
-        return s;
-    }
     @OAProperty(displayName = "Hifive Name", maxLength = 55, displayLength = 20, columnLength = 12)
     @OAColumn(maxLength = 55)
     public String getHifiveName() {
@@ -790,24 +788,6 @@ public class Program extends OAObject {
         boolean old = usesPoints;
         this.usesPoints = newValue;
         firePropertyChange(P_UsesPoints, old, this.usesPoints);
-    }
-    @OAProperty(displayName = "Points Billing Type", defaultValue = "0", displayLength = 5, isNameValue = true)
-    @OAColumn(sqlType = java.sql.Types.INTEGER)
-    public int getPointsBillingType() {
-        return pointsBillingType;
-    }
-    
-    public void setPointsBillingType(int newValue) {
-        fireBeforePropertyChange(P_PointsBillingType, this.pointsBillingType, newValue);
-        int old = pointsBillingType;
-        this.pointsBillingType = newValue;
-        firePropertyChange(P_PointsBillingType, old, this.pointsBillingType);
-    }
-    public String getPointsBillingTypeAsString() {
-        if (isNull(P_PointsBillingType)) return "";
-        String s = hubPointsBillingType.getAt(getPointsBillingType());
-        if (s == null) s = "";
-        return s;
     }
     @OAProperty(displayName = "Sso Logout Url", maxLength = 75, displayLength = 20, columnLength = 18)
     @OAColumn(maxLength = 75)
@@ -1625,7 +1605,105 @@ public class Program extends OAObject {
     public void runSqlServerImport() {
         //ProgramDelegate.runSqlServerImport(this);
     }
-     
+
+    
+    @OAProperty(displayName = "Ecard Type", description = "who can receive ecards", displayLength = 5, isNameValue = true)
+    @OAColumn(sqlType = java.sql.Types.INTEGER)
+    public int getEcardType() {
+        return ecardType;
+    }
+    public void setEcardType(int newValue) {
+        int old = ecardType;
+        fireBeforePropertyChange(P_EcardType, old, newValue);
+        this.ecardType = newValue;
+        firePropertyChange(P_EcardType, old, this.ecardType);
+    }
+    @OAProperty(enumPropertyName = P_EcardType)
+    public String getEcardTypeString() {
+        EcardType ecardType = getEcardTypeEnum();
+        if (ecardType == null) return null;
+        return ecardType.name();
+    }
+    public void setEcardTypeString(String val) {
+        int x = -1;
+        if (OAString.isNotEmpty(val)) {
+            EcardType ecardType = EcardType.valueOf(val);
+            if (ecardType != null) x = ecardType.ordinal();
+        }
+        if (x < 0) setNull(P_EcardType);
+        else setEcardType(x);
+    }
+    @OAProperty(enumPropertyName = P_EcardType)
+    public EcardType getEcardTypeEnum() {
+        if (isNull(P_EcardType)) return null;
+        final int val = getEcardType();
+        if (val < 0 || val >= EcardType.values().length) return null;
+        return EcardType.values()[val];
+    }
+    public void setEcardTypeEnum(EcardType val) {
+        if (val == null) {
+            setNull(P_EcardType);
+        }
+        else {
+            setEcardType(val.ordinal());
+        }
+    }
+    @OACalculatedProperty(enumPropertyName = P_EcardType, displayName = "EcardType", displayLength = 14, columnLength = 6, properties = {P_EcardType} )
+    public String getEcardTypeDisplay() {
+        EcardType ecardType = getEcardTypeEnum();
+        if (ecardType == null) return null;
+        return ecardType.getDisplay();
+    }
+
+    @OAProperty(displayName = "Points Billing Type", defaultValue = "0", displayLength = 5, isNameValue = true)
+    @OAColumn(sqlType = java.sql.Types.INTEGER)
+    public int getPointsBillingType() {
+        return pointsBillingType;
+    }
+    public void setPointsBillingType(int newValue) {
+        int old = pointsBillingType;
+        fireBeforePropertyChange(P_PointsBillingType, old, newValue);
+        this.pointsBillingType = newValue;
+        firePropertyChange(P_PointsBillingType, old, this.pointsBillingType);
+    }
+    @OAProperty(enumPropertyName = P_PointsBillingType)
+    public String getPointsBillingTypeString() {
+        PointsBillingType pointsBillingType = getPointsBillingTypeEnum();
+        if (pointsBillingType == null) return null;
+        return pointsBillingType.name();
+    }
+    public void setPointsBillingTypeString(String val) {
+        int x = -1;
+        if (OAString.isNotEmpty(val)) {
+            PointsBillingType pointsBillingType = PointsBillingType.valueOf(val);
+            if (pointsBillingType != null) x = pointsBillingType.ordinal();
+        }
+        if (x < 0) setNull(P_PointsBillingType);
+        else setPointsBillingType(x);
+    }
+    @OAProperty(enumPropertyName = P_PointsBillingType)
+    public PointsBillingType getPointsBillingTypeEnum() {
+        if (isNull(P_PointsBillingType)) return null;
+        final int val = getPointsBillingType();
+        if (val < 0 || val >= PointsBillingType.values().length) return null;
+        return PointsBillingType.values()[val];
+    }
+    public void setPointsBillingTypeEnum(PointsBillingType val) {
+        if (val == null) {
+            setNull(P_PointsBillingType);
+        }
+        else {
+            setPointsBillingType(val.ordinal());
+        }
+    }
+    @OACalculatedProperty(enumPropertyName = P_PointsBillingType, displayName = "PointsBillingType", displayLength = 14, columnLength = 6, properties = {P_PointsBillingType} )
+    public String getPointsBillingTypeDisplay() {
+        PointsBillingType pointsBillingType = getPointsBillingTypeEnum();
+        if (pointsBillingType == null) return null;
+        return pointsBillingType.getDisplay();
+    }
+    
+    
     public void load(ResultSet rs, int id) throws SQLException {
         this.id = id;
         java.sql.Date date;

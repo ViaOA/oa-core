@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
+import com.auto.dev.reportercorp.model.delegate.HubAODelegate;
 import com.auto.dev.reportercorp.model.oa.AppServer;
 import com.auto.dev.reportercorp.model.oa.AppUser;
 import com.auto.dev.reportercorp.model.oa.AppUserError;
@@ -24,7 +25,6 @@ import com.auto.dev.reportercorp.model.oa.StoreImport;
 import com.auto.dev.reportercorp.model.oa.cs.ClientRoot;
 import com.auto.dev.reportercorp.model.oa.cs.ServerRoot;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubAODelegate;
 
 /**
  * This is used to access all of the Root level Hubs. This is so that they will not have to be passed into and through the models. After

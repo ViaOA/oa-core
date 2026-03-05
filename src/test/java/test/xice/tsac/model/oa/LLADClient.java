@@ -6,11 +6,12 @@ import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADateTime;
 
+import test.hifive.model.oa.ServerInfo.Status;
 import test.xice.tsac.delegate.ModelDelegate;
 import test.xice.tsac.delegate.ServerModelDelegate;
 import test.xice.tsac.delegate.oa.RemoteClientDelegate;
+import test.xice.tsac.model.delegate.OAObjectInfoDelegate;
 import test.xice.tsac.model.oa.filter.*;
 import test.xice.tsac.model.oa.propertypath.*;
  
@@ -42,10 +43,6 @@ public class LLADClient extends OAObject {
     public static final String P_LastPingDateTime = "LastPingDateTime";
     public static final String PROPERTY_LastHeartbeatDateTime = "LastHeartbeatDateTime";
     public static final String P_LastHeartbeatDateTime = "LastHeartbeatDateTime";
-    public static final String PROPERTY_Status = "Status";
-    public static final String P_Status = "Status";
-    public static final String PROPERTY_StatusAsString = "StatusAsString";
-    public static final String P_StatusAsString = "StatusAsString";
     public static final String PROPERTY_ActiveMode = "ActiveMode";
     public static final String P_ActiveMode = "ActiveMode";
     public static final String PROPERTY_ViewOnly = "ViewOnly";
@@ -75,7 +72,15 @@ public class LLADClient extends OAObject {
     protected OADateTime registeredDateTime;
     protected OADateTime lastPingDateTime;
     protected OADateTime lastHeartbeatDateTime;
-    protected int status;
+
+    
+    
+//qqqqqqqqqqq    
+    public static final String P_Status = "status";
+    public static final String P_StatusString = "statusString";
+    public static final String P_StatusEnum = "statusEnum";
+    public static final String P_StatusDisplay = "statusDisplay";
+    protected volatile int status;
     public static final int STATUS_Unknown = 0;
     public static final int STATUS_Connected = 1;
     public static final int STATUS_Connecting = 2;
@@ -85,19 +90,72 @@ public class LLADClient extends OAObject {
     public static final int STATUS_Disconnecting = 6;
     public static final int STATUS_Disconnected = 7;
     public static final int STATUS_Error = 8;
-    public static final Hub<String> hubStatus;
-    static {
-        hubStatus = new Hub<String>(String.class);
-        hubStatus.addElement("Unknown");
-        hubStatus.addElement("Connected");
-        hubStatus.addElement("Connecting");
-        hubStatus.addElement("Suspended");
-        hubStatus.addElement("Suspending");
-        hubStatus.addElement("Resuming");
-        hubStatus.addElement("Disconnecting");
-        hubStatus.addElement("Disconnected");
-        hubStatus.addElement("Error");
+    public static enum Status {
+    	Unknown("Unknown"),
+    	Connected("Connected"),
+    	Connectint("Connectint"),
+    	Stopped("Suspended");
+
+        private String display;
+        Status(String display) {
+            this.display = display;
+        }
+
+        public String getDisplay() {
+            return display;
+        }
     }
+    @OAProperty(displayLength = 18, columnLength = 15, isProcessed = true, isNameValue = true)
+    @OAColumn(sqlType = java.sql.Types.INTEGER)
+    public int getStatus() {
+        return status;
+    }
+    public void setStatus(int newValue) {
+        int old = status;
+        fireBeforePropertyChange(P_Status, old, newValue);
+        this.status = newValue;
+        firePropertyChange(P_Status, old, this.status);
+    }
+    @OAProperty(enumPropertyName = P_Status)
+    public String getStatusString() {
+        Status status = getStatusEnum();
+        if (status == null) return null;
+        return status.name();
+    }
+    public void setStatusString(String val) {
+        int x = -1;
+        if (OAString.isNotEmpty(val)) {
+            Status status = Status.valueOf(val);
+            if (status != null) x = status.ordinal();
+        }
+        if (x < 0) setNull(P_Status);
+        else setStatus(x);
+    }
+    @OAProperty(enumPropertyName = P_Status)
+    public Status getStatusEnum() {
+        if (isNull(P_Status)) return null;
+        final int val = getStatus();
+        if (val < 0 || val >= Status.values().length) return null;
+        return Status.values()[val];
+    }
+    public void setStatusEnum(Status val) {
+        if (val == null) {
+            setNull(P_Status);
+        }
+        else {
+            setStatus(val.ordinal());
+        }
+    }
+    @OACalculatedProperty(enumPropertyName = P_Status, displayName = "Status", displayLength = 14, columnLength = 6, properties = {P_Status} )
+    public String getStatusDisplay() {
+        Status status = getStatusEnum();
+        if (status == null) return null;
+        return status.getDisplay();
+    }
+    
+
+    
+    
     protected boolean activeMode;
     protected boolean viewOnly;
     protected String serverVersion;
@@ -213,24 +271,6 @@ public class LLADClient extends OAObject {
         OADateTime old = lastHeartbeatDateTime;
         this.lastHeartbeatDateTime = newValue;
         firePropertyChange(P_LastHeartbeatDateTime, old, this.lastHeartbeatDateTime);
-    }
-    @OAProperty(displayLength = 18, columnLength = 15, isProcessed = true, isNameValue = true)
-    @OAColumn(sqlType = java.sql.Types.INTEGER)
-    public int getStatus() {
-        return status;
-    }
-    
-    public void setStatus(int newValue) {
-        fireBeforePropertyChange(P_Status, this.status, newValue);
-        int old = status;
-        this.status = newValue;
-        firePropertyChange(P_Status, old, this.status);
-    }
-    public String getStatusAsString() {
-        if (isNull(P_Status)) return "";
-        String s = hubStatus.getAt(getStatus());
-        if (s == null) s = "";
-        return s;
     }
     @OAProperty(displayName = "Active Mode", displayLength = 5)
     @OAColumn(sqlType = java.sql.Types.BOOLEAN)

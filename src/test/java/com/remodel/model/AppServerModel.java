@@ -4,14 +4,14 @@ package com.remodel.model;
 
 import java.util.logging.Logger;
 
+import com.remodel.model.delegate.HubDelegate;
+import com.remodel.model.delegate.HubSelectDelegate;
+import com.remodel.model.delegate.OAObjectCallbackDelegate;
 import com.remodel.model.oa.AppServer;
 import com.remodel.model.oa.AppUserLogin;
 import com.remodel.model.search.AppUserLoginSearchModel;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubCopy;
-import com.viaoa.hub.HubDelegate;
-import com.viaoa.hub.HubSelectDelegate;
-import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectModel;
 
 public class AppServerModel extends OAObjectModel {

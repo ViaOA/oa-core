@@ -18,10 +18,11 @@ import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATable;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectPropertyDelegate;
 import com.viaoa.util.OADate;
+
+import test.hifive.model.delegate.OAObjectInfoDelegate;
+import test.hifive.model.delegate.OAObjectPropertyDelegate;
 
 @OAClass(shortName = "io", displayName = "Inspire Order", displayProperty = "created")
 @OATable(indexes = {

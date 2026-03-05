@@ -27,6 +27,7 @@ public class EnvironmentTypeDelegate {
 
         String result = null;
         int iResult = 0;
+        /*qqqqqqqqqqq        	
         for (int i=0; ;i++) {
             String s = EnvironmentType.hubType.getAt(i);
             if (s == null) break;
@@ -37,6 +38,7 @@ public class EnvironmentTypeDelegate {
                 }
             }
         }
+        */
         
         et = ModelDelegate.getEnvironmentTypes().find(EnvironmentTypePP.type(), iResult);
         return et;

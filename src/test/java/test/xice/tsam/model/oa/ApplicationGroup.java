@@ -10,7 +10,7 @@ import com.viaoa.util.*;
 import test.xice.tsam.delegate.oa.*;
 import test.xice.tsam.model.oa.filter.*;
 import test.xice.tsam.model.oa.propertypath.*;
-
+import test.xice.tsam.model.delegate.OAObjectInfoDelegate;
 import test.xice.tsam.model.oa.Application;
 import test.xice.tsam.model.oa.ApplicationGroup;
 import test.xice.tsam.model.oa.ApplicationType;
@@ -19,7 +19,6 @@ import test.xice.tsam.model.oa.Silo;
 import test.xice.tsam.model.oa.Site;
 import test.xice.tsam.model.oa.propertypath.ApplicationGroupPP;
 import com.viaoa.annotation.*;
-import com.viaoa.sync.OASync;
  
 @OAClass(
     shortName = "ag",
@@ -239,7 +238,7 @@ public class ApplicationGroup extends OAObject {
                 @Override
                 public void afterPropertyChange(HubEvent e) {
                     if ("xcalcThis".equalsIgnoreCase(e.getPropertyName())) {
-                        OASync.sendMessages();
+                        // qqqqqqqq OASync.sendMessages();
                         finder.find(ApplicationGroup.this);
                     }
                 }

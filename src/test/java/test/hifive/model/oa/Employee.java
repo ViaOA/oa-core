@@ -35,13 +35,13 @@ import com.viaoa.object.OAHierFinder;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCallback;
 import com.viaoa.object.OAObjectCallback.Type;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectModel;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OAString;
 
 import test.hifive.FunctionalTest;
+import test.hifive.model.delegate.OAObjectInfoDelegate;
 import test.hifive.model.oa.filter.EmployeeAwardAvailableFilter;
 import test.hifive.model.oa.filter.EmployeeNextAnniverseriesFilter;
 import test.hifive.model.oa.filter.EmployeeNextBirthdaysFilter;

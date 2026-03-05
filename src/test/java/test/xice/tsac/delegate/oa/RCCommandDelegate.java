@@ -1,7 +1,5 @@
 package test.xice.tsac.delegate.oa;
 
-import com.viaoa.remote.OARemoteThreadDelegate;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.OAString;
 
 import test.xice.tsac.delegate.ModelDelegate;
@@ -17,6 +15,7 @@ public class RCCommandDelegate {
     public static void initialize(RCCommand cmd) {
         if (cmd == null) return;
         if (!OAString.isEmpty(cmd.getCommandLine())) return;
+/*qqqqqqqqqq        
         if (!OASyncDelegate.callSyncIsServer()) return;
         try {
             OARemoteThreadDelegate.sendMessages(true);
@@ -25,6 +24,7 @@ public class RCCommandDelegate {
         finally {
             OARemoteThreadDelegate.sendMessages(false);
         }
+*/        
     }
         
     private static void _initialize(RCCommand cmd) {

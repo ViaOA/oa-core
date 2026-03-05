@@ -26,15 +26,20 @@ public class OAGraphImpl implements OAGraphInternal {
 	private final String pkgName;
 	private volatile boolean bInit;
 
-	private final OAObjectService srvcOAObject;
-	private final HubService srvcHub;
-    private final OASyncService srvcOASync;
+	private OAObjectService srvcOAObject;
+	private HubService srvcHub;
+    private OASyncService srvcOASync;
 
 	public OAGraphImpl(OARuntime rt, String pkgName) {
 		if (rt == null) throw new IllegalArgumentException("OARuntime can not be null");
 		this.runtime = rt;
 		this.pkgName = pkgName;
+	}
 
+	public void initialize() throws ClassNotFoundException, IOException {
+		if (bInit) return;
+		bInit = true;
+		
 	    OAThreadImpl tl = (OAThreadImpl) runtime.thread();
 
 		srvcOAObject = new OAObjectService();
@@ -43,11 +48,8 @@ public class OAGraphImpl implements OAGraphInternal {
 
 		srvcOAObject.initialize(srvcHub, srvcOASync, tl.getThreadLocalService(), tl.getRemoteThreadService());
 		srvcHub.initialize(srvcOAObject, srvcOASync, tl.getThreadLocalService(), tl.getRemoteThreadService());
-	}
-
-	public void initialize() throws ClassNotFoundException, IOException {
-		if (bInit) return;
-		bInit = true;
+		
+		
 		if (pkgName != null && !pkgName.isEmpty()) {
 			String[] classNames = OAReflect.getOAObjectClasses(pkgName);
 			for (String cn : classNames) {

@@ -19,9 +19,9 @@ public class EmployeeFilter extends OAObject {
         return createNextAnniverseriesFilter(hubMaster, hub, false);
     }
     public HubFilter createNextAnniverseriesFilter(final Hub<Employee> hubMaster, Hub<Employee> hub, boolean bAllHubs) {
-        HubFilter filter = new HubFilter(hubMaster, hub) {
+        HubFilter<Employee> filter = new HubFilter<>(hubMaster, hub) {
             @Override
-            public boolean isUsed(Object object) {
+            public boolean isUsed(Employee object) {
                 Employee employee = (Employee) object;
                 return isUsedForNextAnniverseriesFilter(employee);
             }
@@ -56,9 +56,9 @@ public class EmployeeFilter extends OAObject {
         return createNextBirthdaysFilter(hubMaster, hub, false);
     }
     public HubFilter createNextBirthdaysFilter(final Hub<Employee> hubMaster, Hub<Employee> hub, boolean bAllHubs) {
-        HubFilter filter = new HubFilter(hubMaster, hub) {
+        HubFilter<Employee> filter = new HubFilter<>(hubMaster, hub) {
             @Override
-            public boolean isUsed(Object object) {
+            public boolean isUsed(Employee object) {
                 Employee employee = (Employee) object;
                 return isUsedForNextBirthdaysFilter(employee);
             }

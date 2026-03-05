@@ -11,6 +11,7 @@ import com.viaoa.util.*;
 import com.messagedesigner.delegate.oa.*;
 import com.messagedesigner.model.oa.filter.*;
 import com.messagedesigner.model.oa.propertypath.*;
+import com.messagedesigner.model.delegate.OAObjectInfoDelegate;
 import com.messagedesigner.model.oa.Message;
 import com.messagedesigner.model.oa.MessageType;
 import com.messagedesigner.model.oa.RpgMessage;

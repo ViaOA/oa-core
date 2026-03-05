@@ -32,7 +32,7 @@ public class AwardTypeAvailableItemFilter {
     private Hub<Item> hubAllItem;  // all items to be filtered 
     private Hub<Item> hubSectionItem;  // uses hubMerger to get all items from Catalog.sections.items
     private Hub<AwardType> hubThis;  // listen for changes to min/max price, and usesItems
-    private HubFilter filter;  // filter that uses hubAllItem to populate hubAvailabeItems
+    private HubFilter<Item> filter;  // filter that uses hubAllItem to populate hubAvailabeItems
     
     private static Hub<Product> hubApprovedProducts;
     private HubListener hubListenerProducts;
@@ -147,12 +147,12 @@ public class AwardTypeAvailableItemFilter {
             }
         });
         
-        filter = new HubFilter(hubAllItem, awardType.getAvailableItems(), 
+        filter = new HubFilter<>(hubAllItem, awardType.getAvailableItems(), 
                 OAString.cpp(Item.PROPERTY_Products, Product.PROPERTY_Cost), 
                 Item.PROPERTY_DiscontinuedDate, 
                 Item.PROPERTY_ItemTypes) {
             @Override
-            public boolean isUsed(Object object) {
+            public boolean isUsed(Item object) {
                 if (!awardType.getUsesItems()) return false;
                 Item item = (Item) object;
 

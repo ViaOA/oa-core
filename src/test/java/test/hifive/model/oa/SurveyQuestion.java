@@ -6,6 +6,8 @@ import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 
+import test.hifive.model.delegate.OAObjectInfoDelegate;
+import test.hifive.model.oa.AwardCardOrder.CardType;
 import test.hifive.model.oa.filter.*;
 import test.hifive.model.oa.propertypath.*;
 
@@ -25,10 +27,6 @@ public class SurveyQuestion extends OAObject {
     private static final long serialVersionUID = 1L;
     public static final String PROPERTY_Id = "Id";
     public static final String P_Id = "Id";
-    public static final String PROPERTY_Type = "Type";
-    public static final String P_Type = "Type";
-    public static final String PROPERTY_TypeAsString = "TypeAsString";
-    public static final String P_TypeAsString = "TypeAsString";
     public static final String PROPERTY_AllowTextResponse = "AllowTextResponse";
     public static final String P_AllowTextResponse = "AllowTextResponse";
     public static final String PROPERTY_Text = "Text";
@@ -47,15 +45,84 @@ public class SurveyQuestion extends OAObject {
     public static final String P_SurveyAnswers = "SurveyAnswers";
      
     protected int id;
-    protected int type;
+    
+    
+//qqqqqqqqqqqqqqqqqqqqq
+    public static final String P_Type = "type";
+    public static final String P_TypeString = "typeString";
+    public static final String P_TypeEnum = "typeEnum";
+    public static final String P_TypeDisplay = "typeDisplay";
+    
+    protected volatile int type;
     public static final int TYPE_pickOne = 0;
     public static final int TYPE_TextOnly = 1;
-    public static final Hub<String> hubType;
-    static {
-        hubType = new Hub<String>(String.class);
-        hubType.addElement("Pick One");
-        hubType.addElement("Text Only");
+    public static enum Type {
+    	PickOne("pickOne"),
+    	TextOnly("TextOnly");
+
+        private String display;
+        Type(String display) {
+            this.display = display;
+        }
+
+        public String getDisplay() {
+            return display;
+        }
     }
+    
+    @OAProperty(displayLength = 5, isNameValue = true)
+    @OAColumn(sqlType = java.sql.Types.INTEGER)
+    public int getType() {
+        return type;
+    }
+    public void setType(int newValue) {
+        int old = type;
+        fireBeforePropertyChange(P_Type, old, newValue);
+        this.type = newValue;
+        firePropertyChange(P_Type, old, this.type);
+    }
+    @OAProperty(enumPropertyName = P_Type)
+    public String getTypeString() {
+        Type type = getTypeEnum();
+        if (type == null) return null;
+        return type.name();
+    }
+    public void setTypeString(String val) {
+        int x = -1;
+        if (OAString.isNotEmpty(val)) {
+            Type type = Type.valueOf(val);
+            if (type != null) x = type.ordinal();
+        }
+        if (x < 0) setNull(P_Type);
+        else setType(x);
+    }
+    @OAProperty(enumPropertyName = P_Type)
+    public Type getTypeEnum() {
+        if (isNull(P_Type)) return null;
+        final int val = getType();
+        if (val < 0 || val >= Type.values().length) return null;
+        return Type.values()[val];
+    }
+    public void setTypeEnum(Type val) {
+        if (val == null) {
+            setNull(P_Type);
+        }
+        else {
+            setType(val.ordinal());
+        }
+    }
+    @OACalculatedProperty(enumPropertyName = P_Type, displayName = "Type", displayLength = 14, columnLength = 6, properties = {P_Type} )
+    public String getTypeDisplay() {
+        Type type = getTypeEnum();
+        if (type == null) return null;
+        return type.getDisplay();
+    }
+    
+    
+    
+    
+    
+    
     protected boolean allowTextResponse;
     protected String text;
     protected int seq;
@@ -86,24 +153,7 @@ public class SurveyQuestion extends OAObject {
         this.id = newValue;
         firePropertyChange(P_Id, old, this.id);
     }
-    @OAProperty(displayLength = 5, isNameValue = true)
-    @OAColumn(sqlType = java.sql.Types.INTEGER)
-    public int getType() {
-        return type;
-    }
-    
-    public void setType(int newValue) {
-        fireBeforePropertyChange(P_Type, this.type, newValue);
-        int old = type;
-        this.type = newValue;
-        firePropertyChange(P_Type, old, this.type);
-    }
-    public String getTypeAsString() {
-        if (isNull(P_Type)) return "";
-        String s = hubType.getAt(getType());
-        if (s == null) s = "";
-        return s;
-    }
+
     @OAProperty(displayName = "Allow Text Response", displayLength = 5, columnLength = 9)
     @OAColumn(sqlType = java.sql.Types.BOOLEAN)
     public boolean getAllowTextResponse() {

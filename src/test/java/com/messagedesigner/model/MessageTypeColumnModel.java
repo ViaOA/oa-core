@@ -26,6 +26,8 @@ import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import com.viaoa.filter.*;
 import com.viaoa.datasource.*;
+import com.messagedesigner.model.delegate.*;
+
 
 public class MessageTypeColumnModel extends OAObjectModel {
     private static Logger LOG = Logger.getLogger(MessageTypeColumnModel.class.getName());
@@ -166,7 +168,7 @@ public class MessageTypeColumnModel extends OAObjectModel {
         modelMessageTypeRecord.setAllowSearch(true);
         modelMessageTypeRecord.setAllowHubSearch(true);
         modelMessageTypeRecord.setAllowGotoEdit(true);
-        OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
+        OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
         modelMessageTypeRecord.setCreateUI(li == null || !MessageTypeColumn.P_MessageTypeRecord.equals(li.getName()) );
         modelMessageTypeRecord.setViewOnly(getViewOnly());
         // call MessageTypeColumn.messageTypeRecordModelCallback(MessageTypeRecordModel) to be able to customize this model

@@ -11,6 +11,7 @@ import com.viaoa.util.*;
 import com.messagedesigner.delegate.oa.*;
 import com.messagedesigner.model.oa.filter.*;
 import com.messagedesigner.model.oa.propertypath.*;
+import com.messagedesigner.model.delegate.OAObjectInfoDelegate;
 import com.messagedesigner.model.oa.MessageType;
 import com.messagedesigner.model.oa.MessageTypeChange;
 import com.viaoa.annotation.*;
@@ -71,17 +72,6 @@ public class MessageTypeChange extends OAObject {
     public static final int TYPE_AddColumn = 4;
     public static final int TYPE_RemoveColumn = 5;
     public static final int TYPE_ChangeColumn = 6;
-    public static final Hub<String> hubType;
-    static {
-        hubType = new Hub<String>(String.class);
-        hubType.addElement("Unknown");
-        hubType.addElement("Add Record");
-        hubType.addElement("Remove Record");
-        hubType.addElement("Change Record");
-        hubType.addElement("Add Column");
-        hubType.addElement("Remove Column");
-        hubType.addElement("Change Column");
-    }
     protected volatile String name;
     protected volatile String description;
      

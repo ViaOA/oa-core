@@ -13,7 +13,6 @@ import com.viaoa.hub.Hub;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAString;
 import com.viaoa.xml.OAXMLReader;
@@ -27,6 +26,7 @@ import test.xice.tsam.delegate.oa.MRADClientDelegate;
 import test.xice.tsam.delegate.oa.OperatingSystemDelegate;
 import test.xice.tsam.delegate.oa.ServerDelegate;
 import test.xice.tsam.delegate.oa.SiloTypeDelegate;
+import test.xice.tsam.model.delegate.OAObjectInfoDelegate;
 import test.xice.tsam.model.oa.Application;
 import test.xice.tsam.model.oa.ApplicationStatus;
 import test.xice.tsam.model.oa.ApplicationType;
@@ -129,7 +129,7 @@ public class MRADClientDelegate {
 
     public static void xmlExport(Hub<MRADClient> hub, String fileName) {
         if (hub == null || OAString.isEmpty(fileName)) return;
-        final OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(MRADClient.class);
+        final OAObjectInfo oi = OAObjectInfoDelegate.getObjectInfo(MRADClient.class);
 
         OAXMLWriter xmlWriter = new OAXMLWriter(fileName) {
             @Override

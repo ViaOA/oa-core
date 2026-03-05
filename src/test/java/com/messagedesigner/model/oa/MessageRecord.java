@@ -11,6 +11,7 @@ import com.viaoa.scheduler.*;
 import com.messagedesigner.delegate.oa.*;
 import com.messagedesigner.model.oa.filter.*;
 import com.messagedesigner.model.oa.propertypath.*;
+import com.messagedesigner.model.delegate.OAObjectInfoDelegate;
 import com.messagedesigner.model.oa.MessageGroup;
 import com.messagedesigner.model.oa.MessageRecord;
 import com.messagedesigner.model.oa.MessageType;
@@ -78,17 +79,6 @@ public class MessageRecord extends OAObject {
     public static final int RELATIONSHIPTYPE_Two = 4;
     public static final int RELATIONSHIPTYPE_Three = 5;
     public static final int RELATIONSHIPTYPE_Four = 6;
-    public static final Hub<String> hubRelationshipType;
-    static {
-        hubRelationshipType = new Hub<String>(String.class);
-        hubRelationshipType.addElement("One");
-        hubRelationshipType.addElement("Zero Or One");
-        hubRelationshipType.addElement("Zero Or More");
-        hubRelationshipType.addElement("One Or More");
-        hubRelationshipType.addElement("Two");
-        hubRelationshipType.addElement("Three");
-        hubRelationshipType.addElement("Four");
-    }
     protected volatile int seq;
      
     // Links to other objects.

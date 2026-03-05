@@ -2,15 +2,15 @@ package com.auto.dev.reportercorp.model;
 
 import java.util.logging.Logger;
 
+import com.auto.dev.reportercorp.model.delegate.HubDelegate;
+import com.auto.dev.reportercorp.model.delegate.HubDetailDelegate;
+import com.auto.dev.reportercorp.model.delegate.OAObjectCallbackDelegate;
 import com.auto.dev.reportercorp.model.oa.EnvironmentVerification;
 import com.auto.dev.reportercorp.model.oa.ReporterCorpVerification;
 import com.auto.dev.reportercorp.model.oa.Verification;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubCopy;
-import com.viaoa.hub.HubDelegate;
-import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectModel;
 
 public class EnvironmentVerificationModel extends OAObjectModel {
@@ -102,7 +102,7 @@ public class EnvironmentVerificationModel extends OAObjectModel {
 		modelVerification.setAllowSearch(false);
 		modelVerification.setAllowHubSearch(false);
 		modelVerification.setAllowGotoEdit(true);
-		OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
+		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
 		modelVerification.setCreateUI(li == null || !EnvironmentVerification.P_Verification.equalsIgnoreCase(li.getName()));
 		modelVerification.setViewOnly(getViewOnly());
 		// call EnvironmentVerification.verificationModelCallback(VerificationModel) to be able to customize this model

@@ -2,6 +2,10 @@ package com.auto.dev.reportercorp.model;
 
 import java.util.logging.Logger;
 
+import com.auto.dev.reportercorp.model.delegate.HubDelegate;
+import com.auto.dev.reportercorp.model.delegate.HubDetailDelegate;
+import com.auto.dev.reportercorp.model.delegate.HubSelectDelegate;
+import com.auto.dev.reportercorp.model.delegate.OAObjectCallbackDelegate;
 import com.auto.dev.reportercorp.model.oa.PypeReportMessage;
 import com.auto.dev.reportercorp.model.oa.Report;
 import com.auto.dev.reportercorp.model.oa.ReportInstance;
@@ -13,13 +17,9 @@ import com.auto.dev.reportercorp.model.search.ReportInstanceSearchModel;
 import com.auto.dev.reportercorp.model.search.ReportVersionSearchModel;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubCopy;
-import com.viaoa.hub.HubDelegate;
-import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.hub.HubGroupBy;
 import com.viaoa.hub.HubListener;
-import com.viaoa.hub.HubSelectDelegate;
 import com.viaoa.model.oa.VInteger;
-import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectModel;
 
 public class ReportInstanceModel extends OAObjectModel {

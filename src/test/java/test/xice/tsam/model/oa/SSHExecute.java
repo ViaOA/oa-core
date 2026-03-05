@@ -6,6 +6,8 @@ import java.sql.*;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
+
+import test.xice.tsam.model.delegate.OAObjectInfoDelegate;
 import test.xice.tsam.model.oa.MRADClientCommand;
 import test.xice.tsam.model.oa.MRADServerCommand;
 import test.xice.tsam.model.oa.SSHExecute;

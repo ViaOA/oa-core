@@ -2,14 +2,14 @@ package com.auto.dev.reportercorp.model;
 
 import java.util.logging.Logger;
 
+import com.auto.dev.reportercorp.model.delegate.HubDelegate;
+import com.auto.dev.reportercorp.model.delegate.HubDetailDelegate;
+import com.auto.dev.reportercorp.model.delegate.OAObjectCallbackDelegate;
 import com.auto.dev.reportercorp.model.oa.EnvironmentVerification;
 import com.auto.dev.reportercorp.model.oa.ReporterCorpVerification;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubCopy;
-import com.viaoa.hub.HubDelegate;
-import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObjectCallbackDelegate;
 import com.viaoa.object.OAObjectModel;
 
 public class ReporterCorpVerificationModel extends OAObjectModel {
@@ -92,7 +92,7 @@ public class ReporterCorpVerificationModel extends OAObjectModel {
 		modelEnvironmentVerification.setAllowSearch(false);
 		modelEnvironmentVerification.setAllowHubSearch(false);
 		modelEnvironmentVerification.setAllowGotoEdit(true);
-		OALinkInfo li = HubDetailDelegate.callDetailGetLinkInfoFromDetailToMaster(getOriginalHub());
+		OALinkInfo li = HubDetailDelegate.getLinkInfoFromDetailToMaster(getOriginalHub());
 		modelEnvironmentVerification
 				.setCreateUI(li == null || !ReporterCorpVerification.P_EnvironmentVerification.equalsIgnoreCase(li.getName()));
 		modelEnvironmentVerification.setViewOnly(getViewOnly());

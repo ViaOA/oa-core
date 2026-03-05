@@ -11,6 +11,7 @@ import com.viaoa.util.*;
 import com.messagedesigner.delegate.oa.*;
 import com.messagedesigner.model.oa.filter.*;
 import com.messagedesigner.model.oa.propertypath.*;
+import com.messagedesigner.model.delegate.OAObjectInfoDelegate;
 import com.messagedesigner.model.oa.JsonType;
 import com.messagedesigner.model.oa.MessageTypeColumn;
 import com.messagedesigner.model.oa.RpgType;
@@ -78,15 +79,6 @@ public class RpgType extends OAObject {
     public static final int ENCODETYPE_ZonedDecimal = 2;
     public static final int ENCODETYPE_Integer = 3;
     public static final int ENCODETYPE_Float = 4;
-    public static final Hub<String> hubEncodeType;
-    static {
-        hubEncodeType = new Hub<String>(String.class);
-        hubEncodeType.addElement("None");
-        hubEncodeType.addElement("Packed Decimal");
-        hubEncodeType.addElement("Zoned Decimal");
-        hubEncodeType.addElement("Integer");
-        hubEncodeType.addElement("Float");
-    }
     protected volatile int defaultSize;
     protected volatile String defaultFormat;
     protected volatile int nullValueType;
@@ -107,13 +99,6 @@ public class RpgType extends OAObject {
     public static final int NULLVALUETYPE_Default = 0;
     public static final int NULLVALUETYPE_Zero = 1;
     public static final int NULLVALUETYPE_Empty = 2;
-    public static final Hub<String> hubNullValueType;
-    static {
-        hubNullValueType = new Hub<String>(String.class);
-        hubNullValueType.addElement("Default");
-        hubNullValueType.addElement("Zero");
-        hubNullValueType.addElement("Empty");
-    }
     protected volatile String note;
     protected volatile String samples;
     protected volatile int seq;

@@ -4,7 +4,6 @@ package test.xice.tsac.delegate;
 
 import com.viaoa.annotation.OAOne;
 import com.viaoa.hub.*;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.OAString;
 
 import test.xice.tsac.model.oa.*;

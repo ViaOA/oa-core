@@ -13,6 +13,7 @@ import com.viaoa.annotation.*;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
 import com.cdi.delegate.oa.*;
+import com.cdi.model.delegate.OAObjectInfoDelegate;
 import com.cdi.model.oa.filter.*;
 import com.cdi.model.oa.propertypath.*;
 
@@ -452,13 +453,6 @@ public class Order extends OAObject {
     public static final int PAYMENTSTATUS_UNPAID = 0;
     public static final int PAYMENTSTATUS_PARTIAL = 1;
     public static final int PAYMENTSTATUS_PAID = 2;
-    public static final Hub<String> hubPaymentStatus;
-    static {
-        hubPaymentStatus = new Hub<String>(String.class);
-        hubPaymentStatus.addElement("Unpaid");
-        hubPaymentStatus.addElement("Partial");
-        hubPaymentStatus.addElement("Paid");
-    }
     @OACalculatedProperty(displayName = "Unshipped Price", decimalPlaces = 2, isCurrency = true, displayLength = 9, columnLength = 15, properties = {P_OrderItems+"."+OrderItem.P_UnshippedPrice})
     public double getRemainingPrice() {
         return getUnshippedPrice();

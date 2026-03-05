@@ -8,6 +8,7 @@ import com.viaoa.util.*;
 
 import test.hifive.model.oa.filter.*;
 import test.hifive.model.oa.propertypath.*;
+import test.hifive.model.delegate.OAObjectInfoDelegate;
 
 import com.viaoa.annotation.*;
  
@@ -43,15 +44,6 @@ public class AddressType extends OAObject {
     public static final int TYPE_WORK = 2;
     public static final int TYPE_SHIPTO = 3;
     public static final int TYPE_OTHER = 4;
-    public static final Hub<String> hubType;
-    static {
-        hubType = new Hub<String>(String.class);
-        hubType.addElement("Unknown");
-        hubType.addElement("Home");
-        hubType.addElement("Work");
-        hubType.addElement("Shipto");
-        hubType.addElement("Other");
-    }
      
     // Links to other objects.
      
@@ -102,7 +94,9 @@ public class AddressType extends OAObject {
     }
     public String getTypeAsString() {
         if (isNull(P_Type)) return "";
-        String s = hubType.getAt(getType());
+        //qqqqqqqqqq
+        String s = "qqqqq";
+        //String s = hubType.getAt(getType());
         if (s == null) s = "";
         return s;
     }

@@ -19,9 +19,9 @@ public class EmployeeAwardFilter extends OAObject {
         return createHasNotSentFilter(hubMaster, hub, false);
     }
     public HubFilter createHasNotSentFilter(final Hub<EmployeeAward> hubMaster, Hub<EmployeeAward> hub, boolean bAllHubs) {
-        HubFilter filter = new HubFilter(hubMaster, hub) {
+        HubFilter<EmployeeAward> filter = new HubFilter<>(hubMaster, hub) {
             @Override
-            public boolean isUsed(Object object) {
+            public boolean isUsed(EmployeeAward object) {
                 EmployeeAward employeeAward = (EmployeeAward) object;
                 return isUsedForHasNotSentFilter(employeeAward);
             }

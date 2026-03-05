@@ -12,6 +12,7 @@ import com.corptostore.model.oa.method.SendResendMethod;
 import com.viaoa.annotation.*;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
+import com.viaoa.model.oa.VInteger;
 import com.viaoa.util.*;
 import com.viaoa.util.OADate;
 
@@ -26,15 +27,15 @@ public class SendResendMethod extends OAObject {
     public static final String P_Batch = "Batch";
     public static final String P_Stores = "Stores";
 
-    protected Hub<Integer> hubBatchId;
+    protected Hub<VInteger> hubBatchId;
     protected OADate date;
     protected Batch batch;
     protected Hub<Store> hubStores;
 
     @OAMany
-    public Hub<Integer> getBatchId() {
+    public Hub<VInteger> getBatchId() {
         if (hubBatchId == null) {
-            hubBatchId = (Hub<Integer>) getHub(P_BatchId);
+            hubBatchId = (Hub<VInteger>) getHub(P_BatchId);
         }
         return hubBatchId;
     }

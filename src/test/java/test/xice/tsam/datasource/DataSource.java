@@ -16,14 +16,14 @@ import com.viaoa.datasource.jdbc.db.Database;
 import com.viaoa.datasource.jdbc.db.Index;
 import com.viaoa.datasource.jdbc.db.Link;
 import com.viaoa.datasource.jdbc.db.Table;
-import com.viaoa.object.OAAnnotationDelegate;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.util.Base64;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAReflect;
 import com.viaoa.util.OAString;
 
+import test.xice.tsam.model.delegate.OAObjectAnnotationDelegate;
+import test.xice.tsam.model.delegate.OAObjectCacheDelegate;
 import test.xice.tsam.model.oa.AdminUser;
 import test.xice.tsam.model.oa.AdminUserCategory;
 import test.xice.tsam.model.oa.Application;
@@ -141,7 +141,7 @@ public class DataSource {
 			}
 			classes = (Class[]) OAArray.add(Class.class, classes, c);
 		}
-		OAAnnotationDelegate.update(database, classes);
+		OAObjectAnnotationDelegate.update(database, classes);
 		return database;
 	}
 

@@ -8,6 +8,7 @@ import com.viaoa.util.*;
 import com.viaoa.annotation.*;
 import com.viaoa.util.OADate;
 
+import test.xice.tsac.model.delegate.OAObjectInfoDelegate;
 import test.xice.tsac.model.oa.filter.*;
 import test.xice.tsac.model.oa.propertypath.*;
  

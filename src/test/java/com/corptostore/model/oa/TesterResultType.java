@@ -63,15 +63,6 @@ public class TesterResultType extends OAObject {
     public static final int TYPE_numberOfAllStoreMessages = 2;
     public static final int TYPE_numberOfUsedAllStoreMessages = 3;
     public static final int TYPE_numberOfMessges = 4;
-    public static final Hub<String> hubType;
-    static {
-        hubType = new Hub<String>(String.class);
-        hubType.addElement("Started");
-        hubType.addElement("Number Of Stores");
-        hubType.addElement("Number Of All Store Messages");
-        hubType.addElement("Number Of Used All Store Messages");
-        hubType.addElement("Number Of Messges");
-    }
      
      
     public TesterResultType() {

@@ -9,6 +9,7 @@ import com.viaoa.annotation.*;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OADateTime;
 
+import test.hifive.model.delegate.OAObjectPropertyDelegate;
 import test.hifive.model.oa.filter.*;
 import test.hifive.model.oa.propertypath.*;
  

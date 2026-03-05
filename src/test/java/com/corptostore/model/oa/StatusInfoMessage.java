@@ -55,13 +55,6 @@ public class StatusInfoMessage extends OAObject {
 	public static final int TYPE_status = 0;
 	public static final int TYPE_activity = 1;
 	public static final int TYPE_alert = 2;
-	public static final Hub<String> hubType;
-	static {
-		hubType = new Hub<String>(String.class);
-		hubType.addElement("Status");
-		hubType.addElement("Activity");
-		hubType.addElement("Alert");
-	}
 	protected volatile String message;
 	protected volatile int counter;
 	protected volatile String exception;

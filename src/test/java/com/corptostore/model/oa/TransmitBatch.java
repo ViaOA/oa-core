@@ -13,6 +13,7 @@ import com.corptostore.model.oa.filter.*;
 import com.corptostore.model.oa.method.*;
 import com.corptostore.model.oa.propertypath.*;
 import com.corptostore.process.server.TransmitBatchDataGenerator;
+import com.corptostore.model.delegate.OAObjectInfoDelegate;
 import com.corptostore.model.oa.StoreTransmitBatch;
 import com.corptostore.model.oa.Tester;
 import com.corptostore.model.oa.Transmit;

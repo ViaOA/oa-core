@@ -4,9 +4,12 @@ package test.xice.tsam.model.oa;
 
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
+
+import test.xice.tsac.model.oa.ConnectionInfo.Status;
 import test.xice.tsam.model.oa.ErrorInfo;
 import com.viaoa.annotation.*;
 import com.viaoa.util.OADateTime;
+import com.viaoa.util.OAString;
  
 @OAClass(
     shortName = "ci",
@@ -29,7 +32,6 @@ public class ConnectionInfo extends OAObject {
     public static final String PROPERTY_CloseDateTime = "CloseDateTime";
     public static final String PROPERTY_TotalMemory = "TotalMemory";
     public static final String PROPERTY_FreeMemory = "FreeMemory";
-    public static final String PROPERTY_Status = "Status";
      
      
     public static final String PROPERTY_ErrorInfos = "ErrorInfos";
@@ -44,19 +46,79 @@ public class ConnectionInfo extends OAObject {
     protected OADateTime closeDateTime;
     protected long totalMemory;
     protected long freeMemory;
-    protected int status;
+
+//qqqqqqqqqqqqqqqqq    
+    public static final String P_Status = "status";
+    public static final String P_StatusString = "statusString";
+    public static final String P_StatusEnum = "statusEnum";
+    public static final String P_StatusDisplay = "statusDisplay";
+    protected volatile int status;
     public static final int STATUS_Connected = 0;
     public static final int STATUS_Disconnected = 1;
     public static final int STATUS_ClosedByUser = 2;
     public static final int STATUS_ClosedByServer = 3;
-     
-    public static final Hub<String> hubStatus;
-    static {
-        hubStatus = new Hub<String>(String.class);
-        hubStatus.addElement("Connected");
-        hubStatus.addElement("Disconnected");
-        hubStatus.addElement("Closed by User");
-        hubStatus.addElement("Closed by Server");
+    public static enum Status {
+    	Connected("Connected"),
+    	Disconnected("Disconnected"),
+    	ClosedByUser("ClosedByUser"),
+    	ClosedByServer("ClosedByServer");
+
+        private String display;
+        Status(String display) {
+            this.display = display;
+        }
+
+        public String getDisplay() {
+            return display;
+        }
+    }
+    @OAProperty(displayLength = 14, isProcessed = true)
+    @OAColumn(sqlType = java.sql.Types.INTEGER)
+    public int getStatus() {
+        return status;
+    }
+    public void setStatus(int newValue) {
+        int old = status;
+        fireBeforePropertyChange(P_Status, old, newValue);
+        this.status = newValue;
+        firePropertyChange(P_Status, old, this.status);
+    }
+    @OAProperty(displayName = "Status", displayLength = 8)
+    @OAColumn(sqlType = java.sql.Types.INTEGER)
+    public String getStatusString() {
+        Status status = getStatusEnum();
+        if (status == null) return null;
+        return status.name();
+    }
+    public void setStatusString(String val) {
+        int x = -1;
+        if (OAString.isNotEmpty(val)) {
+            Status status = Status.valueOf(val);
+            if (status != null) x = status.ordinal();
+        }
+        if (x < 0) setNull(P_Status);
+        else setStatus(x);
+    }
+    @OAProperty(enumPropertyName = P_Status)
+    public Status getStatusEnum() {
+        if (isNull(P_Status)) return null;
+        final int val = getStatus();
+        if (val < 0 || val >= Status.values().length) return null;
+        return Status.values()[val];
+    }
+    public void setStatusEnum(Status val) {
+        if (val == null) {
+            setNull(P_Status);
+        }
+        else {
+            setStatus(val.ordinal());
+        }
+    }
+    @OACalculatedProperty(enumPropertyName = P_Status, displayName = "Status", displayLength = 14, columnLength = 6, properties = {P_Status} )
+    public String getStatusDisplay() {
+        Status status = getStatusEnum();
+        if (status == null) return null;
+        return status.getDisplay();
     }
     
     
@@ -210,19 +272,6 @@ public class ConnectionInfo extends OAObject {
         firePropertyChange(PROPERTY_FreeMemory, old, this.freeMemory);
     }
 
-    @OAProperty(displayName = "Status", displayLength = 8)
-    @OAColumn(sqlType = java.sql.Types.INTEGER)
-    public int getStatus() {
-        return status;
-    }
-    
-    public void setStatus(int newValue) {
-        int old = status;
-        fireBeforePropertyChange(PROPERTY_Status, old, newValue);
-        this.status = newValue;
-        firePropertyChange(PROPERTY_Status, old, this.status);
-    }
-    
     
     
     @OAMany(

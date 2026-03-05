@@ -13,6 +13,7 @@ import com.remodel.model.oa.filter.*;
 import com.remodel.model.oa.propertypath.*;
 import com.viaoa.annotation.*;
 import com.viaoa.util.OADateTime;
+import com.remodel.model.delegate.OAObjectInfoDelegate;
  
 @OAClass(
     lowerName = "dataType",
@@ -115,35 +116,6 @@ public class DataType extends OAObject {
     public static final int TYPE_Rectangle = 22;
     public static final int TYPE_Blob = 23;
     public static final int TYPE_Timezone = 24;
-    public static final Hub<String> hubType;
-    static {
-        hubType = new Hub<String>(String.class);
-        hubType.addElement("Unassigned");
-        hubType.addElement("Unknown");
-        hubType.addElement("boolean");
-        hubType.addElement("byte");
-        hubType.addElement("char");
-        hubType.addElement("short");
-        hubType.addElement("int");
-        hubType.addElement("long");
-        hubType.addElement("float");
-        hubType.addElement("double");
-        hubType.addElement("String");
-        hubType.addElement("String (Long)");
-        hubType.addElement("Guid");
-        hubType.addElement("Date");
-        hubType.addElement("Time");
-        hubType.addElement("Date Time");
-        hubType.addElement("Timestamp");
-        hubType.addElement("Currency");
-        hubType.addElement("Number");
-        hubType.addElement("Font");
-        hubType.addElement("Color");
-        hubType.addElement("Dimension");
-        hubType.addElement("Rectangle");
-        hubType.addElement("Blob");
-        hubType.addElement("Timezone");
-    }
     protected volatile boolean isNumeric;
     protected volatile boolean isDecimal;
     protected volatile int seq;

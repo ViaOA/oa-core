@@ -9,6 +9,7 @@ import com.viaoa.hub.*;
 import com.viaoa.scheduler.*;
 import com.viaoa.util.*;
 import com.remodel.delegate.oa.*;
+import com.remodel.model.delegate.OAObjectInfoDelegate;
 import com.remodel.model.oa.filter.*;
 import com.remodel.model.oa.propertypath.*;
 import com.viaoa.annotation.*;

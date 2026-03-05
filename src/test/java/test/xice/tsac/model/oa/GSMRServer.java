@@ -9,6 +9,7 @@ import com.viaoa.annotation.*;
 import com.viaoa.util.OADateTime;
 
 import test.xice.tsac.delegate.oa.GSMRServerDelegate;
+import test.xice.tsac.model.delegate.OAObjectInfoDelegate;
 import test.xice.tsac.model.oa.filter.*;
 import test.xice.tsac.model.oa.propertypath.*;
 

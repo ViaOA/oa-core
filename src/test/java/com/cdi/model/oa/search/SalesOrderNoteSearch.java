@@ -8,6 +8,7 @@ import com.cdi.model.oa.propertypath.*;
 import com.viaoa.annotation.*;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
+import com.viaoa.model.oa.VString;
 import com.viaoa.util.*;
 import com.viaoa.util.OADateTime;
 import com.viaoa.datasource.*;
@@ -60,14 +61,6 @@ public class SalesOrderNoteSearch extends OAObject {
     public static final int SORTBYTYPE_created = 1;
     public static final int SORTBYTYPE_id = 2;
     public static final int SORTBYTYPE_lastName = 3;
-    public static final Hub<String> hubSortByType;
-    static {
-        hubSortByType = new Hub<String>(String.class);
-        hubSortByType.add("None");
-        hubSortByType.add("Created");
-        hubSortByType.add("Id");
-        hubSortByType.add("Last Name");
-    }
 
     public SalesOrderNoteSearch() {
         reset();

@@ -6,8 +6,9 @@ import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADate;
 
+import test.hifive.model.delegate.OAObjectInfoDelegate;
+import test.hifive.model.oa.AwardCardOrder.CardType;
 import test.hifive.model.oa.filter.*;
 import test.hifive.model.oa.propertypath.*;
  
@@ -36,10 +37,6 @@ public class Report extends OAObject {
     public static final String P_Code = "Code";
     public static final String PROPERTY_Name = "Name";
     public static final String P_Name = "Name";
-    public static final String PROPERTY_Orientation = "Orientation";
-    public static final String P_Orientation = "Orientation";
-    public static final String PROPERTY_OrientationAsString = "OrientationAsString";
-    public static final String P_OrientationAsString = "OrientationAsString";
     public static final String PROPERTY_Template = "Template";
     public static final String P_Template = "Template";
      
@@ -55,17 +52,88 @@ public class Report extends OAObject {
     protected OADate created;
     protected String code;
     protected String name;
-    protected int orientation;
+    
+    
+    
+//qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+
+    public static final String P_Orientation = "orientation";
+    public static final String P_OrientationString = "orientationString";
+    public static final String P_OrientationEnum = "orientationEnum";
+    public static final String P_OrientationDisplay = "orientationDisplay";
+    
+    protected volatile int orientation;
+    public static enum Orientation {
+    	PORTRAIT("PORTRAIT"),
+    	LANDSCAPE("LANDSCAPE"),
+    	CERTIFICATE("CERTIFICATE");
+
+        private String display;
+        Orientation(String display) {
+            this.display = display;
+        }
+
+        public String getDisplay() {
+            return display;
+        }
+    }
     public static final int ORIENTATION_PORTRAIT = 0;
     public static final int ORIENTATION_LANDSCAPE = 1;
     public static final int ORIENTATION_CERTIFICATE = 2;
-    public static final Hub<String> hubOrientation;
-    static {
-        hubOrientation = new Hub<String>(String.class);
-        hubOrientation.addElement("Portrait");
-        hubOrientation.addElement("Landscape");
-        hubOrientation.addElement("Certificate");
+    
+    
+    @OAProperty(displayLength = 5, isNameValue = true)
+    @OAColumn(sqlType = java.sql.Types.INTEGER)
+    public int getOrientation() {
+        return orientation;
     }
+    public void setOrientation(int newValue) {
+        int old = orientation;
+        fireBeforePropertyChange(P_Orientation, old, newValue);
+        this.orientation = newValue;
+        firePropertyChange(P_Orientation, old, this.orientation);
+    }
+    @OAProperty(enumPropertyName = P_Orientation)
+    public String getOrientationString() {
+        Orientation orientation = getOrientationEnum();
+        if (orientation == null) return null;
+        return orientation.name();
+    }
+    public void setOrientationString(String val) {
+        int x = -1;
+        if (OAString.isNotEmpty(val)) {
+            Orientation orientation = Orientation.valueOf(val);
+            if (orientation != null) x = orientation.ordinal();
+        }
+        if (x < 0) setNull(P_Orientation);
+        else setOrientation(x);
+    }
+    @OAProperty(enumPropertyName = P_Orientation)
+    public Orientation getOrientationEnum() {
+        if (isNull(P_Orientation)) return null;
+        final int val = getOrientation();
+        if (val < 0 || val >= Orientation.values().length) return null;
+        return Orientation.values()[val];
+    }
+    public void setOrientationEnum(Orientation val) {
+        if (val == null) {
+            setNull(P_Orientation);
+        }
+        else {
+            setOrientation(val.ordinal());
+        }
+    }
+    @OACalculatedProperty(enumPropertyName = P_Orientation, displayName = "Orientation", displayLength = 14, columnLength = 6, properties = {P_Orientation} )
+    public String getOrientationDisplay() {
+        Orientation orientation = getOrientationEnum();
+        if (orientation == null) return null;
+        return orientation.getDisplay();
+    }
+   
+    
+    
+    
+    
     protected String template;
      
     // Links to other objects.
@@ -132,24 +200,6 @@ public class Report extends OAObject {
         String old = name;
         this.name = newValue;
         firePropertyChange(P_Name, old, this.name);
-    }
-    @OAProperty(displayLength = 5, isNameValue = true)
-    @OAColumn(sqlType = java.sql.Types.INTEGER)
-    public int getOrientation() {
-        return orientation;
-    }
-    
-    public void setOrientation(int newValue) {
-        fireBeforePropertyChange(P_Orientation, this.orientation, newValue);
-        int old = orientation;
-        this.orientation = newValue;
-        firePropertyChange(P_Orientation, old, this.orientation);
-    }
-    public String getOrientationAsString() {
-        if (isNull(P_Orientation)) return "";
-        String s = hubOrientation.getAt(getOrientation());
-        if (s == null) s = "";
-        return s;
     }
     @OAProperty(maxLength = 8, displayLength = 8)
     @OAColumn(sqlType = java.sql.Types.CLOB)

@@ -3,7 +3,6 @@ package test.xice.tsac.delegate.oa;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubCopy;
 import com.viaoa.object.*;
-import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAString;
 
@@ -14,12 +13,14 @@ import test.xice.tsac.model.oa.propertypath.*;
 public class RCDeployDelegate {
 
     public static void initialize(final RCDeploy rcDeploy) throws Exception {
+/*qqqqqq    	
         if (OASyncDelegate.callSyncIsServer()) {
             _initialize(rcDeploy);
         }
         else {
             // send to server
         }
+*/        
     }
 
     private static void _initialize(final RCDeploy rcDeploy) throws Exception {
@@ -74,13 +75,14 @@ public class RCDeployDelegate {
         if (rcDeploy.getRCDeployDetails().find(RCDeployDetailPP.selected(), true) == null) {
             return;
         }
-        
+/*qqqqqqq        
         if (OASyncDelegate.callSyncIsServer()) {
             _download(rcDeploy);
         }
         else {
             // send to server
         }
+*/        
     }
     private static void _download(final RCDeploy rcDeploy) throws Exception {
         if (rcDeploy == null) throw new RuntimeException("deploy can not be null");
@@ -97,14 +99,17 @@ public class RCDeployDelegate {
     }
     
     public static void stage(final RCDeploy rcDeploy) throws Exception {
+/*qqqqqqqqqq    	
         if (OASyncDelegate.callSyncIsServer()) {
             _stage(rcDeploy);
         }
         else {
             // send to server
         }
+*/        
     }
     private static void _stage(final RCDeploy rcDeploy) throws Exception {
+    	/*qqqqqqqqqq    	
         if (rcDeploy == null) throw new RuntimeException("deploy can not be null");
 
         RCStage stage = rcDeploy.getRCStage();
@@ -116,14 +121,17 @@ public class RCDeployDelegate {
             RCStageDelegate._process(stage);
             RCStageDelegate.load(stage);
         }
+        */
     }
     public static void install(final RCDeploy rcDeploy) throws Exception {
+    	/*qqqqqqqqqq    	
         if (OASyncDelegate.callSyncIsServer()) {
             _install(rcDeploy);
         }
         else {
             // send to server
         }
+        */
     }
     private static void _install(final RCDeploy rcDeploy) throws Exception {
         if (rcDeploy == null) throw new RuntimeException("deploy can not be null");
@@ -141,12 +149,14 @@ public class RCDeployDelegate {
     }
 
     public static void verify(final RCDeploy rcDeploy) throws Exception {
+    	/*qqqqqqqqqq    	
         if (OASyncDelegate.callSyncIsServer()) {
             _verify(rcDeploy);
         }
         else {
             // send to server
         }
+        */
     }
     private static void _verify(final RCDeploy rcDeploy) throws Exception {
         if (rcDeploy == null) throw new RuntimeException("deploy can not be null");
@@ -164,12 +174,14 @@ public class RCDeployDelegate {
     
     
     public static void start(final RCDeploy rcDeploy) throws Exception {
+    	/*qqqqqqqqqq    	
         if (OASyncDelegate.callSyncIsServer()) {
             _start(rcDeploy);
         }
         else {
             // send to server
         }
+        */
     }
     private static void _start(final RCDeploy rcDeploy) throws Exception {
         if (rcDeploy == null) throw new RuntimeException("deploy can not be null");
@@ -186,12 +198,14 @@ public class RCDeployDelegate {
     }
 
     public static void stop(final RCDeploy rcDeploy) throws Exception {
+    	/*qqqqqqqqqq    	
         if (OASyncDelegate.callSyncIsServer()) {
             _stop(rcDeploy);
         }
         else {
             // send to server
         }
+        */
     }
     private static void _stop(final RCDeploy rcDeploy) throws Exception {
         if (rcDeploy == null) throw new RuntimeException("deploy can not be null");

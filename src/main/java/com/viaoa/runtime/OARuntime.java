@@ -9,7 +9,6 @@ import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.runtime.datasource.OADataSourceService;
 
 public final class OARuntime {
 	private static Logger LOG = Logger.getLogger(OARuntime.class.getName());
@@ -21,24 +20,23 @@ public final class OARuntime {
 	private final Map<String, RuntimeException> hmRuntimeException = new ConcurrentHashMap<>();
 	private final Map<Class<?>, Class<?>> hmClass = new ConcurrentHashMap<>();
 	
-	private final OAGraph graphDefault;
+	private OAGraph graphDefault;
 
-	private final OAThread thread;
-	private final OADataSource dataSource;
-	private final OAContext context;
-	
+	private OAThread thread;
+	private OADataSource dataSource;
+	private OAContext context;
 	
 	private OARuntime() {
-		this.thread = new OAThreadImpl();
-		this.dataSource = new OADataSourceImpl();
-		
-
-		this.context = new OAContextImpl();
-		
-		
-		graphDefault = new OAGraphImpl(this, null);
+	}
+	
+	static {
+		runtime.thread = new OAThreadImpl();
+		runtime.dataSource = new OADataSourceImpl();
+		runtime.context = new OAContextImpl();
+ 
+		runtime.graphDefault = new OAGraphImpl(runtime, null);
 		try {
-			((OAGraphImpl)graphDefault).initialize();
+			((OAGraphImpl) runtime.graphDefault).initialize();
 		}
 		catch (Exception e) {}
 	}

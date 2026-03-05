@@ -6,8 +6,8 @@ import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADate;
 
+import test.hifive.model.delegate.OAObjectInfoDelegate;
 import test.hifive.model.oa.filter.*;
 import test.hifive.model.oa.propertypath.*;
  
@@ -31,10 +31,6 @@ public class EmailType extends OAObject {
     public static final String P_Seq = "Seq";
     public static final String PROPERTY_Name = "Name";
     public static final String P_Name = "Name";
-    public static final String PROPERTY_Type = "Type";
-    public static final String P_Type = "Type";
-    public static final String PROPERTY_TypeAsString = "TypeAsString";
-    public static final String P_TypeAsString = "TypeAsString";
     public static final String PROPERTY_Subject = "Subject";
     public static final String P_Subject = "Subject";
     public static final String PROPERTY_Text = "Text";
@@ -54,7 +50,37 @@ public class EmailType extends OAObject {
     protected OADate created;
     protected int seq;
     protected String name;
-    protected int type;
+
+    
+    
+    
+    
+    
+    
+//qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq    
+    
+    public static final String P_Type = "type";
+    public static final String P_TypeString = "typeString";
+    public static final String P_TypeEnum = "typeEnum";
+    public static final String P_TypeDisplay = "typeDisplay";
+    
+    protected volatile int type;
+    public static enum Type {
+    	Inspire("Inspire"),
+    	InspireApproval("Inspire Approval"),
+    	InspireRecipient("Inspire Recipient"),
+    	InspireCertificate("Inspire Certificate");
+
+        private String display;
+        Type(String display) {
+            this.display = display;
+        }
+
+        public String getDisplay() {
+            return display;
+        }
+    }
+    
     public static final int TYPE_Inspire = 0;
     public static final int TYPE_InspireApproval = 1;
     public static final int TYPE_InspireRecipient = 2;
@@ -101,56 +127,57 @@ public class EmailType extends OAObject {
     public static final int TYPE_PointsNominationApprovalReminder = 43;
     public static final int TYPE_PointsNominationCertificateEmail = 44;
     public static final int TYPE_PointsNominationHRBPNotification = 45;
-    public static final Hub<String> hubType;
-    static {
-        hubType = new Hub<String>(String.class);
-        hubType.addElement("Inspire");
-        hubType.addElement("Inspire Approval");
-        hubType.addElement("Inspire Recipient");
-        hubType.addElement("Inspire Certificate");
-        hubType.addElement("Inspire Order");
-        hubType.addElement("Forgot Password");
-        hubType.addElement("ECard To");
-        hubType.addElement("Employee Award Notify");
-        hubType.addElement("Employee Award Manager Notify");
-        hubType.addElement("Employee Award Confirm");
-        hubType.addElement("Employee Award Shipped");
-        hubType.addElement("Register");
-        hubType.addElement("ECard Confirmed");
-        hubType.addElement("ECard Delivered");
-        hubType.addElement("Reset Password");
-        hubType.addElement("ECard To Pdf");
-        hubType.addElement("Inspire Recipient Completed");
-        hubType.addElement("Inspire Approval Reminder");
-        hubType.addElement("Points Upload Automated Request");
-        hubType.addElement("Points Buy Notify");
-        hubType.addElement("Points Buy Accounting");
-        hubType.addElement("Points Buy Admin Notify");
-        hubType.addElement("Points Shopping Notify");
-        hubType.addElement("Points Distribute Recipient Notify");
-        hubType.addElement("Points Distribute Requestor Nofity");
-        hubType.addElement("Points Distribute Admin Notify");
-        hubType.addElement("Points Transfer From Notify");
-        hubType.addElement("Points Transfer To Notify");
-        hubType.addElement("Points Transfer Requester Notify");
-        hubType.addElement("Points Request Approver Notify");
-        hubType.addElement("Points Request Approval");
-        hubType.addElement("Points Request Denial");
-        hubType.addElement("Points Recognition Recipient Notify");
-        hubType.addElement("Points Recognition Recognizer Notify");
-        hubType.addElement("Points Recognition Threshold Notify");
-        hubType.addElement("Points Nomination To Approve");
-        hubType.addElement("Points Nomination To Nominator");
-        hubType.addElement("Points Nomination Denied");
-        hubType.addElement("Points Nomination Approved");
-        hubType.addElement("Points Nomination Threshold");
-        hubType.addElement("Points Nomination Certificate");
-        hubType.addElement("Points Nomination To Recipient On Approval");
-        hubType.addElement("Points Nomination Approved Notify Manager");
-        hubType.addElement("Points Nomination Approval Reminder");
-        hubType.addElement("Points Nomination Certificate Email");
-        hubType.addElement("Points Nomination HRBPNotification");
+    
+    
+    @OAProperty(lowerName = "type", displayLength = 14, uiColumnLength = 6, isNameValue = true)
+    @OAColumn(name = "Type", sqlType = java.sql.Types.INTEGER)
+    public int getType() {
+        return type;
     }
+    public void setType(int newValue) {
+        int old = type;
+        fireBeforePropertyChange(P_Type, old, newValue);
+        this.type = newValue;
+        firePropertyChange(P_Type, old, this.type);
+    }
+    @OAProperty(enumPropertyName = P_Type)
+    public String getTypeString() {
+        Type type = getTypeEnum();
+        if (type == null) return null;
+        return type.name();
+    }
+    public void setTypeString(String val) {
+        int x = -1;
+        if (OAString.isNotEmpty(val)) {
+            Type type = Type.valueOf(val);
+            if (type != null) x = type.ordinal();
+        }
+        if (x < 0) setNull(P_Type);
+        else setType(x);
+    }
+    @OAProperty(enumPropertyName = P_Type)
+    public Type getTypeEnum() {
+        if (isNull(P_Type)) return null;
+        final int val = getType();
+        if (val < 0 || val >= Type.values().length) return null;
+        return Type.values()[val];
+    }
+    public void setTypeEnum(Type val) {
+        if (val == null) {
+            setNull(P_Type);
+        }
+        else {
+            setType(val.ordinal());
+        }
+    }
+    @OACalculatedProperty(enumPropertyName = P_Type, displayName = "Type", displayLength = 14, columnLength = 6, properties = {P_Type} )
+    public String getTypeDisplay() {
+        Type type = getTypeEnum();
+        if (type == null) return null;
+        return type.getDisplay();
+    }
+    
+    
     protected String subject;
     protected String text;
     protected String note;
@@ -216,24 +243,6 @@ public class EmailType extends OAObject {
         String old = name;
         this.name = newValue;
         firePropertyChange(P_Name, old, this.name);
-    }
-    @OAProperty(displayLength = 45, isNameValue = true)
-    @OAColumn(sqlType = java.sql.Types.INTEGER)
-    public int getType() {
-        return type;
-    }
-    
-    public void setType(int newValue) {
-        fireBeforePropertyChange(P_Type, this.type, newValue);
-        int old = type;
-        this.type = newValue;
-        firePropertyChange(P_Type, old, this.type);
-    }
-    public String getTypeAsString() {
-        if (isNull(P_Type)) return "";
-        String s = hubType.getAt(getType());
-        if (s == null) s = "";
-        return s;
     }
     @OAProperty(maxLength = 150, isUnicode = true, displayLength = 25)
     @OAColumn(maxLength = 150)

@@ -16,7 +16,7 @@ public class OperatingSystemDelegate {
     }
     
     public static OperatingSystem getOperatingSystem(int type) {
-        OperatingSystem ss = ModelDelegate.getOperatingSystems().find(OperatingSystem.PROPERTY_Type, type);
+        OperatingSystem ss = ModelDelegate.getOperatingSystems().find(OperatingSystem.P_Type, type);
         return ss;
     }
  

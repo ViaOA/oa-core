@@ -4,6 +4,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
+import com.auto.dev.reportercorp.model.delegate.OAObjectInfoDelegate;
 import com.viaoa.annotation.OACalculatedProperty;
 import com.viaoa.annotation.OAClass;
 import com.viaoa.annotation.OAColumn;
@@ -18,7 +19,6 @@ import com.viaoa.annotation.OATable;
 import com.viaoa.hub.Hub;
 import com.viaoa.json.OAJson;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.util.OADateTime;
 
 @OAClass(lowerName = "reportInstance", pluralName = "ReportInstances", shortName = "rpi", displayName = "Report Instance", displayProperty = "id", sortProperty = "id")

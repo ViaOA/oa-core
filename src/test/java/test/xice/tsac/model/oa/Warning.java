@@ -6,8 +6,9 @@ import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADateTime;
 
+import test.hifive.model.oa.ServerInfo.Status;
+import test.xice.tsac.model.delegate.OAObjectInfoDelegate;
 import test.xice.tsac.model.oa.filter.*;
 import test.xice.tsac.model.oa.propertypath.*;
  
@@ -30,10 +31,6 @@ public class Warning extends OAObject {
     public static final String P_ExceptionMessage = "ExceptionMessage";
     public static final String PROPERTY_StackTrace = "StackTrace";
     public static final String P_StackTrace = "StackTrace";
-    public static final String PROPERTY_ActionTaken = "ActionTaken";
-    public static final String P_ActionTaken = "ActionTaken";
-    public static final String PROPERTY_ActionTakenAsString = "ActionTakenAsString";
-    public static final String P_ActionTakenAsString = "ActionTakenAsString";
     public static final String PROPERTY_ActionComment = "ActionComment";
     public static final String P_ActionComment = "ActionComment";
      
@@ -46,21 +43,157 @@ public class Warning extends OAObject {
     protected String message;
     protected String exceptionMessage;
     protected String stackTrace;
-    protected int actionTaken;
+    
+    public static final String P_Status = "status";
+    public static final String P_StatusString = "statusString";
+    public static final String P_StatusEnum = "statusEnum";
+    public static final String P_StatusDisplay = "statusDisplay";
+    protected volatile int status;
+    public static final int STATUS_Starting = 0;
+    public static final int STATUS_Running = 1;
+    public static final int STATUS_Stopping = 2;
+    public static final int STATUS_Stopped = 3;
+    public static enum Status {
+    	Starting("Starting"),
+    	Running("Running"),
+    	Stopping("Stopping"),
+    	Stopped("Stopped");
+
+        private String display;
+        Status(String display) {
+            this.display = display;
+        }
+
+        public String getDisplay() {
+            return display;
+        }
+    }
+    @OAProperty(displayLength = 14, isProcessed = true)
+    @OAColumn(sqlType = java.sql.Types.INTEGER)
+    public int getStatus() {
+        return status;
+    }
+    public void setStatus(int newValue) {
+        int old = status;
+        fireBeforePropertyChange(P_Status, old, newValue);
+        this.status = newValue;
+        firePropertyChange(P_Status, old, this.status);
+    }
+    @OAProperty(enumPropertyName = P_Status)
+    public String getStatusString() {
+        Status status = getStatusEnum();
+        if (status == null) return null;
+        return status.name();
+    }
+    public void setStatusString(String val) {
+        int x = -1;
+        if (OAString.isNotEmpty(val)) {
+            Status status = Status.valueOf(val);
+            if (status != null) x = status.ordinal();
+        }
+        if (x < 0) setNull(P_Status);
+        else setStatus(x);
+    }
+    @OAProperty(enumPropertyName = P_Status)
+    public Status getStatusEnum() {
+        if (isNull(P_Status)) return null;
+        final int val = getStatus();
+        if (val < 0 || val >= Status.values().length) return null;
+        return Status.values()[val];
+    }
+    public void setStatusEnum(Status val) {
+        if (val == null) {
+            setNull(P_Status);
+        }
+        else {
+            setStatus(val.ordinal());
+        }
+    }
+    @OACalculatedProperty(enumPropertyName = P_Status, displayName = "Status", displayLength = 14, columnLength = 6, properties = {P_Status} )
+    public String getStatusDisplay() {
+        Status status = getStatusEnum();
+        if (status == null) return null;
+        return status.getDisplay();
+    }
+    
+    
+    public static final String P_ActionTaken = "actionTaken";
+    public static final String P_ActionTakenString = "actionTakenString";
+    public static final String P_ActionTakenEnum = "actionTakenEnum";
+    public static final String P_ActionTakenDisplay = "actionTakenDisplay";
+    protected volatile int actionTaken;
+
     public static final int ACTIONTAKEN_OPEN = 0;
     public static final int ACTIONTAKEN_LOOKING = 1;
     public static final int ACTIONTAKEN_IGNORE = 2;
     public static final int ACTIONTAKEN_RESOLVED = 3;
     public static final int ACTIONTAKEN_KNOWNISSUE = 4;
-    public static final Hub<String> hubActionTaken;
-    static {
-        hubActionTaken = new Hub<String>(String.class);
-        hubActionTaken.addElement("Open");
-        hubActionTaken.addElement("Looking");
-        hubActionTaken.addElement("Ignore");
-        hubActionTaken.addElement("Resolved");
-        hubActionTaken.addElement("Known issue");
+    public static enum ActionTaken {
+    	OPEN("OPEN"),
+    	LOOKING("LOOKING"),
+    	IGNORE("IGNORE"),
+    	RESOLVED("RESOLVED"),
+    	Stopped("KNOWNISSUE");
+
+        private String display;
+        ActionTaken(String display) {
+            this.display = display;
+        }
+
+        public String getDisplay() {
+            return display;
+        }
     }
+    @OAProperty(displayName = "Action Taken", displayLength = 5, isNameValue = true)
+    @OAColumn(sqlType = java.sql.Types.INTEGER)
+    public int getActionTaken() {
+        return actionTaken;
+    }
+    public void setActionTaken(int newValue) {
+        int old = actionTaken;
+        fireBeforePropertyChange(P_ActionTaken, old, newValue);
+        this.actionTaken = newValue;
+        firePropertyChange(P_ActionTaken, old, this.actionTaken);
+    }
+    @OAProperty(enumPropertyName = P_ActionTaken)
+    public String getActionTakenString() {
+        ActionTaken actionTaken = getActionTakenEnum();
+        if (actionTaken == null) return null;
+        return actionTaken.name();
+    }
+    public void setActionTakenString(String val) {
+        int x = -1;
+        if (OAString.isNotEmpty(val)) {
+            ActionTaken actionTaken = ActionTaken.valueOf(val);
+            if (actionTaken != null) x = actionTaken.ordinal();
+        }
+        if (x < 0) setNull(P_ActionTaken);
+        else setActionTaken(x);
+    }
+    @OAProperty(enumPropertyName = P_ActionTaken)
+    public ActionTaken getActionTakenEnum() {
+        if (isNull(P_ActionTaken)) return null;
+        final int val = getActionTaken();
+        if (val < 0 || val >= ActionTaken.values().length) return null;
+        return ActionTaken.values()[val];
+    }
+    public void setActionTakenEnum(ActionTaken val) {
+        if (val == null) {
+            setNull(P_ActionTaken);
+        }
+        else {
+            setActionTaken(val.ordinal());
+        }
+    }
+    @OACalculatedProperty(enumPropertyName = P_ActionTaken, displayName = "ActionTaken", displayLength = 14, columnLength = 6, properties = {P_ActionTaken} )
+    public String getActionTakenDisplay() {
+        ActionTaken actionTaken = getActionTakenEnum();
+        if (actionTaken == null) return null;
+        return actionTaken.getDisplay();
+    }
+    
+
+    
     protected String actionComment;
      
     // Links to other objects.
@@ -136,24 +269,6 @@ public class Warning extends OAObject {
         String old = stackTrace;
         this.stackTrace = newValue;
         firePropertyChange(P_StackTrace, old, this.stackTrace);
-    }
-    @OAProperty(displayName = "Action Taken", displayLength = 5, isNameValue = true)
-    @OAColumn(sqlType = java.sql.Types.INTEGER)
-    public int getActionTaken() {
-        return actionTaken;
-    }
-    
-    public void setActionTaken(int newValue) {
-        fireBeforePropertyChange(P_ActionTaken, this.actionTaken, newValue);
-        int old = actionTaken;
-        this.actionTaken = newValue;
-        firePropertyChange(P_ActionTaken, old, this.actionTaken);
-    }
-    public String getActionTakenAsString() {
-        if (isNull(P_ActionTaken)) return "";
-        String s = hubActionTaken.getAt(getActionTaken());
-        if (s == null) s = "";
-        return s;
     }
     @OAProperty(displayName = "Action Comment", maxLength = 13, displayLength = 13)
     @OAColumn(sqlType = java.sql.Types.CLOB)

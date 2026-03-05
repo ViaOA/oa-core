@@ -6,6 +6,8 @@ import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 
+import test.hifive.model.delegate.OAObjectInfoDelegate;
+import test.hifive.model.oa.AwardCardOrder.CardType;
 import test.hifive.model.oa.filter.*;
 import test.hifive.model.oa.propertypath.*;
 
@@ -25,10 +27,6 @@ public class LoginImage extends OAObject {
     private static final long serialVersionUID = 1L;
     public static final String PROPERTY_Id = "Id";
     public static final String P_Id = "Id";
-    public static final String PROPERTY_Location = "Location";
-    public static final String P_Location = "Location";
-    public static final String PROPERTY_LocationAsString = "LocationAsString";
-    public static final String P_LocationAsString = "LocationAsString";
     public static final String PROPERTY_XPosition = "XPosition";
     public static final String P_XPosition = "XPosition";
     public static final String PROPERTY_YPosition = "YPosition";
@@ -41,21 +39,35 @@ public class LoginImage extends OAObject {
     public static final String P_LoginImageSet = "LoginImageSet";
      
     protected int id;
-    protected int location;
+    
+    
+    public static final String P_Location = "location";
+    public static final String P_LocationString = "locationString";
+    public static final String P_LocationEnum = "locationEnum";
+    public static final String P_LocationDisplay = "locationDisplay";
+    
+    protected volatile int location;
+    public static enum Location {
+    	TopRight("Top Right"),
+    	topLeft("Top Left"),
+    	BottomRight("Bottom Right"),
+        Center("Center");
+
+        private String display;
+        Location(String display) {
+            this.display = display;
+        }
+
+        public String getDisplay() {
+            return display;
+        }
+    }
     public static final int LOCATION_topRight = 0;
     public static final int LOCATION_topLeft = 1;
     public static final int LOCATION_bottomRight = 2;
     public static final int LOCATION_bottomLeft = 3;
     public static final int LOCATION_center = 4;
-    public static final Hub<String> hubLocation;
-    static {
-        hubLocation = new Hub<String>(String.class);
-        hubLocation.addElement("Top Right");
-        hubLocation.addElement("Top Left");
-        hubLocation.addElement("Bottom Right");
-        hubLocation.addElement("Bottom Left");
-        hubLocation.addElement("Center");
-    }
+    
     protected int xPosition;
     protected int yPosition;
      
@@ -84,24 +96,55 @@ public class LoginImage extends OAObject {
         this.id = newValue;
         firePropertyChange(P_Id, old, this.id);
     }
-    @OAProperty(displayLength = 5, isNameValue = true)
-    @OAColumn(sqlType = java.sql.Types.INTEGER)
+    
+    @OAProperty(lowerName = "location", displayLength = 14, uiColumnLength = 6, isNameValue = true)
+    @OAColumn(name = "Location", sqlType = java.sql.Types.INTEGER)
     public int getLocation() {
         return location;
     }
-    
     public void setLocation(int newValue) {
-        fireBeforePropertyChange(P_Location, this.location, newValue);
         int old = location;
+        fireBeforePropertyChange(P_Location, old, newValue);
         this.location = newValue;
         firePropertyChange(P_Location, old, this.location);
     }
-    public String getLocationAsString() {
-        if (isNull(P_Location)) return "";
-        String s = hubLocation.getAt(getLocation());
-        if (s == null) s = "";
-        return s;
+    @OAProperty(enumPropertyName = P_Location)
+    public String getLocationString() {
+        Location location = getLocationEnum();
+        if (location == null) return null;
+        return location.name();
     }
+    public void setLocationString(String val) {
+        int x = -1;
+        if (OAString.isNotEmpty(val)) {
+            Location location = Location.valueOf(val);
+            if (location != null) x = location.ordinal();
+        }
+        if (x < 0) setNull(P_Location);
+        else setLocation(x);
+    }
+    @OAProperty(enumPropertyName = P_Location)
+    public Location getLocationEnum() {
+        if (isNull(P_Location)) return null;
+        final int val = getLocation();
+        if (val < 0 || val >= Location.values().length) return null;
+        return Location.values()[val];
+    }
+    public void setLocationEnum(Location val) {
+        if (val == null) {
+            setNull(P_Location);
+        }
+        else {
+            setLocation(val.ordinal());
+        }
+    }
+    @OACalculatedProperty(enumPropertyName = P_Location, displayName = "Location", displayLength = 14, columnLength = 6, properties = {P_Location} )
+    public String getLocationDisplay() {
+        Location location = getLocationEnum();
+        if (location == null) return null;
+        return location.getDisplay();
+    }
+    
     @OAProperty(displayName = "X Position", displayLength = 5)
     @OAColumn(sqlType = java.sql.Types.INTEGER)
     public int getXPosition() {

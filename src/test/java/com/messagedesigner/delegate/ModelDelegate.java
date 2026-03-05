@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
+import com.messagedesigner.model.delegate.HubAODelegate;
 import com.messagedesigner.model.oa.AppServer;
 import com.messagedesigner.model.oa.AppUser;
 import com.messagedesigner.model.oa.AppUserError;
@@ -25,7 +26,6 @@ import com.messagedesigner.model.oa.cs.ClientRoot;
 import com.messagedesigner.model.oa.cs.ServerRoot;
 import com.messagedesigner.delegate.ModelDelegate;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubAODelegate;
 
 /**
  * This is used to access all of the Root level Hubs. This is so that they will not have to be passed into and through the models. After

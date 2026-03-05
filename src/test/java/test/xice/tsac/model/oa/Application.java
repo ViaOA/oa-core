@@ -7,6 +7,7 @@ import com.viaoa.hub.*;
 import com.viaoa.util.*;
 
 import test.xice.tsac.delegate.ServerModelDelegate;
+import test.xice.tsac.model.delegate.OAObjectInfoDelegate;
 import test.xice.tsac.model.oa.filter.*;
 import test.xice.tsac.model.oa.propertypath.*;
 
