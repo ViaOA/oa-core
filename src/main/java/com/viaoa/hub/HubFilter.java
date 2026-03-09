@@ -506,7 +506,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	 *
 	 * @param hub the Hub to monitor
 	 */
-	public <T extends OAObject> void addDependentProperty(Hub<t> hub) {
+	public <T extends OAObject> void addDependentProperty(Hub<T> hub) {
 		if (bClosed) {
 			return;
 		}
