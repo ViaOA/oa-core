@@ -2114,4 +2114,9 @@ public class OARemoteMultiplexerServer {
         return true;
     }
     
+    public OACircularQueue<RequestInfo> getCircularQueue(String queName) {
+    	OACircularQueue<RequestInfo> cq = hmAsyncCircularQueue.get(queName);
+    	return cq;
+    }
+    
 }
