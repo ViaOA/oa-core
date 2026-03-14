@@ -2,12 +2,13 @@ package com.viaoa.repl.remote;
 
 import com.viaoa.remote.multiplexer.annotation.OARemoteInterface;
 import com.viaoa.remote.multiplexer.annotation.OARemoteMethod;
-import com.viaoa.remote.multiplexer.annotation.OARemoteParameter;
 
 @OARemoteInterface()
-public interface RemoteServerInterface {
+public interface RemoteClientInterface {
 
+	// called by Master to process msg on Client
     @OARemoteMethod() 
-	RemoteReplInterface registerClient(@OARemoteParameter() RemoteReplInterface replImp);
+    void processMessage(long posMaster, String methodName, Object[] args);
 	
 }
+

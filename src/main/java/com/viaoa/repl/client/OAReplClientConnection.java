@@ -1,17 +1,15 @@
 package com.viaoa.repl.client;
 
 import java.net.InetAddress;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.comm.multiplexer.OAMultiplexerClient;
 import com.viaoa.remote.multiplexer.OARemoteMultiplexerClient;
 import com.viaoa.repl.OAReplicationMaster;
-import com.viaoa.repl.remote.RemoteReplInterface;
-import com.viaoa.repl.remote.RemoteServerInterface;
+import com.viaoa.repl.remote.RemoteClientInterface;
+import com.viaoa.repl.remote.RemoteMasterInterface;
+import com.viaoa.repl.remote.RemoteMasterRegisterInterface;
 import com.viaoa.sync.model.ClientInfo;
-import com.viaoa.sync.remote.RemoteSyncImpl;
-import com.viaoa.sync.remote.RemoteSyncInterface;
 import com.viaoa.util.OADateTime;
 
 public abstract class OAReplClientConnection {
@@ -23,15 +21,14 @@ public abstract class OAReplClientConnection {
 	private volatile boolean bIsStarted;
 	private volatile boolean bIsConnected;
 	private volatile boolean bIsStopped;
-	
 
 	private OAMultiplexerClient multiplexerClient;
 	private OARemoteMultiplexerClient remoteMultiplexerClient;
 	private ClientInfo clientInfo;
 	
-	private RemoteServerInterface remoteReplServer;
-	private RemoteReplInterface remoteReplInterface;
-	private RemoteReplInterface remoteReplImpl;
+	private RemoteClientInterface remoteClient;
+	private RemoteMasterRegisterInterface remoteMasterRegister;
+	private RemoteMasterInterface remoteMaster;
 
 	
     public OAReplClientConnection(String masterHostName, int masterHostPort) {
@@ -51,6 +48,7 @@ public abstract class OAReplClientConnection {
     
     
     public void start() throws Exception {
+    	LOG.fine("starting");
     	if (bIsStarted) throw new Exception("already called, cant start again");
     	bIsStarted = true;
     	if (bIsStopped) throw new Exception("already stopped, cant start again");
@@ -67,8 +65,8 @@ public abstract class OAReplClientConnection {
 
         clientInfo.setConnectionId(getMultiplexerClient().getConnectionId());
 
-        getRemoteRepl();
-
+        getRemoteMaster();
+        
         clientInfo.setStarted(true);
         LOG.config("startup completed successful");
         bIsConnected = true;
@@ -102,6 +100,7 @@ public abstract class OAReplClientConnection {
 
 	public void stop() throws Exception {
 		if (bIsStopped || !bIsConnected) return;
+		LOG.fine("stopping connection to Master");
 		bIsStopped = true;
 		bIsConnected = false;
 
@@ -123,40 +122,40 @@ public abstract class OAReplClientConnection {
 				clientInfo.setIpAddress(localHost.getHostAddress());
 			} catch (Exception e) {
 			}
-
 		}
 		return clientInfo;
 	}
 
-	public RemoteServerInterface getRemoteReplServer() throws Exception {
-		if (remoteReplServer == null) {
-			remoteReplServer = (RemoteServerInterface) getRemoteMultiplexerClient().lookup(OAReplicationMaster.ReplicationServerLookupName);
+	public RemoteMasterRegisterInterface getRemoteMasterRegister() throws Exception {
+		if (remoteMasterRegister == null) {
+			remoteMasterRegister = (RemoteMasterRegisterInterface) getRemoteMultiplexerClient().lookup(OAReplicationMaster.ReplicationMasterLookupName);
+			remoteMasterRegister.registerClient(getRemoteClient());
 		}
-		return remoteReplServer;
+		return remoteMasterRegister;
 	}
 	
-	public RemoteReplInterface getRemoteRepl() throws Exception {
-		if (remoteReplInterface == null) {
-			remoteReplInterface = getRemoteReplServer().registerClient(getRemoteReplImpl());
+	public RemoteMasterInterface getRemoteMaster() throws Exception {
+		if (remoteMaster == null) {
+			remoteMaster = getRemoteMasterRegister().registerClient(getRemoteClient());
 		}
-		return remoteReplInterface;
+		return remoteMaster;
 	}
-    
-    public RemoteReplInterface getRemoteReplImpl() throws Exception {
-        if (remoteReplImpl == null) {
-            remoteReplImpl = new RemoteReplInterface() {
+
+	public RemoteClientInterface getRemoteClient() throws Exception {
+        if (remoteClient == null) {
+        	remoteClient = new RemoteClientInterface() {
 				@Override
-				public long processMessage(long myPositionId, long yourLastPositionId, String methodName, Object[] args) {
-					return OAReplClientConnection.this.processMessage(myPositionId, yourLastPositionId, methodName, args);
+				public void processMessage(long posMaster, String methodName, Object[] args) {
+					OAReplClientConnection.this.processMessageFromMaster(posMaster, methodName, args);
 				}
 			};
         }
-        return remoteReplImpl;
+        return remoteClient;
     }
 	
 	protected abstract void onSocketException(Exception e);
 	protected abstract void onSocketClose(boolean bError);
 	
-	public abstract long processMessage(long posFrom, long posTo, String methodName, Object[] args);
-	
+	public abstract void processMessageFromMaster(long posMaster, String methodName, Object[] args);
 }
+
