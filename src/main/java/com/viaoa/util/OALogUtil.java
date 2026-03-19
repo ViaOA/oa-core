@@ -134,4 +134,17 @@ public class OALogUtil {
         return new String(sb);
     }
     
+	public static void dumpLogger(String prefix, String name) {
+	    Logger log = Logger.getLogger(name);
+	    if (prefix == null) prefix = "";
+	    else prefix += " ";
+	    System.out.println( prefix +
+	        "logger=" + log.getName()
+	        + ", level=" + log.getLevel()
+	        + ", useParentHandlers=" + log.getUseParentHandlers()
+	        + ", handlers=" + log.getHandlers().length
+	        + ", parent=" + (log.getParent() == null ? "null" : log.getParent().getName())
+	    );
+	}	
+
 }

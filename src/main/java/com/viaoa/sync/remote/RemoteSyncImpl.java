@@ -284,5 +284,13 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
         OAObjectDeleteDelegate.syncClientDelete(obj);
     }
 
+//qqqqqqqqq demo temp 20260317
+	@Override
+	public void createNew(Object obj) {
+		//qqqqqqq will auto add OAObject to cache
+		int xx = 4;
+		xx++;
+	}
+
     
 }

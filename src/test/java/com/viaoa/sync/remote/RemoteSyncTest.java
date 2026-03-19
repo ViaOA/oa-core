@@ -102,6 +102,11 @@ public class RemoteSyncTest extends OAUnitTest {
                 // TODO Auto-generated method stub
 //qqqqqqqqqqqqqqqqqqq                
             }
+			@Override
+			public void createNew(Object obj) {
+				// TODO Auto-generated method stub
+				
+			}
         };
         return rsi;
     }

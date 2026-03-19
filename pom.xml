@@ -202,6 +202,9 @@ qqqqqqqq -->
                     </archive>
                 </configuration>
             </plugin>
+
+           
+<!-- qqqqqqqqqqqqqqqqqqq                
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jarsigner-plugin</artifactId>
@@ -218,16 +221,9 @@ qqqqqqqq -->
                     <keystore>${keystore.path}</keystore>
                     <alias>${keystore.alias}</alias>
                     <storepass>${keystore.store.password}</storepass>
-                    
-<!-- 20230916 qqq qqqqqqqqqqqqqqqqqqqqqq                   
-no longer online .....   
-                    <tsa>http://sha256timestamp.ws.symantec.com/sha256/timestamp</tsa>
-                     
-                    <tsa>http://timestamp.digicert.com</tsa>
-try this new one time qqqqqqqqqqqqqqqqqq  -->                    
                 </configuration>
             </plugin>
-
+qqqqqqqqqqqqqqqqqqqqqq -->
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -291,6 +287,9 @@ try this new one time qqqqqqqqqqqqqqqqqq  -->
                
                see: https://help.sonatype.com/en/configuring-your-project-for-deployment.html#deployment-with-the-nexus-staging-maven-plugin
             -->
+            
+            
+<!-- qqqqqqqqqqqqqqqqq            
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-gpg-plugin</artifactId>
@@ -306,8 +305,6 @@ try this new one time qqqqqqqqqqqqqqqqqq  -->
                 </executions>
             </plugin>
 
-
-
             <plugin>
                 <groupId>org.sonatype.plugins</groupId>
                 <artifactId>nexus-staging-maven-plugin</artifactId>
@@ -317,12 +314,14 @@ try this new one time qqqqqqqqqqqqqqqqqq  -->
                     <serverId>ossrh</serverId>
                     <nexusUrl>https://oss.sonatype.org</nexusUrl>
 
-                    <!-- Set this to true and the release will automatically proceed and 
-                        sync to Central Repository will follow -->
+                     Set this to true and the release will automatically proceed and 
+                        sync to Central Repository will follow 
 
                     <autoReleaseAfterClose>true</autoReleaseAfterClose>
                 </configuration>
             </plugin>
+qqqqqqqqqqqqqqqqq -->
+
 
         </plugins>
     </build>

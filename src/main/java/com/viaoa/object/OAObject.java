@@ -126,7 +126,7 @@ public class OAObject implements java.io.Serializable, Comparable {
 		// oaversion
 	    
 	    // pom version: 3.7.11
-		String ver = "3.7.11.202504050";
+		String ver = "3.7.13.202603150";
 		
 		/*
 		 *  previous:
@@ -141,6 +141,7 @@ public class OAObject implements java.io.Serializable, Comparable {
          *  String ver = "3.7.8.202405070";
          *  String ver = "3.7.9.202407150";
          *  String ver = "3.7.10.202409160";
+		 *  String ver = "3.7.11.202504050";
 
 		 */
 		/*

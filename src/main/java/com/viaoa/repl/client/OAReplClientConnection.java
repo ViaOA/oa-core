@@ -15,8 +15,9 @@ import com.viaoa.util.OADateTime;
 public abstract class OAReplClientConnection {
     private static Logger LOG = Logger.getLogger(OAReplClientConnection.class.getName());
 
-	private String masterHostName;
-	private int masterHostPort;
+    private final String guid;
+	private final String masterHostName;
+	private final int masterHostPort;
 	
 	private volatile boolean bIsStarted;
 	private volatile boolean bIsConnected;
@@ -30,12 +31,12 @@ public abstract class OAReplClientConnection {
 	private RemoteMasterRegisterInterface remoteMasterRegister;
 	private RemoteMasterInterface remoteMaster;
 
-	
-    public OAReplClientConnection(String masterHostName, int masterHostPort) {
+    public OAReplClientConnection(String guid, String masterHostName, int masterHostPort) {
+    	this.guid = guid;
     	this.masterHostName = masterHostName;
     	this.masterHostPort = masterHostPort;
     }
-		
+
     public boolean isConnected() {
     	return bIsConnected;
     }
@@ -46,14 +47,12 @@ public abstract class OAReplClientConnection {
     	return bIsStopped;
     }
     
-    
     public void start() throws Exception {
-    	LOG.fine("starting");
+    	LOG.fine(String.format("starting client guid=%d", guid));
     	if (bIsStarted) throw new Exception("already called, cant start again");
     	bIsStarted = true;
     	if (bIsStopped) throw new Exception("already stopped, cant start again");
     	if (bIsConnected) throw new Exception("already connected, cant start again");
-        LOG.config("starting");
 
         getClientInfo();
         getMultiplexerClient().setKeepAlive(115);
@@ -72,7 +71,6 @@ public abstract class OAReplClientConnection {
         bIsConnected = true;
     }
     
-    
 	public OARemoteMultiplexerClient getRemoteMultiplexerClient() {
 		if (remoteMultiplexerClient == null) {
 			remoteMultiplexerClient = new OARemoteMultiplexerClient(getMultiplexerClient());
@@ -83,6 +81,7 @@ public abstract class OAReplClientConnection {
 	protected OAMultiplexerClient getMultiplexerClient() {
 		if (multiplexerClient != null) return multiplexerClient;
 
+    	LOG.fine(String.format("creating OAMultiplexerClient, serverHostName=%s, port=%d", getClientInfo().getServerHostName(), clientInfo.getServerHostPort()));
 		multiplexerClient = new OAMultiplexerClient(getClientInfo().getServerHostName(), clientInfo.getServerHostPort()) {
 			@Override
 			protected void onSocketException(Exception e) {
@@ -99,6 +98,11 @@ public abstract class OAReplClientConnection {
     
 
 	public void stop() throws Exception {
+
+//qqqqqqqqqqqq		
+    	LOG.fine(String.format("", ""));
+		
+		
 		if (bIsStopped || !bIsConnected) return;
 		LOG.fine("stopping connection to Master");
 		bIsStopped = true;
@@ -128,15 +132,15 @@ public abstract class OAReplClientConnection {
 
 	public RemoteMasterRegisterInterface getRemoteMasterRegister() throws Exception {
 		if (remoteMasterRegister == null) {
-			remoteMasterRegister = (RemoteMasterRegisterInterface) getRemoteMultiplexerClient().lookup(OAReplicationMaster.ReplicationMasterLookupName);
-			remoteMasterRegister.registerClient(getRemoteClient());
+			RemoteMasterRegisterInterface reg = (RemoteMasterRegisterInterface) getRemoteMultiplexerClient().lookup(OAReplicationMaster.ReplicationMasterLookupName);
+			remoteMasterRegister = (RemoteMasterRegisterInterface) reg;
 		}
 		return remoteMasterRegister;
 	}
 	
 	public RemoteMasterInterface getRemoteMaster() throws Exception {
 		if (remoteMaster == null) {
-			remoteMaster = getRemoteMasterRegister().registerClient(getRemoteClient());
+			remoteMaster = getRemoteMasterRegister().registerClient(guid, getRemoteClient());
 		}
 		return remoteMaster;
 	}
@@ -145,8 +149,8 @@ public abstract class OAReplClientConnection {
         if (remoteClient == null) {
         	remoteClient = new RemoteClientInterface() {
 				@Override
-				public void processMessage(long posMaster, String methodName, Object[] args) {
-					OAReplClientConnection.this.processMessageFromMaster(posMaster, methodName, args);
+				public void processMessage(long masterSeq, String methodName, Object[] args) {
+					OAReplClientConnection.this.processMessageFromMaster(masterSeq, methodName, args);
 				}
 			};
         }
@@ -156,6 +160,6 @@ public abstract class OAReplClientConnection {
 	protected abstract void onSocketException(Exception e);
 	protected abstract void onSocketClose(boolean bError);
 	
-	public abstract void processMessageFromMaster(long posMaster, String methodName, Object[] args);
+	public abstract void processMessageFromMaster(long masterSeq, String methodName, Object[] args);
 }
 

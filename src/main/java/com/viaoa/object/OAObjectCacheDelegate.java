@@ -33,7 +33,9 @@ import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDetailDelegate;
 import com.viaoa.hub.HubSelectDelegate;
 import com.viaoa.hub.HubTemp;
+import com.viaoa.sync.OASync;
 import com.viaoa.sync.OASyncDelegate;
+import com.viaoa.sync.remote.RemoteSyncInterface;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
@@ -768,6 +770,16 @@ public class OAObjectCacheDelegate {
 
 		if (bSendAddEvent) {
 			fireAfterAddEvent(obj, bSendAddEventInAnotherThread);
+			
+//qqqqqqqqq demo temp 20260317
+if (OASync.isServer()) {
+	RemoteSyncInterface ri = OASync.getRemoteSync();
+	if (ri != null) {
+		ri.createNew(obj); 
+	}
+}
+			
+			
 		}
 		return result;
 	}

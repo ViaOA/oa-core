@@ -9,7 +9,7 @@ public interface RemoteMasterRegisterInterface {
 
 	
     @OARemoteMethod() 
-	RemoteMasterInterface registerClient(@OARemoteParameter() RemoteClientInterface remoteClient);
+	RemoteMasterInterface registerClient(String guid, @OARemoteParameter() RemoteClientInterface remoteClient);
 
 }
 

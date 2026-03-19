@@ -352,6 +352,12 @@ public class OASyncCombinedClient {
                         // TODO Auto-generated method stub
 //qqqqqqqqqqqqqqqqqqqqqqq                        
                     }
+
+					@Override
+					public void createNew(Object obj) {
+						// TODO Auto-generated method stub
+						
+					}
                 };
                 return remoteSync;
             }
@@ -489,6 +495,11 @@ public class OASyncCombinedClient {
                         // TODO Auto-generated method stub
 //qqqqqqqqqqqqqqqqqqqqqqqq                        
                     }
+					@Override
+					public void createNew(Object obj) {
+						// TODO Auto-generated method stub
+						
+					}
                 };
                 return remoteSync;
             }

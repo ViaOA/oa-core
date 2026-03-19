@@ -175,15 +175,18 @@ public class OADataSourceAuto extends OADataSource {
 				return null; // there is one in the works
 			}
 
-			nn = new NextNumber();
-			nn.setId(clazz.getName());
-
-			if (props != null && props.length > 0) {
-				for (String s : props) {
-					OAPropertyInfo pi = oi.getPropertyInfo(s);
-					if (pi != null && pi.getAutoAssign()) {
-						nn.setProperty(s);
-						break;
+			nn = OAObjectCacheDelegate.get(NextNumber.class, clazz.getName());
+			if (nn == null) {
+				nn = new NextNumber();
+				nn.setId(clazz.getName());
+	
+				if (props != null && props.length > 0) {
+					for (String s : props) {
+						OAPropertyInfo pi = oi.getPropertyInfo(s);
+						if (pi != null && pi.getAutoAssign()) {
+							nn.setProperty(s);
+							break;
+						}
 					}
 				}
 			}

@@ -20,6 +20,10 @@ import com.viaoa.remote.multiplexer.annotation.*;
 @OARemoteInterface(isOASync=true)
 public interface RemoteSyncInterface {
 
+	//qqqqqqqqq demo temp 20260317
+	void createNew(Object obj); //qqqqqqqq will auto add to objectCache
+	
+	
     // OAObjectCSDelegate    
     boolean propertyChange(Class objectClass, OAObjectKey origKey, String propertyName, Object newValue, boolean bIsBlob);    
 

@@ -183,7 +183,8 @@ public class OAObjectDelegate {
 			if (!bWasLoading && bInitializeWithDS) {
 				if (OAObjectDSDelegate.getAssignIdOnCreate(oaObj)) {
 					OAThreadLocalDelegate.setLoading(false);
-					try {
+					try { 
+//qqqqqqqqqqqqq 20260317 will send it to ds proxy and end up in server cache
 						OAObjectDSDelegate.assignId(oaObj);
 					} finally {
 						OAThreadLocalDelegate.setLoading(true);

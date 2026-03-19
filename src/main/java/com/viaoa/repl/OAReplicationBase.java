@@ -26,7 +26,7 @@ public abstract class OAReplicationBase {
     }
     
     // capture all sync messages created on this server circ queue.
-    public void start() {
+    public void start() throws Exception {
     	LOG.fine("starting");
     	final String qname = OASyncServer.SyncQueueName;
 
@@ -34,8 +34,7 @@ public abstract class OAReplicationBase {
         final long qposInitial = cque.registerSession(ReplSessionId);
     	LOG.fine("qposInitial="+qposInitial);
 
-        
-        final String threadName = "OAReplicationBase.circularQue." + qname;
+        final String threadName = "OAReplication.getSyncRemoteMsgs";
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -60,7 +59,7 @@ public abstract class OAReplicationBase {
                         for (RequestInfo ri : ris) {
                             qpos++;
                             if (!ri.bind.isOASync) continue;
-                            
+
                             OAReplicationBase.this.onNewRequestInfoMessage(qpos, ri);
                             
                             String s = String.format("%,d ) %s", qpos, ri.toLogString());
