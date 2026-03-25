@@ -179,13 +179,17 @@ public class HubCSDelegate {
                             return false;
                         }
                     });
-                    
+//qqqqqqqqqqqqqqqqqqqqqq                    
+                    rs.addNewToCache(oos);
+
+/*qqqqqqqq was:                    
                     rs.addNewToHub(
                             thisHub.datam.getMasterObject().getClass(), 
                             thisHub.datam.getMasterObject().getObjectKey(), 
                             HubDetailDelegate.getPropertyFromMasterToDetail(thisHub), oos);
                             
                     return;
+*/                    
                 }
             }
             

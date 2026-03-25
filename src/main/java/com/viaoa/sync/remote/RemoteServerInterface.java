@@ -13,6 +13,7 @@ package com.viaoa.sync.remote;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
+import com.viaoa.object.OAObjectSerializer;
 import com.viaoa.remote.multiplexer.annotation.OARemoteInterface;
 import com.viaoa.remote.multiplexer.annotation.OARemoteMethod;
 import com.viaoa.remote.multiplexer.annotation.OARemoteParameter;
@@ -23,6 +24,10 @@ public interface RemoteServerInterface {
 
 	boolean save(Class objectClass, OAObjectKey objectKey, int iCascadeRule);
 
+//qqqqqqqvvvvv20260325 REMOVE	
+//qqqqqqqqqqqqqqqqq	remove, use RemoteSync.addNewToCache, and then call this.save(..)
+//	boolean saveNew(OAObjectSerializer oos, int iCascadeRule);
+	
     @OARemoteMethod(returnOnQueueSocket = true)
 	OAObject getObject(Class objectClass, OAObjectKey objectKey);
 

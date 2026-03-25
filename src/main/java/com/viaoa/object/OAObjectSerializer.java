@@ -241,7 +241,11 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 		 */
 		totalObjectsWritten++;
 		
-        if (holdOAObjectSerializer != null) holdOAObjectSerializer.beforeSerialize(oaObj);
+		if (holdOAObjectSerializer != null) holdOAObjectSerializer.beforeSerialize(oaObj);
+		
+if (stackObject == null) stackObject = new Stack();//qqqqqqqqqqvvvvv20260325
+if (stack == null) stack = new Stack();//qqqqqqqqqqqqqvvvvv20260325
+
 		
 		if (callback != null) {
 			// save and push current settings into stack
@@ -249,7 +253,7 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 			stack.push(t);
 			callback.beforeSerialize(oaObj);
 		}
-
+		
 		// now save the obj in stack for further embeded objects to "see" where they are in the object tree.
 		stackObject.push(oaObj);
 
@@ -297,6 +301,7 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	}
 
 	protected int getStackSize() {
+		if (stackObject == null) return 0;//qqqqqqqqqqqqqqvvvvv20260325
 		return stackObject.size();
 	}
 
@@ -311,6 +316,7 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	 * Last object put on stack is 0, followed by 1,2,3,...
 	 */
 	protected Object getStackObject(int pos) {
+		if (stackObject == null) return null; //qqqqqqqqqqqqvvvvv20260325
 		int x = stackObject.size();
 		x--;
 		x -= pos;
@@ -371,7 +377,9 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 			overFlow.parentObject = oaObj;
 			overFlow.property = propertyName;
 			overFlow.object = obj;
-			overFlow.stack = (Stack) this.stackObject.clone();
+			if (stackObject != null) {  //qqqqqqqqqqqqvvvvv20260325
+				overFlow.stack = (Stack) this.stackObject.clone();
+			}
 			overFlow.levelsDeep = this.levelsDeep;
 			if (listOverflow == null) {
 				listOverflow = new LinkedList<Overflow>();

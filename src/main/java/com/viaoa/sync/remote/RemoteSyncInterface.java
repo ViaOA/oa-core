@@ -20,8 +20,9 @@ import com.viaoa.remote.multiplexer.annotation.*;
 @OARemoteInterface(isOASync=true)
 public interface RemoteSyncInterface {
 
-	//qqqqqqqqq demo temp 20260317
-	void createNew(Object obj); //qqqqqqqq will auto add to objectCache
+//qqqqqqqqqqqqq	New, used when saving, adding to Hub, setting as OAObject.reference qqqqqqqvvvvv20260325 
+// uses serializer to include addition properties
+void addNewToCache(OAObjectSerializer obj);
 	
 	
     // OAObjectCSDelegate    
@@ -29,9 +30,11 @@ public interface RemoteSyncInterface {
 
     // HubCSDelegate
     boolean addToHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, Object obj);
-    
+
+    //qqqqqqqvvvvv20260325    
+//qqqqqqqqqqq REMOVE, use addNewToCache(..) first, and then call addTohub(..)    
     // uses serializer to include addition properties
-    boolean addNewToHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, OAObjectSerializer obj);
+//    boolean addNewToHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, OAObjectSerializer obj);
     
     boolean insertInHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, Object obj, int pos);
     

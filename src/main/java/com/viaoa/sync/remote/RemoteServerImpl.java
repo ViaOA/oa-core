@@ -21,6 +21,7 @@ import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAObjectKey;
+import com.viaoa.object.OAObjectSerializer;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.sync.model.ClientInfo;
@@ -45,6 +46,15 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 		return "OASyncServer";
 	}
 
+	//qqqqqqqvvvvv20260325 REMOVE	
+/*qqqqqqqqqqqqqqqqqqqqqqqqq	removed
+	@Override
+	public boolean saveNew(OAObjectSerializer oos, int iCascadeRule) {
+		OAObject obj = (OAObject) oos.getObject();
+		return save(obj.getClass(), obj.getObjectKey(), iCascadeRule);
+	}
+*/
+	
 	@Override
 	public boolean save(Class objectClass, OAObjectKey objectKey, int iCascadeRule) {
 		boolean bPrev = OAThreadLocalDelegate.setSendMessages(true);

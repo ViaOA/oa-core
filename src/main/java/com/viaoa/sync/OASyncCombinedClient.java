@@ -319,10 +319,12 @@ public class OASyncCombinedClient {
                         }
                         return true;
                     }
+                    /* removed
                     @Override
                     public boolean addNewToHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, OAObjectSerializer obj) {
                         return addToHub(masterObjectClass, masterObjectKey, hubPropertyName, obj.getObject());
                     }
+                    */
 
                     @Override
                     public void refresh(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName) {
@@ -354,10 +356,10 @@ public class OASyncCombinedClient {
                     }
 
 					@Override
-					public void createNew(Object obj) {
-						// TODO Auto-generated method stub
-						
+					public void addNewToCache(OAObjectSerializer obj) {
+						obj.getObject();
 					}
+
                 };
                 return remoteSync;
             }
@@ -469,10 +471,12 @@ public class OASyncCombinedClient {
                         }
                         return true;
                     }
+                    /*qqqqq removed
                     @Override
                     public boolean addNewToHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, OAObjectSerializer obj) {
                         return addToHub(masterObjectClass, masterObjectKey, hubPropertyName, obj.getObject());
                     }
+                    */
                     @Override
                     public void refresh(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName) {
                         OAObjectKey k1 = getClientToServerKey(masterObjectClass, masterObjectKey);
@@ -496,9 +500,8 @@ public class OASyncCombinedClient {
 //qqqqqqqqqqqqqqqqqqqqqqqq                        
                     }
 					@Override
-					public void createNew(Object obj) {
-						// TODO Auto-generated method stub
-						
+					public void addNewToCache(OAObjectSerializer obj) {
+						obj.getObject();
 					}
                 };
                 return remoteSync;

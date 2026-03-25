@@ -48,7 +48,7 @@ public abstract class OAReplClientConnection {
     }
     
     public void start() throws Exception {
-    	LOG.fine(String.format("starting client guid=%d", guid));
+    	LOG.fine(String.format("starting client guid=%s", guid));
     	if (bIsStarted) throw new Exception("already called, cant start again");
     	bIsStarted = true;
     	if (bIsStopped) throw new Exception("already stopped, cant start again");
@@ -100,7 +100,7 @@ public abstract class OAReplClientConnection {
 	public void stop() throws Exception {
 
 //qqqqqqqqqqqq		
-    	LOG.fine(String.format("", ""));
+//    	LOG.fine(String.format("", ""));
 		
 		
 		if (bIsStopped || !bIsConnected) return;

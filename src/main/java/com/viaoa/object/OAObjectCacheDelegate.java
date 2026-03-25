@@ -770,16 +770,6 @@ public class OAObjectCacheDelegate {
 
 		if (bSendAddEvent) {
 			fireAfterAddEvent(obj, bSendAddEventInAnotherThread);
-			
-//qqqqqqqqq demo temp 20260317
-if (OASync.isServer()) {
-	RemoteSyncInterface ri = OASync.getRemoteSync();
-	if (ri != null) {
-		ri.createNew(obj); 
-	}
-}
-			
-			
 		}
 		return result;
 	}

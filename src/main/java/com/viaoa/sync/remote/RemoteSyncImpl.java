@@ -67,12 +67,25 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		return true;
 	}
 
+	//qqqqqqqvvvvv20260325 REMOVE	
+/*qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq remove
 	@Override
 	public boolean addNewToHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, OAObjectSerializer obj) {
 		Object objx = obj.getObject();
 		return addToHub(masterObjectClass, masterObjectKey, hubPropertyName, objx);
 	}
+*/	
 
+//qqqqqqqvvvvv20260325 NEW	
+//qqqqqqqqqqqqqqqqqqqqqqqqqqqqq	used when saving, adding to Hub, setting as OAObject.reference 
+// uses serializer to include addition properties
+	@Override
+	public void addNewToCache(OAObjectSerializer obj) {
+		Object objx = obj.getObject(); // this will load it to OAObject Cache
+	}
+
+	
+	
 	@Override
 	public boolean insertInHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, Object objInsert, int pos) {
 		OAObject obj = getObject(masterObjectClass, masterObjectKey, true);
@@ -284,13 +297,4 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
         OAObjectDeleteDelegate.syncClientDelete(obj);
     }
 
-//qqqqqqqqq demo temp 20260317
-	@Override
-	public void createNew(Object obj) {
-		//qqqqqqq will auto add OAObject to cache
-		int xx = 4;
-		xx++;
-	}
-
-    
 }

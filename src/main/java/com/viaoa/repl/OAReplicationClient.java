@@ -22,7 +22,6 @@ import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.repl.client.OAReplClientConnection;
 import com.viaoa.sync.OASyncServer;
 import com.viaoa.sync.remote.RemoteSyncImpl;
-import com.viaoa.sync.remote.RemoteSyncInterface;
 import com.viaoa.util.OADateTime;
 
 /**
@@ -55,17 +54,16 @@ public class OAReplicationClient extends OAReplicationBase {
 	
 	protected final String tlogFileName;
 	
-    public OAReplicationClient(String guid, OASyncServer syncServer, String masterHostName, int masterHostPort) {
+    public OAReplicationClient(String tlogFileName, String guid, OASyncServer syncServer, String masterHostName, int masterHostPort) {
     	super(syncServer);
     	this.guid = guid;
-    	this.tlogFileName = "./runtime/demo/replClient_"+guid+".bin"; //qqqqqqqqqq    	
+    	this.tlogFileName = tlogFileName;     	
     	this.masterHostName = masterHostName;
     	this.masterHostPort = masterHostPort;
     	
     	LOG.fine(String.format("OAReplicationClient guid=%s, tlogFileName=%s, masterHostName=%s, masterHostPort=%d", 
     			guid, tlogFileName, masterHostName, masterHostPort
     	));
-
     }
     
     @Override
@@ -75,15 +73,6 @@ public class OAReplicationClient extends OAReplicationBase {
     	super.start();
     }
 
-	public void stop() throws Exception {
-    	LOG.fine("Stop called"); 
-		super.stop();
-		if (replClientConnection != null) {
-			replClientConnection.stop();
-			replClientConnection = null;
-		}
-    }
-    
     protected void _start() throws Exception {
     	loadTLogFile();
         openTLogFile();
@@ -93,55 +82,7 @@ public class OAReplicationClient extends OAReplicationBase {
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
-            	OAReplTLog tlog = null;
-		    	for ( ; !bStop ; ) {
-		    		OAReplClientConnection rcc = null;
-		    		
-		    		rcc = getReplClientConnection(); // will be null if cant connect to master
-		    		if (rcc == null ) {
-		    			for (int i=0; i < 10 && !bStop; i++) OAThread.sleep(500);
-		    			continue;
-		    		}
-
-		    		try {
-						if (tlog == null) {
-							tlog = alTLog.poll(1, TimeUnit.SECONDS); 
-							if (tlog == null && !bStop) tlog = alTLog.poll(1, TimeUnit.SECONDS); 
-						}
-						if (tlog == null) continue;
-						
-						LOG.fine("sending message to Master, method="+tlog.methodName);
-
-						rcc.getRemoteMaster().processMessage(tlog.getMasterSeq(), tlog.getClientSeq(), tlog.getMethodName(), tlog.getArgs());
-						
-						tlog = null;
-					}
-					catch (Exception ex) {
-						LOG.log(Level.WARNING, "exception calling RemoteRepl.processMessage", ex);
-						if (!bStop) OAThread.sleep(1000);
-					}
-		    	}
-
-		    	// re-write file
-		    	LOG.fine(String.format("rewriting to temp file %s.tmp", tlogFileName)); 
-		    	try {
-			    	createNewTLogFile(tlogFileName + ".temp");
-			    	int cnt = 0;
-			    	for (;; cnt++) {
-			    		if (tlog == null) tlog = alTLog.poll();
-			    		if (tlog == null) break;
-			    		writeTLog(tlog);
-			    		tlog = null;
-			    	}
-		    		objectOutputStream.close();
-		    		
-		    		File f1 = new File(tlogFileName + ".tmp");
-		    		f1.renameTo(new File(tlogFileName));
-			    	LOG.fine(String.format("rewrote file %s, %,d tlog records", tlogFileName, cnt)); 
-		    	}
-		    	catch (Exception e) {
-		    		LOG.log(Level.WARNING, "error rewriting tlog file, will use original one (no data loss)", e);
-		    	}
+            	OAReplicationClient.this.runSendSyncMessagesToMaster();
             }
         });
         t.setName(threadName);
@@ -150,83 +91,81 @@ public class OAReplicationClient extends OAReplicationBase {
     	LOG.fine(String.format("thread started to send sync msgs to Master, thread=%s", threadName)); 
     }
     
-    public RemoteSyncInterface getRemoteSyncImpl() {
-    	if (remoteSyncImpl == null) {
-    		remoteSyncImpl = new RemoteSyncImpl();
-    	}
-    	return remoteSyncImpl;
-    }
-
-    /**
-     * returns null if connection can not be made, and is set to null if connected is stopped.
-     */
-    public OAReplClientConnection getReplClientConnection() {
-    	if (replClientConnection != null && !replClientConnection.isStopped()) return replClientConnection;
-    	
-    	LOG.fine("creating new ReplClientConnection");
-    	replClientConnection = new OAReplClientConnection(guid, masterHostName, masterHostPort) {
-			@Override
-			public void processMessageFromMaster(long masterSeq, String methodName, Object[] args) {
-				LOG.fine(String.format("received msg from Master, masterSeq=%,d, methodName=%s", masterSeq, methodName)); 
-
-				Method method = getMethod(methodName);
-				try {
-					method.invoke(getRemoteSyncImpl(), args);
-
-					RequestInfo ri = OAThreadLocalDelegate.getRemoteRequestInfo();
-
-					hmIgnoreRequestInfo.put(ri.cnt, true);
-					
-					OAReplicationClient.this.masterSeq = masterSeq;
-				}
-				catch (Exception ex) {
-					LOG.log(Level.WARNING, "error invoking method="+methodName, ex);
-				}
-				
-			}
-			
-			@Override
-			protected void onSocketException(Exception e) {
-				LOG.fine("stopping connection to Master");
-				OAReplicationClient.this.replClientConnection = null;
-				try {
-					this.stop();
-				}
-				catch (Exception e2) {
-				}
-			}
-			
-			@Override
-			protected void onSocketClose(boolean bError) {
-				LOG.fine("stopping connection to Master");
-				OAReplicationClient.this.replClientConnection = null;
-				try {
-					this.stop();
-				}
-				catch (Exception e2) {
-				}
-			}
-		};
-		
-		try {
-			replClientConnection.start();
-			LOG.fine("connection server is available"); 
+	public void stop() throws Exception {
+    	LOG.fine("Stop called"); 
+		super.stop();
+		if (replClientConnection != null) {
+			replClientConnection.stop();
+			replClientConnection = null;
 		}
-		catch (Exception e) {
-	    	LOG.log(Level.FINE, "could not start Repl Client connection, will briefly wait and try again", e);
-			this.replClientConnection = null;
-		};
-    	return replClientConnection;
     }
 
-	protected static class RequestInfoMessage {
-		long posMaster;
-		RequestInfo ri;
+	
+	protected void runSendSyncMessagesToMaster() {
+    	OAReplTLog tlog = null;
+    	long minClientSeq = -1; // so that previous sent msgs can be skipped, if tlog did not remove during last write-out.
+    	for ( ; !bStop ; ) {
+    		OAReplClientConnection rcc = null;
+    		
+    		rcc = getReplClientConnection(); // will be null if cant connect to master
+    		if (rcc == null ) {
+    			for (int i=0; i < 10 && !bStop; i++) OAThread.sleep(500);
+    			continue;
+    		}
+
+    		try {
+				if (minClientSeq < 0) {
+					minClientSeq = rcc.getRemoteMaster().getMinimumClientSeq();
+				}
+				if (tlog == null) {
+					tlog = alTLog.poll(1, TimeUnit.SECONDS); 
+					if (tlog == null && !bStop) tlog = alTLog.poll(1, TimeUnit.SECONDS); 
+				}
+				if (tlog == null) continue;
+
+				if (tlog.getClientSeq() < minClientSeq) continue;
+				
+				LOG.fine("sending message to Master, method="+tlog.methodName);
+
+				rcc.getRemoteMaster().processMessage(tlog.getMasterSeq(), tlog.getClientSeq(), tlog.getMethodName(), tlog.getArgs());
+				
+				tlog = null;
+			}
+			catch (Exception ex) {
+				String s = String.format("exception calling OAReplicationClient.runSendSyncMessagesToMaster, Stop=%b, exception=%s",  bStop, ex.toString());
+				if (!bStop) {
+					LOG.log(Level.WARNING, s, ex);
+					OAThread.sleep(1000);
+				}
+				else LOG.log(Level.WARNING, s, ex); 
+			}
+    	}
+
+    	// re-write file
+    	LOG.fine(String.format("rewriting to temp file %s.tmp", tlogFileName)); 
+    	try {
+	    	createNewTLogFile(tlogFileName + ".temp");
+	    	int cnt = 0;
+	    	for (;; cnt++) {
+	    		if (tlog == null) tlog = alTLog.poll();
+	    		if (tlog == null) break;
+	    		writeTLog(tlog);
+	    		tlog = null;
+	    	}
+    		objectOutputStream.close();
+    		
+    		File f1 = new File(tlogFileName + ".temp");
+    		f1.renameTo(new File(tlogFileName));
+	    	LOG.fine(String.format("rewrote file %s, %,d tlog records", tlogFileName, cnt)); 
+    	}
+    	catch (Exception e) {
+    		LOG.log(Level.WARNING, "error rewriting tlog file, will use original one (no data loss)", e);
+    	}
 	}
 
-	// Sync message from this Server's queue
+	// Sync message from this.Server's queue
 	@Override
-	protected void onNewRequestInfoMessage(long qpos, RequestInfo ri) {
+	protected void onNewSyncMessage(RequestInfo ri) {
 		boolean bFound = hmIgnoreRequestInfo.remove(ri.cnt) != null;
 
         if (!bFound) clientSeq++;
@@ -240,6 +179,78 @@ public class OAReplicationClient extends OAReplicationBase {
 			alTLog.put(tlog);
 		}
 		catch (Exception e2) {
+		}
+	}
+	
+	
+    /**
+     * returns null if connection can not be made, and is set to null if connected is stopped.
+     */
+    protected OAReplClientConnection getReplClientConnection() {
+    	if (replClientConnection != null && !replClientConnection.isStopped()) return replClientConnection;
+    	
+    	LOG.fine("creating new ReplClientConnection");
+    	replClientConnection = new OAReplClientConnection(guid, masterHostName, masterHostPort) {
+			@Override
+			public void processMessageFromMaster(long masterSeq, String methodName, Object[] args) {
+				OAReplicationClient.this.processMessageFromMaster(masterSeq, methodName, args);
+			}
+			
+			@Override
+			protected void onSocketException(Exception e) {
+				LOG.fine("stopping connection to Master");
+				try {
+					this.stop();
+				}
+				catch (Exception e2) {}
+			}
+			
+			@Override
+			protected void onSocketClose(boolean bError) {
+				LOG.fine("stopping connection to Master");
+				try {
+					this.stop();
+				}
+				catch (Exception e2) {}
+			}
+			
+			@Override
+			public void stop() throws Exception {
+				OAReplicationClient.this.replClientConnection = null;
+				super.stop();
+			}
+		};
+		
+		try {
+			replClientConnection.start();
+			LOG.fine("connection server is available"); 
+		}
+		catch (Exception e) {
+	    	LOG.log(Level.FINE, "could not start Repl Client connection, will briefly wait and try again, exception: " + e.toString());
+			this.replClientConnection = null;
+		};
+    	return replClientConnection;
+    }
+
+	protected void processMessageFromMaster(long masterSeq, String methodName, Object[] args) {
+		LOG.fine(String.format("received msg from Master, masterSeq=%,d, methodName=%s", masterSeq, methodName)); 
+
+    	if (remoteSyncImpl == null) {
+    		remoteSyncImpl = new RemoteSyncImpl();
+    	}
+		
+		Method method = getMethod(methodName);
+		try {
+			method.invoke(remoteSyncImpl, args);
+
+			RequestInfo ri = OAThreadLocalDelegate.getRemoteRequestInfo();
+
+			hmIgnoreRequestInfo.put(ri.cnt, true);
+			
+			OAReplicationClient.this.masterSeq = masterSeq;
+		}
+		catch (Exception ex) {
+			LOG.log(Level.WARNING, "error invoking method="+methodName, ex);
 		}
 	}
 	
@@ -270,7 +281,8 @@ public class OAReplicationClient extends OAReplicationBase {
 	            	}
 	        		
         			alTLog.put(tlog);
-			    	LOG.fine(String.format("%,d) guid=%s, masterSeq=%,d, clientSeq=%,d, methodName=%s", cnt+1, tlog.getMasterSeq(), tlog.getClientSeq(), tlog.getMethodName()));
+			    	LOG.fine(String.format("%,d) guid=%s, masterSeq=%,d, clientSeq=%,d, methodName=%s", cnt+1, 
+			    		guid, tlog.getMasterSeq(), tlog.getClientSeq(), tlog.getMethodName()));
 	            }
 	            ois.close();
 		    	LOG.fine(String.format("tlogFileName=%s, total tlog records=%,d", tlogFileName, cnt));

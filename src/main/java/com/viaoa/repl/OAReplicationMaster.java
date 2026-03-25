@@ -40,7 +40,7 @@ public class OAReplicationMaster extends OAReplicationBase {
 	// seq # used for master msg #, must be unique.  Used starting value is stored/persisted. 
 	private long messageCnt;
 
-    public OAReplicationMaster(OASyncServer syncServer) {
+    public OAReplicationMaster(OASyncServer syncServer, String tlogFilename) {
     	super(syncServer);
     }
 

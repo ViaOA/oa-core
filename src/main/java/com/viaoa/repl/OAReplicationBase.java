@@ -15,8 +15,8 @@ public abstract class OAReplicationBase {
     private static Logger LOG = Logger.getLogger(OAReplicationBase.class.getName());
 	
 	protected final OASyncServer syncServer;
-	public static final int ReplSessionId = 7777777; // wont be used by others
-	private OACircularQueue<RequestInfo> cque;
+	private OACircularQueue<RequestInfo> cqueSync;
+	private static final int SyncQueueSessionId = 7777777; // wont be used by others
 	private final Object lock = new Object();
 	protected volatile boolean bStop;
 	private final Map<String, Method> hmNameToMethod = new HashMap<>();
@@ -25,25 +25,25 @@ public abstract class OAReplicationBase {
     	this.syncServer = syncServer;
     }
     
-    // capture all sync messages created on this server circ queue.
+    // capture all sync messages created on this server's circ queue.
     public void start() throws Exception {
     	LOG.fine("starting");
     	final String qname = OASyncServer.SyncQueueName;
 
-    	cque = syncServer.getRemoteMultiplexerServer().getCircularQueue(qname);
-        final long qposInitial = cque.registerSession(ReplSessionId);
+    	cqueSync = syncServer.getRemoteMultiplexerServer().getCircularQueue(qname);
+        final long qposInitial = cqueSync.registerSession(SyncQueueSessionId);
     	LOG.fine("qposInitial="+qposInitial);
-
-        final String threadName = "OAReplication.getSyncRemoteMsgs";
+        final String threadName = "OAReplication.getSyncMsgs";
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
             	long qpos = qposInitial;
                 try {
-                    for (int i=0;;i++) {
+                    long cnt = 0;
+                	for (int i=0;;i++) {
                         RequestInfo[] ris = null;
                         try {
-                            ris = cque.getMessages(ReplSessionId, qpos, 100, 2000);
+                            ris = cqueSync.getMessages(SyncQueueSessionId, qpos, 100, 2000);
                         }
                         catch (Exception e) {
                             LOG.log(Level.WARNING, "Message queue overrun with OAReplication, circularQueue=" + qname, e);
@@ -59,11 +59,11 @@ public abstract class OAReplicationBase {
                         for (RequestInfo ri : ris) {
                             qpos++;
                             if (!ri.bind.isOASync) continue;
-
-                            OAReplicationBase.this.onNewRequestInfoMessage(qpos, ri);
+                            cnt++;
+                            OAReplicationBase.this.onNewSyncMessage(ri);
                             
-                            String s = String.format("%,d ) %s", qpos, ri.toLogString());
-                            LOG.fine("OAReplicationBase, new Sync message from sync que, "+ s);
+                            String s = String.format("%,d ) %s", cnt, ri.toLogString());
+                            LOG.fine("OAReplicationBase, new Sync message from queue, "+ s);
                         }                    	
                     }
                 }
@@ -88,7 +88,7 @@ public abstract class OAReplicationBase {
     	synchronized (lock) {
     		bStop = true;
     	}
-        cque.unregisterSession(ReplSessionId);
+        cqueSync.unregisterSession(SyncQueueSessionId);
     }
 
     
@@ -106,5 +106,5 @@ public abstract class OAReplicationBase {
 	}
     
     
-    protected abstract void onNewRequestInfoMessage(long qpos, RequestInfo ri); 
+    protected abstract void onNewSyncMessage(RequestInfo ri); 
 }

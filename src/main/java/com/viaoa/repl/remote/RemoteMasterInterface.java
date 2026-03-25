@@ -10,5 +10,7 @@ public interface RemoteMasterInterface {
     @OARemoteMethod() 
 	void processMessage(long posMaster, long posClient, String methodName, Object[] args);
 
+    @OARemoteMethod() 
+	long getMinimumClientSeq();
 }
 

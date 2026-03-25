@@ -118,11 +118,40 @@ public class OAObjectCSDelegate {
     }
 
     // returns true if this was saved on server
-    protected static boolean save(OAObject oaObj, int iCascadeRule) {
-        if (oaObj == null) return false;
-        RemoteServerInterface rs = OASyncDelegate.getRemoteServer(oaObj.getClass());
+    protected static boolean save(final OAObject thisObj, int iCascadeRule) {
+        if (thisObj == null) return false;
+        RemoteServerInterface rs = OASyncDelegate.getRemoteServer(thisObj.getClass());
         if (rs != null) {
-            return rs.save(oaObj.getClass(), oaObj.getObjectKey(), iCascadeRule);
+//qqqqqqqvvvvv20260325        	
+//qqqqqqqqqqqqqqqqq new 3.8.13
+        	if (thisObj.isNew() && !OAObjectHubDelegate.isInHubWithMaster(thisObj)) {
+                OAObjectSerializer oos = new OAObjectSerializer(thisObj, false, new OAObjectSerializerCallback() {
+                    @Override
+                    protected void beforeSerialize(OAObject obj) {
+                    }
+                    @Override
+                    public boolean shouldSerializeReference(OAObject oaObj, String propertyName, Object objRef, boolean bDefault) {
+                        if (!bDefault) return false;
+                        boolean b = _shouldSerializeReference(oaObj, propertyName, objRef, bDefault);
+                        return b;
+                    }
+                    
+                    private boolean _shouldSerializeReference(OAObject oaObj, String propertyName, Object objRef, boolean bDefault) {
+                        if (oaObj != thisObj) return false;
+                        if (objRef instanceof Hub) return true;
+                        if (objRef instanceof OAObject) {
+                            if (((OAObject) objRef).isNew()) {
+                                if (!OAObjectHubDelegate.isInHubWithMaster((OAObject)objRef)) return true;                                    
+                            }
+                        }
+                        return false;
+                    }
+                });
+//qqqqqqqvvvvv20260325                 
+                RemoteSyncInterface rsync = OASyncDelegate.getRemoteSync();
+                rsync.addNewToCache(oos);
+        	}
+    		return rs.save(thisObj.getClass(), thisObj.getObjectKey(), iCascadeRule);
         }
         return false;
     }
