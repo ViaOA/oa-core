@@ -527,6 +527,9 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 			}
 		}
 		
+		if (stackObject == null) stackObject = new Stack();
+		if (stack == null) stack = new Stack();
+		
 		if (callback != null) {
 			// save and push current settings into stack
 			Tuple<String[], String[]> t = new Tuple<String[], String[]>(includeProps, excludeProps);
@@ -627,6 +630,7 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	 * @return the number of stacked objects
 	 */
 	protected int getStackSize() {
+		if (stackObject == null) return 0;
 		return stackObject.size();
 	}
 
@@ -649,6 +653,7 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	 * @return the object at the requested stack position, or {@code null} if out of range
 	 */
 	protected Object getStackObject(int pos) {
+		if (stackObject == null) return null;
 		int x = stackObject.size();
 		x--;
 		x -= pos;
@@ -733,7 +738,9 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 			overFlow.parentObject = oaObj;
 			overFlow.property = propertyName;
 			overFlow.object = obj;
-			overFlow.stack = (Stack) this.stackObject.clone();
+			if (stackObject != null) {
+				overFlow.stack = (Stack) this.stackObject.clone();
+			}
 			overFlow.levelsDeep = this.levelsDeep;
 			if (listOverflow == null) {
 				listOverflow = new LinkedList<Overflow>();
