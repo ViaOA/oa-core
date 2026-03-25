@@ -56,6 +56,14 @@ import com.viaoa.remote.multiplexer.annotation.*;
 @OARemoteInterface(isOASync=true)
 public interface RemoteSyncInterface {
 
+
+	/**
+	 * Used when an OAObject is saved or the first time it's added to a Hub,
+	 * so that it exists on the SyncServer.
+	*/
+	void addNewToCache(OAObjectSerializer obj);
+	
+	
     // OAObjectCSDelegate    
 	/**
 	 * Applies a property change to an object identified by class and key.
@@ -81,17 +89,6 @@ public interface RemoteSyncInterface {
      */
     boolean addToHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, Object obj);
     
-    // uses serializer to include addition properties
-    /**
-     * Adds a newly created object to a hub property on a master object.
-     *
-     * @param masterObjectClass the class of the master object
-     * @param masterObjectKey the key identifying the master object
-     * @param hubPropertyName the name of the hub property
-     * @param obj serializer containing the object to add
-     * @return {@code true} if the object was added, otherwise {@code false}
-     */
-    boolean addNewToHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, OAObjectSerializer obj);
     
     /**
      * Inserts an object into a hub property at a specified position.
