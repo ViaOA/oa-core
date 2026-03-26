@@ -176,11 +176,7 @@ public abstract class HubCSService {
                             return false;
                         }
                     });
-					callSyncSyncAddNewToHub(
-                        faHub.getHubDataMaster(thisHub).getMasterObject().getClass(), 
-                        faHub.getHubDataMaster(thisHub).getMasterObject().getObjectKey(), 
-                        callHubDetailGetPropertyFromMasterToDetail(thisHub), oos);
-                    return;
+					callSyncSyncAddNewToCache(oos);
                 }
             }
             
@@ -515,7 +511,7 @@ public abstract class HubCSService {
 	
 	*/
 	
-	public abstract boolean callSyncSyncAddNewToHub(Class<? extends OAObject> masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, OAObjectSerializer obj);
+	// public abstract boolean callSyncSyncAddNewToHub(Class<? extends OAObject> masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, OAObjectSerializer obj);
 	/*	
 	RemoteSyncInterface rs = og.getSyncService().getRemoteSync();
 	                    rs.addNewToHub(
@@ -529,6 +525,6 @@ public abstract class HubCSService {
 	public abstract boolean callThreadLocalIsLoading();		
 	public abstract boolean callRemoteThreadShouldSendMessages();
 	public abstract boolean callRemoteThreadIsRemoteThread();
-	
+	public abstract void callSyncSyncAddNewToCache(OAObjectSerializer oos);	
     
 }

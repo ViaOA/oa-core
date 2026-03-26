@@ -492,8 +492,8 @@ public class OASyncCombinedClient {
                      * @return {@code true} if forwarded successfully
                      */
                     @Override
-                    public boolean addNewToHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, OAObjectSerializer obj) {
-                        return addToHub(masterObjectClass, masterObjectKey, hubPropertyName, obj.getObject());
+                    public void addNewToCache(OAObjectSerializer obj) {
+                        obj.getObject();
                     }
 
                     /**
@@ -719,8 +719,8 @@ public class OASyncCombinedClient {
                      * @return {@code true} if forwarded successfully; otherwise {@code false}
                      */
                     @Override
-                    public boolean addNewToHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, OAObjectSerializer obj) {
-                        return addToHub(masterObjectClass, masterObjectKey, hubPropertyName, obj.getObject());
+                    public void addNewToCache(OAObjectSerializer obj) {
+                        obj.getObject();
                     }
                     
                     /**

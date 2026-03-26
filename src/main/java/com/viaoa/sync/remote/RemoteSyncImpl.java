@@ -148,21 +148,11 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		return true;
 	}
 
-	/**
-	 * Adds a newly created object to a hub property on a master object.
-	 *
-	 * @param masterObjectClass the class of the master object
-	 * @param masterObjectKey the key identifying the master object
-	 * @param hubPropertyName the name of the hub property
-	 * @param obj serializer containing the object to add
-	 * @return {@code true} if the object was added, otherwise {@code false}
-	 */
 	@Override
-	public boolean addNewToHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, OAObjectSerializer obj) {
-		Object objx = obj.getObject();
-		return addToHub(masterObjectClass, masterObjectKey, hubPropertyName, objx);
+	public void addNewToCache(OAObjectSerializer obj) {
+		Object objx = obj.getObject(); // this will add to OAObjectCache
 	}
-
+	
 	/**
 	 * Inserts an object into a hub property at a specific position.
 	 *

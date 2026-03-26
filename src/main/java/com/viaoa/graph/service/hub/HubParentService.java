@@ -539,9 +539,10 @@ public abstract class HubParentService {
 			public boolean callSyncSyncAddToHub(Class<? extends OAObject> masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, Object obj) {
 				return HubParentService.this.srvcSync.getRemoteSync().addToHub(masterObjectClass, masterObjectKey, hubPropertyName, obj);
 			}
+			
 			@Override
-			public boolean callSyncSyncAddNewToHub(Class<? extends OAObject> masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, OAObjectSerializer obj) {
-				return HubParentService.this.srvcSync.getRemoteSync().addNewToHub(masterObjectClass, masterObjectKey, hubPropertyName, obj);
+			public void callSyncSyncAddNewToCache(OAObjectSerializer obj) {
+				HubParentService.this.srvcSync.getRemoteSync().addNewToCache(obj);
 			}
 			@Override
 			public boolean callSyncClientDeleteAll(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName) {
