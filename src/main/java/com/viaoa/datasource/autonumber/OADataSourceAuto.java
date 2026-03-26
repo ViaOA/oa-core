@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.graph.service.object.OAObjectInfoService;
@@ -308,18 +309,24 @@ public class OADataSourceAuto extends OADataSource {
 			final String[] props = oi.getIdProperties();
 
 			if (NextNumber.class.equals(clazz)) {
-				return null; // there is one in the works
+				return null; 
 			}
 
-			nn = new NextNumber();
-			nn.setId(clazz.getName());
+			final OAGraphInternal og2 = (OAGraphInternal) OARuntime.graph(NextNumber.class);
+			nn = og2.objectsInternal().callObjectCacheGetObject(NextNumber.class, clazz.getName());
 
-			if (props != null) {
-				for (String s : props) {
-					OAPropertyInfo pi = oi.getPropertyInfo(s);
-					if (pi != null && pi.getAutoAssign()) {
-						nn.setProperty(s);
-						break;
+			
+			if (nn == null) {
+				nn = new NextNumber();
+				nn.setId(clazz.getName());
+	
+				if (props != null) {
+					for (String s : props) {
+						OAPropertyInfo pi = oi.getPropertyInfo(s);
+						if (pi != null && pi.getAutoAssign()) {
+							nn.setProperty(s);
+							break;
+						}
 					}
 				}
 			}
