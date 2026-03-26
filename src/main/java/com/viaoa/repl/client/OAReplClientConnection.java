@@ -30,11 +30,15 @@ public abstract class OAReplClientConnection {
 	private RemoteClientInterface remoteClient;
 	private RemoteMasterRegisterInterface remoteMasterRegister;
 	private RemoteMasterInterface remoteMaster;
+	
+	private final long initMasterSeq, initClientSeq;
 
-    public OAReplClientConnection(String guid, String masterHostName, int masterHostPort) {
+    public OAReplClientConnection(String guid, String masterHostName, int masterHostPort, long masterSeq, long clientSeq) {
     	this.guid = guid;
     	this.masterHostName = masterHostName;
     	this.masterHostPort = masterHostPort;
+    	this.initMasterSeq = masterSeq;
+    	this.initClientSeq = clientSeq;
     }
 
     public boolean isConnected() {
@@ -140,7 +144,7 @@ public abstract class OAReplClientConnection {
 	
 	public RemoteMasterInterface getRemoteMaster() throws Exception {
 		if (remoteMaster == null) {
-			remoteMaster = getRemoteMasterRegister().registerClient(guid, getRemoteClient());
+			remoteMaster = getRemoteMasterRegister().registerClient(guid, getRemoteClient(), this.initMasterSeq, this.initClientSeq);
 		}
 		return remoteMaster;
 	}

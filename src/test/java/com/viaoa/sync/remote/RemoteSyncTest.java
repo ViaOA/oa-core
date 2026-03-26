@@ -81,8 +81,7 @@ public class RemoteSyncTest extends OAUnitTest {
                 return false;
             }
             @Override
-            public boolean addNewToHub(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, OAObjectSerializer obj) {
-                return addToHub(masterObjectClass, masterObjectKey, hubPropertyName, obj.getObject());
+            public void addNewToCache(OAObjectSerializer obj) {
             }
             @Override
             public void clearHubChanges(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName) {
@@ -94,19 +93,11 @@ public class RemoteSyncTest extends OAUnitTest {
             }
             @Override
             public void serverDelete(Class objectClass, OAObjectKey objectKey) {
-                // TODO Auto-generated method stub
-//qqqqqqqqqqqqqqqqqqq                
             }
             @Override
             public void clientDelete(Class objectClass, OAObjectKey objectKey) {
                 // TODO Auto-generated method stub
-//qqqqqqqqqqqqqqqqqqq                
             }
-			@Override
-			public void createNew(Object obj) {
-				// TODO Auto-generated method stub
-				
-			}
         };
         return rsi;
     }

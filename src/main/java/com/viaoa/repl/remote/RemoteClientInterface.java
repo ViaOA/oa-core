@@ -8,7 +8,7 @@ public interface RemoteClientInterface {
 
 	// called by Master to process msg on Client
     @OARemoteMethod() 
-    void processMessage(long posMaster, String methodName, Object[] args);
+    void processMessage(long masterSeq, String methodName, Object[] args);
 	
 }
 

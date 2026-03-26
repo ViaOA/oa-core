@@ -190,7 +190,7 @@ public class OAReplicationClient extends OAReplicationBase {
     	if (replClientConnection != null && !replClientConnection.isStopped()) return replClientConnection;
     	
     	LOG.fine("creating new ReplClientConnection");
-    	replClientConnection = new OAReplClientConnection(guid, masterHostName, masterHostPort) {
+    	replClientConnection = new OAReplClientConnection(guid, masterHostName, masterHostPort, masterSeq, clientSeq) {
 			@Override
 			public void processMessageFromMaster(long masterSeq, String methodName, Object[] args) {
 				OAReplicationClient.this.processMessageFromMaster(masterSeq, methodName, args);
