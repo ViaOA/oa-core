@@ -17,7 +17,7 @@ public interface RemoteMasterRegisterInterface {
 	 * @return
 	 */
     @OARemoteMethod() 
-	RemoteMasterInterface registerClient(String guid, @OARemoteParameter() RemoteClientInterface remoteClient, long masterSeq, long clientSeq);
+	RemoteMasterInterface registerClient(String guid, @OARemoteParameter() RemoteClientInterface remoteClient, long lastSentMasterSeq, long lastSentClientSeq);
 
 }
 

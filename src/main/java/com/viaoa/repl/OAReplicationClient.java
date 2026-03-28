@@ -1,7 +1,8 @@
-package com.viaoa.repl;
+	package com.viaoa.repl;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -23,6 +24,7 @@ import com.viaoa.repl.client.OAReplClientConnection;
 import com.viaoa.sync.OASyncServer;
 import com.viaoa.sync.remote.RemoteSyncImpl;
 import com.viaoa.util.OADateTime;
+import com.viaoa.util.OAStr;
 
 /**
  * Connects to OAReplicationMaster
@@ -38,8 +40,12 @@ public class OAReplicationClient extends OAReplicationBase {
 	private final int masterHostPort;
 
 	private final String guid;
-	private long masterSeq; 
-	private long clientSeq; 
+
+	private long masterSeq; // last value from Master
+	private long lastSentMasterSeq;
+	private long clientSeq; // current value
+	private long lastSentClientSeq; // last value sent to Master
+	private boolean bGotSeqFromMaster;
 	
     private RemoteSyncImpl remoteSyncImpl;
 	
@@ -51,8 +57,11 @@ public class OAReplicationClient extends OAReplicationBase {
 
     private FileOutputStream fileOutputStream;
     private ObjectOutputStream objectOutputStream;
-	
 	protected final String tlogFileName;
+	
+    private final Object lockCircularQueue = new Object();
+    private long maxCircularQueuePos;
+	
 	
     public OAReplicationClient(String tlogFileName, String guid, OASyncServer syncServer, String masterHostName, int masterHostPort) {
     	super(syncServer);
@@ -103,7 +112,6 @@ public class OAReplicationClient extends OAReplicationBase {
 	
 	protected void runSendSyncMessagesToMaster() {
     	OAReplTLog tlog = null;
-    	long minClientSeq = -1; // so that previous sent msgs can be skipped, if tlog did not remove during last write-out.
     	for ( ; !bStop ; ) {
     		OAReplClientConnection rcc = null;
     		
@@ -112,10 +120,18 @@ public class OAReplicationClient extends OAReplicationBase {
     			for (int i=0; i < 10 && !bStop; i++) OAThread.sleep(500);
     			continue;
     		}
-
+    		
     		try {
-				if (minClientSeq < 0) {
-					minClientSeq = rcc.getRemoteMaster().getMinimumClientSeq();
+				if (!bGotSeqFromMaster) {
+					long x = rcc.getRemoteMaster().getLastReceivedClientSeq();
+					if (x > this.lastSentClientSeq) {
+						this.lastSentClientSeq = x;
+					}
+					x = rcc.getRemoteMaster().getLastReceivedMasterSeq();
+					if (x > this.lastSentMasterSeq) {
+						this.lastSentMasterSeq = x;
+					}
+					bGotSeqFromMaster = true;
 				}
 				if (tlog == null) {
 					tlog = alTLog.poll(1, TimeUnit.SECONDS); 
@@ -123,11 +139,13 @@ public class OAReplicationClient extends OAReplicationBase {
 				}
 				if (tlog == null) continue;
 
-				if (tlog.getClientSeq() < minClientSeq) continue;
+				if (tlog.getClientSeq() <= lastSentClientSeq) continue;
 				
 				LOG.fine("sending message to Master, method="+tlog.methodName);
 
 				rcc.getRemoteMaster().processMessage(tlog.getMasterSeq(), tlog.getClientSeq(), tlog.getMethodName(), tlog.getArgs());
+				lastSentClientSeq = tlog.getClientSeq();
+				lastSentMasterSeq = tlog.getMasterSeq();
 				
 				tlog = null;
 			}
@@ -153,23 +171,39 @@ public class OAReplicationClient extends OAReplicationBase {
 	    		tlog = null;
 	    	}
     		objectOutputStream.close();
+    		objectOutputStream = null;
+    		fileOutputStream.close();
+    		fileOutputStream = null;
     		
     		File f1 = new File(tlogFileName + ".temp");
     		f1.renameTo(new File(tlogFileName));
 	    	LOG.fine(String.format("rewrote file %s, %,d tlog records", tlogFileName, cnt)); 
     	}
     	catch (Exception e) {
-    		LOG.log(Level.WARNING, "error rewriting tlog file, will use original one (no data loss)", e);
+    		LOG.log(Level.WARNING, "exception rewriting tlog file, will use original one (no data loss)", e);
     	}
 	}
 
 	// Sync message from this.Server's queue
 	@Override
 	protected void onNewSyncMessage(RequestInfo ri) {
+
+		for (;;) {
+			synchronized (lockCircularQueue) {
+				if (maxCircularQueuePos == 0L) break;
+				long qpos = getCirularQueuePos();
+				if (qpos <= maxCircularQueuePos) break;
+				try {
+					lockCircularQueue.wait(50);
+				}
+				catch (Exception e) {
+		    		LOG.log(Level.WARNING, "exception waiting on circ queue lock ", e);
+				}
+			}
+		}
+		
 		boolean bFound = hmIgnoreRequestInfo.remove(ri.cnt) != null;
-
         if (!bFound) clientSeq++;
-
 		LOG.fine(String.format("new OASync message from this server, skipping=%b, methodName=%s, masterSeq=%,d, clientSeq=%,d", bFound, ri.method.getName(), masterSeq, clientSeq));
 		if (bFound) return;			
 
@@ -179,6 +213,7 @@ public class OAReplicationClient extends OAReplicationBase {
 			alTLog.put(tlog);
 		}
 		catch (Exception e2) {
+    		throw new RuntimeException("exception writing to tlog", e2);
 		}
 	}
 	
@@ -190,7 +225,7 @@ public class OAReplicationClient extends OAReplicationBase {
     	if (replClientConnection != null && !replClientConnection.isStopped()) return replClientConnection;
     	
     	LOG.fine("creating new ReplClientConnection");
-    	replClientConnection = new OAReplClientConnection(guid, masterHostName, masterHostPort, masterSeq, clientSeq) {
+    	replClientConnection = new OAReplClientConnection(guid, masterHostName, masterHostPort, lastSentMasterSeq, lastSentClientSeq) {
 			@Override
 			public void processMessageFromMaster(long masterSeq, String methodName, Object[] args) {
 				OAReplicationClient.this.processMessageFromMaster(masterSeq, methodName, args);
@@ -235,22 +270,32 @@ public class OAReplicationClient extends OAReplicationBase {
 	protected void processMessageFromMaster(long masterSeq, String methodName, Object[] args) {
 		LOG.fine(String.format("received msg from Master, masterSeq=%,d, methodName=%s", masterSeq, methodName)); 
 
+		synchronized (lockCircularQueue) {
+			maxCircularQueuePos = getCirularQueuePos();
+		}
+		
     	if (remoteSyncImpl == null) {
     		remoteSyncImpl = new RemoteSyncImpl();
     	}
 		
 		Method method = getMethod(methodName);
 		try {
-			method.invoke(remoteSyncImpl, args);
+			method.invoke(remoteSyncImpl, args);   
 
 			RequestInfo ri = OAThreadLocalDelegate.getRemoteRequestInfo();
-
-			hmIgnoreRequestInfo.put(ri.cnt, true);
-			
+			if (ri != null) {
+				hmIgnoreRequestInfo.put(ri.cnt, true);
+			}
 			OAReplicationClient.this.masterSeq = masterSeq;
 		}
 		catch (Exception ex) {
 			LOG.log(Level.WARNING, "error invoking method="+methodName, ex);
+		}
+		finally {
+			synchronized (lockCircularQueue) {
+				maxCircularQueuePos = 0L;
+				lockCircularQueue.notifyAll();
+			}
 		}
 	}
 	
@@ -264,10 +309,16 @@ public class OAReplicationClient extends OAReplicationBase {
 	            ObjectInputStream ois = new ObjectInputStream(bis);
 	            
 	        	String guidx = ois.readUTF();
-	            clientSeq = ois.readLong();
 	            masterSeq = ois.readLong();
-		    	LOG.fine(String.format("guid=%s, masterSeq=%,d, clientSeq=%,d", guidx, masterSeq, clientSeq));
-	            
+	            lastSentMasterSeq = ois.readLong();
+	            clientSeq = ois.readLong();
+	            lastSentClientSeq = ois.readLong();
+		    	LOG.fine(String.format("guid=%s, masterSeq=%,d, clientSeq=%,d, lastClientSeqOnMaster=%,d", guidx, masterSeq, clientSeq, lastSentClientSeq));
+
+	        	if (OAStr.compare(guid, guidx) != 0) {
+	        		throw new RuntimeException(String.format("TLogFile guid=%s, does not match runtime guid=%s", guidx, guid));
+	        	}
+		    	
 	            int cnt = 0;
 	            for (; ; cnt++) {
 	            	OAReplTLog tlog;
@@ -276,8 +327,11 @@ public class OAReplicationClient extends OAReplicationBase {
 	                	clientSeq = tlog.getClientSeq();
 	                	masterSeq = tlog.getMasterSeq();
 	            	}
-	            	catch (IOException e) {
+	            	catch (EOFException e) {
 	            		break;
+	            	}
+	            	catch (IOException e) {
+	            		throw new RuntimeException("Exception loading TLog file", e);
 	            	}
 	        		
         			alTLog.put(tlog);
@@ -314,8 +368,10 @@ public class OAReplicationClient extends OAReplicationBase {
 	        if (!bAppend) {
 			    LOG.fine(String.format("wrote header: masterSeq=%,d, clientSeq=%,d, guid=%s", masterSeq, clientSeq, guid));
 	        	objectOutputStream.writeUTF(this.guid);
-	        	objectOutputStream.writeLong(clientSeq);
 	        	objectOutputStream.writeLong(masterSeq);
+	        	objectOutputStream.writeLong(lastSentMasterSeq);
+	        	objectOutputStream.writeLong(clientSeq);
+	        	objectOutputStream.writeLong(lastSentClientSeq);
 		        objectOutputStream.flush();
 		        fileOutputStream.getFD().sync();
 	        }
@@ -331,14 +387,17 @@ public class OAReplicationClient extends OAReplicationBase {
 	    	LOG.fine(String.format("fileName=%s, exists=%b, wasOpen=%b", fileName, file.exists(), (objectOutputStream != null)));
 			if (objectOutputStream != null) {
 				objectOutputStream.close();
+				fileOutputStream.close();
 			}
 	        
 	        fileOutputStream = new FileOutputStream(file); 
 	        BufferedOutputStream bos = new BufferedOutputStream(fileOutputStream, 64 * 1024);
 	        objectOutputStream = new ObjectOutputStream(bos);
         	objectOutputStream.writeUTF(this.guid);
-        	objectOutputStream.writeLong(clientSeq);
         	objectOutputStream.writeLong(masterSeq);
+        	objectOutputStream.writeLong(lastSentMasterSeq);
+        	objectOutputStream.writeLong(clientSeq);
+        	objectOutputStream.writeLong(lastSentClientSeq);
 	        objectOutputStream.flush();
 	        fileOutputStream.getFD().sync();
 

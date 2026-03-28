@@ -32,13 +32,13 @@ public class OAReplTLog implements Serializable {
 		return masterSeq;
 	}
 	public void setMasterSeq(long seq) {
-		this.masterSeq = masterSeq;
+		this.masterSeq = seq;
 	}
 	public long getClientSeq() {
 		return clientSeq;
 	}
 	public void setClientSeq(long seq) {
-		this.clientSeq = clientSeq;
+		this.clientSeq = seq;
 	}
 	public String getMethodName() {
 		return methodName;

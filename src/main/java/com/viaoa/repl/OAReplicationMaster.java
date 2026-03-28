@@ -2,6 +2,7 @@ package com.viaoa.repl;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -33,23 +34,25 @@ public class OAReplicationMaster extends OAReplicationBase {
 	public static final String ReplicationMasterLookupName = "oaReplicationMaster";
 
 	private Map<Integer, ReplClientSession> hmClientInfo = new ConcurrentHashMap<Integer, ReplClientSession>();
-
-	
-	// very short lived when each client is processing 
-	private final Map<RequestInfo, OAReplTLog> hmRequestInfoTLog = new ConcurrentHashMap<>();
 	
 	private final List<List<OAReplTLog>> alListReplTLog = new ArrayList<>();
 	private final int RequestInfoListSize = 1000;
 	
+	protected final String tlogFileName;
+    private FileOutputStream fileOutputStream;
+    private ObjectOutputStream objectOutputStream;
 	
-	// seq # used for master msg #, must be unique.  Used starting value is stored/persisted. 
-	private long messageCnt;
+	private long currentMasterSeq;
 
+	// very short lived when each client is processing 
+	private final Map<RequestInfo, OAReplTLog> hmRequestInfoTLog = new ConcurrentHashMap<>();
+	
+	
     public OAReplicationMaster(OASyncServer syncServer, String tlogFilename) {
     	super(syncServer);
+    	this.tlogFileName = tlogFilename;
     }
 
-    private ObjectOutputStream objectOutputStream;
 
     @Override
     public void start() throws Exception {
@@ -59,64 +62,21 @@ public class OAReplicationMaster extends OAReplicationBase {
     }    
     
     protected void _start() throws Exception {
-    	super.start(); //qqqqqqqqq dont start until this starts
-    	
-    	
-    	// 1: load previous TLog records ================================== 
-    	
-    	final String fnameNew = "./runtime/demo/replMaster.bin";
-        File file = new File(fnameNew);
-        if (file.exists()) {
-            FileInputStream fis = new FileInputStream(file);
-            BufferedInputStream bis = new BufferedInputStream(fis, 64 * 1024);
-            ObjectInputStream ois = new ObjectInputStream(bis);
-            
-            for (int i=0; ; i++) {
-            	OAReplTLog tlog;
-            	try {
-                	tlog = (OAReplTLog) ois.readObject();
-            	}
-            	catch (IOException e) {
-            		break;
-            	}
-        		addTLog(tlog);
-            	String s = String.format("%,d) %s", tlog.getMasterSeq(), tlog.getMethodName());
-            	System.out.println(s);	                        	
-            }
-            ois.close();
-    	}
+    	loadTLogFile();
+        openTLogFile();
 
-        final boolean bAppend = file.exists() && file.length() > 0;
-        FileOutputStream fos = new FileOutputStream(file, true); // append
-        
-        BufferedOutputStream bos = new BufferedOutputStream(fos, 64 * 1024);
-        objectOutputStream = new ObjectOutputStream(bos) {
-        	@Override
-            protected void writeStreamHeader() throws IOException {
-                if (bAppend) reset(); // do not write a new header
-                else super.writeStreamHeader();
-            }
-        };
-        
-
-    	// 2: open append file for new TLog records ================================== 
-        
-        
     	// register Remote lookup object for clients to get.
     	final RemoteMasterRegisterInterface remoteMasterRegister = new RemoteMasterRegisterInterface() {
 			@Override
-			public RemoteMasterInterface registerClient(String guid, RemoteClientInterface remoteClient, long masterSeq, long clientSeq) {
+			public RemoteMasterInterface registerClient(String guid, RemoteClientInterface remoteClient, long lastSentMasterSeq, long lastSentClientSeq) {
 				RequestInfo ri = OAThreadLocalDelegate.getRemoteRequestInfo();
 				if (ri == null) throw new RuntimeException("RequestInfo is null");
 				
-				final ReplClientSession cs = new ReplClientSession(guid, ri.connectionId, remoteClient, masterSeq, clientSeq);
+				final ReplClientSession cs = new ReplClientSession(guid, ri.connectionId, remoteClient, lastSentMasterSeq, lastSentClientSeq);
 				hmClientInfo.put(ri.connectionId, cs);
 				return cs.remoteMaster;
 			}
     	};
-    	
-    	
-    	// 3: start thread that replicate with Clients  ================================== 
     	
     	
     	syncServer.getRemoteMultiplexerServer().createLookup(ReplicationMasterLookupName, remoteMasterRegister, RemoteMasterRegisterInterface.class);
@@ -125,39 +85,9 @@ public class OAReplicationMaster extends OAReplicationBase {
     	// start thread that will repl each client 
         final String threadName = "OAReplicationMaster";
         Thread t = new Thread(new Runnable() {
-        	final OAThrottle throttle = new OAThrottle(500);
             @Override
             public void run() {
-            	try {
-            		
-            		for (; !OAReplicationMaster.this.bStop; ) {
-            	    	LOG.fine("thread="+threadName + ", checking to sync Repli Clients with Master");
-            			long ms = System.currentTimeMillis();
-	            		for (int id : hmClientInfo.keySet()) {
-	            			if (OAReplicationMaster.this.bStop) break;
-	            			ReplClientSession ci = hmClientInfo.get(id);
-	            			
-	            			syncServer.getClientInfo();
-	            			LOG.fine(threadName + " processing client " +id);
-	            			if (ci == null) continue;
-	            			try {
-	            				ci.process();
-	            			}
-	                        catch (Exception e) {
-	                        	if (throttle.check()) {
-	                        		LOG.log(Level.WARNING, threadName + " exception while processing client merge for connection: " + id +", will continue", e);
-	                        	}
-	                        }
-	            			hmRequestInfoTLog.clear(); // only needed while processing client
-	            		}
-            			long diff = System.currentTimeMillis() - ms;
-	            		if (diff < 5000) OAThread.sleep(5000 - diff);
-            		}
-                }
-                catch (Exception e) {
-	                String s = "thread=" + threadName + ", is stopping, which will stop replicating with clients.";
-	                LOG.log(Level.WARNING, s, e);
-                }
+            	runProcessClients();
             }
         });
         t.setName(threadName);
@@ -166,6 +96,57 @@ public class OAReplicationMaster extends OAReplicationBase {
     	LOG.fine("thread started to Replicate Clients with this Master, thread name="+threadName);
     }
 
+	public void stop() throws Exception {
+    	LOG.fine("Stop called"); 
+    	
+    	// qqqqqqqqq need to drop OAReplClient connections only (not stop OAMultiplexerServer) qqqqqqqqqq
+
+		synchronized (lockTLogFile) {
+			if (objectOutputStream != null) {
+		    	objectOutputStream.close();
+				objectOutputStream = null;
+				fileOutputStream.close();
+				fileOutputStream = null;
+			}
+		}    	
+		super.stop();
+    }
+
+	protected void runProcessClients() {
+    	final OAThrottle throttle = new OAThrottle(500);
+    	try {
+    		for (; !OAReplicationMaster.this.bStop; ) {
+    	    	LOG.fine("checking to sync Repli Clients with Master");
+    			long ms = System.currentTimeMillis();
+        		for (int id : hmClientInfo.keySet()) {
+        			if (OAReplicationMaster.this.bStop) break;
+        			ReplClientSession ci = hmClientInfo.get(id);
+        			
+        			syncServer.getClientInfo();
+        			LOG.fine("processing client " +id);
+        			if (ci == null) continue;
+        			try {
+        				ci.process();
+        			}
+                    catch (Exception e) {
+                    	if (throttle.check()) {
+                    		LOG.log(Level.WARNING, "exception while processing client merge for connection: " + id +", will continue", e);
+                    	}
+                    }
+        			hmRequestInfoTLog.clear(); // only needed while processing client
+        		}
+    			long diff = System.currentTimeMillis() - ms;
+        		if (diff < 5000) OAThread.sleep(5000 - diff);
+    		}
+        }
+        catch (Exception e) {
+            String s = "ProcesClient Thread is stopping, which will stop replicating with clients.";
+            LOG.log(Level.WARNING, s, e);
+        }
+	}
+    
+    
+    
     
 	protected class ReplClientSession {
 //qqqqqq test: make sure dropped client session is removed
@@ -176,21 +157,25 @@ public class OAReplicationMaster extends OAReplicationBase {
 		final Map<OAReplTLog, Boolean> hmIgnoreTLog = new ConcurrentHashMap<>();
 
 		String guid;
-		long lastMasterSeq;
-		long clientSeq;
+		
+		long lastReceivedMasterSeq;
+		long lastProcessedMasterSeq;
+		long lastSentMasterSeq;
+		
+		long lastReceivedClientSeq; 
+		long lastProcessedClientSeq;
 
 		long msLastProcessed;
 		int lastRequestInfoSize;
 		
-		ReplClientSession(String guid, int sessionId, RemoteClientInterface remoteClient, long lastMasterSeq, long clientSeq) {
+		boolean bEnabled = true;
+		
+		ReplClientSession(String guid, int sessionId, RemoteClientInterface remoteClient, long lastSentMasterSeq, long lastSentClientSeq) {
 			this.guid = guid;
 			this.sessionId = sessionId;
 			this.remoteClient = remoteClient;
-			this.lastMasterSeq = lastMasterSeq;
-			this.clientSeq = clientSeq;
-			
-//qqqqqqqqqqqq see if Master has a larger clientSeq			
-			
+			this.lastReceivedMasterSeq = lastSentMasterSeq;
+			this.lastReceivedClientSeq = lastSentClientSeq;
 		}
 		
 		// ReplClient uses this as remote object to send sync messages to ReplMaster
@@ -198,32 +183,49 @@ public class OAReplicationMaster extends OAReplicationBase {
 			@Override
 			public void processMessage(long masterSeq, long clientSeq, String methodName, Object[] args) {
 				LOG.fine("received message from Client.session="+sessionId+", method="+methodName);
-				if (methodName == null) {//qqqqqqqqq remove this, should not happen
-					if (masterSeq != 0) lastMasterSeq = masterSeq;
-					return;
-				}
-				lastMasterSeq = masterSeq;
 				
 				ClientMsg msg = new ClientMsg();
-				msg.posMaster = masterSeq;
-				msg.posClient = clientSeq;
+				msg.masterSeq = masterSeq;
+				msg.clientSeq = clientSeq;
 				msg.methodName = methodName;
 				msg.args = args;
 				try {
 					alClientMsg.put(msg);
 				}
 				catch (Exception ex) {
-					LOG.log(Level.WARNING, "", ex);
+					LOG.log(Level.WARNING, "error adding ClientMsg to blocking que", ex);
 				}
+				lastReceivedClientSeq = clientSeq;
+				lastReceivedMasterSeq = masterSeq;
 			}
-
 			@Override
-			public long getMinimumClientSeq() {
-				return clientSeq;
+			public long getLastReceivedClientSeq() {
+				return lastReceivedClientSeq;
+			}
+			@Override
+			public long getLastProcessedClientSeq() {
+				return lastProcessedClientSeq;
+			}
+			@Override
+			public long getLastReceivedMasterSeq() {
+				return lastReceivedMasterSeq;
+			}
+			@Override
+			public long getLastProcessedMasterSeq() {
+				return lastProcessedMasterSeq;
+			}
+			@Override
+			public void setEnabled(boolean b) {
+				bEnabled = b;
+			}
+			@Override
+			public boolean getEnabled() {
+				return bEnabled;
 			}
 		}; 
  
 		void process() {
+			if (!bEnabled) return;
 			long msNow = System.currentTimeMillis();
 			int size = alClientMsg.size();
 			int size2 = getRequestInfoSize();
@@ -248,11 +250,14 @@ public class OAReplicationMaster extends OAReplicationBase {
 					LOG.fine("invoking message from Client.session="+sessionId+", method="+method.getName());
 					method.invoke(syncServer.getRemoteSync(), cm.args);
 
-					RequestInfo ri = OAThreadLocalDelegate.getRemoteRequestInfo();
-					OAReplTLog tl = OAReplicationMaster.this.getTlog(ri, true);
-//qqqqqqqqqqqqq this is returning ri=null, should be set during method.invoke 					
-					hmIgnoreTLog.put(tl, true);
+					lastProcessedClientSeq = cm.clientSeq;
+					lastProcessedMasterSeq = cm.masterSeq;
 					
+					RequestInfo ri = OAThreadLocalDelegate.getRemoteRequestInfo();
+					if (ri != null) {
+						OAReplTLog tl = OAReplicationMaster.this.getTlog(ri, true);
+						hmIgnoreTLog.put(tl, true);
+					}
 				}
 				catch (Exception ex) {
 					LOG.log(Level.WARNING, "exception invoking client message", ex);
@@ -266,14 +271,13 @@ public class OAReplicationMaster extends OAReplicationBase {
 				synchronized (alListReplTLog) {
 					al = alListReplTLog.get(i);
 				}
-				if (al.get(RequestInfoListSize-1).masterSeq <= lastMasterSeq) continue;
+				if (al.get(RequestInfoListSize-1).masterSeq <= lastProcessedMasterSeq) continue;
 				for (OAReplTLog tlog : al) {
-					//qqqqqqq this cnt compare wont work because restart resets to 0
-					if (tlog.masterSeq <= lastMasterSeq) continue;
+					if (tlog.masterSeq <= lastSentMasterSeq) continue;
 					if (hmIgnoreTLog.remove(tlog) != null) continue;
 					LOG.fine("sending Master message to Client.session="+sessionId+", method="+tlog.methodName);
 					remoteClient.processMessage(tlog.masterSeq, tlog.methodName, tlog.args);
-					lastMasterSeq = tlog.masterSeq;
+					lastSentMasterSeq = tlog.masterSeq;
 				}
 			}
 
@@ -284,11 +288,11 @@ public class OAReplicationMaster extends OAReplicationBase {
 				}
 				synchronized (al) {
 					for (OAReplTLog tlog : al) {
-						if (tlog.masterSeq <= lastMasterSeq) continue;
+						if (tlog.masterSeq <= lastSentMasterSeq) continue;
 						if (hmIgnoreTLog.remove(tlog) != null) continue;
 						LOG.fine("sending Master message to Client.session="+sessionId+", method="+tlog.methodName);
 						remoteClient.processMessage(tlog.masterSeq, tlog.methodName, tlog.args);
-						lastMasterSeq = tlog.masterSeq;
+						lastSentMasterSeq = tlog.masterSeq;
 					}
 				}
 			}
@@ -298,8 +302,8 @@ public class OAReplicationMaster extends OAReplicationBase {
 	}
 	
 	protected static class ClientMsg {
-		long posMaster;
-		long posClient;
+		long masterSeq;
+		long clientSeq;
 		String methodName;
 		Object[] args;
 	}
@@ -329,8 +333,8 @@ public class OAReplicationMaster extends OAReplicationBase {
 
 	@Override
 	protected void onNewSyncMessage(RequestInfo ri) {
-		messageCnt++;
-        final OAReplTLog tlog = new OAReplTLog(new OADateTime(), messageCnt, 0L, ri.method.getName(), ri.args);
+		currentMasterSeq++;
+        final OAReplTLog tlog = new OAReplTLog(new OADateTime(), currentMasterSeq, 0L, ri.method.getName(), ri.args);
         hmRequestInfoTLog.put(ri, tlog);
 		addTLog(tlog);
 	}
@@ -343,11 +347,111 @@ public class OAReplicationMaster extends OAReplicationBase {
 	}
 	
 	
+
+	protected void loadTLogFile() {
+		try {
+	        File file = new File(tlogFileName);
+	    	LOG.fine(String.format("tlogFileName=%s, exists=%b", tlogFileName, file.exists()));
+	        if (file.exists()) {
+	            FileInputStream fis = new FileInputStream(file);
+	            BufferedInputStream bis = new BufferedInputStream(fis, 64 * 1024);
+	            ObjectInputStream ois = new ObjectInputStream(bis);
+	            currentMasterSeq = ois.readLong();
+	            
+	            int cnt = 0;
+	            for (; ; cnt++) {
+	            	OAReplTLog tlog;
+	            	try {
+	                	tlog = (OAReplTLog) ois.readObject();
+	                	currentMasterSeq = tlog.getMasterSeq();
+	            	}
+	            	catch (EOFException e) {
+	            		break;
+	            	}
+	            	catch (IOException e) {
+	            		throw new RuntimeException("Exception loading TLog file", e);
+	            	}
+	        		
+        			addTLog(tlog);
+			    	LOG.fine(String.format("%,d) masterSeq=%,d, methodName=%s", cnt+1, tlog.getMasterSeq(), tlog.getMethodName()));
+	            }
+	            ois.close();
+		    	LOG.fine(String.format("tlogFileName=%s, total tlog records=%,d", tlogFileName, cnt));
+	    	}
+		}
+		catch (Exception e) {
+			throw new RuntimeException("exception appending to tlog file", e);
+		}
+	}
+
+	
+	protected void openTLogFile() {
+		synchronized (lockTLogFile) {
+			_openTLogFile();
+		}		
+	}
+	protected void _openTLogFile() {
+		try {
+			if (objectOutputStream != null) {
+				objectOutputStream.close();
+			}
+			
+	        File file = new File(tlogFileName);
+	    	LOG.fine(String.format("tlogFileName=%s, exists=%b", tlogFileName, file.exists()));
+	        final boolean bAppend = file.exists() && file.length() > 0;
+	        fileOutputStream = new FileOutputStream(file, true); // append
+	        BufferedOutputStream bos = new BufferedOutputStream(fileOutputStream, 64 * 1024);
+
+	        objectOutputStream = new ObjectOutputStream(bos) {
+	        	@Override
+	            protected void writeStreamHeader() throws IOException {
+	                if (bAppend) reset(); // writes a TC_RESET token into the stream, avoids duplicate stream header when appending
+	                else super.writeStreamHeader();
+	            }
+	        };
+	        if (!bAppend) {
+			    LOG.fine(String.format("wrote header: masterSeq=%,d", currentMasterSeq));
+	        	objectOutputStream.writeLong(currentMasterSeq);
+		        objectOutputStream.flush();
+		        fileOutputStream.getFD().sync();
+	        }
+		}
+		catch (Exception e) {
+			throw new RuntimeException("exception opening tlog file", e);
+		}
+	}
+
+	protected void createNewTLogFile(String fileName) {
+		try {
+	        File file = new File(fileName);
+	    	LOG.fine(String.format("fileName=%s, exists=%b, wasOpen=%b", fileName, file.exists(), (objectOutputStream != null)));
+			if (objectOutputStream != null) {
+				objectOutputStream.close();
+				fileOutputStream.close();
+			}
+	        
+	        fileOutputStream = new FileOutputStream(file); 
+	        BufferedOutputStream bos = new BufferedOutputStream(fileOutputStream, 64 * 1024);
+        	objectOutputStream.writeLong(currentMasterSeq);
+	        objectOutputStream.flush();
+	        fileOutputStream.getFD().sync();
+
+		    LOG.fine(String.format("wrote header: masterSeq=%,d", currentMasterSeq));
+		}
+		catch (Exception e) {
+			throw new RuntimeException("exception appending to tlog file", e);
+		}
+	}
+
+	private final Object lockTLogFile = new Object();
+	
 	protected void addTLog(final OAReplTLog tlog) {
 		try {
-	        objectOutputStream.writeObject(tlog);
-	        objectOutputStream.flush();                            
-	        objectOutputStream.close();
+			synchronized (lockTLogFile) {
+		        objectOutputStream.writeObject(tlog);
+		        objectOutputStream.flush();                            
+		        fileOutputStream.getFD().sync();
+			}
 		}
 		catch (Exception e) {
 			throw new RuntimeException("exception appending to tlog file", e);

@@ -11,6 +11,22 @@ public interface RemoteMasterInterface {
 	void processMessage(long masterSeq, long clientSeq, String methodName, Object[] args);
 
     @OARemoteMethod() 
-	long getMinimumClientSeq();
+	long getLastReceivedClientSeq();
+    
+    @OARemoteMethod() 
+	long getLastProcessedClientSeq();
+
+
+    @OARemoteMethod() 
+	long getLastReceivedMasterSeq();
+    
+    @OARemoteMethod() 
+	long getLastProcessedMasterSeq();
+    
+    @OARemoteMethod() 
+	void setEnabled(boolean b);
+    
+    @OARemoteMethod() 
+	boolean getEnabled();
 }
 
