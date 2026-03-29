@@ -336,6 +336,7 @@ public class OAReplicationMaster extends OAReplicationBase {
 		currentMasterSeq++;
         final OAReplTLog tlog = new OAReplTLog(new OADateTime(), currentMasterSeq, 0L, ri.method.getName(), ri.args);
         hmRequestInfoTLog.put(ri, tlog);
+        writeTLog(tlog);
 		addTLog(tlog);
 	}
 
@@ -444,8 +445,9 @@ public class OAReplicationMaster extends OAReplicationBase {
 	}
 
 	private final Object lockTLogFile = new Object();
+
 	
-	protected void addTLog(final OAReplTLog tlog) {
+	protected void writeTLog(final OAReplTLog tlog) {
 		try {
 			synchronized (lockTLogFile) {
 		        objectOutputStream.writeObject(tlog);
@@ -456,7 +458,9 @@ public class OAReplicationMaster extends OAReplicationBase {
 		catch (Exception e) {
 			throw new RuntimeException("exception appending to tlog file", e);
 		}
-        
+	}
+	
+	protected void addTLog(final OAReplTLog tlog) {
         LOG.fine("new message from Sync que");
 		synchronized (alListReplTLog) {
 			List<OAReplTLog> al = null;
