@@ -711,6 +711,22 @@ public class OAObjectCacheDelegate {
 			if (ref == null && key != null && key.isNew()) {
 				OAObjectKey keyGuidOnly = new OAObjectKey((Object[]) null, key.guid, true);
 				ref = (WeakReference) tm.get(keyGuidOnly);
+				
+				//qqqqqqqqqq 20260330 ok.compareTo wont always work if OAObj.new and only guid
+				if (ref == null) {
+					for (Object objx : tm.values()) {
+						WeakReference wrx = (WeakReference) objx; 
+						OAObject oaobjx = (OAObject) wrx.get();
+						if (oaobjx != null) {
+							OAObjectKey kx = oaobjx.getObjectKey();
+							if (kx.guid == key.guid) {
+								ref = wrx;
+								break;
+							}
+						}
+					}
+				}
+				
 			}
 
 			if (ref != null) {
