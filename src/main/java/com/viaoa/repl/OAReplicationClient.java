@@ -24,6 +24,7 @@ import com.viaoa.repl.client.OAReplClientConnection;
 import com.viaoa.sync.OASyncServer;
 import com.viaoa.sync.remote.RemoteSyncImpl;
 import com.viaoa.util.OADateTime;
+import com.viaoa.util.OAFile;
 import com.viaoa.util.OAStr;
 
 /**
@@ -162,7 +163,7 @@ public class OAReplicationClient extends OAReplicationBase {
     	// re-write file
     	LOG.fine(String.format("rewriting to temp file %s.tmp", tlogFileName)); 
     	try {
-	    	createNewTLogFile(tlogFileName + ".temp");
+	    	createNewTLogFile(tlogFileName + ".tmp");
 	    	int cnt = 0;
 	    	for (;; cnt++) {
 	    		if (tlog == null) tlog = alTLog.poll();
@@ -175,9 +176,12 @@ public class OAReplicationClient extends OAReplicationBase {
     		fileOutputStream.close();
     		fileOutputStream = null;
     		
-    		File f1 = new File(tlogFileName + ".temp");
-    		f1.renameTo(new File(tlogFileName));
-	    	LOG.fine(String.format("rewrote file %s, %,d tlog records", tlogFileName, cnt)); 
+			String fn = OAFile.convertFileName(tlogFileName + ".tmp");
+    		File f1 = new File(fn);
+    		
+			fn = OAFile.convertFileName(tlogFileName);
+    		f1.renameTo(new File(fn));
+	    	LOG.fine(String.format("rewrote file %s, %,d tlog records", fn, cnt)); 
     	}
     	catch (Exception e) {
     		LOG.log(Level.WARNING, "exception rewriting tlog file, will use original one (no data loss)", e);
@@ -301,8 +305,9 @@ public class OAReplicationClient extends OAReplicationBase {
 	
 	protected void loadTLogFile() {
 		try {
-	        File file = new File(tlogFileName);
-	    	LOG.fine(String.format("tlogFileName=%s, exists=%b", tlogFileName, file.exists()));
+			String fn = OAFile.convertFileName(tlogFileName);
+	        File file = new File(fn);
+	    	LOG.fine(String.format("tlogFileName=%s, exists=%b", fn, file.exists()));
 	        if (file.exists()) {
 	            FileInputStream fis = new FileInputStream(file);
 	            BufferedInputStream bis = new BufferedInputStream(fis, 64 * 1024);
@@ -339,7 +344,7 @@ public class OAReplicationClient extends OAReplicationBase {
 			    		guid, tlog.getMasterSeq(), tlog.getClientSeq(), tlog.getMethodName()));
 	            }
 	            ois.close();
-		    	LOG.fine(String.format("tlogFileName=%s, total tlog records=%,d", tlogFileName, cnt));
+		    	LOG.fine(String.format("tlogFileName=%s, total tlog records=%,d", fn, cnt));
 	    	}
 		}
 		catch (Exception e) {
@@ -353,8 +358,10 @@ public class OAReplicationClient extends OAReplicationBase {
 				objectOutputStream.close();
 			}
 			
-	        File file = new File(tlogFileName);
-	    	LOG.fine(String.format("tlogFileName=%s, exists=%b", tlogFileName, file.exists()));
+			String fn = OAFile.convertFileName(tlogFileName);
+			OAFile.mkdirsForFile(fn);
+	        File file = new File(fn);
+	    	LOG.fine(String.format("tlogFileName=%s, exists=%b", fn, file.exists()));
 	        final boolean bAppend = file.exists() && file.length() > 0;
 	        fileOutputStream = new FileOutputStream(file, true); // append
 	        BufferedOutputStream bos = new BufferedOutputStream(fileOutputStream, 64 * 1024);
@@ -383,8 +390,11 @@ public class OAReplicationClient extends OAReplicationBase {
 
 	protected void createNewTLogFile(String fileName) {
 		try {
-	        File file = new File(fileName);
-	    	LOG.fine(String.format("fileName=%s, exists=%b, wasOpen=%b", fileName, file.exists(), (objectOutputStream != null)));
+			String fn = OAFile.convertFileName(fileName);
+			OAFile.mkdirsForFile(fn);
+	        File file = new File(fn);
+			
+	    	LOG.fine(String.format("fileName=%s, exists=%b, wasOpen=%b", fn, file.exists(), (objectOutputStream != null)));
 			if (objectOutputStream != null) {
 				objectOutputStream.close();
 				fileOutputStream.close();

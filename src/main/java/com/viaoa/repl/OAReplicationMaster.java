@@ -27,6 +27,7 @@ import com.viaoa.repl.remote.RemoteMasterInterface;
 import com.viaoa.repl.remote.RemoteMasterRegisterInterface;
 import com.viaoa.sync.OASyncServer;
 import com.viaoa.util.OADateTime;
+import com.viaoa.util.OAFile;
 import com.viaoa.util.OAThrottle;
 
 public class OAReplicationMaster extends OAReplicationBase {
@@ -54,7 +55,6 @@ public class OAReplicationMaster extends OAReplicationBase {
     	this.tlogFileName = tlogFilename;
     }
 
-
     @Override
     public void start() throws Exception {
     	LOG.fine("starting ReplMaster");
@@ -78,7 +78,6 @@ public class OAReplicationMaster extends OAReplicationBase {
 				return cs.remoteMaster;
 			}
     	};
-    	
     	
     	syncServer.getRemoteMultiplexerServer().createLookup(ReplicationMasterLookupName, remoteMasterRegister, RemoteMasterRegisterInterface.class);
     	LOG.fine("created remote RemoteMasterRegister, lookup name=" + ReplicationMasterLookupName);
@@ -148,9 +147,6 @@ public class OAReplicationMaster extends OAReplicationBase {
             LOG.log(Level.WARNING, s, e);
         }
 	}
-    
-    
-    
     
 	protected class ReplClientSession {
 //qqqqqq test: make sure dropped client session is removed
@@ -334,7 +330,7 @@ public class OAReplicationMaster extends OAReplicationBase {
 	}
 	
 //qqqqqq needs to be called from OASyncServer qqqqqqqqqqqqqqqq	
-	public void disconnect(int clientId) {
+	public void onClientDisconnected(int clientId) {
 		hmClientInfo.remove(clientId);
 	}
 
@@ -346,15 +342,14 @@ public class OAReplicationMaster extends OAReplicationBase {
         writeTLog(tlog);
 		addTLog(tlog);
 	}
-
-	
-	
 	
 
 	protected void loadTLogFile() {
 		try {
-	        File file = new File(tlogFileName);
-	    	LOG.fine(String.format("tlogFileName=%s, exists=%b", tlogFileName, file.exists()));
+			String fn = OAFile.convertFileName(tlogFileName);
+	        File file = new File(fn);
+			
+	    	LOG.fine(String.format("tlogFileName=%s, exists=%b", fn, file.exists()));
 	        if (file.exists()) {
 	            FileInputStream fis = new FileInputStream(file);
 	            BufferedInputStream bis = new BufferedInputStream(fis, 64 * 1024);
@@ -379,7 +374,7 @@ public class OAReplicationMaster extends OAReplicationBase {
 			    	LOG.fine(String.format("%,d) masterSeq=%,d, methodName=%s", cnt+1, tlog.getMasterSeq(), tlog.getMethodName()));
 	            }
 	            ois.close();
-		    	LOG.fine(String.format("tlogFileName=%s, total tlog records=%,d", tlogFileName, cnt));
+		    	LOG.fine(String.format("tlogFileName=%s, total tlog records=%,d", fn, cnt));
 	    	}
 		}
 		catch (Exception e) {
@@ -400,10 +395,13 @@ public class OAReplicationMaster extends OAReplicationBase {
 				fileOutputStream.close();
 			}
 			
-	        File file = new File(tlogFileName);
-	    	LOG.fine(String.format("tlogFileName=%s, exists=%b", tlogFileName, file.exists()));
+			String fn = OAFile.convertFileName(tlogFileName);
+			OAFile.mkdirsForFile(fn);
+	        File file = new File(fn);
+	        
+	    	LOG.fine(String.format("tlogFileName=%s, exists=%b", fn, file.exists()));
 	        final boolean bAppend = file.exists() && file.length() > 0;
-	        fileOutputStream = new FileOutputStream(file, true); // append
+	        fileOutputStream = new FileOutputStream(file, bAppend);
 	        BufferedOutputStream bos = new BufferedOutputStream(fileOutputStream, 64 * 1024);
 
 	        objectOutputStream = new ObjectOutputStream(bos) {
@@ -427,8 +425,11 @@ public class OAReplicationMaster extends OAReplicationBase {
 
 	protected void createNewTLogFile(String newFileName) {
 		try {
-	        File file = new File(newFileName);
-	    	LOG.fine(String.format("fileName=%s, exists=%b, wasOpen=%b", newFileName, file.exists(), (objectOutputStream != null)));
+			String fn = OAFile.convertFileName(newFileName);
+			OAFile.mkdirsForFile(fn);
+	        File file = new File(fn);
+			
+	    	LOG.fine(String.format("fileName=%s, exists=%b, wasOpen=%b", fn, file.exists(), (objectOutputStream != null)));
 			if (objectOutputStream != null) {
 				objectOutputStream.close();
 				fileOutputStream.close();
