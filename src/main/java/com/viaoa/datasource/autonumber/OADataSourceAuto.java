@@ -19,18 +19,16 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceIterator;
-import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectCacheService;
-import com.viaoa.graph.service.object.OAObjectInfoService;
-import com.viaoa.graph.service.object.OAObjectLockService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAFilter;
+
+
+//qqqqqqqq what about local (negative numbers)
 
 /**
  * A lightweight {@link OADataSource} implementation that does not support
@@ -81,6 +79,8 @@ public class OADataSourceAuto extends OADataSource {
 	 */
 	private final ConcurrentHashMap<Class, NextNumber> hmIgnoreClass = new ConcurrentHashMap();
 
+	private int startNextNumber;
+	
 	/**
 	 * Creates a new OADataSourceAuto instance that registers itself and configures
 	 * itself as the last datasource. Uses or initializes the global Hub of
@@ -150,6 +150,14 @@ public class OADataSourceAuto extends OADataSource {
 		setName("OADataSourceAuto DataSource");
 	}
 
+	
+	public void setStartingNextNumber(int x) {
+		this.startNextNumber = x;
+	}
+	public int getStartingNextNumber() {
+		return this.startNextNumber;
+	}	
+	
 	/**
 	 * Configures the global Hub of {@link NextNumber} instances used for
 	 * autonumber assignment across all OADataSourceAuto instances.
@@ -285,6 +293,12 @@ public class OADataSourceAuto extends OADataSource {
 	 * @return the {@link NextNumber} for the class, or {@code null} if unsupported
 	 */
 	private NextNumber getNextNumber(final Class<?> clazz) {
+		NextNumber nn = _getNextNumber(clazz);
+		if (startNextNumber > 0 && nn.getNext() < startNextNumber) nn.setNext(startNextNumber);
+		return nn;
+	}
+	
+	private NextNumber _getNextNumber(final Class<?> clazz) {
 		NextNumber nn = hmIgnoreClass.get(clazz);
 		if (nn != null) {
 			return nn;

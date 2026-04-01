@@ -248,23 +248,24 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             // 20250407 use reference object from oaobj.properties[]
 			//final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(whereObject);
             Object objx = og.objectsInternal().callObjectPropertyGetProperty(whereObject, propertyFromWhereObject);
-            final List al = new ArrayList();
-            if (!(objx instanceof Hub)) {
-                if (objx instanceof OAObject && (filterx == null || filterx.isUsed(objx))) al.add(objx);
+            if (objx != null) {
+	            final List al = new ArrayList();
+	            if (!(objx instanceof Hub)) {
+	                if (objx instanceof OAObject && (filterx == null || filterx.isUsed(objx))) al.add(objx);
+	            }
+	            else {
+	                for (Object obj2 : ((Hub)objx)) {
+	                    if (filterx == null || filterx.isUsed(obj2)) al.add(obj2);
+	                }
+	            }
+	            if (OAString.isNotEmpty(queryOrder)) {
+	                OAComparator comparator = new OAComparator(selectClass, queryOrder, true);
+	                Collections.sort(al, comparator);
+	            }
+	            OADataSourceIterator dsi = new OADataSourceListIterator(al);
+	            return dsi;
             }
-            else {
-                for (Object obj2 : ((Hub)objx)) {
-                    if (filterx == null || filterx.isUsed(obj2)) al.add(obj2);
-                }
-            }
-            if (OAString.isNotEmpty(queryOrder)) {
-                OAComparator comparator = new OAComparator(selectClass, queryOrder, true);
-                Collections.sort(al, comparator);
-            }
-            OADataSourceIterator dsi = new OADataSourceListIterator(al);
-            return dsi;
             
-            /* was: 
             // find using selectFromPropertyPath, or equalPropertyPath
             final OALinkInfo liRev = li.getReverseLinkInfo();
             String spp = liRev.getSelectFromPropertyPath();
@@ -296,7 +297,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
                 final OAFilter filterz = filterx;
                 OAFinder f = new OAFinder(spp) {
                     protected boolean isUsed(OAObject obj) {
-                        Object objx = OAObjectPropertyDelegate.getProperty(obj, liRev.getName(), false, true);
+                        Object objx = og.objectsInternal().callObjectPropertyGetProperty(obj, liRev.getName(), false, true);
                         if (objx instanceof OAObjectKey) {
                             return objx.equals(whereObjectx.getObjectKey());
                         }
@@ -322,9 +323,9 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
                 public boolean isUsed(Object obj) {
                     boolean b;
                     if (obj instanceof OAObject) {
-                        Object objx = OAObjectPropertyDelegate.getProperty((OAObject) obj, liRev.getName());
+                        Object objx = og.objectsInternal().callObjectPropertyGetProperty((OAObject) obj, liRev.getName());
                         b = (whereObjectx == objx);
-                        //was:  b = b || OACompare.isEqual(objx, whereObjectx);
+                        b = b || OACompare.isEqual(objx, whereObjectx);
                     }
                     else {
                         b = super.isUsed(obj);
@@ -334,7 +335,6 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             };
             if (filterx == null) filterx = filter2;
             else filterx = new OAAndFilter(filterx, filter2);
-            */
         }
 
         ObjectCacheIterator itx = new ObjectCacheIterator(selectClass, filterx);
