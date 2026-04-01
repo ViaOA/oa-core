@@ -18,6 +18,7 @@ import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectDSDelegate;
+import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectInfoDelegate;
 import com.viaoa.object.OAPropertyInfo;
@@ -34,6 +35,8 @@ public class OADataSourceAuto extends OADataSource {
 	private static Hub hubNextNumberGlobal; // new numbers for seq ids
 	private boolean bSupportAllClasses = true;
 	private Hub hubNextNumber; // new numbers for seq ids
+	//qqqqqqqqqqqqqqqq
+	private int startNextNumber;
 
 	private final ConcurrentHashMap<Class, NextNumber> hmIgnoreClass = new ConcurrentHashMap();
 
@@ -53,6 +56,16 @@ public class OADataSourceAuto extends OADataSource {
 		this(hubNextNumber, true, true);
 	}
 
+	//qqqqqqqqqqqqq
+	public void setStartingNextNumber(int x) {
+		this.startNextNumber = x;
+	}
+	public int getStartingNextNumber() {
+		return this.startNextNumber;
+	}
+	
+	
+	
 	/**
 	 * Hub hubNextNumber must include a separate NextNumber2 object for each class that needs to have a seqId assigned to its objectId
 	 * property. The objects in hubNextNumber also need to be saved (OAObject.save() or hubNextNumber.saveAll()). The objectId property will
@@ -148,7 +161,15 @@ public class OADataSourceAuto extends OADataSource {
 	private NextNumber nextNumberNextNumber;
 	private boolean bGettingNextNumber;
 
+
 	private NextNumber getNextNumber(final Class<?> clazz) {
+		NextNumber nn = _getNextNumber(clazz);
+		if (startNextNumber > 0 && nn.getNext() < startNextNumber) nn.setNext(startNextNumber);
+		return nn;
+	}
+	
+	
+	private NextNumber _getNextNumber(final Class<?> clazz) {
 		NextNumber nn = hmIgnoreClass.get(clazz);
 		if (nn != null) {
 			return nn;

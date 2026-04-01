@@ -150,23 +150,28 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             
             // 20250407 use reference object from oaobj.properties[]
             Object objx = OAObjectPropertyDelegate.getProperty(whereObject, propertyFromWhereObject);
-            final List al = new ArrayList();
-            if (!(objx instanceof Hub)) {
-                if (objx instanceof OAObject && (filterx == null || filterx.isUsed(objx))) al.add(objx);
-            }
-            else {
-                for (Object obj2 : ((Hub)objx)) {
-                    if (filterx == null || filterx.isUsed(obj2)) al.add(obj2);
-                }
-            }
-            if (OAString.isNotEmpty(queryOrder)) {
-                OAComparator comparator = new OAComparator(selectClass, queryOrder, true);
-                Collections.sort(al, comparator);
-            }
-            OADataSourceIterator dsi = new OADataSourceListIterator(al);
-            return dsi;
             
-            /* was: 
+//qqqqqqqqqqqqqqqqqqqqvvvvvvvvvvvvv            
+//qqqqqqqqqqqqqqqqqqqqqqvvvvvvvvvvvvvv            
+            if (objx != null) {
+                final List al = new ArrayList();
+	            if (!(objx instanceof Hub)) {
+	                if (objx instanceof OAObject && (filterx == null || filterx.isUsed(objx))) al.add(objx);
+	            }
+	            else {
+	                for (Object obj2 : ((Hub)objx)) {
+	                    if (filterx == null || filterx.isUsed(obj2)) al.add(obj2);
+	                }
+	            }
+	            if (OAString.isNotEmpty(queryOrder)) {
+	                OAComparator comparator = new OAComparator(selectClass, queryOrder, true);
+	                Collections.sort(al, comparator);
+	            }
+	            OADataSourceIterator dsi = new OADataSourceListIterator(al);
+	            return dsi;
+            }
+            
+//qqqqqqqqqqqqqqqqqqqqqqqqqq   was commented out: vvvvvvvvvvvvvvvvqqqqqqqqqqq         
             // find using selectFromPropertyPath, or equalPropertyPath
             final OALinkInfo liRev = li.getReverseLinkInfo();
             String spp = liRev.getSelectFromPropertyPath();
@@ -226,7 +231,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
                     if (obj instanceof OAObject) {
                         Object objx = OAObjectPropertyDelegate.getProperty((OAObject) obj, liRev.getName());
                         b = (whereObjectx == objx);
-                        //was:  b = b || OACompare.isEqual(objx, whereObjectx);
+                        b = b || OACompare.isEqual(objx, whereObjectx);
                     }
                     else {
                         b = super.isUsed(obj);
@@ -236,8 +241,15 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             };
             if (filterx == null) filterx = filter2;
             else filterx = new OAAndFilter(filterx, filter2);
-            */
         }
+        
+        
+        
+        
+        
+        
+        
+        
 
         ObjectCacheIterator itx = new ObjectCacheIterator(selectClass, filterx);
         itx.setMax(max);
