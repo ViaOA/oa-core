@@ -2,10 +2,8 @@ package com.viaoa.repl.client;
 
 import java.net.InetAddress;
 import java.util.logging.Logger;
-
 import com.viaoa.comm.multiplexer.OAMultiplexerClient;
 import com.viaoa.remote.multiplexer.OARemoteMultiplexerClient;
-import com.viaoa.remote.multiplexer.annotation.OARemoteParameter;
 import com.viaoa.repl.OAReplicationMaster;
 import com.viaoa.repl.remote.RemoteClientInterface;
 import com.viaoa.repl.remote.RemoteMasterInterface;
@@ -51,7 +49,6 @@ public abstract class OAReplClientConnection {
     public boolean isStopped() {
     	return bIsStopped;
     }
-    
     
     public void start() throws Exception {
     	LOG.fine(String.format("starting client guid=%s", guid));
@@ -104,9 +101,6 @@ public abstract class OAReplClientConnection {
     
 
 	public void stop() throws Exception {
-//qqqqqqqqqqqq		
-//    	LOG.fine(String.format("", ""));
-		
 		if (bIsStopped || !bIsConnected) return;
 		LOG.fine("stopping connection to Master");
 		bIsStopped = true;

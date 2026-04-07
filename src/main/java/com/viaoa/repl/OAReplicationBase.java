@@ -7,6 +7,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.object.OAObject;
+import com.viaoa.object.OAObjectInfo;
+import com.viaoa.object.OAObjectInfoDelegate;
+import com.viaoa.object.OAObjectSerializer;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.sync.OASyncServer;
 import com.viaoa.sync.remote.RemoteSyncInterface;
@@ -78,6 +82,40 @@ public abstract class OAReplicationBase {
                 for (RequestInfo ri : ris) {
                 	aiQueuePos.incrementAndGet();
                     if (!ri.bind.isOASync) continue;
+                    
+                    if (ri.args != null) {
+                        boolean bFound = false;
+                        boolean bUse = false;
+	                    for (Object arg : ri.args) {
+	                    	if (arg instanceof OAObjectSerializer) {
+	                    		arg = ((OAObjectSerializer) arg).getObject();
+	                    	}
+	                    	if (arg != null) {
+	                    		Class c = arg.getClass();
+	                    		if (OAObject.class.isAssignableFrom(c)) {
+	                    			arg = c;
+	                    		}
+	                    	}
+	                    	
+	                    	if (arg instanceof Class) {
+	                    		Class<?> c = (Class<?>) arg;
+	                    		if (OAObject.class.isAssignableFrom(c)) {
+	                    			bFound = true;
+	                    			OAObjectInfo oi = OAObjectInfoDelegate.getOAObjectInfo(c);
+	                    			bUse |= (oi.getUseDataSource() && !oi.getLocalOnly());
+	                    		}
+	                    		if (c.getSimpleName().indexOf("Report") >= 0) {
+	                    			int xx = 4;
+	                    			xx++;
+	                    		}
+	                    	}
+	                    }
+	                    if (!bUse && bFound) {
+	                    	continue;
+	                    }
+                    }
+                    
+                    
                     cnt++;
                     OAReplicationBase.this.onNewSyncMessage(ri);
                     
