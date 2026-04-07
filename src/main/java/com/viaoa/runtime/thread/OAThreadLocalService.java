@@ -2648,4 +2648,11 @@ public class OAThreadLocalService {
 	}
 
 	
+	//qqqqqqqqqqqqqqqqqqqvvvvvvvvv 20260403	
+		public String getReplicationSource() {
+			return getOAThreadLocal().replicationSource;
+		}
+		public void setReplicationSource(String src) {
+			getOAThreadLocal().replicationSource = src;
+		}
 }

@@ -414,6 +414,12 @@ public class RequestInfo {
      */
     public boolean isRemoteThread;  // if this request was made by an oaRemoteThread
     
+    
+  //qqqqqqvvvvvvvv    
+    public String replicationSource;
+    
+
+    
     /**
      * Flag set to true once the remote method has actually been invoked. Declared
      * volatile for visibility across threads.

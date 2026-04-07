@@ -1732,6 +1732,14 @@ public abstract class OAObjectParentService {
 			public boolean callThreadLocalIsDeleting() {
 				return OAObjectParentService.this.srvcThreadLocal.isDeleting();
 			}
+			@Override
+			protected boolean callHubIsInHubWithMaster(OAObject thisObj) {
+				return OAObjectParentService.this.getOAObjectHubService().isInHubWithMaster(thisObj);
+			}
+			@Override
+			protected void callRemoteSyncAddNewToCache(OAObjectSerializer<? extends OAObject> oos) {
+				OAObjectParentService.this.srvcSync.getRemoteSync().addNewToCache(oos);
+			}
     	};
     	return srvcOAObjectSave;
     }

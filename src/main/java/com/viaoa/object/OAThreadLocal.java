@@ -499,4 +499,8 @@ public class OAThreadLocal {
 	 * behavior.
 	 */
 	public OAThreadLocalHubMergerCallback[] hubMergerCallback;
+
+	//qqqqqqqqqqqqqqqqqqqvvvvvvvvv 20260403
+	public String replicationSource;
+
 }

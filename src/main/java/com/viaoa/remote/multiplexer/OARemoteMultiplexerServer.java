@@ -1267,11 +1267,15 @@ public class OARemoteMultiplexerServer {
         ri.type = RequestInfo.Type.StoC_QueuedBroadcast;
         ri.isRemoteThread = (Thread.currentThread() instanceof OARemoteThread);
 
+      //qqqqqqqqqqqqvvvvvvvvvv 20260403           
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+   		ri.replicationSource = srvcOAThreadLocal.getReplicationSource(); 
+        
+        
         ri.methodInfo = ri.bind.getMethodInfo(ri.method);
         ri.object = ri.bind.getObject();
 
         // 20180225
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
         if (ri.bind.isOASync) {
             srvcOAThreadLocal.incrOASyncEventCount();
         }

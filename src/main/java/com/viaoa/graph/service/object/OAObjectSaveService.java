@@ -6,6 +6,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
+import com.viaoa.sync.remote.RemoteSyncInterface;
 
 public abstract class OAObjectSaveService {
 	private final Logger LOG = Logger.getLogger(OAObjectSaveService.class.getName());
@@ -22,6 +23,36 @@ public abstract class OAObjectSaveService {
 			return;
 		}
 
+//qqqqqqqqqqqqqvvvvvvvvvvvvv 20260401 same code that is in OAObjectCSDelegate.save(..)
+		final OAObject thisObj = oaObj;		
+
+		if (thisObj.isNew() && !callHubIsInHubWithMaster(thisObj)) {
+            OAObjectSerializer<OAObject> oos = new OAObjectSerializer<>(thisObj, false, new OAObjectSerializerCallback() {
+                @Override
+                protected void beforeSerialize(OAObject obj) {
+                }
+                @Override
+                public boolean shouldSerializeReference(OAObject oaObj, String propertyName, Object objRef, boolean bDefault) {
+                    if (!bDefault) return false;
+                    boolean b = _shouldSerializeReference(oaObj, propertyName, objRef, bDefault);
+                    return b;
+                }
+                
+                private boolean _shouldSerializeReference(OAObject oaObj, String propertyName, Object objRef, boolean bDefault) {
+                    if (oaObj != thisObj) return false;
+                    if (objRef instanceof Hub) return true;
+                    if (objRef instanceof OAObject) {
+                        if (((OAObject) objRef).isNew()) {
+                            if (!callHubIsInHubWithMaster((OAObject)objRef)) return true;                                    
+                        }
+                    }
+                    return false;
+                }
+            });
+            callRemoteSyncAddNewToCache(oos);
+    	}
+		
+		
 		if (callCSIsWorkstation()) {
 			callCSSave(oaObj, iCascadeRule);
 			return;
@@ -347,4 +378,8 @@ public abstract class OAObjectSaveService {
 	public abstract <T extends OAObject> void callHubEventFireBeforeSaveEvent(Hub<T> thisHub, T obj);
 	public abstract <T extends OAObject> void callHubEventFireAfterSaveEvent(Hub<T> thisHub, T obj);
 	public abstract boolean callThreadLocalIsDeleting();
+
+	protected abstract boolean callHubIsInHubWithMaster(OAObject thisObj);
+	protected abstract void callRemoteSyncAddNewToCache(OAObjectSerializer<? extends OAObject> oos);
+
 }

@@ -183,4 +183,8 @@ public interface RemoteSyncInterface {
      * @param objectKey the key identifying the object
      */
     void clientDelete(Class objectClass, OAObjectKey objectKey);
+
+
+  //qqqqqqqqqvvv will need a "replace" method, for handling duplicates
+
 }
