@@ -548,7 +548,9 @@ public class OARemoteMultiplexerServer {
             ri.method = method;
             ri.args = args;
             ri.messageId = aiMessageId.incrementAndGet();
-            ri.isRemoteThread = (Thread.currentThread() instanceof OARemoteThread);
+
+    		Thread t = Thread.currentThread();
+            ri.isRemoteThread = (t instanceof OARemoteThread);
             
             onInvokeForStoC(session, ri);
         }
@@ -1004,8 +1006,13 @@ public class OARemoteMultiplexerServer {
         ri.args = args;
         ri.bind = bind;
         ri.type = RequestInfo.Type.StoC_QueuedBroadcast;
-        ri.isRemoteThread = (Thread.currentThread() instanceof OARemoteThread);
 
+		final Thread thread = Thread.currentThread();
+        ri.isRemoteThread = (thread instanceof OARemoteThread);
+//qqqqqqqqqqqqvvvvvvvvvv 20260403           
+		ri.replicationSource = OAThreadLocalDelegate.getReplicationSource(); 
+        
+        
         ri.methodInfo = ri.bind.getMethodInfo(ri.method);
         ri.object = ri.bind.getObject();
 
@@ -1051,10 +1058,9 @@ public class OARemoteMultiplexerServer {
         if (ri.response == null) ri.response = OAReflect.getEmptyPrimitive(ri.method.getReturnType());
 
 
-        Thread t = Thread.currentThread();
         RequestInfo rix;
         if (ri.isRemoteThread) {
-            OARemoteThread rt = (OARemoteThread) t;
+            OARemoteThread rt = (OARemoteThread) thread;
             rix = rt.requestInfo;
         }
         else rix = null;

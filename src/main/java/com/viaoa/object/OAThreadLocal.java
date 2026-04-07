@@ -130,4 +130,9 @@ public class OAThreadLocal {
 	public OAProcess process;
 	
 	public OAThreadLocalHubMergerCallback[] hubMergerCallback;
+	
+//qqqqqqqqqqqqqqqqqqqvvvvvvvvv 20260403
+	public String replicationSource;
+	
+	
 }

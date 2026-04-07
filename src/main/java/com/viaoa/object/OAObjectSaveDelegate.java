@@ -18,6 +18,8 @@ import java.util.logging.Logger;
 
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEventDelegate;
+import com.viaoa.sync.OASyncDelegate;
+import com.viaoa.sync.remote.RemoteSyncInterface;
 
 public class OAObjectSaveDelegate {
 	private static Logger LOG = Logger.getLogger(OAObjectSaveDelegate.class.getName());
@@ -32,6 +34,40 @@ public class OAObjectSaveDelegate {
 			return;
 		}
 
+//qqqqqqqqqqqqqvvvvvvvvvvvvv 20260401 same code that is in OAObjectCSDelegate.save(..)
+final OAObject thisObj = oaObj;		
+
+		if (thisObj.isNew() && !OAObjectHubDelegate.isInHubWithMaster(thisObj)) {
+            RemoteSyncInterface rsync = OASyncDelegate.getRemoteSync();
+            if (rsync != null) {
+	            OAObjectSerializer oos = new OAObjectSerializer(thisObj, false, new OAObjectSerializerCallback() {
+	                @Override
+	                protected void beforeSerialize(OAObject obj) {
+	                }
+	                @Override
+	                public boolean shouldSerializeReference(OAObject oaObj, String propertyName, Object objRef, boolean bDefault) {
+	                    if (!bDefault) return false;
+	                    boolean b = _shouldSerializeReference(oaObj, propertyName, objRef, bDefault);
+	                    return b;
+	                }
+	                
+	                private boolean _shouldSerializeReference(OAObject oaObj, String propertyName, Object objRef, boolean bDefault) {
+	                    if (oaObj != thisObj) return false;
+	                    if (objRef instanceof Hub) return true;
+	                    if (objRef instanceof OAObject) {
+	                        if (((OAObject) objRef).isNew()) {
+	                            if (!OAObjectHubDelegate.isInHubWithMaster((OAObject)objRef)) return true;                                    
+	                        }
+	                    }
+	                    return false;
+	                }
+	            });
+	            rsync.addNewToCache(oos);
+            }
+    	}
+		
+		
+		
 		OACascade cascade = new OACascade();
 		save(oaObj, iCascadeRule, cascade, true, true);
 	}

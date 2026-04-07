@@ -1756,5 +1756,12 @@ public class OAThreadLocalDelegate {
 		ti.process = process;
 	}
 
+//qqqqqqqqqqqqqqqqqqqvvvvvvvvv 20260403	
+	public static String getReplicationSource() {
+		return getOAThreadLocal().replicationSource;
+	}
+	public static void setReplicationSource(String src) {
+		getOAThreadLocal().replicationSource = src;
+	}
 	
 }

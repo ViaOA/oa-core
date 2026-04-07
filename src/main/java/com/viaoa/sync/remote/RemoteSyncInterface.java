@@ -55,4 +55,10 @@ void addNewToCache(OAObjectSerializer obj);
     void serverDelete(Class objectClass, OAObjectKey objectKey);
 
     void clientDelete(Class objectClass, OAObjectKey objectKey);
+
+//qqqqqqqqqvvv will need a "replace" method, for handling duplicates
 }
+
+
+
+
