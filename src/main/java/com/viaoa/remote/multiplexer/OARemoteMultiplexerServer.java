@@ -2681,5 +2681,10 @@ public class OARemoteMultiplexerServer {
     protected boolean shouldSendSyncMessageToClient(RequestInfo ri, ConcurrentHashMap<UUID, Boolean> hmGuid) {
         return true;
     }
+
+    public OACircularQueue<RequestInfo> getCircularQueue(String queName) {
+    	OACircularQueue<RequestInfo> cq = hmAsyncCircularQueue.get(queName);
+    	return cq;
+    }
     
 }

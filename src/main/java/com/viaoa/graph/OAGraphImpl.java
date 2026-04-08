@@ -5,12 +5,15 @@ import java.util.logging.Logger;
 
 import com.viaoa.graph.api.HubsOps;
 import com.viaoa.graph.api.ObjectsOps;
+import com.viaoa.graph.api.ReplOps;
 import com.viaoa.graph.api.SyncOps;
 import com.viaoa.graph.api.internal.HubsInternalOps;
 import com.viaoa.graph.api.internal.ObjectsInternalOps;
+import com.viaoa.graph.api.internal.ReplInternalOps;
 import com.viaoa.graph.api.internal.SyncInternalOps;
 import com.viaoa.graph.service.HubService;
 import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.graph.service.OAReplicationService;
 import com.viaoa.graph.service.OASyncService;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
@@ -29,6 +32,7 @@ public class OAGraphImpl implements OAGraphInternal {
 	private OAObjectService srvcOAObject;
 	private HubService srvcHub;
     private OASyncService srvcOASync;
+    private OAReplicationService srvcOARepl;
 
 	public OAGraphImpl(OARuntime rt, String pkgName) {
 		if (rt == null) throw new IllegalArgumentException("OARuntime can not be null");
@@ -90,6 +94,11 @@ public class OAGraphImpl implements OAGraphInternal {
     }
 
 	@Override
+    public ReplOps repl() {
+    	return srvcOARepl;
+    }
+	
+	@Override
 	public ObjectsInternalOps objectsInternal() {
 		return srvcOAObject;
 	}
@@ -104,5 +113,9 @@ public class OAGraphImpl implements OAGraphInternal {
     	return srvcOASync;
     }
 	
+	@Override
+    public ReplInternalOps replInternal() {
+    	return srvcOARepl;
+    }
 }
 

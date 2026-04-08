@@ -9,8 +9,11 @@ public interface OAGraph {
 	public HubsOps hubs();
     
 	public SyncOps sync();
+
+	public ReplOps repl();
 	
 	public String getPackageName();
+	
 	
 }
 
