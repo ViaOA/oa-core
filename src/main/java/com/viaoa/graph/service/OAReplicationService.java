@@ -13,6 +13,9 @@ import com.viaoa.graph.api.internal.*;
  */
 public class OAReplicationService implements ReplInternalOps {
 
+	
+//qqqqqqqqqqqqqq exception if OASync is not server	
+	
 	private final String guid;
     private final OASyncServer syncServer;
     private final String tLogFileName;

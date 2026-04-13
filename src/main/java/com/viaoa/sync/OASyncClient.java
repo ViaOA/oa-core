@@ -100,7 +100,7 @@ import com.viaoa.util.OALogUtil;
  * are daemon threads and will remain active until the JVM exits unless a
  * shutdown protocol is added externally.
  */
-public class OASyncClient {
+public abstract class OASyncClient {
 	protected static final Logger LOG = Logger.getLogger(OASyncClient.class.getName());
 
 	/**
@@ -162,26 +162,7 @@ public class OASyncClient {
 	 */
 	private int serverHostPort;
 	
-	/**
-	 * Flag indicating whether this client should register itself and its
-	 * remote interfaces with {@code OASyncDelegate}, marking it as the
-	 * primary sync client for the associated package.
-	 */
-	private final boolean bUpdateSyncDelegate; // flag to know if this is the main client. Otherwise it could be a combinedSyncClient
-
-	/**
-	 * Package used as the key when registering this client and related
-	 * remote interfaces with {@code OASyncDelegate} and when creating the
-	 * {@link OADataSourceClient}.
-	 */
-	private final Package packagex;
-
-	/**
-	 * Lazily created data source client that provides remote database access
-	 * for the model associated with this sync client.
-	 */
-	private OADataSourceClient dataSourceClient;
-
+	
 	/**
 	 * Counter that tracks the number of {@link #getDetail(OAObject, String)}
 	 * calls made by this client, and is used to include a per-call id in
@@ -234,42 +215,8 @@ public class OASyncClient {
      * @param serverHostPort the port number of the sync server
      */
 	public OASyncClient(String serverHostName, int serverHostPort) {
-		this(null, serverHostName, serverHostPort);
-	}
-
-	/**
-	 * Creates a new {@code OASyncClient} for the specified package and
-	 * server connection settings. The client will register itself with
-	 * {@code OASyncDelegate}.
-	 *
-	 * @param packagex the package used as the registration key
-	 * @param serverHostName the host name of the sync server
-	 * @param serverHostPort the port number of the sync server
-	 */
-	public OASyncClient(Package packagex, String serverHostName, int serverHostPort) {
-		this(packagex, serverHostName, serverHostPort, true);
-	}
-
-	/**
-	 * Creates a new {@code OASyncClient} with complete control over
-	 * whether it should register with {@code OASyncDelegate}.
-	 * If {@code packagex} is {@code null}, it defaults to
-	 * {@code Object.class.getPackage()}.
-	 *
-	 * @param packagex the package used for registration
-	 * @param serverHostName the server host name
-	 * @param serverHostPort the server port
-	 * @param bUpdateSyncDelegate whether to register with {@code OASyncDelegate}
-	 */
-	protected OASyncClient(Package packagex, String serverHostName, int serverHostPort, boolean bUpdateSyncDelegate) {
-		if (packagex == null) {
-			packagex = Object.class.getPackage();
-		}
-		this.packagex = packagex;
 		this.serverHostName = serverHostName;
 		this.serverHostPort = serverHostPort;
-		this.bUpdateSyncDelegate = bUpdateSyncDelegate;
-		//was: if (bUpdateSyncDelegate) OASyncDelegate.setSyncClient(packagex, this);
 	}
 
 	
@@ -299,23 +246,18 @@ public class OASyncClient {
 
         clientInfo.setConnectionId(getMultiplexerClient().getConnectionId());
 
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(packagex);
-        if (bUpdateSyncDelegate) {
-            og.syncInternal().setSyncClient(this);
-        }
-
         LOG.fine("getting remote objects for OASyncClient");
         getRemoteServer();
         getRemoteSession();
         getRemoteClient();
         getRemoteSync();
-        if (bUpdateSyncDelegate) {
-            startDistributedGCThread();
-            startObjectsWithoutHubsThread();;
-            
-            LOG.fine("creating OADataSourceClient for remote database access");
-            getOADataSourceClient();
-        }
+
+        startDistributedGCThread();
+        startObjectsWithoutHubsThread();
+        
+        LOG.fine("creating OADataSourceClient for remote database access");
+        createRemoteDataSource();
+
         clientInfo.setStarted(true);
         LOG.config("startup completed successful");
     }
@@ -571,9 +513,6 @@ public class OASyncClient {
 	public RemoteServerInterface getRemoteServer() throws Exception {
 		if (remoteServerInterface == null) {
 			remoteServerInterface = (RemoteServerInterface) getRemoteMultiplexerClient().lookup(ServerLookupName);
-			if (bUpdateSyncDelegate) {
-				//qqqqqqqqqq not needed: OASyncDelegate.setRemoteServer(packagex, remoteServerInterface);
-			}
 		}
 		return remoteServerInterface;
 	}
@@ -589,9 +528,6 @@ public class OASyncClient {
 	public RemoteSyncInterface getRemoteSync() throws Exception {
 		if (remoteSyncInterface == null) {
 			remoteSyncInterface = (RemoteSyncInterface) getRemoteMultiplexerClient().lookupBroadcast(SyncLookupName, getRemoteSyncImpl());
-			if (bUpdateSyncDelegate) {
-				//qqqqqqqqq not needed: OASyncDelegate.setRemoteSync(packagex, remoteSyncInterface);
-			}
 		}
 		return remoteSyncInterface;
 	}
@@ -621,9 +557,6 @@ public class OASyncClient {
 	public RemoteSessionInterface getRemoteSession() throws Exception {
 		if (remoteSessionInterface == null) {
 			remoteSessionInterface = getRemoteServer().getRemoteSession(getClientInfo(), getRemoteClientCallback());
-			if (bUpdateSyncDelegate) {
-				//qqqqqqqqqq not needed: OASyncDelegate.setRemoteSession(packagex, remoteSessionInterface);
-			}
 		}
 		return remoteSessionInterface;
 	}
@@ -673,9 +606,6 @@ public class OASyncClient {
 	public RemoteClientInterface getRemoteClient() throws Exception {
 		if (remoteClientSyncInterface == null) {
 			remoteClientSyncInterface = getRemoteServer().getRemoteClient(getClientInfo());
-			if (bUpdateSyncDelegate) {
-				//qqqqqq not needed: OASyncDelegate.setRemoteClient(packagex, remoteClientSyncInterface);
-			}
 		}
 		return remoteClientSyncInterface;
 	}
@@ -730,18 +660,6 @@ public class OASyncClient {
 	}
 
 
-	/**
-	 * Lazily creates and returns the {@link OADataSourceClient} associated with
-	 * this client’s package and used for remote database operations.
-	 *
-	 * @return the data source client
-	 */
-	public OADataSourceClient getOADataSourceClient() {
-		if (dataSourceClient == null) {
-			dataSourceClient = new OADataSourceClient(packagex);
-		}
-		return dataSourceClient;
-	}
 
 	/**
 	 * Indicates whether this client has completed its startup process.
@@ -783,18 +701,9 @@ public class OASyncClient {
 		multiplexerClient = null;
 		remoteMultiplexerClient = null;
 
-		if (bUpdateSyncDelegate) {
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(packagex);
-			og.syncInternal().setSyncClient(null);
-			//qqqqqq not needed: OASyncDelegate.setRemoteServer(packagex, null);
-			//qqqqqq not needed: OASyncDelegate.setRemoteSync(packagex, null);
-			//qqqqqq not needed: OASyncDelegate.setRemoteSession(packagex, null);
-			//qqqqqq not needed: OASyncDelegate.setRemoteClient(packagex, null);
-			OADataSource ds = getOADataSourceClient();
-			if (ds != null) {
-				ds.close();
-			}
-		}
+//qqqqqqqqqqqqqqq datasource in OARuntime		
+		
+		closeRemoteDataSource();
 	}
 
 	/**
@@ -1069,10 +978,8 @@ public class OASyncClient {
 	public void objectFinalized(UUID guid) {
 	    if (guid == null) return;
 		try {
-			if (bUpdateSyncDelegate) {
-				if (queObjectsFinalized != null) {
-				    queObjectsFinalized.add(guid);
-				}
+			if (queObjectsFinalized != null) {
+			    queObjectsFinalized.add(guid);
 			}
 		} catch (Exception e) {
 		}
@@ -1169,7 +1076,7 @@ public class OASyncClient {
         }
 	    
 		try {
-			if (obj != null && bUpdateSyncDelegate) {
+			if (obj != null) {
 				LinkedBlockingQueue<OAObject> q = queObjectsWithoutHubs;
 				if (q != null) {
 					q.add(obj);
@@ -1255,5 +1162,11 @@ public class OASyncClient {
 		boolean b = cf.download(fromFileName, file, getMultiplexerClient());
 		return b;
 	}
+
+
+	protected abstract void createRemoteDataSource();
+
+	protected abstract void closeRemoteDataSource();
+
 
 }

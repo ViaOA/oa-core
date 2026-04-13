@@ -211,7 +211,9 @@ public final class OARuntime {
 	public static OAGraph defaultGraph() {
 		return runtime.graphInternal("");
 	}
+
 	
+	//qqqqqqqqqqqqqq set Default OG qqqqqqqqqqq exception if already set 	
 	/**
 	 * qqqqqqqqqqqqq 
 	 */

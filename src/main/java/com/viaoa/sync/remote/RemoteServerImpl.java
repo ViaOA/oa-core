@@ -71,11 +71,7 @@ import com.viaoa.sync.model.ClientInfo;
 public abstract class RemoteServerImpl implements RemoteServerInterface {
 	private static Logger LOG = Logger.getLogger(RemoteServerImpl.class.getName());
 
-	private Package packageThis;
-	
-	// 20251223
-	public RemoteServerImpl(Package packageThis) {
-		this.packageThis = packageThis;
+	public RemoteServerImpl() {
 	}
 	
 	

@@ -2,6 +2,8 @@ package com.viaoa.graph.service;
 
 import java.util.logging.Logger;
 
+import com.viaoa.datasource.clientserver.OADataSourceClient;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.api.SyncOps;
 import com.viaoa.graph.api.internal.SyncInternalOps;
 import com.viaoa.object.OACascade;
@@ -23,8 +25,10 @@ import com.viaoa.sync.remote.RemoteSyncInterface;
 public class OASyncService implements SyncOps, SyncInternalOps {
 	private static final Logger LOG = Logger.getLogger(OASyncService.class.getName());
 	
-	private final String pkgName;
+	private final Package thisPackage;
 
+	
+	private final OAGraph og;
 	
 	/**
 	 * Cached reference to a single {@link OASyncServer} when only one is
@@ -58,47 +62,76 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 	 */
 	private long maxNextGuid;
 
+	private volatile boolean bStarted; 
 	
-	public OASyncService(String pkgName) {
-    	this.pkgName = pkgName;
+	
+	public OASyncService(OAGraph og) {
+		this.og = og;
+    	this.thisPackage = og.getPackage();
 	}
 
-    public void createServer(int port) throws Exception {
-    	stopServer();
-    	Package packageThis = Package.getPackage(pkgName);
-        syncServer = new OASyncServer(packageThis, port);
-        syncServer.setInvalidConnectionMessage("qqqqqqqq"); //qqqqqq
-        syncServer.start();
-    }
-    
-    public void stopServer() throws Exception {
-    	if (syncServer != null) {
-    		syncServer.stop();
-        	syncServer = null;
-    	}
-    }
-    
-    public void createClient(String serverName, int port) throws Exception {
-    	stopClient();
-    	Package packageThis = Package.getPackage(pkgName);
-    	syncClient = new OASyncClient(packageThis, serverName, port);
-        syncClient.start();
+	
+	@Override
+    public void createServer(int port) {
+		if (syncClient != null) throw new RuntimeException("Sync Client already created");
+		if (syncServer != null) throw new RuntimeException("Sync Server already created");
+        syncServer = new OASyncServer(port);
+        syncServer.setInvalidConnectionMessage("Invalid connection, must use OAMultiplexer");
     }
 
-    public void stopClient() throws Exception {
-    	if (syncClient != null) {
-    		syncClient.stop();
-    		syncClient = null;
-    	}
+	
+	@Override
+    public void createClient(String serverName, int port) {
+		if (syncClient != null) throw new RuntimeException("Sync Client already created");
+		if (syncServer != null) throw new RuntimeException("Sync Server already created");
+		
+    	syncClient = new OASyncClient(serverName, port) {
+			private OADataSourceClient dataSourceClient;
+
+			@Override
+			protected void createRemoteDataSource() {
+				if (dataSourceClient == null) {
+					dataSourceClient = new OADataSourceClient(thisPackage);
+				}
+			}
+
+			@Override
+			protected void closeRemoteDataSource() {
+				if (dataSourceClient != null) {
+					dataSourceClient.close();
+				}
+			}
+
+    	};
     }
-    
-    
-    
+	
+	@Override
+	public void start() throws Exception {
+		if (bStarted) throw new Exception("already started");
+		if (syncServer != null) syncServer.start();
+		else if (syncClient != null) syncClient.start();
+		bStarted = true;
+	}
+	
+	@Override
+	public void stop() throws Exception {
+		if (!bStarted) return;
+		if (syncServer != null) syncServer.stop();
+		if (syncClient != null) syncClient.stop();
+    	syncServer = null;
+    	syncClient = null;
+    	bStarted = false;
+	}
+	
+	@Override
+	public boolean isRunning() {
+		return bStarted;
+	}
+	
     
     public OASyncClient getClient() {
     	return syncClient;
     }
-
 
 	/**
 	 * Returns the active {@link OASyncServer}. If a single server instance
@@ -110,20 +143,6 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 		return syncServer;
 	}
 
-	/**
-	 * Registers or removes an {@link OASyncServer} for a specific package.
-	 * Maintains both:
-	 * <ul>
-	 *   <li>a per-package mapping, and</li>
-	 *   <li>a cached global instance when only one server exists.</li>
-	 * </ul>
-	 *
-	 * @param p the package to associate with the server
-	 * @param ss the server instance, or {@code null} to remove
-	 */
-	public void setSyncServer(OASyncServer ss) {
-		syncServer = ss;
-	}
 
 	// ========= SyncClient ============
 	/**
@@ -134,18 +153,6 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 	 */
 	public OASyncClient getSyncClient() {
 		return syncClient;
-	}
-
-	/**
-	 * Registers or removes an {@link OASyncClient} for the specified package.
-	 * Maintains both a per-package entry and a cached global instance when
-	 * only one client exists.
-	 *
-	 * @param p the package to associate with the client
-	 * @param sc the client instance, or {@code null} to remove
-	 */
-	public void setSyncClient(OASyncClient sc) {
-		syncClient = sc;
 	}
 
 	/**
@@ -265,7 +272,8 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 	@Override
 	public boolean isConnected() {
 	    if (syncClient != null) return syncClient.isConnected();
-	    return (syncServer != null);	}
+	    return (syncServer != null);	
+	}
 
 
 	/**
@@ -502,6 +510,9 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 		getSyncServer().performDGC();
 	}
 
+	
+//qqqqqqqqqqqqq check these qqqqqqqqqqqqqq
+	
 	@Override
 	public boolean callSyncIsServer() {
 		// TODO Auto-generated method stub

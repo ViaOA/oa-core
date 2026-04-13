@@ -26,18 +26,18 @@ public class OAGraphImpl implements OAGraphInternal {
 	private static Logger LOG = Logger.getLogger(OAGraphImpl.class.getName());
 
 	private final OARuntime runtime;
-	private final String pkgName;
+	private final Package thisPackage;
 	private volatile boolean bInit;
 
 	private OAObjectService srvcOAObject;
 	private HubService srvcHub;
     private OASyncService srvcOASync;
-    private OAReplicationService srvcOARepl;
+    private OAReplicationService srvcOAReplication;
 
-	public OAGraphImpl(OARuntime rt, String pkgName) {
+	public OAGraphImpl(OARuntime rt, Package thisPackage) {
 		if (rt == null) throw new IllegalArgumentException("OARuntime can not be null");
 		this.runtime = rt;
-		this.pkgName = pkgName;
+		this.thisPackage = thisPackage;
 	}
 
 	public void initialize() throws ClassNotFoundException, IOException {
@@ -48,13 +48,14 @@ public class OAGraphImpl implements OAGraphInternal {
 
 		srvcOAObject = new OAObjectService();
 		srvcHub = new HubService();
-	    srvcOASync = new OASyncService(pkgName);
+	    srvcOASync = new OASyncService(this);
 
 		srvcOAObject.initialize(srvcHub, srvcOASync, tl.getThreadLocalService(), tl.getRemoteThreadService());
 		srvcHub.initialize(srvcOAObject, srvcOASync, tl.getThreadLocalService(), tl.getRemoteThreadService());
 		
 		
-		if (pkgName != null && !pkgName.isEmpty()) {
+		if (thisPackage != null) {
+			String pkgName = thisPackage.getName();
 			String[] classNames = OAReflect.getOAObjectClasses(pkgName);
 			for (String cn : classNames) {
 				Class<?> c = Class.forName(pkgName + "." + cn);
@@ -69,8 +70,8 @@ public class OAGraphImpl implements OAGraphInternal {
 		return runtime;
 	}
 	
-	public String getPackageName() {
-		return pkgName;
+	public Package getPackage() {
+		return thisPackage;
 	}
 
 	public boolean wasInitCalled() {
@@ -78,7 +79,7 @@ public class OAGraphImpl implements OAGraphInternal {
 	}
     
 
-	
+/*	
 	public ObjectsOps objects() {
 		return srvcOAObject;
 	}
@@ -87,15 +88,15 @@ public class OAGraphImpl implements OAGraphInternal {
 	public HubsOps hubs() {
 		return srvcHub;
 	}
-	
+*/	
 	@Override
     public SyncOps sync() {
     	return srvcOASync;
     }
 
 	@Override
-    public ReplOps repl() {
-    	return srvcOARepl;
+    public ReplOps replication() {
+    	return srvcOAReplication;
     }
 	
 	@Override
@@ -115,7 +116,7 @@ public class OAGraphImpl implements OAGraphInternal {
 	
 	@Override
     public ReplInternalOps replInternal() {
-    	return srvcOARepl;
+    	return srvcOAReplication;
     }
 }
 

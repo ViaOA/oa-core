@@ -208,12 +208,6 @@ public class OASyncServer {
 	private RemoteClientInterface remoteClientForServer;
 	
 	/**
-	 * Package used when registering this sync server and its remote objects with
-	 * {@link OASyncDelegate}, allowing multiple models to be isolated by package.
-	 */
-	private final Package packagex;
-
-	/**
 	 * {@link ServerFile} helper used to coordinate file upload and download
 	 * operations between the server and connected clients.
 	 */
@@ -227,30 +221,9 @@ public class OASyncServer {
 	 *             client connections
 	 */
 	public OASyncServer(int port) {
-		this(null, port);
+		this.port = port;
 	}
 
-	/**
-	 * Constructs a new sync server for the given package and port, initializes the
-	 * package reference, and registers this instance with {@link OASyncDelegate}.
-	 * If the supplied package is {@code null}, the package of {@link Object} is
-	 * used instead.
-	 *
-	 * @param packagex the package used to scope this sync server's registrations,
-	 *                 or {@code null} to use the {@link Object} package
-	 * @param port     the TCP port the multiplexer server will listen on for
-	 *                 incoming client connections
-	 */
-	public OASyncServer(Package packagex, int port) {
-		if (packagex == null) {
-			//qqqqqqqqqq ?? packagex = Object.class.getPackage();
-		}
-		this.packagex = packagex;
-		this.port = port;
-		
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(packagex);
-		og.syncInternal().setSyncServer(this);
-	}
 
 	/**
 	 * Returns the lazily created {@link RemoteSyncImpl} instance used to broadcast
@@ -281,7 +254,7 @@ public class OASyncServer {
 	 */
 	public RemoteServerImpl getRemoteServer() {
 		if (remoteServer == null) {
-			remoteServer = new RemoteServerImpl(packagex) {
+			remoteServer = new RemoteServerImpl() {
 				@Override
 				public RemoteSessionInterface getRemoteSession(ClientInfo ci, RemoteClientCallbackInterface callback) {
 					RemoteSessionInterface rsi = OASyncServer.this.getRemoteSession(ci, callback);
@@ -320,7 +293,6 @@ public class OASyncServer {
 					return 0;
 				}
 			};
-			//qqqqqqq not needed: OASyncDelegate.setRemoteServer(packagex, remoteServer);
 			getRemoteSessionForServer();
 		}
 		return remoteServer;
@@ -352,7 +324,6 @@ public class OASyncServer {
 	public RemoteSessionInterface getRemoteSessionForServer() {
 		if (remoteSessionServer == null) {
 			remoteSessionServer = getRemoteSession(getClientInfo(), null);
-			//qqqqqq not needed: OASyncDelegate.setRemoteSession(packagex, remoteSessionServer);
 		}
 		return remoteSessionServer;
 	}
@@ -367,7 +338,6 @@ public class OASyncServer {
 	public RemoteClientInterface getRemoteClientForServer() {
 		if (remoteClientForServer == null) {
 			remoteClientForServer = getRemoteClient(getClientInfo());
-			//qqqqqq not needed: OASyncDelegate.setRemoteClient(packagex, remoteClientForServer);
 		}
 		return remoteClientForServer;
 	}

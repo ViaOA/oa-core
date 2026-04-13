@@ -16,8 +16,6 @@ public interface SyncInternalOps extends SyncOps {
 //qqqqqqqqqqq make all of the method names "call*"	
 	
 	
-	
-	
 	public boolean isServer();
 	public boolean isClient();
 	public boolean isSingleUser();
@@ -49,8 +47,10 @@ public interface SyncInternalOps extends SyncOps {
 	public void callRemoteClientRefresh(Class<? extends OAObject> class1, OAObjectKey objectKey, String linkPropertyName);
 
 	public void sendMessages(boolean b);
-	public void setSyncClient(OASyncClient oaSyncClient);
-	public void setSyncServer(OASyncServer oaSyncServer);
+	
+//qqqqqq remove, from *Delegate days qqqqqq	
+//	public void setSyncClient(OASyncClient oaSyncClient);
+	//public void setSyncServer(OASyncServer oaSyncServer);
 
 //qqqqqqq make these finer grain	
 	
