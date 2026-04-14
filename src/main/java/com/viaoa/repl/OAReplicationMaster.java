@@ -19,6 +19,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.concurrent.OAThread;
+import com.viaoa.datasource.OADataSource;
+import com.viaoa.datasource.objectcache.OADataSourceObjectCache;
+import com.viaoa.object.OAObject;
+import com.viaoa.object.OAObjectSerializer;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.repl.remote.RemoteClientInterface;
@@ -110,13 +114,13 @@ public class OAReplicationMaster extends OAReplicationBase {
     	final OAThrottle throttle = new OAThrottle(250);
     	try {
     		for (; !this.bStop; ) {
-    	    	LOG.fine("checking to sync Repli Clients with Master");
+    	    	LOG.finer("checking to sync Repli Clients with Master");
     			long ms = System.currentTimeMillis();
         		for (int id : hmClientSession.keySet()) {
         			if (OAReplicationMaster.this.bStop) break;
         			ReplClientSession ci = hmClientSession.get(id);
         			
-        			LOG.fine("processing client " +id);
+        			LOG.finer("processing client " +id);
         			if (ci == null) continue;
         			try {
         				ci.process();
@@ -132,7 +136,7 @@ public class OAReplicationMaster extends OAReplicationBase {
     		}
         }
         catch (Exception e) {
-            String s = "ProcesClient Thread is stopping, which will stop replicating with clients.";
+            String s = "ProcessClient Thread is stopping, which will stop replicating with clients.";
             LOG.log(Level.WARNING, s, e);
         }
 	}
@@ -170,6 +174,18 @@ public class OAReplicationMaster extends OAReplicationBase {
 			@Override
 			public void processMessage(long masterSeq, long clientSeq, String methodName, Object[] args) {
 				LOG.fine("received message from Client.session="+sessionId+", method="+methodName);
+				
+//qqqqq temp for demo to make sure it's in cache 
+				if (methodName.equals("addNewToCache") && args != null && args.length > 0 && (args[0] instanceof OAObjectSerializer) ) {
+					OAObjectSerializer os = (OAObjectSerializer) args[0];
+					OAObject objx = (OAObject) os.getObject();
+					OADataSource ds = OADataSource.getDataSource(objx.getClass());
+					if (ds instanceof OADataSourceObjectCache) {
+						OADataSourceObjectCache dsx = (OADataSourceObjectCache) ds;
+						dsx.addToCache(objx);
+					}
+				}
+				
 				
 				ClientMsg msg = new ClientMsg();
 				msg.masterSeq = masterSeq;
@@ -210,6 +226,10 @@ public class OAReplicationMaster extends OAReplicationBase {
 			@Override
 			public boolean getEnabled() {
 				return bEnabled;
+			}
+			@Override
+			public void setLastReceivedMasterSeq(long seq) {
+				lastSentMasterSeq = seq;
 			}
 		}; 
  

@@ -329,6 +329,21 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
         }        
     }
 
+    public void addToCache(OAObject object) {
+        if (object == null) {
+            return;
+        }
+        Set hs = getSet(object.getClass());
+        
+        try {
+            lock.writeLock().lock();
+            hs.add(object);
+        }
+        finally {
+            lock.writeLock().unlock();
+        }        
+    }
+    
     
     public void saveToStorageFile(File file, Object extraObject) throws Exception {
         LOG.fine("saving to storage file=" + file);

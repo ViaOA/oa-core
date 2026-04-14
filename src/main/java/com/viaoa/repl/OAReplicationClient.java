@@ -16,6 +16,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.concurrent.OAThread;
+import com.viaoa.datasource.OADataSource;
+import com.viaoa.datasource.objectcache.OADataSourceObjectCache;
+import com.viaoa.object.OAObject;
+import com.viaoa.object.OAObjectSerializer;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.repl.client.OAReplClientConnection;
@@ -110,6 +114,7 @@ public class OAReplicationClient extends OAReplicationBase {
 	
 	protected void runSendSyncMessagesToMaster() {
     	OAReplTLog tlog = null;
+		OAReplClientConnection rccLast = null;
     	for ( ; !bStop ; ) {
     		OAReplClientConnection rcc = null;
     		
@@ -120,15 +125,22 @@ public class OAReplicationClient extends OAReplicationBase {
     		}
     		
     		try {
-				if (!bGotSeqFromMaster) {
-					long x = rcc.getRemoteMaster().getLastReceivedClientSeq();
+    			if (rcc != rccLast) {
+            		rcc.getRemoteMaster().setLastReceivedMasterSeq(this.masterSeq);
+            		rccLast = rcc;
+    			}
+    			
+    			if (!bGotSeqFromMaster) {
+            		long x = rcc.getRemoteMaster().getLastReceivedClientSeq();
 					if (x > this.lastSentClientSeq) {
 						this.lastSentClientSeq = x;
 					}
+					/* add this back when Master keeps track of last know Client GUID lastSentMasterSeq
 					x = rcc.getRemoteMaster().getLastReceivedMasterSeq();
 					if (x > this.lastSentMasterSeq) {
 						this.lastSentMasterSeq = x;
 					}
+					*/
 					bGotSeqFromMaster = true;
 				}
 				if (tlog == null) {
@@ -205,12 +217,24 @@ public class OAReplicationClient extends OAReplicationBase {
     		throw new RuntimeException("exception writing to tlog", e2);
 		}
 	}
-	
+
+private boolean bDisconnectFromMaster;	
+public void setDisconnectFromMaster(boolean b) {
+	this.bDisconnectFromMaster = b;
+	if (b) {
+		try {
+			replClientConnection.stop();
+		}
+		catch (Exception e) {}
+		replClientConnection = null;
+	}
+}
 	
     /**
      * returns null if connection can not be made, and is set to null if connected is stopped.
      */
     protected OAReplClientConnection getReplClientConnection() {
+    	if (bDisconnectFromMaster) return null;//qqqqqq
     	if (replClientConnection != null && !replClientConnection.isStopped()) return replClientConnection;
     	
     	LOG.fine("creating new ReplClientConnection");
@@ -266,6 +290,9 @@ public class OAReplicationClient extends OAReplicationBase {
     	if (remoteSyncImpl == null) {
     		remoteSyncImpl = new RemoteSyncImpl();
     	}
+    	if (masterSeq < lastSentMasterSeq) {
+    		return; //qqqqqqq 
+    	}
 		try {
 	    	OAThreadLocalDelegate.setReplicationSource(CausedByMasterMsgSourceName);
 			LOG.fine(String.format("received msg from Master, masterSeq=%,d, methodName=%s", masterSeq, methodName)); 
@@ -273,6 +300,19 @@ public class OAReplicationClient extends OAReplicationBase {
 			Method method = getMethod(methodName);
 			method.invoke(remoteSyncImpl, args);   
 
+//qqqqqqqqqqqqqqqqq			
+			//qqqqq temp for demo to make sure it's in cache 
+			if (methodName.equals("addNewToCache") && args != null && args.length > 0 && (args[0] instanceof OAObjectSerializer) ) {
+				OAObjectSerializer os = (OAObjectSerializer) args[0];
+				OAObject objx = (OAObject) os.getObject();
+				OADataSource ds = OADataSource.getDataSource(objx.getClass());
+				if (ds instanceof OADataSourceObjectCache) {
+					OADataSourceObjectCache dsx = (OADataSourceObjectCache) ds;
+					dsx.addToCache(objx);
+				}
+			}
+			
+			
 			this.masterSeq = masterSeq;
 		}
 		catch (Exception e) {

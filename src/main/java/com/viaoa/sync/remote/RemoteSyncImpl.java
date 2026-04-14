@@ -37,7 +37,8 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		if (obj == null) {
 			if (OASync.isServer()) {
 				if (throttlePropertyChangeError.check()) {
-					LOG.warning("Object not found, class=" + objectClass + ", key=" + origKey + ", propName=" + propertyName);
+//qqqqqqqqqqqqqqq					
+//					LOG.warning("Object not found, class=" + objectClass + ", key=" + origKey + ", propName=" + propertyName);
 				}
 			}
 			return false;
