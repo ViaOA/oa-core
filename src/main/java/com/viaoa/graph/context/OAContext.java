@@ -1,19 +1,4 @@
-/*
- * Copyright 1999–2025 ViaOA (info@viaoa.com)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package com.viaoa.context;
+package com.viaoa.graph.context;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ConcurrentHashMap;
@@ -22,63 +7,29 @@ import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThread;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAString;
 
-/**
- * Provides the thread-scoped application context used by OA for permission
- * evaluation, user identity, and context-specific Hub and OAUserAccess
- * associations. <p>
- *
- * OAContext ties together the OA thread-local context mechanism
- * ({@link com.viaoa.object.OAThreadLocalDelegate}), the logged-in user
- * (represented as an {@link com.viaoa.object.OAObject}), and any
- * {@link com.viaoa.context.OAUserAccess} rules that determine visibility and
- * enabled/disabled permissions throughout an OAObject graph. <p>
- *
- * The context API allows callers to:
- * <ul>
- *   <li>Associate an OAObject with a context as the “current user”.</li>
- *   <li>Associate a Hub containing the user as the active object.</li>
- *   <li>Associate OAUserAccess instances with a context.</li>
- *   <li>Query for admin, super-admin, and “allow edit processed” permissions
- *       using pluggable property paths.</li>
- *   <li>Retrieve context-specific Hub, OAObject, or OAUserAccess values.</li>
- * </ul>
- *
- * All context-based associations are stored in thread-safe maps using
- * {@link WeakReference} so entries automatically expire when the context is no
- * longer referenced. The special server thread (no context set) receives
- * elevated default permissions when {@link com.viaoa.sync.OASync#callSyncIsServer()}
- * is true.
- *
- * OAContext acts as the bridge between the OA object graph, thread-local
- * execution state, and permission-enforcement mechanisms such as
- * {@link com.viaoa.object.OAObjectCallback}.
- */
 public class OAContext {
-	
+
 	/**
 	 * Map of context-key → Hub, stored using weak references so entries expire
 	 * automatically when no longer referenced. Each Hub's active object represents
 	 * the OAObject associated with that context.
 	 */
-	private static final ConcurrentHashMap<Object, WeakReference<Hub<? extends OAObject>>> hmContextHub = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<Object, WeakReference<Hub<? extends OAObject>>> hmContextHub = new ConcurrentHashMap<>();
 	
 	/**
 	 * Map of context-key → OAUserAccess rules, stored using weak references.
 	 * Enables context-specific permission evaluation.
 	 */
-	private static final ConcurrentHashMap<Object, WeakReference<OAUserAccess>> hmContextUserAccess = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<Object, WeakReference<OAUserAccess>> hmContextUserAccess = new ConcurrentHashMap<>();
 
 	/**
 	 * Special placeholder used when no thread-local context is provided. This
 	 * distinguishes “no context provided” from an actual null key.
 	 */
-	private static final Object NullContext = new Object();
+	private final Object NullContext = new Object();
 
 	// by default, these property names are in AppUser
 
@@ -86,28 +37,20 @@ public class OAContext {
 	 * Property path used to determine whether the context user has admin rights.
 	 * Defaults to "Admin".
 	 */
-	private static String adminPropertyPath = "Admin";
+	private String adminPropertyPath = "Admin";
 	
 	/**
 	 * Property path used to determine whether the context user has super-admin
 	 * rights. Defaults to "SuperAdmin".
 	 */
-	private static String superAdminPropertyPath = "SuperAdmin";
+	private String superAdminPropertyPath = "SuperAdmin";
 	
 	/**
 	 * Property path used to determine whether the context user may edit processed
 	 * objects. Defaults to "EditProcessed".
 	 */
-	private static String allowEditProcessedPropertyPath = "EditProcessed";
+	private String allowEditProcessedPropertyPath = "EditProcessed";
 
-	
-	/**
-	 * Private constructor to prevent instantiation. OAContext exposes only static
-	 * methods.
-	 */
-	private OAContext() {
-	    // static methods only
-	}
 	
 	/**
 	 * Sets the property path used to determine whether a user may edit processed
@@ -115,8 +58,8 @@ public class OAContext {
 	 *
 	 * @param pp property path to use
 	 */
-	public static void setAllowEditProcessedPropertyPath(String pp) {
-		OAContext.allowEditProcessedPropertyPath = pp;
+	public void setAllowEditProcessedPropertyPath(String pp) {
+		allowEditProcessedPropertyPath = pp;
 	}
 
 	/**
@@ -124,8 +67,8 @@ public class OAContext {
 	 *
 	 * @return property path
 	 */
-	public static String getAllowEditProcessedPropertyPath() {
-		return OAContext.allowEditProcessedPropertyPath;
+	public String getAllowEditProcessedPropertyPath() {
+		return allowEditProcessedPropertyPath;
 	}
 
 	/**
@@ -134,7 +77,7 @@ public class OAContext {
 	 *
 	 * @return true if permitted; false otherwise
 	 */
-	public static boolean getAllowEditProcessed() {
+	public boolean getAllowEditProcessed() {
 		return getAllowEditProcessed(OARuntime.thread().getContext());
 	}
 
@@ -145,7 +88,7 @@ public class OAContext {
 	 * @param context context key; null is converted to NullContext
 	 * @return true if permitted; false otherwise
 	 */
-	public static boolean getAllowEditProcessed(Object context) {
+	public boolean getAllowEditProcessed(Object context) {
 		if (context == null) {
 			context = NullContext;
 		}
@@ -171,7 +114,7 @@ public class OAContext {
 			return false;
 		}
 
-		Object val = oaObj.getProperty(OAContext.allowEditProcessedPropertyPath);
+		Object val = oaObj.getProperty(allowEditProcessedPropertyPath);
 		boolean b = OAConv.toBoolean(val);
 		b = b || isSuperAdmin(context);
 		return b;
@@ -183,8 +126,8 @@ public class OAContext {
 	 *
 	 * @param pp property path to use
 	 */
-	public static void setAdminPropertyPath(String pp) {
-		OAContext.adminPropertyPath = pp;
+	public void setAdminPropertyPath(String pp) {
+		adminPropertyPath = pp;
 	}
 
 	/**
@@ -192,8 +135,8 @@ public class OAContext {
 	 *
 	 * @return property path
 	 */
-	public static String getAdminPropertyPath() {
-		return OAContext.adminPropertyPath;
+	public String getAdminPropertyPath() {
+		return adminPropertyPath;
 	}
 
 	/**
@@ -201,7 +144,7 @@ public class OAContext {
 	 *
 	 * @return true if admin; false otherwise
 	 */
-	public static boolean isAdmin() {
+	public boolean isAdmin() {
 		return isAdmin(OARuntime.thread().getContext());
 	}
 
@@ -212,7 +155,7 @@ public class OAContext {
 	 * @param context context key
 	 * @return true if admin; false otherwise
 	 */
-	public static boolean isAdmin(Object context) {
+	public boolean isAdmin(Object context) {
 		if (context == null) {
 			context = NullContext;
 		}
@@ -241,7 +184,7 @@ public class OAContext {
 			return false;
 		}
 
-		Object val = oaObj.getProperty(OAContext.adminPropertyPath);
+		Object val = oaObj.getProperty(adminPropertyPath);
 		boolean b = OAConv.toBoolean(val);
 		b = b || isSuperAdmin(context);
 		return b;
@@ -252,8 +195,8 @@ public class OAContext {
 	 *
 	 * @param pp property path
 	 */
-	public static void setSuperAdminPropertyPath(String pp) {
-		OAContext.superAdminPropertyPath = pp;
+	public void setSuperAdminPropertyPath(String pp) {
+		superAdminPropertyPath = pp;
 	}
 
 	/**
@@ -261,8 +204,8 @@ public class OAContext {
 	 *
 	 * @return property path
 	 */
-	public static String getSuperAdminPropertyPath() {
-		return OAContext.superAdminPropertyPath;
+	public String getSuperAdminPropertyPath() {
+		return superAdminPropertyPath;
 	}
 
 	/**
@@ -270,7 +213,7 @@ public class OAContext {
 	 *
 	 * @return true if super-admin; false otherwise
 	 */
-	public static boolean isSuperAdmin() {
+	public boolean isSuperAdmin() {
 		Object context = OARuntime.thread().getContext();
 		return isSuperAdmin(context);
 	}
@@ -281,7 +224,7 @@ public class OAContext {
 	 * @param context context key; null converted to NullContext
 	 * @return true if super-admin; false otherwise
 	 */
-	public static boolean isSuperAdmin(Object context) {
+	public boolean isSuperAdmin(Object context) {
 		if (OAString.isEmpty(superAdminPropertyPath)) {
 			return false;
 		}
@@ -293,7 +236,7 @@ public class OAContext {
 			return false;
 		}
 
-		Object val = oaObj.getProperty(OAContext.superAdminPropertyPath);
+		Object val = oaObj.getProperty(superAdminPropertyPath);
 		boolean b = OAConv.toBoolean(val);
 		return b;
 	}
@@ -307,7 +250,7 @@ public class OAContext {
 	 * @param bEqualTo required boolean value
 	 * @return true if property equals bEqualTo; false otherwise
 	 */
-	public static boolean isEnabled(final String pp, final boolean bEqualTo) {
+	public boolean isEnabled(final String pp, final boolean bEqualTo) {
 		Object context = OARuntime.thread().getContext();
 		return isEnabled(context, pp, bEqualTo);
 	}
@@ -321,7 +264,7 @@ public class OAContext {
 	 * @param bEqualTo required boolean value
 	 * @return true if enabled; false otherwise
 	 */
-	public static boolean isEnabled(Object context, final String pp, final boolean bEqualTo) {
+	public boolean isEnabled(Object context, final String pp, final boolean bEqualTo) {
 		if (context == null) {
 			context = NullContext;
 		}
@@ -357,10 +300,10 @@ public class OAContext {
 	 * Associates an OAObject with the specified context. The object is wrapped
 	 * inside a Hub whose active object represents the context user.
 	 *
-	 * @param context context key; null converted to NullContext
+	 * @param context context key; null is converted to NullContext
 	 * @param obj OAObject representing the user; null removes the mapping
 	 */
-	public static void setContextObject(Object context, OAObject obj) {
+	public void setContextObject(Object context, OAObject obj) {
 		if (context == null) {
 			context = NullContext;
 		}
@@ -380,7 +323,7 @@ public class OAContext {
 	 * @param context context key
 	 * @param obj OAObject to associate
 	 */
-	public static void setContext(Object context, OAObject obj) {
+	public void setContext(Object context, OAObject obj) {
 		setContextObject(context, obj);
 	}
 
@@ -390,7 +333,7 @@ public class OAContext {
 	 *
 	 * @return associated OAObject or null
 	 */
-	public static OAObject getContextObject() {
+	public OAObject getContextObject() {
 		Object context = OARuntime.thread().getContext();
 		return getContextObject(context);
 	}
@@ -402,7 +345,7 @@ public class OAContext {
 	 * @param context context key
 	 * @return OAObject, or null
 	 */
-	public static OAObject getContextObject(Object context) {
+	public OAObject getContextObject(Object context) {
 		Hub<? extends OAObject> hub = getContextHub(context);
 		if (hub == null) {
 			return null;
@@ -417,7 +360,7 @@ public class OAContext {
 	 * @param context context key
 	 * @param hub Hub to associate; null removes the mapping
 	 */
-	public static void setContextHub(Object context, Hub<? extends OAObject> hub) {
+	public void setContextHub(Object context, Hub<? extends OAObject> hub) {
 		if (context == null) {
 			context = NullContext;
 		}
@@ -434,7 +377,7 @@ public class OAContext {
 	/**
 	 * Removes the Hub associated with the NullContext.
 	 */
-	public static void removeContextHub() {
+	public void removeContextHub() {
 		removeContextHub(NullContext);
 	}
 
@@ -443,7 +386,7 @@ public class OAContext {
 	 *
 	 * @param context context key
 	 */
-	public static void removeContextHub(Object context) {
+	public void removeContextHub(Object context) {
 		if (context == null) {
 			context = NullContext;
 		}
@@ -455,14 +398,14 @@ public class OAContext {
 	 *
 	 * @param context context key
 	 */
-	public static void removeContext(Object context) {
+	public void removeContext(Object context) {
 		removeContextHub(context);
 	}
 
 	/**
 	 * Removes all context information for the NullContext.
 	 */
-	public static void removeContext() {
+	public void removeContext() {
 		removeContextHub(null);
 	}
 
@@ -471,7 +414,7 @@ public class OAContext {
 	 *
 	 * @return associated Hub, or null
 	 */
-	public static Hub<? extends OAObject> getContextHub() {
+	public Hub<? extends OAObject> getContextHub() {
 		Object context = OARuntime.thread().getContext();
 		return getContextHub(context);
 	}
@@ -483,7 +426,7 @@ public class OAContext {
 	 * @param context context key
 	 * @return Hub instance or null
 	 */
-	public static Hub<? extends OAObject> getContextHub(Object context) {
+	public Hub<? extends OAObject> getContextHub(Object context) {
 		if (context == null) {
 			context = NullContext;
 		}
@@ -500,7 +443,7 @@ public class OAContext {
 	 * @param context context key
 	 * @param ua OAUserAccess instance; null removes mapping
 	 */
-	public static void setContextUserAccess(Object context, OAUserAccess ua) {
+	public void setContextUserAccess(Object context, OAUserAccess ua) {
 		if (context == null) {
 			context = NullContext;
 		}
@@ -516,7 +459,7 @@ public class OAContext {
 	 *
 	 * @return OAUserAccess or null
 	 */
-	public static OAUserAccess getContextUserAccess() {
+	public OAUserAccess getContextUserAccess() {
 		Object context = OARuntime.thread().getContext();
 		return getContextUserAccess(context);
 	}
@@ -527,7 +470,7 @@ public class OAContext {
 	 * @param context context key
 	 * @return OAUserAccess instance or null
 	 */
-	public static OAUserAccess getContextUserAccess(Object context) {
+	public OAUserAccess getContextUserAccess(Object context) {
 		if (context == null) {
 			context = NullContext;
 		}
@@ -537,5 +480,4 @@ public class OAContext {
 		}
 		return ref.get();
 	}
-
 }

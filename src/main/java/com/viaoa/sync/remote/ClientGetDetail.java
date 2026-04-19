@@ -34,8 +34,8 @@ import com.viaoa.object.OAObjectSerializerCallback;
 import com.viaoa.object.OAPerformance;
 import com.viaoa.object.OASiblingHelper;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.OANotExist;
 
 /**
@@ -169,7 +169,12 @@ public class ClientGetDetail {
 		OAObject masterObject = og.objectsInternal().callObjectReflectGetObject(masterClass, masterObjectKey);
 		if (masterObject == null) {
 			// get from datasource
-			masterObject = (OAObject) OADataSource.getObject(masterClass, masterObjectKey);
+			
+			OADataSource ds = OARuntime.datasource().get(masterClass);
+			if (ds != null) {
+				masterObject = ds.getObject(masterClass, masterObjectKey);
+			}
+			
 			if (masterObject == null) {
 				if (errorCnt++ < 100) {
 					LOG.warning("cant find masterObject in cache or DS.  masterClass=" + masterClass + ", key=" + masterObjectKey
@@ -193,7 +198,7 @@ public class ClientGetDetail {
 		}
 
 		final OASiblingHelper siblingHelper = new OASiblingHelper(hubHold);
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		srvcOAThreadLocal.addSiblingHelper(siblingHelper);
 		Object detailValue = null;
 		try {

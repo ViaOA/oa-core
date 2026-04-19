@@ -36,4 +36,4 @@
  * properties behave relative to user or system context.
  */
 
-package com.viaoa.context;
+package com.viaoa.graph.context;

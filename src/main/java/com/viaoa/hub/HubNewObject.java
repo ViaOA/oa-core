@@ -22,8 +22,8 @@ import com.viaoa.graph.service.object.OAObjectReflectService;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 
 /**
  * Manages the creation and staging of new {@link OAObject OAObjects} before they
@@ -250,7 +250,7 @@ public class HubNewObject<F extends OAObject> {
 	 */
 	public F createNewObject() {
 		F obj = null;
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		try {
 			srvcOAThreadLocal.setLoading(true);
 			Class<F> clazz = hubMain.getObjectClass();

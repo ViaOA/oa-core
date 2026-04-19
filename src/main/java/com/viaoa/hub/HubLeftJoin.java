@@ -22,8 +22,8 @@ import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.hub.HubAddRemoveService;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.OACompare;
 import com.viaoa.util.OAString;
 
@@ -247,7 +247,7 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubCombined);
 				og.hubsInternal().callHubAddRemoveClear(hubCombined, false, false); // 20240403 dont send newList event
 				
-				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 				srvcOAThreadLocal.setLoading(true);
 				try {
     				for (A a : hubA) {

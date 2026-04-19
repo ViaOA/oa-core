@@ -28,8 +28,8 @@ import com.viaoa.graph.service.object.OAObjectPropertyService;
 import com.viaoa.graph.service.object.OAObjectSiblingService;
 import com.viaoa.hub.*;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.*;
 
 /**
@@ -624,7 +624,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		List<T> al = null;
 
 		OASiblingHelper<F> siblingHelper = null;
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		if (!bUseOnlyLoadedData) {
 			siblingHelper = new OASiblingHelper<F>(hubRoot);
 			siblingHelper.add(strPropertyPath);
@@ -1224,7 +1224,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 						if (objx instanceof Hub) {
 							Hub h = (Hub) objx;
 							if (og.hubsInternal().callHubSortGetSortListener(h) == null && og.hubsInternal().callHubSequenceGetAutoSequence(h) == null) {
-								final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+								final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 								OAThreadLocal tl = srvcOAThreadLocal.getThreadLocal(true);
 								if (tl.cntGetSiblingCalled > 1) {
 									b = false;

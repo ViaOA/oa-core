@@ -95,31 +95,10 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
      * {@code true}.
      */
     public OADataSourceObjectCache() {
-        this(true);
     }
 
-    /**
-     * Creates a new object-cache data source with optional registration
-     * behavior. Delegates to
-     * {@link #OADataSourceObjectCache(Hub, boolean, boolean)} with a null hub
-     * and {@code bMakeLastDataSource = true}.
-     *
-     * @param bRegister whether this data source should be registered
-     */
-    public OADataSourceObjectCache(boolean bRegister) {
-        this(null, bRegister, true);
-    }
-
-    /**
-     * Creates a new object-cache data source with explicit registration and
-     * ordering flags. Delegates to the full constructor with a null hub.
-     *
-     * @param bRegister whether this data source should be registered
-     * @param bMakeLastDataSource whether this instance should become the final
-     *                            data source in the chain
-     */
-    public OADataSourceObjectCache(boolean bRegister, boolean bMakeLastDataSource) {
-        this(null, bRegister, bMakeLastDataSource);
+    public OADataSourceObjectCache(boolean bMakeLastDataSource) {
+        super(bMakeLastDataSource);
     }
 
     /**
@@ -131,8 +110,8 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
      * @param bMakeLastDataSource whether this instance should be last in the
      *                            data-source chain
      */
-    public OADataSourceObjectCache(Hub hubNextNumber, boolean bRegister, boolean bMakeLastDataSource) {
-        super(hubNextNumber, bRegister, bMakeLastDataSource);
+    public OADataSourceObjectCache(Hub hubNextNumber, boolean bMakeLastDataSource) {
+        super(hubNextNumber, bMakeLastDataSource);
     }
 
     /**
@@ -407,8 +386,8 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
      * @return {@code true} if more than one data source exists; otherwise false
      */
     protected boolean isOtherDataSource() {
-        OADataSource[] dss = OADataSource.getDataSources();
-        return dss != null && dss.length > 1;
+		OADataSource[] dss = OARuntime.datasource().getAll();
+        return dss.length > 1;
     }
 
     /**

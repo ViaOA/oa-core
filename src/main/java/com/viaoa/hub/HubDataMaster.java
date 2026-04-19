@@ -164,8 +164,12 @@ public class HubDataMaster implements java.io.Serializable {
 		}
 
 		// 20160623 so that serverRoot wont store changes to objects
-		if (!liDetailToMaster.getToObjectInfo().getUseDataSource() && OADataSource.getDataSource(liDetailToMaster.getToClass()) == null) {
-			return false;
+		
+		if (!liDetailToMaster.getToObjectInfo().getUseDataSource()) {
+			OADataSource ds = OARuntime.datasource().get(liDetailToMaster.getToClass());
+			if (ds == null) {
+				return false;
+			}
 		}
 
 		// 20160505 check to see if rev li is calc.

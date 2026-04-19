@@ -35,10 +35,10 @@ import com.viaoa.graph.service.OAObjectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.model.oa.VEnum;
 import com.viaoa.model.oa.VString;
+import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OARemoteThreadService;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.remote.RemoteServerInterface;
 import com.viaoa.util.OACompare;
@@ -1703,7 +1703,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *         {@code false} otherwise
 	 */
 	public boolean isLoading() {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		return srvcOAThreadLocal.isLoading();
 	}
 
@@ -2399,7 +2399,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * previous admin flag is restored.
 	 */
 	public void save() {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		boolean b3 = srvcOAThreadLocal.setAdmin(true);
 		try {
 			this.save(CASCADE_LINK_RULES);
@@ -2520,7 +2520,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	public void delete() {
 		// verify with objectCallback
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		if (!srvcOARemoteThread.isRemoteThread()) {
 			OAObjectCallback em = og.objectsInternal().callObjectCallbackGetVerifyDeleteObjectCallback(null, this, OAObjectCallback.CHECK_CallbackMethod);
 			if (!em.getAllowed()) {
@@ -2744,7 +2744,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *         {@code false} otherwise
 	 */
 	public boolean isRemoteThread() {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		return srvcOARemoteThread.isRemoteThread();
 	}
 
@@ -2777,7 +2777,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return the resulting message-sending state as reported by the delegate
 	 */
 	public void sendMessages(boolean b) {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		srvcOARemoteThread.sendMessages(b);
 	}
 
@@ -3051,7 +3051,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
 		
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		if (og.syncInternal().callSyncIsServer() || srvcOARemoteThread.isRemoteThread()) {
 			throw new RuntimeException("method " + mname + ", isRemoable=false, thread=" + Thread.currentThread());
 		}
@@ -3197,7 +3197,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return {@code true} if remote invocation is permitted; {@code false} otherwise
 	 */
 	public boolean isRemoteAvailable() {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		if (srvcOARemoteThread.isRemoteThread()) {
 			return false;
 		}
@@ -3220,7 +3220,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		if (hub == null) {
 			return false;
 		}
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		if (srvcOARemoteThread.isRemoteThread()) {
 			return false;
 		}
@@ -3352,7 +3352,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		if (!og.syncInternal().callSyncIsServer()) {
 			return false;
 		}
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		srvcOARemoteThread.sendMessages(true);
 		return true;
 	}
@@ -3392,7 +3392,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		if (!og.syncInternal().callSyncIsServer()) {
 			return;
 		}
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		if (srvcOARemoteThread.isRemoteThreadSendingMessages()) {
 			srvcOARemoteThread.sendMessages(false);
 		}
@@ -3910,7 +3910,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 			return;
 		}
 		
-		OADataSource ds = OADataSource.getDataSource(getClass());
+		OADataSource ds = OARuntime.datasource().get(getClass());
 		if (ds == null) {
 			return;
 		}
@@ -3971,7 +3971,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 			return;
 		}
 
-		OADataSource ds = OADataSource.getDataSource(li.getToClass());
+		OADataSource ds = OARuntime.datasource().get(li.getToClass());
 		if (ds == null) {
 			return;
 		}

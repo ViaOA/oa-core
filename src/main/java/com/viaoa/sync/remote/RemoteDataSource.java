@@ -399,7 +399,8 @@ public abstract class RemoteDataSource {
 
 		OAObject objNew = (OAObject) og.objectsInternal().callObjectCacheGet(objectClass, key);
 		if (objNew == null) {
-			objNew = (OAObject) OADataSource.getObject(objectClass, key);
+			OADataSource ds = OARuntime.datasource().get(objectClass);
+			if (ds != null) objNew = ds.getObject(objectClass, key);
 		}
 		return objNew;
 	}
@@ -412,18 +413,16 @@ public abstract class RemoteDataSource {
 	 */
 	protected OADataSource getDataSource(Class c) {
 		if (c != null) {
-			OADataSource ds = OADataSource.getDataSource(c);
+			OADataSource ds = OARuntime.datasource().get(c);
 			if (ds != null) {
 				return ds;
 			}
 		}
-		if (defaultDataSource == null) {
-			OADataSource[] dss = OADataSource.getDataSources();
-			if (dss != null && dss.length > 0) {
-				defaultDataSource = dss[0];
-			}
+
+		for (OADataSource ds : OARuntime.datasource().getAll()) {
+			return ds;
 		}
-		return defaultDataSource;
+		return null;
 	}
 
 	/**
@@ -431,10 +430,6 @@ public abstract class RemoteDataSource {
 	 */
 	private AtomicInteger aiSelectCount = new AtomicInteger();
     
-	/**
-	 * Default datasource used when no class-specific datasource is available.
-	 */
-	private OADataSource defaultDataSource;
 
 	/**
 	 * Returns the default datasource.

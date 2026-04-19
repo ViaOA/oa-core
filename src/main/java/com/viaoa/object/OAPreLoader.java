@@ -30,8 +30,8 @@ import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.service.object.OAObjectPropertyService;
 import com.viaoa.hub.Hub;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
@@ -119,7 +119,7 @@ public class OAPreLoader {
 			linkInfos = propertyPath.getLinkInfos();
 		}
 		ArrayList al = null;
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		try {
 			srvcOAThreadLocal.setLoading(true);
 			al = _load(linkInfos);
@@ -244,7 +244,7 @@ public class OAPreLoader {
 		if (linkInfo == null || !linkInfo.isMany2Many()) {
 			return;
 		}
-		OADataSource ds = OADataSource.getDataSource(linkInfo.getToClass());
+		OADataSource ds = OARuntime.datasource().get(linkInfo.getToClass());
 		if (!(ds instanceof OADataSourceJDBC)) {
 			return;
 		}

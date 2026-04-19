@@ -431,7 +431,7 @@ public abstract class HubSelectService {
 			if (select.getRewind()) {
 
 				// 20120716
-				OAFilter<Hub<T>> filter = new OAFilter<>() {
+				OAFilter<Hub<T>> filter = new OAFilter<Hub<T>>() {
 					@Override
 					public boolean isUsed(Hub<T> h) {
 						if (h != thisHub && faHub.getHubDataActive(h) != faHub.getHubDataActive(thisHub)) {

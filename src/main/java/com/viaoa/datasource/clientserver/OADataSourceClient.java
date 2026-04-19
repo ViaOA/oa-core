@@ -229,7 +229,7 @@ public class OADataSourceClient extends OADataSource {
 	 * from {@link com.viaoa.sync.OASyncDelegate}. Defines the synchronization
 	 * namespace under which operations are executed.
 	 */
-	private final Package packagex;
+	private final String packageName;
 
 	/**
 	 * Constructs a new client-side datasource using the specified package to
@@ -238,11 +238,8 @@ public class OADataSourceClient extends OADataSource {
 	 *
 	 * @param packagex the package namespace for synchronization
 	 */
-	public OADataSourceClient(Package packagex) {
-		if (packagex == null) {
-			//qqqqqqqqq ?? packagex = OASync.ObjectPackage;
-		}
-		this.packagex = packagex;
+	public OADataSourceClient(String packageName) {
+		this.packageName = packageName;
 	}
 
 	/**
@@ -262,7 +259,7 @@ public class OADataSourceClient extends OADataSource {
 	 */
 	public RemoteClientInterface getRemoteClient() {
 		if (remoteClientSync == null) {
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(packagex);
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(packageName);
 			remoteClientSync = og.syncInternal().getRemoteClient();
 		}
 		return remoteClientSync;

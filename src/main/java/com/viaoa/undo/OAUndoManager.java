@@ -26,10 +26,10 @@ import javax.swing.undo.UndoManager;
 import javax.swing.undo.UndoableEdit;
 
 import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OARemoteThreadService;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 
 /**
  * OA-specific extension of {@link javax.swing.undo.UndoManager} providing
@@ -208,7 +208,7 @@ public class OAUndoManager extends UndoManager {
 	 * @param presentationName the name displayed for the compound undo operation
 	 */
 	public static void startCompoundEditForPropertyChanges(final String presentationName) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		srvcOAThreadLocal.startUndoable(presentationName);
 		//startCompoundEdit(presentationName);
 		//OARuntime.threadLocals().setCreateUndoablePropertyChanges(true);
@@ -221,7 +221,7 @@ public class OAUndoManager extends UndoManager {
 	 * {@link #startCompoundEditForPropertyChanges(String)}.
 	 */
 	public static void endCompoundEditForPropertyChanges() {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		srvcOAThreadLocal.endUndoable();
 		//endCompoundEdit();
 		//OARuntime.threadLocals().setCreateUndoablePropertyChanges(false);
@@ -487,7 +487,7 @@ public class OAUndoManager extends UndoManager {
 
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph();
 		if (!og.syncInternal().isSingleUser()) {
-			final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+			final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 			if (srvcOARemoteThread.isRemoteThread()) {
 				return true;
 			}

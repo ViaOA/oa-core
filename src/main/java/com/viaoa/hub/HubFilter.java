@@ -41,10 +41,10 @@ import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
+import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OARemoteThreadService;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAString;
@@ -758,7 +758,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 				if (bClosed) {
 					return;
 				}
-				final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+				final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 				try {
 					if (bServerSideOnly) {
 						srvcOARemoteThread.sendMessages(true);
@@ -946,7 +946,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 		if (aiClearing.get() != 0) {
 			return;
 		}
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		try {
 			if (bServerSideOnly) { // 20120425
 				srvcOARemoteThread.sendMessages(true); // so that events will go out, even if OAClientThread
@@ -1053,8 +1053,8 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 		if (hub == null || bClosed) {
 			return;
 		}
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		if (bServerSideOnly) {
 			srvcOARemoteThread.sendMessages(true); // so that events will go out, even if OAClientThread
 		}

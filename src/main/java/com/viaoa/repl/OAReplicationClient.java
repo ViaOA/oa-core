@@ -19,8 +19,8 @@ import com.viaoa.concurrent.OAThread;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.repl.client.OAReplClientConnection;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.sync.OASyncServer;
 import com.viaoa.sync.remote.RemoteSyncImpl;
 import com.viaoa.util.OADateTime;
@@ -110,6 +110,7 @@ public class OAReplicationClient extends OAReplicationBase {
 	
 	protected void runSendSyncMessagesToMaster() {
     	OAReplTLog tlog = null;
+		OAReplClientConnection rccLast = null;
     	for ( ; !bStop ; ) {
     		OAReplClientConnection rcc = null;
     		
@@ -120,15 +121,22 @@ public class OAReplicationClient extends OAReplicationBase {
     		}
     		
     		try {
-				if (!bGotSeqFromMaster) {
-					long x = rcc.getRemoteMaster().getLastReceivedClientSeq();
+    			if (rcc != rccLast) {
+            		rcc.getRemoteMaster().setLastReceivedMasterSeq(this.masterSeq);
+            		rccLast = rcc;
+    			}
+    			
+    			if (!bGotSeqFromMaster) {
+            		long x = rcc.getRemoteMaster().getLastReceivedClientSeq();
 					if (x > this.lastSentClientSeq) {
 						this.lastSentClientSeq = x;
 					}
+					/* add this back when Master keeps track of last know Client GUID lastSentMasterSeq
 					x = rcc.getRemoteMaster().getLastReceivedMasterSeq();
 					if (x > this.lastSentMasterSeq) {
 						this.lastSentMasterSeq = x;
 					}
+					*/
 					bGotSeqFromMaster = true;
 				}
 				if (tlog == null) {
@@ -207,11 +215,25 @@ public class OAReplicationClient extends OAReplicationBase {
 	}
 	
 	
+	private boolean bDisconnectFromMaster;	
+	public void setDisconnectFromMaster(boolean b) {
+		this.bDisconnectFromMaster = b;
+		if (b) {
+			try {
+				replClientConnection.stop();
+			}
+			catch (Exception e) {}
+			replClientConnection = null;
+		}
+	}
+	
+	
     /**
      * returns null if connection can not be made, and is set to null if connected is stopped.
      */
     protected OAReplClientConnection getReplClientConnection() {
     	if (replClientConnection != null && !replClientConnection.isStopped()) return replClientConnection;
+    	if (bDisconnectFromMaster) return null;
     	
     	LOG.fine("creating new ReplClientConnection");
     	replClientConnection = new OAReplClientConnection(guid, masterHostName, masterHostPort, lastSentMasterSeq, lastSentClientSeq) {
@@ -266,7 +288,11 @@ public class OAReplicationClient extends OAReplicationBase {
     	if (remoteSyncImpl == null) {
     		remoteSyncImpl = new RemoteSyncImpl();
     	}
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+    	if (masterSeq < lastSentMasterSeq) {
+    		return; 
+    	}
+    	
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		try {
 			srvcOAThreadLocal.setReplicationSource(guid);
 			LOG.fine(String.format("received msg from Master, masterSeq=%,d, methodName=%s", masterSeq, methodName)); 

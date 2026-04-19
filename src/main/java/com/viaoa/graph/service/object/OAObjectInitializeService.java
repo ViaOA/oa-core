@@ -3,12 +3,14 @@ package com.viaoa.graph.service.object;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-import com.viaoa.context.OAContext;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAString;
 
 public abstract class OAObjectInitializeService {
@@ -153,13 +155,13 @@ public abstract class OAObjectInitializeService {
 	 * @param bSetChangedToFalse whether the object's changed flag should be cleared.
 	 */
 	public void initialize(
-	        OAObject oaObj,
+	        final OAObject oaObj,
 	        OAObjectInfo oi,
-	        boolean bInitializeNulls,
-	        boolean bInitializeWithDS,
-	        boolean bAddToCache,
-	        boolean bInitializeWithCS,
-	        boolean bSetChangedToFalse) {
+	        final boolean bInitializeNulls,
+	        final boolean bInitializeWithDS,
+	        final boolean bAddToCache,
+	        final boolean bInitializeWithCS,
+	        final boolean bSetChangedToFalse) {
   
 		final boolean bWasLoading = callThreadLocalSetLoading(true);
 		try {
@@ -199,7 +201,8 @@ public abstract class OAObjectInitializeService {
 
 					// 20190205 set default linkOne
 					if (li.getType() == li.TYPE_ONE && OAString.isNotEmpty(li.getDefaultContextPropertyPath())) {
-						OAObject objx = OAContext.getContextObject();
+						OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
+						OAObject objx = og.context().getContextObject();
 						if (objx != null) {
 							if (!li.getDefaultContextPropertyPath().equals(".")) {
 								OAFinder hf = new OAFinder(li.getDefaultContextPropertyPath());

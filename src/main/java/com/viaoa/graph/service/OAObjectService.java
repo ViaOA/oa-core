@@ -12,7 +12,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import com.viaoa.annotation.OAMany;
-import com.viaoa.graph.api.ObjectsOps;
 import com.viaoa.graph.api.internal.ObjectsInternalOps;
 import com.viaoa.graph.service.object.*;
 import com.viaoa.hub.Hub;
@@ -36,7 +35,7 @@ import com.viaoa.util.OADate;
 import com.viaoa.util.OAFilter;
 import com.viaoa.xml.OAXMLWriter;
 
-public class OAObjectService extends OAObjectParentService implements ObjectsOps, ObjectsInternalOps {
+public class OAObjectService extends OAObjectParentService implements ObjectsInternalOps {
 	private static final Logger LOG = Logger.getLogger(OAObjectService.class.getName());
 
     

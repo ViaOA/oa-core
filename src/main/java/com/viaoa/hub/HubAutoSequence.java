@@ -23,9 +23,9 @@ import java.lang.reflect.*;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.object.*;
+import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.OAThreadService;
 
 /**
  * Automatically maintains a numeric sequence property on every object in a {@link Hub},
@@ -338,7 +338,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
             }
         }
 
-    	final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+    	final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
         try {
             if (bServerSideOnly) {
                 srvcOARemoteThread.sendMessages(true); 

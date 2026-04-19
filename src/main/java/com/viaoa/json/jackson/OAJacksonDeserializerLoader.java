@@ -54,8 +54,8 @@ import com.viaoa.pojo.PojoLinkOneDelegate;
 import com.viaoa.pojo.PojoLinkUnique;
 import com.viaoa.pojo.PojoProperty;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OADate;
@@ -271,7 +271,7 @@ public class OAJacksonDeserializerLoader {
 
 		boolean bNeedsAssignedId = loadObjectIdProperties(stackItem);
 
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		if (srvcOAThreadLocal.isLoading()) {
 			 srvcOAThreadLocal.setLoading(false);
 			try {
@@ -687,7 +687,8 @@ public class OAJacksonDeserializerLoader {
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(li.getToClass());
 				obj = (OAObject) og.objectsInternal().callObjectCacheGet(li.getToClass(), ok);
 				if (obj == null) {
-					obj = (OAObject) OADataSource.getObject(li.getToClass(), ok);
+					OADataSource ds = OARuntime.datasource().get(li.getToClass());
+					if (ds != null) obj = (OAObject) ds.getObject(li.getToClass(), ok);
 				}
 			}
 			
@@ -798,7 +799,10 @@ public class OAJacksonDeserializerLoader {
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(li.getToClass());
 			obj = (OAObject) og.objectsInternal().callObjectCacheGet(li.getToClass(), ok);
 			if (obj == null) {
-				obj = (OAObject) OADataSource.getObject(li.getToClass(), ok);
+				OADataSource ds = OARuntime.datasource().get(li.getToClass());
+				if (ds != null) {
+					obj = (OAObject) ds.getObject(li.getToClass(), ok);
+				}
 			}
 		}
 		if (obj == null && ok != null) {
@@ -1131,24 +1135,28 @@ public class OAJacksonDeserializerLoader {
 
 		// see if it's in objCache (since it might not be in DS)
 		OADataSource ds = null;
-		OADataSource[] dss = OADataSource.getDataSources();
-		if (dss != null) {
-			for (OADataSource dsx : dss) {
-				if (dsx instanceof OADataSourceObjectCache) {
-					ds = dsx;
-					break;
-				}
+		
+		for (OADataSource dsx : OARuntime.datasource().getAll()) {
+			if (dsx instanceof OADataSourceObjectCache) {
+				ds = dsx;
+				break;
 			}
 		}
 		if (ds == null) {
 			ds = new OADataSourceObjectCache(false);
+			OARuntime.datasource().register(ds);
 		}
 
 		OADataSourceIterator dsi = ds.select(stackItem.oi.getForClass(), sql, args, null, false);
 		Object objx = dsi.next();
-		if (objx == null && OADataSource.getDataSource(stackItem.oi.getForClass()) != ds) {
-			OASelect sel = new OASelect(stackItem.oi.getForClass(), sql, args, null);
-			objx = sel.next();
+		
+
+		if (objx == null) {
+			OADataSource dsx = OARuntime.datasource().get(stackItem.oi.getForClass());
+			if (dsx != null && dsx != ds) {
+				OASelect sel = new OASelect(stackItem.oi.getForClass(), sql, args, null);
+				objx = sel.next();
+			}
 		}
 		stackItem.obj = (OAObject) objx;
 	}
@@ -1314,17 +1322,15 @@ public class OAJacksonDeserializerLoader {
 
 		// look in objectCache first
 		OADataSource ds = null;
-		OADataSource[] dss = OADataSource.getDataSources();
-		if (dss != null) {
-			for (OADataSource dsx : dss) {
-				if (dsx instanceof OADataSourceObjectCache) {
-					ds = dsx;
-					break;
-				}
+		for (OADataSource dsx : OARuntime.datasource().getAll()) {
+			if (dsx instanceof OADataSourceObjectCache) {
+				ds = dsx;
+				break;
 			}
 		}
 		if (ds == null) {
 			ds = new OADataSourceObjectCache(false);
+			OARuntime.datasource().register(ds);
 		}
 
 		if (debug) {
@@ -1333,9 +1339,13 @@ public class OAJacksonDeserializerLoader {
 
 		OADataSourceIterator dsi = ds.select(stackItem.oi.getForClass(), sql, args, null, false);
 		Object objx = dsi.next();
-		if (objx == null && OADataSource.getDataSource(stackItem.oi.getForClass()) != ds) {
-			OASelect sel = new OASelect(stackItem.oi.getForClass(), sql, args, null);
-			objx = sel.next();
+		
+		if (objx == null) {
+			OADataSource dsx = OARuntime.datasource().get(stackItem.oi.getForClass());
+			if (dsx != null && dsx != ds) {
+				OASelect sel = new OASelect(stackItem.oi.getForClass(), sql, args, null);
+				objx = sel.next();
+			}
 		}
 		stackItem.obj = (OAObject) objx;
 	}

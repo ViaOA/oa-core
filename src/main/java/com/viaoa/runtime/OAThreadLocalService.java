@@ -1,4 +1,4 @@
-package com.viaoa.runtime.thread;
+package com.viaoa.runtime;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,7 +22,6 @@ import com.viaoa.object.OAThreadLocalHubMergerCallback;
 import com.viaoa.process.OAProcess;
 import com.viaoa.remote.OARemoteThread;
 import com.viaoa.remote.info.RequestInfo;
-import com.viaoa.runtime.OARuntime;
 import com.viaoa.transaction.OATransaction;
 import com.viaoa.undo.OAUndoManager;
 import com.viaoa.util.OAArray;
@@ -60,8 +59,6 @@ import com.viaoa.util.Tuple3;
  */
 public class OAThreadLocalService {
 	private static Logger LOG = Logger.getLogger(OAThreadLocalService.class.getName());
-
-	// private final OARuntime runtimeX;
 
 	/**
 	 * Global counter used for diagnostics to track how many threads increment
@@ -2272,7 +2269,7 @@ public class OAThreadLocalService {
 	 *
 	 * @param hub the hub to register
 	 */
-	public void addDontAdjustHub(Hub hub) {
+	public void addDontAdjustHub(Hub<?> hub) {
 		if (hub == null) {
 			return;
 		}
@@ -2292,7 +2289,7 @@ public class OAThreadLocalService {
 	 *
 	 * @param hub the hub to remove
 	 */
-	public void removeDontAdjustHub(Hub hub) {
+	public void removeDontAdjustHub(Hub<?> hub) {
 		if (hub == null) {
 			return;
 		}
@@ -2309,7 +2306,7 @@ public class OAThreadLocalService {
 		aiTotalDontAdjustHub.decrementAndGet();
 	}
 
-	public boolean getCanAdjustHub(Hub hub) {
+	public boolean getCanAdjustHub(Hub<?> hub) {
 		if (hub == null) {
 			return false;
 		}
@@ -2472,7 +2469,7 @@ public class OAThreadLocalService {
 	 * @param h the hub to inspect
 	 * @return true if the hub reports fast-loading enabled, otherwise false
 	 */
-	public boolean isFastLoadingHub(Hub h) {
+	public boolean isFastLoadingHub(Hub<?> h) {
 		if (h == null) return false;
 		Hub hx = getFastLoadingHub();
 		if (hx == null) return false;
@@ -2486,7 +2483,7 @@ public class OAThreadLocalService {
 	 *
 	 * @param hub the hub to assign or null to clear
 	 */
-	public void setFastLoadingHub(Hub hub) {
+	public void setFastLoadingHub(Hub<?> hub) {
 		setFastLoadingHub(getThreadLocal(true), hub);
 	}
 	
@@ -2648,11 +2645,10 @@ public class OAThreadLocalService {
 	}
 
 	
-	//qqqqqqqqqqqqqqqqqqqvvvvvvvvv 20260403	
-		public String getReplicationSource() {
-			return getOAThreadLocal().replicationSource;
-		}
-		public void setReplicationSource(String src) {
-			getOAThreadLocal().replicationSource = src;
-		}
+	public String getReplicationSource() {
+		return getOAThreadLocal().replicationSource;
+	}
+	public void setReplicationSource(String src) {
+		getOAThreadLocal().replicationSource = src;
+	}
 }

@@ -53,7 +53,7 @@ public abstract class HubRootService {
 
 		// 3: get dm
 		// 20120717 could be more then one master hub available, find the one that owns this object
-		OAFilter<Hub<T>> filter = new OAFilter<>() {
+		OAFilter<Hub<T>> filter = new OAFilter<Hub<T>>() {
 			@Override
 			public boolean isUsed(Hub<T> hx) {
 				return (faHub.getHubDataMaster(hx).getMasterHub() != null);

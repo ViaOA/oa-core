@@ -42,8 +42,8 @@ import com.viaoa.object.OATrigger;
 import com.viaoa.object.OATriggerDelegate;
 import com.viaoa.object.OATriggerListener;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAString;
 
@@ -657,7 +657,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 * rules. Aborts if any save operation fails.
 	 */
 	public void saveAll() {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		boolean b = srvcOAThreadLocal.setAdmin(true);
 		try {
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
@@ -1720,7 +1720,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 * @param propertyPath property path whose changes will trigger updates
 	 */
 	public void addTriggerListener(HubListener<TYPE> hl, final String property, String propertyPath) {
-		OATriggerListener<TYPE> tl = new OATriggerListener<>() {
+		OATriggerListener<TYPE> tl = new OATriggerListener<TYPE>() {
 			@Override
 			public void onTrigger(TYPE obj, HubEvent hubEvent, String propertyPath) throws Exception {
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Hub.this);
@@ -1740,7 +1740,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 * @param useBackgroundThread  true to run listener in background thread
 	 */
 	public void addTriggerListener(HubListener<TYPE> hl, final String property, String propertyPath, boolean useBackgroundThread) {
-		OATriggerListener<TYPE> tl = new OATriggerListener<>() {
+		OATriggerListener<TYPE> tl = new OATriggerListener<TYPE>() {
 			@Override
 			public void onTrigger(TYPE obj, HubEvent hubEvent, String propertyPath) throws Exception {
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Hub.this);
@@ -2730,7 +2730,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 * @param b true to enable loading mode
 	 */
 	public void setLoading(boolean b) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		srvcOAThreadLocal.setLoading(b);
 	}
 
@@ -2741,7 +2741,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 * @return true if loading mode is enabled
 	 */
 	public boolean isLoading() {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		return srvcOAThreadLocal.isLoading();
 	}
 

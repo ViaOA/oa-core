@@ -91,25 +91,13 @@ public class OADataSourceAuto extends OADataSource {
 	}
 
 	/**
-	 * Creates an OADataSourceAuto with explicit registration and ordering flags.
-	 *
-	 * @param bRegister             true to register this datasource with the global
-	 *                              datasource registry
-	 * @param bMakeLastDataSource   true to mark this datasource as the last in the
-	 *                              global datasource chain
-	 */
-	public OADataSourceAuto(boolean bRegister, boolean bMakeLastDataSource) {
-		this(null, bRegister, bMakeLastDataSource);
-	}
-
-	/**
 	 * Creates an OADataSourceAuto and optionally marks it as the last datasource.
 	 * Registration is enabled by default.
 	 *
 	 * @param bMakeLastDataSource true to designate this datasource as last in chain
 	 */
 	public OADataSourceAuto(boolean bMakeLastDataSource) {
-		this(null, true, bMakeLastDataSource);
+		setLast(bMakeLastDataSource);
 	}
 
 	/**
@@ -118,26 +106,8 @@ public class OADataSourceAuto extends OADataSource {
 	 *
 	 * @param hubNextNumber Hub containing NextNumber instances
 	 */
-	public OADataSourceAuto(Hub hubNextNumber) {
-		this(hubNextNumber, true, true);
-	}
-
-	/**
-	 * Internal constructor that performs full initialization of the datasource,
-	 * including Hub selection, global Hub installation, and datasource ordering.
-	 *
-	 * @param hubNextNumber        Hub containing NextNumber instances, or null to
-	 *                             use the global Hub
-	 * @param bRegister            true to register in global datasource registry
-	 * @param bMakeLastDataSource  true to mark as last datasource
-	 */
-	public OADataSourceAuto(Hub hubNextNumber, boolean bRegister, boolean bMakeLastDataSource) {
-		super(bRegister);
-		if (bRegister) {
-			super.bLast = bMakeLastDataSource;
-		}
-
-		super.bLast = true;
+	public OADataSourceAuto(Hub hubNextNumber, boolean makeLast) {
+		this(makeLast);
 		if (hubNextNumber == null) {
 			hubNextNumber = hubNextNumberGlobal;
 			if (hubNextNumber == null) {
@@ -150,6 +120,9 @@ public class OADataSourceAuto extends OADataSource {
 		setName("OADataSourceAuto DataSource");
 	}
 
+	public OADataSourceAuto(Hub hubNextNumber) {
+		this(hubNextNumber, true);
+	}
 	
 	public void setStartingNextNumber(int x) {
 		this.startNextNumber = x;

@@ -8,6 +8,7 @@ import com.viaoa.hub.Hub;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
+import com.viaoa.runtime.OARuntime;
 
 public abstract class HubDeleteService {
 	private final Logger LOG = Logger.getLogger(HubDeleteService.class.getName());
@@ -130,7 +131,7 @@ public abstract class HubDeleteService {
                 liRev = callObjectInfoGetReverseLinkInfo(li);
 
                 masterObj = callHubDetailGetMasterObject(thisHub);
-                if (masterObj != null) dataSource = OADataSource.getDataSource(masterObj.getClass());
+                if (masterObj != null) dataSource = OARuntime.datasource().get(masterObj.getClass());
             }
         }
 

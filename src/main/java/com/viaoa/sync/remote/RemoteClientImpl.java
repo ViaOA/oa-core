@@ -308,24 +308,17 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	 */
 	protected OADataSource getDataSource(Class c) {
 		if (c != null) {
-			OADataSource ds = OADataSource.getDataSource(c);
+			OADataSource ds = OARuntime.datasource().get(c);
 			if (ds != null) {
 				return ds;
 			}
 		}
-		if (defaultDataSource == null) {
-			OADataSource[] dss = OADataSource.getDataSources();
-			if (dss != null && dss.length > 0) {
-				return dss[0];
-			}
+		for (OADataSource ds : OARuntime.datasource().getAll()) {
+			return ds;
 		}
-		return defaultDataSource;
+		return null;
 	}
 
-	/**
-	 * Default datasource used when no class-specific datasource is available.
-	 */
-	protected OADataSource defaultDataSource;
 
 	/**
 	 * Returns the default datasource.
@@ -415,7 +408,11 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
 		OAObject obj = (OAObject) og.objectsInternal().callObjectCacheGet(objectClass, origKey);
 		if (obj == null && og.syncInternal().isServer()) {
-			obj = (OAObject) OADataSource.getObject(objectClass, origKey);
+			
+			OADataSource ds = OARuntime.datasource().get(objectClass);
+			if (ds != null) {
+				obj = (OAObject) ds.getObject(objectClass, origKey);
+			}
 			if (obj != null) {
 				// object must have been GCd, use the original guid
 //qqqqqqqqqqqqqqqqqqqqqqqqq 20260121 WAS: 				

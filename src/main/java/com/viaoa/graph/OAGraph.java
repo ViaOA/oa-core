@@ -2,10 +2,16 @@ package com.viaoa.graph;
 
 import java.util.List;
 
+import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.api.*;
+import com.viaoa.graph.context.OAContext;
 import com.viaoa.hub.Hub;
+import com.viaoa.hub.HubAutoMatch;
 import com.viaoa.hub.HubFilter;
+import com.viaoa.hub.HubFlattened;
 import com.viaoa.hub.HubListener;
+import com.viaoa.hub.HubMerger;
+import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAGroupBy;
 import com.viaoa.object.OALeftJoin;
 import com.viaoa.object.OAObject;
@@ -66,7 +72,7 @@ import com.viaoa.util.OAFilter;
 public interface OAGraph {
 
 	/**
-	 * Returns the model package used to create this {@code OAGraph}.
+	 * Returns the model package name used to create this {@code OAGraph}.
 	 * <p>
 	 * The package identifies the set of model classes (OAObjects) that define
 	 * the blueprint executed by this graph.
@@ -76,7 +82,7 @@ public interface OAGraph {
 	 *
 	 * @return the fully qualified package name for this graph's model
 	 */
-	public Package getPackage();
+	public String getPackageName();
 	
 	/**
 	 * Returns the real-time synchronization operations for this graph.
@@ -345,58 +351,20 @@ public interface OAGraph {
      * @param orderBy the ordering expression, or {@code null} for default ordering
      * @param args argument values referenced by the {@code where} expression
      */
-    <T extends OAObject> Hub<T> select(Hub<T> hub, String where, String orderBy, Object... args);
+    void select(Hub<?> hubInto, String where, String orderBy, Object... args);
     
+    <T extends OAObject> OASelect<T> getSelect(Class<T> type, String where, String orderBy, Object... args);
+
     
     /**
-     * Finds the first object in the supplied Hub that matches the search criteria.
-     * <p>
-     * {@code find(...)} searches the objects currently available through the
-     * supplied {@link Hub} using the {@code where} expression and returns the
-     * first matching object.
-     * <p>
-     * Unlike {@link #select(Hub, String, String, Object...)}, this is a graph-based
-     * search that does not query external data sources. It evaluates the
-     * {@code where} expression against the live objects in the graph using
-     * object property paths.
-     * <p>
-     * This method is commonly used to locate a single matching object from an
-     * existing live Hub without creating a new Hub result set.
-     *
-     * @param <T> the model object type
-     * @param hub the Hub to search
-     * @param where the search criteria
-     * @param args argument values referenced by the {@code where} expression
-     * @return the first matching object, or {@code null} if no match is found
+     * OAFinder methods  
+     *  qqqqqqqqqq method sig changed, needs regenerated
+     * path is from F to T
+     * 
      */
-    <T extends OAObject> T findFirst(Hub<T> hub, String where, Object... args);
-    <T extends OAObject, T2 extends OAObject> T findFirst(T2 fromObject, String where, Object... args);
+    <F extends OAObject, T extends OAObject> OAFinder<F, T> finder(F obj, Class<T> toType, String path);
+    <F extends OAObject, T extends OAObject> OAFinder<F, T> finder(Hub<F> hub, Class<T> toType, String path, boolean bUseAll);
 
-
-    /**
-     * Finds all objects in the supplied Hub that match the search criteria.
-     * <p>
-     * {@code findAll(...)} searches the objects currently available through the
-     * supplied {@link Hub} using the {@code where} expression and returns all
-     * matching objects as a {@link java.util.List}.
-     * <p>
-     * Unlike {@link #select(Hub, String, String, Object...)}, this is a graph-based
-     * search that does not query external data sources. It evaluates the
-     * {@code where} expression against the live objects in the graph using
-     * object property paths.
-     * <p>
-     * This method is commonly used when multiple matching objects are needed from
-     * an existing live Hub without creating a new Hub result set.
-     *
-     * @param <T> the model object type
-     * @param hub the Hub to search
-     * @param where the search criteria
-     * @param args argument values referenced by the {@code where} expression
-     * @return a list of matching objects (empty if no matches are found)
-     */
-    <T extends OAObject> List<T> findAll(Hub<T> hub, String where, Object... args);
-    <T extends OAObject, T2 extends OAObject> List<T> findAll(T2 fromObject, String where, Object... args);
-    
 
     
     
@@ -492,26 +460,6 @@ public interface OAGraph {
     
     // =========== Hub shaping (runtime blueprint composition) =========== 
 
-    /**
-     * Creates a live Hub by merging objects reached through a property path from
-     * the supplied source Hub.
-     * <p>
-     * {@code merge(...)} traverses the supplied {@code path} starting from the
-     * objects in {@code hub} and collects the reachable objects into a new
-     * {@link Hub}. The returned Hub is a live graph structure that remains
-     * synchronized as source objects, relationships, and reachable objects change.
-     * <p>
-     * The {@code path} defines relationship traversal using model property names
-     * and may span multiple levels (for example, {@code "orders.lineItems"}).
-     * <p>
-     * This is commonly used to flatten related objects from a source Hub into a
-     * single live Hub for runtime wiring, UI use, or further graph operations.
-     *
-     * @param hub the source Hub
-     * @param path the relationship path used to collect objects into the merged Hub
-     * @return a new live Hub containing the merged objects reached through the path
-     */
-    Hub<?> merge(Hub<?> hub, String path);
 
     /**
      * Merges objects reached through a property path from the supplied source Hub
@@ -532,8 +480,19 @@ public interface OAGraph {
      * @param hubCombined the target Hub that receives and maintains the merged objects
      * @param path the relationship path used to collect objects into the target Hub
      */
-    void merge(Hub<?> hub, Hub<?> hubCombined, String path);
+    <F extends OAObject, T extends OAObject> HubMerger<F, T> merge(Hub<F> hub, Hub<T> hubCombined, String path);
 
+    
+    <F extends OAObject, T extends OAObject> HubMerger<F, T> merge(Hub<F> hubRoot, Hub<T> hubCombinedObjects,
+            String path, boolean bShareActiveObject, String selectOrder,
+            boolean bUseAll, boolean bIncludeRootHub, boolean bUseBackgroundThread);    
+    
+    
+    
+    
+    
+    
+    
     /**
      * Combines the contents of multiple Hubs into a single live master Hub.
      * <p>
@@ -554,25 +513,8 @@ public interface OAGraph {
     
     /**
      * Creates and returns a HubFilter that maintains a filtered view from one or
-     * more source Hubs into the supplied master Hub.
-     * <p>
-     * {@code filter(...)} sets up a live filtering structure for {@code hubMaster}
-     * using the supplied source Hubs. The returned {@link HubFilter} can then be
-     * configured with filtering rules to control which objects are included in the
-     * master Hub.
-     * <p>
-     * As source Hub contents change, the filtering structure keeps the master Hub
-     * synchronized according to the active filter rules.
-     * <p>
-     * Use this form when a reusable or configurable live filter is needed rather
-     * than a one-time selection.
-     *
-     * @param <T> the model object type contained by the Hubs
-     * @param hubMaster the target Hub that receives the filtered objects
-     * @param hubs the source Hubs used by the filter
-     * @return the live HubFilter used to define and maintain the filtered result
      */
-    <T extends OAObject> HubFilter<T> filter(Hub<T> hubMaster, final Hub<T>... hubs);
+    <T extends OAObject> HubFilter<T> filter(Hub<T> hubMaster, Hub<T> hubFiltered);
     
     
     /**
@@ -596,7 +538,7 @@ public interface OAGraph {
      * @param filter the filter used to determine which objects are included
      * @param dependentPropertyPaths optional property paths that affect filter results
      */
-    <T extends OAObject> void filter(Hub<T> hubMaster, Hub<T> hub, OAFilter<T> filter, String... dependentPropertyPaths);
+    <T extends OAObject> HubFilter<T> filter(Hub<T> hubMaster, Hub<T> hub, OAFilter<T> filter, String... dependentPropertyPaths);
 
     /**
      * Maintains a live match between objects in one Hub and objects in another Hub
@@ -620,8 +562,8 @@ public interface OAGraph {
      * @param property the reference property used for matching
      * @param hubMaster the source Hub providing the matching objects
      */
-    <T extends OAObject, T2 extends OAObject> void match(Hub<T> hub, String property, Hub<T2> hubMaster); // HubAutoMatch, see also: HubAutoAdd
-    
+    <T extends OAObject, T2 extends OAObject> HubAutoMatch<T,T2> match(Hub<T> hub, String property, Hub<T2> hubMaster);    
+
     /**
      * Creates a live copy of the supplied Hub.
      * <p>
@@ -640,7 +582,7 @@ public interface OAGraph {
      * @param hub the source Hub to copy
      * @return a new live Hub that mirrors the contents of the source Hub
      */
-    Hub<?> copy(Hub<?> hub);
+    <T extends OAObject> void copy(Hub<T> hubFrom, Hub<T> hubTo);
     
     /**
      * Creates a live copy of the supplied Hub with optional shared active object behavior.
@@ -666,7 +608,7 @@ public interface OAGraph {
      *        {@code false} if the copied Hub maintains its own active object
      * @return a new live Hub that mirrors the contents of the source Hub
      */
-    Hub<?> copy(Hub<?> hub, boolean shareActiveObject);
+    <T extends OAObject> void copy(Hub<T> hubFrom, Hub<T> hubTo, boolean shareActiveObject);
     
     /**
      * Creates and maintains a live grouped view from one Hub into another.
@@ -717,7 +659,7 @@ public interface OAGraph {
      * @param hubRoot the root Hub of the recursive structure
      * @param hubFlat the target Hub that receives and maintains the flattened objects
      */
-    <T extends OAObject> void flatten(Hub<T> hubRoot, Hub<T> hubFlat);
+    <T extends OAObject> HubFlattened<T> flatten(Hub<T> hubRoot, Hub<T> hubFlat);
     
     /**
      * Creates a live flattened view of a recursive Hub structure.
@@ -763,7 +705,7 @@ public interface OAGraph {
      * @param propertyPath the relationship path from primary objects to the joined objects
      * @param shareActiveObject
      */
-    <A extends OAObject, B extends OAObject> Hub<OALeftJoin<A, B>> leftJoin(Hub<A> hubA, Hub<B> hubB, String propertyPath, boolean shareActiveObject);
+    <A extends OAObject, B extends OAObject> Hub<OALeftJoin<A, B>> leftJoin(Hub<A> hubLeft, Hub<B> hub, String propertyPath, boolean shareActiveObject);
     
     
     // Software Blueprints from OA Model
@@ -788,5 +730,8 @@ public interface OAGraph {
     OAObjectInfo info(OAObject obj);
 
     OAObjectInfo info(Hub<?> hub);
+
+
+	OAContext context();
 }
 

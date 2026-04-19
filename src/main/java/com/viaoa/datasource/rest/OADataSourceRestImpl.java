@@ -105,15 +105,15 @@ public class OADataSourceRestImpl implements OADataSourceRestInterface {
 	 */
 	protected OADataSource getDataSource(Class c) {
 		if (c != null) {
-			OADataSource ds = OADataSource.getDataSource(c);
+			OADataSource ds = OARuntime.datasource().get(c);
 			if (ds != null) {
 				return ds;
 			}
 		}
 		if (defaultDataSource == null) {
-			OADataSource[] dss = OADataSource.getDataSources();
-			if (dss != null && dss.length > 0) {
-				defaultDataSource = dss[0];
+			for (OADataSource ds  : OARuntime.datasource().getAll()) {
+				defaultDataSource = ds;
+				break;
 			}
 		}
 		return defaultDataSource;
@@ -341,14 +341,6 @@ public class OADataSourceRestImpl implements OADataSourceRestInterface {
 			return -1;
 		}
 
-		/*
-			public abstract OADataSourceIterator select(Class selectClass,
-			String queryWhere, Object[] params, String queryOrder,
-			OAObject whereObject, String propertyFromWhereObject, String extraWhere,
-			int max, OAFilter filter, boolean bDirty);
-
-		*/
-
 		OAObject objWhere = null;
 		if (whereObjectClass != null && whereKey != null) {
 			OAObjectKey ok = OAJson.convertJsonSinglePartIdToObjectKey(whereObjectClass, whereKey);
@@ -357,13 +349,16 @@ public class OADataSourceRestImpl implements OADataSourceRestInterface {
 			
 			objWhere = (OAObject) og.objectsInternal().callObjectCacheGet(whereObjectClass, ok);
 			if (objWhere == null) {
-				objWhere = (OAObject) OADataSource.getObject(whereObjectClass, ok);
+				OADataSource dsx = OARuntime.datasource().get(whereObjectClass);
+				if (dsx != null) {
+					objWhere = (OAObject) dsx.getObject(whereObjectClass, ok);
+				}
 			}
 		}
 
-		OADataSourceIterator iterator = ds.select(	selectClass, queryWhere, params, queryOrderBy, objWhere, propertyFromWhereObject,
-													extraWhere,
-													max, null, bDirty);
+		OADataSourceIterator iterator = ds.select(selectClass, queryWhere, params, 
+			queryOrderBy, objWhere, propertyFromWhereObject,
+			extraWhere, max, null, bDirty);
 
 		int selectId = aiSelect.incrementAndGet();
 

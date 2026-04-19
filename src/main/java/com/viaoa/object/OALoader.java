@@ -27,8 +27,8 @@ import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.hub.*;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.*;
 
 /**
@@ -214,7 +214,7 @@ public class OALoader<F extends OAObject, T extends OAObject> {
         this.hubFrom = hubRoot;
         final OASiblingHelper<F> siblingHelper = new OASiblingHelper<F>(hubRoot);
         siblingHelper.add(OALoader.this.strPropertyPath);
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
         srvcOAThreadLocal.addSiblingHelper(siblingHelper); 
         try {
             for (F obj : hubRoot) {
@@ -250,7 +250,7 @@ public class OALoader<F extends OAObject, T extends OAObject> {
 
         final OASiblingHelper<F> siblingHelper = new OASiblingHelper<F>(this.hubFrom);
         siblingHelper.add(OALoader.this.strPropertyPath);
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
         srvcOAThreadLocal.addSiblingHelper(siblingHelper); 
         try {
             for ( ;!bStop && (sel.hasMore() || hubFrom.size()>0); ) {
@@ -291,7 +291,7 @@ public class OALoader<F extends OAObject, T extends OAObject> {
 
         final OASiblingHelper<F> siblingHelper = new OASiblingHelper<F>(this.hubFrom);
         siblingHelper.add(OALoader.this.strPropertyPath);
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
         srvcOAThreadLocal.addSiblingHelper(siblingHelper); 
         try {
             _load(objectRoot);
@@ -399,7 +399,7 @@ public class OALoader<F extends OAObject, T extends OAObject> {
                             if (bStop) return;
                             final OASiblingHelper<F> siblingHelper = new OASiblingHelper<F>(OALoader.this.hubFrom);
                             siblingHelper.add(OALoader.this.strPropertyPath);
-                			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+                			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
                             srvcOAThreadLocal.addSiblingHelper(siblingHelper); 
                             try {
                                 Object objx = recursiveLinkInfos[pos - 1].getValue(obj);
@@ -442,7 +442,7 @@ public class OALoader<F extends OAObject, T extends OAObject> {
 
                             final OASiblingHelper<F> siblingHelper = new OASiblingHelper<F>(OALoader.this.hubFrom);
                             siblingHelper.add(OALoader.this.strPropertyPath);
-                			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+                			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
                             srvcOAThreadLocal.addSiblingHelper(siblingHelper); 
                             try {
                                 Object objx = linkInfos[pos].getValue(obj);

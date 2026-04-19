@@ -138,7 +138,7 @@ public class OATriggerMethodListener implements OATriggerListener {
         }
         
         
-        OADataSource ds = OADataSource.getDataSource(clazz);
+		OADataSource ds = OARuntime.datasource().get(clazz);
         
         if (bOnlyUseLoadedData || ds == null || !ds.supportsStorage()) {
         	og.objectsInternal().callObjectCacheVisit(clazz, new OACallback() {

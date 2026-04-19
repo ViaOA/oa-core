@@ -37,8 +37,8 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAPerformance;
 import com.viaoa.object.OASiblingHelper;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OACompare;
 import com.viaoa.util.OAPropertyPath;
@@ -566,7 +566,7 @@ public class HubListenerTree {
 		if (hl == null) {
 			return;
 		}
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		try {
 			srvcOAThreadLocal.setHubListenerTree(true);
 			addListener(hl, property, bActiveObjectOnly); // this will check for dependent calcProps
@@ -586,7 +586,7 @@ public class HubListenerTree {
 	 */
 	private void addListenerMain(HubListener hl, final String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly,
 			final boolean bAllowBackgroundThread) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		try {
 			srvcOAThreadLocal.setHubListenerTree(true);
 			this.addListener(hl);
@@ -606,7 +606,7 @@ public class HubListenerTree {
 			final String[] dependentPropertyNames, final boolean bActiveObjectOnly, final boolean bAllowBackgroundThread) {
 		//LOG.finer("Hub="+root.hub+", property="+origPropertyName);
 
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		// 20120826 check for endless loops
 		if (srvcOAThreadLocal.getHubListenerTreeCount() > 25) {
 			// need to bail out, before stackoverflow

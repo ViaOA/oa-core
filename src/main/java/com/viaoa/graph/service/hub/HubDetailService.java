@@ -697,7 +697,7 @@ public abstract class HubDetailService {
 			return thisHub;
 		}
 
-		OAFilter<Hub<T>> filter = new OAFilter<>() {
+		OAFilter<Hub<T>> filter = new OAFilter<Hub<T>>() {
 			@Override
 			public boolean isUsed(Hub<T> h) {
 				if (faHub.getHubDataMaster(h).getMasterHub() != null) {
@@ -728,7 +728,7 @@ public abstract class HubDetailService {
 			return thisHub;
 		}
 
-		OAFilter<Hub<T>> filter = new OAFilter<>() {
+		OAFilter<Hub<T>> filter = new OAFilter<Hub<T>>() {
 			@Override
 			public boolean isUsed(Hub<T> h) {
 				if (faHub.getHubDataMaster(h).getMasterHub() != null) {

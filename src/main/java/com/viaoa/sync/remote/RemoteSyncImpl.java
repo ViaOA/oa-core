@@ -335,7 +335,8 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		OAObject obj = (OAObject) og.objectsInternal().callObjectCacheGet(objectClass, origKey);
 
 		if (obj == null && og.syncInternal().isServer()) {
-			obj = (OAObject) OADataSource.getObject(objectClass, origKey);
+			OADataSource ds = OARuntime.datasource().get(objectClass);
+			if (ds != null) obj = (OAObject) ds.getObject(objectClass, origKey);
 			if (obj != null) {
 				// object must have been GCd, use the original guid
 //qqqqqqqqqqqqqqqqqqqqqqqqqq WAS: 20260121				

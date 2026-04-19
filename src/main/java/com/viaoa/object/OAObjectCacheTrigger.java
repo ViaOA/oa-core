@@ -23,9 +23,9 @@ import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
+import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAFilter;
 
@@ -432,7 +432,7 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
      * @param obj the object to trigger on
      */
     private void callOnTrigger(T obj) {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
         try {
             if (bServerSideOnly) { 
             	srvcOARemoteThread.sendMessages(true);

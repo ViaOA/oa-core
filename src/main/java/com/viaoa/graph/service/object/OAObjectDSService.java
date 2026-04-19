@@ -10,6 +10,7 @@ import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
+import com.viaoa.runtime.OARuntime;
 
 public abstract class OAObjectDSService {
 	private static final Logger LOG = Logger.getLogger(OAObjectDSService.class.getName());
@@ -118,11 +119,11 @@ public abstract class OAObjectDSService {
 	 */
 	public OADataSource getDataSource(Object obj) {
 		if (obj == null) return null;
-		return OADataSource.getDataSource(obj.getClass());
+		return OARuntime.datasource().get(obj.getClass());
 	}
 
 	public OADataSource getDataSource(Class<?> c) {
-		return OADataSource.getDataSource(c);
+		return OARuntime.datasource().get(c);
 	}
 	
 	/**
@@ -133,7 +134,7 @@ public abstract class OAObjectDSService {
 	 * @return {@code true} if a DataSource is registered; otherwise {@code false}
 	 */
 	protected static boolean hasDataSource(OAObject oaObj) {
-		return OADataSource.getDataSource(oaObj.getClass()) != null;
+		return OARuntime.datasource().get(oaObj.getClass()) != null;
 	}
 
 	/**
@@ -143,7 +144,7 @@ public abstract class OAObjectDSService {
 	 * @return {@code true} if a DataSource is registered; otherwise {@code false}
 	 */
 	public static boolean hasDataSource(Class<? extends OAObject> c) {
-		return OADataSource.getDataSource(c) != null;
+		return OARuntime.datasource().get(c) != null;
 	}
 	
 	/**
@@ -155,7 +156,7 @@ public abstract class OAObjectDSService {
 	 *         otherwise {@code false}
 	 */
 	public boolean supportsStorage(Class<? extends OAObject> clazz) {
-		OADataSource ds = OADataSource.getDataSource(clazz);
+		OADataSource ds = OARuntime.datasource().get(clazz);
 		return (ds != null && ds.supportsStorage());
 	}
 
@@ -173,7 +174,7 @@ public abstract class OAObjectDSService {
 		if (clazz == null || key == null) {
 			return null;
 		}
-		OADataSource ds = OADataSource.getDataSource(clazz);
+		OADataSource ds = OARuntime.datasource().get(clazz);
 		OAObject oaObj = null;
 		if (ds != null) {
 			if (!(key instanceof OAObjectKey)) {
@@ -196,7 +197,7 @@ public abstract class OAObjectDSService {
 			return;
 		}
 		Class<? extends OAObject> clazz = obj.getClass();
-		OADataSource ds = OADataSource.getDataSource(clazz);
+		OADataSource ds = OARuntime.datasource().get(clazz);
 		if (ds != null) {
 			OAObjectKey key = callKeyGetKey(obj);
 			OAObjectInfo oi = callInfoGetObjectInfo(clazz);
@@ -213,7 +214,9 @@ public abstract class OAObjectDSService {
 	 * @return the retrieved object, or {@code null} if none exists
 	 */
 	protected <T extends OAObject> T  getObject(Class<T> clazz, OAObjectKey key) {
-		return OADataSource.getObject(clazz, key);
+		OADataSource ds = OARuntime.datasource().get(clazz);
+		if (ds == null) return null;
+		return ds.getObject(clazz, key);
 	}
 
 	/**
@@ -226,10 +229,8 @@ public abstract class OAObjectDSService {
 	 * @return the retrieved object, or {@code null} if no DataSource exists
 	 */
 	public <T extends OAObject> T getObject(OAObjectInfo oi, Class<T> clazz, OAObjectKey key) {
-		OADataSource ds = OADataSource.getDataSource(clazz);
-		if (ds == null) {
-			return null;
-		}
+		OADataSource ds = OARuntime.datasource().get(clazz);
+		if (ds == null) return null;
 		return ds.getObject(oi, clazz, key, false);
 	}
 
@@ -242,12 +243,11 @@ public abstract class OAObjectDSService {
 	 * @return the blob's value, or {@code null} if unavailable
 	 */
 	public Object getBlob(OAObject obj, String propName) {
-		//qqqqqqq method was protected
 		if (obj == null || propName == null) {
 			return null;
 		}
 		Class<? extends OAObject> clazz = obj.getClass();
-		OADataSource ds = OADataSource.getDataSource(clazz);
+		OADataSource ds = OARuntime.datasource().get(clazz);
 		if (ds == null) return null;
 		return ds.getPropertyBlobValue(obj, propName);
 	}
@@ -259,7 +259,6 @@ public abstract class OAObjectDSService {
 	 * @param oaObj the object to save
 	 */
 	public void save(OAObject oaObj) {
-		//qqqqqqq method was protected
 		OADataSource dataSource = getDataSource(oaObj);
 		if (dataSource != null) {
 			if (oaObj.getNew()) {
@@ -278,7 +277,6 @@ public abstract class OAObjectDSService {
 	 * @param oaObj the object to save without references
 	 */
 	public void saveWithoutReferences(OAObject oaObj) {
-		//qqqqqqq method was protected
 		OADataSource dataSource = getDataSource(oaObj);
 		if (dataSource != null) {
 			if (oaObj.getNew()) {
@@ -337,7 +335,7 @@ public abstract class OAObjectDSService {
 		if (obj == null) {
 			return;
 		}
-		OADataSource ds = OADataSource.getDataSource(obj.getClass());
+		OADataSource ds = OARuntime.datasource().get(obj.getClass());
 		if (ds != null) {
 			ds.delete(obj);
 		}
@@ -352,7 +350,7 @@ public abstract class OAObjectDSService {
 	 *         DataSource exists; otherwise {@code false}
 	 */
 	public boolean allowIdChange(Class<? extends OAObject> c) {
-		OADataSource ds = OADataSource.getDataSource(c);
+		OADataSource ds = OARuntime.datasource().get(c);
 		return (ds == null || ds.getAllowIdChange());
 	}
 
@@ -365,7 +363,7 @@ public abstract class OAObjectDSService {
 	 * @return the object retrieved from the DataSource, or {@code null}
 	 */
 	public Object getObject(OAObject oaObj) {
-		OADataSource ds = OADataSource.getDataSource(oaObj.getClass());
+		OADataSource ds = OARuntime.datasource().get(oaObj.getClass());
 		if (ds == null) return null;
 		// todo, check if needed:  if (ds == null || ds.isAssigningId(oaObj)) return null;  // datasource could be assigning the Id to a unique value
 		return ds.getObject(oaObj.getClass(), callKeyGetKey(oaObj));

@@ -43,8 +43,8 @@ import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPerformance;
 import com.viaoa.object.OASiblingHelper;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.transaction.OATransaction;
 import com.viaoa.util.ClassModifier;
 import com.viaoa.util.OAConv;
@@ -613,7 +613,7 @@ public class ResultSetIterator implements OADataSourceIterator {
 			if (siblingHelper == null) {
 				siblingHelper = new OASiblingHelper(this.hubReadAhead);
 			}
-			OAThreadLocalService srvcThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();
+			OAThreadLocalService srvcThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
 			boolean bx = srvcThreadLocal.addSiblingHelper(siblingHelper);
 			try {
 				obj.afterLoad();
@@ -665,7 +665,7 @@ public class ResultSetIterator implements OADataSourceIterator {
 		OAObject oaObject = null;
 		boolean bLoadedObject = false;
 		boolean bSetChangedAndNew = false;
-		final OAThreadLocalService srvcThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();
+		final OAThreadLocalService srvcThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
 		try {
 			ResultSet resultSet = rs;
 			if (query2 != null) { // need to do a seperate select to get data for each row

@@ -24,8 +24,8 @@ import com.viaoa.repl.remote.RemoteClientInterface;
 import com.viaoa.repl.remote.RemoteMasterInterface;
 import com.viaoa.repl.remote.RemoteMasterRegisterInterface;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.sync.OASyncServer;
 import com.viaoa.util.OADateTime;
 import com.viaoa.util.OAFile;
@@ -70,7 +70,7 @@ public class OAReplicationMaster extends OAReplicationBase {
     	final RemoteMasterRegisterInterface remoteMasterRegister = new RemoteMasterRegisterInterface() {
 			@Override
 			public RemoteMasterInterface registerClient(String guid, RemoteClientInterface remoteClient, long lastSentMasterSeq, long lastSentClientSeq) {
-				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();
+				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
 				RequestInfo ri = srvcOAThreadLocal.getRemoteRequestInfo();
 				if (ri == null) throw new RuntimeException("RequestInfo is null");
 				
@@ -214,6 +214,10 @@ public class OAReplicationMaster extends OAReplicationBase {
 			public boolean getEnabled() {
 				return bEnabled;
 			}
+			@Override
+			public void setLastReceivedMasterSeq(long seq) {
+				lastSentMasterSeq = seq;
+			}
 		}; 
  
 		void process() {
@@ -232,7 +236,7 @@ public class OAReplicationMaster extends OAReplicationBase {
 
 			
 			// invoke client changes on master.
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
 			srvcOAThreadLocal.setReplicationSource(this.guid);
 			for (int i=0; ; i++) {
 				try {

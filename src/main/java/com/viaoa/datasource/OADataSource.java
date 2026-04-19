@@ -15,15 +15,14 @@
  */
 package com.viaoa.datasource;
 
+import java.util.List;
 import java.util.Vector;
 
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.runtime.OADataSourceImpl;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.datasource.OADataSourceService;
 import com.viaoa.transaction.OATransaction;
 import com.viaoa.util.OAFilter;
 
@@ -91,39 +90,6 @@ public abstract class OADataSource implements OADataSourceInterface {
 	/** If true, write operations are silently ignored. */
 	private boolean bIgnoreWrites;
 
-	/**
-	 * Returns all registered DataSources. Results are cached in {@link #dsAll}
-	 * until the registration changes.
-	 *
-	 * @return array of DataSource instances
-	 */
-	public static OADataSource[] getDataSources() {
-		return OARuntime.datasources().getDataSources();
-	}
-
-	/**
-	 * Returns the first enabled DataSource that supports the given class.
-	 *
-	 * @param clazz class to evaluate
-	 * @return supporting DataSource or null
-	 */
-	public static OADataSource getDataSource(Class clazz) {
-		return OARuntime.datasources().getDataSource(clazz);
-	}
-
-	/**
-	 * Returns a DataSource that supports the class and passes the filter.
-	 * A DataSource marked as {@code bLast=true} is considered only after others.
-	 *
-	 * @param clazz class to evaluate
-	 * @param filter optional filter used by the DataSource
-	 * @return matching DataSource or null
-	 */
-	public static OADataSource getDataSource(Class clazz, OAFilter filter) {
-		OADataSourceImpl dsi = (OADataSourceImpl) OARuntime.datasources();
-		OADataSourceService srvcOADataSource = dsi.getDataSourceService(); 
-		return srvcOADataSource.getDataSource(clazz, filter);
-	}
 
 	/**
 	 * Sets a GUID prefix used when creating sequence-assigned object keys.
@@ -159,6 +125,8 @@ public abstract class OADataSource implements OADataSourceInterface {
 		this.bEnabled = b;
 	}
 
+	
+	
 	/**
 	 * Retrieves an object using a String ID value.
 	 *
@@ -166,28 +134,28 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * @param id String key value
 	 * @return matching object or null
 	 */
-	public static Object getObject(Class clazz, String id) {
+	public <T extends OAObject> T getObject(Class<T> clazz, String id) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
 		OAObjectKey key = og.objectsInternal().callObjectKeyCreateObjectKey(clazz, (Object) id);
 		return getObject(clazz, key);
 	}
 
 	/** Retrieves an object using an int ID value. */
-	public static Object getObject(Class clazz, int id) {
+	public <T extends OAObject> T getObject(Class<T> clazz, int id) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
 		OAObjectKey key = og.objectsInternal().callObjectKeyCreateObjectKey(clazz, (Object) id);
 		return getObject(clazz, key);
 	}
 
 	/** Retrieves an object using a long ID value. */
-	public static Object getObject(Class clazz, long id) {
+	public <T extends OAObject> T getObject(Class<T> clazz, long id) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
 		OAObjectKey key = og.objectsInternal().callObjectKeyCreateObjectKey(clazz, (Object) id);
 		return getObject(clazz, key);
 	}
 
 	/** Retrieves an object using an arbitrary ID value. */
-	public static Object getObject(Class clazz, Object id) {
+	public <T extends OAObject> T getObject(Class<T> clazz, Object id) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
 		OAObjectKey key = og.objectsInternal().callObjectKeyCreateObjectKey(clazz, id);
 		return getObject(clazz, key);
@@ -196,7 +164,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 	/**
 	 * Retrieves an object using a composite key composed of the given ID array.
 	 */
-	public static <T extends OAObject> T getObject(Class<T> clazz, Object[] ids) {
+	public <T extends OAObject> T getObject(Class<T> clazz, Object[] ids) {
 		OAObjectKey key = new OAObjectKey(ids);
 		return getObject(clazz, key);
 	}
@@ -209,19 +177,15 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * @param key object key
 	 * @return matching object or null
 	 */
-	public static <T extends OAObject> T getObject(Class<T> clazz, OAObjectKey key) {
+	public <T extends OAObject> T getObject(Class<T> clazz, OAObjectKey key) {
 		if (clazz == null || key == null) {
 			return null;
 		}
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
 		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(clazz);
-		OADataSource ds = getDataSource(clazz);
-		if (ds == null) {
-			return null;
-		}
-		return ds.getObject(oi, clazz, key, false);
+		return getObject(oi, clazz, key, false);
 	}
-
+	
 	/**
 	 * Resolves an object using metadata from {@link OAObjectInfo} and a generated
 	 * property-path query. Uses {@link #select} to perform the retrieval.
@@ -237,10 +201,6 @@ public abstract class OADataSource implements OADataSourceInterface {
 		if (clazz == null || key == null || oi == null) {
 			return null;
 		}
-		OADataSource ds = getDataSource(clazz);
-		if (ds == null) {
-			return null;
-		}
 
 		String[] props = oi.getIdProperties();
 
@@ -253,7 +213,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 		}
 
 		T obj = null;
-		OADataSourceIterator<T> it = ds.select(clazz, query, key.getObjectIds(), "", bDirty);
+		OADataSourceIterator<T> it = select(clazz, query, key.getObjectIds(), "", bDirty);
 		if (it != null && it.hasNext()) {
 			obj = it.next();
 			it.remove();
@@ -279,22 +239,6 @@ public abstract class OADataSource implements OADataSourceInterface {
 		return true;
 	}
 
-	/**
-	 * Builds a Vector containing formatted information for all registered
-	 * DataSources.
-	 *
-	 * @return vector containing DataSource info
-	 */
-	public static Vector<String> getInfo() {
-		Vector<String> vec = new Vector<>(20, 20);
-		vec.addElement("OADataSource Info --- ");
-		OADataSource[] dss = getDataSources();
-		for (int i = 0; i < dss.length; i++) {
-			vec.addElement("OADataSource #" + i);
-			dss[i].getInfo(vec);
-		}
-		return vec;
-	}
 
 	/**
 	 * Adds this DataSource's information to the provided Vector.
@@ -302,7 +246,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 *
 	 * @param vec destination vector
 	 */
-	public void getInfo(Vector vec) {
+	public void getInfo(List<String> al) {
 	}
 
 	//-------------------------------------------------------
@@ -323,72 +267,8 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * @see #OADataSource(boolean)
 	 */
 	public OADataSource() {
-		this(true);
 	}
 
-	/**
-	 * Constructs a DataSource with optional registration.
-	 *
-	 * @param bRegister if true, register this DataSource in the global list
-	 */
-	public OADataSource(boolean bRegister) {
-		if (bRegister) {
-			OADataSourceImpl dsi = (OADataSourceImpl) OARuntime.datasources();
-			OADataSourceService srvcOADataSource = dsi.getDataSourceService(); 
-			srvcOADataSource.register(this);
-		}
-	}
-
-
-	/**
-	 * Returns the global change counter, incremented when DataSource registration
-	 * changes.
-	 */
-	public static int getChangeCounter() {
-		OADataSourceImpl dsi = (OADataSourceImpl) OARuntime.datasources();
-		OADataSourceService srvcOADataSource = dsi.getDataSourceService(); 
-		return srvcOADataSource.getChangeCounter();
-	}
-
-	/**
-	 * Finalizer that closes this DataSource before garbage collection.
-	 */
-	protected void finalize() throws Throwable {
-		close();
-		super.finalize();
-	}
-
-	/** Closes all registered data sources and clears the global list. */
-	public static void closeAll() {
-		OADataSourceImpl dsi = (OADataSourceImpl) OARuntime.datasources();
-		OADataSourceService srvcOADataSource = dsi.getDataSourceService(); 
-		srvcOADataSource.closeAll();
-	}
-
-	/** Closes this DataSource and removes it from the global list. */
-	@Override
-	public void close() {
-		removeFromList();
-	}
-
-	/** Removes this DataSource from the global registry. */
-	public void removeFromList() {
-		OADataSourceImpl dsi = (OADataSourceImpl) OARuntime.datasources();
-		OADataSourceService srvcOADataSource = dsi.getDataSourceService(); 
-		srvcOADataSource.removeFromList(this);
-	}
-
-	/**
-	 * Re-adds this DataSource at the given position after it has been closed.
-	 *
-	 * @param pos insertion index
-	 */
-	@Override
-	public void reopen(int pos) {
-		OADataSourceImpl dsi = (OADataSourceImpl) OARuntime.datasources();
-		OADataSourceService srvcOADataSource = dsi.getDataSourceService(); 
-		srvcOADataSource.reopen(pos, this);
-	}
 
 	/**
 	 * Marks this DataSource to be used last in lookup operations.
@@ -403,28 +283,6 @@ public abstract class OADataSource implements OADataSourceInterface {
 		return bLast;
 	}
 	
-	/**
-	 * Moves this DataSource to the specified position in the global list.
-	 *
-	 * @param pos target index
-	 */
-	public void setPosition(int pos) {
-		OADataSourceImpl dsi = (OADataSourceImpl) OARuntime.datasources();
-		OADataSourceService srvcOADataSource = dsi.getDataSourceService(); 
-		srvcOADataSource.setPosition(pos, this);
-	}
-
-	/**
-	 * Returns this DataSource's index in the global list.
-	 *
-	 * @return position or -1 if not registered
-	 */
-	public int getPosition() {
-		OADataSourceImpl dsi = (OADataSourceImpl) OARuntime.datasources();
-		OADataSourceService srvcOADataSource = dsi.getDataSourceService(); 
-		return srvcOADataSource.getPosition(this);
-	}
-
 	/** Sets the name of this DataSource. */
 	public void setName(String name) {
 		this.name = name;
@@ -435,16 +293,6 @@ public abstract class OADataSource implements OADataSourceInterface {
 		return name;
 	}
 
-	/**
-	 * Returns the name if defined, otherwise the default object representation.
-	 */
-	public String toString() {
-		if (name == null) {
-			return super.toString();
-		} else {
-			return name;
-		}
-	}
 
 	/**
 	 * Returns whether this DataSource supports persistence for the given class.
@@ -1326,4 +1174,11 @@ public abstract class OADataSource implements OADataSourceInterface {
 		return bIgnoreWrites;
 	}
 
+	@Override
+	public void close() {
+	}
+
+	@Override
+	public void reopen(int pos) {
+	}
 }

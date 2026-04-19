@@ -39,10 +39,10 @@ import com.viaoa.remote.info.BindInfo;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.remote.multiplexer.io.RemoteObjectInputStream;
 import com.viaoa.remote.multiplexer.io.RemoteObjectOutputStream;
+import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OARemoteThreadService;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.OACircularQueue;
 import com.viaoa.util.OACompressWrapper;
 import com.viaoa.util.OAReflect;
@@ -509,7 +509,7 @@ public class OARemoteMultiplexerServer {
                 resp = ri.response;
             }
 
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
             try {
                 srvcOAThreadLocal.addObjectSerializer(session.oaObjectSerializer);
                 oos.writeObject(resp);
@@ -840,7 +840,7 @@ public class OARemoteMultiplexerServer {
             oos.writeAsciiString(ri.bind.name);
             oos.writeAsciiString(ri.methodInfo.methodNameSignature);
             
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
             try {
                 srvcOAThreadLocal.addObjectSerializer(session.oaObjectSerializer);
                 oos.writeObject(ri.args);
@@ -1268,7 +1268,7 @@ public class OARemoteMultiplexerServer {
         ri.isRemoteThread = (Thread.currentThread() instanceof OARemoteThread);
 
       //qqqqqqqqqqqqvvvvvvvvvv 20260403           
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
    		ri.replicationSource = srvcOAThreadLocal.getReplicationSource(); 
         
         
@@ -1584,8 +1584,8 @@ public class OARemoteMultiplexerServer {
         
         processCtoSArguments(ri, session);
         
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
         try {
             srvcOAThreadLocal.setRemoteRequestInfo(ri);
             if (!ri.bind.isBroadcast) {
@@ -2216,7 +2216,7 @@ public class OARemoteMultiplexerServer {
          * @throws Exception if writing to the queue socket fails
          */
         public void writeOnQueueSocket(final RequestInfo ri) throws Exception {
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
             try {
                 srvcOAThreadLocal.addObjectSerializer(oaObjectSerializer);
                 _writeOnQueueSocketX(ri);
@@ -2342,7 +2342,7 @@ public class OARemoteMultiplexerServer {
             
             hmAsyncQueueSocket.put(asyncQueueName, vsi);
 
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
             try {
                 srvcOAThreadLocal.addObjectSerializer(oaObjectSerializer);
                 _writeQueueMessages(cque, vsi, startQuePos);

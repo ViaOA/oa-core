@@ -41,10 +41,10 @@ import com.viaoa.remote.info.BindInfo;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.remote.multiplexer.io.RemoteObjectInputStream;
 import com.viaoa.remote.multiplexer.io.RemoteObjectOutputStream;
+import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OARemoteThreadService;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.OACompressWrapper;
 import com.viaoa.util.OAPool;
 import com.viaoa.util.OAReflect;
@@ -568,7 +568,7 @@ public class OARemoteMultiplexerClient {
 					// 20160122 queue thread will wait for OARemoteThreadDelegate.startNextThread()
 					//    to call srvcOAThreadLocal.notifyWaitingThread(), and wake up que thread waiting on ri lock
 					if (ri.bind.isOASync) {
-						final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+						final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 						srvcOAThreadLocal.setNotifyObject(ri);
 					}
 				}
@@ -659,7 +659,7 @@ public class OARemoteMultiplexerClient {
 						ri.response = (ri.args[0] == ri.object);
 					}
 				} else {
-					final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+					final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 					try {
 						srvcOAThreadLocal.setRemoteRequestInfo(ri);
 						ri.response = ri.method.invoke(stuntObject, ri.args);
@@ -684,7 +684,7 @@ public class OARemoteMultiplexerClient {
 		}
 
 		// check if remoteThread, and if it has already processed it's msg before calling remote method
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		if (!srvcOARemoteThread.isSafeToCallRemoteMethod()) {
 			if (errorCnt++ < 25 || (errorCnt % 100 == 0)) {
 				//Exception e = new Exception("isSafeToCallRemoteMethod is false");
@@ -1988,8 +1988,8 @@ public class OARemoteMultiplexerClient {
 			}
 		}
 
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		try {
 			srvcOAThreadLocal.setRemoteRequestInfo(ri);
 

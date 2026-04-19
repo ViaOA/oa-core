@@ -34,10 +34,10 @@ import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.pojo.OAObjectPojoLoader;
 import com.viaoa.pojo.Pojo;
+import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OARemoteThreadService;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OACompare;
 import com.viaoa.util.OAPropertyPath;
@@ -218,12 +218,6 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 */
 	int weakReferenceable = -1; // flag set/used by OAObjectInfoDelegate.isWeakReferenceable -1=not checked, 0=false, 1=true
 
-	/**
-	 * Cached flag indicating whether this type supports persistent storage through
-	 * an OADataSource. Values mirror a tri-state:
-	 * -1 = not yet evaluated, 0 = does not support storage, 1 = supports storage.
-	 */
-	private int supportsStorage = -1; // flag set/used by caching  -1:not checked, 0:false, 1:true
 
 	/**
 	 * Indicates whether recursive-link metadata has been evaluated for this type.
@@ -1262,11 +1256,6 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return og.objectsInternal().callObjectInfoGetRecursiveLinkInfo(this, type);
 	}
 
-	/**
-	 * Stores the datasource change-counter value used to determine when
-	 * storage-support metadata must be reevaluated.
-	 */
-	private int lastDataSourceChangeCnter;
 
 	/**
 	 * Determines whether objects of this type support persistent
@@ -1275,15 +1264,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 * @return true if storage is supported.
 	 */
 	public boolean getSupportsStorage() {
-		if (supportsStorage == -1 || lastDataSourceChangeCnter != OADataSource.getChangeCounter()) {
-			supportsStorage = -1;
-			lastDataSourceChangeCnter = OADataSource.getChangeCounter();
-			OADataSource ds = OADataSource.getDataSource(thisClass);
-			if (ds != null) {
-				supportsStorage = ds.supportsStorage() ? 1 : 0;
-			}
-		}
-		return supportsStorage == 1;
+		OADataSource ds = OARuntime.datasource().get(thisClass);
+		return ds != null && ds.supportsStorage();
 	}
 
 	/**
@@ -1653,7 +1635,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 			return;
 		}
 
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		final int x = srvcOAThreadLocal.getRecursiveTriggerCount();
 		if (x > 25) {
 			throw new RuntimeException("onChange for Triggers has caused a loop over 25");
@@ -1750,7 +1732,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 				b = true;
 			} else if (ti.bReverseHasMany) {
 				if (og.syncInternal().isServer()) {
-					OADataSource ds = OADataSource.getDataSource(thisClass);
+					OADataSource ds = OARuntime.datasource().get(thisClass);
 					b = (ds != null && ds.supportsStorage()); // might have to go to ds
 				} else {
 					b = true; // if client
@@ -1758,7 +1740,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 			}
 		}
 
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		if ((b || ti.trigger.bUseBackgroundThread) && !srvcOARemoteThread.isRemoteThread()) {
 			OATriggerDelegate.runTrigger(new Runnable() {
 				@Override
@@ -1855,7 +1837,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(fromObject);
 			boolean b = false;
 			if (og.syncInternal().isServer()) {
-				OADataSource ds = OADataSource.getDataSource(thisClass);
+				OADataSource ds = OARuntime.datasource().get(thisClass);
 				b = (ds == null || !ds.supportsStorage()); // server must have all data loaded
 			}
 

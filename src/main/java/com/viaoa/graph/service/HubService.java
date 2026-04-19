@@ -8,7 +8,6 @@ import java.util.Comparator;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OASelect;
-import com.viaoa.graph.api.HubsOps;
 import com.viaoa.graph.api.internal.HubsInternalOps;
 import com.viaoa.graph.service.hub.*;
 import com.viaoa.graph.service.hub.HubStatusService.HubCurrentStateEnum;
@@ -23,7 +22,7 @@ import com.viaoa.object.OAObject;
 import com.viaoa.util.OAFilter;
 import com.viaoa.xml.OAXMLWriter;
 
-public class HubService extends HubParentService implements HubsOps, HubsInternalOps {
+public class HubService extends HubParentService implements HubsInternalOps {
 	private final Logger LOG = Logger.getLogger(HubService.class.getName());
 
 	// AddRemove =========================

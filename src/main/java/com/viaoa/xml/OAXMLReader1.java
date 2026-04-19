@@ -46,8 +46,8 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.Base64;
 import com.viaoa.util.OACompare;
 import com.viaoa.util.OAConverter;
@@ -822,13 +822,14 @@ public class OAXMLReader1 extends DefaultHandler {
 				if (matchProps == null || matchProps.length == 0) {
 					if (object == null && ids != null && ids.length > 0) {
 						if (object == null) {
-							object = (OAObject) OADataSource.getObject(c, key);
+							OADataSource ds = OARuntime.datasource().get(c);
+							if (ds != null) object = ds.getObject(c, key);
 						}
 					}
 				}
 
 				if (object == null) {
-					final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+					final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 					try {
 						srvcOAThreadLocal.setLoading(true);
 						object = createNewObject(c);
@@ -1025,7 +1026,7 @@ public class OAXMLReader1 extends DefaultHandler {
 		try {
 			if (object.getNew()) {
 				bLoadingObject = true;
-				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(object);
 				if (og.objectsInternal().callObjectCSIsServer(object)) {
@@ -1183,7 +1184,7 @@ public class OAXMLReader1 extends DefaultHandler {
 				if (bResult) {
 					object.afterLoad();
 				}
-				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 				srvcOAThreadLocal.setLoading(false);
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(object);
 				if (og.objectsInternal().callObjectCSIsServer(object)) {

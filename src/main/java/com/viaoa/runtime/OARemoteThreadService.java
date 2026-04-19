@@ -1,19 +1,14 @@
-package com.viaoa.runtime.thread;
+package com.viaoa.runtime;
 
 import java.util.logging.Logger;
 
 import com.viaoa.remote.OARemoteThread;
 import com.viaoa.remote.info.RequestInfo;
-import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
 
-public class OARemoteThreadService {
+public abstract class OARemoteThreadService {
 	private Logger LOG = Logger.getLogger(OARemoteThreadService.class.getName());
 
-	// private final OARuntime runtime;
-
 	public OARemoteThreadService() {
-		// this.runtime = runtime;
 	}
 
 	/**
@@ -72,9 +67,10 @@ public class OARemoteThreadService {
             if (rt.startedNextThread) return;
             rt.startNextThread();
         }
-        OAThreadImpl ti = (OAThreadImpl) OARuntime.thread();
-        ti.getThreadLocalService().notifyWaitingThread();
+        callThreadLocalNotifyWaitingThread();
     }
+    
+    
     
     /**
      * Returns whether the current thread has already signaled that another
@@ -180,4 +176,5 @@ public class OARemoteThreadService {
         return true;
     }
 	
+    protected abstract void callThreadLocalNotifyWaitingThread();
 }

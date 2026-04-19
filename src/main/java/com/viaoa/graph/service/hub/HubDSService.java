@@ -5,6 +5,7 @@ import java.util.logging.Logger;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
+import com.viaoa.runtime.OARuntime;
 
 public abstract class HubDSService {
 	private final Logger LOG = Logger.getLogger(HubDSService.class.getName());
@@ -24,7 +25,7 @@ public abstract class HubDSService {
 	 * @return the data source for the class, or null if none exists
 	 */
 	public OADataSource getDataSource(Class<?> c) {
-	    return OADataSource.getDataSource(c);
+	    return OARuntime.datasource().get(c);
 	}
     
 	/**
@@ -38,7 +39,7 @@ public abstract class HubDSService {
 	 * @param propFromMaster the name of the master-side property for the link
 	 */
 	public <T extends OAObject> void updateMany2ManyLinks(OAObject masterObject, T[] adds, T[] removes, String propFromMaster) {
-		OADataSource ds = OADataSource.getDataSource(masterObject.getClass());
+		OADataSource ds = OARuntime.datasource().get(masterObject.getClass());
 		if (ds != null) ds.updateMany2ManyLinks(masterObject, adds, removes, propFromMaster);
 	}
 
@@ -62,7 +63,7 @@ public abstract class HubDSService {
         T[] objs = callHubAddRemoveGetRemovedObjects(hub);
         if (objs == null || objs.length == 0) return;
        
-        OADataSource ds = OADataSource.getDataSource(objMaster.getClass());
+        OADataSource ds = OARuntime.datasource().get(objMaster.getClass());
         if (ds == null) return;
         
         ds.updateMany2ManyLinks(objMaster, null, objs, propFromMaster);

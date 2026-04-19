@@ -21,8 +21,8 @@ import java.util.logging.Logger;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.OAString;
 
 /**
@@ -291,7 +291,7 @@ public class HubCombined<TYPE extends OAObject> {
 
 			@Override
 			public void onNewList(HubEvent<TYPE> e) {
-				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 				try {
 					bUpdatingMasterHub = true;
 					srvcOAThreadLocal.setLoading(true);

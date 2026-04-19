@@ -179,7 +179,7 @@ public class OAAnnotationVerifier {
 					bs[x] = true;
 
 					if (m.getReturnType().equals(String.class) && pi.getMaxLength() != oaprop.maxLength()) {
-						OADataSource ds = OADataSource.getDataSource(clazz);
+						OADataSource ds = OARuntime.datasource().get(clazz);
 						if (ds != null) {
 							x = ds.getMaxLength(clazz, s);
 							if (x != oaprop.maxLength()) {

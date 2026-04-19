@@ -25,9 +25,9 @@ import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.process.OAChangeRefresher;
+import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OARemoteThreadService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAFilter;
 
@@ -168,7 +168,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
                 final Hub<T> hub = wrHub.get();
                 if (hub == null) return;
                 if (isUsed((T) obj)) {
-        			final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+        			final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
                     if (bServerSideOnly) { 
                         srvcOARemoteThread.sendMessages(true);
                     }
@@ -489,7 +489,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         setupTrigger();
 
         if (!bRefresh) return;
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
         if (bServerSideOnly) { 
         	srvcOARemoteThread.sendMessages(true);
         }
@@ -610,7 +610,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
                     */
                 }
                 else {
-        			final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+        			final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
                     if (bServerSideOnly) { 
                     	srvcOARemoteThread.sendMessages(true);
                     }

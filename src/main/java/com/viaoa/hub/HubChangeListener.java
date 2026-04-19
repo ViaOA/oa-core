@@ -17,7 +17,6 @@ package com.viaoa.hub;
 
 import java.util.ArrayList;
 
-import com.viaoa.context.OAContext;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.OAObjectService;
@@ -1535,7 +1534,8 @@ public abstract class HubChangeListener {
 					return false;
 				}
 				if (compareValue == Type.OnlySuperAdmin) {
-					if (OAContext.isSuperAdmin()) {
+					OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+					if (og.context().isSuperAdmin()) {
 						return true;
 					}
 					failureReason = "only SuperAdmin";

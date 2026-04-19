@@ -23,10 +23,10 @@ import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.model.oa.VEnum;
 import com.viaoa.model.oa.VString;
 import com.viaoa.object.*;
+import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OARemoteThreadService;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAConverter;
 import com.viaoa.util.OAStr;
@@ -338,8 +338,8 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 			}
 		}
 		
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		
 		if (!abUpdating.compareAndSet(false, true)) {
 			return; // already updating
@@ -385,7 +385,7 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 	 */
 	private void _update1() {
 		if (hub != null) {
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 			if (srvcOAThreadLocal.isDeleting(hub.getMasterObject())) {
 				return;
 			}
@@ -576,7 +576,7 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 	 * @param e the hub event associated with the insert
 	 */
 	public @Override void afterInsert(HubEvent e) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		if (!srvcOAThreadLocal.isLoading()) {
 			if (!srvcOAThreadLocal.isHubMergerChanging()) { // else wait for newList
 				update();
@@ -591,7 +591,7 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 	 * @param e the hub event associated with the add
 	 */
 	public @Override void afterAdd(HubEvent e) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		if (!srvcOAThreadLocal.isLoading()) {
 			if (!srvcOAThreadLocal.isHubMergerChanging()) { // else wait for newList
 				update();
@@ -606,7 +606,7 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 	 * @param e the hub event associated with the removal
 	 */
 	public @Override void afterRemove(HubEvent e) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		if (srvcOAThreadLocal.isHubMergerChanging()) {
 			return; // else wait for newList
 		}
@@ -620,7 +620,7 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 	 * @param e the hub event associated with the new list
 	 */
 	public @Override void onNewList(HubEvent e) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		if (srvcOAThreadLocal.isHubMergerChanging()) { // else wait for newList after merger is done
 			return;
 		}

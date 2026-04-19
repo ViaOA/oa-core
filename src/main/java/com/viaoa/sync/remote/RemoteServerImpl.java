@@ -27,10 +27,10 @@ import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
+import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OARemoteThreadService;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.sync.model.ClientInfo;
 
 /**
@@ -119,7 +119,7 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 	 */
 	@Override
 	public boolean save(Class objectClass, OAObjectKey objectKey, int iCascadeRule) {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
     	
@@ -165,7 +165,8 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 		OAObject obj = (OAObject) og.objectsInternal().callObjectCacheGetObject(objectClass, objectKey);
 		if (obj == null) {
 			if (og.syncInternal().isServer()) {
-				obj = (OAObject) OADataSource.getObject(objectClass, objectKey);
+				OADataSource ds = OARuntime.datasource().get(objectClass);
+				if (ds != null) obj = ds.getObject(objectClass, objectKey);
 			}
 		}
 		return obj;
@@ -177,7 +178,8 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 		OAObject obj = (OAObject) og.objectsInternal().callObjectCacheGetObject(objectClass, objectKey.getObjectIds());
 		if (obj == null) {
 			if (og.syncInternal().isServer()) {
-				obj = (OAObject) OADataSource.getObject(objectClass, objectKey);
+				OADataSource ds = OARuntime.datasource().get(objectClass);
+				if (ds != null) obj = (OAObject) ds.getObject(objectClass, objectKey);
 			}
 		}
 		return obj;
@@ -324,7 +326,7 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 	 */
 	@Override
 	public String performThreadDump(String msg) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		String s = srvcOAThreadLocal.getAllStackTraces();
 		LOG.warning(msg + "\n" + s);
 		return s;

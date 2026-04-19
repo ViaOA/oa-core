@@ -3,6 +3,7 @@ package com.viaoa.runtime;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.OAGraph;
@@ -15,30 +16,27 @@ public final class OARuntime {
 
 	private static OARuntime runtime = new OARuntime();
 	
-	private final Map<String, OAGraph> hmPackageGraph = new ConcurrentHashMap<>();
-	private final Map<String, OAGraph> hmPackageGraph2 = new ConcurrentHashMap<>();
-	private final Map<String, RuntimeException> hmRuntimeException = new ConcurrentHashMap<>();
-	private final Map<Class<?>, Class<?>> hmClass = new ConcurrentHashMap<>();
+	private final Map<String, OAGraph> hmPackageNameGraph = new ConcurrentHashMap<>();
+	private final Map<String, OAGraph> hmPackageNameGraphHelper = new ConcurrentHashMap<>();
+	private final Map<String, RuntimeException> hmPackageNameException = new ConcurrentHashMap<>();
+	private final Map<Class<?>, Class<?>> hmClassHelper = new ConcurrentHashMap<>();
 	
-	private OAGraph graphDefault;
+	private OAGraphImpl graphDefault;
 
-	private OAThread thread;
-	private OADataSource dataSource;
-	private OAContext context;
+	private final OADataSourceService srvcDataSource = new OADataSourceService();
+	private final OAThreadService srvcThread = new OAThreadService();
 	
 	private OARuntime() {
 	}
 	
 	static {
-		runtime.thread = new OAThreadImpl();
-		runtime.dataSource = new OADataSourceImpl();
-		runtime.context = new OAContextImpl();
- 
-		runtime.graphDefault = new OAGraphImpl(runtime, null);
+		runtime.graphDefault = new OAGraphImpl(""); 
 		try {
 			((OAGraphImpl) runtime.graphDefault).initialize();
 		}
-		catch (Exception e) {}
+		catch (Exception e) {
+			LOG.log(Level.WARNING, "Exception creating OAGraph graphDefault", e);
+		}
 	}
 	
 	public static OARuntime get() {
@@ -48,6 +46,7 @@ public final class OARuntime {
 	public static OAGraph createGraph(final Package pkg) {
 		return runtime.createGraphInternal(pkg);
 	}
+
 	private OAGraph createGraphInternal(final Package pkg) {
 		if (pkg == null) return null;
 		final String pn = pkg.getName();
@@ -57,26 +56,31 @@ public final class OARuntime {
 	public static OAGraph createGraph(final String pkgName) {
 		return runtime.createGraphInternal(pkgName);
 	}
+	
 	private OAGraph createGraphInternal(final String pkgName) {
 		if (pkgName == null) return null;
 
-		OAGraph og = hmPackageGraph.get(pkgName);
+		OAGraph og = hmPackageNameGraph.get(pkgName);
 		if (og != null) return og;
 
-		RuntimeException exRt = hmRuntimeException.get(pkgName);
-		if (exRt != null) throw exRt;
+		synchronized (hmPackageNameGraph) {
+			og = hmPackageNameGraph.get(pkgName);
+			if (og != null) return og;
 		
-		og = new OAGraphImpl(this, pkgName);
-		hmPackageGraph.put(pkgName, og);
-		hmPackageGraph2.clear();
+			RuntimeException exRt = hmPackageNameException.get(pkgName);
+			if (exRt != null) throw exRt;
 			
-		try {
-			((OAGraphImpl)og).initialize();
-		} catch (ClassNotFoundException | IOException e) {
-			RuntimeException ex = new RuntimeException("Could not initialize OAGraph, package name is " + pkgName, e);
-			hmPackageGraph.remove(pkgName);
-			hmRuntimeException.put(pkgName, ex);
-			throw ex;
+			og = new OAGraphImpl(pkgName);
+			try {
+				((OAGraphImpl)og).initialize();
+				hmPackageNameGraphHelper.clear();
+				hmPackageNameGraph.put(pkgName, og);
+			} catch (ClassNotFoundException | IOException e) {
+				RuntimeException ex = new RuntimeException("Could not initialize OAGraph, package name is " + pkgName, e);
+				hmPackageNameGraph.remove(pkgName);
+				hmPackageNameException.put(pkgName, ex);
+				throw ex;
+			}
 		}
 		return og;
 	}
@@ -84,24 +88,27 @@ public final class OARuntime {
 	public static OAGraph graph(final OAObject obj) {
 		return runtime.graphInternal(obj);
 	}	
+	
 	private OAGraph graphInternal(final OAObject obj) {
-		Class c = obj == null ? null : obj.getClass();
+		Class<?> c = obj == null ? null : obj.getClass();
 		return graphInternal(c);
 	}
 
 	public static OAGraph graph(final Hub hub) {
 		return runtime.graphInternal(hub);
 	}
+	
 	private OAGraph graphInternal(final Hub hub) {
-		Class c = hub == null ? null : hub.getObjectClass();
+		Class<?> c = hub == null ? null : hub.getObjectClass();
 		return graphInternal(c);
 	}
 
 	public static OAGraph graph(final Hub hub, final OAObject obj) {
 		return runtime.graphInternal(hub, obj);
 	}
+	
 	private OAGraph graphInternal(final Hub hub, final OAObject obj) {
-		Class c = hub == null ? null : hub.getObjectClass();
+		Class<?> c = hub == null ? null : hub.getObjectClass();
 		if (c == null && obj != null) {
 			c = obj.getClass();
 		}
@@ -111,12 +118,13 @@ public final class OARuntime {
 	public static OAGraph graph(final Class<?> clazz) {
 		return runtime.graphInternal(clazz);
 	}
+	
 	private OAGraph graphInternal(final Class<?> clazz) {
 	    Class<?> classFound = clazz;
 
 	    Class<?> classSuper = (classFound == null) ? null : classFound.getSuperclass();
 	    if (classSuper != null && classSuper != OAObject.class) {
-	        Class<?> cx = hmClass.get(clazz);
+	        Class<?> cx = hmClassHelper.get(clazz);
 	        if (cx != null) {
 	            classFound = cx;
 	        }
@@ -125,23 +133,21 @@ public final class OARuntime {
 	                classSuper = classFound.getSuperclass();
 	                if (classSuper == null) { 
 	                	classFound = clazz; 
-		                hmClass.put(clazz, clazz);
+		                hmClassHelper.put(clazz, clazz);
 	                	break; 
 	                }
 	                if (classSuper == OAObject.class) break;
 	                classFound = classSuper;
 	            }
 	            if (classFound != clazz) {
-	                hmClass.put(clazz, classFound);
+	                hmClassHelper.put(clazz, classFound);
 	            }
 	        }
 	    }
 
-	    String pn = (classFound == null) ? null : classFound.getPackage().getName();
+	    String pn = (classFound == null) ? "" : classFound.getPackage().getName();
 	    return graphInternal(pn);
 	}
-	
-	
 	
 	public static OAGraph graph(final Package pkg) {
 		return runtime.graphInternal(pkg);
@@ -159,85 +165,52 @@ public final class OARuntime {
 	private OAGraph graphInternal(String pkgName) {
 		if (pkgName == null) pkgName = "";
 
-		OAGraph og = hmPackageGraph.get(pkgName);
+		OAGraph og = hmPackageNameGraph.get(pkgName);
 		if (og != null) return og;
 		
-		og = hmPackageGraph2.get(pkgName);
+		og = hmPackageNameGraphHelper.get(pkgName);
 		if (og != null) return og;
 		
-		RuntimeException exRt = hmRuntimeException.get(pkgName);
+		RuntimeException exRt = hmPackageNameException.get(pkgName);
 		if (exRt != null) throw exRt;
 		
 		String fnd = null;
-		for (String s : hmPackageGraph.keySet()) {
+		for (String s : hmPackageNameGraph.keySet()) {
 			if (pkgName.equals(s) || pkgName.startsWith(s + ".")) {
 				if (fnd == null || s.length() > fnd.length()) fnd = s;
 			}
 		}
 		if (fnd != null) {
-			og = hmPackageGraph.get(fnd);
-			hmPackageGraph2.put(pkgName, og);
+			og = hmPackageNameGraph.get(fnd);
+			hmPackageNameGraphHelper.put(pkgName, og);
 			return og;
 		}
-		else {
-			hmPackageGraph2.put(pkgName, graphDefault);
-		}
-
+		hmPackageNameGraphHelper.put(pkgName, graphDefault);
 		return graphDefault;
 	}	
 
-	public static void assignGraph(String pkgName, OAGraph graph) {
-		runtime.assignGraphInternal(pkgName, graph);
-	}
-	
-	private void assignGraphInternal(String pkgName, OAGraph graph) {
-		if (pkgName == null) pkgName = "";
-		
-		if (graph == null) hmPackageGraph.remove(pkgName);
-		else hmPackageGraph.put(pkgName, graph);
-		hmPackageGraph2.clear();
-	}
 
 	/**
-	 * qqqqqqqqqqqqq same as default graph
+	 * same as default graph
 	 */
 	public static OAGraph graph() {
 		return runtime.graphInternal("");
 	}
 
-	/**
-	 * qqqqqqqqqqqqq 
-	 */
 	public static OAGraph defaultGraph() {
 		return runtime.graphInternal("");
 	}
 
-	
-	//qqqqqqqqqqqqqq set Default OG qqqqqqqqqqq exception if already set 	
-	/**
-	 * qqqqqqqqqqqqq 
-	 */
-	public static void setDefaultGraph(OAGraph graph) {
-		runtime.assignGraphInternal("", graph);
+	public static OAThreadService thread() {
+		return runtime.srvcThread;
 	}
 	
-	
-	
-	public static OAThread thread() {
-		return runtime.thread;
+	public static OADataSourceService datasource() {
+		return runtime.srvcDataSource;
 	}
+		
 	
-	public static OAContext context() {
-		return runtime.context;
-	}
-
-	public static OADataSource datasources() {
-		return runtime.dataSource;
-	}
-	
-	
-	
-	
+	//qqqqqqq temporary	
 	/**
 	 * Enables or disables unit test mode. When enabled, certain operations
 	 * such as {@link #resetCache()} are permitted; otherwise they will throw
@@ -248,9 +221,10 @@ public final class OARuntime {
 	public void setUnitTestMode(boolean b) {
 		UnitTestMode = b;
 	}
-	//qqqqqqq
+	//qqqqqqq temporary	
 	private boolean UnitTestMode;
 	
+	//qqqqqqq temporary	
 	/**
 	 * Clears all cache data, listeners, select-all Hubs, and named Hubs.
 	 * This operation is permitted only when unit test mode is enabled;
@@ -263,7 +237,7 @@ public final class OARuntime {
 		if (!UnitTestMode) {
 			throw new RuntimeException("Can only call reset cache if UnitTestMode is true");
 		}
-/*qqqqqqqqqqq for each OG.cache
+		/*qqqqqqqqqqq for each OG.cache
 		objectCache.clearCache();
 		hmCacheListener.clear();
 		aiListenerCount.set(0);
@@ -273,13 +247,7 @@ public final class OARuntime {
 		synchronized (hmCacheNamedHub) {
 			hmCacheNamedHub.clear();
 		}
-*/		
+		*/		
 	}
 	
-	
 }
-
-
-
-
-

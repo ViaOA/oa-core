@@ -22,8 +22,8 @@ import java.util.logging.Logger;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.*;
 
 /**
@@ -309,7 +309,7 @@ public class HubSortListener<TYPE extends OAObject> extends HubListenerAdapter<T
         if (bCallingSortMove) return;
         String s = e.getPropertyName();
         if (s != null && s.equalsIgnoreCase(sortPropertyName)) {
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
             try {
                 bCallingSortMove = true;
                 srvcOAThreadLocal.setSuppressCSMessages(true);  // each client will handle it's own sorting

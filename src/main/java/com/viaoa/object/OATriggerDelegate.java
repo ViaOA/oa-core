@@ -25,8 +25,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 
 /**
  * Factory and manager for {@link OATrigger} instances.
@@ -141,7 +141,7 @@ public class OATriggerDelegate {
 		 */
 		public TriggerRunnable(Runnable runnable) {
 			this.runnable = runnable;
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 			this.bIsLoading = srvcOAThreadLocal.isLoading();
 			this.context = srvcOAThreadLocal.getContext();
 		}
@@ -152,7 +152,7 @@ public class OATriggerDelegate {
 		 */
 		@Override
 		public void run() {
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 			try {
 				srvcOAThreadLocal.setContext(context);
 				if (bIsLoading) {

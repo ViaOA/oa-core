@@ -55,8 +55,8 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OADate;
 import com.viaoa.util.OAString;
@@ -546,7 +546,7 @@ public class OAJson {
 		setStackItem(null);
 		this.cascade = null;
 		String json;
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		try {
 			srvcOAThreadLocal.setOAJackson(this);
 
@@ -599,7 +599,7 @@ public class OAJson {
 		setStackItem(null);
 		this.cascade = null;
 		String json;
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		try {
 			srvcOAThreadLocal.setOAJackson(this);
 
@@ -624,7 +624,7 @@ public class OAJson {
 		setStackItem(null);
 		this.cascade = null;
 		String json;
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		try {
 			srvcOAThreadLocal.setOAJackson(this);
 
@@ -763,7 +763,7 @@ public class OAJson {
 		getGuidMap();
 
 		T obj;
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		try {
 			srvcOAThreadLocal.setOAJackson(this);
 			if (bIsLoading) {
@@ -824,7 +824,7 @@ public class OAJson {
 		Map<UUID, OAObject> hmGuidMap = getGuidMap();
 
 		T obj;
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		try {
 			srvcOAThreadLocal.setOAJackson(this);
 
@@ -877,7 +877,7 @@ public class OAJson {
 		Map<UUID, OAObject> hmGuidMap = getGuidMap();
 
 		T obj;
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		try {
 			srvcOAThreadLocal.setOAJackson(this);
 			if (bIsLoading) {
@@ -929,7 +929,7 @@ public class OAJson {
 		hmGuidObject = null;
 
 		Map<K, V> map;
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		try {
 			srvcOAThreadLocal.setOAJackson(this);
 			if (bIsLoading) {
@@ -978,7 +978,7 @@ public class OAJson {
 		hmGuidObject = null;
 
 		List<T> list;
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		try {
 			srvcOAThreadLocal.setOAJackson(this);
 			if (bIsLoading) {
@@ -1027,7 +1027,7 @@ public class OAJson {
 		hmGuidObject = null;
 
 		List<T> list;
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		try {
 			srvcOAThreadLocal.setOAJackson(this);
 			if (bIsLoading) {
@@ -1075,7 +1075,7 @@ public class OAJson {
 		hmGuidObject = null;
 
 		List<T> list;
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		try {
 			srvcOAThreadLocal.setOAJackson(this);
 			if (bIsLoading) {
@@ -1142,7 +1142,7 @@ public class OAJson {
 	public void write(final Hub<? extends OAObject> hub, File file) throws JsonProcessingException, IOException {
 		setStackItem(null);
 		this.cascade = null;
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		try {
 			srvcOAThreadLocal.setOAJackson(this);
 
@@ -1164,7 +1164,7 @@ public class OAJson {
 		setStackItem(null);
 		this.cascade = null;
 		String json;
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		try {
 			srvcOAThreadLocal.setOAJackson(this);
 			final ObjectMapper objectMapper = getObjectMapper();
@@ -1226,7 +1226,7 @@ public class OAJson {
 		hmGuidObject = null;
 		Map<UUID, OAObject> hmGuidMap = getGuidMap();
 
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		try {
 			srvcOAThreadLocal.setOAJackson(this);
 			if (bIsLoading) {
@@ -1252,7 +1252,10 @@ public class OAJson {
 						if (objNew != null) {
 							hub.add((T) objNew);
 						} else {
-							objNew = (OAObject) OADataSource.getObject(getReadObjectClass(), ok);
+							OADataSource dsx = OARuntime.datasource().get(getReadObjectClass());
+							if (dsx != null) {
+								objNew = (OAObject) dsx.getObject(getReadObjectClass(), ok);
+							}
 							hub.add((T) objNew);
 						}
 					} else {
@@ -1270,7 +1273,8 @@ public class OAJson {
 							if (objNew != null) {
 								hub.add((T) objNew);
 							} else {
-								objNew = (OAObject) OADataSource.getObject(getReadObjectClass(), ok);
+								OADataSource dsx = OARuntime.datasource().get(getReadObjectClass());
+								if (dsx != null) objNew = (OAObject) dsx.getObject(getReadObjectClass(), ok);
 								hub.add((T) objNew);
 							}
 						}
@@ -1392,7 +1396,7 @@ public class OAJson {
 
 		final OAJson oaj = new OAJson();
 
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		try {
 			srvcOAThreadLocal.setOAJackson(oaj);
 

@@ -44,8 +44,8 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.Base64;
 import com.viaoa.util.OACompare;
 import com.viaoa.util.OAConv;
@@ -579,7 +579,7 @@ public class OAXMLReader {
 			}
 
 			if (objNew == null) {
-				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 				srvcOAThreadLocal.setLoading(true);
 				try {
 					objNew = createNewObject(toClass);
@@ -613,7 +613,7 @@ public class OAXMLReader {
 
 		final boolean bLoadingNew = objNew.getNew() && !bIsPreloading;
 		if (bLoadingNew) {
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 			srvcOAThreadLocal.setLoading(true);
 		}
 
@@ -678,7 +678,7 @@ public class OAXMLReader {
 				}
 			}
 
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 			if (v instanceof ArrayList) {
 				// load into Hub
 				Hub h;
@@ -731,7 +731,7 @@ public class OAXMLReader {
 			}
 		}
 		if (bLoadingNew) {
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 			srvcOAThreadLocal.setLoading(false);
 		}
 		if (!bIsPreloading) {

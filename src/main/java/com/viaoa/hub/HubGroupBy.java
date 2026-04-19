@@ -27,8 +27,8 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OASiblingHelper;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
 
@@ -1508,7 +1508,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		// this will tell the OASyncClient.getDetail which hub objects are being used
 		final OASiblingHelper<F> siblingHelper = new OASiblingHelper<F>(this.hubFrom);
 		siblingHelper.add(this.propertyPath);
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		srvcOAThreadLocal.addSiblingHelper(siblingHelper);
 		try {
 			srvcOAThreadLocal.setSuppressCSMessages(true);

@@ -324,7 +324,7 @@ public abstract class HubAOService {
 		}
 
 		// Now call for all sharedHubs with same "dataa"
-		OAFilter<Hub<T>> filter = new OAFilter<>() {
+		OAFilter<Hub<T>> filter = new OAFilter<Hub<T>>() {
 			@Override
 			public boolean isUsed(Hub<T> h) {
 				return faHub.getHubDataActive(h) == faHub.getHubDataActive(thisHub); 

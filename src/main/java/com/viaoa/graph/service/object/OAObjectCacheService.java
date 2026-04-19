@@ -30,6 +30,7 @@ import com.viaoa.object.OAObjectCache;
 import com.viaoa.object.OAObjectCacheListener;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
@@ -1439,7 +1440,7 @@ public abstract class OAObjectCacheService {
 		}
 		final Set<Hub> hsHub = new HashSet<Hub>();
 
-		OADataSource ds = OADataSource.getDataSource(clazz);
+		OADataSource ds = OARuntime.datasource().get(clazz);
 		if (ds == null) {
 			return;
 		}

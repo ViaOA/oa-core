@@ -32,8 +32,8 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAPerformance;
 import com.viaoa.object.OASiblingHelper;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAComparator;
 import com.viaoa.util.OAFilter;
@@ -531,10 +531,9 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	 * @return the DataSource used for select operations, or null
 	 */
 	public OADataSource getDataSource() {
-		if (clazz == null) {
-			return null;
-		}
-		OADataSource ds = OADataSource.getDataSource(clazz, getDataSourceFilter());
+		if (clazz == null) return null;
+		OADataSource ds = OARuntime.datasource().get(clazz, getDataSourceFilter());
+		if (ds == null) return null;
 		return ds;
 	}
 
@@ -1254,7 +1253,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 
 			// 20190130
 			OASiblingHelper siblingHelper = query == null ? null : query.getSiblingHelper();
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 			boolean bx = ((siblingHelper != null) && srvcOAThreadLocal.addSiblingHelper(siblingHelper));
 			try {
 				if (oaFilter.isUsed(obj)) {

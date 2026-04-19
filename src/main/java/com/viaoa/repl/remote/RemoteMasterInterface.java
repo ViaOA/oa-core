@@ -19,6 +19,9 @@ public interface RemoteMasterInterface {
 
     @OARemoteMethod() 
 	long getLastReceivedMasterSeq();
+
+    @OARemoteMethod() 
+	void setLastReceivedMasterSeq(long seq);
     
     @OARemoteMethod() 
 	long getLastProcessedMasterSeq();

@@ -10,10 +10,10 @@ import com.viaoa.object.OACascade;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.remote.info.RequestInfo;
+import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OARemoteThreadService;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.OASyncServer;
 import com.viaoa.sync.model.ClientInfo;
@@ -24,9 +24,6 @@ import com.viaoa.sync.remote.RemoteSyncInterface;
 
 public class OASyncService implements SyncOps, SyncInternalOps {
 	private static final Logger LOG = Logger.getLogger(OASyncService.class.getName());
-	
-	private final Package thisPackage;
-
 	
 	private final OAGraph og;
 	
@@ -67,7 +64,6 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 	
 	public OASyncService(OAGraph og) {
 		this.og = og;
-    	this.thisPackage = og.getPackage();
 	}
 
 	
@@ -91,7 +87,7 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 			@Override
 			protected void createRemoteDataSource() {
 				if (dataSourceClient == null) {
-					dataSourceClient = new OADataSourceClient(thisPackage);
+					dataSourceClient = new OADataSourceClient(og.getPackageName());
 				}
 			}
 
@@ -341,7 +337,7 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 	 * @return previous setting for message sending
 	 */
 	public void sendMessages(boolean b) {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		srvcOARemoteThread.sendMessages(b);
 	}
 
@@ -352,7 +348,7 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 	 * @return {@code true} if the current thread is remote-thread context
 	 */
 	public boolean isRemoteThread() {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		return srvcOARemoteThread.isRemoteThread();
 	}
 
@@ -365,8 +361,8 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 	 * @return {@code true} if the current thread is a sync-processing thread
 	 */
 	public boolean isSyncThread() {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		if (srvcOARemoteThread.isRemoteThread()) {
 			return true;
 		}
@@ -385,7 +381,7 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 	 * @return {@code true} if messages should be sent
 	 */
 	public boolean shouldSendMessages() {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		return srvcOARemoteThread.shouldSendMessages();
 	}
 
@@ -397,7 +393,7 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 	 * @param b whether to suppress CS messages
 	 */
 	public void setSuppressCSMessages(boolean b) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		srvcOAThreadLocal.setSuppressCSMessages(b);
 	}
 
@@ -409,7 +405,7 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 	 * @return {@code true} if CS messages are suppressed
 	 */
 	public boolean getSuppressCSMessages() {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		return srvcOAThreadLocal.isSuppressCSMessages();
 	}
 
@@ -421,7 +417,7 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 	 * @return the request info, or {@code null} if not in remote-thread context
 	 */
 	public RequestInfo getRequestInfo() {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		return srvcOARemoteThread.getRequestInfo();
 	}
 
@@ -433,7 +429,7 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 	 * @return the current request's connection ID, or -1 if unavailable
 	 */
 	public int getRequestConnectionId() {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		RequestInfo ri = srvcOARemoteThread.getRequestInfo();
 		if (ri == null) {
 			return -1;
@@ -446,7 +442,7 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 	 * the thread-local loading flag to {@code true}.
 	 */
 	public void setLoading() {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		srvcOAThreadLocal.setLoading(true);
 	}
 
@@ -457,7 +453,7 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 	 * @param b {@code true} to mark as loading, {@code false} otherwise
 	 */
 	public void setLoading(boolean b) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		srvcOAThreadLocal.setLoading(b);
 	}
 

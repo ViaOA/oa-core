@@ -40,10 +40,10 @@ import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAPerformance;
 import com.viaoa.object.OASiblingHelper;
 import com.viaoa.object.OAThreadLocal;
+import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OARemoteThreadService;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.OAPropertyPath;
 
 /**
@@ -430,7 +430,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 
         long ts = System.currentTimeMillis();
 
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
         
         final OASiblingHelper sh = getSiblingHelper();
         final boolean bx = srvcOAThreadLocal.addSiblingHelper(sh);
@@ -538,7 +538,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         }
         this.bEnabled = b;
         if (bEnabled) {
-			final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+			final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
             try {
                 if (bServerSideOnly) {
                     srvcOARemoteThread.sendMessages(true);
@@ -1517,7 +1517,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
          * the Hub is empty—used for detail-Hub traversal cases.
          */
         void createChildUsingMaster() {
-			final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+			final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
             try {
                 if (bServerSideOnly) {
                     srvcOARemoteThread.sendMessages(true);
@@ -1620,7 +1620,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             if (shouldQuit()) {
                 return;
             }
-			final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+			final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
             try {
                 if (bServerSideOnly) {
                     srvcOARemoteThread.sendMessages(true);
@@ -1649,7 +1649,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             if (node == nodeRoot && bIncludeRootHub) {
                 if (hubCombined != null && !hubCombined.contains(parent)) {
                     final boolean bx = aiLoadingCombinedHub.get() > 0;
-        			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+        			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
                     try {
                         if (bx) {
                             srvcOAThreadLocal.setLoading(true);
@@ -1666,7 +1666,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             if (node.child == null) {
                 if (!bShareEndHub && hubCombined != null && !hubCombined.contains(parent)) {
                     final boolean bx = aiLoadingCombinedHub.get() > 0;
-        			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+        			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
                     try {
                         if (bx) {
                             srvcOAThreadLocal.setLoading(true);
@@ -1861,7 +1861,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
          * @param obj object being removed
          */
         void remove(Object obj) {
-			final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+			final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
             try {
                 if (bServerSideOnly) {
                     srvcOARemoteThread.sendMessages(true);
@@ -1895,7 +1895,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                             return; // might have already been removed
                         }
                     }
-        			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+        			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
                     if (srvcOAThreadLocal.isHubMergerChanging()) { // 20120102
                         // 20120612 dont send event, unless there is a recursive prop, which needs to
                         // have recursives nodes updated
@@ -1918,7 +1918,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             // 20131209
             if (node == nodeRoot && bIncludeRootHub) {
                 if (!isUsed(obj)) {
-        			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+        			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
                     if (srvcOAThreadLocal.isHubMergerChanging()) {
                 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubCombined);
                 		og.hubsInternal().callHubAddRemoveRemove((Hub<OAObject>)hubCombined, (OAObject)obj, false, bIsRecusive, false, false, false, false);
@@ -1973,7 +1973,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                     }
                     if (ref != null) {
                         if (!isUsed(ref, child.node)) {
-                			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+                			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
                             if (srvcOAThreadLocal.isHubMergerChanging()) { // 20120102
                         		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(child.hub);
                         		og.hubsInternal().callHubAddRemoveRemove((Hub<OAObject>)child.hub, (OAObject)ref, false, false, false, false, false, false);
@@ -2072,7 +2072,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
          */
         public @Override void beforeRemoveAll(HubEvent e) {
             final boolean b = (hub == hubRoot);
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
             try {
                 if (b) {
                     srvcOAThreadLocal.setHubMergerChanging(true);
@@ -2228,7 +2228,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         private void _onNewList() {
             long ts = System.currentTimeMillis();
             final boolean b = bServerSideOnly;
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
             try {
                 srvcOAThreadLocal.setHubMergerChanging(true);
                 if (!b) {
@@ -2305,8 +2305,8 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
          */
         private void _onNewList3() {
             final OASiblingHelper sh = getSiblingHelper();
-			final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
             boolean bx = srvcOAThreadLocal.addSiblingHelper(sh);
             try {
                 if (bServerSideOnly) {
@@ -2448,7 +2448,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         public void beforeRemove(HubEvent e) {
             Object obj = e.getObject();
             final boolean b = (hub == hubRoot);
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
             try {
                 if (b) {
                     srvcOAThreadLocal.setHubMergerChanging(true);
@@ -2520,7 +2520,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         @Override
         public void beforeAdd(HubEvent e) {
             final boolean b = (hub == hubRoot);
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
             try {
                 if (b) {
                     srvcOAThreadLocal.setHubMergerChanging(true);
@@ -2553,7 +2553,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
          */
         public @Override void afterAdd(HubEvent e) {
             final boolean b = (hub == hubRoot);
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
             try {
                 if (b) {
                     srvcOAThreadLocal.setHubMergerChanging(true);
@@ -2614,7 +2614,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         @Override
         public void beforeInsert(HubEvent e) {
             final boolean b = (hub == hubRoot);
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
             try {
                 if (b) {
                     srvcOAThreadLocal.setHubMergerChanging(true);
@@ -2648,7 +2648,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         @Override 
         public void afterInsert(HubEvent e) {
             final boolean b = (hub == hubRoot);
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
             try {
                 if (b) {
                     srvcOAThreadLocal.setHubMergerChanging(true);
@@ -2701,7 +2701,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
          * @param e the HubEvent representing the property change
          */
         public @Override void afterPropertyChange(HubEvent e) {
-			final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+			final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
             try {
                 if (bServerSideOnly) {
                     srvcOARemoteThread.sendMessages(true);
@@ -2775,7 +2775,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 if (!node.child.data.hub.contains(ref)) {
                     // 20200407 added siblingHelper
                     final OASiblingHelper sh = getSiblingHelper();
-        			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+        			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
                     boolean bx = srvcOAThreadLocal.addSiblingHelper(sh);
                     try {
                         node.child.data.hub.add((OAObject) ref);
@@ -2858,7 +2858,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 }
             }
             final boolean b = (hub == hubRoot);
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
             try {
                 if (b) {
                     srvcOAThreadLocal.setHubMergerChanging(true);

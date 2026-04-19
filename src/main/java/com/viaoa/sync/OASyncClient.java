@@ -38,10 +38,10 @@ import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.remote.multiplexer.OARemoteMultiplexerClient;
+import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadImpl;
-import com.viaoa.runtime.thread.OARemoteThreadService;
-import com.viaoa.runtime.thread.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadLocalService;
+import com.viaoa.runtime.OAThreadService;
 import com.viaoa.sync.file.ClientFile;
 import com.viaoa.sync.model.ClientInfo;
 import com.viaoa.sync.remote.RemoteClientCallbackInterface;
@@ -332,10 +332,10 @@ public abstract class OASyncClient {
 		OALinkInfo li = null;
 		try {
 			// both Hub && pp are set by HubMerger, HubGroupBy
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 			final boolean bHasSiblingHelper = srvcOAThreadLocal.hasSiblingHelpers();
 
-			final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
+			final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 			if (srvcOARemoteThread.isRemoteThread()) {
 				// use annotated version that does not use the msg queue
 				//qqqqq cntDup = OAObjectSerializeDelegate.cntDup;
@@ -585,7 +585,7 @@ public abstract class OASyncClient {
 
 				@Override
 				public String performThreadDump(String msg) {
-					final OAThreadLocalService srvcOAThreadLocal = ((OAThreadImpl) OARuntime.thread()).getThreadLocalService();  
+					final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 					String s = srvcOAThreadLocal.getAllStackTraces();
 					LOG.warning(msg + "\n" + s);
 					return s;
