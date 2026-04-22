@@ -1,12 +1,11 @@
 package com.viaoa.graph;
 
-import java.util.List;
-
 import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.api.*;
 import com.viaoa.graph.context.OAContext;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubAutoMatch;
+import com.viaoa.hub.HubCopy;
 import com.viaoa.hub.HubFilter;
 import com.viaoa.hub.HubFlattened;
 import com.viaoa.hub.HubListener;
@@ -100,7 +99,8 @@ public interface OAGraph {
 	 * {@link #replication()}.
 	 *
 	 * @return synchronization operations for this graph
-	 */	public SyncOps sync();
+	 */	
+	public SyncOps sync();
 
 	
 	 /**
@@ -137,14 +137,14 @@ public interface OAGraph {
 	  * directly calling a constructor.
 	  * <p>
 	  * The returned object is not automatically saved. Persist it using
-	  * {@link #save(OAObject)} or {@link #save(OAObject)}when appropriate.
+	  * {@link #save(OAObject)} when appropriate.
 	  *
 	  * @param <T> the model object type
 	  * @param type the model class to create
 	  * @return a new live object instance for the supplied type
 	  * @see OAObject
 	  */
-	 <T extends OAObject> T create(Class<T> type); //qqqqqqqq need to verify that type is in this OG
+	 <T extends OAObject> T create(Class<T> type);
 	
     
 	 /**
@@ -167,7 +167,7 @@ public interface OAGraph {
 	  * @return a new live Hub for the supplied type
 	  * @see Hub
 	  */
-	 <T extends OAObject> Hub<T> createHub(Class<T> type); //qqqqqqqq need to verify that type is in this OG
+	 <T extends OAObject> Hub<T> createHub(Class<T> type);
 	
 	 /**
 	  * Persists the supplied object using the graph's runtime and data sources.
@@ -260,6 +260,9 @@ public interface OAGraph {
      */
     void delete(Hub<?> hub);
 
+    
+	// =========== Get / Select ===========
+    
     /**
      * Returns the object of the specified type for the given identity key.
      * <p>
@@ -346,25 +349,83 @@ public interface OAGraph {
      * affect the selection results. For live graph-based searching or continuously
      * updated matching behavior, use the appropriate find/filter mechanisms instead.
      *
-     * @param hub the Hub to populate with the selected objects
+     * @param targetHub the Hub to populate with the selected objects
      * @param where the selection criteria, or {@code null} for no filtering
      * @param orderBy the ordering expression, or {@code null} for default ordering
      * @param args argument values referenced by the {@code where} expression
      */
-    void select(Hub<?> hubInto, String where, String orderBy, Object... args);
+    void select(Hub<?> targetHub, String where, String orderBy, Object... args);
     
+
+    /**
+     * Creates and returns an {@link OASelect} for advanced selection scenarios.
+     * <p>
+     * {@code getSelect(...)} exposes the lower-level {@link OASelect} used for
+     * query-style selection so that application code can work with it directly
+     * when more control is needed than the higher-level {@link #select(Class, String, String, Object...)}
+     * methods provide.
+     * <p>
+     * Most application code should use {@code select(...)}. Use this method when
+     * direct access to {@code OASelect} behavior is needed.
+     *
+     * @param <T> the model object type
+     * @param type the model class to select
+     * @param where the selection criteria, or {@code null} for no filtering
+     * @param orderBy the ordering expression, or {@code null} for default ordering
+     * @param args argument values referenced by the {@code where} expression
+     * @return an {@link OASelect} configured for the supplied selection
+     */
     <T extends OAObject> OASelect<T> getSelect(Class<T> type, String where, String orderBy, Object... args);
 
     
+	// =========== Finder (Traversal) ===========
+    
     /**
-     * OAFinder methods  
-     *  qqqqqqqqqq method sig changed, needs regenerated
-     * path is from F to T
-     * 
+     * Creates an {@link OAFinder} that traverses the supplied path starting from
+     * a single source object.
+     * <p>
+     * {@code finder(...)} is the graph-traversal/search verb for navigating live
+     * object relationships in memory. Unlike {@link #select(Class, String, String, Object...)},
+     * it does not represent a query result set. Instead, it follows the supplied
+     * relationship path from the source object and allows application code to work
+     * with the reachable objects.
+     * <p>
+     * Use this form when traversal should begin from one specific object rather than
+     * from a Hub.
+     *
+     * @param <F> the source model object type
+     * @param <T> the target model object type reached by the path
+     * @param obj the source object used as the traversal starting point
+     * @param toType the target model class reached by the path
+     * @param path the relationship path from the source object to target objects
+     * @return an {@link OAFinder} configured for the supplied traversal
      */
     <F extends OAObject, T extends OAObject> OAFinder<F, T> finder(F obj, Class<T> toType, String path);
-    <F extends OAObject, T extends OAObject> OAFinder<F, T> finder(Hub<F> hub, Class<T> toType, String path, boolean bUseAll);
-
+    
+    /**
+     * Creates an {@link OAFinder} that traverses the supplied path starting from
+     * either the active object or all objects in the source Hub.
+     * <p>
+     * {@code finder(...)} is the graph-traversal/search verb for navigating live
+     * object relationships in memory. Unlike {@link #select(Class, String, String, Object...)},
+     * it does not represent a query result set. Instead, it follows the supplied
+     * relationship path from the source object(s) and allows application code to
+     * work with the reachable objects.
+     * <p>
+     * When {@code useAllObjects} is {@code false}, traversal begins only from the
+     * active object of {@code hub}. When {@code true}, traversal begins from all
+     * objects currently contained in {@code hub}.
+     *
+     * @param <F> the source model object type
+     * @param <T> the target model object type reached by the path
+     * @param hub the source Hub used as the traversal starting point
+     * @param toType the target model class reached by the path
+     * @param path the relationship path from source objects to target objects
+     * @param useAllObjects {@code true} to traverse from all objects in the Hub;
+     *        {@code false} to traverse only from the Hub's active object
+     * @return an {@link OAFinder} configured for the supplied traversal
+     */
+    <F extends OAObject, T extends OAObject> OAFinder<F, T> finder(Hub<F> hub, Class<T> toType, String path, boolean useAllObjects);
 
     
     
@@ -391,6 +452,7 @@ public interface OAGraph {
     
     
     // =========== Hub Collection Wiring ===========
+    
     /**
      * Creates a detail Hub based on the supplied master Hub and property path.
      * <p>
@@ -429,12 +491,12 @@ public interface OAGraph {
      * same or different active-object behavior.
      *
      * @param <T> the model object type contained by the Hubs
-     * @param hub the source Hub whose collection is shared
-     * @param hub2 the target Hub that will share the collection
+     * @param hub the target Hub that will share the collection
+     * @param hubToShare the source Hub whose collection is shared
      * @param shareActiveObject {@code true} if the active object is also shared;
      *        {@code false} if each Hub should maintain its own active object
      */
-    <T extends OAObject> void share(Hub<T> hub, Hub<T> hub2, boolean shareActiveObject);
+    <T extends OAObject> void share(Hub<T> hub, Hub<T> hubToShare, boolean shareActiveObject);
     
     /**
      * Links one Hub to a reference property of another Hub's active object.
@@ -458,8 +520,7 @@ public interface OAGraph {
     
 
     
-    // =========== Hub shaping (runtime blueprint composition) =========== 
-
+    // =========== Hub Composition / Shaping =========== 
 
     /**
      * Merges objects reached through a property path from the supplied source Hub
@@ -483,14 +544,47 @@ public interface OAGraph {
     <F extends OAObject, T extends OAObject> HubMerger<F, T> merge(Hub<F> hub, Hub<T> hubCombined, String path);
 
     
-    <F extends OAObject, T extends OAObject> HubMerger<F, T> merge(Hub<F> hubRoot, Hub<T> hubCombinedObjects,
-            String path, boolean bShareActiveObject, String selectOrder,
-            boolean bUseAll, boolean bIncludeRootHub, boolean bUseBackgroundThread);    
-    
-    
-    
-    
-    
+    /**
+     * Creates and returns a {@link HubMerger} that maintains a live merged view
+     * from a source Hub into a target Hub using advanced merge options.
+     * <p>
+     * {@code merge(...)} traverses the supplied {@code path} starting from the
+     * objects in {@code hubRoot} and keeps {@code mergedHub} synchronized with the
+     * reachable objects. As source objects, relationships, and reachable objects
+     * change, the merged Hub is automatically updated to reflect the current result.
+     * <p>
+     * This overload exposes advanced merge behavior such as active-object sharing,
+     * ordering, whether traversal begins from all objects or only the active object,
+     * whether the root Hub is included, and whether merge maintenance uses a
+     * background thread.
+     *
+     * @param <F> the source model object type
+     * @param <T> the merged target model object type
+     * @param hubRoot the source Hub used as the merge starting point
+     * @param mergedHub the target Hub that receives and maintains the merged objects
+     * @param path the relationship path used to collect objects into the merged Hub
+     * @param shareActiveObject {@code true} if the merged Hub shares the active
+     *        object behavior of the source structure; {@code false} otherwise
+     * @param selectOrder optional ordering expression applied to the merged result;
+     *        {@code null} for default ordering
+     * @param useAllObjects {@code true} to traverse from all objects in
+     *        {@code hubRoot}; {@code false} to traverse only from its active object
+     * @param includeRootHub {@code true} to include the root Hub level in merge
+     *        processing; {@code false} to merge only objects reached through the path
+     * @param useBackgroundThread {@code true} to maintain the merge using a
+     *        background thread; {@code false} to maintain it on the calling thread
+     * @return a {@link HubMerger} used to manage and maintain the merged view
+     */
+    <F extends OAObject, T extends OAObject> HubMerger<F, T> merge(
+        Hub<F> hubRoot,
+        Hub<T> mergedHub,
+        String path,
+        boolean shareActiveObject,
+        String selectOrder,
+        boolean useAllObjects,
+        boolean includeRootHub,
+        boolean useBackgroundThread
+    );
     
     
     /**
@@ -510,11 +604,32 @@ public interface OAGraph {
      * @param hubs the source Hubs whose contents are combined into the master Hub
      */
     <T extends OAObject> void combine(final Hub<T> hubMaster, final Hub<T>... hubs);
+
+    
+    // =========== Filter / Match =========== 
     
     /**
-     * Creates and returns a HubFilter that maintains a filtered view from one or
+     * Creates and returns a {@link HubFilter} that maintains a live filtered view
+     * from one Hub into another.
+     * <p>
+     * {@code filter(...)} wires {@code hubFiltered} so that it contains only the
+     * objects from {@code hubMaster} that satisfy the filter criteria managed by
+     * the returned {@link HubFilter}.
+     * <p>
+     * The returned {@code HubFilter} can be configured with filtering logic and
+     * optional dependent property paths. As objects are added, removed, or updated
+     * in {@code hubMaster}, and as relevant properties change, {@code hubFiltered}
+     * is automatically updated to reflect the current filtered result.
+     * <p>
+     * This is the dynamic form of filtering, where the filtering rules may be
+     * defined or modified after the {@code HubFilter} is created.
+     *
+     * @param <T> the model object type contained by the Hubs
+     * @param hubMaster the source Hub providing objects to be filtered
+     * @param hubFiltered the target Hub that receives the filtered objects
+     * @return a {@link HubFilter} used to manage and maintain the filtered view
      */
-    <T extends OAObject> HubFilter<T> filter(Hub<T> hubMaster, Hub<T> hubFiltered);
+     <T extends OAObject> HubFilter<T> filter(Hub<T> hubMaster, Hub<T> hubFiltered);
     
     
     /**
@@ -564,6 +679,9 @@ public interface OAGraph {
      */
     <T extends OAObject, T2 extends OAObject> HubAutoMatch<T,T2> match(Hub<T> hub, String property, Hub<T2> hubMaster);    
 
+    
+    // =========== Copy / Group / Flatten / Join =========== 
+    
     /**
      * Creates a live copy of the supplied Hub.
      * <p>
@@ -579,10 +697,10 @@ public interface OAGraph {
      * Changes to the source Hub are automatically observed and reflected in the
      * copied Hub without requiring any manual refresh.
      *
-     * @param hub the source Hub to copy
-     * @return a new live Hub that mirrors the contents of the source Hub
+     * @param hubFrom the source Hub to copy
+     * @param hubTo the Hub to copy to
      */
-    <T extends OAObject> void copy(Hub<T> hubFrom, Hub<T> hubTo);
+    <T extends OAObject> HubCopy<T> copy(Hub<T> hubFrom, Hub<T> hubTo);
     
     /**
      * Creates a live copy of the supplied Hub with optional shared active object behavior.
@@ -603,12 +721,12 @@ public interface OAGraph {
      * Changes to the source Hub are automatically observed and reflected in the
      * copied Hub without requiring any manual refresh.
      *
-     * @param hub the source Hub to copy
+     * @param hubFrom the source Hub to copy
+     * @param hubTo the Hub to copy to
      * @param shareActiveObject {@code true} if the active object is also shared;
      *        {@code false} if the copied Hub maintains its own active object
-     * @return a new live Hub that mirrors the contents of the source Hub
      */
-    <T extends OAObject> void copy(Hub<T> hubFrom, Hub<T> hubTo, boolean shareActiveObject);
+    <T extends OAObject> HubCopy<T> copy(Hub<T> hubFrom, Hub<T> hubTo, boolean shareActiveObject);
     
     /**
      * Creates and maintains a live grouped view from one Hub into another.
@@ -625,7 +743,7 @@ public interface OAGraph {
      * path, are automatically observed and reflected in the grouped result without
      * requiring any manual refresh.
      * <p>
-     * When {@code bCreateNullList} is {@code true}, group entries are also created
+     * When {@code createNullList} is {@code true}, group entries are also created
      * for grouping objects that currently have no matching source objects.
      *
      * @param <F> the model object type being grouped
@@ -700,15 +818,15 @@ public interface OAGraph {
      * This is commonly used to correlate and navigate related data across Hubs
      * while preserving all objects from the primary side.
      *
-     * @param hub the primary Hub (left side of the join)
-     * @param hubOther the secondary Hub (right side of the join)
+     * @param hubLeft the primary Hub (left side of the join)
+     * @param hubRight the secondary Hub (right side of the join)
      * @param propertyPath the relationship path from primary objects to the joined objects
-     * @param shareActiveObject
+     * @param shareActiveObject 
      */
-    <A extends OAObject, B extends OAObject> Hub<OALeftJoin<A, B>> leftJoin(Hub<A> hubLeft, Hub<B> hub, String propertyPath, boolean shareActiveObject);
+    <A extends OAObject, B extends OAObject> Hub<OALeftJoin<A, B>> leftJoin(Hub<A> hubLeft, Hub<B> hubRight, String propertyPath, boolean shareActiveObject);
     
     
-    // Software Blueprints from OA Model
+    // =========== Metadata (Blueprint) =========== 
     
     /**
      * Returns the blueprint metadata for the supplied model object type.
@@ -727,11 +845,56 @@ public interface OAGraph {
      */
     OAObjectInfo info(Class<? extends OAObject> type);
     
+    /**
+     * Returns the blueprint metadata for the supplied model object instance.
+     * <p>
+     * {@code info(...)} provides access to the runtime metadata that defines how
+     * the supplied {@link OAObject} participates in the Object Graph, including
+     * its properties, relationships, methods, and other model-defined structure.
+     * <p>
+     * This is the object-instance form of {@link #info(Class)} and is commonly used
+     * when application code already has a live object and needs to inspect the
+     * executable blueprint for that object's type.
+     *
+     * @param obj the model object whose type metadata should be returned
+     * @return the runtime metadata for the supplied object's model type
+     */
     OAObjectInfo info(OAObject obj);
 
+    /**
+     * Returns the blueprint metadata for the model object type contained by the
+     * supplied Hub.
+     * <p>
+     * {@code info(...)} provides access to the runtime metadata that defines how
+     * the objects contained in the supplied {@link Hub} participate in the
+     * Object Graph, including their properties, relationships, methods, and other
+     * model-defined structure.
+     * <p>
+     * This is the Hub form of {@link #info(Class)} and is commonly used when
+     * application code is working with a live Hub and needs to inspect the
+     * executable blueprint for its object type.
+     *
+     * @param hub the Hub whose contained object type metadata should be returned
+     * @return the runtime metadata for the Hub's model object type
+     */
     OAObjectInfo info(Hub<?> hub);
 
 
-	OAContext context();
+    // ===========  Context =========== 
+    
+    /**
+     * Returns the access context operations for this graph.
+     * <p>
+     * {@code context()} provides access to the graph-aware context used to evaluate
+     * access, visibility, enabled state, and other permission-related behavior
+     * based on the model, actor objects, OAPaths, and user-specific boundary rules.
+     * <p>
+     * Context is part of the executable blueprint because access rules are defined
+     * in terms of model objects, relationships, and property paths within the
+     * Object Graph.
+     *
+     * @return the context operations for this graph
+     */
+    OAContext context();
 }
 

@@ -1206,13 +1206,9 @@ public class OAThreadLocalService {
 	 */
 	public void releaseAllLocks() {
 		OAThreadLocal tl = getThreadLocal(false);
-		if (tl == null) {
-			return;
-		}
+		if (tl == null) return;
 		Object[] locks = tl.getLocks();
-		if (locks == null) {
-			return;
-		}
+		if (locks == null) return;
 		for (Object obj : locks) {
 			unlock(obj);
 		}
@@ -1343,7 +1339,7 @@ public class OAThreadLocalService {
 			ti.incHubMergerChangingCount();
 			x = aiTotalHubMergerChanging.getAndIncrement();
 		} else {
-			ti.incHubMergerChangingCount();
+			ti.decHubMergerChangingCount();
 			x = aiTotalHubMergerChanging.decrementAndGet();
 			
 			if (ti.getHubMergerChangingCount() == 0) {
@@ -1672,6 +1668,7 @@ public class OAThreadLocalService {
 		}
 		List<OASiblingHelper<?>> al = getSiblingHelpers(getThreadLocal(true));
 		if (al != null) {
+			aiTotalSiblingHelper.addAndGet(-al.size());
 			al.clear();
 		}
 	}
@@ -1682,9 +1679,8 @@ public class OAThreadLocalService {
 	 * @param msg the status message
 	 */
 	public void setStatus(String msg) {
-		OAThreadLocal tl = getThreadLocal(false);
-		if (tl == null && OAStr.isEmpty(msg)) return;
-		tl.setStatus(msg);
+		OAThreadLocal tl = getThreadLocal(OAStr.isNotEmpty(msg));
+		if (tl != null) tl.setStatus(msg);
 	}
 
 	/**
@@ -1693,9 +1689,8 @@ public class OAThreadLocalService {
 	 * @param ri the request information
 	 */
 	public void setRemoteRequestInfo(RequestInfo ri) {
-		OAThreadLocal tl = getThreadLocal(false);
-		if (tl == null && ri == null) return;
-		tl.setRequestInfo(ri);
+		OAThreadLocal tl = getThreadLocal(ri != null);
+		if (tl != null) tl.setRequestInfo(ri);
 	}
 
 	/**
@@ -2001,9 +1996,9 @@ public class OAThreadLocalService {
 		}
 		if (!tl.alHubEvent.contains(he)) {
 			tl.alHubEvent.add(he);
+			aiTotalHubEvent.incrementAndGet();
 		}
 
-		aiTotalHubEvent.incrementAndGet();
 		int x = tl.alHubEvent.size();
 		if (x > 25 || aiTotalHubEvent.get() > 250) {
 			msHubEvent = throttleLOG("TotalHubEvent this=" + x + ", all=" + aiTotalHubEvent.get(), msHubEvent);
@@ -2027,13 +2022,14 @@ public class OAThreadLocalService {
 		if (tl.alHubEvent == null) {
 			return;
 		}
-		tl.alHubEvent.remove(he);
+		if (tl.alHubEvent.remove(he)) {
+			aiTotalHubEvent.decrementAndGet();
+		}
 
 		if (tl.alHubEvent.size() == 0) {
 			tl.setCalcPropertyEvents(null);
 		}
 
-		aiTotalHubEvent.decrementAndGet();
 		int x = tl.alHubEvent.size();
 		if (x > 25 || aiTotalHubEvent.get() > 250 || aiTotalHubEvent.get() < 0) {
 			msHubEvent = throttleLOG("TotalHubEvent this=" + x + ", all=" + aiTotalHubEvent.get(), msHubEvent);

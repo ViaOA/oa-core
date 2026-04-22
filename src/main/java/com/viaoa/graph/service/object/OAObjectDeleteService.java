@@ -56,6 +56,7 @@ public abstract class OAObjectDeleteService {
 	 * @param oaObj the object to delete
 	 */
     public void syncServerDelete(OAObject oaObj) {
+    	if (oaObj == null) return;
         OACascade cascade = new OACascade();
         delete(oaObj, cascade);
     }
@@ -68,6 +69,7 @@ public abstract class OAObjectDeleteService {
      * @param oaObj the object to delete
      */
 	public void syncClientDelete(OAObject oaObj) {
+    	if (oaObj == null) return;
         OACascade cascade = new OACascade();
         delete(oaObj, cascade);
 	}
@@ -258,7 +260,7 @@ public abstract class OAObjectDeleteService {
                     }
                     if (liRev.getPrivateMethod()) {
                         Hub<?> hubx = (Hub<?>) li.getValue(oaObj);
-                        hubx.clear();
+                        if (hubx != null) hubx.clear();
                     }
                 }
     			
@@ -370,7 +372,7 @@ public abstract class OAObjectDeleteService {
 
         if (!bIsSyncClient) callCSSendDeleteToClients(oaObj);
 		
-		if (hubs != null) {
+		if (!bIsSyncClient && hubs != null) {
 			for (Hub<T> h : hubs) {
 				if (h != null) {
 					callHubEventFireAfterDeleteEvent(h, oaObj);
@@ -447,6 +449,9 @@ public abstract class OAObjectDeleteService {
 			}
 			if (!li.getUsed()) {
 				continue;
+			}
+			if (li.getPrivateMethod()) {
+			    continue;
 			}
 
 			String prop = li.getName();

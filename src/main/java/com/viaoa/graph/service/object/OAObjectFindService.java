@@ -5,6 +5,7 @@ import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
 import com.viaoa.hub.Hub;
+import com.viaoa.object.OACascade;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.util.OACompare;
@@ -67,12 +68,17 @@ public class OAObjectFindService {
 	 *                     not be {@code null}.
 	 * @param findValue    the value to compare against the resolved property value.
 	 * @param bFindAll     if {@code true}, collect all matches; otherwise stop at the first match.
-	 * @return an array containing matched values (or objects), never {@code null}.
+	 * @return null or an array containing matched values (or objects).
 	 */
 	public OAObject[] find(OAObject base, String propertyPath, Object findValue, boolean bFindAll) {
-		if (propertyPath == null || propertyPath.length() == 0) {
+		final OACascade cascade = new OACascade();
+		return _find(base, propertyPath, findValue, bFindAll, cascade);
+	}
+	protected OAObject[] _find(OAObject base, String propertyPath, Object findValue, boolean bFindAll, final OACascade cascade) {
+		if (base == null || propertyPath == null || propertyPath.length() == 0) {
 			return null;
 		}
+		if (cascade.wasCascaded(base, true)) return null;
 		StringTokenizer st = new StringTokenizer(propertyPath, ".");
 		Object result = base;
 		for (; st.hasMoreTokens();) {
@@ -110,7 +116,7 @@ public class OAObjectFindService {
 					if (obj == null) {
 						break;
 					}
-					OAObject[] objs = find((OAObject) obj, pp, findValue, bFindAll);
+					OAObject[] objs = _find((OAObject) obj, pp, findValue, bFindAll, cascade);
 					if (objs != null) {
 						if (!bFindAll) {
 							return objs;
@@ -136,6 +142,4 @@ public class OAObjectFindService {
 		}
 		return null;
 	}
-	
-	
 }

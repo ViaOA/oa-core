@@ -43,6 +43,8 @@ public class OALock implements java.io.Serializable {
      */
     protected Object object;
     
+    protected transient Thread thread;
+    
     /**
      * Optional weak reference used to control the lifetime of this lock.
      * The lock is considered expired once the referenced object is garbage collected.
@@ -74,11 +76,11 @@ public class OALock implements java.io.Serializable {
      * @throws IllegalArgumentException if {@code object} is {@code null}
      */
     public OALock(Object object, Object refObject, Object miscObject) {
-		//qqqqqqq method was protected
         if (object == null) throw new IllegalArgumentException("object can not be null");
         this.object = object;
         if (refObject != null) ref = new WeakReference(refObject);
         this.miscObject = miscObject;
+        this.thread = Thread.currentThread();
     }
     
     /**
@@ -121,6 +123,9 @@ public class OALock implements java.io.Serializable {
     	this.waitCnt = x;
     }
     
+    public Thread getThread() {
+    	return this.thread;
+    }
 }
 
 

@@ -73,9 +73,9 @@ public abstract class OAObjectSerializeService {
 				OAObjectKey ok = (OAObjectKey) in.readObject();
 				callGuidSetGuid(oaObj, ok.getGuid());
 
-				final OAObjectSerializer serializer = callThreadLocalGetCurrentObjectSerializer();
-				
-				if (serializer != null) serializer.dupCount--;
+				//qqqq was:
+				// final OAObjectSerializer serializer = callThreadLocalGetCurrentObjectSerializer();
+				// if (serializer != null) serializer.dupCount--;
 				return;
 			} else if (bx == 2) {
 			}
@@ -129,6 +129,7 @@ public abstract class OAObjectSerializeService {
 			}
 			callPropertyUnsafeSetPropertyIfEmpty(oaObj, key, value); // HubSerializeDelegate._readResolve could have set this first (as weakref)
 		}
+		//qqqqqqqq remove this, guid is now UUID and dont have to check guid as a seq#
 		//was:  srvcObject.getOAObjectGuidService().updateGuid(srvcObject.getOAObjectGuidService().getGuid(oaObj));
 	}
 
@@ -465,7 +466,6 @@ public abstract class OAObjectSerializeService {
 	public void _writeProperties(final OAObjectInfo oi, final boolean bIsServer, final OAObject oaObj,
 			final java.io.ObjectOutputStream stream, final OAObjectSerializer serializer, final boolean bIsObjectSentOnServer)
 			throws IOException {
-		//qqqqqqq method was protected
 		// this method can not support synchronized blocks, since multiple threads could be calling it and then cause deadlock
 		// default way for OAServer to send objects.  Clients always send objectKeys.
 		//   this way, only the object properties are sent, no reference objects or Hubs

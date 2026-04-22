@@ -575,7 +575,7 @@ public class OAObjectService extends OAObjectParentService implements ObjectsInt
 	public void callObjectInitializeInitializeAfterLoading(OAObject oaObj, boolean bAssignNewId, boolean bInitializeNulls, boolean bSetChangedToFalse) {
 	    getOAObjectInitializeService().initializeAfterLoading(oaObj, bAssignNewId, bInitializeNulls, bSetChangedToFalse);
 	}
-
+/*qqqqqqqqq remove
 	@Override
 	public void callObjectInitializeSetAsNewObject(OAObject oaObj, UUID guid) {
 	    getOAObjectInitializeService().setAsNewObject(oaObj, guid);
@@ -585,7 +585,7 @@ public class OAObjectService extends OAObjectParentService implements ObjectsInt
 	public void callObjectInitializeSetAsNewObject(OAObject oaObj) {
 	    getOAObjectInitializeService().setAsNewObject(oaObj);
 	}
-
+*/
 	// KeyService ======
 	@Override
 	public OAObjectKey callObjectKeyGetKey(OAObject oaObj) {

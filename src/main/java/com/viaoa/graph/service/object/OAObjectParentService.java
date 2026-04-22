@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 import com.viaoa.annotation.OAMany;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OASelect;
+import com.viaoa.graph.context.OAContext;
 import com.viaoa.graph.service.HubService;
 import com.viaoa.graph.service.OASyncService;
 import com.viaoa.hub.Hub;
@@ -55,7 +56,7 @@ public abstract class OAObjectParentService {
 	private OASyncService srvcSync;
 	private OAThreadLocalService srvcThreadLocal;
 	private OARemoteThreadService srvcRemoteThread;
-	
+	private OAContext context;
 	private final OAObjectInternalBridge faBridge = new OAObjectInternalBridge();
 
     private OAObjectAnnotationService srvcOAObjectAnnotation;
@@ -105,16 +106,19 @@ public abstract class OAObjectParentService {
 	public static final String WORD_Deleted = "DELETED";
 	
 
-	public void initialize(HubService srvcHub, OASyncService srvcSync, OAThreadLocalService srvcThreadLocal, OARemoteThreadService srvcRemoteThread) {
+	public void initialize(HubService srvcHub, OASyncService srvcSync, OAThreadLocalService srvcThreadLocal, OARemoteThreadService srvcRemoteThread, OAContext context) {
+		if (this.srvcHub != null) throw new IllegalArgumentException("initialize already called");
     	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
     	if (srvcSync == null) throw new IllegalArgumentException("OASyncService can not be null");
     	if (srvcThreadLocal == null) throw new IllegalArgumentException("OAThreadLocalService can not be null");
     	if (srvcRemoteThread == null) throw new IllegalArgumentException("OARemoteThreadService can not be null");
+    	if (context == null) throw new IllegalArgumentException("OAContext can not be null");
 
 		this.srvcHub = srvcHub;
 		this.srvcSync = srvcSync;
 		this.srvcThreadLocal = srvcThreadLocal;
 		this.srvcRemoteThread = srvcRemoteThread;
+		this.context = context;
 		
 	    getOAObjectAnnotationService();
 	    getOAObjectAutoAddService();
@@ -149,14 +153,10 @@ public abstract class OAObjectParentService {
 		
 	}
 	
-
-	//qqqqqq remove, keep internal ?? qqqqq
-	public HubService getHubService() {
+	protected HubService getHubService() {
 		return this.srvcHub;
 	}
 
-//qqqqqqqqq make all getter methods for sub Services package protected	
-	
     public OAObjectAnnotationService getOAObjectAnnotationService() {
     	if (srvcOAObjectAnnotation != null) return srvcOAObjectAnnotation;
 		srvcOAObjectAnnotation = new OAObjectAnnotationService(faBridge.getObjectInfoFriendAccess()) {
@@ -305,6 +305,10 @@ public abstract class OAObjectParentService {
 			@Override
 			public boolean callSyncIsServer() {
 				return OAObjectParentService.this.srvcSync.isServer();
+			}
+			@Override
+			protected OAContext callContextGetContext() {
+				return OAObjectParentService.this.context;
 			}
     	};
     	return srvcOAObjectCallback;
@@ -1166,6 +1170,11 @@ public abstract class OAObjectParentService {
 			@Override
 			public OAObject callCacheAdd(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll) {
 				return OAObjectParentService.this.getOAObjectCacheService().add(obj, bErrorIfExists, bAddToSelectAll);
+			}
+			@Override
+			public OAObject callContextGetContextObject() {
+				OAObject objx = context.getContextObject();
+				return objx;
 			}
 		};
     	return srvcOAObjectInitialize;

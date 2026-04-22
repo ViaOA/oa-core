@@ -273,7 +273,6 @@ public abstract class OAObjectDatabaseService {
 				for (int i = 0; i < cols.length; i++) {
 					if (cols[i].primaryKey) {
 						poss = OAArray.add(poss, i);
-						break;
 					}
 				}
 				Table tt = database.getTable(m.getReturnType());

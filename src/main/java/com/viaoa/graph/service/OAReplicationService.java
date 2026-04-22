@@ -16,23 +16,27 @@ public class OAReplicationService implements ReplInternalOps {
 	
 //qqqqqqqqqqqqqq exception if OASync is not server	
 	
-	private final String guid;
-    private final OASyncServer syncServer;
-    private final String tLogFileName;
-    private final String replicationMasterHostName;
-    private final int replicationMasterPort;
-    private final boolean bIsMaster;
+	private String guid;
+    private OASyncServer syncServer;
+    private String tLogFileName;
+    private String replicationMasterHostName;
+    private int replicationMasterPort;
+    private boolean bIsMaster;
 	
 	private OAReplicationMaster replMaster;
     private OAReplicationClient replClient;
 
+    
+	public OAReplicationService() {
+	}
+    
     /**
      * Create OAReplication Master
      * @param guid
      * @param syncServer
      * @param tLogFileName
      */
-	public OAReplicationService(String guid, OASyncServer syncServer, String tLogFileName) {
+	public void createMaster(String guid, OASyncServer syncServer, String tLogFileName) {
 		this.guid = guid;
 		this.syncServer = syncServer;
 		this.tLogFileName = tLogFileName;
@@ -50,7 +54,7 @@ public class OAReplicationService implements ReplInternalOps {
 	 * @param replicationMasterHostName
 	 * @param replicationMasterPort
 	 */
-	public OAReplicationService(String guid, OASyncServer syncServer, String tLogFileName, String replicationMasterHostName, int replicationMasterPort) {
+	public void createClient(String guid, OASyncServer syncServer, String tLogFileName, String replicationMasterHostName, int replicationMasterPort) {
 		this.guid = guid;
 		this.syncServer = syncServer;
 		this.tLogFileName = tLogFileName;

@@ -512,25 +512,26 @@ public abstract class OAObjectHubService {
         callHubDeleteDeleteAll(hub, cascade); // cascade delete and update M2M links
     }
 
+/*qqqqqqqq not used    
     public <T extends OAObject> void setMasterObject(Hub<T> hub, T oaObj, OALinkInfo liDetailToMaster) {
         if (callHubDetailGetMasterObject(hub) == null) {
         	callHubDetailSetMasterObject(hub, oaObj, liDetailToMaster);
         }
     }
-
-    public void setMasterObject(Hub<?> hub, OAObject oaObj, String nameFromMasterToDetail) {
-        if (hub == null || oaObj == null || nameFromMasterToDetail == null) return;
+*/
+    public void setMasterObject(Hub<?> hub, OAObject masterObject, String nameFromMasterToDetail) {
+        if (hub == null || masterObject == null || nameFromMasterToDetail == null) return;
         Object objx = callHubDetailGetMasterObject(hub);
-        if (objx != null && objx == oaObj) {
+        if (objx != null && objx == masterObject) {
             return;  // already set
         }
 
-        OAObjectInfo oi = callInfoGetObjectInfo(oaObj.getClass());
+        OAObjectInfo oi = callInfoGetObjectInfo(masterObject.getClass());
         
         OALinkInfo li = oi.getLinkInfo(nameFromMasterToDetail);
         if (li == null) return;
         li = callInfoGetReverseLinkInfo(li);
-        callHubDetailSetMasterObject(hub, oaObj, li);
+        callHubDetailSetMasterObject(hub, masterObject, li);
     }
 
 

@@ -29,13 +29,13 @@ public abstract class OAObjectEmptyHubService {
      * arrays of property names representing reference hubs that were
      * recorded as loaded and empty.
      */
-    private static Map<String, Map<Integer, String[]>> map;    
+    private Map<String, Map<Integer, String[]>> map;    
 
     /**
      * Flag indicating whether empty-hub tracking is enabled.
      * When disabled, no metadata is saved or restored.
      */
-    private static boolean bEnabled;
+    private boolean bEnabled;
 
     
     /**

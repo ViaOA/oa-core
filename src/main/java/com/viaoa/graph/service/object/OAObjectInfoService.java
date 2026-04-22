@@ -443,7 +443,7 @@ public abstract class OAObjectInfoService {
 	 * @param bIncludeSuperClasses  true to scan superclasses.
 	 * @return array of discovered property names.
 	 */
-	private String[] getPropertyNames(Class<?> clazzOrig, boolean bIncludeSuperClasses) {
+	private String[] getPropertyNames(final Class<?> clazzOrig, boolean bIncludeSuperClasses) {
 		ArrayList<String> alFound = new ArrayList<>();
 
 		HashSet<String> hsGetter = new HashSet<>();
@@ -1155,7 +1155,6 @@ public abstract class OAObjectInfoService {
 	 * @param method the method to store.
 	 */
 	public void storeMethod(Class<?> clazz, Method method) {
-		//qqqqqqqq method was protected
 		Map<String, Method> map = getClassMethodMap(clazz);
 		method.setAccessible(true); // 20130131
 		map.put(method.getName().toUpperCase(), method);
@@ -1849,8 +1848,8 @@ public abstract class OAObjectInfoService {
 	 * @param clazz the class whose not-found map is requested.
 	 * @return the not-found method-name set.
 	 */
-    public Set<String> getClassMethodNotFoundMap(Class<?> clazz) {
-        Set<String> map = hmClassMethodNotFound.computeIfAbsent(clazz, k -> new HashSet<String>(3, .75f));
+    protected Set<String> getClassMethodNotFoundMap(Class<?> clazz) {
+        Set<String> map = hmClassMethodNotFound.computeIfAbsent(clazz, k -> ConcurrentHashMap.newKeySet());
         return map;
     }
 
@@ -1861,7 +1860,7 @@ public abstract class OAObjectInfoService {
      *
      * @return the Class-to-OAObjectInfo map.
      */
-    public Map<Class, OAObjectInfo> getObjectInfoMap() {
+    protected Map<Class, OAObjectInfo> getObjectInfoMap() {
     	return hmObjectInfo;
     }
     

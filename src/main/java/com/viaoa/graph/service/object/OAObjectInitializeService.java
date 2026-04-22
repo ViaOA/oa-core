@@ -3,14 +3,11 @@ package com.viaoa.graph.service.object;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.object.OAFinder;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAString;
 
 public abstract class OAObjectInitializeService {
@@ -201,8 +198,7 @@ public abstract class OAObjectInitializeService {
 
 					// 20190205 set default linkOne
 					if (li.getType() == li.TYPE_ONE && OAString.isNotEmpty(li.getDefaultContextPropertyPath())) {
-						OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
-						OAObject objx = og.context().getContextObject();
+						OAObject objx = callContextGetContextObject();
 						if (objx != null) {
 							if (!li.getDefaultContextPropertyPath().equals(".")) {
 								OAFinder hf = new OAFinder(li.getDefaultContextPropertyPath());
@@ -259,14 +255,15 @@ public abstract class OAObjectInitializeService {
 	 *
 	 * @param oaObj the object to reinitialize; may be {@code null}.
 	 */
+/*qqqqqqqqqqqqq NOT Used	
 	public void setAsNewObject(final OAObject oaObj) {
 		if (oaObj == null) return;
 		callGuidAssignNewGuid(oaObj);
 
 		UUID guid = callGuidGetGuid(oaObj);
-		setAsNewObject(oaObj, guid);
+		_setAsNewObject(oaObj, guid);
 	}
-	
+*/	
 	
 	/**
 	 * Reinitializes the specified {@link OAObject} so it behaves as a newly created
@@ -286,12 +283,13 @@ public abstract class OAObjectInitializeService {
 	 * @param oaObj the object to reset; may be {@code null}.
 	 * @param guid  the GUID to assign.
 	 */
-	public void setAsNewObject(final OAObject oaObj, UUID guid) {
+/*qqqqqqqqqq	
+	protected void _setAsNewObject(final OAObject oaObj, UUID guid) {
 		if (oaObj == null) {
 			return;
 		}
 		faObject.setNew(oaObj, true);
-		faObject.setGuid(oaObj, guid); //qqqqqqq not a good idea (hashcode) ... will also need to update cache (key is guid
+		faObject.setGuid(oaObj, guid); 
 
 		OAObjectInfo oi = callInfoGetObjectInfo(oaObj.getClass());
 		String[] ids = oi.getIdProperties();
@@ -312,7 +310,8 @@ public abstract class OAObjectInitializeService {
 		}
 		oaObj.getObjectKey();
 	}
-
+*/
+	
 	/**
 	 * Reassigns the GUID of the specified {@link OAObject} to match the GUID
 	 * contained in the provided {@link OAObjectKey}. This is used when an object
@@ -330,13 +329,15 @@ public abstract class OAObjectInitializeService {
 	 * @param obj the object whose GUID is being restored; may be {@code null}.
 	 * @param origKey the key containing the original GUID to apply; must not be {@code null}.
 	 */
+/*qqqqqqqqqq Remove this	
 	public void reassignGuid(OAObject oaObj, OAObjectKey origKey) {
 		//qqqqqqqqqqqqqqq this is not be a good idea ... objectCache would need to be updated		
 		if (oaObj != null && origKey != null) {
 			faObject.setGuid(oaObj, origKey.getGuid()); // needs to re-cache
 		}
 	}
-
+*/
+	
 	public abstract OAObject callCacheAdd(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll);
 	public abstract <T extends OAObject> void callCacheFireAfterLoadEvent(T obj);
 	public abstract void callCacheAddToSelectAllHubs(OAObject obj);
@@ -353,5 +354,6 @@ public abstract class OAObjectInitializeService {
 	public abstract void callSyncClientObjectCreated(OAObject obj);	
 	public abstract boolean callThreadLocalIsLoading();
 	public abstract boolean callThreadLocalSetLoading(boolean b);
+	public abstract OAObject callContextGetContextObject();
 }
 

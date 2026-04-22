@@ -313,10 +313,13 @@ public abstract class OAObjectImportMatchService {
 				callThreadLocalSetLoading(false);
 			}
 
+			try {
 			objNext = (OAObject) callReflectCreateNewObject(oiNext.getForClass());
-
-			if (b) {
-				callThreadLocalSetLoading(true);
+			}
+			finally {
+				if (b) {
+					callThreadLocalSetLoading(true);
+				}
 			}
 
 			// final OAJson oaj = callThreadLocalGetOAJackson();

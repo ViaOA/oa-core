@@ -29,7 +29,7 @@ public abstract class OAObjectAutoAddService {
 	 * Tracks OAObjects for which automatic reverse-link insertion is disabled.
 	 * Presence of a GUID in this map indicates auto-add is turned off.
 	 */
-	private static final ConcurrentHashMap<UUID, Long> hmAutoAdd = new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<UUID, Long> hmAutoAdd = new ConcurrentHashMap<>();
 	
 	/**
 	 * Enables or disables automatic reverse-link insertion for the specified

@@ -5,7 +5,7 @@ import java.util.logging.Logger;
 
 import javax.swing.JLabel;
 
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.context.OAContext;
 import com.viaoa.graph.context.OAUserAccess;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubChangeListener;
@@ -385,7 +385,7 @@ public abstract class OAObjectCallbackService {
 			} else {
 				if (li.getOwner()) {
 					for (OAObject objx : (Hub<OAObject>) li.getValue(obj)) {
-						_getAllowSubmit(em, (OAObject) li.getValue(objx), cascade);
+						_getAllowSubmit(em, objx, cascade);
 						em.setObject(obj);
 						if (!em.isAllowed() || em.getThrowable() != null) {
 							break;
@@ -660,9 +660,8 @@ public abstract class OAObjectCallbackService {
 			return;
 		}
 		
-		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectCallback.getObject());
-		if (!og.context().getAllowEditProcessed()) {
-			String sx = og.context().getAllowEditProcessedPropertyPath();
+		if (!callContextGetContext().getAllowEditProcessed()) {
+			String sx = callContextGetContext().getAllowEditProcessedPropertyPath();
 			objectCallback.setResponse("User." + sx + "=false");
 			objectCallback.setAllowed(false);
 		}
@@ -769,11 +768,10 @@ public abstract class OAObjectCallbackService {
 		if (objectCallback.getAllowed()) {
 			String pp = oi.getContextEnabledProperty();
 			if (OAString.isNotEmpty(pp)) {
-				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-				if (!og.context().isEnabled(pp, oi.getContextEnabledValue())) {
+				if (!callContextGetContext().isEnabled(pp, oi.getContextEnabledValue())) {
 					objectCallback.setAllowed(false);
 					String s = "Not enabled, user rule for " + clazz.getSimpleName() + ", ";
-					OAObject user = og.context().getContextObject();
+					OAObject user = callContextGetContext().getContextObject();
 					if (user == null) {
 						s = "OAContext.getContextObject (User) returned null";
 					} else {
@@ -1043,11 +1041,10 @@ public abstract class OAObjectCallbackService {
 		if (objectCallback.getAllowed()) {
 			String pp = oi.getContextEnabledProperty();
 			if (OAString.isNotEmpty(pp)) {
-				OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objDelete);
-				if (!og.context().isEnabled(pp, oi.getContextEnabledValue())) {
+				if (!callContextGetContext().isEnabled(pp, oi.getContextEnabledValue())) {
 					objectCallback.setAllowed(false);
 					String s = "Not enabled, user rule for " + clazz.getSimpleName() + ", ";
-					OAObject user = og.context().getContextObject();
+					OAObject user = callContextGetContext().getContextObject();
 					if (user == null) {
 						s = "OAContext.getContextObject (User) returned null";
 					} else {
@@ -1090,7 +1087,7 @@ public abstract class OAObjectCallbackService {
 						objDelete);
 				processObjectCallback(objectCallback);
 			} else {
-				objectCallback = getAllowNewObjectCallback(hub.getObjectClass());
+				objectCallback = getAllowDeleteObjectCallback(objDelete);
 				processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, null);
 			}
 		}
@@ -1342,7 +1339,7 @@ public abstract class OAObjectCallbackService {
 	 * to succeed. When enabled, callback failures are overridden to allow
 	 * all operations, useful for demos or testing scenarios.
 	 */
-	private static boolean DEMO_AllowAllToPass;
+	private static volatile boolean DEMO_AllowAllToPass;
 	
 	/**
 	 * Processes the supplied callback by delegating to the internal
@@ -1359,8 +1356,7 @@ public abstract class OAObjectCallbackService {
 			objectCallback.setAllowed(true);
 		} else if ((!objectCallback.getAllowed() || objectCallback.getThrowable() != null)) {
 			// allow AppUser.admin=true to always be valid
-			OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectCallback.getObject());
-			if (og.context().isSuperAdmin()) { // allow all if super admin
+			if (callContextGetContext().isSuperAdmin()) { // allow all if super admin
 				objectCallback.setThrowable(null);
 				objectCallback.setAllowed(true);
 			}
@@ -1424,8 +1420,7 @@ public abstract class OAObjectCallbackService {
 			}
 		}
 
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectCallback.getObject());
-		final OAUserAccess userAccess = og.context().getContextUserAccess();
+		final OAUserAccess userAccess = callContextGetContext().getContextUserAccess();
 		
 		// 20200217 add OAUserAccess
 		if (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType() == Type.AllowVisible) {
@@ -1575,7 +1570,7 @@ public abstract class OAObjectCallbackService {
 				}
 			}
 			if ((!bHadVisibleProperty || objectCallback.getAllowed()) && OAString.isNotEmpty(sx)) {
-				OAObject user = og.context().getContextObject();
+				OAObject user = callContextGetContext().getContextObject();
 				if (user == null) {
 					
 					if (!callSyncIsServer()) {
@@ -1668,13 +1663,13 @@ public abstract class OAObjectCallbackService {
 				}
 			}
 			if ((!bHadEnabledProperty || objectCallback.getAllowed()) && OAString.isNotEmpty(enabledName) && bCheckUserEnabledProperty) {
-				boolean b = og.context().isEnabled(enabledName, enabledValue);
+				boolean b = callContextGetContext().isEnabled(enabledName, enabledValue);
 				objectCallback.setAllowed(b);
 				if (!b) {
 					objectCallback.setAllowed(false);
 					if (OAString.isEmpty(objectCallback.getResponse())) {
 						objectCallback.setAllowed(false);
-						OAObject user = og.context().getContextObject();
+						OAObject user = callContextGetContext().getContextObject();
 						String s = user == null ? "User" : user.getClass().getSimpleName();
 						s = "Not enabled, " + s + "." + enabledName + " is not " + enabledValue;
 						objectCallback.setResponse(s);
@@ -1793,8 +1788,7 @@ public abstract class OAObjectCallbackService {
 			if (bPassed && OAString.isNotEmpty(pp)) {
 				b = oi.getContextVisibleValue();
 
-				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectCallback.getObject());
-				OAObject user = og.context().getContextObject();
+				OAObject user = callContextGetContext().getContextObject();
 				if (user == null) {
 					if (!callSyncIsServer()) {
 						bPassed = false;
@@ -1841,8 +1835,7 @@ public abstract class OAObjectCallbackService {
 				pp = li.getContextVisibleProperty();
 				if (OAString.isNotEmpty(pp)) {
 					b = li.getContextVisibleValue();
-					OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectCallback.getObject());
-					OAObject user = og.context().getContextObject();
+					OAObject user = callContextGetContext().getContextObject();
 					if (user == null) {
 						if (!callSyncIsServer()) {
 							bPassed = false;
@@ -1898,12 +1891,11 @@ public abstract class OAObjectCallbackService {
 			pp = oi.getContextEnabledProperty();
 			if (bPassed && OAString.isNotEmpty(pp) && bCheckUserEnabledProperty) {
 				b = oi.getContextEnabledValue();
-				OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectCallback.getObject());
-				if (!og.context().isEnabled(pp, b)) {
+				if (!callContextGetContext().isEnabled(pp, b)) {
 					bPassed = false;
 					objectCallback.setAllowed(false);
 					String s = "Not enabled, user rule for " + oaObj.getClass().getSimpleName() + ", ";
-					OAObject user = og.context().getContextObject();
+					OAObject user = callContextGetContext().getContextObject();
 					if (user == null) {
 						s = "OAAuthDelegate.getUser returned null";
 					} else {
@@ -1945,9 +1937,8 @@ public abstract class OAObjectCallbackService {
 				pp = li.getContextEnabledProperty();
 				if (OAString.isNotEmpty(pp) && bCheckUserEnabledProperty) {
 					b = li.getContextEnabledValue();
-					OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectCallback.getObject());
-					if (!og.context().isEnabled(pp, b)) {
-						OAObject user = og.context().getContextObject();
+					if (!callContextGetContext().isEnabled(pp, b)) {
+						OAObject user = callContextGetContext().getContextObject();
 						objectCallback.setAllowed(false);
 						String s = "Not enabled, user rule for " + oaObj.getClass().getSimpleName() + "." + propertyName + ", ";
 						if (user == null) {
@@ -2245,8 +2236,7 @@ public abstract class OAObjectCallbackService {
 							(OAString.isEmpty(prop) && oi.getProcessed()),
 							changeListener);
 
-		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(cz);
-		final Hub hubUser = og.context().getContextHub();
+		final Hub hubUser = callContextGetContext().getContextHub();
 		if (bEnabled) {
 			s = oi.getContextEnabledProperty();
 		} else {
@@ -2373,8 +2363,7 @@ public abstract class OAObjectCallbackService {
 			}
 		}
 		if (contextDependentProperties != null) {
-			OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-			Hub hubUser = og.context().getContextHub();
+			Hub hubUser = callContextGetContext().getContextHub();
 			if (contextDependentProperties.length > 0 && hubUser == null) {
 				changeListener.addAlwaysFalse(hub);
 			}
@@ -2383,12 +2372,11 @@ public abstract class OAObjectCallbackService {
 			}
 		}
 		if (bProcessed) {
-			OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-			Hub hubUser = og.context().getContextHub();
+			Hub hubUser = callContextGetContext().getContextHub();
 			if (hubUser == null) {
 				changeListener.addAlwaysFalse(hub);
 			}
-			changeListener.add(hubUser, og.context().getAllowEditProcessedPropertyPath());
+			changeListener.add(hubUser, callContextGetContext().getAllowEditProcessedPropertyPath());
 		}
 	}
 
@@ -2407,6 +2395,6 @@ public abstract class OAObjectCallbackService {
 	public abstract <T extends OAObject> HubListener<T>[] callHubEventGetAllListeners(Hub<T> hub);
 
 	public abstract boolean callSyncIsServer();
-
+	protected abstract OAContext callContextGetContext();
 }
 

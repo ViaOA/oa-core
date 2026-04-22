@@ -46,8 +46,10 @@ public abstract class OAObjectLogService {
      */
     public void createXMLLogFile(String fname) {
         if (writerXml != null) {
-            writerXml.close();
-            writerXml = null;
+            synchronized (writerXml) {
+            	writerXml.close();
+                writerXml = null;
+            }
         }
         if (fname != null) {
             fname = OAString.convertFileName(fname);
@@ -99,6 +101,7 @@ public abstract class OAObjectLogService {
      * @param bSave true to log a SAVE command, false to log a DELETE
      */
      public void logToXmlFile(OAObject oaObj, boolean bSave) {
+     	OAXMLWriter writerXml = this.writerXml;
         if (writerXml == null) return;
         OALogRecord rec = new OALogRecord();
         rec.setObject(oaObj);
@@ -135,10 +138,17 @@ public abstract class OAObjectLogService {
             public void endObject(OAObject obj, boolean bHasParent) {
                 if (!(obj instanceof OALogRecord)) return;
                 OALogRecord lr = (OALogRecord) obj;
-                if (lr.getCommand().equals(OALogRecord.COMMAND_SAVE)) {
-                    lr.getObject().save(OAObject.CASCADE_NONE);
+                
+                String cmd = lr.getCommand();
+                
+                if (cmd != null && cmd.equals(OALogRecord.COMMAND_SAVE)) {
+                	OAObject objx = lr.getObject();
+                	if (objx != null) objx.save(OAObject.CASCADE_NONE);
                 }
-                else lr.getObject().delete();
+                else {
+                	OAObject objx = lr.getObject();
+                	if (objx != null) objx.delete();
+                }
             }
         };
         try {

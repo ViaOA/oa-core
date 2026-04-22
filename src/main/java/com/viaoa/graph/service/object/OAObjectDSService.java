@@ -43,7 +43,7 @@ public abstract class OAObjectDSService {
 		}
 	}
     
-    private static final ConcurrentHashMap<UUID, Long> hmAssigningId = new ConcurrentHashMap<>(17, 0.75F);
+    private final ConcurrentHashMap<UUID, Long> hmAssigningId = new ConcurrentHashMap<>(17, 0.75F);
 	
 	/**
 	 * Returns the internal map tracking GUIDs of objects currently
@@ -51,7 +51,7 @@ public abstract class OAObjectDSService {
 	 *
 	 * @return the assigning-ID tracking map
 	 */
-    public static Map<UUID, Long> getAssigningIdMap() {
+    public Map<UUID, Long> getAssigningIdMap() {
         return hmAssigningId;
     }
 
@@ -134,7 +134,7 @@ public abstract class OAObjectDSService {
 	 * @return {@code true} if a DataSource is registered; otherwise {@code false}
 	 */
 	protected static boolean hasDataSource(OAObject oaObj) {
-		return OARuntime.datasource().get(oaObj.getClass()) != null;
+		return oaObj != null && OARuntime.datasource().get(oaObj.getClass()) != null;
 	}
 
 	/**
@@ -144,7 +144,7 @@ public abstract class OAObjectDSService {
 	 * @return {@code true} if a DataSource is registered; otherwise {@code false}
 	 */
 	public static boolean hasDataSource(Class<? extends OAObject> c) {
-		return OARuntime.datasource().get(c) != null;
+		return c != null && OARuntime.datasource().get(c) != null;
 	}
 	
 	/**
@@ -214,6 +214,7 @@ public abstract class OAObjectDSService {
 	 * @return the retrieved object, or {@code null} if none exists
 	 */
 	protected <T extends OAObject> T  getObject(Class<T> clazz, OAObjectKey key) {
+		if (clazz == null) return null;
 		OADataSource ds = OARuntime.datasource().get(clazz);
 		if (ds == null) return null;
 		return ds.getObject(clazz, key);
@@ -229,6 +230,7 @@ public abstract class OAObjectDSService {
 	 * @return the retrieved object, or {@code null} if no DataSource exists
 	 */
 	public <T extends OAObject> T getObject(OAObjectInfo oi, Class<T> clazz, OAObjectKey key) {
+		if (clazz == null) return null;
 		OADataSource ds = OARuntime.datasource().get(clazz);
 		if (ds == null) return null;
 		return ds.getObject(oi, clazz, key, false);

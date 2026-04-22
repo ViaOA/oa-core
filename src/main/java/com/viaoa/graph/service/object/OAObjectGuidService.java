@@ -112,14 +112,16 @@ public abstract class OAObjectGuidService {
 	 * {@link #setObjectGuid(OAObject, long)}.</p>
 	 *
 	 * @param obj the object whose GUID is requested; may be {@code null}.
-	 * @return the object's GUID, or {@code 0} if the object is {@code null}.
+	 * @return the object's GUID.
 	 */
 	public UUID getGuid(OAObject oaObj) {
+		if (oaObj == null) return null;
 		UUID guid = faObject.getGuid(oaObj);
 		return guid;
 	}
 
 	public void setGuid(OAObject oaObj, UUID guid) {
+		if (oaObj == null) return;
 		faObject.setGuid(oaObj, guid);
 	}
 	

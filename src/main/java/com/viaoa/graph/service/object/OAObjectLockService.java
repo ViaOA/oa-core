@@ -25,7 +25,6 @@ public abstract class OAObjectLockService {
 	 */
     private final Map<OAObject, OALock> hmObjectLock = new HashMap<>(11, 0.75F);
 
-    
 	// property locking
 	private final Map<String, PropertyLock> hmPropertyLock = new ConcurrentHashMap<>();
 	private final Map<Thread, Thread> hmWaitingOnPropertyLock = new ConcurrentHashMap<>();
@@ -59,32 +58,33 @@ public abstract class OAObjectLockService {
      * @param object the object to lock; must not be {@code null}
      * @throws IllegalArgumentException if {@code object} is {@code null}
      */
-	public void lock(OAObject object) {
+	public boolean lock(OAObject object) {
 	    if (object == null) throw new IllegalArgumentException("object can not be null");
 
 	    if (callSyncIsServer() || callSyncIsClient()) {
 	    	// locks will be under RemoteSessionImpl.hashLock
-	    	callSyncSetLock(object.getClass(), object.getObjectKey(), true);
-	    	return;
+	    	return callSyncSetLock(object.getClass(), object.getObjectKey(), true);
 	    }
-	            
-	    OALock newLock = new OALock(object, null, null);
+		final Thread threadThis = Thread.currentThread();
+	    
 	    synchronized (hmObjectLock) {
 	        for (;;) {
 	            OALock lock = hmObjectLock.get(object);
 	            if (lock == null) break;
+	            if (lock.getThread() == threadThis) return false; // already locked by this thread
 	            try {
-	                int x = lock.getWaitCount();
-	                lock.setWaitCount(x + 1);
+	                lock.setWaitCount(lock.getWaitCount() + 1);
 	                hmObjectLock.wait();
 	            }
 	            catch (InterruptedException e) {
 	            	Thread.currentThread().interrupt();	            	
-	            	return;
+	            	return false;
 	            }
 	        }
+		    OALock newLock = new OALock(object, null, null);
 	        hmObjectLock.put(object, newLock);
 	    }
+	    return true;
 	}
 
 	/**
@@ -104,19 +104,25 @@ public abstract class OAObjectLockService {
 	 * @param object the object whose lock is to be released; ignored if
 	 *               {@code null}
 	 */
-	public void unlock(OAObject object) {
-	    if (object == null) return;
+	public boolean unlock(OAObject object) {
+	    if (object == null) return false;
 
 	    if (callSyncIsServer() || callSyncIsClient()) {
 	    	// locks will be under RemoteSessionImpl.hashLock
-	    	callSyncSetLock(object.getClass(), object.getObjectKey(), false);
-	    	return;
+	    	return callSyncSetLock(object.getClass(), object.getObjectKey(), false);
 	    }
 	    
-	    synchronized (hmObjectLock) {
-	    	hmObjectLock.remove(object);
-	    	hmObjectLock.notifyAll();
+		synchronized (hmObjectLock) {
+            OALock lock = hmObjectLock.get(object);
+            if (lock != null) {
+                if (lock.getThread() == Thread.currentThread()) {
+                	hmObjectLock.remove(object);
+                	hmObjectLock.notifyAll();
+                	return true;
+                }
+            }
 	    }
+		return false;
 	}
 
 	/**
@@ -141,11 +147,28 @@ public abstract class OAObjectLockService {
 	    	return callSyncIsLocked(object.getClass(), object.getObjectKey());
 	    }
 	    
+	    OALock lock;
         synchronized (hmObjectLock) {
-            return (hmObjectLock.get(object) != null);
+        	lock = hmObjectLock.get(object);
         }
+        return (lock != null);
 	}
 
+	public boolean isLockedByAnotherThread(OAObject object) {
+	    if (object == null) return false;
+
+	    if (callSyncIsServer() || callSyncIsClient()) {
+	    	// locks will be under RemoteSessionImpl.hashLock
+	    	return callSyncIsLocked(object.getClass(), object.getObjectKey());
+	    }
+	    
+	    OALock lock;
+        synchronized (hmObjectLock) {
+        	lock = hmObjectLock.get(object);
+        }
+    	if (lock == null) return false;
+        return (lock.getThread() != Thread.currentThread());
+	}
 	
 	
 	/**
@@ -271,20 +294,26 @@ public abstract class OAObjectLockService {
 	 * @param oaObj the target object
 	 * @param name  the property name whose lock should be released
 	 */
-	public void releasePropertyLock(OAObject oaObj, String name) {
+	public boolean releasePropertyLock(OAObject oaObj, String name) {
 		if (oaObj == null || name == null) {
-			return;
+			return false;
 		}
 		final String key = oaObj.getGuid() + "." + name.toUpperCase(Locale.ROOT);
-		PropertyLock lock = hmPropertyLock.remove(key);
-		if (lock != null) {
-			synchronized (lock) {
-				lock.done = true;
-				if (lock.hasWait) {
-					lock.notifyAll();
-				}
+		PropertyLock lock = hmPropertyLock.get(key);
+		if (lock == null) return false;
+		
+		final Thread threadThis = Thread.currentThread();
+		synchronized (lock) {
+			if (lock.thread != threadThis) {
+				return false;
+			}
+			lock.done = true;
+			hmPropertyLock.remove(key);
+			if (lock.hasWait) {
+				lock.notifyAll();
 			}
 		}
+		return true;
 	}
 	
 	/**
@@ -299,7 +328,17 @@ public abstract class OAObjectLockService {
 			return false;
 		}
 		String key = oaObj.getGuid() + "." + name.toUpperCase(Locale.ROOT);
-		return (hmPropertyLock.get(key) != null);
+		PropertyLock lock = hmPropertyLock.get(key);
+		return (lock != null);
+	}
+
+	public boolean isPropertyLockedByAnotherThread(OAObject oaObj, String name) {
+		if (oaObj == null || name == null) {
+			return false;
+		}
+		String key = oaObj.getGuid() + "." + name.toUpperCase(Locale.ROOT);
+		PropertyLock lock = hmPropertyLock.get(key);
+		return (lock != null && lock.thread != Thread.currentThread());
 	}
 	
 	public abstract boolean callSyncIsClient();

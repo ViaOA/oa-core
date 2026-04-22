@@ -47,7 +47,7 @@ public class OAGraphImpl implements OAGraphInternal {
 	private HubService srvcHub;
     private OASyncService srvcOASync;
     private OAReplicationService srvcOAReplication;
-    private OAContext srvcOAContext;
+    private OAContext context;
 
 	public OAGraphImpl(String packageName) {
 		this.packageName = packageName;
@@ -62,9 +62,10 @@ public class OAGraphImpl implements OAGraphInternal {
 		srvcOAObject = new OAObjectService();
 		srvcHub = new HubService();
 	    srvcOASync = new OASyncService(this);
-	    srvcOAContext = new OAContext();
+	    srvcOAReplication = new OAReplicationService();
+	    context = new OAContext();
 
-		srvcOAObject.initialize(srvcHub, srvcOASync, srvcThread.getThreadLocalService(), srvcThread.getRemoteThreadService());
+		srvcOAObject.initialize(srvcHub, srvcOASync, srvcThread.getThreadLocalService(), srvcThread.getRemoteThreadService(), context);
 		srvcHub.initialize(srvcOAObject, srvcOASync, srvcThread.getThreadLocalService(), srvcThread.getRemoteThreadService());
 
 		if (packageName != null) {
@@ -86,17 +87,6 @@ public class OAGraphImpl implements OAGraphInternal {
 		return bInit;
 	}
     
-
-/*	
-	public ObjectsOps objects() {
-		return srvcOAObject;
-	}
-
-	@Override
-	public HubsOps hubs() {
-		return srvcHub;
-	}
-*/	
 	@Override
     public SyncOps sync() {
     	return srvcOASync;
@@ -196,7 +186,6 @@ public class OAGraphImpl implements OAGraphInternal {
 	}
 
 
-//qqqqqqqqqqqqqqqq	
 	@Override
 	public <F extends OAObject, T extends OAObject> OAFinder<F, T> finder(F obj, Class<T> toType, String path) {
 		OAFinder<F, T> finder = new OAFinder<F, T>(obj, path);
@@ -209,13 +198,9 @@ public class OAGraphImpl implements OAGraphInternal {
 		return finder;
 	}
 	
-	
-	
-	
-
 	@Override
 	public <T extends OAObject> void observe(Hub<T> hub, HubListener<T> hl) {
-		if (hub == null) return;
+		if (hub == null || hl == null) return;
 		hub.addHubListener(hl);
 	}
 
@@ -226,9 +211,9 @@ public class OAGraphImpl implements OAGraphInternal {
 	}
 
 	@Override
-	public <T extends OAObject> void share(Hub<T> hub, Hub<T> hub2, boolean shareActiveObject) {
+	public <T extends OAObject> void share(Hub<T> hub, Hub<T> hubToShare, boolean shareActiveObject) {
 		if (hub == null) return;
-		hub.setSharedHub(hub2);
+		hub.setSharedHub(hubToShare, shareActiveObject);
 	}
 
 	@Override
@@ -242,13 +227,13 @@ public class OAGraphImpl implements OAGraphInternal {
 
 	@Override
 	public <F extends OAObject, T extends OAObject> HubMerger<F, T> merge(Hub<F> hub, Hub<T> hubCombined, String path) {
-		HubMerger<F, T> merger = new HubMerger(hub, hubCombined, path);
+		HubMerger<F, T> merger = new HubMerger<>(hub, hubCombined, path);
 		return merger;
 	}
 
 	@Override
 	public <F extends OAObject, T extends OAObject> HubMerger<F, T> merge(Hub<F> hubRoot, Hub<T> hubCombinedObjects, String path, boolean bShareActiveObject, String selectOrder, boolean bUseAll, boolean bIncludeRootHub, boolean bUseBackgroundThread) {
-		HubMerger<F, T> merger = new HubMerger<F, T>(hubRoot, hubCombinedObjects, path, bShareActiveObject, bUseAll, bIncludeRootHub);
+		HubMerger<F, T> merger = new HubMerger<F, T>(hubRoot, hubCombinedObjects, path, bShareActiveObject, selectOrder, bUseAll, bIncludeRootHub, bUseBackgroundThread);
 		return merger;
 	}
 	
@@ -284,12 +269,14 @@ public class OAGraphImpl implements OAGraphInternal {
 	}
 
 	@Override
-	public <T extends OAObject> void copy(Hub<T> hubFrom, Hub<T> hubTo) {
+	public <T extends OAObject> HubCopy<T> copy(Hub<T> hubFrom, Hub<T> hubTo) {
 		HubCopy<T> hc = new HubCopy<>(hubFrom, hubTo, true);
+		return hc;
 	}
 
-	public <T extends OAObject> void copy(Hub<T> hubFrom, Hub<T> hubTo, boolean shareActiveObject) {
+	public <T extends OAObject> HubCopy<T> copy(Hub<T> hubFrom, Hub<T> hubTo, boolean shareActiveObject) {
 		HubCopy<T> hc = new HubCopy<>(hubFrom, hubTo, shareActiveObject);
+		return hc;
 	}
 	
 
@@ -343,12 +330,8 @@ public class OAGraphImpl implements OAGraphInternal {
 
 	@Override
 	public OAContext context() {
-		return srvcOAContext;
+		return context;
 	}
-
-
-
-
 
 }
 

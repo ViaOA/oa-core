@@ -287,13 +287,14 @@ public abstract class OAObjectPropertyService {
 	 *         was null; false if the property did not exist or its value was
 	 *         non-null
 	 */
-	public boolean removePropertyIfNull(OAObject oaObj, String name, boolean bFirePropertyChange) {
+	protected boolean removePropertyIfNull(OAObject oaObj, String name, boolean bFirePropertyChange) {
 		Object[] properties = faObject.getProperties(oaObj);
 		if (oaObj == null || properties == null || name == null) {
 			return false;
 		}
 		Object value = null;
 		boolean bResize = false;
+		boolean bFound = false;
 		synchronized (oaObj) {
 			for (int i = 0; i < properties.length; i += 2) {
 				if (properties[i] == null) {
@@ -303,7 +304,7 @@ public abstract class OAObjectPropertyService {
 					if (value != null) {
 						return false;
 					}
-
+					bFound = true;
 					properties[i] = null;
 					properties[i + 1] = null;
 					if (bResize) {
@@ -316,7 +317,7 @@ public abstract class OAObjectPropertyService {
 		if (bFirePropertyChange) {
 			faObject.firePropertyChange(oaObj, name, value, null);
 		}
-		return true;
+		return bFound;
 	}
 	
 	/**
@@ -796,7 +797,7 @@ public abstract class OAObjectPropertyService {
 			return;
 		}
 
-		boolean bSupportStorage = oi.getSupportsStorage();
+		// boolean bSupportStorage = oi.getSupportsStorage();
 
 		for (OALinkInfo li : oi.getLinkInfos()) {
 			if (li.getType() != OALinkInfo.ONE) {
@@ -844,9 +845,7 @@ public abstract class OAObjectPropertyService {
 					continue;
 				}
 				boolean b = setPropertyWeakRef((OAObject) parent, liRev.getName(), !bReferenceable, (Hub) objx);
-				if (!b) {
-					break; // already changed, dont need to continue
-				}
+				if (!b) break; 
 			}
 			if (bReferenceable) {
 				if (cascade == null) {
@@ -865,10 +864,9 @@ public abstract class OAObjectPropertyService {
 	 * @param oaObj the object whose properties should be cleared
 	 */
 	public void clearProperties(OAObject oaObj) {
-		if (oaObj != null) {
-			synchronized (oaObj) {
-				faObject.setProperties(oaObj, null);
-			}
+		if (oaObj == null) return;
+		synchronized (oaObj) {
+			faObject.setProperties(oaObj, null);
 		}
 	}
 

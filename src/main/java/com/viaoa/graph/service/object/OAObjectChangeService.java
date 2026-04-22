@@ -89,7 +89,7 @@ public abstract class OAObjectChangeService {
 		if (iCascadeRule == oaObj.CASCADE_NONE) {
 			return false;
 		}
-		if (cascade.wasCascaded(oaObj, true)) {
+		if (cascade != null && cascade.wasCascaded(oaObj, true)) {
 			return false;
 		}
 

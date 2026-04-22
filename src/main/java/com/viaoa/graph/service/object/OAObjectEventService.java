@@ -46,16 +46,10 @@ public abstract class OAObjectEventService {
 	private final String WORD_CHANGED = "CHANGED";
 
 	/**
-	 * Timestamp used to throttle repeated warning messages so they do not
-	 * flood the log when callback or validation errors occur frequently.
-	 */
-	private volatile long msThrottle;
-
-	/**
 	 * Counter used to track how many validation or callback-related errors
 	 * have occurred, allowing the logger to include sequence information.
 	 */
-	private int cntError;
+	private volatile int cntError;
 
 	/**
 	 * Entry point for emitting a before-change notification for a property.
@@ -129,9 +123,10 @@ public abstract class OAObjectEventService {
 			}
 
 			if (!bSkip && !bIsLoading) {
-				OAObjectCallback em = callCallbackGetVerifyPropertyChangeObjectCallback(	OAObjectCallback.CHECK_CallbackMethod,
-																										oaObj, propertyName, oldObj,
-																										newObj);
+				OAObjectCallback em = callCallbackGetVerifyPropertyChangeObjectCallback(
+					OAObjectCallback.CHECK_CallbackMethod,
+					oaObj, propertyName, oldObj, newObj
+				);
 				if (!em.getAllowed() || em.getThrowable() != null) {
 					String msg = em.getResponse();
 					if (em.getThrowable() != null) {
@@ -146,17 +141,7 @@ public abstract class OAObjectEventService {
 						}
 						msg = (oaObj.getClass().getSimpleName()) + "." + propertyName + " change not allowed, value=" + newObj + msg;
 					}
-
-					long ms = System.currentTimeMillis();
-					++cntError;
-					if (ms > msThrottle + 5000) {
-						LOG.warning(cntError + ") " + msg + ", will continue without throwing an exception");
-						msThrottle = ms;
-					}
-					/*
-					 * 20181018, 20190502 dont throw an exception until there is more confidence.
-					 * throw new RuntimeException(msg, em.getThrowable());
-					 */
+					throw new RuntimeException(msg, em.getThrowable());
 				}
 			}
 		}
@@ -235,7 +220,7 @@ public abstract class OAObjectEventService {
 					}
 					// cant assign a child of this object as the new parent - causes orphaned objects
 					Object obj = newObj;
-					for (int i=0; i<100; i++) {
+					for (int i=0; i<250; i++) {
 						
 						obj = callReflectGetProperty((OAObject) obj, liRecursive.getName());
 						if (obj == null) {
@@ -405,7 +390,6 @@ public abstract class OAObjectEventService {
 	 */
 	public void firePropertyChange(final OAObject oaObj, final String propertyName, Object oldObj, Object newObj,
 			boolean bLocalOnly, boolean bSetChanged) {
-		//qqqqq method was protected
 		firePropertyChange(oaObj, propertyName, oldObj, newObj, bLocalOnly, bSetChanged, false, false);
 	}
 
@@ -423,7 +407,6 @@ public abstract class OAObjectEventService {
 	 */
 	public void firePropertyChange(final OAObject oaObj, final String propertyName, Object oldObj, Object newObj,
 			boolean bLocalOnly, boolean bSetChanged, boolean bUnknownValues) {
-    	//qqqqqqqqqq method was protected
 		firePropertyChange(oaObj, propertyName, oldObj, newObj, bLocalOnly, bSetChanged, bUnknownValues, false);
 	}
 
@@ -445,7 +428,6 @@ public abstract class OAObjectEventService {
 	 */
 	public void firePropertyChange(final OAObject oaObj, final String propertyName, Object oldObj, Object newObj,
 			final boolean bLocalOnly, final boolean bSetChanged, final boolean bUnknownValues, final boolean bIsCheckingRef) {
-    	//qqqqqqqqqq method was protected
 		if (oaObj == null || propertyName == null) {
 			return;
 		}
@@ -552,7 +534,6 @@ public abstract class OAObjectEventService {
 			faObject.setChangedFlag(oaObj, true);
 		}
 
-		
 		if (!bIsLoading) {
 			if (!bLocalOnly) {
 				// prior to 20100406, this was always calling these methods
@@ -568,8 +549,7 @@ public abstract class OAObjectEventService {
 			//      default=false, which means that the individual UI components are controlling this
 			if (callThreadLocalGetCreateUndoablePropertyChanges()) {
 				if (!bIsChangeProp && OAUndoManager.getUndoManager() != null) {
-					OAUndoableEdit ue = OAUndoableEdit.createUndoablePropertyChange(null, oaObj, propertyName, oldObj, newObj,
-																					bChangeHold);
+					OAUndoableEdit ue = OAUndoableEdit.createUndoablePropertyChange(null, oaObj, propertyName, oldObj, newObj,bChangeHold);
 					OAUndoManager.add(ue);
 				}
 			}
@@ -598,23 +578,9 @@ public abstract class OAObjectEventService {
 			callCacheFireAfterPropertyChange(oaObj, origKey, propertyName, oldObj, newObj, bLocalOnly, true);
 		}
 
-		faObject.setChangedFlag(oaObj, bChangeHold);
-
-		/*was: moved to below
-		// 20160304
-		if (!bIsLoading) {
-		    if (oi.getHasTriggers()) {
-		        HubEvent hubEvent = new HubEvent(oaObj, propertyName, oldObj, newObj);
-		        try {
-		            OARuntime.threadService().addHubEvent(hubEvent);
-		            oi.onChange(oaObj, propertyName, hubEvent);
-		        }
-		        finally {
-		            OARuntime.threadService().removeHubEvent(hubEvent);
-		        }
-		    }
+		if (!bIsChangeProp) {
+			faObject.setChangedFlag(oaObj, bChangeHold);
 		}
-		*/
 
 		// set to Changed
 		if (!bIsChangeProp && bSetChanged && !bChangeHold && (calcInfo == null) && !bUnknownValues) {

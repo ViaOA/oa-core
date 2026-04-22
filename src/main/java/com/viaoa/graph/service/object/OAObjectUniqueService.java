@@ -12,8 +12,7 @@ public abstract class OAObjectUniqueService {
     public OAObjectUniqueService() {
     }
     
-    // qqqq could be too heavy, rework new solution
-    private final Object Lock = new Object();
+    private Object Lock = new Object();
 
     /**
      * Finds or creates an {@link OAObject} instance with the specified unique
@@ -67,6 +66,7 @@ public abstract class OAObjectUniqueService {
         OASelect<?> select = new OASelect<>(clazz);
         select.setWhere(propertyName+" = ?", new Object[] {uniqueKey});
         oaObj = select.next();
+        select.close();
         if (oaObj != null) {
             return oaObj;
         }

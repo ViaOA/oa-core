@@ -85,7 +85,6 @@ public abstract class OAObjectReflectService {
 	 * @throws RuntimeException if construction fails for any reason
 	 */
 	private <T> T _createNewObject(Class<T> clazz) {
-		OAObjectInfo oi = getOAObjectInfo(clazz);
 		T obj = null;
 
 		/**
@@ -298,10 +297,10 @@ public abstract class OAObjectReflectService {
 	 * @param value    the new value (may be OAObject, OAObjectKey, or raw)
 	 * @param fmt      optional formatter used for type conversion
 	 */
-	public void setProperty(final OAObject oaObj, String propName, Object value, final String fmt) {
+	public boolean setProperty(final OAObject oaObj, String propName, Object value, final String fmt) {
 		if (oaObj == null || propName == null || propName.length() == 0) {
 			LOG.log(Level.WARNING, "property is invalid, =" + propName, new Exception());
-			return;
+			return false;
 		}
 
 		// add support for propertyPath
@@ -312,9 +311,9 @@ public abstract class OAObjectReflectService {
 
 			Object objx = getProperty(oaObj, s);
 			if (objx instanceof OAObject) {
-				setProperty((OAObject) objx, propName, value, fmt);
+				return setProperty((OAObject) objx, propName, value, fmt);
 			}
-			return;
+			return false;
 		}
 
 		final boolean bIsLoading = callThreadLocalIsLoading();
@@ -344,7 +343,7 @@ public abstract class OAObjectReflectService {
 				clazz = m.getReturnType();
 				if (clazz != null && clazz.equals(Hub.class)) {
 					setHubProperty(oaObj, propName, propNameU, value, oi, fmt);
-					return;
+					return true;
 				}
 			}
 			if (!bIsLoading) {
@@ -358,7 +357,7 @@ public abstract class OAObjectReflectService {
 			if (!bIsLoading) {
 				callEventFirePropertyChange(oaObj, propName, previousValue, value, oi.getLocalOnly(), true);
 			}
-			return;
+			return true;
 		}
 
 		if (value instanceof OANullObject) {
@@ -378,7 +377,7 @@ public abstract class OAObjectReflectService {
 					}
 					callPropertySetProperty(oaObj, propName, value);
 				}
-				return;
+				return true;
 			}
 			previousValue = callPropertyGetProperty(oaObj, propName, false, true); // get previous value
 		}
@@ -392,17 +391,17 @@ public abstract class OAObjectReflectService {
 			}
 		} else if (value == null) { // must be a reference property, being set to null value.
 			if (previousValue == null) {
-				return; // no change
+				return false; // no change
 			}
 		} else if ((value instanceof OAObject)) { // reference property, that is an OAObject class type value
 			if (previousValue == value) {
-				return;
+				return false;
 			}
 			if (previousValue instanceof OAObjectKey) {
 				OAObjectKey k = callKeyGetKey((OAObject) value);
 				if (callKeyIsForSameOAObject(null, k, (OAObjectKey) previousValue)) {
 					callPropertySetProperty(oaObj, propName, value);
-					return; // no change; was storing key; now storing oaObject
+					return false; // no change; was storing key; now storing oaObject
 				}
 			}
 		} else { //  (value NOT instanceof OAObject) either OAObjectKey or value of key
@@ -410,12 +409,12 @@ public abstract class OAObjectReflectService {
 				value = callKeyCreateObjectKey(li.getToClass(), value);
 			}
 			if (value.equals(previousValue)) {
-				return; // no change
+				return false; // no change
 			}
 			if (previousValue instanceof OAObject) {
 				OAObjectKey k = callKeyGetKey((OAObject) previousValue);
 				if (callKeyIsForSameOAObject(null, k, (OAObjectKey) value)) {
-					return; // no change
+					return false; // no change
 				}
 			}
 
@@ -433,7 +432,7 @@ public abstract class OAObjectReflectService {
 				if (!bIsLoading) {
 					previousValue = getProperty(oaObj, propName);
 					if (previousValue == null) {
-						return; // no change
+						return false; // no change
 					}
 				}
 				value = OAReflect.getPrimitiveClassWrapperObject(clazz);
@@ -458,6 +457,7 @@ public abstract class OAObjectReflectService {
 				callEventFirePropertyChange(oaObj, propName, previousValue, null, oi.getLocalOnly(), true); // setting to null
 			}
 		}
+		return true;
 	}
 
 	/**
@@ -594,7 +594,7 @@ public abstract class OAObjectReflectService {
 			return;
 		}
 
-		Hub<?> hub;
+		Hub hub;
 		Object objOrig = callPropertyGetProperty(oaObj, propName, false, true);
 
 		if (value instanceof Hub) {
@@ -618,9 +618,6 @@ public abstract class OAObjectReflectService {
 			callPropertySetProperty(oaObj, propName, hub);
 		}
 
-		Class<? extends OAObject> c = hub.getObjectClass();
-		boolean bKeyOnly = (c.equals(OAObjectKey.class));
-
 		if (!(value instanceof OAObject)) {
 			if (!(value instanceof OAObjectKey)) { // convert to OAObjectKey
 				if (value instanceof Hub) {
@@ -630,17 +627,12 @@ public abstract class OAObjectReflectService {
 			}
 		}
 
-		if (bKeyOnly) {
-			if (value instanceof OAObject) {
-				value = callKeyGetKey((OAObject) value);
-			}
-		} else {
-			if (value instanceof OAObjectKey) {
-				value = getObject(c, value);
-			}
+		if (value instanceof OAObjectKey) {
+			Class<? extends OAObject> c = hub.getObjectClass();
+			value = getObject(c, value);
 		}
-		if (value instanceof OAObject && value != null && hub.getObject(value) == null) {
-			((Hub<OAObject>)hub).add((OAObject) value);
+		if (value instanceof OAObject && !hub.contains(value)) {
+			hub.add((OAObject) value);
 		}
 	}
 
@@ -878,6 +870,22 @@ public abstract class OAObjectReflectService {
 	 */
 	private Hub<?> _getReferenceHub(final OAObject oaObj, final String linkPropertyName, String sortOrder,
 			boolean bSequence, Hub<?> hubMatch, final OAObjectInfo oi, final OALinkInfo linkInfo) {
+		
+		List<OAObject> alSiblinkLock = new ArrayList<>();
+		Hub hub = null;
+		try {
+			hub = _getReferenceHub2(oaObj, linkPropertyName, sortOrder, bSequence, hubMatch, oi, linkInfo, alSiblinkLock);
+		}
+		finally {
+			for (OAObject obj : alSiblinkLock) {
+				callLockReleasePropertyLock(obj, linkPropertyName);
+			}
+		}
+		return hub;
+	}
+	
+	private Hub<?> _getReferenceHub2(final OAObject oaObj, final String linkPropertyName, String sortOrder,
+			boolean bSequence, Hub<?> hubMatch, final OAObjectInfo oi, final OALinkInfo linkInfo, final List<OAObject> alSiblinkLock ) {
 
 		Object propertyValue = callPropertyGetProperty(oaObj, linkPropertyName, true, true);
 		final boolean bThisIsServer = callCSIsServer();
@@ -1035,6 +1043,7 @@ public abstract class OAObjectReflectService {
 							if (!callLockAttemptPropertyLock(objx, linkPropertyName)) {
 								continue;
 							}
+							alSiblinkLock.add(objx);
 							alOk.add(keyx);
 							hmSiblingHub.put(keyx, new Hub(linkClass, objx, liReverse, false));
 						}
@@ -1269,7 +1278,6 @@ public abstract class OAObjectReflectService {
 				} else {
 					callPropertySetPropertyHubIfNotSet(obj, linkPropertyName, hx);
 				}
-				callLockReleasePropertyLock(obj, linkPropertyName);
 			}
 		}
 		if (siblingKeys != null) {
@@ -1517,7 +1525,7 @@ public abstract class OAObjectReflectService {
 			getProperty(obj, name);
 			cnt++;
 			if (max > 0 && cnt >= max) {
-				continue;
+				break;
 			}
 		}
 	}

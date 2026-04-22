@@ -13,6 +13,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
@@ -34,6 +35,7 @@ import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAFilter;
 import com.viaoa.util.OAPropertyPath;
 import com.viaoa.util.OAString;
+import com.viaoa.util.OAThrottle;
 
 /**
  * Internal service responsible for managing the OAGraph OAObject cache,
@@ -75,7 +77,7 @@ public abstract class OAObjectCacheService {
 
 	private final OAObjectCache objectCache = new OAObjectCache();
     
-	protected int defaultAddMode = 1;
+	protected volatile int defaultAddMode = 1;
 	
 	/**
 	 * throw an exception if a duplicate object is added. This is Default. see HubController#setAddMode
@@ -920,6 +922,7 @@ public abstract class OAObjectCacheService {
 		threadCacheSendAddEvent = new Thread(new Runnable() {
 			@Override
 			public void run() {
+				final OAThrottle trottle = new OAThrottle(500);
 				int cnt = 0;
 				for (;;) {
 					try {
@@ -928,7 +931,7 @@ public abstract class OAObjectCacheService {
 							hl.afterAdd((OAObject) se.obj);
 						}
 					} catch (Exception e) {
-						// TODO: handle exception
+						if (trottle.check()) LOG.log(Level.WARNING, "OAObjectCacheService.SendAddEvent thread exception", e);
 					}
 				}
 			}
@@ -1238,8 +1241,7 @@ public abstract class OAObjectCacheService {
 	 * @return the first matching object in the cache, or {@code null} if none found
 	 */
 	public <T extends OAObject> T find(Class<T> clazz, OAFinder<T,T> finder, boolean bSkipNew, boolean bThrowException) {
-		return _find(null, clazz, finder, false, true); 
-		//qqqqqqqqqqqq not using bThrowException ??
+		return _find(null, clazz, finder, bSkipNew, bThrowException); 
 	}
 
 	/**

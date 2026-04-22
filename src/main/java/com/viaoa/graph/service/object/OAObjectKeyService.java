@@ -92,6 +92,7 @@ public abstract class OAObjectKeyService {
 	 * @return a new {@link OAObjectKey} instance
 	 */
 	public OAObjectKey createObjectKey(OAObjectInfo oi, Object[] ids, UUID guid) {
+		Object[] idsNew = null;
 		if (oi != null && ids != null && ids.length > 0) {
 			String[] idProperties = oi.getIdProperties();
 			if (idProperties != null && idProperties.length == ids.length) {
@@ -101,12 +102,19 @@ public abstract class OAObjectKeyService {
 					}
 					else if (!(ids[i] instanceof OAObject)) { // note: OAObjectKey constructor will handle id values that are OAObject
 						Class c = callInfoGetPropertyClass(oi, idProperties[i]);
-						ids[i] = OAConverter.convert(c, ids[i], null);
+						if (idsNew == null) {
+							idsNew = new Object[ids.length];
+							System.arraycopy(ids, 0, idsNew, 0, ids.length);
+						}
+						idsNew[i] = OAConverter.convert(c, idsNew[i], null);
 					}
 				}
 			}
 		}
-		return new OAObjectKey(ids, guid);
+		OAObjectKey ok;
+		if (idsNew != null) ok = new OAObjectKey(idsNew, guid);
+		else ok = new OAObjectKey(ids, guid);
+		return ok;
 	}
 
 	/**
@@ -123,14 +131,14 @@ public abstract class OAObjectKeyService {
 		if (id == null) return null;
 		if (id instanceof OAObjectKey) return (OAObjectKey) id;
 		if (id instanceof OAObject) return createObjectKey((OAObject) id);
-		if (id instanceof UUID) return createObjectKey(null, null, (UUID) id);
+		if (id instanceof UUID) return createObjectKey((OAObjectInfo) null, (Object[]) null, (UUID) id);
 		if (id.getClass().isArray()) return createObjectKey((OAObjectInfo) null, (Object[]) id, (UUID) null);
 		return createObjectKey((OAObjectInfo) null, new Object[] {id}, (UUID) null);
 	}
 
 	public OAObjectKey createObjectKey(UUID guid) {
 		if (guid == null) return null;
-		return createObjectKey(null, null, guid);
+		return createObjectKey((OAObjectInfo) null, (Object[]) null, guid);
 	}
 
 	/**
@@ -422,7 +430,7 @@ public abstract class OAObjectKeyService {
 					//was: Object[] ids = srvcObject.getOAObjectInfoService().getPropertyIdValues(oaObj);
 
 					String s = "";
-					for (int i = 0; i < ids.length; i++) {
+					for (int i = 0; ids != null && i < ids.length; i++) {
 						if (ids[i] != null) {
 							if (s.length() > 0) {
 								s += " ";
@@ -444,7 +452,7 @@ public abstract class OAObjectKeyService {
 							Object[] ids = newObjectKey.getObjectIds();
 							// Object[] ids = srvcObject.getOAObjectInfoService().getPropertyIdValues(oaObj);
 							String s = "";
-							for (int i = 0; i < ids.length; i++) {
+							for (int i = 0; ids != null && i < ids.length; i++) {
 								if (i > 0) {
 									s += " ";
 								}
@@ -484,8 +492,9 @@ public abstract class OAObjectKeyService {
 
 		for (int i = 0; ids != null && i < ids.length; i++) {
 			if (propertyName.equalsIgnoreCase(ids[i])) {
-			    if (objectKey.getObjectIds().length > i) {
-			        return objectKey.getObjectIds()[i];
+				Object[] ids2 = objectKey.getObjectIds();
+			    if (ids2 != null && ids2.length > i) {
+			        return ids2[i];
 			    }
 			}
 		}

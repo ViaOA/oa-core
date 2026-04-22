@@ -25,6 +25,8 @@ public abstract class OAObjectEnumService {
 	 *         if the property does not define enumeration metadata
 	 */
 	public Hub<VEnum> getVEnums(Class<? extends OAObject> clazz, String propertyName) {
+		if (clazz == null) return null;
+		if (propertyName == null) return null;
 		OAObjectInfo oi = callInfoGetObjectInfo(clazz);
 		OAPropertyInfo pi = oi.getPropertyInfo(propertyName);
 		if (pi == null) {
