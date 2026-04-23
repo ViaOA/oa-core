@@ -18,7 +18,6 @@ package com.viaoa.object;
 import java.util.HashSet;
 
 import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.graph.service.object.OAObjectHubService;
@@ -61,7 +60,7 @@ public class OAObjectAnalyzer {
 		OAGraphInternal ogx = (OAGraphInternal) OARuntime.graph();
     	
         for (Class cs : ogx.objectsInternal().callObjectCacheGetClasses()) {
-        	OAGraphInternal og = (OAGraphImpl) OARuntime.graph(cs);
+        	OAGraphInternal og = (OAGraphInternal) OARuntime.graph(cs);
 
     		System.out.println("Starting class="+cs.getSimpleName()+", total="+og.objectsInternal().callObjectCacheGetTotal(cs));
             

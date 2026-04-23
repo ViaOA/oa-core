@@ -102,7 +102,7 @@ public class OAGroupBy<F extends OAObject, G extends OAObject> extends OAObject 
      * <p>
      * If the Hub has not yet been resolved, it is retrieved using
      * {@link #getHub(String)} with {@link #PROPERTY_Hub}.
-     * </p>
+     * </p> 
      *
      * @return the Hub containing member/detail objects
      */

@@ -7,15 +7,18 @@ import java.util.logging.Logger;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.api.ReplOps;
 import com.viaoa.graph.api.SyncOps;
+import com.viaoa.graph.api.TriggerOps;
 import com.viaoa.graph.api.internal.HubsInternalOps;
 import com.viaoa.graph.api.internal.ObjectsInternalOps;
 import com.viaoa.graph.api.internal.ReplInternalOps;
 import com.viaoa.graph.api.internal.SyncInternalOps;
+import com.viaoa.graph.api.internal.TriggerInternalOps;
 import com.viaoa.graph.context.OAContext;
 import com.viaoa.graph.service.HubService;
 import com.viaoa.graph.service.OAObjectService;
 import com.viaoa.graph.service.OAReplicationService;
 import com.viaoa.graph.service.OASyncService;
+import com.viaoa.graph.service.OATriggerService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubAutoMatch;
 import com.viaoa.hub.HubCombined;
@@ -32,6 +35,7 @@ import com.viaoa.object.OALeftJoin;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
+import com.viaoa.object.OATrigger;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.OAFilter;
@@ -48,6 +52,7 @@ public class OAGraphImpl implements OAGraphInternal {
     private OASyncService srvcOASync;
     private OAReplicationService srvcOAReplication;
     private OAContext context;
+    private OATriggerService srvcOATrigger;
 
 	public OAGraphImpl(String packageName) {
 		this.packageName = packageName;
@@ -64,6 +69,7 @@ public class OAGraphImpl implements OAGraphInternal {
 	    srvcOASync = new OASyncService(this);
 	    srvcOAReplication = new OAReplicationService();
 	    context = new OAContext();
+	    srvcOATrigger = new OATriggerService();
 
 		srvcOAObject.initialize(srvcHub, srvcOASync, srvcThread.getThreadLocalService(), srvcThread.getRemoteThreadService(), context);
 		srvcHub.initialize(srvcOAObject, srvcOASync, srvcThread.getThreadLocalService(), srvcThread.getRemoteThreadService());
@@ -117,6 +123,10 @@ public class OAGraphImpl implements OAGraphInternal {
     	return srvcOAReplication;
     }
 
+	@Override
+	public TriggerInternalOps triggerInternal() {
+		return srvcOATrigger;
+	}
 	
 	
 //qqqqqqqqqqqqqqqqqq OAGraph verbs	
@@ -331,6 +341,16 @@ public class OAGraphImpl implements OAGraphInternal {
 	@Override
 	public OAContext context() {
 		return context;
+	}
+
+	@Override
+	public void addTrigger(OATrigger trigger) {
+		triggerInternal().addTrigger(trigger);
+	}
+
+	@Override
+	public void removeTrigger(OATrigger trigger) {
+		triggerInternal().removeTrigger(trigger);
 	}
 
 }

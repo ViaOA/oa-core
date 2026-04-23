@@ -51,7 +51,6 @@ public abstract class OAObjectSerializerCallback {
         this.os = os;
     }
     
-    
     /**
      * Requests that the specified property names be explicitly included during
      * serialization. Delegates to the underlying serializer if available.

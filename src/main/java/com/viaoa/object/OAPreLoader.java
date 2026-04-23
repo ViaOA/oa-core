@@ -17,17 +17,14 @@ package com.viaoa.object;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OASelect;
 import com.viaoa.datasource.jdbc.OADataSourceJDBC;
 import com.viaoa.datasource.jdbc.db.ManyToMany;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectCacheService;
-import com.viaoa.graph.service.object.OAObjectInfoService;
-import com.viaoa.graph.service.object.OAObjectPropertyService;
 import com.viaoa.hub.Hub;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
@@ -106,7 +103,7 @@ public class OAPreLoader {
 	 *
 	 * @return a list of loaded root objects, or {@code null} if root class is missing
 	 */
-	public ArrayList load() {
+	public List<?> load() {
 		if (classFrom == null) {
 			return null;
 		}
@@ -118,7 +115,7 @@ public class OAPreLoader {
 			propertyPath = new OAPropertyPath(classFrom, strPropertyPath);
 			linkInfos = propertyPath.getLinkInfos();
 		}
-		ArrayList al = null;
+		List<?> al = null;
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		try {
 			srvcOAThreadLocal.setLoading(true);
@@ -146,10 +143,10 @@ public class OAPreLoader {
 	 * @param linkInfos the property-path link definitions to load
 	 * @return the list of loaded root objects
 	 */
-	protected ArrayList _load(OALinkInfo[] linkInfos) {
-		final HashMap<Class, ArrayList> hm = new HashMap<>();
+	protected List<?> _load(OALinkInfo[] linkInfos) {
+		final HashMap<Class<?>, List<?>> hm = new HashMap<>();
 
-		final ArrayList al = load(classFrom, null);
+		final List<?> al = load(classFrom, null);
 		hm.put(classFrom, al);
 
 		if (linkInfos != null) {
@@ -160,7 +157,7 @@ public class OAPreLoader {
 					break;
 				}
 
-				ArrayList alx = hm.get(c);
+				List<?> alx = hm.get(c);
 				if (alx == null) {
 					alx = load(c, linkInfo);
 					hm.put(c, alx);
@@ -192,7 +189,7 @@ public class OAPreLoader {
 	 * @param linkInfo the link definition for the MANY side
 	 * @param alMany the list of objects on the MANY side
 	 */
-	protected void loadOtoM(OALinkInfo linkInfo, ArrayList alMany) {
+	protected void loadOtoM(OALinkInfo linkInfo, List<?> alMany) {
 		if (linkInfo == null || linkInfo.getType() != OALinkInfo.MANY) {
 			return;
 		}
@@ -319,7 +316,7 @@ public class OAPreLoader {
 	 * @param linkInfo optional link metadata for sorting
 	 * @return list of loaded instances
 	 */
-	protected ArrayList load(Class clazz, final OALinkInfo linkInfo) {
+	protected List load(Class clazz, final OALinkInfo linkInfo) {
 		OASelect sel = new OASelect<>(clazz);
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
 		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(clazz);
@@ -339,7 +336,7 @@ public class OAPreLoader {
 			sel.setOrder(sortOrder);
 		}
 
-		ArrayList al = new ArrayList<>();
+		List al = new ArrayList<>();
 		for (;;) {
 			Object obj = sel.next();
 			if (obj == null) {
@@ -390,7 +387,7 @@ public class OAPreLoader {
 	 * @param al the list of objects to organize recursively
 	 * @param liMany the MANY-side recursive link metadata
 	 */
-	protected void loadRecursive(Class clazz, ArrayList al, OALinkInfo liMany) {
+	protected void loadRecursive(Class clazz, List al, OALinkInfo liMany) {
 		if (liMany == null) {
 			return;
 		}

@@ -19,14 +19,7 @@ import java.util.Comparator;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.service.hub.HubAddRemoveService;
-import com.viaoa.graph.service.object.OAObjectCSService;
-import com.viaoa.graph.service.object.OAObjectCacheService;
-import com.viaoa.graph.service.object.OAObjectDeleteService;
-import com.viaoa.graph.service.object.OAObjectPropertyService;
-import com.viaoa.graph.service.object.OAObjectReflectService;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
@@ -105,7 +98,7 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 	@Override
 	public boolean propertyChange(Class objectClass, OAObjectKey origKey, String propertyName, Object newValue, boolean bIsBlob) {
 		OAObject obj = getObject(objectClass, origKey, true);
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objectClass);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
 		if (obj == null) {
 			if (og.syncInternal().isServer()) {
 				if (throttlePropertyChangeError.check()) {
@@ -244,7 +237,7 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		if (obj == null) {
 			return false;
 		}
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objectClass);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
 
 		Hub h = getHub(obj, hubPropertyName);
 		if (h == null) {
@@ -331,7 +324,7 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		if (origKey == null) {
 			return null;
 		}
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objectClass);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
 		OAObject obj = (OAObject) og.objectsInternal().callObjectCacheGet(objectClass, origKey);
 
 		if (obj == null && og.syncInternal().isServer()) {
@@ -358,7 +351,7 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		if (obj == null) {
 			return null;
 		}
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph((OAObject) obj);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) obj);
 		boolean bWasLoaded = og.objectsInternal().callObjectReflectIsReferenceHubLoaded(obj, hubPropertyName);
 		if (!bWasLoaded && !og.syncInternal().isServer()) {
 			return null;
@@ -391,7 +384,7 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 			return;
 		}
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(h);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(h);
 		og.hubsInternal().callHubDataClearHubChanges(h);
 	}
 
@@ -404,7 +397,7 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 	 */
 	@Override
 	public void refresh(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(masterObjectClass);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(masterObjectClass);
 		if (og.syncInternal().isServer()) {
 			return;
 		}
@@ -436,7 +429,7 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
         if (obj == null) {
             return;
         }
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objectClass);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
         if (!og.syncInternal().isServer()) return;
         og.objectsInternal().callObjectDeleteSyncServerDelete(obj);
     }
@@ -454,7 +447,7 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
         if (obj == null) {
             return;
         }
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(objectClass);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
         if (!og.syncInternal().isClient()) return;
         og.objectsInternal().callObjectDeleteSyncClientDelete(obj);
     }

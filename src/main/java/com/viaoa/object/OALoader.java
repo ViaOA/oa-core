@@ -103,11 +103,6 @@ public class OALoader<F extends OAObject, T extends OAObject> {
     private volatile boolean bStop;
     
     /**
-     * Flag indicating that traversal should stop as soon as possible.
-     */
-    private boolean bSetup;
-
-    /**
      * Maximum number of worker threads allocated for parallel loading.
      */
     private final int threadCount;
@@ -206,6 +201,7 @@ public class OALoader<F extends OAObject, T extends OAObject> {
      */
     public void load(Hub<F> hubRoot) {
         if (hubRoot == null) return;
+        abMainThreadRunning.set(true);
 
         bStop = false;
         setup(hubRoot.getObjectClass());
@@ -242,6 +238,7 @@ public class OALoader<F extends OAObject, T extends OAObject> {
      */
     public void load(OASelect<F> sel) {
         if (sel == null) return;
+        abMainThreadRunning.set(true);
 
         bStop = false;
         setup(sel.getSelectClass());
@@ -281,6 +278,7 @@ public class OALoader<F extends OAObject, T extends OAObject> {
      */
     public void load(F objectRoot) {
         if (objectRoot == null) return;
+        abMainThreadRunning.set(true);
 
         bStop = false;
         setup(objectRoot.getClass());
@@ -481,28 +479,28 @@ public class OALoader<F extends OAObject, T extends OAObject> {
      * @param c the root class for the property-path traversal
      */
     protected void setup(Class c) {
-        if (bSetup) return;
-        bSetup = true;
-        if (propertyPath != null || c == null) return;
-        propertyPath = new OAPropertyPath(c, strPropertyPath);
+        if (c == null) return;
         
         aiThreadsUsed.set(0); 
         aiVisitCnt.set(0);
         aiNotLoadedCnt.set(0);
+        
+        if (propertyPath == null) { 
+        	propertyPath = new OAPropertyPath(c, strPropertyPath);
+	        linkInfos = propertyPath.getLinkInfos();
+	        recursiveLinkInfos = propertyPath.getRecursiveLinkInfos();
+	        methods = propertyPath.getMethods();
 
-        linkInfos = propertyPath.getLinkInfos();
-        recursiveLinkInfos = propertyPath.getRecursiveLinkInfos();
-        methods = propertyPath.getMethods();
+	        int x = linkInfos == null ? 0 : linkInfos.length; 
+	        if (x != methods.length) {
+	            // oafinder is to get from one OAObj/Hub to another, not a property/etc
+	            throw new RuntimeException("propertyPath " + strPropertyPath + " must end in an OAObject/Hub");
+	        }
 
-        int x = linkInfos == null ? 0 : linkInfos.length; 
-        if (x != methods.length) {
-            // oafinder is to get from one OAObj/Hub to another, not a property/etc
-            throw new RuntimeException("propertyPath " + strPropertyPath + " must end in an OAObject/Hub");
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
+	        OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(c);
+	        liRecursiveRoot = oi.getRecursiveLinkInfo(OALinkInfo.MANY);
         }
-
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
-        OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(c);
-        liRecursiveRoot = oi.getRecursiveLinkInfo(OALinkInfo.MANY);
 
         if (linkInfos != null && linkInfos.length > 0) {
             cascades = new OACascade[linkInfos.length];

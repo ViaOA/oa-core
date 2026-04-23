@@ -15,7 +15,7 @@
  */
 package com.viaoa.hub;
 
-import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 
@@ -105,7 +105,7 @@ public class HubShareAO<TYPE extends OAObject> extends HubListenerAdapter<TYPE> 
 	 */
     @Override
     public void afterChangeActiveObject(HubEvent<TYPE> evt) {
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub1);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub1);
         if (og.hubsInternal().callHubShareIsUsingSameSharedAO(hub1, hub2)) {
             return;
         }

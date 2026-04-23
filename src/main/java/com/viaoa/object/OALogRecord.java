@@ -15,6 +15,9 @@
  */
 package com.viaoa.object;
 
+import com.viaoa.annotation.OAClass;
+import com.viaoa.annotation.OAOne;
+
 /**
  * Lightweight internal log record representing a single persistence command
  * executed against an {@link OAObject}.
@@ -32,26 +35,45 @@ package com.viaoa.object;
  *       and excluded from caches.</li>
  * </ul>
  */
+@OAClass(
+    lowerName = "logRecord",
+    pluralName = "logRecords",
+    shortName = "lr",
+    displayName = "Log Record",
+    displayProperty = "command",
+    noPojo = true,
+    localOnly = true,
+    addToCache = false,
+    initialize = false,
+    useDataSource = false
+)
 public class OALogRecord extends OAObject {
     private static final long serialVersionUID = 1L;
    
     public static final String COMMAND_SAVE = "save";
     public static final String COMMAND_DELETE = "delete";
+   
+    public static final String P_Command = "Command";
+    public static final String P_Object = "Object";
     
     private String command;
     private transient OAObject object;
 
+    @OAOne(
+        displayName = "Object" 
+    )
     public OAObject getObject() {
         if (object == null) {
-            object = (OAObject) getObject("object");
+            object = (OAObject) getObject(P_Object);
         }
         return object;
     }
 
     public void setObject(OAObject newObject) {
         OAObject old = getObject();
+        fireBeforePropertyChange(P_Object, old, newObject);
         this.object = newObject;
-        firePropertyChange("object", old, object);
+        firePropertyChange(P_Object, old, object);
     }
     
     
@@ -61,24 +83,8 @@ public class OALogRecord extends OAObject {
 
     public void setCommand(String newCommand) {
         String old = command;
+        fireBeforePropertyChange(P_Command, old, newCommand);
         this.command = newCommand;
-        firePropertyChange("command", old, command);
-    }
-    
-    //========================= Object Info ============================
-    public static OAObjectInfo getOAObjectInfo() {
-        return oaObjectInfo;
-    }
-    protected static final OAObjectInfo oaObjectInfo;
-    static {
-        oaObjectInfo = new OAObjectInfo(new String[] {});
-         
-        // OALinkInfo(property, toClass, ONE/MANY, cascadeSave, cascadeDelete, reverseProperty, allowDelete, owner, recursive)
-        oaObjectInfo.addLinkInfo(new OALinkInfo("object", OAObject.class, OALinkInfo.ONE, false, false, "", true));
-         
-        oaObjectInfo.setAddToCache(false);
-        oaObjectInfo.setInitializeNewObjects(false);
-        oaObjectInfo.setLocalOnly(true);
-        oaObjectInfo.setUseDataSource(false);
+        firePropertyChange(P_Command, old, command);
     }
 }

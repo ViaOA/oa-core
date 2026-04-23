@@ -16,7 +16,7 @@
 package com.viaoa.object;
 
 /**
- * Callback for methods that "visit" object graphs. see OAObjectCacheDelegate#
+ * Callback for methods that "visit" object graphs. see OAObjectCacheService#
  */
 public interface OACallback<TYPE> {
 

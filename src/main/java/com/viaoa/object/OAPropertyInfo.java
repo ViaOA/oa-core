@@ -46,9 +46,6 @@ import com.viaoa.util.OAString;
  *   <li>Converter usage for formatting and serialization</li>
  * </ul>
  *
- * <p>OAPropertyInfo instances are immutable after construction and are
- * accessed through OAObjectInfo for fast runtime lookup.</p>
- *
  * @see OAObjectInfo
  * @see OAObject
  * @see OALinkInfo
@@ -175,7 +172,7 @@ public class OAPropertyInfo implements java.io.Serializable {
 	 * Holds the list of valid name-value entries for this property when it is
 	 * configured as a name-value type. Lazily created on first access.
 	 */
-	private Hub<VEnum> hubVEnum;
+	private volatile Hub<VEnum> hubVEnum;
 	
 	/**
 	 * Indicates whether this property represents a currency value. Influences
@@ -725,7 +722,11 @@ public class OAPropertyInfo implements java.io.Serializable {
 	 */
 	public Hub<VEnum> getVEnums() {
 		if (hubVEnum == null) {
-			hubVEnum = new Hub<>(VEnum.class);
+			synchronized (this) {
+				if (hubVEnum == null) {
+					hubVEnum = new Hub<>(VEnum.class);
+				}
+			}
 		}
 		return hubVEnum;
 	}
@@ -1120,6 +1121,7 @@ public class OAPropertyInfo implements java.io.Serializable {
 	 * to OAObjectReflectDelegate.getProperty using the stored property name.
 	 */
 	public Object getValue(Object obj) {
+		if (!(obj instanceof OAObject)) return null;
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) obj);
 		return og.objectsInternal().callObjectReflectGetProperty((OAObject) obj, name);
 	}

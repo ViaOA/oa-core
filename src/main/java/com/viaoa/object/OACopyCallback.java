@@ -55,7 +55,6 @@ public class OACopyCallback {
 	 * @return {@code true} to copy the owned Hub, {@code false} otherwise
 	 */
     public boolean shouldCopyOwnedHub(OAObject oaObj, String path, boolean bDefault) {
-    	//qqqqqqqqqq method was protected
         return bDefault;
     }
     
@@ -72,7 +71,6 @@ public class OACopyCallback {
      * @return the object to use in the copied Hub, typically {@code currentValue}
      */
     public OAObject createCopy(OAObject oaObj, String path, Hub hub, OAObject currentValue) {
-    	//qqqqqqqqqq method was protected
         return currentValue;
     }
 
@@ -88,7 +86,6 @@ public class OACopyCallback {
      * @return the value to assign in the copied object, typically {@code currentValue}
      */
     public Object getPropertyValue(OAObject oaObj, String path, Object currentValue) {
-    	//qqqqqqqqqq method was protected
         return currentValue;
     }
     

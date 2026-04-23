@@ -236,24 +236,33 @@ public class OAAnnotationVerifier {
 				continue;
 			}
 			int pos = alCalc.indexOf(ci);
-			bs[pos] = true;
+			if (pos < 0 || pos >= bs.length) {
+				p("method with calc not in calsInfos list");
+				bResult = false;
+				continue;
+			}
+			else bs[pos] = true;
 
 			// compare properties
 			String[] ss1 = ci.getDependentProperties();
 			String[] ss2 = annotation.properties();
-			Arrays.sort(ss1);
-			Arrays.sort(ss2);
 			if (ss1.length != ss2.length) {
 				p("calc props mismatch");
 				bResult = false;
 			} else {
 				for (int j = 0; j < ss1.length; j++) {
-					if (!ss1[j].equalsIgnoreCase(ss2[j])) {
+					boolean b = false;
+					for (int k = 0; k < ss2.length; k++) {
+						if (ss1[j].equalsIgnoreCase(ss2[k])) {
+							b = true;
+						}
+					}
+					if (!b) {
 						p("calc prop name mismatch");
 						bResult = false;
+						break;
 					}
 				}
-
 			}
 		}
 		for (boolean b : bs) {
@@ -318,7 +327,11 @@ public class OAAnnotationVerifier {
 				}
 			}
 			int x = alLinkInfo.indexOf(li);
-			bs[x] = true;
+			if (x < 0 || x >= bs.length) {
+				p("method for linkInfo not found in linkInfos");
+				bResult = false;
+			}
+			else bs[x] = true;
 		}
 		// Manys
 		for (Method m : methods) {
@@ -361,8 +374,11 @@ public class OAAnnotationVerifier {
 				}
 			}
 			int x = alLinkInfo.indexOf(li);
-			bs[x] = true;
-
+			if (x < 0 || x >= bs.length) {
+				p("method for linkInfo not found in linkInfos");
+				bResult = false;
+			}
+			else bs[x] = true;
 		}
 
 		int i = 0;
@@ -980,7 +996,8 @@ public class OAAnnotationVerifier {
 
 		List<OALinkInfo> al = oi1.getLinkInfos();
 		List<OALinkInfo> al2 = oi2.getLinkInfos();
-		if (al != al2 && al == null || al.size() != al2.size()) {
+
+		if (al != al2 && (al == null || al2 == null || al.size() != al2.size())) {
 			p("LinkInfos mismatch");
 			return false;
 		}
@@ -1006,7 +1023,7 @@ public class OAAnnotationVerifier {
 
 		ArrayList<OACalcInfo> alCalc = oi1.getCalcInfos();
 		ArrayList<OACalcInfo> alCalc2 = oi2.getCalcInfos();
-		if (alCalc != alCalc2 && alCalc == null || alCalc.size() != alCalc2.size()) {
+		if (alCalc != alCalc2 && (alCalc == null || alCalc2 == null || alCalc.size() != alCalc2.size())) {
 			p("CalcInfos mismatch");
 			return false;
 		}
@@ -1119,11 +1136,14 @@ public class OAAnnotationVerifier {
 		}
 		boolean b = false;
 		for (int i = 0; !b && i < p1.length; i++) {
-			for (int j = 0; !b && j < p1.length; j++) {
+			b = false;
+			for (int j = 0; !b && j < p2.length; j++) {
 				if (p1[i].equalsIgnoreCase(p2[j])) {
 					b = true;
+					break;
 				}
 			}
+			if (!b) break;
 		}
 		if (!b && p1.length > 0) {
 			p("calc property name dont match");

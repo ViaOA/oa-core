@@ -234,6 +234,7 @@ public class OASiblingHelper<TYPE extends OAObject> {
 	 */
 	private Node _add(Node node, String prop) {
 		// returns the node node that has this prop
+		if (node == null) return null;
 		Node nodeFound = null;
 		if (node.alChildren == null) {
 			node.alChildren = new ArrayList<>();
@@ -368,12 +369,13 @@ public class OASiblingHelper<TYPE extends OAObject> {
 	 * @return the matching node, or null if none is found
 	 */
 	private Node _findNode(final Node node, final OAObject obj, final String prop, final boolean bRetry, final boolean bFromLastNode) {
+		if (node == null || obj == null) return null;
 		final Class cz = obj.getClass();
 
 		if (node.oi.getForClass().equals(cz)) {
 
 			boolean bCheckLinks = true;
-			if (node.alChildren != null) {
+			if (node.alChildren != null && prop != null) {
 				for (Node nodeChild : node.alChildren) {
 					if (prop.equalsIgnoreCase(nodeChild.li.getName())) {
 						if (bFromLastNode && nodeLastFound != null) {

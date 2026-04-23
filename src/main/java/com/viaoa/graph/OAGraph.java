@@ -16,6 +16,7 @@ import com.viaoa.object.OALeftJoin;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
+import com.viaoa.object.OATrigger;
 import com.viaoa.util.OAFilter;
 
 /**
@@ -896,5 +897,10 @@ public interface OAGraph {
      * @return the context operations for this graph
      */
     OAContext context();
+
+
+    void addTrigger(OATrigger trigger);
+    
+    void removeTrigger(OATrigger trigger);
 }
 

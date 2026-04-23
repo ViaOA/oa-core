@@ -200,7 +200,7 @@ public class OAObjectGrid {
     public Column addGroupByColumn(OAObjectGrid.Column colLeft, Hub hub, String pp, String matchPropName) {
         if (colLeft == null) return null;
         
-        Column colRoot = getRootColumn(colLeft);
+        //Column colRoot = getRootColumn(colLeft);
         if (!verifyLinkProperty(colLeft.hub == null ? colLeft.object.getClass() : colLeft.hub.getObjectClass(), pp)) {
             throw new RuntimeException("invalid propertyPath, must be for a link property, pp="+pp);
         }
@@ -373,7 +373,8 @@ public class OAObjectGrid {
      */
     public Object getRealObject(int row, int col) {
         final List<Object[]> al = getGrid();
-        if (row < 0 || al == null || col >= al.size()) return null;
+        if (row < 0 || al == null || row >= al.size()) return null;
+        if (col < 0 || col >= alColumn.size()) return null;
         Column column = alColumn.get(col);
         Object obj = getObject(row, column, al, true);
         return obj;
@@ -423,6 +424,7 @@ public class OAObjectGrid {
      * @return true if a descendant column occupies this row.
      */
     protected boolean hasChildRow(Column column, int row, final List<Object[]> al) {
+    	if (column == null) return false;
         if (al == null) return false;
         if (row >= al.size()) return false;
         
@@ -466,9 +468,17 @@ public class OAObjectGrid {
         for ( ; col.colFrom != null; colRoot = colRoot.colFrom) {
         }
         
-        for (Object obj : colRoot.hub) {
-            int x = getRowCount(colRoot, (OAObject) obj);
-            cnt += x;
+        if (colRoot.hub == null) {
+        	if (colRoot.object != null) {
+	            int x = getRowCount(colRoot, colRoot.object);
+	            cnt += x;
+        	}
+        }
+        else {
+	        for (Object obj : colRoot.hub) {
+	            int x = getRowCount(colRoot, (OAObject) obj);
+	            cnt += x;
+	        }
         }
         return cnt;
     }

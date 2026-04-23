@@ -21,6 +21,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -336,7 +337,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * Global counter tracking the number of OAObject instances created during the
 	 * lifetime of the application runtime.
 	 */
-	public static volatile int cntNew;
+	public static final AtomicInteger cntNew = new AtomicInteger();
 
 	/**
 	 * Constructs a new {@code OAObject} instance and performs framework-level
@@ -359,10 +360,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		og.objectsInternal().callObjectInitializeInitialize(this);
 
-		cntNew++;
-		if (cntNew % 500 == 0) {
-			//System.out.println(cntNew+") new OAObject.guid="+guid+" "+this.getClass().getSimpleName());
-		}
+		cntNew.incrementAndGet();
 
 		// 20141209 removed, since it was creating dup oaObjKeys, one when putting in cache, then clearing it, and then
 		//    creating another the next time that OAObj calls for it.
@@ -1334,6 +1332,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 	@Override
 	public int hashCode() {
+		if (this.guid == null) return 0;
 		return this.guid.hashCode();
 	}
 
@@ -1365,6 +1364,11 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		if (obj == this) return 0;
         if (obj instanceof OAObject) {
     		UUID otherGuid = ((OAObject) obj).getGuid();
+    		if (this.guid == null) {
+    			if (otherGuid == null) return 0;
+    			return -1;
+    		}
+    		else if (otherGuid == null) return 1;
     		return this.guid.compareTo(otherGuid);
 		}
     	return this.getClass().getName().compareTo(obj.getClass().getName());

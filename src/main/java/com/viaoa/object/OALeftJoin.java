@@ -102,7 +102,7 @@ public class OALeftJoin<A extends OAObject, B extends OAObject> extends OAObject
      * <p>
      * This method fires before- and after-property-change events for
      * property {@code "B"}.
-     * </p>
+     * </p> 
      *
      * @param obj the new right-side object
      */

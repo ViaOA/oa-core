@@ -44,7 +44,8 @@ public class OAObjectCacheHubAdder<T extends OAObject> implements OAObjectCacheL
     static final long serialVersionUID = 1L;
 
     protected WeakReference<Hub<T>> wfHub;
-    private Class clazz;
+    private Class<T> clazz;
+    private volatile boolean bClosed; 
 
     /**
      * Creates a new cache-to-Hub adder that listens for objects of the Hub's
@@ -78,7 +79,10 @@ public class OAObjectCacheHubAdder<T extends OAObject> implements OAObjectCacheL
             @Override
             public boolean updateObject(Object obj) {
                 Hub<T> h = wfHub.get();
-                if (h != null) {
+                if (h == null) {
+                	OAObjectCacheHubAdder.this.close();
+                }
+                else {
                     if (!h.contains(obj)) {
                         if (isUsed((T) obj)) {
                             h.add((T) obj);
@@ -98,6 +102,8 @@ public class OAObjectCacheHubAdder<T extends OAObject> implements OAObjectCacheL
      * </p>
      */
     public void close() {
+    	if (bClosed) return;
+    	bClosed = true;
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
 		og.objectsInternal().callObjectCacheRemoveListener(clazz, this);
     }

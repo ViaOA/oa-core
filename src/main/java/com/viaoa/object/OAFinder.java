@@ -969,6 +969,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
         DuplicateFilter f = new DuplicateFilter(pp);
         addFilter(f);
         List<T> al = find(objectRoot);
+        if (al == null) al = new ArrayList<T>();
         f.cancel();
         f.hm.clear();
         
@@ -1014,10 +1015,18 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	}
 
 	protected void setup(Class c) {
+
 		if (bSetup) {
+			if (cascades == null && linkInfos != null) {
+				cascades = new OACascade[linkInfos.length];
+				for (int i = 0; i < linkInfos.length; i++) {
+					cascades[i] = new OACascade();
+				}
+			}
 			return;
 		}
 		bSetup = true;
+
 		if (propertyPath != null || c == null) {
 			return;
 		}
@@ -1100,7 +1109,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		if (obj == null || bStop) {
 			return;
 		}
-		if (pos > 20) {
+		if (pos > 100) {
 			return;
 		}
 		try {
@@ -1363,7 +1372,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	public String[] getStackPropertyNames() {
 		String[] ss = new String[stackPos];
 		for (int i = 0; i < stackPos; i++) {
-			String methodName;
+			String methodName = null;
 			if (stack[i].pos == 0) {
 				methodName = "[root]";
 			} else if (stack[i].pos <= linkInfos.length) {

@@ -81,13 +81,13 @@ import com.viaoa.runtime.OARuntime;
 	 * Counter tracking the number of get-lookup operations performed,
 	 * used to periodically trigger reference-queue cleanup.
 	 */
-	private int cntGetObject;
+	private volatile int cntGetObject;
 	
 	/**
 	 * Counter tracking how many cached objects were reclaimed by the
 	 * garbage collector and subsequently purged from the cache.
 	 */
-	private int cntGCd;
+	private volatile int cntGCd;
 	
 	/**
 	 * Returns the list of OAObject classes currently represented in the
@@ -123,6 +123,7 @@ import com.viaoa.runtime.OARuntime;
 		ConcurrentHashMap<UUID, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);
 		if (hm == null) return;
 		hm.clear();
+		objectIndex.clear(clazz);
 	}
 	
 	/**
@@ -223,20 +224,29 @@ import com.viaoa.runtime.OARuntime;
 	public <T extends OAObject> boolean updateObject(final T obj, final OAObjectKey ok, final Class<T> clazz) {
 		if (obj == null || ok == null) return false;
 		
-		boolean[] bsWasFound = new boolean[] {true};
+		final OAWeakRef<T>[] oldRef = new OAWeakRef[1];
+		final boolean[] bsWasFound = new boolean[] {true};
 		final ConcurrentHashMap<UUID, OAWeakRef<T>> hm = getOrCreateObjectByGuidMap(clazz);
-		final OAWeakRef<T> wrOld = hm.computeIfAbsent(ok.getGuid(), k -> {
-		    bsWasFound[0] = false;
-		    return new OAWeakRef<>(obj, ok, refQueue);
-		});		
+		
+		hm.compute(ok.getGuid(), (k, existing) -> {
+	        oldRef[0] = existing;
+		    if (existing == null || existing.get() == null) {
+		        bsWasFound[0] = false;
+		        return new OAWeakRef<>(obj, ok, refQueue);
+		    }
+		    bsWasFound[0] = true;
+		    existing.key = ok;
+		    return existing;
+		});
 		
 		if (bsWasFound[0]) {
-			OAObjectKey okOld = wrOld.key;
-			wrOld.key = ok;
-			objectIndex.updateIndex(obj, ok, okOld);
+			objectIndex.updateIndex(obj, ok, oldRef[0].key);
 		}
 		else {
-			objectIndex.addToIndex(obj, ok);
+		    if (oldRef[0] != null) {
+		        objectIndex.removeFromIndex(clazz, oldRef[0].key);
+		    }
+		    objectIndex.addToIndex(obj, ok);
 		}
 		checkReferenceQueue();
 		return bsWasFound[0];

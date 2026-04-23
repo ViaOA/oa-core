@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -66,8 +67,7 @@ import com.viaoa.util.OAString;
  *   <li>Datasource mapping and schema alignment</li>
  * </ul>
  *
- * <p>This class is immutable once constructed and is looked up at runtime via
- * OAObjectInfoDelegate. It provides the schema that allows OAObjects to form a
+ * <p>It provides the schema that allows OAObjects to form a
  * dynamic, model-driven Object Graph with behavior determined by metadata
  * rather than hard-coded assumptions.</p>
  *
@@ -402,6 +402,11 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	
 	protected boolean bPreSelect;
 
+	private volatile Map<String, OALinkInfo> hmLinkInfo;
+
+	private volatile Map<String, OAPropertyInfo> hmPropertyInfo;
+	
+	private volatile Map<String, OAMethodInfo> hmMethodInfo;
 	
 	/**
 	 * Default constructor that initializes the metadata instance with
@@ -548,9 +553,11 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		if (alLinkInfo == null) {
 			alLinkInfo = new CopyOnWriteArrayList<OALinkInfo>() {
 				void reset() {
+					bOwnedAndNoManyCheck = false;
+					bOwnedByOneCheck = false;
+					
 					hmLinkInfo = null;
 					ownedLinkInfos = null;
-					bSetRecursive = false;
 				}
 
 				@Override
@@ -602,8 +609,6 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		getLinkInfos().add(li);
 	}
 
-	private HashMap<String, OALinkInfo> hmLinkInfo;
-
 	/**
 	 * Retrieves link metadata associated with the supplied property
 	 * name. Performs a case-insensitive lookup using an internal
@@ -616,7 +621,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		if (propertyName == null) {
 			return null;
 		}
-		HashMap<String, OALinkInfo> hm = hmLinkInfo;
+		Map<String, OALinkInfo> hm = hmLinkInfo;
 		if (hm == null) {
 			hm = new HashMap<String, OALinkInfo>();
 			for (OALinkInfo li : getLinkInfos()) {
@@ -631,7 +636,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return hm.get(propertyName.toUpperCase());
 	}
 
-	private OALinkInfo[] ownedLinkInfos;
+	private volatile OALinkInfo[] ownedLinkInfos;
 
 	/**
 	 * Returns an array of link definitions where this object is the
@@ -669,8 +674,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return ownedLinkInfos;
 	}
 
-	private boolean bOwnedAndNoMany;
-	private boolean bOwnedAndNoManyCheck;
+	private volatile boolean bOwnedAndNoMany;
+	private volatile boolean bOwnedAndNoManyCheck;
 
 	/**
 	 * Determines whether this type is owned by another object and has
@@ -709,7 +714,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return bOwnedAndNoMany;
 	}
 
-	private boolean bOwnedByOne;
+	private volatile boolean bOwnedByOneCheck;
 	private OALinkInfo liOwnedByOne;
 
 	/**
@@ -719,7 +724,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 * @return the owning ONE link info, or null if none found.
 	 */
 	public OALinkInfo getOwnedByOne() {
-		if (bOwnedByOne) {
+		if (bOwnedByOneCheck) {
 			return liOwnedByOne;
 		}
 		for (OALinkInfo li : getLinkInfos()) {
@@ -738,7 +743,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 				break;
 			}
 		}
-		bOwnedByOne = true;
+		bOwnedByOneCheck = true;
 		return liOwnedByOne;
 	}
 
@@ -859,13 +864,13 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		if (bCheckHasBlobProperty) {
 			return bHasBlobProperty;
 		}
-		bCheckHasBlobProperty = true;
 		for (OAPropertyInfo pi : getPropertyInfos()) {
 			if (pi.isBlob()) {
 				bHasBlobProperty = true;
 				break;
 			}
 		}
+		bCheckHasBlobProperty = true;
 		return bHasBlobProperty;
 	}
 
@@ -879,8 +884,6 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		return getHasBlobProperty();
 	}
 
-	private HashMap<String, OAPropertyInfo> hmPropertyInfo;
-
 	/**
 	 * Retrieves primitive property metadata by name. Performs a
 	 * case-insensitive lookup and builds an internal cache on demand.
@@ -892,7 +895,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		if (propertyName == null) {
 			return null;
 		}
-		HashMap<String, OAPropertyInfo> hm = hmPropertyInfo;
+		Map<String, OAPropertyInfo> hm = hmPropertyInfo;
 		if (hm == null) {
 			hm = new HashMap<String, OAPropertyInfo>();
 			for (OAPropertyInfo pi : getPropertyInfos()) {
@@ -943,8 +946,6 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		hmMethodInfo = null;
 	}
 
-	private HashMap<String, OAMethodInfo> hmMethodInfo;
-
 	/**
 	 * Retrieves method metadata by method name. Uses a case-insensitive
 	 * lookup and lazily initializes an internal name → metadata map.
@@ -956,7 +957,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		if (name == null) {
 			return null;
 		}
-		HashMap<String, OAMethodInfo> hm = hmMethodInfo;
+		Map<String, OAMethodInfo> hm = hmMethodInfo;
 		if (hm == null) {
 			hm = new HashMap<String, OAMethodInfo>();
 			for (OAMethodInfo mi : getMethodInfos()) {
@@ -1289,13 +1290,13 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	/**
 	 * Counter tracking the number of triggers created for this type.
 	 */
-	private AtomicInteger aiTrigger = new AtomicInteger();
+	private final AtomicInteger aiTrigger = new AtomicInteger();
 	
 	/**
 	 * Counter tracking the number of triggers that require execution
 	 * within a background thread.
 	 */
-	private AtomicInteger aiTriggerBackgroundThread = new AtomicInteger();
+	private final AtomicInteger aiTriggerBackgroundThread = new AtomicInteger();
 
 	/**
 	 * Global counter shared across all OAObjectInfo instances that tracks
@@ -1337,7 +1338,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 * @param bSkipFirstNonManyProperty whether to skip listening on
 	 *        the first non-many property in the path.
 	 */
-	protected void createTrigger(final OATrigger trigger, final boolean bSkipFirstNonManyProperty) {
+	public void createTrigger(final OATrigger trigger, final boolean bSkipFirstNonManyProperty) {
 		if (trigger == null) {
 			return;
 		}
@@ -1484,9 +1485,11 @@ public class OAObjectInfo { //implements java.io.Serializable {
 						onChange(obj, listenProperty, hubEvent);
 					}
 				};
-				OATrigger t = OATriggerDelegate.createTrigger(	listenProperty, thisClass, tl, calcProps, trigger.bOnlyUseLoadedData,
-																trigger.bServerSideOnly, trigger.bUseBackgroundThread, true);
-				trigger.dependentTriggers = (OATrigger[]) OAArray.add(OATrigger.class, trigger.dependentTriggers, t);
+				final OATrigger trigger2 = new OATrigger(listenProperty, thisClass, tl, calcProps, trigger.bOnlyUseLoadedData,
+					trigger.bServerSideOnly, trigger.bUseBackgroundThread, true);
+				OAGraphInternal og = (OAGraphInternal) OARuntime.graph(thisClass);
+		        og.triggerInternal().addTrigger(trigger2);
+				trigger.dependentTriggers = (OATrigger[]) OAArray.add(OATrigger.class, trigger.dependentTriggers, trigger2);
 			}
 		}
 		al.add(ti);
@@ -1555,7 +1558,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 *
 	 * @param trigger the trigger instance being removed.
 	 */
-	protected void _removeTrigger(OATrigger trigger) {
+	protected void _removeTrigger(final OATrigger trigger) {
 		if (trigger == null) {
 			return;
 		}
@@ -1575,6 +1578,11 @@ public class OAObjectInfo { //implements java.io.Serializable {
 				al.remove(tiFound);
 				int x = aiTrigger.decrementAndGet();
 				aiAllTrigger.decrementAndGet();
+				
+				if (trigger.bUseBackgroundThread) {
+					aiTriggerBackgroundThread.decrementAndGet();
+				}
+				
 				if (al.size() == 0) {
 					hmTriggerInfo.remove(tiFound.listenProperty.toUpperCase());
 				}
@@ -1742,7 +1750,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 
 		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		if ((b || ti.trigger.bUseBackgroundThread) && !srvcOARemoteThread.isRemoteThread()) {
-			OATriggerDelegate.runTrigger(new Runnable() {
+			og.triggerInternal().runTrigger(new Runnable() {
 				@Override
 				public void run() {
 					_runOnChange2(fromObject, prop, ti, hubEvent);
@@ -2004,8 +2012,6 @@ public class OAObjectInfo { //implements java.io.Serializable {
 
 	/**
 	 * Returns the static enabled value associated with this type.
-	 *
-	 * @return true if enabled, otherwise false.
 	 */
 	public String getEnabledProperty() {
 		return enabledProperty;
@@ -2014,7 +2020,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	/**
 	 * Sets the enabled value associated with this type.
 	 *
-	 * @param b the enabled value to assign.
+	 * @param s the enabled value to assign.
 	 */
 	public void setEnabledProperty(String s) {
 		enabledProperty = s;
@@ -2515,11 +2521,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		public void setWeakReferenceable(OAObjectInfo oi, int x) {
 			oi.weakReferenceable = x;
 		}
-		
-		
-		
-		
 	}
+	
 	private final static FriendAccess friendAccess = new FriendAccess(); 
 	static FriendAccess getFriendAccess() {
 		return friendAccess;

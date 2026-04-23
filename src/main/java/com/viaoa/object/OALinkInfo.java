@@ -59,9 +59,6 @@ import com.viaoa.util.OAString;
  *   <li>Hub population for collections</li>
  * </ul>
  *
- * <p>OALinkInfo is immutable after construction and is retrieved via
- * OAObjectInfo for each OAObject type.</p>
- *
  * @see OAObjectInfo
  * @see OAObjectPropertyDelegate
  * @see Hub
@@ -888,6 +885,7 @@ public class OALinkInfo { //implements java.io.Serializable {
 	 * @return the linked value for the object
 	 */
 	public Object getValue(Object obj) {
+		if (!(obj instanceof OAObject)) return null;
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) obj);
 		return og.objectsInternal().callObjectReflectGetProperty((OAObject) obj, name);
 	}
@@ -919,7 +917,7 @@ public class OALinkInfo { //implements java.io.Serializable {
 	 */
 	public boolean isLocked(Object obj) {
 		if (!(obj instanceof OAObject)) {
-			return true;
+			return false;
 		}
 		OAObject oaObj = (OAObject) obj;
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
@@ -1100,7 +1098,7 @@ public class OALinkInfo { //implements java.io.Serializable {
 		return revLinkInfo;
 	}
 
-	private transient OAObjectInfo oi;
+	private transient OAObjectInfo oiTo;
 
 	/**
 	 * Returns the {@link OAObjectInfo} metadata for the target class
@@ -1113,11 +1111,11 @@ public class OALinkInfo { //implements java.io.Serializable {
 	 * @return the {@code OAObjectInfo} for the link's target class
 	 */
 	public OAObjectInfo getToObjectInfo() {
-		if (oi == null) {
+		if (oiTo == null) {
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(toClass);
-			oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(toClass);
+			oiTo = og.objectsInternal().callObjectInfoGetOAObjectInfo(toClass);
 		}
-		return oi;
+		return oiTo;
 	}
 
 	/**

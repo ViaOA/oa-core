@@ -717,13 +717,14 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 					hmLinkInfoCount = new HashMap<OALinkInfo, Integer>();
 				}
 				Object objx = hmLinkInfoCount.get(linkInfo);
-				if (objx != null) {
+				if (objx instanceof Integer) {
 					int x2 = ((Integer) objx).intValue();
-					if (x2 > x) {
+					if (x2 >= x) {
 						return false;
 					}
 					hmLinkInfoCount.put(linkInfo, Integer.valueOf(x2 + 1));
 				}
+				else hmLinkInfoCount.put(linkInfo, 1);
 			}
 		}
 		if (callback != null) {
@@ -1134,7 +1135,7 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 			return; //
 		}
 
-		listOverflow = (LinkedList) stream.readObject();
+		listOverflow = (LinkedList<Overflow>) stream.readObject();
 		int cnt = 0;
 		for (Overflow overFlow : listOverflow) {
 			OAObjectSerializer wrap = (OAObjectSerializer) stream.readObject();
@@ -1198,7 +1199,7 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	 */
 	public void setCallback(OAObjectSerializerCallback callback) {
 		this.callback = callback;
-		callback.setOAObjectSerializer(this);
+		if (callback != null) callback.setOAObjectSerializer(this);
 	}
 	
 	/**

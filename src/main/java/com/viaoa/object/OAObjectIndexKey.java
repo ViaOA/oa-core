@@ -62,7 +62,7 @@ public final class OAObjectIndexKey {
      * @return true if all identifier values are non-null.
      */
 	public boolean hasValidIds() {
-		if (this.ids == null || this.ids.length == 0) return false;
+		if (this.ids.length == 0) return false;
 		for (int i=0; i<this.ids.length; i++) {
 			if (this.ids[i] == null) return false;
 		}

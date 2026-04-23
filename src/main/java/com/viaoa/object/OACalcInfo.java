@@ -245,11 +245,6 @@ public class OACalcInfo implements java.io.Serializable {
     }
     
     
-    /**
-     * Explicitly sets the lowercase form of the calculated property name.
-     *
-     * @param name the lowercase name to assign
-     */
     public boolean isHtml() {
         return isHtml;
     }

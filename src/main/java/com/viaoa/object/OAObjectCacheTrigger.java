@@ -208,19 +208,7 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
      * @throws RuntimeException if {@code hub} is {@code null}
      */
     public OAObjectCacheTrigger(Hub<T> hub, OAFilter<T> filter, String ... dependentPropPaths) {
-        if (hub == null) throw new RuntimeException("hub can not be null");
-        clazz = hub.getObjectClass();
- 
-        if (dependentPropPaths != null) {
-            for (String pp : dependentPropPaths) {
-                addDependentProperty(pp);
-            }
-        }
-        
-        if (filter != null) addFilter(filter, false);
-        if (hub.getSize() == 0) {
-            refresh();
-        }  // else the hub must have been preselected
+        this(hub.getObjectClass(), filter, dependentPropPaths);
     }
 
     
@@ -328,7 +316,9 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
      */
     protected void setupTrigger() {
         if (trigger != null) {
-            OATriggerDelegate.removeTrigger(trigger);
+    		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+            og.triggerInternal().removeTrigger(trigger);
+    		trigger = null;
         }
 
         OATriggerListener<T> triggerListener = new OATriggerListener<T>() {
@@ -377,7 +367,8 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
         }
         
         trigger = new OATrigger(name, clazz, triggerListener, dependentPropertyPaths, true, false, false, true);
-        OATriggerDelegate.createTrigger(trigger);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+        og.triggerInternal().addTrigger(trigger);
     }
     
     
@@ -386,11 +377,12 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
      * After closing, no further trigger notifications will occur.
      */
     public void close() {
-        if (trigger == null) {
-            OATriggerDelegate.removeTrigger(trigger);
+        if (trigger != null) {
+    		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+	        og.triggerInternal().removeTrigger(trigger);
             trigger = null;
         }
-        if (cacheListener == null) {
+        if (cacheListener != null) {
     		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
     		og.objectsInternal().callObjectCacheRemoveListener(clazz, cacheListener);
             cacheListener = null;

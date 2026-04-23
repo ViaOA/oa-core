@@ -28,8 +28,6 @@ import com.viaoa.annotation.OAFkey;
  * that the correct target object is resolved without requiring full graph
  * materialization.</p>
  *
- * <p>This class is a simple metadata holder and has no side effects.</p>
- *
  * @see OALinkInfo
  * @see OAPropertyInfo
  * @see com.viaoa.annotation.OAFkey

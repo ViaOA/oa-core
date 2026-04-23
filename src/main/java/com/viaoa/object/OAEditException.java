@@ -58,6 +58,7 @@ public class OAEditException extends RuntimeException {
      */
     public OAEditException(OAObject obj, String property, Object newValue) {
         super("Invalid entry for "+property);
+//qqqqqqq obj is not used ??        
         this.property = property;
         this.newValue = newValue;
     }

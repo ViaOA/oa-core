@@ -127,8 +127,3 @@ public class OALock implements java.io.Serializable {
     	return this.thread;
     }
 }
-
-
-
-
-

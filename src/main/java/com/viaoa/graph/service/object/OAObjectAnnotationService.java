@@ -21,6 +21,7 @@ import com.viaoa.annotation.OAObjCallback;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATriggerMethod;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.model.oa.VEnum;
@@ -33,9 +34,10 @@ import com.viaoa.object.OAObjectCallback;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectModel;
 import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.object.OATriggerDelegate;
+import com.viaoa.object.OATrigger;
 import com.viaoa.object.OATriggerListener;
 import com.viaoa.object.OATriggerMethodListener;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.text.OATextCode;
 import com.viaoa.util.OAReflect;
 import com.viaoa.util.OAStr;
@@ -1059,7 +1061,9 @@ public abstract class OAObjectAnnotationService {
 
 			// 20160625
 			OATriggerListener tl = new OATriggerMethodListener(clazz, method, bOnlyUseLoadedData);
-			OATriggerDelegate.createTrigger(method.getName(), clazz, tl, props, bOnlyUseLoadedData, bServerSideOnly, bBackgroundThread, true);
+			OATrigger trigger = new OATrigger(method.getName(), clazz, tl, props, bOnlyUseLoadedData, bServerSideOnly, bBackgroundThread, true);
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oi.getForClass());
+	        og.triggerInternal().addTrigger(trigger);
 		}
 	}
 

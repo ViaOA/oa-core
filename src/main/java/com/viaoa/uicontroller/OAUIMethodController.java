@@ -16,6 +16,7 @@
 package com.viaoa.uicontroller;
 
 import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCallbackService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
@@ -93,7 +94,7 @@ public class OAUIMethodController extends OAUIBaseController {
         OAObject obj = (OAObject) hub.getAO();
         if (obj == null) return false;
         
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(obj);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
         OAObjectCallback eq = og.objectsInternal().callObjectCallbackGetAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, getHub(), obj, getMethodName());
         return eq.getAllowed();
     }
@@ -110,7 +111,7 @@ public class OAUIMethodController extends OAUIBaseController {
     public boolean isVisible() {
         if (!super.isVisible()) return false;
         
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(getHub());
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(getHub());
         OAObjectCallback eq = og.objectsInternal().callObjectCallbackGetAllowVisibleObjectCallback(getHub(), (OAObject) hub.getAO(), getMethodName());
         return eq.getAllowed();
     }
@@ -178,7 +179,7 @@ public class OAUIMethodController extends OAUIBaseController {
         OAObjectCallback cb; 
         String s;
 
-		final OAGraphImpl og = (OAGraphImpl) OARuntime.graph(hub, obj);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub, obj);
         // 1: confirm
         cb = og.objectsInternal().callObjectCallbackGetConfirmCommandObjectCallback(obj, getMethodName(), getConfirmMessage(), getTitle());
         s = cb.getConfirmMessage();

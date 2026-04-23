@@ -39,7 +39,6 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCallback;
 import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OATrigger;
-import com.viaoa.object.OATriggerDelegate;
 import com.viaoa.object.OATriggerListener;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
@@ -1727,7 +1726,9 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 				og.hubsInternal().callHubEventFireCalcPropertyChange(Hub.this, obj, property);
 			}
 		};
-		OATrigger trigger = OATriggerDelegate.createTrigger(property, getObjectClass(), tl, new String[] { propertyPath }, true, false, false, true);
+		OATrigger trigger = new OATrigger(property, getObjectClass(), tl, new String[] { propertyPath }, true, false, false, true);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(getObjectClass());
+        og.triggerInternal().addTrigger(trigger);
 	}
 
 	/**
@@ -1747,7 +1748,9 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 				og.hubsInternal().callHubEventFireCalcPropertyChange(Hub.this, obj, property);
 			}
 		};
-		OATrigger trigger = OATriggerDelegate.createTrigger(property, getObjectClass(), tl, new String[] { propertyPath }, true, false, useBackgroundThread, true);
+		OATrigger trigger = new OATrigger(property, getObjectClass(), tl, new String[] { propertyPath }, true, false, useBackgroundThread, true);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(getObjectClass());
+        og.triggerInternal().addTrigger(trigger);
 	}
 
 	/**

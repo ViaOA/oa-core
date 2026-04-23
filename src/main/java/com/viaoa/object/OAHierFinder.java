@@ -120,7 +120,7 @@ public class OAHierFinder<F extends OAObject> {
         if (fromObject == null) return null;
 
         Class c = fromObject.getClass();
-        propertyPath = new OAPropertyPath(c, strPropertyPath);
+        if (propertyPath == null) propertyPath = new OAPropertyPath(c, strPropertyPath);
         
         foundValue = null;
         findFirstValue(fromObject, filter, 0);
@@ -292,7 +292,7 @@ public class OAHierFinder<F extends OAObject> {
         }        
         
         if (liRecursive != null) {
-            if (cntRecursive > 50) return false;
+            if (cntRecursive > 100) return false;
             OAObject parent = (OAObject) liRecursive.getValue(obj);
             if (parent != null) {
                 if (findFirstValue(parent, filter, pos, true, cntRecursive+1)) return true;

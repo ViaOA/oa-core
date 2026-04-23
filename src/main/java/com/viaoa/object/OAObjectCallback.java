@@ -15,8 +15,6 @@
  */
 package com.viaoa.object;
 
-import javax.swing.JLabel;
-
 import com.viaoa.hub.Hub;
 import com.viaoa.util.OAConv;
 import com.viaoa.util.OAString;
@@ -169,7 +167,7 @@ public class OAObjectCallback {
 	 * Optional Swing label used for UI-related callback types that allow
 	 * label configuration or rendering customization.
 	 */
-	private JLabel label; // used for UI rendering control
+	private Object label; // used for UI rendering control
 
 	/**
 	 * Optional response message assigned by callback logic, typically returned
@@ -518,6 +516,7 @@ public class OAObjectCallback {
 	 * @param type the callback type to assign
 	 */
 	public OAObjectCallback(Type type) {
+		if (type == null) type = Type.Unknown;
 		this.type = type;
 	}
 
@@ -536,6 +535,7 @@ public class OAObjectCallback {
 	 * @param value the callback value, interpreted according to the type
 	 */
 	public OAObjectCallback(Type type, int checkType, Hub hub, Class clazz, OAObject oaObj, String propertyName, Object value) {
+		if (type == null) type = Type.Unknown;
 		this.type = type;
 		this.checkType = checkType;
 		this.hub = hub;
@@ -557,6 +557,7 @@ public class OAObjectCallback {
 	 * @param eq the source callback to copy values from
 	 */
 	public OAObjectCallback(Type type, int checkType, OAObjectCallback eq) {
+		if (type == null) type = Type.Unknown;
 		this.type = type;
 		this.checkType = checkType;
 
@@ -585,8 +586,9 @@ public class OAObjectCallback {
 	 *
 	 * @param t the new callback type
 	 */
-	public void setType(Type t) {
-		this.type = t;
+	public void setType(Type type) {
+		if (type == null) type = Type.Unknown;
+		this.type = type;
 	}
 
 	/**
@@ -911,7 +913,7 @@ public class OAObjectCallback {
 	 *
 	 * @return the label, or {@code null} if none is set
 	 */
-	public JLabel getLabel() {
+	public Object getLabel() {
 		return label;
 	}
 
@@ -920,7 +922,7 @@ public class OAObjectCallback {
 	 *
 	 * @param label the label to assign
 	 */
-	public void setLabel(JLabel label) {
+	public void setLabel(Object label) {
 		this.label = label;
 	}
 

@@ -158,6 +158,10 @@ public class OATrigger {
         this.bUseBackgroundThreadIfNeeded = bUseBackgroundThreadIfNeeded;
     }
 
+    public Class<?> getRootClass() {
+    	return rootClass;
+    }
+    
     /**
      * Returns the triggers that depend on this trigger.
      *

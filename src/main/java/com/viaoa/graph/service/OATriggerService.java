@@ -1,19 +1,4 @@
-/*
- * Copyright 1999–2025 ViaOA (info@viaoa.com)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package com.viaoa.object;
+package com.viaoa.graph.service;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -23,7 +8,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectInfoService;
+import com.viaoa.graph.api.TriggerOps;
+import com.viaoa.graph.api.internal.TriggerInternalOps;
+import com.viaoa.object.OAObjectInfo;
+import com.viaoa.object.OATrigger;
+import com.viaoa.object.OATriggerListener;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
@@ -44,42 +33,10 @@ import com.viaoa.runtime.OAThreadService;
  * </ul>
  *
  * @see OATrigger
- * @see OAObjectInfoDelegate
+ * @see OAObjectInfoService
  * @see OATriggerListener
  */
-public class OATriggerDelegate {
-
-	/**
-	 * Creates and registers a new trigger using the supplied parameters and
-	 * returns the resulting {@link OATrigger}. The trigger is constructed with
-	 * the given property paths and behavioral flags, then registered through
-	 * {@link #createTrigger(OATrigger)}.
-	 *
-	 * @param name                    the trigger name
-	 * @param rootClass               the root class the trigger applies to
-	 * @param triggerListener         the listener invoked when the trigger fires
-	 * @param dependentPropertyPaths  the property paths this trigger monitors
-	 * @param bOnlyUseLoadedData      true to restrict evaluation to loaded data
-	 * @param bServerSideOnly         true to run only on the server
-	 * @param bBackgroundThread       true to use a background thread for execution
-	 * @param bBackgroundThreadIfNeeded true to use a background thread only when required
-	 * @return the newly created trigger
-	 */
-	public static OATrigger createTrigger(
-			String name,
-			Class rootClass,
-			OATriggerListener triggerListener,
-			String[] dependentPropertyPaths,
-			final boolean bOnlyUseLoadedData,
-			final boolean bServerSideOnly,
-			final boolean bBackgroundThread,
-			final boolean bBackgroundThreadIfNeeded) {
-		OATrigger t = new OATrigger(name, rootClass, triggerListener, dependentPropertyPaths, bOnlyUseLoadedData, bServerSideOnly,
-				bBackgroundThread, bBackgroundThreadIfNeeded);
-
-		createTrigger(t);
-		return t;
-	}
+public class OATriggerService implements TriggerOps, TriggerInternalOps {
 
 	/**
 	 * Registers the given trigger without skipping any initial non-many
@@ -87,8 +44,9 @@ public class OATriggerDelegate {
 	 *
 	 * @param trigger the trigger to register
 	 */
-	public static void createTrigger(OATrigger trigger) {
-		createTrigger(trigger, false);
+	@Override
+	public void addTrigger(OATrigger trigger) {
+		addTrigger(trigger, false);
 	}
 
 	/**
@@ -99,13 +57,14 @@ public class OATriggerDelegate {
 	 * @param trigger                       the trigger to register
 	 * @param bSkipFirstNonManyProperty     true to skip a non-many first property in the path
 	 */
-	public static void createTrigger(OATrigger trigger, boolean bSkipFirstNonManyProperty) {
+	@Override
+	public void addTrigger(OATrigger trigger, boolean bSkipFirstNonManyProperty) {
 		if (trigger == null) {
 			return;
 		}
 		
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(trigger.rootClass);
-		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(trigger.rootClass);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(trigger.getRootClass());
+		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(trigger.getRootClass());
 		oi.createTrigger(trigger, bSkipFirstNonManyProperty);
 	}
 
@@ -116,13 +75,14 @@ public class OATriggerDelegate {
 	 * @param trigger the trigger to remove
 	 * @return true if removed, false if the trigger was null
 	 */
-	public static boolean removeTrigger(OATrigger trigger) {
+	@Override
+	public boolean removeTrigger(OATrigger trigger) {
 		if (trigger == null) {
 			return false;
 		}
 
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(trigger.rootClass);
-		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(trigger.rootClass);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(trigger.getRootClass());
+		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(trigger.getRootClass());
 		oi.removeTrigger(trigger);
 
 		return true;
@@ -160,6 +120,7 @@ public class OATriggerDelegate {
 				}
 				runnable.run();
 			} finally {
+				srvcOAThreadLocal.setContext(null);
 				if (bIsLoading) {
 					srvcOAThreadLocal.setLoading(false);
 				}
@@ -174,20 +135,19 @@ public class OATriggerDelegate {
 	 *
 	 * @param r the runnable to execute
 	 */
-	public static void runTrigger(Runnable r) {
+	public void runTrigger(Runnable r) {
+		if (r == null) return;
 		Runnable rx = new TriggerRunnable(r);
 		getExecutorService().submit(rx);
 	}
 
-	public static volatile ThreadPoolExecutor executorService;
-	
 	/**
 	 * Returns the shared executor service used for asynchronous trigger
 	 * execution.
 	 *
 	 * @return the executor service
 	 */
-	protected static ExecutorService getExecutorService() {
+	protected ExecutorService getExecutorService() {
 	    return Holder.INSTANCE;
 	}
 
@@ -215,6 +175,4 @@ public class OATriggerDelegate {
 	    }
 	}
 
-	
-	
 }

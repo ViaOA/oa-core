@@ -289,13 +289,6 @@ public class OAMethodInfo implements java.io.Serializable {
         contextEnabledValue = b;
     }
     
-    /**
-     * Sets the value that determines whether this method is enabled
-     * based on the current context.
-     *
-     * @param b {@code true} to enable the method when the context property matches,
-     *          otherwise {@code false}
-     */
     public String getContextVisibleProperty() {
         return contextVisibleProperty;
     }

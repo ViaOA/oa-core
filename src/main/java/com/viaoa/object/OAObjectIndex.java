@@ -22,6 +22,7 @@ import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectKeyService;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.util.OAArray;
+import com.viaoa.util.OACompare;
 
 /**
  * Maintains a runtime index of OAObject instances by their primary/business key
@@ -194,7 +195,7 @@ public class OAObjectIndex {
 	 */
 	protected boolean removeFromIndex(final Class<? extends OAObject> c, OAObjectIndexKey ik) {
 		if (c == null || ik == null || !ik.hasValidIds()) return false;
-		ConcurrentHashMap<OAObjectIndexKey, UUID> hm = hmGuidByIndexKey.computeIfAbsent(c, k -> new ConcurrentHashMap<>());
+		ConcurrentHashMap<OAObjectIndexKey, UUID> hm = hmGuidByIndexKey.get(c);
 		if (hm == null) return false;
 		return (hm.remove(ik) != null);
 	}
@@ -210,6 +211,7 @@ public class OAObjectIndex {
 	 */
 	public void updateIndex(final OAObject obj, OAObjectKey okNew, OAObjectKey okOld) {
 		if (obj == null) return;
+		if (okNew != null && okNew.equals(okOld)) return;
 
 		if (okNew != null) {
 			addToIndex(obj, okNew);
@@ -225,6 +227,12 @@ public class OAObjectIndex {
 	 */
 	public void clear() {
 		hmGuidByIndexKey.clear();
+	}
+
+	public void clear(Class<? extends OAObject> clazz) {
+		if (clazz == null) return;
+		ConcurrentHashMap<OAObjectIndexKey, UUID> hm = hmGuidByIndexKey.get(clazz);
+		if (hm != null) hm.clear();
 	}
 	
 }

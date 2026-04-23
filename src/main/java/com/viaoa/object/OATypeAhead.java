@@ -674,7 +674,7 @@ public class OATypeAhead<F extends OAObject,T extends OAObject> {
      * @param b ignored; enabling is unconditional
      */
     public void setShowHint(boolean b) {
-        this.showHint = true;
+        this.showHint = b;
     }
 
     /**

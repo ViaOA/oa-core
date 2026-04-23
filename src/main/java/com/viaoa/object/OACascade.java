@@ -49,43 +49,43 @@ public class OACascade {
 	 * Tracks GUIDs of OAObjects that have already been visited during a cascade
 	 * operation, preventing redundant processing and infinite recursion.
 	 */
-	private TreeSet<UUID> treeObject;
+	private volatile TreeSet<UUID> treeObject;
 
 	/**
 	 * Tracks Hub instances encountered during cascading, ensuring each Hub is
 	 * processed only once.
 	 */
-	private TreeSet<Hub> treeHub;
+	private volatile TreeSet<Hub> treeHub;
 	
 	/**
 	 * Optional read/write lock providing thread-safe access to the object
 	 * tracking set when locking is enabled.
 	 */
-	private ReentrantReadWriteLock rwLock;
+	private final ReentrantReadWriteLock rwLock;
 	
 	/**
 	 * Optional read/write lock providing thread-safe access to the Hub
 	 * tracking set when locking is enabled.
 	 */
-	private ReentrantReadWriteLock rwLockHub;
+	private final ReentrantReadWriteLock rwLockHub;
 
 	/**
 	 * Current recursive depth of the cascade traversal, incremented and
 	 * decremented as recursion advances and unwinds.
 	 */
-	private int depth;
+	private volatile int depth;
 
 	/**
 	 * Optional overflow list used to store objects encountered during deep
 	 * cascading or when additional bookkeeping is needed.
 	 */
-	private ArrayList<Object> alOverflow;
+	private volatile ArrayList<Object> alOverflow;
 
 	/**
 	 * Set of classes that should be ignored during cascade tracking; any object
 	 * of a class in this set is treated as already processed.
 	 */
-	private HashSet<Class> hsIgnore;
+	private volatile HashSet<Class> hsIgnore;
 	
 	/**
 	 * Creates a new cascade-tracking instance used during recursive graph
@@ -101,6 +101,10 @@ public class OACascade {
 		if (bUseLocks) {
 			rwLock = new ReentrantReadWriteLock();
 			rwLockHub = new ReentrantReadWriteLock();
+		}
+		else {
+			rwLock = null;
+			rwLockHub = null;
 		}
 	}
 
@@ -147,10 +151,16 @@ public class OACascade {
 	 * @param obj the object to add to the overflow list
 	 */
 	public void addToOverflow(Object obj) {
+		if (rwLock != null) {
+			rwLock.writeLock().lock();
+		}
 		if (alOverflow == null) {
-			alOverflow = new ArrayList<Object>();
+			if (alOverflow == null) alOverflow = new ArrayList<Object>();
 		}
 		alOverflow.add(obj);
+		if (rwLock != null) {
+			rwLock.writeLock().unlock();
+		}
 	}
 
 	/**
@@ -177,7 +187,8 @@ public class OACascade {
 	 * scenarios.
 	 */
 	public OACascade() {
-		// LOG.finer("new OACascade");
+		rwLock = null;
+		rwLockHub = null;
 	}
 
 	/**
@@ -193,10 +204,16 @@ public class OACascade {
 	 * @param clazz the class to ignore during cascading
 	 */
 	public void ignore(Class clazz) {
+		if (rwLock != null) {
+			rwLock.writeLock().lock();
+		}
 		if (hsIgnore == null) {
-			hsIgnore = new HashSet<Class>();
+			if (hsIgnore == null) hsIgnore = new HashSet<Class>();
 		}
 		hsIgnore.add(clazz);
+		if (rwLock != null) {
+			rwLock.writeLock().unlock();
+		}
 	}
 
 	/**
@@ -228,7 +245,9 @@ public class OACascade {
 			if (rwLock != null) {
 				rwLock.writeLock().lock();
 			}
-			treeObject = new TreeSet<UUID>();
+			if (treeObject == null) {
+				treeObject = new TreeSet<UUID>();
+			}
 			if (rwLock != null) {
 				rwLock.writeLock().unlock();
 			}
@@ -291,7 +310,7 @@ public class OACascade {
 			if (rwLockHub != null) {
 				rwLockHub.writeLock().lock();
 			}
-			treeHub = new TreeSet<Hub>();
+			if (treeHub == null) treeHub = new TreeSet<Hub>();
 			if (rwLockHub != null) {
 				rwLockHub.writeLock().unlock();
 			}

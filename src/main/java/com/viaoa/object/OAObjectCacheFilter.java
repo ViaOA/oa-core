@@ -220,22 +220,12 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
      * @throws RuntimeException if {@code hub} is {@code null}
      */
     public OAObjectCacheFilter(Hub<T> hub, OAFilter<T> filter, String ... dependentPropPaths) {
-        if (hub == null) throw new RuntimeException("hub can not be null");
-        clazz = hub.getObjectClass();
-        wrHub = new WeakReference<Hub<T>>(hub);
- 
-        final boolean bEmptyHub = (hub.getSize() == 0);
-        
+    	this(hub, filter);
         if (dependentPropPaths != null) {
             for (String pp : dependentPropPaths) {
                 addDependentProperty(pp, false);
             }
         }
-        
-        if (filter != null) addFilter(filter, false);
-        if (bEmptyHub) {
-            reselectAndRefresh();            
-        }  // else the hub must have been preselected
     }
     
     /**
@@ -624,7 +614,9 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         };
         
         if (trigger != null) {
-            OATriggerDelegate.removeTrigger(trigger);
+        	OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+            og.triggerInternal().removeTrigger(trigger);
+            trigger = null;
         }
         
         if (name == null) {
@@ -632,7 +624,8 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         }
         
         trigger = new OATrigger(name, clazz, triggerListener, dependentPropertyPaths, true, false, false, true);
-        OATriggerDelegate.createTrigger(trigger);
+        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+        og.triggerInternal().addTrigger(trigger);
     }
     
     
@@ -649,11 +642,12 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
      * </p>
      */
     public void close() {
-        if (trigger == null) {
-            OATriggerDelegate.removeTrigger(trigger);
+        if (trigger != null) {
+        	OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+            og.triggerInternal().removeTrigger(trigger);
             trigger = null;
         }
-        if (cacheListener == null) {
+        if (cacheListener != null) {
     		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
         	        	
     		og.objectsInternal().callObjectCacheRemoveListener(clazz, cacheListener);
@@ -688,7 +682,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
     @Override
     public boolean isUsed(T obj) {
         if (alFilter == null) {
-            return false;
+            return true;
         }
         
         for (OAFilter<T> f : alFilter) {

@@ -32,7 +32,7 @@ public final class OARuntime {
 	static {
 		runtime.graphDefault = new OAGraphImpl(""); 
 		try {
-			((OAGraphImpl) runtime.graphDefault).initialize();
+			runtime.graphDefault.initialize();
 		}
 		catch (Exception e) {
 			LOG.log(Level.WARNING, "Exception creating OAGraph graphDefault", e);
@@ -72,7 +72,7 @@ public final class OARuntime {
 			
 			og = new OAGraphImpl(pkgName);
 			try {
-				((OAGraphImpl)og).initialize();
+				((OAGraphImpl) og).initialize();
 				hmPackageNameGraphHelper.clear();
 				hmPackageNameGraph.put(pkgName, og);
 			} catch (ClassNotFoundException | IOException e) {

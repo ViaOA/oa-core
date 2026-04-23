@@ -171,16 +171,6 @@ public class OAObjectKey implements Serializable, Comparable<Object> {
 	}
 	
 
-	/**
-	 * Compares this key with another object for equality.
-	 * <p>
-	 * Two {@link OAObjectKey} instances are considered equal when both their
-	 * GUID values match and their ID arrays are equal (including both being
-	 * {@code null} or the same reference).
-	 *
-	 * @param obj the object to compare with this key
-	 * @return {@code true} if the keys are equal; otherwise {@code false}
-	 */
 	@Override
 	public boolean equals(final Object obj) {
 	    if (obj == this) return true;

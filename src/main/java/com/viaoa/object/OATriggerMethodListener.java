@@ -16,6 +16,8 @@
 package com.viaoa.object;
 
 import java.lang.reflect.Method;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OASelect;
@@ -26,6 +28,7 @@ import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.util.OALogger;
 import com.viaoa.util.OAString;
 
 /**
@@ -48,6 +51,7 @@ import com.viaoa.util.OAString;
  * @see com.viaoa.datasource.OASelect
  */
 public class OATriggerMethodListener implements OATriggerListener {
+	private static final Logger LOG = OALogger.getLogger(OATriggerMethodListener.class);
 	
 	/**
 	 * The class that declares the trigger method.
@@ -149,7 +153,7 @@ public class OATriggerMethodListener implements OATriggerListener {
                         method.invoke(obj, new Object[] { hubEvent });
                     }
                     catch (Exception e) {
-                        // TODO: handle exception
+                        LOG.log(Level.WARNING, "Exception calling updateObject for Trigger", e);
                     }
                     return true;
                 }
