@@ -492,10 +492,6 @@ public abstract class HubParentService {
 		if (srvcHubCS != null) return srvcHubCS;
 		srvcHubCS = new HubCSService(faHub) {
 			@Override
-			public boolean callThreadLocalIsSuppressCSMessages() {
-				return HubParentService.this.srvcThreadLocal.isSuppressCSMessages();
-			}
-			@Override
 			public boolean callThreadLocalIsLoading() {
 				return HubParentService.this.srvcThreadLocal.isLoading();
 			}
@@ -508,8 +504,8 @@ public abstract class HubParentService {
 				return HubParentService.this.srvcSync.getRemoteSync().sort(objectClass, objectKey, hubPropertyName, propertyPaths, bAscending, comp);
 			}
 			@Override
-			public boolean callSyncShouldSendMessages() {
-				return HubParentService.this.srvcSync.shouldSendMessages();
+			public boolean callThreadLocalGetSendSyncMessages() {
+				return HubParentService.this.srvcThreadLocal.getSendSyncMessages();
 			}
 			@Override
 			public boolean callSyncRemoteSyncRemoveFromHub(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName, Class<? extends OAObject> objectClassX, OAObjectKey objectKeyX) {
@@ -559,14 +555,6 @@ public abstract class HubParentService {
 			@Override
 			public boolean callSyncIsClient() {
 				return HubParentService.this.srvcSync.isClient();
-			}
-			@Override
-			public boolean callSyncGetSuppressCSMessages() {
-				return HubParentService.this.srvcSync.getSuppressCSMessages();
-			}
-			@Override
-			public boolean callRemoteThreadShouldSendMessages() {
-				return HubParentService.this.srvcRemoteThread.shouldSendMessages();
 			}
 			@Override
 			public boolean callRemoteThreadIsRemoteThread() {
@@ -789,8 +777,12 @@ public abstract class HubParentService {
 				HubParentService.this.srvcThreadLocal.unlock(hub);				
 			}
 			@Override
-			public void callRemoteThreadSendMessages(boolean b) {
-				HubParentService.this.srvcRemoteThread.sendMessages(b);				
+			public boolean callThreadLocalGetSendSyncMessages() {
+				return HubParentService.this.srvcThreadLocal.getSendSyncMessages();
+			}
+			@Override
+			public void callThreadLocalSetSendSyncMessages(boolean b) {
+				HubParentService.this.srvcThreadLocal.setSendSyncMessages(b);
 			}
 		};
 		
@@ -1008,8 +1000,8 @@ public abstract class HubParentService {
 				return HubParentService.this.srvcRemoteThread.isRemoteThread();
 			}
 			@Override
-			public void callThreadLocalAddHubEvent(HubEvent he) {
-				HubParentService.this.srvcThreadLocal.addHubEvent(he);
+			public boolean callThreadLocalAddHubEvent(HubEvent he) {
+				return HubParentService.this.srvcThreadLocal.addHubEvent(he);
 			}
 			@Override
 			public void callThreadLocalRemoveHubEvent(HubEvent<?> he) {
@@ -1367,8 +1359,12 @@ public abstract class HubParentService {
 				HubParentService.this.getHubSelectService().loadAllData(thisHub);	
 			}
 			@Override
-			public void callThreadLocalSetSuppressCSMessages(boolean b) {
-				HubParentService.this.srvcThreadLocal.setSuppressCSMessages(b);
+			public boolean callThreadLocalGetSendSyncMessages() {
+				return HubParentService.this.srvcThreadLocal.getSendSyncMessages();
+			}
+			@Override
+			public void callThreadLocalSetSendSyncMessages(boolean b) {
+				HubParentService.this.srvcThreadLocal.setSendSyncMessages(b);
 			}
     	};
 		return srvcHubSerialize;

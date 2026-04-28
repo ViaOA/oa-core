@@ -1001,7 +1001,12 @@ public class OARemoteMultiplexerClient {
 	 * @param bSendMessgage whether the thread should send outgoing messages
 	 * @return a remote-thread ready to process the request
 	 */
-	private OARemoteThread getRemoteThread(RequestInfo ri, boolean bSendMessgage) {
+	private OARemoteThread getRemoteThread(RequestInfo ri, boolean bSendSyncMessages) {
+		OARemoteThread rt = _getRemoteThread(ri);
+		rt.setSendSyncMessages(bSendSyncMessages);
+		return rt;
+	}
+	private OARemoteThread _getRemoteThread(RequestInfo ri) {
 		OARemoteThread remoteThread;
 		synchronized (alRemoteThread) {
 			for (int i = 0;; i++) {
@@ -1012,7 +1017,6 @@ public class OARemoteMultiplexerClient {
 					synchronized (rt.Lock) {
 						if (rt.requestInfo == null) {
 							rt.requestInfo = ri;
-							rt.setSendMessages(bSendMessgage);
 							return rt;
 						}
 					}
@@ -1063,7 +1067,6 @@ public class OARemoteMultiplexerClient {
 			}
 		}
 		remoteThread = createRemoteThread();
-		remoteThread.setSendMessages(bSendMessgage);
 
 		synchronized (alRemoteThread) {
 			remoteThread.requestInfo = ri;
@@ -1995,7 +1998,7 @@ public class OARemoteMultiplexerClient {
 
 			// 20141217
 			if (!ri.bind.isBroadcast) {
-				srvcOARemoteThread.sendMessages(true);
+                srvcOAThreadLocal.setSendSyncMessages(true);
 			}
 			ri.response = ri.method.invoke(ri.bind.getObject(), ri.args);
 		} catch (InvocationTargetException e) {
@@ -2012,7 +2015,7 @@ public class OARemoteMultiplexerClient {
 		} finally {
 			// 20141217
 			if (!ri.bind.isBroadcast) {
-				srvcOARemoteThread.sendMessages(false);
+                srvcOAThreadLocal.setSendSyncMessages(false);
 			}
 		}
 		srvcOAThreadLocal.setRemoteRequestInfo(null);

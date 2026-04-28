@@ -24,11 +24,12 @@ public abstract class HubSerializeService {
 	 */
 	public void _writeObject(Hub<?> thisHub, java.io.ObjectOutputStream stream) throws IOException {
 		if (callHubSelectIsMoreData(thisHub)) {
+			boolean bWas = callThreadLocalGetSendSyncMessages();
 			try {
-				callThreadLocalSetSuppressCSMessages(true);
+				callThreadLocalSetSendSyncMessages(false);
 				callHubSelectLoadAllData(thisHub); // otherwise, client will not have the correct datasource
 			} finally {
-				callThreadLocalSetSuppressCSMessages(false);
+				callThreadLocalSetSendSyncMessages(bWas);
 			}
 		}
 		stream.defaultWriteObject();
@@ -90,6 +91,7 @@ public abstract class HubSerializeService {
 	public abstract <T extends OAObject> boolean callObjectHubAddHub(T oaObj, Hub<T> hub);
 	public abstract boolean callHubSelectIsMoreData(Hub<?> thisHub);
 	public abstract void callHubSelectLoadAllData(Hub<?> thisHub);
-	public abstract void callThreadLocalSetSuppressCSMessages(boolean b);
+	public abstract boolean callThreadLocalGetSendSyncMessages();
+	public abstract void callThreadLocalSetSendSyncMessages(boolean b);
 }
 

@@ -80,13 +80,6 @@ public class OAThreadLocalService {
 	private final AtomicInteger aiTotalObjectSerializer = new AtomicInteger();
 	
 	/**
-	 * Tracks the number of increments/decrements applied to the
-	 * suppressCSMessages counter across all threads. Useful for analyzing
-	 * client/server message suppression patterns.
-	 */
-	private final AtomicInteger aiTotalSuppressCSMessages = new AtomicInteger();
-	
-	/**
 	 * Global counter used to measure how frequently deletion-related thread-local
 	 * states are entered or exited. Assists in understanding cascading delete
 	 * operations and suppression behavior.
@@ -192,7 +185,7 @@ public class OAThreadLocalService {
 	
 	private long msObjectCacheAddMode;
 	private long msObjectSerializer;
-	private long msSuppressCSMessages;
+	private long msDisableSyncMessages;
 	private final ConcurrentHashMap<Object, AtomicInteger> hmDeleting = new ConcurrentHashMap<>();
 	private long msDeleting;
 	private long msFlag;
@@ -212,7 +205,6 @@ public class OAThreadLocalService {
 	private long msHubListenerTree;
 	private long msHubEvent;
 	private long msRefreshingObject;
-	
 	
 	/**
 	 * Core thread-local container storing the OAThreadLocal instance associated
@@ -531,74 +523,24 @@ public class OAThreadLocalService {
 	}
 	
 	
-	/**
-	 * Returns whether the specified thread-local instance has message
-	 * suppression enabled.
-	 *
-	 * @param ti the thread-local instance
-	 * @return true if suppressed, otherwise false
-	 */
-	public boolean isSuppressCSMessages() {
-		boolean b;
-		if (aiTotalSuppressCSMessages.get() == 0) {
-			// LOG.finest("fast");
-			b = false;
-		} else {
-			b = isSuppressCSMessages(getThreadLocal(false));
-			// LOG.finest(""+b);
-		}
-		return b;
+	
+	public boolean getSendSyncMessages() {
+		return getSendSyncMessages(getThreadLocal(false));
 	}
 	
-	/**
-	 * Returns whether the specified thread-local instance has message
-	 * suppression enabled.
-	 *
-	 * @param ti the thread-local instance
-	 * @return true if suppressed, otherwise false
-	 */
-	public boolean isSuppressCSMessages(OAThreadLocal ti) {
-		if (ti == null) {
-			return false;
-		}
-		return ti.getSuppressCSMessages() > 0;
+	public boolean getSendSyncMessages(OAThreadLocal ti) {
+		if (ti == null) return true;
+		return ti.getSendSyncMessages();
 	}
 
-	/**
-	 * Enables or disables suppression of client/server messages for the
-	 * current thread.
-	 *
-	 * @param b true to enable suppression, false to disable
-	 */
-	public void setSuppressCSMessages(boolean b) {
-		setSuppressCSMessages(getThreadLocal(b), b);
+	public void setSendSyncMessages(boolean b) {
+		setSendSyncMessages(getThreadLocal(!b), b);
 	}
 
-	/**
-	 * Updates suppression counts for the specified thread-local instance and
-	 * the global suppression counter. Logs throttled warnings when thresholds
-	 * are exceeded.
-	 *
-	 * @param ti the thread-local instance
-	 * @param b  true to increment suppression, false to decrement
-	 */
-	public void setSuppressCSMessages(OAThreadLocal ti, boolean b) {
-		if (ti == null) {
-			return;
-		}
-		int x, x2;
-		x = ti.getSuppressCSMessages();
-		if (b) {
-			x++;
-			x2 = aiTotalSuppressCSMessages.incrementAndGet();
-		} else {
-			x--;
-			x2 = aiTotalSuppressCSMessages.decrementAndGet();
-		}
-		ti.setSuppressCSMessages(x);
-		if (x > 30 || x < 0 || x2 > 50 || x2 < 0) {
-			msSuppressCSMessages = throttleLOG("TotalSuppressCSMessages =" + x2 + ", ti=" + x, msSuppressCSMessages);
-		}
+	public void setSendSyncMessages(OAThreadLocal ti, boolean b) {
+		if (ti == null) return;
+		boolean bReturn = ti.getSendSyncMessages();
+		ti.setSendSyncMessages(b);
 	}
 
 	
@@ -1981,14 +1923,22 @@ public class OAThreadLocalService {
 	}
 
 	
+	
+	protected final int MaxEventDepth = 100;
+	public int getMaxEventDepth() {
+		return MaxEventDepth;
+	}
+	
+	
 	/**
 	 * Adds the supplied HubEvent to the current thread’s active-event list.
 	 *
 	 * @param he the HubEvent to add
+	 * @return true if event listeners should be call, false if Event Depth gt max.
 	 */
-	public void addHubEvent(HubEvent he) {
+	public boolean addHubEvent(HubEvent he) {
 		if (he == null) {
-			return;
+			return true;
 		}
 		OAThreadLocal tl = getThreadLocal(true);
 		if (tl.alHubEvent == null) {
@@ -2000,9 +1950,10 @@ public class OAThreadLocalService {
 		}
 
 		int x = tl.alHubEvent.size();
-		if (x > 25 || aiTotalHubEvent.get() > 250) {
+		if (x > 100) {
 			msHubEvent = throttleLOG("TotalHubEvent this=" + x + ", all=" + aiTotalHubEvent.get(), msHubEvent);
 		}
+		return (x < MaxEventDepth);
 	}
 	
 	/**
@@ -2012,27 +1963,15 @@ public class OAThreadLocalService {
 	 * @param he the HubEvent to remove
 	 */
 	public void removeHubEvent(HubEvent he) {
-		if (aiTotalHubEvent.get() == 0) {
-			return;
-		}
 		OAThreadLocal tl = getThreadLocal(false);
-		if (tl == null) {
-			return;
-		}
-		if (tl.alHubEvent == null) {
-			return;
-		}
+		if (tl == null) return;
+		if (tl.alHubEvent == null) return;
 		if (tl.alHubEvent.remove(he)) {
 			aiTotalHubEvent.decrementAndGet();
 		}
 
 		if (tl.alHubEvent.size() == 0) {
 			tl.setCalcPropertyEvents(null);
-		}
-
-		int x = tl.alHubEvent.size();
-		if (x > 25 || aiTotalHubEvent.get() > 250 || aiTotalHubEvent.get() < 0) {
-			msHubEvent = throttleLOG("TotalHubEvent this=" + x + ", all=" + aiTotalHubEvent.get(), msHubEvent);
 		}
 	}
 	
@@ -2335,36 +2274,6 @@ public class OAThreadLocalService {
 	
 	
 	/**
-	 * Returns whether the current thread-local instance is marked as a sync
-	 * thread.
-	 *
-	 * @return true if sync-thread mode is enabled
-	 */
-	public boolean isSyncThread() {
-		OAThreadLocal ti = getThreadLocal(false);
-		return (ti != null && ti.isSyncThread());
-	}
-	
-	/**
-	 * Enables or disables sync-thread mode for the current thread-local
-	 * instance.
-	 *
-	 * @param b true to enable, false to disable
-	 * @return the previous sync-thread flag value
-	 */
-	public boolean setSyncThread(boolean b) {
-		OAThreadLocal ti = getThreadLocal(b);
-
-		if (ti == null) {
-			return false;
-		}
-		boolean b2 = ti.isSyncThread();
-		ti.setIsSyncThread(b);
-		return b2;
-	}
-	
-	
-	/**
 	 * Returns whether the current thread is actively performing a refresh
 	 * operation.
 	 *
@@ -2647,4 +2556,5 @@ public class OAThreadLocalService {
 	public void setReplicationSource(String src) {
 		getOAThreadLocal().replicationSource = src;
 	}
+
 }

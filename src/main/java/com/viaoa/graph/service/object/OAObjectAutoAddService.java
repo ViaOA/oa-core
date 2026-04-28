@@ -4,6 +4,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
+import com.viaoa.graph.service.hub.HubParentService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -75,8 +76,9 @@ public abstract class OAObjectAutoAddService {
 			return;
 		}
 
+		final boolean bWas = callThreadLocalGetSendSyncMessages();
 		try {
-			callThreadLocalSetSuppressCSMessages(true);
+			callThreadLocalSetSendSyncMessages(false);
 			// need to see if object should be put into linkOne/masterObject hub(s)
 			OAObjectInfo oi = callObjectInfoGetOAObjectInfo(oaObj);
 			
@@ -112,7 +114,7 @@ public abstract class OAObjectAutoAddService {
 				}
 			}
 		} finally {
-			callThreadLocalSetSuppressCSMessages(false);
+			callThreadLocalSetSendSyncMessages(bWas);
 		}
 	}
 
@@ -138,10 +140,11 @@ public abstract class OAObjectAutoAddService {
 	}
 
 	public abstract void callObjectEventFirePropertyChange(OAObject oaObj, String propertyName, Object oldObj, Object newObj, boolean bLocalOnly, boolean bSetChanged);
-	public abstract void callThreadLocalSetSuppressCSMessages(boolean b);
 	public abstract OAObjectInfo callObjectInfoGetOAObjectInfo(OAObject oaObj);
 	public abstract Object callObjectReflectGetRawReference(OAObject oaObj, String name);
 	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo li);
 	public abstract Object callObjectReflectGetProperty(OAObject obj, String name);	
+	public abstract boolean callThreadLocalGetSendSyncMessages();
+	public abstract void callThreadLocalSetSendSyncMessages(boolean b);
 	
 }

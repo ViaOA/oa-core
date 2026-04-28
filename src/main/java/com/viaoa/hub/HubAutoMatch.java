@@ -200,7 +200,6 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 		if (bInit) {
 			return;
 		}
-		bInit = true;
 		if (hub == null) {
 			throw new IllegalArgumentException("hub can not be null");
 		}
@@ -208,7 +207,7 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 			// 20220802 now allows auto match on Enum property
 			// throw new IllegalArgumentException("hubMaster can not be null");
 		}
-
+		bInit = true;
 		this.hub = hub;
 		this.hubMaster = hubMaster;
 		if (!bManuallyCalled && hubMaster != null) {
@@ -338,17 +337,17 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 			}
 		}
 		
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
-		
 		if (!abUpdating.compareAndSet(false, true)) {
 			return; // already updating
 		}
-        if (bServerSideOnly) {
-            srvcOARemoteThread.sendMessages(true);
-        }
-
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+		
+		boolean bWas = false;
         try {
+            if (bServerSideOnly) {
+            	bWas = srvcOAThreadLocal.getSendSyncMessages();
+                srvcOAThreadLocal.setSendSyncMessages(true);
+            }
             if (bCheckInSync) {
         		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.hub);
     			if (og.hubsInternal().callHubStatusGetCurrentState(hub, null, null) != HubStatusService.HubCurrentStateEnum.InSync) {
@@ -373,7 +372,7 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 		} finally {
 			abUpdating.set(false);
 			if (bServerSideOnly) {
-				srvcOARemoteThread.sendMessages(false);
+				srvcOAThreadLocal.setSendSyncMessages(bWas);
 			}
 		}
 	}

@@ -113,9 +113,10 @@ public abstract class HubEventService {
 					@Override
 					public void run() {
 						try {
-							callThreadLocalAddHubEvent(hubEvent);
-							for (int i = 0; i < x; i++) {
-								hl[i].afterRemove(hubEvent);
+							if (callThreadLocalAddHubEvent(hubEvent)) {
+								for (int i = 0; i < x; i++) {
+									hl[i].afterRemove(hubEvent);
+								}
 							}
 						} finally {
 							callThreadLocalRemoveHubEvent(hubEvent);
@@ -125,9 +126,10 @@ public abstract class HubEventService {
 				callRemoteThreadQueueEvent(r);
 			} else {
 				try {
-					callThreadLocalAddHubEvent(hubEvent);
-					for (int i = 0; i < x; i++) {
-						hl[i].afterRemove(hubEvent);
+					if (callThreadLocalAddHubEvent(hubEvent)) {
+						for (int i = 0; i < x; i++) {
+							hl[i].afterRemove(hubEvent);
+						}
 					}
 				} finally {
 					callThreadLocalRemoveHubEvent(hubEvent);
@@ -149,8 +151,9 @@ public abstract class HubEventService {
 					if (oi.getHasTriggers()) {
 						final HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
 						try {
-							callThreadLocalAddHubEvent(hubEvent);
-							oi.onChange(thisHub.getMasterObject(), s, hubEvent);
+							if (callThreadLocalAddHubEvent(hubEvent)) {
+								oi.onChange(thisHub.getMasterObject(), s, hubEvent);
+							}
 						} finally {
 							callThreadLocalRemoveHubEvent(hubEvent);
 						}
@@ -212,9 +215,10 @@ public abstract class HubEventService {
 					@Override
 					public void run() {
 						try {
-							callThreadLocalAddHubEvent(hubEvent);
-							for (int i = 0; i < x; i++) {
-								hl[i].afterRemoveAll(hubEvent);
+							if (callThreadLocalAddHubEvent(hubEvent)) {
+								for (int i = 0; i < x; i++) {
+									hl[i].afterRemoveAll(hubEvent);
+								}
 							}
 						} finally {
 							callThreadLocalRemoveHubEvent(hubEvent);
@@ -224,9 +228,10 @@ public abstract class HubEventService {
 				callRemoteThreadQueueEvent(r);
 			} else {
 				try {
-					callThreadLocalAddHubEvent(hubEvent);
-					for (int i = 0; i < x; i++) {
-						hl[i].afterRemoveAll(hubEvent);
+					if (callThreadLocalAddHubEvent(hubEvent)) {
+						for (int i = 0; i < x; i++) {
+							hl[i].afterRemoveAll(hubEvent);
+						}
 					}
 				} finally {
 					callThreadLocalRemoveHubEvent(hubEvent);
@@ -246,8 +251,9 @@ public abstract class HubEventService {
 				if (oi.getHasTriggers()) {
 					final HubEvent hubEvent = new HubEvent(thisHub);
 					try {
-						callThreadLocalAddHubEvent(hubEvent);
-						oi.onChange(objx, s, hubEvent);
+						if (callThreadLocalAddHubEvent(hubEvent)) {
+							oi.onChange(objx, s, hubEvent);
+						}
 					} finally {
 						callThreadLocalRemoveHubEvent(hubEvent);
 					}
@@ -319,9 +325,10 @@ public abstract class HubEventService {
 					@Override
 					public void run() {
 						try {
-							callThreadLocalAddHubEvent(hubEvent);
-							for (int i = 0; i < x; i++) {
-								hl[i].afterAdd(hubEvent);
+							if (callThreadLocalAddHubEvent(hubEvent)) {
+								for (int i = 0; i < x; i++) {
+									hl[i].afterAdd(hubEvent);
+								}
 							}
 						} finally {
 							callThreadLocalRemoveHubEvent(hubEvent);
@@ -331,9 +338,10 @@ public abstract class HubEventService {
 				callRemoteThreadQueueEvent(r);
 			} else {
 				try {
-					callThreadLocalAddHubEvent(hubEvent);
-					for (int i = 0; i < x; i++) {
-						hl[i].afterAdd(hubEvent);
+					if (callThreadLocalAddHubEvent(hubEvent)) {
+						for (int i = 0; i < x; i++) {
+							hl[i].afterAdd(hubEvent);
+						}
 					}
 				} finally {
 					callThreadLocalRemoveHubEvent(hubEvent);
@@ -355,9 +363,10 @@ public abstract class HubEventService {
 					OAObjectInfo oi = callObjectInfoGetObjectInfo(objx.getClass());
 					if (oi.getHasTriggers()) {
 						HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
-						callThreadLocalAddHubEvent(hubEvent);
 						try {
-							oi.onChange(thisHub.getMasterObject(), s, hubEvent);
+							if (callThreadLocalAddHubEvent(hubEvent)) {
+								oi.onChange(thisHub.getMasterObject(), s, hubEvent);
+							}
 						} finally {
 							callThreadLocalRemoveHubEvent(hubEvent);
 						}
@@ -429,9 +438,10 @@ public abstract class HubEventService {
 					@Override
 					public void run() {
 						try {
-							callThreadLocalAddHubEvent(hubEvent);
-							for (int i = 0; i < x; i++) {
-								hl[i].afterInsert(hubEvent);
+							if (callThreadLocalAddHubEvent(hubEvent)) {
+								for (int i = 0; i < x; i++) {
+									hl[i].afterInsert(hubEvent);
+								}
 							}
 						} finally {
 							callThreadLocalRemoveHubEvent(hubEvent);
@@ -441,9 +451,10 @@ public abstract class HubEventService {
 				callRemoteThreadQueueEvent(r);
 			} else {
 				try {
-					callThreadLocalAddHubEvent(hubEvent);
-					for (int i = 0; i < x; i++) {
-						hl[i].afterInsert(hubEvent);
+					if (callThreadLocalAddHubEvent(hubEvent)) {
+						for (int i = 0; i < x; i++) {
+							hl[i].afterInsert(hubEvent);
+						}
 					}
 				} finally {
 					callThreadLocalRemoveHubEvent(hubEvent);
@@ -466,8 +477,9 @@ public abstract class HubEventService {
 					if (oi.getHasTriggers()) {
 						HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
 						try {
-							callThreadLocalAddHubEvent(hubEvent);
-							oi.onChange(thisHub.getMasterObject(), s, hubEvent);
+							if (callThreadLocalAddHubEvent(hubEvent)) {
+								oi.onChange(thisHub.getMasterObject(), s, hubEvent);
+							}
 						} finally {
 							callThreadLocalRemoveHubEvent(hubEvent);
 						}
@@ -492,17 +504,22 @@ public abstract class HubEventService {
 		if (x > 0) {
 			Exception exception = null;
 			final HubEvent hubEvent = new HubEvent(thisHub, obj, pos);
-			callThreadLocalAddHubEvent(hubEvent);
-			for (int i = 0; i < x; i++) {
-				try {
-					hl[i].afterChangeActiveObject(hubEvent);
-				} catch (Exception e) {
-					if (e != null) {
-						exception = e;
+			try {
+				if (callThreadLocalAddHubEvent(hubEvent)) {
+					for (int i = 0; i < x; i++) {
+						try {
+							hl[i].afterChangeActiveObject(hubEvent);
+						} catch (Exception e) {
+							if (e != null) {
+								exception = e;
+							}
+						}
 					}
 				}
 			}
-			callThreadLocalRemoveHubEvent(hubEvent);
+			finally {
+				callThreadLocalRemoveHubEvent(hubEvent);
+			}
 			if (exception != null) {
 				throw new RuntimeException("Exception while calling fireAfterChangeActiveObjectEvent", exception);
 			}
@@ -520,8 +537,8 @@ public abstract class HubEventService {
 		int x = hl.length;
 		if (x > 0) {
 			HubEvent<T> hubEvent = new HubEvent<T>(thisHub);
-			callThreadLocalAddHubEvent(hubEvent);
 			try {
+				callThreadLocalAddHubEvent(hubEvent);
 				for (int i = 0; i < x; i++) {
 					hl[i].beforeRefresh(hubEvent);
 				}
@@ -542,8 +559,8 @@ public abstract class HubEventService {
 		int x = hl.length;
 		if (x > 0) {
 			HubEvent<T> hubEvent = new HubEvent<T>(thisHub);
-			callThreadLocalAddHubEvent(hubEvent);
 			try {
+				callThreadLocalAddHubEvent(hubEvent);
 				for (int i = 0; i < x; i++) {
 					hl[i].beforeSelect(hubEvent);
 				}
@@ -564,10 +581,11 @@ public abstract class HubEventService {
 		int x = hl.length;
 		if (x > 0) {
 			HubEvent<T> hubEvent = new HubEvent<T>(thisHub);
-			callThreadLocalAddHubEvent(hubEvent);
 			try {
-				for (int i = 0; i < x; i++) {
-					hl[i].afterSort(hubEvent);
+				if (callThreadLocalAddHubEvent(hubEvent)) {
+					for (int i = 0; i < x; i++) {
+						hl[i].afterSort(hubEvent);
+					}
 				}
 			} finally {
 				callThreadLocalRemoveHubEvent(hubEvent);
@@ -618,9 +636,10 @@ public abstract class HubEventService {
 					@Override
 					public void run() {
 						try {
-							callThreadLocalAddHubEvent(hubEvent);
-							for (int i = 0; i < x; i++) {
-								hl[i].afterDelete(hubEvent);
+							if (callThreadLocalAddHubEvent(hubEvent)) {
+								for (int i = 0; i < x; i++) {
+									hl[i].afterDelete(hubEvent);
+								}
 							}
 						} finally {
 							callThreadLocalRemoveHubEvent(hubEvent);
@@ -630,9 +649,10 @@ public abstract class HubEventService {
 				callRemoteThreadQueueEvent(r);
 			} else {
 				try {
-					callThreadLocalAddHubEvent(hubEvent);
-					for (int i = 0; i < x; i++) {
-						hl[i].afterDelete(hubEvent);
+					if (callThreadLocalAddHubEvent(hubEvent)) {
+						for (int i = 0; i < x; i++) {
+							hl[i].afterDelete(hubEvent);
+						}
 					}
 				} finally {
 					callThreadLocalRemoveHubEvent(hubEvent);
@@ -677,10 +697,11 @@ public abstract class HubEventService {
 		int x = hl.length;
 		if (x > 0) {
 			HubEvent<T> hubEvent = new HubEvent<T>(thisHub, obj);
-			callThreadLocalAddHubEvent(hubEvent);
 			try {
-				for (int i = 0; i < x; i++) {
-					hl[i].afterSave(hubEvent);
+				if (callThreadLocalAddHubEvent(hubEvent)) {
+					for (int i = 0; i < x; i++) {
+						hl[i].afterSave(hubEvent);
+					}
 				}
 			} finally {
 				callThreadLocalRemoveHubEvent(hubEvent);
@@ -725,9 +746,10 @@ public abstract class HubEventService {
 		if (x > 0) {
 			HubEvent<T> hubEvent = new HubEvent<T>(thisHub, fromPos, toPos);
 			try {
-				callThreadLocalAddHubEvent(hubEvent);
-				for (int i = 0; i < x; i++) {
-					hl[i].afterMove(hubEvent);
+				if (callThreadLocalAddHubEvent(hubEvent)) {
+					for (int i = 0; i < x; i++) {
+						hl[i].afterMove(hubEvent);
+					}
 				}
 			} finally {
 				callThreadLocalRemoveHubEvent(hubEvent);
@@ -752,7 +774,7 @@ public abstract class HubEventService {
 			return;
 		}
 		
-		OAObjectInfo oi = callObjectInfoGetObjectInfo((OAObject) object);
+		OAObjectInfo oi = callObjectInfoGetObjectInfo(object);
 		OALinkInfo linkInfo = callObjectInfoGetLinkInfo(oi, propertyName);
 		if (linkInfo != null) {
 			propertyChangeUpdateDetailHubs(thisHub, object, propertyName);
@@ -763,9 +785,10 @@ public abstract class HubEventService {
 		if (x > 0) {
 			HubEvent<T> hubEvent = new HubEvent<T>(thisHub, object, propertyName, null, null);
 			try {
-				callThreadLocalAddHubEvent(hubEvent);
-				for (int i = 0; i < x; i++) {
-					hl[i].afterPropertyChange(hubEvent);
+				if (callThreadLocalAddHubEvent(hubEvent)) {
+					for (int i = 0; i < x; i++) {
+						hl[i].afterPropertyChange(hubEvent);
+					}
 				}
 			} finally {
 				callThreadLocalRemoveHubEvent(hubEvent);
@@ -849,9 +872,10 @@ public abstract class HubEventService {
 					@Override
 					public void run() {
 						try {
-							callThreadLocalAddHubEvent(hubEvent);
-							for (int i = 0; i < x; i++) {
-								hl[i].afterPropertyChange(hubEvent);
+							if (callThreadLocalAddHubEvent(hubEvent)) {
+								for (int i = 0; i < x; i++) {
+									hl[i].afterPropertyChange(hubEvent);
+								}
 							}
 						} finally {
 							callThreadLocalRemoveHubEvent(hubEvent);
@@ -861,9 +885,10 @@ public abstract class HubEventService {
 				callRemoteThreadQueueEvent(r);
 			} else {
 				try {
-					callThreadLocalAddHubEvent(hubEvent);
-					for (int i = 0; i < x; i++) {
-						hl[i].afterPropertyChange(hubEvent);
+					if (callThreadLocalAddHubEvent(hubEvent)) {
+						for (int i = 0; i < x; i++) {
+							hl[i].afterPropertyChange(hubEvent);
+						}
 					}
 				} finally {
 					callThreadLocalRemoveHubEvent(hubEvent);
@@ -934,9 +959,10 @@ public abstract class HubEventService {
 		if (x > 0) {
 			HubEvent<T> hubEvent = new HubEvent<T>(thisHub, null);
 			try {
-				callThreadLocalAddHubEvent(hubEvent);
-				for (int i = 0; i < x; i++) {
-					hl[i].onNewList(hubEvent);
+				if (callThreadLocalAddHubEvent(hubEvent)) {
+					for (int i = 0; i < x; i++) {
+						hl[i].onNewList(hubEvent);
+					}
 				}
 			} finally {
 				callThreadLocalRemoveHubEvent(hubEvent);
@@ -944,9 +970,10 @@ public abstract class HubEventService {
 
 			hubEvent = new HubEvent<T>(thisHub, null);
 			try {
-				callThreadLocalAddHubEvent(hubEvent);
-				for (int i = 0; i < x; i++) {
-					hl[i].afterNewList(hubEvent);
+				if (callThreadLocalAddHubEvent(hubEvent)) {
+					for (int i = 0; i < x; i++) {
+						hl[i].afterNewList(hubEvent);
+					}
 				}
 			} finally {
 				callThreadLocalRemoveHubEvent(hubEvent);
@@ -1317,7 +1344,7 @@ public abstract class HubEventService {
 								if (!bHasLast) {
 									al.add(hls[i]);
 								} else {
-									al.add(j, hls[i]);
+									al.add(j+1, hls[i]);
 								}
 								bDone = true;
 								break;
@@ -1362,9 +1389,10 @@ public abstract class HubEventService {
 		if (x > 0) {
 			HubEvent<T> hubEvent = new HubEvent(thisHub, oaObj);
 			try {
-				callThreadLocalAddHubEvent(hubEvent);
-				for (i = 0; i < x; i++) {
-					hl[i].afterLoad(hubEvent);
+				if (callThreadLocalAddHubEvent(hubEvent)) {
+					for (i = 0; i < x; i++) {
+						hl[i].afterLoad(hubEvent);
+					}
 				}
 			} finally {
 				callThreadLocalRemoveHubEvent(hubEvent);
@@ -1386,7 +1414,7 @@ public abstract class HubEventService {
 	public abstract <T extends OAObject> WeakReference<Hub<T>>[] callHubShareGetSharedWeakHubs(Hub<T> thisHub);
 	public abstract void callHubDataIncChangeCount(Hub<?> thisHub);
 	public abstract boolean callRemoteThreadIsRemoteThread();
-	public abstract void callThreadLocalAddHubEvent(HubEvent he);
+	public abstract boolean callThreadLocalAddHubEvent(HubEvent he);
 	public abstract void callThreadLocalRemoveHubEvent(HubEvent<?> he);
 	public abstract boolean callThreadLocalIsLoading();		
 	public abstract boolean callRemoteThreadShouldEventsBeQueued();

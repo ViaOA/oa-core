@@ -129,10 +129,9 @@ public class OAThreadLocal {
 	protected int loading;
 
 	/**
-	 * Counter controlling suppression of client/server sync messages for the
-	 * duration of critical update sections or batch operations.
+	 * Used by OASync to know if sync message should be sent to others. 
 	 */
-	protected int suppressCSMessages;
+	protected boolean sendSyncMessages = true;
 
 	/**
 	 * Flag to know that an object key property is being assigned
@@ -152,12 +151,6 @@ public class OAThreadLocal {
 	 * acquire the final lock in its lock chain.
 	 */
 	private boolean bIsWaitingOnLock; // used on last lock - which is the only one that this could be waiting on.
-
-	/**
-	 * Marks this thread as a sync-processing thread, used to modify behavior
-	 * of event dispatching, object updates, or remote callback handling.
-	 */
-	private boolean bIsSyncThread;
 
 	/**
 	 * Generic array of thread-scoped flags used internally by OA subsystems to
@@ -239,12 +232,12 @@ public class OAThreadLocal {
 	}
 	
 
-	public int getSuppressCSMessages() {
-		return suppressCSMessages;
+	public boolean getSendSyncMessages() {
+		return sendSyncMessages;
 	}
 
-	public void setSuppressCSMessages(int suppressCSMessages) {
-		this.suppressCSMessages = suppressCSMessages;
+	public void setSendSyncMessages(boolean b) {
+		this.sendSyncMessages = b;
 	}
 
 	public Object[] getDeleting() {
@@ -378,14 +371,6 @@ public class OAThreadLocal {
 
 	public void setCalcPropertyEvents(Tuple3<Hub, OAObject, String>[] calcPropertyEvents) {
 		this.calcPropertyEvents = calcPropertyEvents;
-	}
-
-	public boolean isSyncThread() {
-		return bIsSyncThread;
-	}
-
-	public void setIsSyncThread(boolean bIsSyncThread) {
-		this.bIsSyncThread = bIsSyncThread;
 	}
 
 	public int getRefreshing() {

@@ -758,17 +758,19 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 				if (bClosed) {
 					return;
 				}
-				final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
+				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
+				boolean bWas = false;
 				try {
 					if (bServerSideOnly) {
-						srvcOARemoteThread.sendMessages(true);
+						bWas = srvcOAThreadLocal.getSendSyncMessages();
+						srvcOAThreadLocal.setSendSyncMessages(true);
 					}
 					if (hubMaster == null || !hubMaster.contains(e.getObject())) {
 						removeObject(getObject(e.getObject()));
 					}
 				} finally {
 					if (bServerSideOnly) {
-						srvcOARemoteThread.sendMessages(false);
+						srvcOAThreadLocal.setSendSyncMessages(bWas);
 					}
 				}
 			}
@@ -946,10 +948,13 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 		if (aiClearing.get() != 0) {
 			return;
 		}
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
+		boolean bWas = false;
 		try {
+			
 			if (bServerSideOnly) { // 20120425
-				srvcOARemoteThread.sendMessages(true); // so that events will go out, even if OAClientThread
+				bWas = srvcOAThreadLocal.getSendSyncMessages();
+				srvcOAThreadLocal.setSendSyncMessages(true); // so that events will go out, even if OAClientThread
 			}
 			aiUpdating.incrementAndGet();
 			obj = getObject(obj);
@@ -998,7 +1003,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 		} finally {
 			aiUpdating.decrementAndGet();
 			if (bServerSideOnly) {
-				srvcOARemoteThread.sendMessages(false);
+				srvcOAThreadLocal.setSendSyncMessages(bWas); 
 			}
 		}
 	}
@@ -1054,9 +1059,12 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 			return;
 		}
 		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
+		
+		boolean bWas = false;
 		if (bServerSideOnly) {
-			srvcOARemoteThread.sendMessages(true); // so that events will go out, even if OAClientThread
+			bWas = srvcOAThreadLocal.getSendSyncMessages();
+			srvcOAThreadLocal.setSendSyncMessages(true); // so that events will go out, even if OAClientThread
 		}
 
 		final int cnt = aiInitializeCount.incrementAndGet();
@@ -1108,7 +1116,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 			}
 		} finally {
 			if (bServerSideOnly) {
-				srvcOARemoteThread.sendMessages(false);
+				srvcOAThreadLocal.setSendSyncMessages(bWas);
 			}
 		}
 		if (bCompleted) {

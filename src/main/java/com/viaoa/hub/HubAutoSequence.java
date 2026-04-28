@@ -21,10 +21,8 @@ import java.util.logging.Logger;
 import java.lang.reflect.*;
 
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectInfoService;
-import com.viaoa.object.*;
-import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
 
 /**
@@ -173,7 +171,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
      * @param bServerSideOnly whether sequence updates are controlled exclusively by the server
      */
     public HubAutoSequence(Hub hub, String propertyName, int startNumber, boolean bKeepSeq, boolean bServerSideOnly) {
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.hub);
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
         if (bServerSideOnly && !og.hubsInternal().callHubCSIsServer(hub)) {
             LOG.warning("bServerSideOnly should be false, since this is not the server");
         }
@@ -324,6 +322,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
      * @param startPos the position from which to begin resequencing
      */
     protected void resequence(int startPos) {
+    	if (hub == null) return;
         if (hub.isDeletingAll()) return;
         synchronized (hmUpdateSeq) {
             for (int i=0; ;i++) {
@@ -338,16 +337,18 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
             }
         }
 
-    	final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
+    	final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
+    	boolean bWas = false;
         try {
             if (bServerSideOnly) {
-                srvcOARemoteThread.sendMessages(true); 
+            	bWas = srvcOAThreadLocal.getSendSyncMessages();
+            	srvcOAThreadLocal.setSendSyncMessages(true); 
             }
             _resequence(startPos);
         }
         finally {
             if (bServerSideOnly) {
-            	srvcOARemoteThread.sendMessages(false); 
+            	srvcOAThreadLocal.setSendSyncMessages(bWas); 
             }
             synchronized (hmUpdateSeq) {
                 hmUpdateSeq.remove(this);

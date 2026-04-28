@@ -100,6 +100,7 @@ public abstract class HubAOService {
 	 * @param bForce       whether to force the update even if unchanged
 	 */
 	public <T extends OAObject> void setActiveObject(Hub<T> thisHub, T object, boolean adjustMaster, boolean bUpdateLink, boolean bForce) {
+		if (thisHub == null) return;
 		// for detailHub where link.type=ONE
 		OALinkInfo li = faHub.getHubDataMaster(thisHub).getDetailToMasterLinkInfo();
 		OALinkInfo liRev;
@@ -254,19 +255,27 @@ public abstract class HubAOService {
 			}
 		}
 
-		callThreadLocalLock(thisHub);
-		Object origActiveObject = faHub.getHubDataActive(thisHub).getActiveObject();
-		faHub.getHubDataActive(thisHub).setActiveObject(object);
-		callThreadLocalUnlock(thisHub);
-
-		faHub.getHubDataUnique(thisHub).setUpdatingActiveObject(true);
-
-		callHubDetailUpdateAllDetail(thisHub, bUpdateLink);
-
-		if (bUpdateLink) {
-			callHubLinkUpdateLinkProperty(thisHub, object, pos);
+		try {
+			callThreadLocalLock(thisHub);
+			// Object origActiveObject = faHub.getHubDataActive(thisHub).getActiveObject();
+			faHub.getHubDataActive(thisHub).setActiveObject(object);
 		}
-		faHub.getHubDataUnique(thisHub).setUpdatingActiveObject(false);
+		finally {
+			callThreadLocalUnlock(thisHub);
+		}
+
+		try {
+			faHub.getHubDataUnique(thisHub).setUpdatingActiveObject(true);
+	
+			callHubDetailUpdateAllDetail(thisHub, bUpdateLink);
+	
+			if (bUpdateLink) {
+				callHubLinkUpdateLinkProperty(thisHub, object, pos);
+			}
+		}
+		finally {
+			faHub.getHubDataUnique(thisHub).setUpdatingActiveObject(false);
+		}
 
 		// Now call for all sharedHubs with same "dataa"
 		OAFilter<Hub<T>> filter = new OAFilter<Hub<T>>() {
@@ -281,15 +290,19 @@ public abstract class HubAOService {
 		for (int i = 0; i < hubs.length; i++) {
 			Hub h = hubs[i];
 			if (h != thisHub && faHub.getHubDataActive(h) == faHub.getHubDataActive(thisHub)) {
-				faHub.getHubDataUnique(h).setUpdatingActiveObject(true);
-
-				if (bUpdateSharedHubDetail) {
-					callHubDetailUpdateAllDetail(h, bUpdateLink);
+				try {
+					faHub.getHubDataUnique(h).setUpdatingActiveObject(true);
+	
+					if (bUpdateSharedHubDetail) {
+						callHubDetailUpdateAllDetail(h, bUpdateLink);
+					}
+					if (bUpdateLink) {
+						callHubLinkUpdateLinkProperty(h, object, pos);
+					}
 				}
-				if (bUpdateLink) {
-					callHubLinkUpdateLinkProperty(h, object, pos);
+				finally {
+					faHub.getHubDataUnique(h).setUpdatingActiveObject(false);
 				}
-				faHub.getHubDataUnique(h).setUpdatingActiveObject(false);
 			}
 		}
 
@@ -336,9 +349,13 @@ public abstract class HubAOService {
 		for (int i = 0; i < hubs.length; i++) {
 			Hub<T> h = hubs[i];
 			if (h != thisHub && faHub.getHubDataActive(h) == faHub.getHubDataActive(thisHub)) {
-				faHub.getHubDataUnique(h).setUpdatingActiveObject(true);
-				callHubDetailUpdateAllDetail(h, true);
-				faHub.getHubDataUnique(h).setUpdatingActiveObject(false);
+				try {
+					faHub.getHubDataUnique(h).setUpdatingActiveObject(true);
+					callHubDetailUpdateAllDetail(h, true);
+				}
+				finally {
+					faHub.getHubDataUnique(h).setUpdatingActiveObject(false);
+				}
 			}
 		}
 	}

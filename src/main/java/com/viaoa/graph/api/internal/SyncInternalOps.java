@@ -19,12 +19,7 @@ public interface SyncInternalOps extends SyncOps {
 	public boolean isServer();
 	public boolean isClient();
 	public boolean isSingleUser();
-
 	
-	/**
-	 * return true if currentThread is an OARemoteThread or OAThreadLocal.isSyncThread=true
-	 */
-	public boolean isSyncThread();
 	
 	public boolean isConnected();
 	public int getConnectionId();
@@ -46,7 +41,8 @@ public interface SyncInternalOps extends SyncOps {
 	public void callRemoteClientRefresh(Class<? extends OAObject> class1, OAObjectKey objectKey);
 	public void callRemoteClientRefresh(Class<? extends OAObject> class1, OAObjectKey objectKey, String linkPropertyName);
 
-	public void sendMessages(boolean b);
+//qqqqqq remove	
+//	public void sendMessagesXXXX(boolean b);
 	
 //qqqqqq remove, from *Delegate days qqqqqq	
 //	public void setSyncClient(OASyncClient oaSyncClient);

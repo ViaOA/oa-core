@@ -331,15 +331,17 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 
 	/**
 	 * Enables or disables sending sync messages for the current thread.
-	 * Delegates to {@link OARemoteThreadDelegate#sendMessages(boolean)}.
+	 * Delegates to {@link OARemoteThreadDelegate#sendSyncMessages(boolean)}.
 	 *
 	 * @param b {@code true} to send messages, {@code false} to suppress
 	 * @return previous setting for message sending
 	 */
+/*qqqqqqqqq remove	
 	public void sendMessages(boolean b) {
 		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
-		srvcOARemoteThread.sendMessages(b);
+		srvcOARemoteThread.sendSyncMessages(b);
 	}
+*/	
 
 	/**
 	 * Determines whether the current thread is an {@code OARemoteThread},
@@ -350,63 +352,6 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 	public boolean isRemoteThread() {
 		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		return srvcOARemoteThread.isRemoteThread();
-	}
-
-	/**
-	 * Determines whether the current thread is processing sync-related
-	 * activity. Returns {@code true} if the thread is:
-	 *   • an {@code OARemoteThread}, OR
-	 *   • marked as a sync thread via {@link OAThreadLocalDelegate}.
-	 *
-	 * @return {@code true} if the current thread is a sync-processing thread
-	 */
-	public boolean isSyncThread() {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
-		if (srvcOARemoteThread.isRemoteThread()) {
-			return true;
-		}
-		return srvcOAThreadLocal.isSyncThread();
-	}
-
-	/*
-	 * Checks to see if any sync changes will be sent to other computers. This will be true if the current thread is not an OARemoteThread,
-	 * or if sendMessages([true]) was set.
-	 */
-	/**
-	 * Determines whether sync changes made in the current thread should be
-	 * broadcast to other computers. Delegates to
-	 * {@link OARemoteThreadDelegate#callRemoteThreadShouldSendMessages()}.
-	 *
-	 * @return {@code true} if messages should be sent
-	 */
-	public boolean shouldSendMessages() {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
-		return srvcOARemoteThread.shouldSendMessages();
-	}
-
-	/**
-	 * Enables or disables suppression of client–server (CS) sync messages for
-	 * the current thread. Delegates to
-	 * {@link OAThreadLocalDelegate#callThreadLocalSetSuppressCSMessages(boolean)}.
-	 *
-	 * @param b whether to suppress CS messages
-	 */
-	public void setSuppressCSMessages(boolean b) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
-		srvcOAThreadLocal.setSuppressCSMessages(b);
-	}
-
-	/**
-	 * Returns whether CS sync messages are currently suppressed for the
-	 * current thread. Delegates to
-	 * {@link OAThreadLocalDelegate#callThreadLocalIsSuppressCSMessages()}.
-	 *
-	 * @return {@code true} if CS messages are suppressed
-	 */
-	public boolean getSuppressCSMessages() {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
-		return srvcOAThreadLocal.isSuppressCSMessages();
 	}
 
 	/**
@@ -526,10 +471,5 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 		// TODO Auto-generated method stub
 		
 	}
-
-
-
-
-
 
 }

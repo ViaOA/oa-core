@@ -89,7 +89,7 @@ import com.viaoa.util.OAString;
  * This class is central to OA’s “object-automation” pattern, enabling reactive,
  * declarative binding between model, view, and persistence layers.
  */
-public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Cloneable, Comparable<Hub<TYPE>>, Iterable<TYPE> {
+public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Cloneable, Iterable<TYPE> {
 	/**
 	 * Serialization version identifier used to validate compatibility when
 	 * Hub instances are serialized and deserialized.
@@ -1512,7 +1512,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setMasterHub(Hub masterHub, String path, boolean bShared) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubDetailSetMasterHub(this, masterHub, path, false, null);
+		og.hubsInternal().callHubDetailSetMasterHub(this, masterHub, path, bShared, null);
 	}
 
 	/**
@@ -1527,7 +1527,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setMasterHub(Hub masterHub, Class clazz, String path, boolean bShared, String selectOrder) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubDetailSetMasterHub(this, masterHub, path, false, selectOrder);
+		og.hubsInternal().callHubDetailSetMasterHub(this, masterHub, path, bShared, selectOrder);
 	}
 
 	/**
@@ -1718,12 +1718,13 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 * @param property    property name for event dispatch
 	 * @param propertyPath property path whose changes will trigger updates
 	 */
-	public void addTriggerListener(HubListener<TYPE> hl, final String property, String propertyPath) {
+	public void addTriggerListener(final HubListener<TYPE> hl, final String property, String propertyPath) {
 		OATriggerListener<TYPE> tl = new OATriggerListener<TYPE>() {
 			@Override
 			public void onTrigger(TYPE obj, HubEvent hubEvent, String propertyPath) throws Exception {
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Hub.this);
 				og.hubsInternal().callHubEventFireCalcPropertyChange(Hub.this, obj, property);
+				if (hl != null) hl.afterPropertyChange(hubEvent);
 			}
 		};
 		OATrigger trigger = new OATrigger(property, getObjectClass(), tl, new String[] { propertyPath }, true, false, false, true);
@@ -1746,6 +1747,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			public void onTrigger(TYPE obj, HubEvent hubEvent, String propertyPath) throws Exception {
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Hub.this);
 				og.hubsInternal().callHubEventFireCalcPropertyChange(Hub.this, obj, property);
+				if (hl != null) hl.afterPropertyChange(hubEvent);
 			}
 		};
 		OATrigger trigger = new OATrigger(property, getObjectClass(), tl, new String[] { propertyPath }, true, false, useBackgroundThread, true);
@@ -2564,25 +2566,6 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 */	
 
 	/**
-	 * Compares this Hub to another object using hashCode-based comparison.
-	 *
-	 * @param obj object to compare
-	 * @return comparison result: 1, 0, or -1
-	 */
-	public int compareTo(Hub<TYPE> obj) {
-		if (obj == null) {
-			return 1;
-		}
-		if (obj == this) {
-			return 0;
-		}
-		if (this.hashCode() > obj.hashCode()) {
-			return 1;
-		}
-		return -1;
-	}
-
-	/**
 	 * Returns whether this Hub’s object class is considered server-side by
 	 * delegating to {@link OASyncDelegate#isServer(Class)}.
 	 *
@@ -2957,10 +2940,11 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	@Override
 	public ListIterator<TYPE> listIterator() {
 		// create a snapshot, so that concurrent issues dont happen
-		final List list = Arrays.asList(toArray());
+		final List<TYPE> list = new ArrayList<>(Arrays.asList(toArray()));
 
 		ListIterator<TYPE> iter = new ListIterator<TYPE>() {
 			int pos = -1;
+			TYPE currentObject;
 
 			@Override
 			public boolean hasNext() {
@@ -2970,10 +2954,15 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 
 			@Override
 			public void remove() {
-				if (pos >= 0 && pos < list.size()) {
+				int size = list.size();
+				if (pos >= 0 && pos < size) {
 					Object objx = list.remove(pos);
 					if (objx != null) {
 						Hub.this.remove(objx);
+					}
+					size--;
+					if (pos >= size) {
+						pos = size-1;
 					}
 				}
 			}
@@ -2984,7 +2973,8 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 				if (pos < x) {
 					++pos;
 					if (pos < x) {
-						return (TYPE) list.get(pos);
+						currentObject = list.get(pos);
+						return currentObject;
 					}
 				}
 				return null;
@@ -3000,7 +2990,8 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 				if (pos >= 0) {
 					--pos;
 					if (pos >= 0) {
-						return (TYPE) list.get(pos);
+						currentObject = list.get(pos);
+						return currentObject;
 					}
 				}
 				return null;
@@ -3026,16 +3017,16 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			@Override
 			public void set(TYPE e) {
 				if (pos >= 0 && pos < list.size()) {
-					Hub.this.remove(e);
+					Hub.this.remove(currentObject);
 					Hub.this.insert(e, pos);
 					list.set(pos, e);
+					currentObject = e;
 				}
-
 			}
 
 			@Override
 			public void add(TYPE e) {
-				if (list.contains(e)) {
+				if (Hub.this.contains(e)) {
 					return;
 				}
 				list.add(e);
@@ -3057,7 +3048,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	public ListIterator<TYPE> listIterator(int index) {
 		ListIterator li = listIterator();
 		for (int i = 0; i < index; i++) {
-			li.next();
+			if (li.next() == null) break;
 		}
 		return li;
 	}

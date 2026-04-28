@@ -25,6 +25,7 @@ import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAFilter;
@@ -277,18 +278,30 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
     public void refresh() {
         // need to check loaded objects 
 
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-    	
-		og.objectsInternal().callObjectCacheVisit(clazz, new OACallback() {
-            @SuppressWarnings("unchecked")
-            @Override
-            public boolean updateObject(Object obj) {
-                if (isUsed((T) obj)) {
-                    callOnTrigger((T)obj);
-                }
-                return true;
+    	final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
+		boolean bWas = srvcOAThreadLocal.getSendSyncMessages();
+        try {
+            if (bServerSideOnly) { 
+                srvcOAThreadLocal.setSendSyncMessages(true);
             }
-        });
+			og.objectsInternal().callObjectCacheVisit(clazz, new OACallback() {
+	            @SuppressWarnings("unchecked")
+	            @Override
+	            public boolean updateObject(Object obj) {
+	                if (isUsed((T) obj)) {
+	                    callOnTrigger((T)obj);
+	                }
+	                return true;
+	            }
+	        });
+        }
+        finally {
+            if (bServerSideOnly) {
+	        	srvcOAThreadLocal.setSendSyncMessages(bWas);
+            }
+        }
     }
     
     
@@ -424,16 +437,18 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
      * @param obj the object to trigger on
      */
     private void callOnTrigger(T obj) {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
+    	
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
+		boolean bWas = srvcOAThreadLocal.getSendSyncMessages();
         try {
             if (bServerSideOnly) { 
-            	srvcOARemoteThread.sendMessages(true);
+                srvcOAThreadLocal.setSendSyncMessages(true);
             }
             onTrigger(obj);
         }
         finally {
             if (bServerSideOnly) {
-            	srvcOARemoteThread.sendMessages(false);
+	        	srvcOAThreadLocal.setSendSyncMessages(bWas);
             }
         }
     }

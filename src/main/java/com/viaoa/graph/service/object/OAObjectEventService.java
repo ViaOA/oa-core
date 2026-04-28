@@ -586,11 +586,12 @@ public abstract class OAObjectEventService {
 		if (!bIsChangeProp && bSetChanged && !bChangeHold && (calcInfo == null) && !bUnknownValues) {
 			if (!oaObj.isChanged()) {
 				if (linkInfo == null || !linkInfo.getCalculated()) { // 20120429
+					final boolean bWas = callThreadLocalGetSendSyncMessages(); 
 					try {
-						callThreadLocalSetSuppressCSMessages(true); // the client will setChanged when it gets the propertyChange message
+						callThreadLocalSetSendSyncMessages(false); // the client will setChanged when it gets the propertyChange message
 						oaObj.setChanged(true);
 					} finally {
-						callThreadLocalSetSuppressCSMessages(false);
+						callThreadLocalSetSendSyncMessages(bWas);
 					}
 				}
 			}
@@ -1208,11 +1209,11 @@ public abstract class OAObjectEventService {
 	public abstract boolean callThreadLocalIsDeleting();
 	public abstract boolean callThreadLocalIsDeleting(OAObject obj);
 	public abstract boolean callThreadLocalGetCreateUndoablePropertyChanges();
-	public abstract void callThreadLocalSetSuppressCSMessages(boolean b);
 	public abstract void callThreadLocalSetDeleting(Object obj, boolean b);
 	public abstract void callThreadLocalAddHubEvent(HubEvent<?> he);
 	public abstract void callThreadLocalRemoveHubEvent(HubEvent<?>  he);
 	public abstract boolean callRemoteThreadIsRemoteThread();
 	public abstract void callRemoteThreadStartNextThread();
-
+	public abstract boolean callThreadLocalGetSendSyncMessages();
+	public abstract void callThreadLocalSetSendSyncMessages(boolean b);
 }

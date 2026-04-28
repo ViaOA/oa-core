@@ -29,10 +29,7 @@ import java.util.logging.Logger;
 
 import javax.swing.SwingUtilities;
 
-import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.hub.HubAddRemoveService;
-import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.object.OACascade;
 import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -435,15 +432,16 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         final OASiblingHelper sh = getSiblingHelper();
         final boolean bx = srvcOAThreadLocal.addSiblingHelper(sh);
         final boolean bz = bServerSideOnly;
+        boolean bWas = srvcOAThreadLocal.getSendSyncMessages();
         try {
             // 20120624 hubCombined could be a detail hub.
-            srvcOAThreadLocal.setSuppressCSMessages(true);
+            srvcOAThreadLocal.setSendSyncMessages(false);
             if (!bz) {
                 aiLoadingCombinedHub.incrementAndGet();
             }
             _init();
         } finally {
-            srvcOAThreadLocal.setSuppressCSMessages(false);
+            srvcOAThreadLocal.setSendSyncMessages(bWas);
             if (!bz) {
                 aiLoadingCombinedHub.decrementAndGet();
             }
@@ -538,19 +536,23 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         }
         this.bEnabled = b;
         if (bEnabled) {
-			final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
+			boolean bWas = false;
             try {
                 if (bServerSideOnly) {
-                    srvcOARemoteThread.sendMessages(true);
+                    bWas = srvcOAThreadLocal.getSendSyncMessages();
+                    srvcOAThreadLocal.setSendSyncMessages(true);
                 }
                 if (!bShareEndHub && hubCombined != null) {
                     hubCombined.clear();
                 }
-                dataRoot.onNewList(null);
-                dataRoot.afterChangeActiveObject(null);
+                if (dataRoot != null) {
+	                dataRoot.onNewList(null);
+	                dataRoot.afterChangeActiveObject(null);
+                }
             } finally {
                 if (bServerSideOnly) {
-                    srvcOARemoteThread.sendMessages(false);
+                    srvcOAThreadLocal.setSendSyncMessages(bWas);
                 }
             }
         }
@@ -1517,15 +1519,17 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
          * the Hub is empty—used for detail-Hub traversal cases.
          */
         void createChildUsingMaster() {
-			final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
+			boolean bWas = false;
             try {
                 if (bServerSideOnly) {
-                    srvcOARemoteThread.sendMessages(true);
+                	bWas = srvcOAThreadLocal.getSendSyncMessages();
+                    srvcOAThreadLocal.setSendSyncMessages(true);
                 }
                 _createChildUsingMaster();
             } finally {
                 if (bServerSideOnly) {
-                    srvcOARemoteThread.sendMessages(false);
+                    srvcOAThreadLocal.setSendSyncMessages(bWas);
                 }
             }
         }
@@ -1620,15 +1624,17 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             if (shouldQuit()) {
                 return;
             }
-			final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
+			boolean bWas = false;
             try {
                 if (bServerSideOnly) {
-                    srvcOARemoteThread.sendMessages(true);
+                	bWas = srvcOAThreadLocal.getSendSyncMessages();
+                    srvcOAThreadLocal.setSendSyncMessages(true);
                 }
                 _createChild2(parent);
             } finally {
                 if (bServerSideOnly) {
-                    srvcOARemoteThread.sendMessages(false);
+                    srvcOAThreadLocal.setSendSyncMessages(bWas);
                 }
             }
         }
@@ -1861,15 +1867,17 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
          * @param obj object being removed
          */
         void remove(Object obj) {
-			final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
+			boolean bWas = false;
             try {
                 if (bServerSideOnly) {
-                    srvcOARemoteThread.sendMessages(true);
+                	bWas = srvcOAThreadLocal.getSendSyncMessages();
+                    srvcOAThreadLocal.setSendSyncMessages(true);
                 }
                 _remove(obj);
             } finally {
                 if (bServerSideOnly) {
-                    srvcOARemoteThread.sendMessages(false);
+                    srvcOAThreadLocal.setSendSyncMessages(bWas);
                 }
             }
         }
@@ -2308,19 +2316,13 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 			final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
             boolean bx = srvcOAThreadLocal.addSiblingHelper(sh);
+			boolean bWas = false;
             try {
-                if (bServerSideOnly) {
-                    srvcOARemoteThread.sendMessages(true);
-                } else {
-                    srvcOAThreadLocal.setSuppressCSMessages(true);
-                }
+            	bWas = srvcOAThreadLocal.getSendSyncMessages();
+                srvcOAThreadLocal.setSendSyncMessages(true);
                 _onNewList4();
             } finally {
-                if (bServerSideOnly) {
-                    srvcOARemoteThread.sendMessages(false);
-                } else {
-                    srvcOAThreadLocal.setSuppressCSMessages(false);
-                }
+                srvcOAThreadLocal.setSendSyncMessages(bWas);
                 if (bx) {
                     srvcOAThreadLocal.removeSiblingHelper(sh);
                 }
@@ -2701,15 +2703,17 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
          * @param e the HubEvent representing the property change
          */
         public @Override void afterPropertyChange(HubEvent e) {
-			final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
+			boolean bWas = false;
             try {
                 if (bServerSideOnly) {
-                    srvcOARemoteThread.sendMessages(true);
+                	bWas = srvcOAThreadLocal.getSendSyncMessages();
+                    srvcOAThreadLocal.setSendSyncMessages(true);
                 }
                 _afterPropertyChange(e);
             } finally {
                 if (bServerSideOnly) {
-                    srvcOARemoteThread.sendMessages(false);
+                    srvcOAThreadLocal.setSendSyncMessages(bWas);
                 }
             }
         }

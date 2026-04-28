@@ -119,13 +119,14 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 	 */
 	@Override
 	public boolean save(Class objectClass, OAObjectKey objectKey, int iCascadeRule) {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
     	
 		boolean bResult;
+		final boolean bWas = srvcOAThreadLocal.getSendSyncMessages();
 		try {
-			srvcOARemoteThread.sendMessages(true);
+			srvcOAThreadLocal.setSendSyncMessages(true);
 			OAObject obj = (OAObject) og.objectsInternal().callObjectCacheGetObject(objectClass, objectKey);
 			if (obj != null) {
 				obj.save(iCascadeRule);
@@ -135,7 +136,7 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 			}
 		}
 		finally {
-			srvcOARemoteThread.sendMessages(false);
+			srvcOAThreadLocal.setSendSyncMessages(bWas);
 		}
 		return bResult;
 	}

@@ -19,14 +19,12 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.process.OAChangeRefresher;
-import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
 import com.viaoa.util.OAArray;
 import com.viaoa.util.OAFilter;
@@ -87,7 +85,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
     
     /**
      * When true, Hub update operations triggered by this filter are treated
-     * as server-side only, temporarily suppressing remote messaging.
+     * as server-side only, and changes sent to clients.
      */
     protected boolean bServerSideOnly;
     
@@ -168,14 +166,20 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
                 final Hub<T> hub = wrHub.get();
                 if (hub == null) return;
                 if (isUsed((T) obj)) {
-        			final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
-                    if (bServerSideOnly) { 
-                        srvcOARemoteThread.sendMessages(true);
+                	if (bServerSideOnly) {
+                		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
+                		boolean bWas = srvcOAThreadLocal.getSendSyncMessages();
+                		try {
+                			srvcOAThreadLocal.setSendSyncMessages(true);
+                			hub.add((T) obj);
+                		}
+                		finally {
+                			srvcOAThreadLocal.setSendSyncMessages(bWas);
+                		}
                     }
-                    hub.add((T) obj);
-                    if (bServerSideOnly) { 
-                    	srvcOARemoteThread.sendMessages(false);
-                    }
+                	else {
+                        hub.add((T) obj);
+                	}
                 }
             }
             @Override
@@ -234,13 +238,13 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
      * <p>
      * When enabled, outbound remote messages are temporarily suspended and
      * resumed around Hub modifications so that client updates are still
-     * published even when initiated on an {@code OAClientThread}.
+     * published even when initiated on an {@code OARemoteThread}.
      * </p>
      *
-     * @param b {@code true} to enable server-side-only behavior, {@code false} otherwise
+     * @param b {@code true} to enable server-side-processing, {@code false} otherwise
      */
     public void setServerSideOnly(boolean b) {
-        bServerSideOnly = b;
+    	bServerSideOnly = b;
     }
     
     
@@ -396,11 +400,29 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
 
         // 20191002 
         //was: hub.clear();
-        for (T obj : hub) {
-            if (!isUsed(obj)) {
-                hub.remove(obj);
-            }
+        
+    	if (bServerSideOnly) {
+    		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
+    		boolean bWas = srvcOAThreadLocal.getSendSyncMessages();
+    		try {
+    			srvcOAThreadLocal.setSendSyncMessages(true);
+    	        for (T obj : hub) {
+    	            if (!isUsed(obj)) {
+    	                hub.remove(obj);
+    	            }
+    	        }
+    		}
+    		finally {
+    			srvcOAThreadLocal.setSendSyncMessages(bWas);
+    		}
         }
+    	else {
+	        for (T obj : hub) {
+	            if (!isUsed(obj)) {
+	                hub.remove(obj);
+	            }
+	        }
+    	}
         if (changeRefresher != null && changeRefresher.hasChanged()) {
             return;
         }
@@ -409,9 +431,17 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
 
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
         boolean b = og.hubsInternal().callHubDataSetLoadingAllData(hub, true);
-    	
+    
+        
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
+		boolean bWas = false;
         try {
-            // need to check loaded objects 
+        	if (bServerSideOnly) {
+        		bWas = srvcOAThreadLocal.getSendSyncMessages();
+    			srvcOAThreadLocal.setSendSyncMessages(true);
+        	}
+        	
+        	// need to check loaded objects 
         	og.objectsInternal().callObjectCacheVisit(clazz, new OACallback() {
                 @SuppressWarnings("unchecked")
                 @Override
@@ -429,6 +459,9 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         }
         finally {
             if (bSetLoading) hub.setLoading(false);
+            if (bServerSideOnly) {
+            	srvcOAThreadLocal.setSendSyncMessages(bWas);
+        	}
             if (!b) og.hubsInternal().callHubDataSetLoadingAllData(hub, false);
             og.hubsInternal().callHubEventFireOnNewListEvent(hub, false);
         }
@@ -479,23 +512,31 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         setupTrigger();
 
         if (!bRefresh) return;
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
-        if (bServerSideOnly) { 
-        	srvcOARemoteThread.sendMessages(true);
-        }
         
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-		og.objectsInternal().callObjectCacheVisit(clazz, new OACallback() {
-            @Override
-            public boolean updateObject(Object obj) {
-                if (isUsed((T) obj)) hub.add((T) obj);
-                else hub.remove((T) obj);
-                return true;
-            }
-        });
-        if (bServerSideOnly) { 
-            srvcOARemoteThread.sendMessages(false);
-        }
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
+		boolean bWas = false;
+		
+		try {
+	        if (bServerSideOnly) { 
+	    		bWas = srvcOAThreadLocal.getSendSyncMessages();
+	            srvcOAThreadLocal.setSendSyncMessages(true);
+	        }
+	        
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+			og.objectsInternal().callObjectCacheVisit(clazz, new OACallback() {
+	            @Override
+	            public boolean updateObject(Object obj) {
+	                if (isUsed((T) obj)) hub.add((T) obj);
+	                else hub.remove((T) obj);
+	                return true;
+	            }
+	        });
+		}
+		finally {
+	        if (bServerSideOnly) { 
+	        	srvcOAThreadLocal.setSendSyncMessages(bWas);
+	        }
+		}
     }
 
     /**
@@ -600,15 +641,20 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
                     */
                 }
                 else {
-        			final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
-                    if (bServerSideOnly) { 
-                    	srvcOARemoteThread.sendMessages(true);
-                    }
-                    if (isUsed((T) rootObject)) hub.add((T) rootObject);
-                    else hub.remove((T) rootObject);
-                    if (bServerSideOnly) { 
-                    	srvcOARemoteThread.sendMessages(false);
-                    }
+            		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
+            		boolean bWas = srvcOAThreadLocal.getSendSyncMessages();
+            		try {
+	                    if (bServerSideOnly) { 
+	                        srvcOAThreadLocal.setSendSyncMessages(true);
+	                    }
+	                    if (isUsed((T) rootObject)) hub.add((T) rootObject);
+	                    else hub.remove((T) rootObject);
+            		}
+            		finally {
+	                    if (bServerSideOnly) { 
+	                    	srvcOAThreadLocal.setSendSyncMessages(bWas);
+	                    }
+            		}
                 }
             }
         };

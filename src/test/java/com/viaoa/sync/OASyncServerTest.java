@@ -89,7 +89,7 @@ public class OASyncServerTest {
 					return;
 				}
 
-				OAThreadLocalDelegate.setSendMessages(true);
+				OAThreadLocalDelegate.setSendSyncMessages(true);
 				site.setName("Server running test");
 
 				Thread t = new Thread(new Runnable() {

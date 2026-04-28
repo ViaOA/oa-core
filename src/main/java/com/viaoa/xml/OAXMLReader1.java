@@ -1023,6 +1023,7 @@ public class OAXMLReader1 extends DefaultHandler {
 		}
 		boolean bResult = true;
 		boolean bLoadingObject = false;
+		boolean bWas = false;
 		try {
 			if (object.getNew()) {
 				bLoadingObject = true;
@@ -1030,7 +1031,8 @@ public class OAXMLReader1 extends DefaultHandler {
 
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(object);
 				if (og.objectsInternal().callObjectCSIsServer(object)) {
-					srvcOAThreadLocal.setSuppressCSMessages(true);
+					bWas = srvcOAThreadLocal.getSendSyncMessages();
+					srvcOAThreadLocal.setSendSyncMessages(false);
 					// no, needs to have OAObjectEventDelegate.firePropertyChange() process property changes
 					//   since it has already created the object w/o setLoading(true), which means that there are null primitive properties
 					//     that would not be "unset" if firePropertyChange() was not ran.
@@ -1188,7 +1190,7 @@ public class OAXMLReader1 extends DefaultHandler {
 				srvcOAThreadLocal.setLoading(false);
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(object);
 				if (og.objectsInternal().callObjectCSIsServer(object)) {
-					srvcOAThreadLocal.setSuppressCSMessages(false);
+					srvcOAThreadLocal.setSendSyncMessages(bWas);
 				}
 			}
 		}

@@ -1589,7 +1589,7 @@ public class OARemoteMultiplexerServer {
         try {
             srvcOAThreadLocal.setRemoteRequestInfo(ri);
             if (!ri.bind.isBroadcast) {
-                srvcOARemoteThread.sendMessages(true);
+                srvcOAThreadLocal.setSendSyncMessages(true);
             }
 
             // 20180225 added code for threadlocal.oasynceventcount
@@ -1615,7 +1615,7 @@ public class OARemoteMultiplexerServer {
         }
         finally {
             if (!ri.bind.isBroadcast) {
-                srvcOARemoteThread.sendMessages(false);
+                srvcOAThreadLocal.setSendSyncMessages(false);  // turn off
             }
         }
         srvcOAThreadLocal.setRemoteRequestInfo(null);

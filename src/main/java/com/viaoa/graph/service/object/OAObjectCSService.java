@@ -137,8 +137,7 @@ public abstract class OAObjectCSService {
         if (oi.getLocalOnly()) return true; 
         
         if (callSyncIsClient()) { 
-	        if (!callRemoteThreadShouldSendMessages()) return true;
-	        if (callThreadLocalIsSuppressCSMessages()) return true;
+	        if (!callThreadLocalGetSendSyncMessages()) return true;
         }
         
         callSyncSyncServerDelete(obj.getClass(), obj.getObjectKey());  // will call OAObjectDeleteDelegate
@@ -160,7 +159,7 @@ public abstract class OAObjectCSService {
         if (!callSyncIsServer()) return;
         // needs to send these to client if on RemoteThread        
         
-        if (callThreadLocalIsSuppressCSMessages()) return;
+        if (!callThreadLocalGetSendSyncMessages()) return;
         
         OAObjectInfo oi = callInfoGetObjectInfo(obj.getClass());
         if (oi.getLocalOnly()) return; 
@@ -259,14 +258,15 @@ public abstract class OAObjectCSService {
             
             
             bResult = true;
+            final boolean bWas = callThreadLocalGetSendSyncMessages();
             // load all data without sending messages
             // even though Hub.writeObject does this, this data could be used on server application
         	try {
-        		callThreadLocalSetSuppressCSMessages(true);
+        		callThreadLocalSetSendSyncMessages(false);
         		callHubSelectLoadAllData(thisHub, select);
         	}
         	finally {
-        		callThreadLocalSetSuppressCSMessages(false);        	
+        		callThreadLocalSetSendSyncMessages(bWas);        	
         	}
         }
         else bResult = false;
@@ -288,9 +288,8 @@ public abstract class OAObjectCSService {
 		
 		if (!callSyncIsServer() && !callSyncIsClient()) return;
         
-        if (!callRemoteThreadShouldSendMessages()) return;
+        if (!callThreadLocalGetSendSyncMessages()) return;
         if (callThreadLocalIsLoading()) return;
-        if (callThreadLocalIsSuppressCSMessages()) return;
 
         OAObjectInfo oi = callInfoGetObjectInfo(obj.getClass());
         if (oi.getLocalOnly()) return;
@@ -332,10 +331,9 @@ public abstract class OAObjectCSService {
 	public abstract <T extends OAObject> T callSyncClientCreateCopy(Class<T> objectClass, OAObjectKey objectKey, String[] excludeProperties);
 	public abstract boolean callSyncServerSave(Class<? extends OAObject> objectClass, OAObjectKey objectKey, int iCascadeRule);
 	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
-	public abstract boolean callRemoteThreadShouldSendMessages();
-	public abstract boolean callThreadLocalIsSuppressCSMessages();		
+	public abstract boolean callThreadLocalGetSendSyncMessages();
+	public abstract void callThreadLocalSetSendSyncMessages(boolean b);
 	public abstract boolean callThreadLocalIsLoading();		
-	public abstract void callThreadLocalSetSuppressCSMessages(boolean b);		
 	public abstract <T extends OAObject> T callSyncServerGetObject(Class<T> clazz, OAObjectKey key);
 	public abstract boolean callSyncSyncServerDelete(Class<? extends OAObject> clazz, OAObjectKey key);
 	public abstract boolean callSyncSyncClientDelete(Class<? extends OAObject> clazz, OAObjectKey key);

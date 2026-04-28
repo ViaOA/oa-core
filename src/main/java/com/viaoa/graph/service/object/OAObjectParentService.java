@@ -14,6 +14,7 @@ import com.viaoa.datasource.OASelect;
 import com.viaoa.graph.context.OAContext;
 import com.viaoa.graph.service.HubService;
 import com.viaoa.graph.service.OASyncService;
+import com.viaoa.graph.service.hub.HubParentService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubAutoMatch;
 import com.viaoa.hub.HubAutoSequence;
@@ -183,10 +184,6 @@ public abstract class OAObjectParentService {
     	
     	srvcOAObjectAutoAdd = new OAObjectAutoAddService(faBridge.getObjectFriendAccess()) {
 			@Override
-			public void callThreadLocalSetSuppressCSMessages(boolean b) {
-				OAObjectParentService.this.srvcThreadLocal.setSuppressCSMessages(b);				
-			}
-			@Override
 			public Object callObjectReflectGetRawReference(OAObject oaObj, String name) {
 				return OAObjectParentService.this.getOAObjectReflectService().getRawReference(oaObj, name);
 			}
@@ -205,6 +202,14 @@ public abstract class OAObjectParentService {
 			@Override
 			public void callObjectEventFirePropertyChange(OAObject oaObj, String propertyName, Object oldObj, Object newObj, boolean bLocalOnly, boolean bSetChanged) {
 				OAObjectParentService.this.getOAObjectEventService().firePropertyChange(oaObj, propertyName, oldObj, newObj, bLocalOnly, bSetChanged);
+			}
+			@Override
+			public boolean callThreadLocalGetSendSyncMessages() {
+				return OAObjectParentService.this.srvcThreadLocal.getSendSyncMessages();
+			}
+			@Override
+			public void callThreadLocalSetSendSyncMessages(boolean b) {
+				OAObjectParentService.this.srvcThreadLocal.setSendSyncMessages(b);
 			}
 		};
     	return srvcOAObjectAutoAdd;
@@ -408,16 +413,12 @@ public abstract class OAObjectParentService {
 				return OAObjectParentService.this.getOAObjectInfoService().getLinkInfo(oi, name);
 			}
 			@Override
-			public boolean callRemoteThreadShouldSendMessages() {
-				return OAObjectParentService.this.srvcRemoteThread.shouldSendMessages();
+			public boolean callThreadLocalGetSendSyncMessages() {
+				return OAObjectParentService.this.srvcThreadLocal.getSendSyncMessages();
 			}
 			@Override
-			public boolean callThreadLocalIsSuppressCSMessages() {
-		        return srvcThreadLocal.isSuppressCSMessages();
-			}
-			@Override
-			public void callThreadLocalSetSuppressCSMessages(boolean b) {
-		        srvcThreadLocal.setSuppressCSMessages(b);
+			public void callThreadLocalSetSendSyncMessages(boolean b) {
+		        srvcThreadLocal.setSendSyncMessages(b);
 			}
 			@Override
 			public boolean callThreadLocalIsLoading() {
@@ -773,10 +774,6 @@ public abstract class OAObjectParentService {
 				return OAObjectParentService.this.getOAObjectPropertyService().getProperty(oaObj, name, bReturnNotExist, bConvertWeakRef);
 			}
 			@Override
-			public void callThreadLocalSetSuppressCSMessages(boolean b) {
-				OAObjectParentService.this.srvcThreadLocal.setSuppressCSMessages(b);
-			}
-			@Override
 			public void callThreadLocalSetDeleting(Object obj, boolean b) {
 				OAObjectParentService.this.srvcThreadLocal.setDeleting(obj, b);
 			}
@@ -929,6 +926,14 @@ public abstract class OAObjectParentService {
 			public void callCSFireBeforePropertyChange(OAObject obj, String propertyName, Object oldValue, Object newValue) {
 				OAObjectParentService.this.getOAObjectCSService().fireBeforePropertyChange(obj, propertyName, oldValue, newValue);
 			}
+			@Override
+			public boolean callThreadLocalGetSendSyncMessages() {
+				return OAObjectParentService.this.srvcThreadLocal.getSendSyncMessages();
+			}
+			@Override
+			public void callThreadLocalSetSendSyncMessages(boolean b) {
+				OAObjectParentService.this.srvcThreadLocal.setSendSyncMessages(b);
+			}
 		}; 
     	
     	return srvcOAObjectEvent;
@@ -961,8 +966,8 @@ public abstract class OAObjectParentService {
 				return OAObjectParentService.this.srvcSync.isClient();
 			}
 			@Override
-			public boolean callRemoteThreadShouldSendMessages() {
-				return OAObjectParentService.this.srvcRemoteThread.shouldSendMessages();
+			public boolean callThreadLocalGetSendSyncMessages() {
+				return OAObjectParentService.this.srvcThreadLocal.getSendSyncMessages();
 			}
 			@Override
 			public Object callPropertyGetProperty(OAObject oaObj, String name) {
@@ -1379,10 +1384,6 @@ public abstract class OAObjectParentService {
 				return OAObjectParentService.this.getOAObjectCSService().getServerReferenceHub(oaObj, linkPropertyName);
 			}
 			@Override
-			public void callThreadLocalSetSuppressCSMessages(boolean b) {
-				OAObjectParentService.this.srvcThreadLocal.setSuppressCSMessages(b);
-			}
-			@Override
 			public void callThreadLocalSetLoading(boolean b) {
 				OAObjectParentService.this.srvcThreadLocal.setLoading(b);
 			}
@@ -1669,6 +1670,14 @@ public abstract class OAObjectParentService {
 			@Override
 			public OAObject callCSCreateCopy(OAObject oaObj, String[] excludeProperties) {
 				return OAObjectParentService.this.getOAObjectCSService().createCopy(oaObj, excludeProperties);
+			}
+			@Override
+			public boolean callThreadLocalGetSendSyncMessages() {
+				return OAObjectParentService.this.srvcThreadLocal.getSendSyncMessages();
+			}
+			@Override
+			public void callThreadLocalSetSendSyncMessages(boolean b) {
+				OAObjectParentService.this.srvcThreadLocal.setSendSyncMessages(b);
 			}
 		}; 
     	return srvcOAObjectReflect;

@@ -40,20 +40,6 @@ public abstract class OARemoteThreadService {
     }
     
     /**
-     * Indicates whether remote messages should be broadcast from the current
-     * thread. If the current thread is not an {@link OARemoteThread}, messages
-     * should be sent. If it is a remote thread, its internal send-messages flag
-     * determines the result.
-     *
-     * @return true if messages should be sent, otherwise false
-     */
-    public boolean shouldSendMessages() {
-        Thread t = Thread.currentThread();
-        if (!(t instanceof OARemoteThread)) return true;
-        return ((OARemoteThread) t).getSendMessages();
-    }
-
-    /**
      * Marks that the current thread has reached its primary processing point and
      * may allow another {@link OARemoteThread} to begin handling the next
      * message. If the current thread is a remote thread and has not already
@@ -103,44 +89,6 @@ public abstract class OARemoteThreadService {
         return null;
     }
     
-    /**
-     * Enables message sending for the current thread by delegating to
-     * {@link #sendMessages(boolean)} with a value of true.
-     *
-     * @return the previous send-messages state for the current thread
-     */
-/*qqqqqqqqqqqqqq REMOVE THIS qqqqqqqqqqqqqqqqqqqqqqq ??    
-    public boolean sendMessages() {
-        return sendMessages(true);
-    }
-*/    
-    /**
-     * Updates whether messages should be sent from the current thread. If the
-     * thread is not an {@link OARemoteThread}, messages are always considered
-     * sendable and the method returns true. For remote threads, the previous
-     * send-messages state is returned after setting the new state.
-     *
-     * @param b true to enable message sending, false to disable it
-     * @return the previous send-messages state
-     */
-    public void sendMessages(boolean b) {
-        Thread t = Thread.currentThread();
-        if (!(t instanceof OARemoteThread)) return;
-        ((OARemoteThread) t).setSendMessages(b);
-    }
-
-    /**
-     * Checks whether the current thread, if it is an {@link OARemoteThread}, is
-     * currently configured to send remote messages.
-     *
-     * @return true if the remote thread is sending messages, otherwise false
-     */
-    public boolean isRemoteThreadSendingMessages() {
-        Thread t = Thread.currentThread();
-        if (!(t instanceof OARemoteThread)) return false;
-        boolean bx = ((OARemoteThread) t).getSendMessages();
-        return bx;
-    }
     
     /**
      * Determines whether runnable events should be queued for background

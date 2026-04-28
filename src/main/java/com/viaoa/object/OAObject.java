@@ -2737,7 +2737,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	}
 
 	/**
-	 * Determines whether the current thread is an OA remote thread.
+	 * Determines whether the current thread is an OA remote thread, used to process
+	 * OASync messages.
 	 * <p>
 	 * This method delegates to
 	 * {@link OARemoteThreadDelegate#isRemoteThread()}, which identifies
@@ -2752,37 +2753,26 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		return srvcOARemoteThread.isRemoteThread();
 	}
 
-	/**
-	 * Determines whether the current thread is an OA Sync thread.
-	 * <p>
-	 * This method delegates to
-	 * {@link OASyncDelegate#isSyncThread()}, which identifies whether the
-	 * current thread is part of the OA synchronization subsystem.
-	 *
-	 * @return {@code true} if the current thread is an OA Sync thread;
-	 *         {@code false} otherwise
-	 */
-	public boolean isSyncThread() {
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.syncInternal().isSyncThread();
-	}
 
 	/**
 	 * Enables or disables the sending of OA remote messages for the
 	 * current thread.
 	 * <p>
 	 * This method delegates to
-	 * {@link OARemoteThreadDelegate#sendMessages(boolean)}, allowing
+	 * {@link OARemoteThreadDelegate#sendSyncMessages(boolean)}, allowing
 	 * callers to control whether outbound remote messages should be
 	 * dispatched during operations that may trigger synchronization.
 	 *
 	 * qqqqqqqqqqqqqqqqqq
 	 * @param b {@code true} to allow message sending; {@code false} to suppress it
 	 * @return the resulting message-sending state as reported by the delegate
+	 * 
+	 * qqqqqqqqqq change to sendSyncMessage(..)
+	 * 
 	 */
 	public void sendMessages(boolean b) {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
-		srvcOARemoteThread.sendMessages(b);
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+        srvcOAThreadLocal.setSendSyncMessages(b);
 	}
 
 	/**
@@ -3341,7 +3331,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * </ul>
 	 * <p>
 	 * If both checks pass, this method enables remote-message sending for the current
-	 * thread by invoking {@link OARemoteThreadDelegate#sendMessages(boolean)} with
+	 * thread by invoking {@link OARemoteThreadDelegate#sendSyncMessages(boolean)} with
 	 * {@code true}. This marks the beginning of a server-only execution region.
 	 *
 	 * @return {@code true} if server-only execution is allowed and remote message
@@ -3356,8 +3346,12 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		if (!og.syncInternal().callSyncIsServer()) {
 			return false;
 		}
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
-		srvcOARemoteThread.sendMessages(true);
+
+		
+		OAThreadService srvcThread = OARuntime.thread();
+		if (srvcThread.getRemoteThreadService().isRemoteThread()) {
+			srvcThread.getThreadLocalService().setSendSyncMessages(true);
+		}
 		return true;
 	}
 
@@ -3386,7 +3380,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * <p>
 	 * If both checks pass and the current thread is flagged as sending remote
 	 * messages, this method disables message sending by invoking
-	 * {@link OARemoteThreadDelegate#sendMessages(boolean)} with {@code false}.
+	 * {@link OARemoteThreadDelegate#sendSyncMessages(boolean)} with {@code false}.
 	 */
 	public void endServerOnly() {
 		if (isLoading()) {
@@ -3396,9 +3390,10 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		if (!og.syncInternal().callSyncIsServer()) {
 			return;
 		}
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
-		if (srvcOARemoteThread.isRemoteThreadSendingMessages()) {
-			srvcOARemoteThread.sendMessages(false);
+
+		OAThreadService srvcThread = OARuntime.thread();
+		if (srvcThread.getRemoteThreadService().isRemoteThread()) {
+			srvcThread.getThreadLocalService().setSendSyncMessages(false);
 		}
 	}
 

@@ -26,16 +26,18 @@ public abstract class HubAutoMatchService {
 	 * @param bServerSideOnly whether matching should only be enforced on the server
 	 */
 	public <T extends OAObject, T2 extends OAObject> void setAutoMatch(Hub<T> thisHub, String property, Hub<T2> hubMaster, boolean bServerSideOnly) {
+		if (thisHub == null) return;
 		final HubData<T> hd = faHub.getHubData(thisHub);
 		if (hd.getAutoMatch() != null) {
 			hd.getAutoMatch().close();
+			hd.setAutoMatch(null);
 		}
 		// 20220802 now works with Enum (name/value) property
 		// if (hubMaster != null) {
 		HubAutoMatch<T, T2> am = new HubAutoMatch<>();
-		hd.setAutoMatch(am);
 		am.setServerSideOnly(bServerSideOnly);
 		am.init(thisHub, property, hubMaster, null, null);
+		hd.setAutoMatch(am);
 		// }
 	}
 
@@ -55,13 +57,14 @@ public abstract class HubAutoMatchService {
 		final HubData<T> hd = faHub.getHubData(thisHub);
 		if (hd.getAutoMatch() != null) {
 			hd.getAutoMatch().close();
+			hd.setAutoMatch(null);
 		}
 		// 20220802 now works with Enum (name/value) property
 		// if (hubMaster != null) {
 		HubAutoMatch<T, T2> am = new HubAutoMatch<>();
-		hd.setAutoMatch(am);
 		am.setServerSideOnly(bServerSideOnly);
 		am.init(thisHub, property, hubMaster, objStop, stopProperty);
+		hd.setAutoMatch(am);
 		// }
 	}
 

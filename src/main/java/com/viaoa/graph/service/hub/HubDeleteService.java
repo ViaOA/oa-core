@@ -30,19 +30,21 @@ public abstract class HubDeleteService {
 	 * @param thisHub the hub whose contents will be deleted
 	 */
     public void deleteAll(Hub<?> thisHub) {
+    	if (thisHub == null) return;
         // 20150206 send to server
         if (thisHub.getSize() == 0) return;
         if (!callHubCSDeleteAll(thisHub)) {
             return; // sent to server to be done.
         }
 
+        boolean bWas = callThreadLocalGetSendSyncMessages();
         try {
             callThreadLocalSetDeleting(thisHub, true);
-            callRemoteThreadSendMessages(true);
+            callThreadLocalSetSendSyncMessages(true);
             _runDeleteAll(thisHub);
         }
         finally {
-            callRemoteThreadSendMessages(false);
+        	callThreadLocalSetSendSyncMessages(bWas);
             callThreadLocalSetDeleting(thisHub, false);
         }
     }
@@ -57,6 +59,7 @@ public abstract class HubDeleteService {
      * @param thisHub the hub whose contents are being deleted
      */
     private <T extends OAObject> void _runDeleteAll(Hub<T> thisHub) {
+    	if (thisHub == null) return;
         T[] objs = thisHub.toArray();
 
         callHubAddRemoveClear(thisHub); // single event to remove all from hub (sent to clients)
@@ -81,6 +84,7 @@ public abstract class HubDeleteService {
      * @return {@code true} if the hub is currently deleting all objects
      */
     public boolean isDeletingAll(Hub<?> thisHub) {
+    	if (thisHub == null) return false;
         return callThreadLocalIsDeleting(thisHub);
     }
 
@@ -94,6 +98,7 @@ public abstract class HubDeleteService {
      * @param cascade the cascade tracker used to avoid repeated processing
      */
     public void deleteAll(Hub<?> thisHub, OACascade cascade) {
+    	if (thisHub == null) return;
         if (thisHub.size() == 0) return;
         if (cascade.wasCascaded(thisHub, true)) return;
         try {
@@ -118,6 +123,7 @@ public abstract class HubDeleteService {
      * @param cascade the cascade used for recursive delete operations
      */
     private <T extends OAObject> void _deleteAll(Hub<T> thisHub, OACascade cascade) {
+    	if (thisHub == null) return;
         Object objLast = null;
 
         // 20121005 need to check to see if a link table was used for a 1toM, where createMethod for One is false
@@ -202,7 +208,6 @@ public abstract class HubDeleteService {
 	public abstract boolean callThreadLocalIsDeleting(Hub<?> hub);
 	public abstract void callThreadLocalLock(Hub<?> hub);
 	public abstract void callThreadLocalUnlock(Hub<?> hub);
-	public abstract void callRemoteThreadSendMessages(boolean b);
-
-
+	public abstract boolean callThreadLocalGetSendSyncMessages();
+	public abstract void callThreadLocalSetSendSyncMessages(boolean b);
 }

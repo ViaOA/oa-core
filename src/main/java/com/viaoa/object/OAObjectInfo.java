@@ -1726,11 +1726,11 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 */
 	private void _onChange2(final OAObject fromObject, final String prop, final TriggerInfo ti, final HubEvent hubEvent) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(fromObject);
+
 		if (ti.trigger.bServerSideOnly) {
 			if (!og.syncInternal().isServer()) {
 				return;
 			}
-			og.syncInternal().sendMessages(true);
 		}
 
 		boolean b = false;
@@ -1753,15 +1753,11 @@ public class OAObjectInfo { //implements java.io.Serializable {
 			og.triggerInternal().runTrigger(new Runnable() {
 				@Override
 				public void run() {
-					_runOnChange2(fromObject, prop, ti, hubEvent);
+					_runOnChange1(fromObject, prop, ti, hubEvent);
 				}
 			});
 		} else {
-			_runOnChange2(fromObject, prop, ti, hubEvent);
-		}
-
-		if (ti.trigger.bServerSideOnly) {
-			og.syncInternal().sendMessages(false);
+			_runOnChange1(fromObject, prop, ti, hubEvent);
 		}
 	}
 
@@ -1776,6 +1772,22 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 * @param ti         trigger metadata.
 	 * @param hubEvent   event information.
 	 */
+	private void _runOnChange1(final OAObject fromObject, final String prop, final TriggerInfo ti, final HubEvent hubEvent) {
+		final OAThreadLocalService srvcThreadLocal = OARuntime.thread().getThreadLocalService();
+		boolean bWas = false;
+		try {
+			if (ti.trigger.bServerSideOnly) {
+				bWas = srvcThreadLocal.getSendSyncMessages();
+				srvcThreadLocal.setSendSyncMessages(true);
+			}
+			_runOnChange2(fromObject, prop, ti, hubEvent);
+		}
+		finally {
+			if (ti.trigger.bServerSideOnly) {
+				srvcThreadLocal.setSendSyncMessages(bWas);
+			}
+		}
+	}
 	private void _runOnChange2(final OAObject fromObject, final String prop, final TriggerInfo ti, final HubEvent hubEvent) {
 		if (ti.ppToRootClass == null || ti.ppToRootClass.length() == 0) {
 			try {

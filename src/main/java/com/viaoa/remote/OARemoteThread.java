@@ -103,12 +103,6 @@ public class OARemoteThread extends Thread {
 	public volatile long msLastUsed;
 	
 	/**
-	 * Counter used to determine whether OASync changes should be broadcast to
-	 * other computers. A value greater than zero enables sending messages.
-	 */
-	private volatile int sendMessageCount;  // if ==  0 (default) then sendMessages is false, else true
-
-	/**
 	 * Creates a new {@code OARemoteThread} with no initial runnable. No additional
 	 * initialization is performed.
 	 */
@@ -183,36 +177,6 @@ public class OARemoteThread extends Thread {
 		return startedNextThread;
 	}
 
-	/*
-	 * Any OAsync changes (OAObject/Hub) that are made within an OARemoteThread will not be broadcast to other computers, since they will
-	 * also be processing the same originating message. This can be set to true, so that any OASync changes will be sent out. This is useful
-	 * when an event listener will only run on the server, and any sync changes will then be sent to others. False by default.
-	 */
-	/**
-	 * Adjusts whether OASync messages should be broadcast to other systems. Each
-	 * true value increments the internal counter; false decrements it.
-	 *
-	 * @param b true to increase the send counter, false to decrease it
-	 */
-	public boolean setSendMessages(boolean b) {
-		if (b) {
-			sendMessageCount++;
-		} else {
-			sendMessageCount--;
-		}
-		return sendMessageCount > 1;
-	}
-
-	/**
-	 * Determines whether OASync changes made within this thread should be
-	 * broadcast to other computers.
-	 *
-	 * @return true if send message count is greater than zero, otherwise false
-	 */
-	public boolean getSendMessages() {
-		return sendMessageCount > 0;
-	}
-
 	/**
 	 * Sets whether this thread is currently waiting on a lock established by
 	 * {@code OAThreadLocalDelegate}.
@@ -250,15 +214,25 @@ public class OARemoteThread extends Thread {
 	 */
 	public void reset() {
 		// sendMessages = false;
-		sendMessageCount = 0;
 		startedNextThread = false;
 		watingOnLock = false;
 		msStartNextThread = 0l;
-
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		
-		// reset thread local
-		srvcOAThreadLocal.setContext(null);
-		srvcOAThreadLocal.setAdmin(false);
+
+		Thread t = Thread.currentThread();
+		if (t == this) {
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+			srvcOAThreadLocal.setSendSyncMessages(getSendSyncMessages());
+			srvcOAThreadLocal.setContext(null);
+			srvcOAThreadLocal.setAdmin(false);
+		}
+	}
+
+	protected boolean bSendSyncMessages;
+	public void setSendSyncMessages(boolean bSendSyncMessages) {
+		this.bSendSyncMessages = bSendSyncMessages;
+	}
+	public boolean getSendSyncMessages() {
+		return this.bSendSyncMessages;
 	}
 }

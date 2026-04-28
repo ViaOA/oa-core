@@ -112,7 +112,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	 * Internal flag used to suppress recursive active-object update handling
 	 * while programmatically modifying AO values.
 	 */
-	private boolean bIgnoreAOChange;
+	private volatile boolean bIgnoreAOChange;
 	
 	/**
 	 * Indicates whether a separate group should be maintained for objects
@@ -1316,10 +1316,12 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 
 				@Override
 				public void afterRemoveAll(HubEvent e) {
-					for (Object obj : removeObjects) {
-						remove((G) obj);
+					if (removeObjects != null) {
+						for (Object obj : removeObjects) {
+							remove((G) obj);
+						}
+						removeObjects = null;
 					}
-					removeObjects = null;
 				}
 
 				@Override
@@ -1383,9 +1385,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 
 			@Override
 			public void afterRemoveAll(HubEvent e) {
-				if (removeObjects == null) {
-					return;
-				}
+				if (removeObjects == null) return;
 				for (Object obj : removeObjects) {
 					remove((F) obj);
 				}
@@ -1509,13 +1509,14 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		siblingHelper.add(this.propertyPath);
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		srvcOAThreadLocal.addSiblingHelper(siblingHelper);
+		boolean bWas = srvcOAThreadLocal.getSendSyncMessages();
 		try {
-			srvcOAThreadLocal.setSuppressCSMessages(true);
+			srvcOAThreadLocal.setSendSyncMessages(false);
 			for (F bx : hubFrom) {
 				add(bx);
 			}
 		} finally {
-			srvcOAThreadLocal.setSuppressCSMessages(false);
+			srvcOAThreadLocal.setSendSyncMessages(bWas);
 			srvcOAThreadLocal.removeSiblingHelper(siblingHelper);
 		}
 	}

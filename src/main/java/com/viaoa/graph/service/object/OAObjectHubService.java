@@ -179,7 +179,7 @@ public abstract class OAObjectHubService {
                 //    use the finalizer thread to send msg to server.
                 if (!isInHubWithMaster(oaObj)) {
 					
-                    if (callRemoteThreadShouldSendMessages() && !oaObj.isDeleted()) {
+                    if (callThreadLocalGetSendSyncMessages() && !oaObj.isDeleted()) {
                         // CACHE_NOTE: if it was on the Server.cache, it was removed when it was added
                         // to a hub. Need to add to cache now that it is no longer in a hub.
                         
@@ -408,7 +408,7 @@ public abstract class OAObjectHubService {
         }
         if (bReused) aiReuseWeakRefArray.incrementAndGet();
 
-        if (bRemoveFromServerCache && callSyncIsClient() && callRemoteThreadShouldSendMessages()) {
+        if (bRemoveFromServerCache && callSyncIsClient() && callThreadLocalGetSendSyncMessages()) {
         	callCSUpdateObjectsWithoutHubs(oaObj);
         }
         return true;
@@ -554,5 +554,5 @@ public abstract class OAObjectHubService {
 	public abstract OAObject callHubDetailGetMasterObject(Hub<?> thisHub);
 	public abstract void callHubSaveSaveAll(Hub<?> thisHub, int iCascadeRule, OACascade cascade);
 	public abstract boolean callSyncIsClient();
-	public abstract boolean callRemoteThreadShouldSendMessages();
+	public abstract boolean callThreadLocalGetSendSyncMessages();
 }

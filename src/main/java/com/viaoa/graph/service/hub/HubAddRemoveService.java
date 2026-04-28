@@ -75,8 +75,8 @@ public abstract class HubAddRemoveService {
 
 		Hub<T> hubx = faHub.getHubDataUnique(thisHub).getSharedHub();
 		if (hubx != null) {
-			remove(hubx, objOrig, bForce, bSendEvent, bDeleting, bSetAO, true, bIsRemovingAll);
-			return null;
+			T objx = remove(hubx, objOrig, bForce, bSendEvent, bDeleting, bSetAO, bSetPropToMaster, bIsRemovingAll);
+			return objx;
 		}
 		
 		T obj = callHubFindGetRealObject(thisHub, objOrig);
@@ -310,8 +310,18 @@ public abstract class HubAddRemoveService {
 	 * @param bSendNewList  whether to fire a new-list event
 	 */
 	public void clear(final Hub<?> thisHub, final boolean bSetAOtoNull, final boolean bSendNewList) {
+		if (thisHub == null) return;
 		if (!callRemoteThreadIsRemoteThread() && bSendNewList) {
 			OAObjectCallback eq = callObjectCallbackGetVerifyRemoveAllObjectCallback(thisHub, OAObjectCallback.CHECK_CallbackMethod);
+			if (eq != null && !eq.getAllowed()) {
+				String s = eq.getResponse();
+				if (OAString.isEmpty(s)) {
+					s = "Cant clear, OAObjectCallback verifyRemoveAll retured false";
+				}
+				throw new RuntimeException(s);
+			}
+
+			eq = callObjectCallbackGetAllowRemoveAllObjectCallback(thisHub, OAObjectCallback.CHECK_CallbackMethod);
 			if (eq != null && !eq.getAllowed()) {
 				String s = eq.getResponse();
 				if (OAString.isEmpty(s)) {
@@ -331,7 +341,6 @@ public abstract class HubAddRemoveService {
 			callThreadLocalUnlock(thisHub);
 		}
 		if (b) {
-			callRemoteThreadStartNextThread(); // if this is RemoteThread, then start the next one
 			_afterClear(thisHub, bSetAOtoNull, bSendNewList);
 		}
 	}
@@ -865,7 +874,7 @@ public abstract class HubAddRemoveService {
 	 * @return {@code true} if insertion succeeded, otherwise {@code false}
 	 */
 	public <T extends OAObject> boolean insert(final Hub<T> thisHub, final T obj, final int pos) {
-		if (obj == null) {
+		if (thisHub == null || obj == null) {
 			return false;
 		}
 		if (faHub.getHubDataUnique(thisHub).getSharedHub() != null) {
@@ -1055,14 +1064,6 @@ public abstract class HubAddRemoveService {
 				}
 			}
 		}
-
-		// if recursive and this is the root hub, then need to set parent to null (since object is now in root, it has no parent)
-		if (thisHub.getRootHub() == thisHub) {
-			OALinkInfo liRecursive = callObjectInfoGetRecursiveLinkInfo(thisHub.getOAObjectInfo(), OALinkInfo.ONE);
-			if (liRecursive != null) {
-				callObjectReflectSetProperty(obj, liRecursive.getName(), null, null);
-			}
-		}
 		return pos;
 	}
 
@@ -1092,6 +1093,7 @@ public abstract class HubAddRemoveService {
 	 * @param pos2    the position of the second object
 	 */
 	public void swap(final Hub<?> thisHub, int pos1, int pos2) {
+		if (thisHub == null) return;
 		if (faHub.getHubDataUnique(thisHub).getSharedHub() != null) {
 			swap(faHub.getHubDataUnique(thisHub).getSharedHub(), pos1, pos2);
 			return;
@@ -1122,6 +1124,7 @@ public abstract class HubAddRemoveService {
 	 * @return an array of added {@link OAObject} instances
 	 */
 	public <T extends OAObject>  T[] getAddedObjects(Hub<T> thisHub) {
+		if (thisHub == null) return null;
 		return callHubDataGetAddedObjects(thisHub);
 	}
 
@@ -1132,6 +1135,7 @@ public abstract class HubAddRemoveService {
 	 * @return an array of removed {@link OAObject} instances
 	 */
 	public <T extends OAObject> T[] getRemovedObjects(Hub<T> thisHub) {
+		if (thisHub == null) return null;
 		return callHubDataGetRemovedObjects(thisHub);
 	}
 
@@ -1189,6 +1193,7 @@ public abstract class HubAddRemoveService {
 	 * @param list the objects to add
 	 */
 	public <T extends OAObject> void unsafeAddAll(Hub<T> hub, List<T> list) {
+		if (hub == null || list == null) return;
 		faHub.getHubData(hub).getVector().addAll(list);
 	}
 
@@ -1201,6 +1206,7 @@ public abstract class HubAddRemoveService {
 	 * @param hubNew the hub providing the new objects
 	 */
 	public <T extends OAObject> void refresh(Hub<T> hub, Hub<T> hubNew) {
+		if (hub == null) return;
 		for (T objx : hub) {
 			callObjectHubRemoveHub(objx, hub, false);
 		}

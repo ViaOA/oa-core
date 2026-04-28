@@ -309,16 +309,17 @@ public class HubSortListener<TYPE extends OAObject> extends HubListenerAdapter<T
         if (bCallingSortMove) return;
         String s = e.getPropertyName();
         if (s != null && s.equalsIgnoreCase(sortPropertyName)) {
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
+			boolean bWas = srvcOAThreadLocal.getSendSyncMessages();
             try {
                 bCallingSortMove = true;
-                srvcOAThreadLocal.setSuppressCSMessages(true);  // each client will handle it's own sorting
+                srvcOAThreadLocal.setSendSyncMessages(false);  // each client will handle it's own sorting
         		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
                 og.hubsInternal().callHubAddRemoveSortMove(hub, e.getObject());
             }
             finally {
                 bCallingSortMove = false;
-                srvcOAThreadLocal.setSuppressCSMessages(false);
+                srvcOAThreadLocal.setSendSyncMessages(bWas);
             }
         }
     }
