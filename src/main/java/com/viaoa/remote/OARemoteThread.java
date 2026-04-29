@@ -101,6 +101,9 @@ public class OARemoteThread extends Thread {
 	 * for remote message processing.
 	 */
 	public volatile long msLastUsed;
+
+	protected boolean bDefaultSendSyncMessages;
+
 	
 	/**
 	 * Creates a new {@code OARemoteThread} with no initial runnable. No additional
@@ -222,17 +225,17 @@ public class OARemoteThread extends Thread {
 		Thread t = Thread.currentThread();
 		if (t == this) {
 			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
-			srvcOAThreadLocal.setSendSyncMessages(getSendSyncMessages());
+			srvcOAThreadLocal.setSendSyncMessages(getDefaultSendSyncMessages());
 			srvcOAThreadLocal.setContext(null);
 			srvcOAThreadLocal.setAdmin(false);
 		}
 	}
 
-	protected boolean bSendSyncMessages;
-	public void setSendSyncMessages(boolean bSendSyncMessages) {
-		this.bSendSyncMessages = bSendSyncMessages;
+	public void setDefaultSendSyncMessages(boolean bSendSyncMessages) {
+		this.bDefaultSendSyncMessages = bSendSyncMessages;
 	}
-	public boolean getSendSyncMessages() {
-		return this.bSendSyncMessages;
+	
+	public boolean getDefaultSendSyncMessages() {
+		return this.bDefaultSendSyncMessages;
 	}
 }

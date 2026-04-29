@@ -271,89 +271,6 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 	    return (syncServer != null);	
 	}
 
-
-	/**
-	 * Returns the next GUID for the specified package.
-	 *
-	 * Server mode:
-	 *   • GUIDs are generated locally using {@link OAObjectDelegate#getNextGuid()}.
-	 *
-	 * Client mode:
-	 *   • GUIDs are allocated in blocks of 50 from the remote server.
-	 *   • When the current block is exhausted, a new block is requested via
-	 *     {@link RemoteServerInterface#getNextFiftyObjectGuids()}.
-	 *
-	 * @param p the package for which a GUID is requested
-	 * @return the next GUID value
-	 * @throws RuntimeException if the remote request fails
-	 */
-	/*qqqqqqqqqqqqq 
-	public long getGuidFromServer() {
-		if (isServer()) {
-	    	Package packageThis = Package.getPackage(pkgName);
-			return OAObjectDelegate.getNextGuid(packageThis);
-		}
-		long x;
-		synchronized (NextGuidLock) {
-			if (nextGuid == maxNextGuid) {
-				try {
-					nextGuid = getSyncClient().getRemoteServer().getNextFiftyObjectGuids();
-					maxNextGuid = nextGuid + 50;
-				} catch (Exception ex) {
-					LOG.log(Level.WARNING, "", ex);
-					throw new RuntimeException("OAClient.getObjectGuid Error:", ex);
-				}
-			}
-			x = nextGuid++;
-		}
-		return x;
-	}
-	*/
-
-	/*
-	 * If the currentThread is an OARemoteThead, then this is used to have sync changes (OAObject/Hub) sent to other computers. By default,
-	 * all msgs processed by OARemoteThreads will not send out any sync changes to other computers (since they will receive the same msg).
-	 * This will set a flag in the current OARemoteThread to allow any further changes during the current msg processing to be sent to the
-	 * server/other clients. see OARemoteThread
-	 */
-	/**
-	 * Returns whether sync messages should be sent from the current thread.
-	 * Delegates to {@link OARemoteThreadDelegate#sendMessages()}.
-	 *qqqqqqqqqqqqq
-	 * @return {@code true} if sync messages will be sent
-	 */
-	/*qqqqqqqqqq remove
-	public boolean sendMessages() {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
-		return srvcOARemoteThread.sendMessages();
-	}
-	*/
-
-	/**
-	 * Enables or disables sending sync messages for the current thread.
-	 * Delegates to {@link OARemoteThreadDelegate#sendSyncMessages(boolean)}.
-	 *
-	 * @param b {@code true} to send messages, {@code false} to suppress
-	 * @return previous setting for message sending
-	 */
-/*qqqqqqqqq remove	
-	public void sendMessages(boolean b) {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
-		srvcOARemoteThread.sendSyncMessages(b);
-	}
-*/	
-
-	/**
-	 * Determines whether the current thread is an {@code OARemoteThread},
-	 * which is used internally to process incoming sync messages.
-	 *
-	 * @return {@code true} if the current thread is remote-thread context
-	 */
-	public boolean isRemoteThread() {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
-		return srvcOARemoteThread.isRemoteThread();
-	}
-
 	/**
 	 * Returns the {@link RequestInfo} associated with the current thread
 	 * if it is an {@code OARemoteThread}. This describes the sync message
@@ -382,25 +299,6 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 		return ri.connectionId;
 	}
 
-	/**
-	 * Marks the current thread as performing loading operations by setting
-	 * the thread-local loading flag to {@code true}.
-	 */
-	public void setLoading() {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
-		srvcOAThreadLocal.setLoading(true);
-	}
-
-	/**
-	 * Sets or clears the thread-local loading flag, used to indicate whether
-	 * the current thread is performing object-loading operations.
-	 *
-	 * @param b {@code true} to mark as loading, {@code false} otherwise
-	 */
-	public void setLoading(boolean b) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
-		srvcOAThreadLocal.setLoading(b);
-	}
 
 	@Override
 	public boolean isClient() {
@@ -415,10 +313,8 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 		OASyncClient sc = getClient();
 		return (ss != null || sc == null);
 	}
-	
-	// qqqqqqqqqqqqqqqqq SyncOps, SyncInternalOps ===========
-	
 
+	
 	@Override
 	public void sendException(String msg, Throwable ex) {
 		RemoteSessionInterface rci = getRemoteSession();
@@ -452,24 +348,31 @@ public class OASyncService implements SyncOps, SyncInternalOps {
 	}
 
 	
-//qqqqqqqqqqqqq check these qqqqqqqqqqqqqq
-	
 	@Override
 	public boolean callSyncIsServer() {
-		// TODO Auto-generated method stub
-		return false;
+		return isServer();
 	}
 
 	@Override
 	public void callRemoteClientRefresh(Class<? extends OAObject> class1, OAObjectKey objectKey) {
-		// TODO Auto-generated method stub
-		
+		if (syncClient == null) return;
+		try {
+			syncClient.getRemoteClient().refresh(class1, objectKey);
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override
 	public void callRemoteClientRefresh(Class<? extends OAObject> class1, OAObjectKey objectKey, String linkPropertyName) {
-		// TODO Auto-generated method stub
-		
+		if (syncClient == null) return;
+		try {
+			syncClient.getRemoteClient().refresh(class1, objectKey, linkPropertyName);
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 }

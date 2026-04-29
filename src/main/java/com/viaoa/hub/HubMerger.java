@@ -1656,14 +1656,15 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 if (hubCombined != null && !hubCombined.contains(parent)) {
                     final boolean bx = aiLoadingCombinedHub.get() > 0;
         			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
-                    try {
+                    boolean bWas = false;
+        			try {
                         if (bx) {
-                            srvcOAThreadLocal.setLoading(true);
+                            bWas = srvcOAThreadLocal.setLoading(true);
                         }
                         hubCombined.add(parent);
                     } finally {
                         if (bx) {
-                            srvcOAThreadLocal.setLoading(false);
+                            srvcOAThreadLocal.setLoading(bWas);
                         }
                     }
                 }
@@ -1673,14 +1674,15 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 if (!bShareEndHub && hubCombined != null && !hubCombined.contains(parent)) {
                     final boolean bx = aiLoadingCombinedHub.get() > 0;
         			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+                    boolean bWas = false;
                     try {
                         if (bx) {
-                            srvcOAThreadLocal.setLoading(true);
+                            bWas = srvcOAThreadLocal.setLoading(true);
                         }
                         hubCombined.add(parent);
                     } finally {
                         if (bx) {
-                            srvcOAThreadLocal.setLoading(false);
+                            srvcOAThreadLocal.setLoading(bWas);
                         }
                     }
                 }

@@ -185,7 +185,6 @@ public class OAThreadLocalService {
 	
 	private long msObjectCacheAddMode;
 	private long msObjectSerializer;
-	private long msDisableSyncMessages;
 	private final ConcurrentHashMap<Object, AtomicInteger> hmDeleting = new ConcurrentHashMap<>();
 	private long msDeleting;
 	private long msFlag;
@@ -539,7 +538,6 @@ public class OAThreadLocalService {
 
 	public void setSendSyncMessages(OAThreadLocal ti, boolean b) {
 		if (ti == null) return;
-		boolean bReturn = ti.getSendSyncMessages();
 		ti.setSendSyncMessages(b);
 	}
 

@@ -768,7 +768,7 @@ public class OAJson {
 		try {
 			srvcOAThreadLocal.setOAJackson(this);
 			if (bIsLoading) {
-				srvcOAThreadLocal.setLoading(true);
+				bWas = srvcOAThreadLocal.setLoading(true);
 			} else {
 				bWas = srvcOAThreadLocal.getSendSyncMessages();
 				srvcOAThreadLocal.setSendSyncMessages(false);
@@ -784,7 +784,7 @@ public class OAJson {
 
 		} finally {
 			if (bIsLoading) {
-				srvcOAThreadLocal.setLoading(false);
+				srvcOAThreadLocal.setLoading(bWas);
 			} else {
 				srvcOAThreadLocal.setSendSyncMessages(bWas);
 			}
@@ -832,7 +832,7 @@ public class OAJson {
 			srvcOAThreadLocal.setOAJackson(this);
 
 			if (bIsLoading) {
-				srvcOAThreadLocal.setLoading(true);
+				bWas = srvcOAThreadLocal.setLoading(true);
 			} else {
 				bWas = srvcOAThreadLocal.getSendSyncMessages();
 				srvcOAThreadLocal.setSendSyncMessages(false);
@@ -848,7 +848,7 @@ public class OAJson {
 
 		} finally {
 			if (bIsLoading) {
-				srvcOAThreadLocal.setLoading(false);
+				srvcOAThreadLocal.setLoading(bWas);
 			} else {
 				srvcOAThreadLocal.setSendSyncMessages(bWas);
 			}
@@ -886,7 +886,7 @@ public class OAJson {
 		try {
 			srvcOAThreadLocal.setOAJackson(this);
 			if (bIsLoading) {
-				srvcOAThreadLocal.setLoading(true);
+				bWas = srvcOAThreadLocal.setLoading(true);
 			} else {
 				bWas = srvcOAThreadLocal.getSendSyncMessages();
 				srvcOAThreadLocal.setSendSyncMessages(false);
@@ -902,7 +902,7 @@ public class OAJson {
 
 		} finally {
 			if (bIsLoading) {
-				srvcOAThreadLocal.setLoading(false);
+				srvcOAThreadLocal.setLoading(bWas);
 			} else {
 				srvcOAThreadLocal.setSendSyncMessages(bWas);
 			}
@@ -940,7 +940,7 @@ public class OAJson {
 		try {
 			srvcOAThreadLocal.setOAJackson(this);
 			if (bIsLoading) {
-				srvcOAThreadLocal.setLoading(true);
+				bWas = srvcOAThreadLocal.setLoading(true);
 			} else {
 				bWas = srvcOAThreadLocal.getSendSyncMessages();
 				srvcOAThreadLocal.setSendSyncMessages(false);
@@ -956,7 +956,7 @@ public class OAJson {
 			map = (Map<K, V>) om.readValue(json, mt);
 		} finally {
 			if (bIsLoading) {
-				srvcOAThreadLocal.setLoading(false);
+				srvcOAThreadLocal.setLoading(bWas);
 			} else {
 				srvcOAThreadLocal.setSendSyncMessages(bWas);
 			}
@@ -991,7 +991,7 @@ public class OAJson {
 		try {
 			srvcOAThreadLocal.setOAJackson(this);
 			if (bIsLoading) {
-				srvcOAThreadLocal.setLoading(true);
+				bWas = srvcOAThreadLocal.setLoading(true);
 			} else {
 				bWas = srvcOAThreadLocal.getSendSyncMessages();
 				srvcOAThreadLocal.setSendSyncMessages(false);
@@ -1007,7 +1007,7 @@ public class OAJson {
 
 		} finally {
 			if (bIsLoading) {
-				srvcOAThreadLocal.setLoading(false);
+				srvcOAThreadLocal.setLoading(bWas);
 			} else {
 				srvcOAThreadLocal.setSendSyncMessages(bWas);
 			}
@@ -1042,7 +1042,7 @@ public class OAJson {
 		try {
 			srvcOAThreadLocal.setOAJackson(this);
 			if (bIsLoading) {
-				srvcOAThreadLocal.setLoading(true);
+				bWas = srvcOAThreadLocal.setLoading(true);
 			} else {
 				bWas = srvcOAThreadLocal.getSendSyncMessages();
 				srvcOAThreadLocal.setSendSyncMessages(false);
@@ -1057,7 +1057,7 @@ public class OAJson {
 			list = (List<T>) om.readValue(file, ct);
 		} finally {
 			if (bIsLoading) {
-				srvcOAThreadLocal.setLoading(false);
+				srvcOAThreadLocal.setLoading(bWas);
 			} else {
 				srvcOAThreadLocal.setSendSyncMessages(bWas);
 			}
@@ -1092,7 +1092,7 @@ public class OAJson {
 		try {
 			srvcOAThreadLocal.setOAJackson(this);
 			if (bIsLoading) {
-				srvcOAThreadLocal.setLoading(true);
+				bWas = srvcOAThreadLocal.setLoading(true);
 			} else {
 				bWas = srvcOAThreadLocal.getSendSyncMessages();
 				srvcOAThreadLocal.setSendSyncMessages(false);
@@ -1107,7 +1107,7 @@ public class OAJson {
 			list = (List<T>) om.readValue(stream, ct);
 		} finally {
 			if (bIsLoading) {
-				srvcOAThreadLocal.setLoading(false);
+				srvcOAThreadLocal.setLoading(bWas);
 			} else {
 				srvcOAThreadLocal.setSendSyncMessages(bWas);
 			}
@@ -1245,7 +1245,7 @@ public class OAJson {
 		try {
 			srvcOAThreadLocal.setOAJackson(this);
 			if (bIsLoading) {
-				srvcOAThreadLocal.setLoading(true);
+				bWas = srvcOAThreadLocal.setLoading(true);
 			} else {
 				bWas = srvcOAThreadLocal.getSendSyncMessages();
 				srvcOAThreadLocal.setSendSyncMessages(false);
@@ -1302,7 +1302,7 @@ public class OAJson {
 
 		} finally {
 			if (bIsLoading) {
-				srvcOAThreadLocal.setLoading(false);
+				srvcOAThreadLocal.setLoading(bWas);
 			} else {
 				srvcOAThreadLocal.setSendSyncMessages(bWas);
 			}

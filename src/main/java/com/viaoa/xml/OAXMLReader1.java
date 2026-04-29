@@ -1305,7 +1305,7 @@ public class OAXMLReader1 extends DefaultHandler {
 			return value;
 		}
 
-		Object result = OAConverter.convert(conversionClass, value);
+		Object result = OAConverter.convert(propertyClass, value);
 
 		return result;
 	}

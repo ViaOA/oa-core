@@ -41,17 +41,10 @@ public interface SyncInternalOps extends SyncOps {
 	public void callRemoteClientRefresh(Class<? extends OAObject> class1, OAObjectKey objectKey);
 	public void callRemoteClientRefresh(Class<? extends OAObject> class1, OAObjectKey objectKey, String linkPropertyName);
 
-//qqqqqq remove	
-//	public void sendMessagesXXXX(boolean b);
-	
-//qqqqqq remove, from *Delegate days qqqqqq	
-//	public void setSyncClient(OASyncClient oaSyncClient);
-	//public void setSyncServer(OASyncServer oaSyncServer);
-
-//qqqqqqq make these finer grain	
-	
 	public RemoteClientInterface getRemoteClient();
+
 	public RemoteServerInterface getRemoteServer();
+	
 	public OASyncClient getSyncClient();
 	
 	

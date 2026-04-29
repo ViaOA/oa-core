@@ -1588,7 +1588,7 @@ public class OARemoteMultiplexerServer {
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
         try {
             srvcOAThreadLocal.setRemoteRequestInfo(ri);
-            if (!ri.bind.isBroadcast) {
+            if (!ri.bind.isBroadcast) {  //qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq callSetDefaultSendSyncMessages() + call reset() qqqqqqqqqqq
                 srvcOAThreadLocal.setSendSyncMessages(true);
             }
 

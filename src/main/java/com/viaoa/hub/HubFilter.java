@@ -175,7 +175,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	 * Internal flag used to prevent recursive active-object updates
 	 * between master and filtered Hubs.
 	 */
-	private boolean bIgnoreSettingAO;
+	private volatile boolean bIgnoreSettingAO;
 
 	/**
 	 * Collection of filters applied to determine whether objects are
@@ -1082,8 +1082,8 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 					og.hubsInternal().callHubAddRemoveClear(hub, false, false); // false:dont set AO to null,  false: dont send newList event
 
 					objTemp = null;
-					bIgnoreSettingAO = false;
 				} finally {
+					bIgnoreSettingAO = false;
 					aiClearing.decrementAndGet();
 				}
 

@@ -501,10 +501,6 @@ public abstract class OAObjectReflectService {
 			return false;
 		}
 		synchronized (oaObj) {
-			nulls = faobject.getNulls(oaObj);
-			if (nulls == null) {
-				return false;
-			}
 			boolean bAllZero = true;
 			for (byte b : nulls) {
 				if (b != 0) {
@@ -1130,6 +1126,7 @@ public abstract class OAObjectReflectService {
 			if (siblingKeys != null && siblingKeys.length > 0) {
 				OALinkInfo rli = linkInfo.getReverseLinkInfo();
 				final boolean bWas = callThreadLocalGetSendSyncMessages();
+				final boolean bWas2 = callThreadLocalGetLoading();
 				try {
 					callThreadLocalSetSendSyncMessages(false);
 					callThreadLocalSetLoading(true);
@@ -1156,7 +1153,7 @@ public abstract class OAObjectReflectService {
 						}
 					}
 				} finally {
-					callThreadLocalSetLoading(false);
+					callThreadLocalSetLoading(bWas2);
 					callThreadLocalSetSendSyncMessages(bWas);
 				}
 			} else {
@@ -3057,6 +3054,7 @@ public abstract class OAObjectReflectService {
 		}
 
 		final boolean bWas = callThreadLocalGetSendSyncMessages();
+		final boolean bWas2 = callThreadLocalGetLoading();
 		try {
 			callThreadLocalSetLoading(true);
 			callThreadLocalSetSendSyncMessages(false);
@@ -3068,7 +3066,7 @@ public abstract class OAObjectReflectService {
 
 		} finally {
 			callThreadLocalSetSendSyncMessages(bWas);
-			callThreadLocalSetLoading(false);
+			callThreadLocalSetLoading(bWas2);
 		}
 		callCacheAdd(newObject);
 		return newObject;
@@ -3976,6 +3974,7 @@ public abstract class OAObjectReflectService {
 	public abstract boolean callThreadLocalAddSiblingHelper(OASiblingHelper sh);
 	public abstract void callThreadLocalRemoveSiblingHelper(OASiblingHelper sh);
 	public abstract void callThreadLocalSetLoading(boolean b);
+	public abstract boolean callThreadLocalGetLoading();
 	public abstract boolean callRemoteThreadIsRemoteThread();
 	public abstract boolean callThreadLocalGetSendSyncMessages();
 	public abstract void callThreadLocalSetSendSyncMessages(boolean b);

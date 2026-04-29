@@ -1679,6 +1679,10 @@ public abstract class OAObjectParentService {
 			public void callThreadLocalSetSendSyncMessages(boolean b) {
 				OAObjectParentService.this.srvcThreadLocal.setSendSyncMessages(b);
 			}
+			@Override
+			public boolean callThreadLocalGetLoading() {
+    			return	OAObjectParentService.this.srvcThreadLocal.isLoading();
+			}
 		}; 
     	return srvcOAObjectReflect;
     }

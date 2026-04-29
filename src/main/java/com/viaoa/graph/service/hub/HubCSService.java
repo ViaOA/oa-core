@@ -333,10 +333,9 @@ public abstract class HubCSService {
     public boolean deleteAll(Hub<?> thisHub) {
 		if (thisHub == null) return false;
         if (callSyncIsServer()) return true;  // invoke on the server
+        if (!callThreadLocalGetSendSyncMessages()) return true;
         LOG.fine("hub="+thisHub);
 
-        if (!callThreadLocalGetSendSyncMessages()) return true;
-        
         OAObjectInfo oi = callObjectInfoGetObjectInfo(thisHub.getObjectClass());
         if (oi.getLocalOnly()) return true; 
         
@@ -408,6 +407,7 @@ public abstract class HubCSService {
     public void sendRefresh(Hub<?> thisHub) {
         if (thisHub == null) return;
         if (callSyncIsSingleUser()) return;
+        if (!callThreadLocalGetSendSyncMessages()) return;
 
         OAObject obj = thisHub.getMasterObject();
         if (obj == null) return;

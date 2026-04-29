@@ -1003,7 +1003,7 @@ public class OARemoteMultiplexerClient {
 	 */
 	private OARemoteThread getRemoteThread(RequestInfo ri, boolean bSendSyncMessages) {
 		OARemoteThread rt = _getRemoteThread(ri);
-		rt.setSendSyncMessages(bSendSyncMessages);
+		rt.setDefaultSendSyncMessages(bSendSyncMessages);
 		return rt;
 	}
 	private OARemoteThread _getRemoteThread(RequestInfo ri) {

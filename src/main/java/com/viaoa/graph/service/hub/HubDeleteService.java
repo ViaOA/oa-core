@@ -101,6 +101,7 @@ public abstract class HubDeleteService {
     	if (thisHub == null) return;
         if (thisHub.size() == 0) return;
         if (cascade.wasCascaded(thisHub, true)) return;
+        
         try {
             callThreadLocalSetDeleting(thisHub, true);
             callThreadLocalLock(thisHub);
@@ -109,6 +110,7 @@ public abstract class HubDeleteService {
         finally {
             callThreadLocalUnlock(thisHub);
             callThreadLocalSetDeleting(thisHub, false);
+            
         }
     }
 

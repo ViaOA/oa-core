@@ -339,6 +339,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
         boolean b = og.hubsInternal().callHubDataSetLoadingAllData(hub, true);
+        boolean bWas = hub.isLoading();
         try {
             hub.setLoading(true);
             if (changeRefresher != null && changeRefresher.hasChanged()) return;
@@ -347,7 +348,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
             refresh();
         }
         finally {
-            hub.setLoading(false);
+            hub.setLoading(bWas);
             if (!b) og.hubsInternal().callHubDataSetLoadingAllData(hub, false);
         }
     }
@@ -427,6 +428,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
             return;
         }
         
+        boolean bWas2 = hub.isLoading();
         if (bSetLoading) hub.setLoading(true);
 
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
@@ -458,7 +460,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
             });
         }
         finally {
-            if (bSetLoading) hub.setLoading(false);
+            if (bSetLoading) hub.setLoading(bWas2);
             if (bServerSideOnly) {
             	srvcOAThreadLocal.setSendSyncMessages(bWas);
         	}
