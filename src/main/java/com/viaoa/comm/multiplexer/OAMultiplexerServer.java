@@ -171,6 +171,7 @@ public class OAMultiplexerServer {
      */
     public void stop() throws Exception {
         getServerSocketController().close();
+        _bAllowConnections = false;
     }
     
     /**

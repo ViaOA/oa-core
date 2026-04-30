@@ -532,47 +532,6 @@ public class OARemoteMultiplexerClient {
 
 			ri.bSent = _onInvokeForCtoS(ri);
 
-			// 4:CtoS_QueuedRequestNoResponse END
-
-			if (ri.bSent && (ri.bind.usesQueue && (ri.type.hasReturnValue() || ri.bind.isOASync))) {
-				releaseSocketForCtoS(socket);
-				socket = null;
-				// 4:CtoS_QueuedRequest wait on return value from server
-				synchronized (ri) {
-					for (int i = 0;; i++) {
-						if (ri.methodInvoked) {
-							break;
-						}
-						if (i > 0) {
-							if (!multiplexerClient.isConnected()) {
-								break;
-							}
-							if (ri.methodInfo.timeoutSeconds > 0 && i >= ri.methodInfo.timeoutSeconds) {
-								if (!OAObject.getDebugMode()) {
-									break;
-								}
-							}
-						}
-						// if (i>5) System.out.println(i+" CLIENT IS Waiting on REQUEST TO RETURN "+ri.toLogString());						
-						ri.wait(1000); // request timeout
-					}
-				}
-				// 7:CtoS_QueuedRequest END
-				if (!ri.methodInvoked) {
-					if (!multiplexerClient.isConnected()) {
-						ri.exceptionMessage = "socket disconnected";
-					} else {
-						ri.exceptionMessage = "timeout waiting on response from server";
-					}
-				} else {
-					// 20160122 queue thread will wait for OARemoteThreadDelegate.startNextThread()
-					//    to call srvcOAThreadLocal.notifyWaitingThread(), and wake up que thread waiting on ri lock
-					if (ri.bind.isOASync) {
-						final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
-						srvcOAThreadLocal.setNotifyObject(ri);
-					}
-				}
-			}
 		} catch (Exception e) {
 			ri.exception = e;
 		} finally {
@@ -581,6 +540,48 @@ public class OARemoteMultiplexerClient {
 				releaseSocketForCtoS(socket);
 			}
 		}
+
+		// 4:CtoS_QueuedRequestNoResponse END
+		if (ri.bSent && (ri.bind.usesQueue && (ri.type.hasReturnValue() || ri.bind.isOASync))) {
+			releaseSocketForCtoS(socket);
+			socket = null;
+			// 4:CtoS_QueuedRequest wait on return value from server
+			synchronized (ri) {
+				for (int i = 0;; i++) {
+					if (ri.methodInvoked) {
+						break;
+					}
+					if (i > 0) {
+						if (!multiplexerClient.isConnected()) {
+							break;
+						}
+						if (ri.methodInfo.timeoutSeconds > 0 && i >= ri.methodInfo.timeoutSeconds) {
+							if (!OAObject.getDebugMode()) {
+								break;
+							}
+						}
+					}
+					// if (i>5) System.out.println(i+" CLIENT IS Waiting on REQUEST TO RETURN "+ri.toLogString());						
+					ri.wait(1000); // request timeout
+				}
+			}
+			// 7:CtoS_QueuedRequest END
+			if (!ri.methodInvoked) {
+				if (!multiplexerClient.isConnected()) {
+					ri.exceptionMessage = "socket disconnected";
+				} else {
+					ri.exceptionMessage = "timeout waiting on response from server";
+				}
+			} else {
+				// 20160122 queue thread will wait for OARemoteThreadDelegate.startNextThread()
+				//    to call srvcOAThreadLocal.notifyWaitingThread(), and wake up que thread waiting on ri lock
+				if (ri.bind.isOASync) {
+					final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+					srvcOAThreadLocal.setNotifyObject(ri);
+				}
+			}
+		}
+		
 		afterInvokeForCtoS(ri);
 
 		if (ri.exception != null) {
@@ -675,6 +676,9 @@ public class OARemoteMultiplexerClient {
 							ri.exception = ex;
 						}
 					}
+			        catch (Throwable tx) {
+			            ri.exception = new Exception(tx.toString(), tx);
+			        }
 					srvcOAThreadLocal.setRemoteRequestInfo(null);
 				}
 			} else {
@@ -1836,15 +1840,15 @@ public class OARemoteMultiplexerClient {
 	protected void processMessageForStoC(RequestInfo ri) throws Exception {
 		try {
 			_processMessageForStoC(ri); // invoke
-			if (ri.type.hasReturnValue()) {
-				sendResponseForStoC(ri);
-			}
-			afterInvokForStoC(ri);
 		} catch (Exception e) {
 			ri.exception = e;
 		} finally {
 			ri.methodInvoked = true;
 		}
+		if (ri.type.hasReturnValue()) {
+			sendResponseForStoC(ri);
+		}
+		afterInvokForStoC(ri);
 	}
 
 	/**
@@ -2002,6 +2006,9 @@ public class OARemoteMultiplexerClient {
 				ri.exception = ex;
 			}
 		}
+        catch (Throwable tx) {
+            ri.exception = new Exception(tx.toString(), tx);
+        }
 		srvcOAThreadLocal.setRemoteRequestInfo(null);
 
 		if (ri.response != null && ri.methodInfo.remoteReturn != null) {

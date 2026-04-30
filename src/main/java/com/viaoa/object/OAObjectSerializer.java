@@ -919,6 +919,7 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 			}
 
 			finishWrite(roos);
+			roos.writeInt(totalObjectsWritten);
 
 			roos.flush();
 			if (!bStreamIsRoos) {
@@ -960,8 +961,8 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 								object==null ? "null" : object.getClass().getSimpleName(),
 								extraObject == null ? "null" : extraObject.getClass().getSimpleName(),
 								totalObjectsWritten, (ts2 - ts));
+			stream.writeInt(totalObjectsWritten);
 		}
-		stream.writeInt(totalObjectsWritten);
 
 		/*
 		if (totalObjectsWritten > 120000 || totalObjectsWritten < 0) {
@@ -1072,10 +1073,10 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 				extraObject = rois.readObject();
 			}
 			finishRead(rois);
+			totalObjectsWritten = rois.readInt();
 
 			//ois.close();  dont call this, it WILL affect the stream
 			// iis.close();// ?? not sure
-			totalObjectsWritten = stream.readInt();
 
 			long sizeBefore = inflater.getBytesRead();
 			long sizeAfter = inflater.getBytesWritten();

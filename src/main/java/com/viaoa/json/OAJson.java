@@ -1278,7 +1278,7 @@ public class OAJson {
 						String s = node.textValue();
 						if (s.indexOf("guid.") == 0) {
 							s = s.substring(5);
-							long guid = Long.parseLong(s);
+							UUID guid = UUID.fromString(s);
 							hub.add((T) getGuidMap().get(guid));
 						} else {
 							// convert multipart key to OAObjectKey

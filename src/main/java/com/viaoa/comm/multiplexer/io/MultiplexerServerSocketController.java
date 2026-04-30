@@ -125,7 +125,7 @@ public class MultiplexerServerSocketController {
      * Indicates whether the controller and underlying server socket have been
      * closed. When true, accept loops and timeout loops exit.
      */
-    private boolean _bClosed;
+    private volatile boolean _bClosed;
 
     /**
      * List of all active MultiplexerSocketController instances. Each entry

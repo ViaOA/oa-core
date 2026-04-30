@@ -142,6 +142,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		dataa = new HubDataActive<>();
 		datam = new HubDataMaster();
 		if (obj != null) {
+			add(obj);
 			this.setPos(0);
 		}
 	}

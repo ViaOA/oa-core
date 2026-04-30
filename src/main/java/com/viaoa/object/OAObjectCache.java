@@ -18,14 +18,10 @@ package com.viaoa.object;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.List;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
-
-import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectKeyService;
 import com.viaoa.runtime.OARuntime;
 
 /**
@@ -235,7 +231,6 @@ import com.viaoa.runtime.OARuntime;
 		        return new OAWeakRef<>(obj, ok, refQueue);
 		    }
 		    bsWasFound[0] = true;
-		    existing.key = ok;
 		    return existing;
 		});
 		

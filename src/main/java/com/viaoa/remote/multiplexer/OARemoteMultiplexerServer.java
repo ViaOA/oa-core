@@ -774,6 +774,9 @@ public class OARemoteMultiplexerServer {
                             ri.exception = ex;
                         }
                     }
+                    catch (Throwable tx) {
+                        ri.exception = new Exception(tx.toString(), tx);
+                    }
                 }
             }
             else ri.exceptionMessage = "Method  not found";
@@ -1305,6 +1308,9 @@ public class OARemoteMultiplexerServer {
                             ri.exception = ex;
                         }
                     }
+                    catch (Throwable tx) {
+                        ri.exception = new Exception(tx.toString(), tx);
+                    }
                     srvcOAThreadLocal.setRemoteRequestInfo(null);
                 }
             }
@@ -1585,14 +1591,11 @@ public class OARemoteMultiplexerServer {
         
 		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+        int x = srvcOAThreadLocal.getOASyncEventCount();
         try {
             srvcOAThreadLocal.setRemoteRequestInfo(ri);
-
             // 20180225 added code for threadlocal.oasynceventcount
-            int x = srvcOAThreadLocal.getOASyncEventCount();
             ri.response = ri.method.invoke(ri.bind.getObject(), ri.args);
-            int x2 = srvcOAThreadLocal.getOASyncEventCount();
-            ri.bHadOASyncEvent = (x != x2);
         }
         catch (InvocationTargetException e) {
             Exception ex = e;
@@ -1609,6 +1612,8 @@ public class OARemoteMultiplexerServer {
         catch (Throwable tx) {
             ri.exception = new Exception(tx.toString(), tx);
         }
+        int x2 = srvcOAThreadLocal.getOASyncEventCount();
+        ri.bHadOASyncEvent = (x != x2);
         srvcOAThreadLocal.setRemoteRequestInfo(null);
         processCtoSReturnValue(ri, session);
         ri.nsEnd = System.nanoTime();
