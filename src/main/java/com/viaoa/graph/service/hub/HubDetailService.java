@@ -42,7 +42,7 @@ public abstract class HubDetailService {
 		final HubDataUnique<?> hdu = faHub.getHubDataUnique(thisHub);
 		
 		if (hdu.getSharedHub() != null) {
-			if (masterHub == null) {
+			if (masterHub != null) {
 				throw new RuntimeException("sharedHub cant have a master hub");
 			}
 		}
@@ -783,6 +783,10 @@ public abstract class HubDetailService {
 	 * @return the master class, or null if unavailable
 	 */
 	public Class<? extends OAObject> getMasterClass(Hub<?> thisHub) {
+		return _getMasterClass(thisHub, 0);
+	}
+	protected Class<? extends OAObject> _getMasterClass(Hub<?> thisHub, final int cnt) {
+		if (cnt > 25) return null;
 		if (faHub.getHubDataMaster(thisHub).getMasterObject() != null) {
 			return faHub.getHubDataMaster(thisHub).getMasterObject().getClass();
 		}
@@ -791,12 +795,12 @@ public abstract class HubDetailService {
 		}
 		Hub<?> h = getHubWithMasterObject(thisHub);
 		if (h != null) {
-			return h.getObjectClass();
+			return _getMasterClass(h, cnt+1);
 		}
 
 		h = getHubWithMasterHub(thisHub);
 		if (h != null) {
-			return h.getObjectClass();
+			return _getMasterClass(h, cnt+1);
 		}
 		return null;
 	}
@@ -1241,7 +1245,7 @@ public abstract class HubDetailService {
 			if (h != null) {
 				boolean b = removeDetailHub(h, hubDetail);
 				if (b && hd.getReferenceCount() <= 0) {
-					if (faHub.getHubDataUnique(h).getVecHubDetail() != null || faHub.getHubDataUnique(h).getVecHubDetail().size() == 0) {
+					if (faHub.getHubDataUnique(h).getVecHubDetail() == null || faHub.getHubDataUnique(h).getVecHubDetail().size() == 0) {
 						removeDetailHub(thisHub, h);
 						return true;
 					}
@@ -1561,7 +1565,7 @@ public abstract class HubDetailService {
 			if (OAString.isEmpty(s)) {
 				break;
 			}
-			pp = OAString.concat(pp, "", ".");
+			pp = OAString.concat(pp, s, ".");
 			h = h.getMasterHub();
 			if (h == null) {
 				break;
