@@ -32,7 +32,6 @@ import java.util.logging.Logger;
 import com.viaoa.comm.multiplexer.OAMultiplexerServer;
 import com.viaoa.comm.multiplexer.io.VirtualServerSocket;
 import com.viaoa.comm.multiplexer.io.VirtualSocket;
-import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
 import com.viaoa.remote.OARemoteThread;
 import com.viaoa.remote.info.BindInfo;
@@ -1481,7 +1480,7 @@ public class OARemoteMultiplexerServer {
         // sent by client, invoke method on object
         Object obj = ri.bind.getObject();
         if (obj == null) {
-            if (ri.exceptionMessage != null) ri.exceptionMessage = "remote object impl is null";
+            if (ri.exceptionMessage == null) ri.exceptionMessage = "remote object impl is null";
             notifyMethodInvoked(ri);
             return;
         }
@@ -1578,7 +1577,7 @@ public class OARemoteMultiplexerServer {
         if (ri == null) return;
 
         if (ri.methodInfo == null) {
-            if (ri.exceptionMessage != null) ri.exceptionMessage = "method not found";
+            if (ri.exceptionMessage == null) ri.exceptionMessage = "method not found";
             return;
         }
         
@@ -1588,9 +1587,6 @@ public class OARemoteMultiplexerServer {
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
         try {
             srvcOAThreadLocal.setRemoteRequestInfo(ri);
-            if (!ri.bind.isBroadcast) {  //qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq callSetDefaultSendSyncMessages() + call reset() qqqqqqqqqqq
-                srvcOAThreadLocal.setSendSyncMessages(true);
-            }
 
             // 20180225 added code for threadlocal.oasynceventcount
             int x = srvcOAThreadLocal.getOASyncEventCount();
@@ -1612,11 +1608,6 @@ public class OARemoteMultiplexerServer {
         }
         catch (Throwable tx) {
             ri.exception = new Exception(tx.toString(), tx);
-        }
-        finally {
-            if (!ri.bind.isBroadcast) {
-                srvcOAThreadLocal.setSendSyncMessages(false);  // turn off
-            }
         }
         srvcOAThreadLocal.setRemoteRequestInfo(null);
         processCtoSReturnValue(ri, session);
@@ -1763,15 +1754,10 @@ public class OARemoteMultiplexerServer {
         OARemoteThread t = new OARemoteThread() {
             @Override
             public void run() {
-                boolean bReset = true;
                 for ( ;!stopCalled; ) {
                     try {
                         if (shouldClose(this)) break;
                         synchronized (Lock) {
-                            if (bReset) {
-                                reset();
-                                bReset = false;
-                            }
                             if (requestInfo == null) {
                                 if (alRemoteClientThread.size() > 15) {
                                     Lock.wait(1000);
@@ -1780,7 +1766,6 @@ public class OARemoteMultiplexerServer {
                                 if (requestInfo == null) continue;
                             }
                         }
-                        bReset = true;
                         
                         Session session;
                         if (requestInfo.connectionId != 0) {
@@ -1789,23 +1774,26 @@ public class OARemoteMultiplexerServer {
                         else session = null;
                         // 6:CtoS_QueuedRequest invoke
                         // 6:CtoS_QueuedRequestNoResponse
-                        _invokeByRemoteThread(this, requestInfo, session);
 
-                        this.msLastUsed = System.currentTimeMillis();
-                        synchronized (Lock) {
-                            if (requestInfo != null) {
-                                if (!requestInfo.processedByServerQueue) {
-                                    notifyProcessedByServer(requestInfo);
-                                }
-                                this.requestInfo = null;
-                            }
-                            Lock.notifyAll();
-                        }
+                        setDefaultSendSyncMessages(requestInfo.bind.isBroadcast == false);
+                        reset();
+                        
+                        _invokeByRemoteThread(this, requestInfo, session);
                     }
                     catch (Exception e) {
                         String s = requestInfo == null ? "null" : requestInfo.toLogString();
                         LOG.log(Level.WARNING, "error in remoteThread loop, will continue. requestInfo="+s, e);
-                        requestInfo = null;
+                    }
+
+                    this.msLastUsed = System.currentTimeMillis();
+                    synchronized (Lock) {
+                        if (requestInfo != null) {
+                            if (!requestInfo.processedByServerQueue) {
+                                notifyProcessedByServer(requestInfo);
+                            }
+                            this.requestInfo = null;
+                        }
+                        Lock.notifyAll();
                     }
                 }
             }

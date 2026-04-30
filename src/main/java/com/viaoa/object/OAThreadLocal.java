@@ -133,6 +133,12 @@ public class OAThreadLocal {
 	 */
 	protected boolean sendSyncMessages = true;
 
+	/** 
+	 * Used to track OAThreadLocal.startServerOnly and endServerOnly processing.
+	 */
+	protected int cntStartServerOnly;
+	protected boolean sendSyncMessagesHold;
+	
 	/**
 	 * Flag to know that an object key property is being assigned
 	 */
@@ -240,6 +246,21 @@ public class OAThreadLocal {
 		this.sendSyncMessages = b;
 	}
 
+	public boolean getSendSyncMessagesHold() {
+		return sendSyncMessagesHold;
+	}
+
+	public void setSendSyncMessagesHold(boolean b) {
+		this.sendSyncMessagesHold = b;
+	}
+	
+	public int incStartServerOnly() {
+		return ++cntStartServerOnly;
+	}
+	public int decStartServerOnly() {
+		return --cntStartServerOnly;
+	}
+	
 	public Object[] getDeleting() {
 		return deleting;
 	}

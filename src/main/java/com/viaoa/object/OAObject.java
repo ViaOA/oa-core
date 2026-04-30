@@ -3338,7 +3338,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *         sending has been enabled; {@code false} otherwise
 	 * @see #endServerOnly()
 	 */
-	public boolean beginServerOnly() {
+	public boolean startServerOnly() {
 		if (isLoading()) {
 			return false;
 		}
@@ -3347,25 +3347,9 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 			return false;
 		}
 
-		
 		OAThreadService srvcThread = OARuntime.thread();
-		if (srvcThread.getRemoteThreadService().isRemoteThread()) {
-			srvcThread.getThreadLocalService().setSendSyncMessages(true);
-		}
+		srvcThread.getThreadLocalService().startServerOnly();
 		return true;
-	}
-
-	/**
-	 * Starts a server-only execution block by delegating directly to
-	 * {@link #beginServerOnly()}.
-	 * <p>
-	 * This method performs no additional checks or logic of its own.
-	 *
-	 * @return {@code true} if {@code beginServerOnly()} returns {@code true};
-	 *         otherwise {@code false}
-	 */
-	public boolean startServerOnly() {
-		return beginServerOnly();
 	}
 
 	/**
@@ -3392,9 +3376,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		}
 
 		OAThreadService srvcThread = OARuntime.thread();
-		if (srvcThread.getRemoteThreadService().isRemoteThread()) {
-			srvcThread.getThreadLocalService().setSendSyncMessages(false);
-		}
+		srvcThread.getThreadLocalService().endServerOnly();
 	}
 
 	/**

@@ -521,8 +521,6 @@ public class OAThreadLocalService {
 		}
 	}
 	
-	
-	
 	public boolean getSendSyncMessages() {
 		return getSendSyncMessages(getThreadLocal(false));
 	}
@@ -541,8 +539,24 @@ public class OAThreadLocalService {
 		ti.setSendSyncMessages(b);
 	}
 
+	/**
+	 * @see OAObject#startServerOnly()
+	 */
+	public void startServerOnly() {
+		OAThreadLocal ti  = getThreadLocal(true);
+		if (ti.incStartServerOnly() == 1) ti.setSendSyncMessagesHold(ti.getSendSyncMessages());
+		ti.setSendSyncMessages(true);
+	}
 	
-	
+	/**
+	 * @see OAObject#endServerOnly()
+	 */
+	public void endServerOnly() {
+		OAThreadLocal ti  = getThreadLocal(true);
+		if (ti.decStartServerOnly() == 0) {
+			ti.setSendSyncMessages(ti.getSendSyncMessagesHold());
+		}
+	}
 	
 	/**
 	 * Returns whether the current thread is in a deleting state.

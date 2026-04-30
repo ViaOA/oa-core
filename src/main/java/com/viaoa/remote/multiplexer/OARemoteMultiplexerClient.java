@@ -270,7 +270,7 @@ public class OARemoteMultiplexerClient {
 		Exception ex = null;
 		Class c = null;
 		if (!ois.readBoolean()) {
-			ex = (Exception) ois.readObject();
+			ex = new Exception( (String) ois.readObject());
 		} else {
 			c = (Class) ois.readObject();
 		}
@@ -321,8 +321,8 @@ public class OARemoteMultiplexerClient {
 
 		RemoteObjectInputStream ois = new RemoteObjectInputStream(socket, hmClassDescInput);
 		if (!ois.readBoolean()) {
-		    ois.close();
 			Exception ex = new Exception((String) ois.readObject());
+		    ois.close();
 			throw ex;
 		}
 		Object[] objs = (Object[]) ois.readObject();
@@ -1001,12 +1001,7 @@ public class OARemoteMultiplexerClient {
 	 * @param bSendMessgage whether the thread should send outgoing messages
 	 * @return a remote-thread ready to process the request
 	 */
-	private OARemoteThread getRemoteThread(RequestInfo ri, boolean bSendSyncMessages) {
-		OARemoteThread rt = _getRemoteThread(ri);
-		rt.setDefaultSendSyncMessages(bSendSyncMessages);
-		return rt;
-	}
-	private OARemoteThread _getRemoteThread(RequestInfo ri) {
+	private OARemoteThread getRemoteThread(RequestInfo ri, boolean bSendMessgage) {
 		OARemoteThread remoteThread;
 		synchronized (alRemoteThread) {
 			for (int i = 0;; i++) {
@@ -1017,6 +1012,7 @@ public class OARemoteMultiplexerClient {
 					synchronized (rt.Lock) {
 						if (rt.requestInfo == null) {
 							rt.requestInfo = ri;
+							rt.setDefaultSendSyncMessages(bSendMessgage);
 							return rt;
 						}
 					}
@@ -1067,7 +1063,8 @@ public class OARemoteMultiplexerClient {
 			}
 		}
 		remoteThread = createRemoteThread();
-
+		remoteThread.setDefaultSendSyncMessages(bSendMessgage);
+		
 		synchronized (alRemoteThread) {
 			remoteThread.requestInfo = ri;
 			alRemoteThread.add(remoteThread);
@@ -1100,17 +1097,12 @@ public class OARemoteMultiplexerClient {
 				/* 20151103 on hold for OAsyncCombinedClient work
 				srvcOAThreadLocal.setRemoteMultiplexerClient(RemoteMultiplexerClient.this);
 				*/
-				boolean bReset = true;
 				for (; !stopCalled;) {
+					if (shouldClose(this)) {
+						break;
+					}
 					try {
-						if (shouldClose(this)) {
-							break;
-						}
 						synchronized (Lock) {
-							if (bReset) {
-								reset();
-								bReset = false;
-							}
 							if (requestInfo == null) {
 								Lock.wait(2000);
 								if (requestInfo == null) {
@@ -1118,23 +1110,23 @@ public class OARemoteMultiplexerClient {
 								}
 							}
 						}
-						bReset = true;
-
+	                    reset();
 						processMessageForStoC(requestInfo);
-						this.setAllowRunnable(false); // turn back off, it could have been set to true in setupSyncRequestQueueThread
-
-						this.msLastUsed = System.currentTimeMillis();
-
-						synchronized (Lock) {
-							if (requestInfo != null) {
-								requestInfo.methodInvoked = true;
-								this.requestInfo = null;
-							}
-							Lock.notifyAll();
-						}
-					} catch (Exception e) {
+					} 
+					catch (Exception e) {
 						LOG.log(Level.WARNING, "error in OARemoteThread", e);
 					}
+
+					this.setAllowRunnable(false); // turn back off, it could have been set to true in setupSyncRequestQueueThread
+					this.msLastUsed = System.currentTimeMillis();
+					synchronized (Lock) {
+						if (requestInfo != null) {
+							requestInfo.methodInvoked = true;
+							this.requestInfo = null;
+						}
+						Lock.notifyAll();
+					}
+
 				}
 			}
 
@@ -1312,7 +1304,7 @@ public class OARemoteMultiplexerClient {
 
 	/**
 	 * Initializes and starts the worker thread responsible for processing
-	 * asynchronous server-to-client requests. The thread continuously polls
+	 * asynchronous server-to-client requests. The thread gets messages from
 	 * the request queue and assigns each request to a suitable
 	 * {@link OARemoteThread} for execution.
 	 */
@@ -1373,14 +1365,16 @@ public class OARemoteMultiplexerClient {
 								if (ri.connectionId == multiplexerClient.getConnectionId()) {
 									// 20160122 this client called a oasync method. This is the return ack.
 									RequestInfo rix = hmAsyncRequestInfo.remove(ri.messageId);
-									synchronized (rix) {
-										rix.response = OAReflect.getEmptyPrimitive(rix.method.getReturnType());
-										rix.methodInvoked = true;
-										rix.notifyAll(); // wake up waiting thread that made this request.  See onInvokeForCtoS(..)
-
-										// 20160121 wait for OARemoteThreadDelegate.startNextThread to be called, which will
-										//      then notify rix that sync msg is done, and then the next sync msg can be processed
-										rix.wait(5);
+									if (rix != null) {
+										synchronized (rix) {
+											rix.response = OAReflect.getEmptyPrimitive(rix.method.getReturnType());
+											rix.methodInvoked = true;
+											rix.notifyAll(); // wake up waiting thread that made this request.  See onInvokeForCtoS(..)
+	
+											// 20160121 wait for OARemoteThreadDelegate.startNextThread to be called, which will
+											//      then notify rix that sync msg is done, and then the next sync msg can be processed
+											rix.wait(5);
+										}
 									}
 									continue;
 								}
@@ -1612,7 +1606,7 @@ public class OARemoteMultiplexerClient {
 							}
 						}
 					} catch (Exception e) {
-						LOG.log(Level.WARNING, "error processing OARemoteThread runnable, requestInfo=" + requestInfo.toLogString(), e);
+						LOG.log(Level.WARNING, "error processing OARemoteThread runnable, requestInfo=" + (requestInfo==null?"":requestInfo.toLogString()), e);
 					}
 				}
 				aiSyncRunnableQueueThread.decrementAndGet();
@@ -1995,11 +1989,6 @@ public class OARemoteMultiplexerClient {
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		try {
 			srvcOAThreadLocal.setRemoteRequestInfo(ri);
-
-			// 20141217
-			if (!ri.bind.isBroadcast) {
-                srvcOAThreadLocal.setSendSyncMessages(true);
-			}
 			ri.response = ri.method.invoke(ri.bind.getObject(), ri.args);
 		} catch (InvocationTargetException e) {
 			Exception ex = e;
@@ -2011,11 +2000,6 @@ public class OARemoteMultiplexerClient {
 				}
 				ex = (Exception) t;
 				ri.exception = ex;
-			}
-		} finally {
-			// 20141217
-			if (!ri.bind.isBroadcast) {
-                srvcOAThreadLocal.setSendSyncMessages(false);
 			}
 		}
 		srvcOAThreadLocal.setRemoteRequestInfo(null);
