@@ -22,6 +22,8 @@ import com.messagedesigner.model.oa.AppUserLogin;
 import com.messagedesigner.model.search.AppUserLoginSearchModel;
 import com.viaoa.annotation.*;
 import com.viaoa.hub.*;
+import com.viaoa.hub.copy.HubCopy;
+import com.viaoa.metadata.OAObjectModel;
 import com.viaoa.util.*;
 import com.viaoa.filter.*;
 import com.viaoa.datasource.*;

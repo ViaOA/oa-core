@@ -11,9 +11,9 @@ import com.auto.dev.reportercorp.model.oa.StoreImport;
 import com.auto.dev.reportercorp.model.oa.StoreImportTemplate;
 import com.auto.dev.reportercorp.model.search.ReportTemplateSearchModel;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubCopy;
-import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObjectModel;
+import com.viaoa.hub.copy.HubCopy;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectModel;
 
 public class StoreImportTemplateModel extends OAObjectModel {
 	private static Logger LOG = Logger.getLogger(StoreImportTemplateModel.class.getName());

@@ -10,6 +10,7 @@ import com.viaoa.object.*;
 import com.viaoa.util.*;
 import com.viaoa.datasource.*;
 import com.viaoa.datasource.jdbc.*;
+import com.viaoa.datetime.OADate;
 
 
 public class JobLoader implements Runnable {

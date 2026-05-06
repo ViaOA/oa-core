@@ -6,8 +6,8 @@ import static org.junit.Assert.*;
 import java.util.Calendar;
 
 import com.viaoa.OAUnitTest;
-import com.viaoa.util.OAConverter;
-import com.viaoa.util.OADateTime;
+import com.viaoa.converter.OAConverter;
+import com.viaoa.datetime.OADateTime;
 
 import test.xice.tsac3.model.oa.*;
 

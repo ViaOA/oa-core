@@ -1,6 +1,6 @@
 package test.xice.tsam.delegate.oa;
 
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
 
 import test.xice.tsam.delegate.ModelDelegate;
 import test.xice.tsam.model.oa.*;

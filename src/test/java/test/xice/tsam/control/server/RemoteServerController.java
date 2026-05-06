@@ -6,9 +6,9 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.logging.Logger;
 
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.sync.OASyncServer;
 import com.viaoa.sync.model.ClientInfo;
-import com.viaoa.util.OADateTime;
 
 public abstract class RemoteServerController {
 

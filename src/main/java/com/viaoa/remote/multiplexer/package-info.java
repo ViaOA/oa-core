@@ -49,7 +49,7 @@
  *   <li>Remote lookups and method calls are serialized using
  *       {@link com.viaoa.remote.multiplexer.io.RemoteObjectInputStream} and
  *       {@link com.viaoa.remote.multiplexer.io.RemoteObjectOutputStream}.</li>
- *   <li>Server dispatches remote invocations to worker {@link com.viaoa.remote.OARemoteThread}s.</li>
+ *   <li>Server dispatches remote invocations to worker {@link com.viaoa.runtime.thread.OARemoteThread}s.</li>
  *   <li>Return values (including remote objects) are serialized back to the caller or routed using
  *       async queues when enabled.</li>
  * </ol>

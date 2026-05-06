@@ -5,6 +5,7 @@ import java.util.logging.*;
 import java.sql.*;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
+import com.viaoa.lang.OAString;
 import com.viaoa.util.*;
 
 import test.xice.tsam.model.delegate.OAObjectInfoDelegate;
@@ -17,7 +18,7 @@ import test.xice.tsam.model.oa.MRADClientMessage;
 import test.xice.tsam.model.oa.MRADServer;
 import test.xice.tsam.model.oa.Server;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADateTime;
+import com.viaoa.datetime.OADateTime;
 
 import test.xice.tsam.delegate.*;
 import test.xice.tsam.delegate.oa.*;

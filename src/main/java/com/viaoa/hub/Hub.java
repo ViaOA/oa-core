@@ -30,21 +30,22 @@ import java.util.NoSuchElementException;
 import java.util.Vector;
 import java.util.stream.Stream;
 
-import com.viaoa.datasource.OASelect;
+import com.viaoa.callback.OAObjectCallback;
+import com.viaoa.cascade.OACascade;
+import com.viaoa.filter.OAFilter;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.object.OACascade;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.hub.filter.HubFilter;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCallback;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OATrigger;
-import com.viaoa.object.OATriggerListener;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAString;
+import com.viaoa.select.OASelect;
+import com.viaoa.trigger.OATrigger;
+import com.viaoa.trigger.OATriggerListener;
 
 /**
  * Core observable collection for OAObject graphs.
@@ -60,7 +61,7 @@ import com.viaoa.util.OAString;
  *   <li>Track and broadcast the current active object (AO) for UI and logic binding.</li>
  *   <li>Coordinate master-detail and link relationships among multiple Hubs.</li>
  *   <li>Support shared Hubs that reference a single data vector but have independent AOs.</li>
- *   <li>Integrate with OA’s data source layer via {@link com.viaoa.datasource.OASelect}.</li>
+ *   <li>Integrate with OA’s data source layer via {@link com.viaoa.select.OASelect}.</li>
  *   <li>Propagate property, add/remove, and selection events through {@code HubEventDelegate}.</li>
  *   <li>Provide cloning, serialization, and change-tracking semantics for persistence and sync.</li>
  * </ul>

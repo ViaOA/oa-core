@@ -9,12 +9,12 @@ import org.junit.Test;
 import com.viaoa.OAUnitTest;
 import com.viaoa.comm.multiplexer.OAMultiplexerClient;
 import com.viaoa.comm.multiplexer.OAMultiplexerServer;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.object.OAObject;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.remote.multiplexer.OARemoteMultiplexerClient;
 import com.viaoa.remote.multiplexer.OARemoteMultiplexerServer;
 import com.viaoa.remote.multiplexer.remote.*;  // test package only
-import com.viaoa.util.OADateTime;
 
 public class RemoteMultiplexerTest4 extends OAUnitTest {
     private OAMultiplexerServer multiplexerServer;

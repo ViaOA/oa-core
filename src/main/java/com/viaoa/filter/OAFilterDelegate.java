@@ -17,11 +17,11 @@ package com.viaoa.filter;
 
 import java.lang.reflect.Method;
 
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAFinder;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAString;
+import com.viaoa.path.OAPath;
 
 /**
  * Delegate class containing helper methods used internally by OA filter
@@ -39,7 +39,7 @@ import com.viaoa.util.OAString;
 public class OAFilterDelegate {
 
 	/**
-	 * Container object returned by {@link OAFilterDelegate#createFinder(Class, OAPropertyPath)}.
+	 * Container object returned by {@link OAFilterDelegate#createFinder(Class, OAPath)}.
 	 * Holds a generated {@link OAFinder} and the remaining portion of the
 	 * property path that should be applied by the filter after the finder
 	 * performs its lookup.
@@ -90,7 +90,7 @@ public class OAFilterDelegate {
      * @return a {@link FinderInfo} containing the finder and remaining path,
      *         or {@code null} if no Hub traversal is needed
      */
-    public static FinderInfo createFinder(Class clazz, OAPropertyPath pp) {
+    public static FinderInfo createFinder(Class clazz, OAPath pp) {
         if (clazz == null || pp == null) return null;
         
         String s = pp.getPropertyPath();

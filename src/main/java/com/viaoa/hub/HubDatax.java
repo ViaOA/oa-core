@@ -19,9 +19,12 @@ import java.lang.reflect.Method;
 import java.util.Hashtable;
 import java.util.Vector;
 
-import com.viaoa.datasource.OASelect;
+import com.viaoa.hub.auto.HubAutoMatch;
+import com.viaoa.hub.auto.HubAutoSequence;
+import com.viaoa.hub.sort.HubSortListener;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
+import com.viaoa.select.OASelect;
 
 /**
  * Optional extended state for a {@link HubData} instance.

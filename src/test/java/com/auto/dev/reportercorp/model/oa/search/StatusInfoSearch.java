@@ -4,13 +4,13 @@ import java.util.logging.Logger;
 
 import com.auto.dev.reportercorp.model.oa.StatusInfo;
 import com.viaoa.annotation.OAClass;
-import com.viaoa.datasource.OASelect;
 import com.viaoa.filter.OAAndFilter;
+import com.viaoa.filter.OAFilter;
 import com.viaoa.filter.OAQueryFilter;
+import com.viaoa.lang.OAArray;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OAArray;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAString;
+import com.viaoa.select.OASelect;
 
 @OAClass(useDataSource = false, localOnly = true)
 public class StatusInfoSearch extends OAObject {

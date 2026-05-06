@@ -19,6 +19,53 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+/*qqqqqqqqqqqqq
+CODEX
+
+  - file/class/method: OATextTokenizer.maskPassword
+  - concrete failure scenario: Default password masking is case-sensitive despite default helpers intending case-
+    insensitive matching.
+  - example input: maskPassword("Password", "secret")
+  - expected result: *****
+  - actual or likely result: secret
+  - why it matters to OA: Logs/debug output can leak secrets when field names use common capitalization.
+  - fix direction: Lowercase name and word when !bCaseSensitive, not when bCaseSensitive.
+
+
+ - file/class/method: OATextTokenizer.csv / OATextTokenizer.parseLine
+  - concrete failure scenario: CSV values written with doubled quotes do not parse back to the original value.
+  - example input: value a"b writes as "a""b"; parsing "a""b"
+  - expected result: a"b
+  - actual or likely result: a""b
+  - why it matters to OA: CSV export/import paths can corrupt quoted text.
+  - fix direction: In quoted fields, treat doubled quotes as one literal quote.
+
+
+
+ 7. Medium - OATextTokenizer.countMatches
+     Scenario: returns delimited field count instead of match count.
+     Example: OAString.countMatches("a,b,c", ",") returns 3; OAString.count("a,b,c", ",") returns 2.
+     Impact: callers using countMatches for separator/match counts get off-by-one results.
+  8. Medium - OATextTokenizer.tokenize / OATextEscape.getHtmlAttributeMap
+     Scenario: tab/newline whitespace is not treated as an attribute delimiter.
+     Example: OAString.getHtmlAttributeMap("<input\ttype=\"text\"\tdisabled>") returns corrupted keys like "text" and
+     ="text".
+     Impact: HTML/UI attribute parsing breaks for valid whitespace-separated tags.
+  9. Medium - OATextTokenizer.getCssMap
+     Scenario: CSS declarations with normal spaces after semicolons produce bogus entries and quoted values remain
+     quoted.
+     Example: OAString.getCssMap("color: red; font-family: 'Times New Roman';") returns {=, color=red, font-
+     family='Times New Roman'}.
+     Impact: UI style parsing can create empty keys and incorrect CSS values.
+  10. Medium - OATextTokenizer.csv
+     Scenario: values that begin or end with quotes are not wrapped after internal quotes are doubled.
+     Example: OAString.csv(null, "\"abc") returns ""abc, not a valid quoted CSV field.
+     Impact: CSV export can emit malformed rows for quoted text.
+
+
+
+*/
+
 /**
  * Tokenization and field-extraction utilities for delimited text.
  * <p>

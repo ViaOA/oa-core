@@ -6,8 +6,8 @@ import com.viaoa.annotation.OAClass;
 import com.viaoa.annotation.OAColumn;
 import com.viaoa.annotation.OAId;
 import com.viaoa.annotation.OAProperty;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OADateTime;
 
 @OAClass(lowerName = "imageStore", pluralName = "ImageStores", shortName = "ims", displayName = "Image Store", useDataSource = false, displayProperty = "id", noPojo = true)
 public class ImageStore extends OAObject {

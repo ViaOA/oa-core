@@ -20,18 +20,51 @@ import java.util.List;
 import java.util.Stack;
 import java.util.Vector;
 
-import com.viaoa.datasource.query.OAQueryToken;
-import com.viaoa.datasource.query.OAQueryTokenType;
-import com.viaoa.datasource.query.OAQueryTokenizer;
+import com.viaoa.converter.OAConv;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
-import com.viaoa.object.OAObjectInfo;
+import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAPropertyInfo;
+import com.viaoa.path.OAPath;
+import com.viaoa.query.OAQueryToken;
+import com.viaoa.query.OAQueryTokenType;
+import com.viaoa.query.OAQueryTokenizer;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.util.OAConv;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
+
+/*qqqqqqqqqqqqqqqqq
+CODEX
+	version 4.0
+	
+  - Severity: high
+  - File/method: src/main/java/com/viaoa/filter/OAQueryFilter.java:244, src/main/java/com/viaoa/filter/
+    OAQueryFilter.java:279
+  - Finding: In-memory OAQueryFilter gives OR higher precedence than AND. a OR b AND c is parsed as (a OR b) AND c,
+    while SQL evaluates a OR (b AND c).
+  - Why it matters: Same OA query can return different results from object-cache filtering vs DB selection.
+  - PoC impact: Yes.
+  - Direction: Make parser precedence match SQL/OA docs: AND binds tighter than OR.
+	
+ 
+  - Severity: medium
+  - File/method: src/main/java/com/viaoa/filter/OAQueryFilter.java:397
+  - Finding: Missing ? args in OAQueryFilter silently leave "?" as a literal value. JDBC path throws for wrong
+    parameter counts later, but in-memory filtering does not.
+  - Why it matters: Same query can fail in DB mode but silently mis-filter in object-cache mode.
+  - PoC impact: Yes for search/filter code using params.
+  - Direction: Require exact parameter count and throw on missing or extra args.
+
+  - Severity: medium
+  - File/method: src/main/java/com/viaoa/datasource/jdbc/query/QueryConverter.java:1854, src/main/java/com/viaoa/
+    filter/OAQueryFilter.java:397
+  - Finding: JDBC conversion recognizes TRUE/FALSE, but OAQueryFilter treats them as string literals.
+  - Why it matters: Boolean queries can differ between memory and DB.
+  - PoC impact: Possible.
+  - Direction: Classify boolean tokens in tokenizer or normalize them in both parsers.
+ 
+ 
+ */
+
 
 /**
  * Compiles an object-query expression into an {@link OAFilter} tree that can be
@@ -47,7 +80,7 @@ import com.viaoa.util.OAPropertyPath;
  *
  * <h3>Supported expression features</h3>
  * <ul>
- *   <li>Property names and nested {@link OAPropertyPath} expressions</li>
+ *   <li>Property names and nested {@link OAPath} expressions</li>
  *   <li>Comparison operators: 
  *       =, !=, &lt;, &lt;=, &gt;, &gt;=</li>
  *   <li>LIKE and NOTLIKE (wildcard matching)</li>
@@ -98,7 +131,7 @@ public class OAQueryFilter<TYPE> implements OAFilter<TYPE> {
 
     /**
      * The root class type for which the query expression is evaluated.
-     * Used when creating {@link OAPropertyPath} instances.
+     * Used when creating {@link OAPath} instances.
      */
 	private Class<TYPE> clazz;
 
@@ -375,7 +408,7 @@ public class OAQueryFilter<TYPE> implements OAFilter<TYPE> {
 				throw new Exception("token expected for =");
 			}
 
-			OAPropertyPath pp = new OAPropertyPath(clazz, token.value);
+			OAPath pp = new OAPath(clazz, token.value);
 
 			OAEqualFilter f = new OAEqualFilter(pp, getValueToUse(nextToken));
 			f.setIgnoreCase(true); // might want to make false, and then create a new "LIKE" operator
@@ -426,7 +459,7 @@ public class OAQueryFilter<TYPE> implements OAFilter<TYPE> {
 			if (nextToken == null) {
 				throw new Exception("token expected for !=");
 			}
-			OAPropertyPath pp = new OAPropertyPath(clazz, token.value);
+			OAPath pp = new OAPath(clazz, token.value);
 			OAFilter f = new OANotEqualFilter(pp, getValueToUse(nextToken), true);
 			stack.push(f);
 			nextToken = nextToken();
@@ -450,7 +483,7 @@ public class OAQueryFilter<TYPE> implements OAFilter<TYPE> {
 			if (nextToken == null) {
 				throw new Exception("token expected for !=");
 			}
-			OAPropertyPath pp = new OAPropertyPath(clazz, token.value);
+			OAPath pp = new OAPath(clazz, token.value);
 			OAFilter f = new OAGreaterFilter(pp, getValueToUse(nextToken));
 			stack.push(f);
 			nextToken = nextToken();
@@ -474,7 +507,7 @@ public class OAQueryFilter<TYPE> implements OAFilter<TYPE> {
 			if (nextToken == null) {
 				throw new Exception("token expected for !=");
 			}
-			OAPropertyPath pp = new OAPropertyPath(clazz, token.value);
+			OAPath pp = new OAPath(clazz, token.value);
 			OAFilter f = new OAGreaterOrEqualFilter(pp, getValueToUse(nextToken));
 			stack.push(f);
 			nextToken = nextToken();
@@ -498,7 +531,7 @@ public class OAQueryFilter<TYPE> implements OAFilter<TYPE> {
 			if (nextToken == null) {
 				throw new Exception("token expected for !=");
 			}
-			OAPropertyPath pp = new OAPropertyPath(clazz, token.value);
+			OAPath pp = new OAPath(clazz, token.value);
 			OAFilter f = new OALessFilter(pp, getValueToUse(nextToken));
 			stack.push(f);
 			nextToken = nextToken();
@@ -524,7 +557,7 @@ public class OAQueryFilter<TYPE> implements OAFilter<TYPE> {
 				throw new Exception("token expected for !=");
 			}
 
-			OAPropertyPath pp = new OAPropertyPath(clazz, token.value);
+			OAPath pp = new OAPath(clazz, token.value);
 			OAFilter f = new OALessOrEqualFilter(pp, getValueToUse(nextToken));
 			stack.push(f);
 			nextToken = nextToken();
@@ -549,7 +582,7 @@ public class OAQueryFilter<TYPE> implements OAFilter<TYPE> {
 				throw new Exception("token expected for !=");
 			}
 
-			OAPropertyPath pp = new OAPropertyPath(clazz, token.value);
+			OAPath pp = new OAPath(clazz, token.value);
 			OAFilter f = new OALikeFilter(pp, getValueToUse(nextToken));
 			stack.push(f);
 			nextToken = nextToken();
@@ -574,7 +607,7 @@ public class OAQueryFilter<TYPE> implements OAFilter<TYPE> {
 			if (nextToken == null) {
 				throw new Exception("token expected for NotLike");
 			}
-			OAPropertyPath pp = new OAPropertyPath(clazz, token.value);
+			OAPath pp = new OAPath(clazz, token.value);
 			OAFilter f = new OANotLikeFilter(pp, getValueToUse(nextToken));
 			stack.push(f);
 			nextToken = nextToken();
@@ -653,7 +686,7 @@ public class OAQueryFilter<TYPE> implements OAFilter<TYPE> {
 	 * @throws Exception if argument or value syntax is invalid
 	 */
 	private OAQueryToken parseIn(OAQueryToken token) throws Exception {
-		OAPropertyPath pp = new OAPropertyPath(clazz, token.value);
+		OAPath pp = new OAPath(clazz, token.value);
 		OAQueryToken nextToken = null;
 
 		OAFilter f = null;
@@ -758,7 +791,7 @@ public class OAQueryFilter<TYPE> implements OAFilter<TYPE> {
 					int pos = 0;
 					for (OAQueryToken qt : alInTokens) {
 						// OAPropertyInfo pi = oi.getPropertyInfo(qt.value);
-						OAPropertyPath pp = new OAPropertyPath(qt.value);
+						OAPath pp = new OAPath(qt.value);
 						OAFilter fx = new OAEqualFilter(pp, ok.getObjectIds()[pos++]);
 						alFilter.add(fx);
 					}
@@ -778,7 +811,7 @@ public class OAQueryFilter<TYPE> implements OAFilter<TYPE> {
 
 			OAQueryToken tokx = alInTokens.get(commaCount);
 
-			OAPropertyPath pp = new OAPropertyPath(tokx.value);
+			OAPath pp = new OAPath(tokx.value);
 
 			Object objx = getValueToUse(nextToken);
 

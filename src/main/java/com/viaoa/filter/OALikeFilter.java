@@ -18,19 +18,18 @@ package com.viaoa.filter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.compare.OACompare;
 import com.viaoa.filter.OAFilterDelegate.FinderInfo;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OACompare;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
+import com.viaoa.path.OAPath;
 
 /**
  * Filter that evaluates whether the string representation of a property
  * value matches a SQL-style LIKE pattern (using
- * {@link com.viaoa.util.OACompare#isLike(Object, Object)}).  The value may
- * be retrieved directly or through an {@link OAPropertyPath}.
+ * {@link com.viaoa.compare.OACompare#isLike(Object, Object)}).  The value may
+ * be retrieved directly or through an {@link OAPath}.
  *
  * <p>
  * If the property path navigates through a many-relationship, an
@@ -51,7 +50,7 @@ public class OALikeFilter implements OAFilter {
      * Optional property path used to extract a nested value from the
      * evaluated object before applying the LIKE comparison.
      */
-    private OAPropertyPath pp;
+    private OAPath pp;
     
     /**
      * The SQL-style LIKE pattern used for comparison. Supports wildcard
@@ -83,7 +82,7 @@ public class OALikeFilter implements OAFilter {
      * @param pp the property path used to extract the value
      * @param value the LIKE pattern used for comparison
      */
-    public OALikeFilter(OAPropertyPath pp, Object value) {
+    public OALikeFilter(OAPath pp, Object value) {
         this. pp = pp;
         this.value = value;
     }
@@ -96,7 +95,7 @@ public class OALikeFilter implements OAFilter {
      * @param value the LIKE pattern used for comparison
      */
     public OALikeFilter(String pp, Object value) {
-        this(pp==null?null:new OAPropertyPath(pp), value);
+        this(pp==null?null:new OAPath(pp), value);
     }
     
     /**

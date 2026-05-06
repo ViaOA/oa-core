@@ -17,9 +17,9 @@ import com.viaoa.annotation.OAFkey;
 import com.viaoa.annotation.OAId;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
-import com.viaoa.object.OAFinder;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.find.OAFinder;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OADateTime;
 
 @OAClass(lowerName = "testerStore", pluralName = "TesterStores", shortName = "tss", displayName = "Tester Store", useDataSource = false, isProcessed = true, displayProperty = "id")
 public class TesterStore extends OAObject {

@@ -1,6 +1,10 @@
 package test.vetjobs;
 
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OATime;
 import com.viaoa.hub.*;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.util.*;
 import com.viaoa.object.*;
 

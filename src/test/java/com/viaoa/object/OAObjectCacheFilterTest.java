@@ -7,9 +7,10 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.cache.OAObjectCacheFilter;
+import com.viaoa.filter.OAFilter;
 import com.viaoa.filter.OAFilterDelegate;
 import com.viaoa.hub.Hub;
-import com.viaoa.util.OAFilter;
 
 import test.hifive.model.oa.Employee;
 import test.hifive.model.oa.Location;

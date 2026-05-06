@@ -18,12 +18,12 @@ import com.viaoa.annotation.OAObjCallback;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATable;
+import com.viaoa.callback.OAObjectCallback;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.hub.Hub;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCallback;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAString;
 import com.remodel.model.delegate.OAObjectInfoDelegate;
 
 @OAClass(lowerName = "repository", pluralName = "Repositories", shortName = "rps", displayName = "Repository", displayProperty = "fileName", rootTreePropertyPaths = {

@@ -19,8 +19,8 @@ package com.viaoa.sync.remote;
 import java.util.Comparator;
 
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectSerializer;
 import com.viaoa.remote.multiplexer.annotation.*;
+import com.viaoa.serialize.OAObjectSerializer;
 
 /**
  * Remote interface defining broadcast-style synchronization messages exchanged

@@ -20,8 +20,8 @@ import java.util.Date;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.viaoa.comm.multiplexer.io.VirtualSocket;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.util.OADateTime;
 
 /**
  * Tracks all runtime details for a single synchronous remote request within

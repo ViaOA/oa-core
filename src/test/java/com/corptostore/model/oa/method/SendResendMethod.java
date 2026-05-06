@@ -10,11 +10,11 @@ import com.corptostore.model.oa.Batch;
 import com.corptostore.model.oa.Store;
 import com.corptostore.model.oa.method.SendResendMethod;
 import com.viaoa.annotation.*;
+import com.viaoa.datetime.OADate;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.model.oa.VInteger;
 import com.viaoa.util.*;
-import com.viaoa.util.OADate;
 
 @OAClass(useDataSource=false, localOnly=true)
 public class SendResendMethod extends OAObject {

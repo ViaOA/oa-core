@@ -15,19 +15,10 @@
  */
 package com.viaoa.image;
 
-import java.lang.reflect.*;
 import java.awt.*;
 import java.awt.image.*;
-import java.awt.event.*;
-import java.util.*;
 
 import javax.swing.*;
-import javax.swing.table.*;
-import javax.swing.event.*;
-import javax.swing.border.*;
-
-import com.viaoa.hub.*;
-import com.viaoa.util.*;
 
 /**
     creates an image from multiple images

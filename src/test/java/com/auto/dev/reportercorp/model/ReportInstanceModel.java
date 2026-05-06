@@ -16,11 +16,11 @@ import com.auto.dev.reportercorp.model.search.PypeReportMessageSearchModel;
 import com.auto.dev.reportercorp.model.search.ReportInstanceSearchModel;
 import com.auto.dev.reportercorp.model.search.ReportVersionSearchModel;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubCopy;
-import com.viaoa.hub.HubGroupBy;
 import com.viaoa.hub.HubListener;
+import com.viaoa.hub.copy.HubCopy;
+import com.viaoa.hub.view.HubGroupBy;
+import com.viaoa.metadata.OAObjectModel;
 import com.viaoa.model.oa.VInteger;
-import com.viaoa.object.OAObjectModel;
 
 public class ReportInstanceModel extends OAObjectModel {
 	private static Logger LOG = Logger.getLogger(ReportInstanceModel.class.getName());

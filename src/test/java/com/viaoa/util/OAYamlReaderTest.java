@@ -8,8 +8,10 @@ import java.io.StringReader;
 import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.io.OAFile;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectPropertyDelegate;
+import com.viaoa.serialization.yaml.OAYamlReader;
 
 public class OAYamlReaderTest extends OAUnitTest {
 

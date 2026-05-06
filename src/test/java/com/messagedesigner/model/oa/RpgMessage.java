@@ -21,10 +21,10 @@ import com.viaoa.annotation.OAMethod;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATable;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAString;
 
 @OAClass(lowerName = "rpgMessage", pluralName = "RpgMessages", shortName = "rpm", displayName = "Rpg Message", isProcessed = true, displayProperty = "messageTypeRecord", filterClasses = {
 		RpgMessageOpenFilter.class, RpgMessageErrorFilter.class })

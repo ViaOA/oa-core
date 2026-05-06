@@ -19,13 +19,282 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
+import com.viaoa.config.OAProperties;
+import com.viaoa.converter.OAConv;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.datetime.OATime;
+import com.viaoa.find.OAFinder;
+import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.Hub;
+import com.viaoa.lang.OAStr;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.model.oa.VString;
 import com.viaoa.object.*;
+import com.viaoa.path.OAPath;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
-import com.viaoa.util.*;
+import com.viaoa.ui.grid.OAObjectGrid;
+
+/*qqqqqqqqqqqqq
+CODEX
+
+ #1 — [FIX NOW]
+  Location:
+  src/main/java/com/viaoa/template/OATemplate.java:310-314
+
+  Description:
+  createTree(template) accepts null, but the next line calls template.toLowerCase(). new OATemplate().process()
+  throws NullPointerException.
+
+  Why it matters:
+  The default constructor explicitly allows setTemplate later, but a missing template should render empty or
+  produce a controlled parse result, not crash.
+
+  Minimal safe action:
+  Use the normalized parsed text or guard template != null before checking for <html.
+
+ #2 — [FIX NOW]
+  Location:
+  src/main/java/com/viaoa/template/OATemplate.java:980-987
+
+  Description:
+  End-token detection uses broad contains("end%") / contains("end "). A property such as <%=friend%> is parsed as
+  End because friend% contains end%, so the value is silently omitted.
+
+  Why it matters:
+  Normal property names ending in end or containing end  can disappear from generated UI/report text.
+
+  Minimal safe action:
+  Recognize only exact end directives after trimming, such as end, end%, or end %, not arbitrary containment.
+
+ #3 — [FIX NOW]
+  Location:
+  src/main/java/com/viaoa/template/OATemplate.java:438-454
+
+  Description:
+  _removeRowTags assumes a very specific child shape: foreach.alChildren.get(0).alChildren.get(0). Empty foreach
+  blocks, parse-error foreach blocks, or foreach blocks whose first child is not literal text can throw
+  IndexOutOfBoundsException.
+
+  Why it matters:
+  Any HTML template containing <html triggers row-tag removal. A malformed or minimal foreach can fail during
+  parsing before rendering starts.
+
+  Minimal safe action:
+  Check child-list sizes and node text before drilling into children; skip row-tag removal when the expected
+  literal siblings are not present.
+
+
+ #4 — [FIX NOW]
+  Location:
+  src/main/java/com/viaoa/template/OATemplate.java:467-484, 521-533
+
+  Description:
+  _removeRowTagsBefore/After call treeNode.arg1.length() without verifying arg1 is non-null.
+
+  Why it matters:
+  Adjacent nodes can be commands or structured tags, not literal text. HTML foreach preprocessing can crash on
+  valid templates with commands next to foreach blocks.
+
+  Minimal safe action:
+  Return immediately if treeNode == null or treeNode.arg1 == null.
+
+#5 — [FIX NOW]
+  Location:
+  src/main/java/com/viaoa/template/OATemplate.java:727-732, 1309-1333
+
+  Description:
+  #sum parsing never assigns arg3, and treats the second token as format instead of the child property. In
+  generation, prop2 = node.arg2 and fmt = node.arg3, so #sum orders amount, #.## tries to sum property #.## or
+  otherwise uses the wrong argument.
+
+  Why it matters:
+  The command is effectively broken and can silently produce 0 or wrong totals in reports/templates.
+
+  Minimal safe action:
+  Parse #sum as arg1 = hub/property, arg2 = value property, arg3 = optional format.
+
+
+#6 — [FIX NOW]
+  Location:
+  src/main/java/com/viaoa/template/OATemplate.java:1035-1044
+
+  Description:
+  generate always calls srvcOAThreadLocal.addSiblingHelper(siblingHelper), even when hub == null and siblingHelper
+  == null.
+
+  Why it matters:
+  If addSiblingHelper(null) is not explicitly supported, any non-hub template render can fail. Even if currently
+  tolerated, it is a fragile contract mismatch.
+
+  Minimal safe action:
+  Only call addSiblingHelper when siblingHelper != null.
+
+#7 — [FIX NOW]
+  Location:
+  src/main/java/com/viaoa/template/OATemplate.java:1108-1136
+
+  Description:
+  cntInDataGrid++ is not restored in a finally. Any exception or cancellation inside grid generation leaves the
+  instance permanently in data-grid mode.
+
+  Why it matters:
+  getValue changes property paths when cntInDataGrid > 0; later renders on the same cached template can resolve the
+  wrong property.
+
+  Minimal safe action:
+  Wrap grid rendering in try/finally { cntInDataGrid--; }.
+
+#8 — [FIX NOW]
+  Location:
+  src/main/java/com/viaoa/template/OATemplate.java:1124-1129
+
+  Description:
+  hmPropertyToColumn.get(sppLinks) is unboxed to int without a null check. If a generated property path was not
+  included in createObjectGrid, rendering throws NullPointerException.
+
+  Why it matters:
+  Nested template constructs or unsupported property paths can crash output instead of falling back to normal
+  property resolution or a blank value.
+
+  Minimal safe action:
+  Check for missing column mapping and either skip grid lookup or render through the current object normally.
+
+
+ #9 — [FIX NOW]
+  Location:
+  src/main/java/com/viaoa/template/OATemplate.java:592-620
+
+  Description:
+  Include recursion tracking is global for the whole preprocess pass. Reusing the same include twice is treated as
+  recursive on the second occurrence.
+
+  Why it matters:
+  Templates commonly include the same header/footer/fragment more than once. The second include becomes ERROR:
+  recursive include.
+
+  Minimal safe action:
+  Track only the active include stack: add before expanding nested includes, remove after that include expansion is
+  complete.
+
+
+#10 — [DEFER]
+  Location:
+  src/main/java/com/viaoa/template/OATemplate.java:952-956, 671-696
+
+  Description:
+  A malformed token missing %> is emitted as literal text and does not increment parseErrorCnt.
+
+  Why it matters:
+  getHasParseError() can return false even though the template syntax is malformed.
+
+  Minimal safe action:
+  Mark a parse error when Token.missingEnd is created, or convert it to an error node.
+
+ #11 — [DEFER]
+  Location:
+  src/main/java/com/viaoa/template/OATemplate.java:641-650, 980-987
+
+  Description:
+  Unexpected root-level <%=end%> tokens are silently ignored.
+
+  Why it matters:
+  Malformed templates can hide structural mistakes and still report no parse error.
+
+  Minimal safe action:
+  When parsing sees an End token outside parseC, increment parseErrorCnt and emit an error node.
+
+
+ #12 — [DEFER]
+  Location:
+  src/main/java/com/viaoa/template/OATemplate.java:771-787, 789-808
+
+  Description:
+  Conditional argument parsing splits only on spaces. Values with spaces or quoted strings cannot compare
+  correctly.
+
+  Why it matters:
+  <%=ifequals status In Progress%> compares only against In, producing skipped content.
+
+  Minimal safe action:
+  Document the limitation or parse quoted operands as a single value.
+
+ #13 — [DEFER]
+  Location:
+  src/main/java/com/viaoa/template/OATemplate.java:975-976
+
+  Description:
+  Token lowercasing uses default locale.
+
+  Why it matters:
+  Under Turkish or other locale-sensitive defaults, command detection can fail for uppercase template directives.
+
+  Minimal safe action:
+  Use toLowerCase(Locale.ROOT).
+
+ #14 — [DEFER]
+  Location:
+  src/main/java/com/viaoa/template/OATemplate.java:327-345
+
+  Description:
+  classChoosen is cached after one render and reused without checking whether either current root object still
+  matches the sampled property path.
+
+  Why it matters:
+  Cached templates used with different root object class pairs can select objRoot2 incorrectly when neither root
+  matches the previous chosen class.
+
+  Minimal safe action:
+  Validate classChoosen against both current roots, or recompute when the class pair changes.
+
+ #15 — [DEFER]
+  Location:
+  src/main/java/com/viaoa/template/OATemplate.java:1020, 1073-1344
+
+  Description:
+  hmForEachCounter is mutable instance state shared across render calls.
+
+  Why it matters:
+  OATemplate instances are cached by UI controllers. Concurrent renders can corrupt #counter output between
+  threads.
+
+  Minimal safe action:
+  Make counters render-local, or document OATemplate as single-threaded and avoid sharing cached instances across
+  concurrent requests.
+
+
+ #16 — [DEFER]
+  Location:
+  src/main/java/com/viaoa/template/OATemplate.java:1478-1518
+
+  Description:
+  Missing $name and $name found with null are indistinguishable. setProperty(name, null) removes the internal
+  property entirely.
+
+  Why it matters:
+  Templates cannot distinguish “not supplied” from “supplied but null,” which can affect conditional blocks and
+  default handling.
+
+  Minimal safe action:
+  Define the contract explicitly or support a sentinel/null marker in OAProperties/internal props.
+
+  #17 — [FALSE POSITIVE]
+  Location:
+  src/main/java/com/viaoa/template/OATemplate.java:1181-1183
+
+  Description:
+  IfNot intentionally falls through into If.
+
+  Why it matters:
+  This looks like a missing break, but it correctly reuses normal truth evaluation and then inverts the result.
+
+  Minimal safe action:
+  Optional comment only; no correctness change needed.
+
+*/
 
 /**
  * A lightweight, high-performance template engine used throughout OA for
@@ -336,7 +605,7 @@ public class OATemplate<F extends OAObject> {
 				obj = objRoot1;
 			} else {
 				try {
-					OAPropertyPath pp = new OAPropertyPath<>(objRoot1.getClass(), ppSample);
+					OAPath pp = new OAPath<>(objRoot1.getClass(), ppSample);
 					obj = objRoot1;
 					classChoosen = objRoot1.getClass();
 				} catch (Exception e) {
@@ -1123,7 +1392,7 @@ public class OATemplate<F extends OAObject> {
                                 OAObject oa = null; 
 	                            if (dn.tagType == TagType.GetProp || dn.tagType == TagType.ForEach) {
 	                                // find column in dataGrid
-	                                OAPropertyPath pp = new OAPropertyPath( ((Hub) objValue).getObjectClass(), dn.arg1);
+	                                OAPath pp = new OAPath( ((Hub) objValue).getObjectClass(), dn.arg1);
 	                                final String sppLinks = pp.getPropertyPathLinksOnly();
 	                                col = hmPropertyToColumn.get(sppLinks);
                                     oa = (OAObject) og.getObject(row, col);
@@ -1365,7 +1634,7 @@ public class OATemplate<F extends OAObject> {
             }
         
             // make columns for pp
-            OAPropertyPath pp = new OAPropertyPath(hub.getObjectClass(), cn.arg1);
+            OAPath pp = new OAPath(hub.getObjectClass(), cn.arg1);
             OALinkInfo[] lis = pp.getLinkInfos();
             if (lis == null || lis.length == 0) {
                 continue; // root column
@@ -1541,7 +1810,7 @@ public class OATemplate<F extends OAObject> {
 					String fmtx = null;
 					if (bUseFormat && OAString.isEmpty(fmt) && obj != null) {
 						bFmt = false;
-						OAPropertyPath pp = new OAPropertyPath(obj.getClass(), propertyName, true);
+						OAPath pp = new OAPath(obj.getClass(), propertyName, true);
 						fmtx = pp.getFormat();
 					}
 
@@ -1593,7 +1862,7 @@ public class OATemplate<F extends OAObject> {
 		}
 
 		if (OAString.isNotEmpty(propertyName) && propertyName.indexOf('.') >= 0) {
-			OAPropertyPath pp = new OAPropertyPath(oaObj.getClass(), propertyName, true);
+			OAPath pp = new OAPath(oaObj.getClass(), propertyName, true);
 			if (pp.getHasHubProperty()) {
 				// 20190131 useFinder for pp with hubs
 				final VString vs = new VString();

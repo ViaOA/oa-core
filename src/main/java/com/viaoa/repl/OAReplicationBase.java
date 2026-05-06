@@ -8,14 +8,14 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectSerializer;
+import com.viaoa.queue.OACircularQueue;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.runtime.OARuntime;
+import com.viaoa.serialize.OAObjectSerializer;
 import com.viaoa.sync.OASyncServer;
 import com.viaoa.sync.remote.RemoteSyncInterface;
-import com.viaoa.util.OACircularQueue;
 
 public abstract class OAReplicationBase {
     private static Logger LOG = Logger.getLogger(OAReplicationBase.class.getName());

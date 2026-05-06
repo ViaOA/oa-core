@@ -19,17 +19,16 @@ import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.compare.OACompare;
 import com.viaoa.filter.OAFilterDelegate.FinderInfo;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OACompare;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
+import com.viaoa.path.OAPath;
 
 /**
  * Filter that evaluates whether a property's value is <em>not</em> empty.
- * Uses {@link com.viaoa.util.OACompare#isEmpty(Object, boolean)} to test
+ * Uses {@link com.viaoa.compare.OACompare#isEmpty(Object, boolean)} to test
  * emptiness.  A property path may be supplied to retrieve the value.
  *
  * <p>
@@ -55,7 +54,7 @@ public class OANotEmptyFilter implements OAFilter {
      * Optional property path used to extract the value from the evaluated
      * object before applying the not-empty check.
      */
-    private OAPropertyPath pp;
+    private OAPath pp;
     
     /**
      * Finder created when the property path crosses a many-relationship,
@@ -76,7 +75,7 @@ public class OANotEmptyFilter implements OAFilter {
      *
      * @param pp the property path used to retrieve the value
      */
-    public OANotEmptyFilter(OAPropertyPath pp) {
+    public OANotEmptyFilter(OAPath pp) {
         this.pp = pp;
     }
 
@@ -87,7 +86,7 @@ public class OANotEmptyFilter implements OAFilter {
      * @param pp the property-path expression; may be {@code null}
      */
     public OANotEmptyFilter(String pp) {
-        this(pp==null?null:new OAPropertyPath(pp));
+        this(pp==null?null:new OAPath(pp));
     }
     
     /**

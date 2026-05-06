@@ -4,8 +4,11 @@ package test.xice.tsam.model.oa.trigger;
 import java.util.logging.*;
 
 import com.viaoa.object.*;
-import com.viaoa.datasource.OASelect;
+import com.viaoa.select.OASelect;
+import com.viaoa.cache.OAObjectCacheTrigger;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.hub.*;
+import com.viaoa.hub.trigger.HubTrigger;
 import com.viaoa.util.*;
 
 import test.xice.tsam.model.oa.*;

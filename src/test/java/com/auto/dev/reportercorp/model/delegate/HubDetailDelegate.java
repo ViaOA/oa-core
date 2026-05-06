@@ -4,7 +4,7 @@ import com.auto.dev.reportercorp.model.oa.ReportInstance;
 import com.auto.dev.reportercorp.model.oa.ReporterCorp;
 import com.viaoa.graph.service.HubService;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 

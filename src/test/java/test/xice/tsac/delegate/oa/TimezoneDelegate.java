@@ -2,7 +2,7 @@ package test.xice.tsac.delegate.oa;
 
 import java.util.TimeZone;
 
-import com.viaoa.util.OADateTime;
+import com.viaoa.datetime.OADateTime;
 
 public class TimezoneDelegate {
 

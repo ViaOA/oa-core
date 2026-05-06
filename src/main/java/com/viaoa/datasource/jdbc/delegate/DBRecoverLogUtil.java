@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-import com.viaoa.util.OAArray;
+import com.viaoa.lang.OAArray;
 
 /**
  * Parses lines written by {@link DBLogDelegate} to reconstruct commands

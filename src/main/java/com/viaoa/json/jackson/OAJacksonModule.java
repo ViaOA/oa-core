@@ -17,10 +17,10 @@ package com.viaoa.json.jackson;
 
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.datetime.OATime;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OADate;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OATime;
 
 /**
  * Jackson {@link com.fasterxml.jackson.databind.Module Module} that registers

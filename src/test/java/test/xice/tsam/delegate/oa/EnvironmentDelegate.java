@@ -12,10 +12,11 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import test.xice.tsam.delegate.oa.EnvironmentTypeDelegate;
+
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAFinder;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OAString;
 import com.viaoa.xml.OAXMLReader;
 import com.viaoa.xml.OAXMLReader1;
 import com.viaoa.xml.OAXMLWriter;

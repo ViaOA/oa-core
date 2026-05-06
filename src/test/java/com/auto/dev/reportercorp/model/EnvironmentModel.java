@@ -11,9 +11,9 @@ import com.auto.dev.reportercorp.model.oa.EnvironmentSnapshot;
 import com.auto.dev.reportercorp.model.oa.ReporterCorp;
 import com.auto.dev.reportercorp.model.search.ReporterCorpSearchModel;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubCopy;
-import com.viaoa.hub.HubMakeCopy;
-import com.viaoa.object.OAObjectModel;
+import com.viaoa.hub.copy.HubCopy;
+import com.viaoa.hub.copy.HubMakeCopy;
+import com.viaoa.metadata.OAObjectModel;
 
 public class EnvironmentModel extends OAObjectModel {
 	private static Logger LOG = Logger.getLogger(EnvironmentModel.class.getName());

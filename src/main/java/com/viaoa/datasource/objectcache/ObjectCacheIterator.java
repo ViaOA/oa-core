@@ -18,18 +18,18 @@ package com.viaoa.datasource.objectcache;
 import java.util.ArrayList;
 
 import com.viaoa.datasource.OADataSourceIterator;
+import com.viaoa.filter.OAFilter;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.util.OAFilter;
 
 /**
  * Iterator over objects stored in the OA object cache.
  * <p>
  * {@code ObjectCacheIterator} retrieves batches of objects from
  * {@link com.viaoa.object.OAObjectCacheDelegate} that match a given
- * {@link com.viaoa.util.OAFilter}. It is used by
+ * {@link com.viaoa.filter.OAFilter}. It is used by
  * {@link OADataSourceObjectCache#select} to perform in-memory queries.
  *
  * <h2>Features</h2>

@@ -11,6 +11,8 @@ import org.junit.Test;
 import com.viaoa.OAUnitTest;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.hub.Hub;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 
 import test.xice.tsac3.model.oa.AdminUserCategory;
 import test.xice.tsac3.model.oa.Server;

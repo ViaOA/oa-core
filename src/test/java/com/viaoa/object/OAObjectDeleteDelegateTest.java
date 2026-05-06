@@ -13,13 +13,13 @@ import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
 import com.viaoa.datasource.OADataSourceIterator;
-import com.viaoa.datasource.OASelect;
 import com.viaoa.datasource.jdbc.OADataSourceJDBC;
 import com.viaoa.datasource.objectcache.OADataSourceObjectCache;
+import com.viaoa.filter.OAFilter;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDataDelegate;
+import com.viaoa.select.OASelect;
 import com.viaoa.transaction.OATransaction;
-import com.viaoa.util.OAFilter;
 
 import test.hifive.DataSource;
 import test.hifive.Resource;

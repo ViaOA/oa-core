@@ -23,9 +23,13 @@ import com.viaoa.annotation.OATable;
 import com.viaoa.datasource.jdbc.db.Column;
 import com.viaoa.datasource.jdbc.db.Database;
 import com.viaoa.datasource.jdbc.db.Table;
-import com.viaoa.util.OAArray;
-import com.viaoa.util.OAReflect;
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAArray;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OACalcInfo;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAPropertyInfo;
+import com.viaoa.reflect.OAReflect;
 
 import test.xice.tsam.model.oa.AdminUserCategory;
 import test.xice.tsam.model.oa.Application;

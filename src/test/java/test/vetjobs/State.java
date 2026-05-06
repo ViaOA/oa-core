@@ -1,6 +1,7 @@
 package test.vetjobs;
 
 import com.viaoa.hub.*;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.*;
 
 public class State extends OAObject {

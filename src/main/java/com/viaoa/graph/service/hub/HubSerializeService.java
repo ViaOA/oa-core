@@ -6,7 +6,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import com.viaoa.hub.*;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;
 
 public abstract class HubSerializeService {

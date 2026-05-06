@@ -15,10 +15,14 @@ import com.corptostore.model.oa.search.StoreBatchSearch;
 import com.corptostore.model.oa.search.StoreTransmitBatchSearch;
 import com.viaoa.annotation.*;
 import com.viaoa.object.*;
+import com.viaoa.select.OASelect;
 import com.viaoa.hub.*;
+import com.viaoa.lang.OAArray;
+import com.viaoa.lang.OAString;
 import com.viaoa.util.*;
 import com.viaoa.datasource.*;
 import com.viaoa.filter.*;
+import com.viaoa.find.OAFinder;
 
 @OAClass(useDataSource=false, localOnly=true)
 public class StoreBatchSearch extends OAObject {

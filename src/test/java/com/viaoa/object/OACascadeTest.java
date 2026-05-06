@@ -4,6 +4,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.cascade.OACascade;
 
 import test.xice.tsac3.model.oa.*;
 

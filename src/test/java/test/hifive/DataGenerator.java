@@ -2,8 +2,12 @@
 package test.hifive;
  
 import com.viaoa.object.*;
+import com.viaoa.select.OASelect;
 import com.viaoa.datasource.*;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.hub.*;
+import com.viaoa.lang.OAString;
 import com.viaoa.util.*;
  
 import test.hifive.model.oa.*;

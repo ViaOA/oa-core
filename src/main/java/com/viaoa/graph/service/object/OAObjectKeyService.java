@@ -6,12 +6,12 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import com.viaoa.converter.OAConverter;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.util.OAConverter;
 
 public abstract class OAObjectKeyService {
 	private static final Logger LOG = Logger.getLogger(OAObjectKeyService.class.getName());

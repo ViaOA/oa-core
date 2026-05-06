@@ -8,7 +8,7 @@ import com.viaoa.util.*;
 import test.xice.tsam.model.oa.ConnectionInfo;
 import test.xice.tsam.model.oa.ExceptionType;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADateTime;
+import com.viaoa.datetime.OADateTime;
  
 @OAClass(
     shortName = "ei",

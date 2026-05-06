@@ -15,6 +15,28 @@
  */
 package com.viaoa.text;
 
+/*qqqqqqqqqqqqq
+CODEX
+
+ - file/class/method: OATextAlign.right, OATextAlign.center, OATextFilter.substring
+  - concrete failure scenario: Right/center substring helpers throw for normal truncation.
+  - example input: OAString.right("abcdef", 2)
+  - expected result: ef
+  - actual or likely result: StringIndexOutOfBoundsException
+  - why it matters to OA: Shared UI/display formatting helpers can fail on common truncation paths.
+  - fix direction: Treat the third substring parameter consistently as length, or pass start + amount from right/
+    center.
+
+ 17. Medium - OATextAlign.padStart / padEnd
+     Scenario: surrogate pairs are over-padded because width is computed with value.length() before code-point
+     alignment.
+     Example: OAString.padStart("😀", 1) produces two leading spaces instead of one.
+     Impact: Unicode UI/text formatting widths become wrong.
+
+
+*/
+
+
 /**
  * Text alignment and padding utility supporting full Unicode (code points) and
  * optional truncation with smart ellipsis behavior.

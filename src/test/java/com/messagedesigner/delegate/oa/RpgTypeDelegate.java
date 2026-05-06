@@ -2,7 +2,7 @@ package com.messagedesigner.delegate.oa;
 
 import com.messagedesigner.delegate.ModelDelegate;
 import com.messagedesigner.model.oa.RpgType;
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
 
 public class RpgTypeDelegate {
 

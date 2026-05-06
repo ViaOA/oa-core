@@ -11,8 +11,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.log.OALogUtil;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OALogUtil;
 
 public class MultiplexerServerTest extends OAUnitTest {
 	private volatile boolean bStopCalled;

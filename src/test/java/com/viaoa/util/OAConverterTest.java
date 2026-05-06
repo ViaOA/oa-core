@@ -8,6 +8,9 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 import org.junit.Test;
+
+import com.viaoa.converter.OAConverter;
+
 import org.junit.Ignore;
 
 public class OAConverterTest {

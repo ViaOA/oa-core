@@ -10,11 +10,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.viaoa.OAUnitTest;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
-import com.viaoa.object.OATriggerListener;
+import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAObjectInfoDelegate;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
-import com.viaoa.object.OATriggerDelegate;
+import com.viaoa.trigger.OATrigger;
+import com.viaoa.trigger.OATriggerDelegate;
+import com.viaoa.trigger.OATriggerListener;
 
 import test.hifive.model.oa.*;
 import test.hifive.model.oa.propertypath.EmployeePP;

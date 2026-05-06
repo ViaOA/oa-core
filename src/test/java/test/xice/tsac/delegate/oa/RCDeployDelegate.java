@@ -1,10 +1,11 @@
 package test.xice.tsac.delegate.oa;
 
+import com.viaoa.filter.OAFilter;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubCopy;
+import com.viaoa.hub.copy.HubCopy;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.*;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAString;
 
 import test.xice.tsac.delegate.RemoteDelegate;
 import test.xice.tsac.model.oa.*;

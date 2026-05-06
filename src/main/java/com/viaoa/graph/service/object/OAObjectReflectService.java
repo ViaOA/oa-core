@@ -21,33 +21,33 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.callback.OACallback;
+import com.viaoa.callback.OACopyCallback;
+import com.viaoa.cascade.OACascade;
+import com.viaoa.compare.OANotExist;
+import com.viaoa.compare.OANullObject;
+import com.viaoa.converter.OAConv;
+import com.viaoa.converter.OAConverter;
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.datasource.OASelect;
+import com.viaoa.find.OAFinder;
+import com.viaoa.find.OAHierFinder;
+import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubAutoMatch;
-import com.viaoa.hub.HubAutoSequence;
-import com.viaoa.hub.HubMerger;
-import com.viaoa.hub.HubSortListener;
-import com.viaoa.object.OACallback;
-import com.viaoa.object.OACascade;
-import com.viaoa.object.OACopyCallback;
-import com.viaoa.object.OAFinder;
-import com.viaoa.object.OAHierFinder;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.hub.auto.HubAutoMatch;
+import com.viaoa.hub.auto.HubAutoSequence;
+import com.viaoa.hub.merge.HubMerger;
+import com.viaoa.hub.sort.HubSortListener;
+import com.viaoa.lang.OAArray;
+import com.viaoa.lang.OAStr;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.object.OASiblingHelper;
-import com.viaoa.util.OAArray;
-import com.viaoa.util.OAConv;
-import com.viaoa.util.OAConverter;
-import com.viaoa.util.OANotExist;
-import com.viaoa.util.OANullObject;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAReflect;
-import com.viaoa.util.OAStr;
-import com.viaoa.util.OAString;
+import com.viaoa.path.OAPath;
+import com.viaoa.reflect.OAReflect;
+import com.viaoa.select.OASelect;
 
 public abstract class OAObjectReflectService {
 	private static final Logger LOG = Logger.getLogger(OAObjectReflectService.class.getName());
@@ -2532,7 +2532,7 @@ public abstract class OAObjectReflectService {
 					// 20231126 check for equalPropertyPath
                     String s = li.getEqualPropertyPath();
                     if (OAString.isNotEmpty(s)) {
-                        OAPropertyPath pp = new OAPropertyPath(oaObj.getClass(), s);
+                        OAPath pp = new OAPath(oaObj.getClass(), s);
                         final OAObject matchValue = (OAObject) pp.getValue(oaObj);
                         
                         final OALinkInfo liRev = callInfoGetReverseLinkInfo(li);
@@ -2542,8 +2542,8 @@ public abstract class OAObjectReflectService {
                                 ((OAObject) ref).setProperty(s, matchValue);
                             }
                             else {
-                                pp = new OAPropertyPath(li.getToClass(), s);
-                                OAPropertyPath ppRev = pp.getReversePropertyPath();
+                                pp = new OAPath(li.getToClass(), s);
+                                OAPath ppRev = pp.getReversePropertyPath();
                                 s = ppRev.getPropertyPath();
                                 s = s.substring(0, s.lastIndexOf('.'));
                                 

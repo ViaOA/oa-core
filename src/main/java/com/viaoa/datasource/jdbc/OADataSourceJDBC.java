@@ -40,18 +40,18 @@ import com.viaoa.datasource.jdbc.delegate.InsertDelegate;
 import com.viaoa.datasource.jdbc.delegate.SelectDelegate;
 import com.viaoa.datasource.jdbc.delegate.UpdateDelegate;
 import com.viaoa.datasource.jdbc.delegate.VerifyDelegate;
+import com.viaoa.filter.OAFilter;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.service.object.OAObjectKeyService;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.lang.OAArray;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
+import com.viaoa.path.OAPath;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.util.OAArray;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAString;
 
 /**
  * JDBC-based implementation of {@link com.viaoa.datasource.OADataSource}.
@@ -490,7 +490,7 @@ public class OADataSourceJDBC extends OADataSource {
 			int max, OAFilter filter, boolean bDirty) {
 		// 20200219 need to convert whereObject/properyFromWhereObject to part of query if it's using a propertyPath
 		if (whereObject != null && propertyFromWhereObject != null && propertyFromWhereObject.indexOf(".") >= 0) {
-			OAPropertyPath pp = new OAPropertyPath(whereObject.getClass(), propertyFromWhereObject, true);
+			OAPath pp = new OAPath(whereObject.getClass(), propertyFromWhereObject, true);
 			pp = pp.getReversePropertyPath();
 			if (OAString.isNotEmpty(queryWhere)) {
 				queryWhere += " AND ";

@@ -5,8 +5,8 @@ import java.util.*;
 import java.util.logging.*;
 import java.sql.*;
 import com.viaoa.object.*;
+import com.viaoa.schedule.*;
 import com.viaoa.hub.*;
-import com.viaoa.scheduler.*;
 import com.viaoa.util.*;
 import com.corptostore.delegate.oa.*;
 import com.corptostore.model.oa.filter.*;
@@ -18,6 +18,7 @@ import com.corptostore.model.oa.Store;
 import com.corptostore.model.oa.Transmit;
 import com.corptostore.model.oa.TransmitBatch;
 import com.viaoa.annotation.*;
+import com.viaoa.datetime.OADate;
  
 @OAClass(
     lowerName = "transmit",

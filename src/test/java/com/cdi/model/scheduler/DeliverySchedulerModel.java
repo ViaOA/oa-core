@@ -8,7 +8,7 @@ import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import com.viaoa.util.filter.*;
 import com.viaoa.datasource.*;
-
+import com.viaoa.find.OAFinder;
 import com.cdi.model.*;
 import com.cdi.model.oa.*;
 import com.cdi.model.oa.propertypath.*;

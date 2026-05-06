@@ -2,9 +2,9 @@ package test.xice.tsac.delegate.oa;
 
 import java.util.concurrent.locks.ReentrantLock;
 
-import com.viaoa.object.OAFinder;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAString;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.find.OAFinder;
+import com.viaoa.lang.OAString;
 
 import test.xice.tsac.delegate.ModelDelegate;
 import test.xice.tsac.model.oa.Application;

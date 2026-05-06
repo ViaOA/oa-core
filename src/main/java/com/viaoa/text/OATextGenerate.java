@@ -34,6 +34,23 @@ package com.viaoa.text;
  * @since OA 4.0
  */
 
+/*qqqqqqqqqqqqqq
+CODEX
+
+  17. Medium - OATextGenerate.getRandomString
+     Concrete failure: getRandomString(5, 5, false, false, false) still generates alphabetic characters.
+     Expected: no digits and no alpha should produce an empty string or fail explicitly.
+     Actual: bUseDigits=false forces bAlpha=true, ignoring bUseAlpha=false.
+     Fix direction: validate impossible character set before generation.
+
+
+ 21. Medium - OATextGenerate.getDummyText
+     Scenario: invalid bounds are not normalized.
+     Example: OATextGenerate.getDummyText(0, -1, -1) throws NegativeArraySizeException.
+     Impact: sample/demo text generation can crash on unchecked size inputs.
+
+*/
+
 public class OATextGenerate {
 
 	/**

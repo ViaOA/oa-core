@@ -4,11 +4,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.objectcache.OADataSourceObjectCache;
+import com.viaoa.datetime.OATime;
+import com.viaoa.log.OALogUtil;
 import com.viaoa.object.OAObject;
+import com.viaoa.queue.OACircularQueue;
 import com.viaoa.sync.remote.RemoteTestInterface2;
-import com.viaoa.util.OACircularQueue;
-import com.viaoa.util.OALogUtil;
-import com.viaoa.util.OATime;
 
 import test.xice.tsam.delegate.ModelDelegate;
 import test.xice.tsam.model.oa.cs.ServerRoot;

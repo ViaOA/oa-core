@@ -14,6 +14,12 @@ import org.junit.Test;
 import com.messagedesigner.model.oa.MessageGroup;
 import com.messagedesigner.model.oa.MessageType;
 import com.viaoa.OAUnitTest;
+import com.viaoa.compare.OAAnyValueObject;
+import com.viaoa.compare.OACompare;
+import com.viaoa.compare.OAEmptyObject;
+import com.viaoa.compare.OANotExist;
+import com.viaoa.compare.OANotNullObject;
+import com.viaoa.compare.OANullObject;
 import com.viaoa.object.OAObjectKey;
 
 public class OACompareTest extends OAUnitTest {

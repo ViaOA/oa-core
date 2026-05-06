@@ -16,10 +16,10 @@ import com.viaoa.annotation.OAMethod;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATable;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OADate;
-import com.viaoa.util.OADateTime;
 
 @OAClass(lowerName = "pypeReportMessage", pluralName = "PypeReportMessages", shortName = "prm", displayName = "Pype Report Message", isProcessed = true, displayProperty = "id")
 @OATable(name = "pype_report_message", indexes = {

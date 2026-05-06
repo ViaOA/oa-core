@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.datasource.autonumber.OADataSourceAuto;
+import com.viaoa.filter.OAFilter;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectCacheDelegate;
@@ -11,7 +12,6 @@ import com.viaoa.object.OAObjectKey;
 import com.viaoa.object.OAObjectPropertyDelegate;
 import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.OASyncServer;
-import com.viaoa.util.OAFilter;
 
 import test.xice.tsac3.model.oa.Environment;
 import test.xice.tsac3.model.oa.Server;

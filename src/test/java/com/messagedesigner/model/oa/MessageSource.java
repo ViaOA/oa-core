@@ -23,12 +23,12 @@ import com.viaoa.annotation.OAMethod;
 import com.viaoa.annotation.OAObjCallback;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATable;
+import com.viaoa.callback.OAObjectCallback;
 import com.viaoa.datasource.OADataSource;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.hub.Hub;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCallback;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAString;
 
 @OAClass(lowerName = "messageSource", pluralName = "MessageSources", shortName = "mss", displayName = "Message Source", isLookup = true, isPreSelect = true, displayProperty = "source")
 @OATable()

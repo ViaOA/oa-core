@@ -29,20 +29,67 @@ import com.viaoa.datasource.jdbc.db.Database;
 import com.viaoa.datasource.jdbc.db.Link;
 import com.viaoa.datasource.jdbc.db.Table;
 import com.viaoa.datasource.jdbc.delegate.ConverterDelegate;
-import com.viaoa.datasource.query.OAQueryToken;
-import com.viaoa.datasource.query.OAQueryTokenType;
-import com.viaoa.datasource.query.OAQueryTokenizer;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.service.object.OAObjectKeyService;
 import com.viaoa.graph.service.object.OAObjectReflectService;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.lang.OAArray;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
+import com.viaoa.query.OAQueryToken;
+import com.viaoa.query.OAQueryTokenType;
+import com.viaoa.query.OAQueryTokenizer;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.util.OAArray;
-import com.viaoa.util.OAString;
+
+/*qqqqqqqqqqqqqqqqqqqqq
+CODEX 
+v4.0
+
+  - Severity: high
+  - File/method: src/main/java/com/viaoa/datasource/jdbc/query/QueryConverter.java:428, src/main/java/com/viaoa/
+    datasource/jdbc/query/QueryConverter.java:869
+  - Finding: convertToWhere() can set bUseExists = false for link-table paths, but the nested convertToSql(...) call
+    resets converter state again, losing that decision.
+  - Why it matters: SQL join/EXISTS choice can be wrong for where-object/link-table queries.
+  - PoC impact: Likely for many-to-many or link-table select paths.
+  - Direction: Avoid the second reset, or pass conversion options explicitly into the core SQL builder.
+
+
+ - Severity: high
+  - File/method: src/main/java/com/viaoa/datasource/jdbc/query/QueryConverter.java:1722
+  - Finding: SQL conversion parses property paths with StringTokenizer, not OAPropertyPath. It does not share
+    OAPropertyPath casting, validation, filters, root class qualifier, or semantic metadata behavior.
+  - Why it matters: OA query paths are semantic object-graph paths. DB translation can diverge from OA runtime path
+    resolution.
+  - PoC impact: Medium now; higher as OA 4.0 leans on generated paths.
+  - Direction: Have SQL conversion consume a graph-owned parsed property-path representation, then map that to DB
+    links/columns.
+
+  #7 — FIX NOW
+  Location: src/main/java/com/viaoa/datasource/jdbc/query/QueryConverter.java:1749
+  parseLink() uses StringTokenizer on dots, not OAPropertyPath. It misses OAPropertyPath validation/semantics and
+  can diverge from runtime path resolution. This is the biggest architectural correctness risk in the descendant
+  parser.
+
+ #8 — FIX NOW
+  Location: src/main/java/com/viaoa/datasource/jdbc/query/QueryConverter.java:1755
+  parseLink("") or malformed empty path can throw NoSuchElementException, not a controlled query exception.
+
+  #9 — FIX NOW
+  Location: src/main/java/com/viaoa/datasource/jdbc/query/QueryConverter.java:1515
+  In EXISTS generation, the loop over composite foreign keys resets exists = ... each iteration after adding " AND
+  ", so earlier key comparisons can be lost. Composite-key many paths are likely wrong.
+
+  #10 — DEFER
+  Location: src/main/java/com/viaoa/datasource/jdbc/query/QueryConverter.java:969
+  ORDER BY parsing is whitespace/comma token based. Function calls with spaces or richer expressions are fragile.
+  Probably acceptable for simple OA property order clauses, but should be covered by tests.
+
+
+*/
 
 /**
  * Translates OA object queries into executable SQL statements.
@@ -52,7 +99,7 @@ import com.viaoa.util.OAString;
  * <p>
  * Features:
  * <ul>
- *   <li>Parses OA query syntax using {@link com.viaoa.datasource.query.OAQueryTokenizer}.</li>
+ *   <li>Parses OA query syntax using {@link com.viaoa.query.OAQueryTokenizer}.</li>
  *   <li>Generates SELECT, FROM, WHERE, and ORDER BY clauses with proper aliasing and quoting.</li>
  *   <li>Supports prepared statements and parameter substitution.</li>
  *   <li>Automatically applies DISTINCT when many-side joins are detected.</li>

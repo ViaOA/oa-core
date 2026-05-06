@@ -18,7 +18,7 @@ package com.viaoa.pojo;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
 
 /**
  * Helper methods for working with {@link PojoLinkOne} instances and

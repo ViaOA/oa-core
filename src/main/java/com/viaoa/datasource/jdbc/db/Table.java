@@ -19,8 +19,8 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 
-import com.viaoa.util.ClassModifier;
-import com.viaoa.util.OAArray;
+import com.viaoa.lang.OAArray;
+import com.viaoa.reflect.OAReflect;
 
 /**
  * Represents a relational database table and its associated metadata.
@@ -330,7 +330,7 @@ public class Table {
 			if (method != null) {
 				Class[] cs = method.getParameterTypes();
 				if (cs.length > 0) {
-					Class c = ClassModifier.getClassWrapper(cs[0]);
+					Class c = OAReflect.getClassWrapper(cs[0]);
 					column.clazz = c;
 				}
 			}

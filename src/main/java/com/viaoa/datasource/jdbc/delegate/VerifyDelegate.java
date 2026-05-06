@@ -27,8 +27,8 @@ import com.viaoa.datasource.jdbc.db.DBMetaData;
 import com.viaoa.datasource.jdbc.db.Index;
 import com.viaoa.datasource.jdbc.db.Link;
 import com.viaoa.datasource.jdbc.db.Table;
-import com.viaoa.util.OAStr;
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAStr;
+import com.viaoa.lang.OAString;
 
 /**
  * Methods to validate that OAObject database metadata matches database scheme.

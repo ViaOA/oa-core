@@ -5,8 +5,8 @@ import java.util.logging.Logger;
 import com.auto.dev.reportercorp.model.delegate.HubDelegate;
 import com.auto.dev.reportercorp.model.oa.ReportInstanceData;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubCopy;
-import com.viaoa.object.OAObjectModel;
+import com.viaoa.hub.copy.HubCopy;
+import com.viaoa.metadata.OAObjectModel;
 
 public class ReportInstanceDataModel extends OAObjectModel {
 	private static Logger LOG = Logger.getLogger(ReportInstanceDataModel.class.getName());

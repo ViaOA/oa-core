@@ -15,12 +15,13 @@
  */
 package com.viaoa.converter;
 
+import com.viaoa.lang.OAString;
 import com.viaoa.model.oa.VEnum;
-import com.viaoa.util.OAString;
 
 public class OAConverterVEnum implements OAConverterInterface<VEnum> {
     
     public VEnum convert(Class<VEnum> thisClass, Object fromValue, String fmt) {
+    	if (fromValue instanceof VEnum) return (VEnum) fromValue;
         return null;
     }
 

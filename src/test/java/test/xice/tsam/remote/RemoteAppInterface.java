@@ -3,8 +3,8 @@ package test.xice.tsam.remote;
 
 import java.util.ArrayList;
 
+import com.viaoa.config.OAProperties;
 import com.viaoa.remote.multiplexer.annotation.OARemoteInterface;
-import com.viaoa.util.OAProperties;
 
 import test.xice.tsam.model.oa.AdminUser;
 import test.xice.tsam.model.oa.MRADServerCommand;

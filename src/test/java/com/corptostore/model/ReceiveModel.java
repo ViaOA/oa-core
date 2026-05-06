@@ -25,6 +25,8 @@ import com.corptostore.model.search.BatchSearchModel;
 import com.corptostore.model.search.StoreSearchModel;
 import com.viaoa.annotation.*;
 import com.viaoa.hub.*;
+import com.viaoa.hub.copy.HubCopy;
+import com.viaoa.metadata.OAObjectModel;
 import com.viaoa.util.*;
 import com.viaoa.filter.*;
 import com.viaoa.datasource.*;

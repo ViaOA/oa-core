@@ -6,6 +6,8 @@ import static org.junit.Assert.*;
 import java.util.Properties;
 import javax.mail.Session;
 import com.viaoa.OAUnitTest;
+import com.viaoa.mail.OAMail;
+
 import test.xice.tsac3.model.oa.*;
 import javax.mail.*;
 import javax.mail.internet.*;

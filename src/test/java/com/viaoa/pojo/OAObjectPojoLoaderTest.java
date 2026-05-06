@@ -14,9 +14,9 @@ import com.auto.dev.reportercorp.model.oa.PypeReportMessage;
 import com.auto.dev.reportercorp.model.oa.ReportInfo;
 import com.auto.dev.reportercorp.model.oa.ReportInstanceProcess;
 import com.auto.dev.reportercorp.model.oa.ReporterCorp;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
-import com.viaoa.object.OAPropertyInfo;
+import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAObjectInfoDelegate;
+import com.viaoa.metadata.OAPropertyInfo;
 
 /**
  * Verify that OAObject POJO information is correctly loaded.

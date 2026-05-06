@@ -6,12 +6,12 @@ import com.auto.dev.reportercorp.model.SnapshotReportModel;
 import com.auto.dev.reportercorp.model.oa.SnapshotReport;
 import com.auto.dev.reportercorp.model.oa.SnapshotReportTemplate;
 import com.auto.dev.reportercorp.model.oa.search.SnapshotReportTemplateSearch;
-import com.viaoa.datasource.OASelect;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListener;
 import com.viaoa.hub.HubListenerAdapter;
-import com.viaoa.object.OAFinder;
+import com.viaoa.select.OASelect;
 
 public class SnapshotReportTemplateSearchModel {
 	private static Logger LOG = Logger.getLogger(SnapshotReportTemplateSearchModel.class.getName());

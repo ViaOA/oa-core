@@ -1,6 +1,6 @@
 package test.xice.tsac.delegate.oa;
 
-import com.viaoa.util.OADate;
+import com.viaoa.datetime.OADate;
 
 import test.xice.tsac.model.oa.*;
 

@@ -3,8 +3,8 @@ package com.cdi.delegate.oa;
 import java.util.logging.Logger;
 
 import com.cdi.model.oa.*;
+import com.viaoa.datetime.OADate;
 import com.viaoa.hub.Hub;
-import com.viaoa.util.OADate;
 
 public class WOItemProductionDelegate {
 	private static Logger LOG = Logger.getLogger(WOItemProductionDelegate.class.getName());

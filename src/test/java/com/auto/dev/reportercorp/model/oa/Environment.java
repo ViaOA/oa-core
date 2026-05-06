@@ -13,11 +13,11 @@ import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAMethod;
 import com.viaoa.annotation.OAObjCallback;
 import com.viaoa.annotation.OAProperty;
+import com.viaoa.callback.OAObjectCallback;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.hub.Hub;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCallback;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAString;
 
 @OAClass(lowerName = "environment", pluralName = "Environments", shortName = "env", displayName = "Environment", isLookup = true, isPreSelect = true, useDataSource = false, displayProperty = "name", filterClasses = {
 		EnvironmentNonProdFilter.class }, noPojo = true)

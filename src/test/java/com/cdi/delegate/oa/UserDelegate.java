@@ -3,7 +3,7 @@ package com.cdi.delegate.oa;
 import com.cdi.delegate.ModelDelegate;
 import com.cdi.model.oa.AppUser;
 import com.cdi.model.oa.User;
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
 
 public class UserDelegate {
 

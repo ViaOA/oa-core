@@ -7,18 +7,18 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 import com.viaoa.comm.io.IODummy;
+import com.viaoa.compare.OANotExist;
+import com.viaoa.compare.OANullObject;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubAutoMatch;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.hub.auto.HubAutoMatch;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectSerializer;
-import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.remote.multiplexer.io.RemoteObjectInputStream;
 import com.viaoa.remote.multiplexer.io.RemoteObjectOutputStream;
-import com.viaoa.util.OANotExist;
-import com.viaoa.util.OANullObject;
+import com.viaoa.serialize.OAObjectSerializer;
 
 public abstract class OAObjectSerializeService {
 	private static final Logger LOG = Logger.getLogger(OAObjectSerializeService.class.getName());

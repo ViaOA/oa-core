@@ -1,6 +1,6 @@
 package test.xice.tsac.delegate.oa;
 
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
 
 import test.xice.tsac.model.oa.*;
 

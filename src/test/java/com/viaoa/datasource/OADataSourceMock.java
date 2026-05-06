@@ -4,10 +4,10 @@ import java.util.Iterator;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceIterator;
+import com.viaoa.filter.OAFilter;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.util.OAFilter;
 
 import test.xice.tsam.model.oa.Server;
 

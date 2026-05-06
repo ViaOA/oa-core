@@ -4,9 +4,9 @@ package test.xice.tsac.model.oa;
 
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
+import com.viaoa.lang.OAString;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAString;
+import com.viaoa.datetime.OADateTime;
 
 import test.hifive.model.oa.ServerInfo.Status;
  

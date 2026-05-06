@@ -7,6 +7,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.find.OAFinder;
+import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.Hub;
 
 import test.hifive.HifiveDataGenerator;

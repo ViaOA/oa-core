@@ -18,6 +18,18 @@ package com.viaoa.text;
 import java.awt.Color;
 
 
+/*qqqqqqqqqqqqq
+CODEX
+
+ 3. Medium - OATextCode.getPropertyName
+     Scenario: JavaBean acronym getters are decapitalized incorrectly.
+     Example: getPropertyName("getURL") returns uRL; JavaBeans property name should remain URL.
+     Impact: OA annotation/database/object metadata scans can register or look up the wrong property name for acronym
+     properties.
+
+
+*/
+
 /**
  * 
  * qqqqqqq String helpers for working on programming code

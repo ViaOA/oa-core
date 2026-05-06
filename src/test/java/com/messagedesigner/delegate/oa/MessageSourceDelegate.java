@@ -26,9 +26,9 @@ import com.messagedesigner.model.pojo.MessageGroupDef;
 import com.messagedesigner.model.pojo.MessageRecordDef;
 import com.messagedesigner.model.pojo.RecordDef;
 import com.messagedesigner.model.pojo.RpgTypeDef;
-import com.viaoa.datasource.OASelect;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAString;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.lang.OAString;
+import com.viaoa.select.OASelect;
 
 public class MessageSourceDelegate {
 

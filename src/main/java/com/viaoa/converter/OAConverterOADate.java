@@ -23,8 +23,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 
-import com.viaoa.util.OADate;
-import com.viaoa.util.OADateTime;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
 
 /**
  * Converter for transforming values into {@link OADate} instances and

@@ -14,8 +14,8 @@ import java.util.logging.Logger;
 
 import org.junit.Test;
 
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OATime;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.datetime.OATime;
 
 public class OAScheduledExecutorServiceTest {
 

@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.util.OALogUtil;
+import com.viaoa.log.OALogUtil;
 
 // see this for broadcast addresses
 // https://en.wikipedia.org/wiki/IPv4#Addresses_ending_in_0_or_255

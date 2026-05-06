@@ -4,13 +4,13 @@ import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
+import com.viaoa.cascade.OACascade;
+import com.viaoa.compare.OANotExist;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OACascade;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.util.OANotExist;
 
 public abstract class OAObjectPropertyService {
 	private static final Logger LOG = Logger.getLogger(OAObjectPropertyService.class.getName());

@@ -4,9 +4,10 @@ package test.hifive.model.oa;
 import java.sql.*;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
+import com.viaoa.lang.OAString;
 import com.viaoa.util.*;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADate;
+import com.viaoa.datetime.OADate;
 
 import test.hifive.model.oa.filter.*;
 import test.hifive.model.oa.propertypath.*;

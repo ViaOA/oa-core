@@ -17,18 +17,17 @@ package com.viaoa.filter;
 
 import java.util.logging.Logger;
 
+import com.viaoa.compare.OACompare;
 import com.viaoa.filter.OAFilterDelegate.FinderInfo;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OACompare;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
+import com.viaoa.path.OAPath;
 
 /**
  * Filter that evaluates whether a property value lies strictly between two
  * comparison values (exclusive).  The comparison may operate directly on
- * the object or on a value obtained through an {@link OAPropertyPath}.
+ * the object or on a value obtained through an {@link OAPath}.
  *
  * <p>
  * If the property path resolves through a many-relationship, a nested
@@ -36,7 +35,7 @@ import com.viaoa.util.OAPropertyPath;
  * applied to the referenced object graph.
  * </p>
  *
- * @see com.viaoa.util.OACompare#isBetween(Object, Object, Object)
+ * @see com.viaoa.compare.OACompare#isBetween(Object, Object, Object)
  */
 public class OABetweenFilter<T> implements OAFilter {
 	private static Logger LOG = Logger.getLogger(OABetweenFilter.class.getName());
@@ -45,7 +44,7 @@ public class OABetweenFilter<T> implements OAFilter {
 	 * Optional property path used to extract a nested value from the object
 	 * being evaluated. If {@code null}, the object itself is compared.
 	 */
-	private OAPropertyPath pp;
+	private OAPath pp;
 
 	/**
 	 * Optional finder constructed when the property path traverses a
@@ -78,7 +77,7 @@ public class OABetweenFilter<T> implements OAFilter {
 	 * @param val1 the lower comparison value
 	 * @param val2 the upper comparison value
 	 */
-	public OABetweenFilter(OAPropertyPath pp, Object val1, Object val2) {
+	public OABetweenFilter(OAPath pp, Object val1, Object val2) {
 		this.pp = pp;
 		this.value1 = val1;
 		this.value2 = val2;
@@ -86,14 +85,14 @@ public class OABetweenFilter<T> implements OAFilter {
 
 	/**
 	 * Creates a filter using a string property-path expression. The string is
-	 * converted into an {@link OAPropertyPath} unless {@code null}.
+	 * converted into an {@link OAPath} unless {@code null}.
 	 *
 	 * @param pp the property path expression, or {@code null}
 	 * @param val1 the lower comparison value
 	 * @param val2 the upper comparison value
 	 */
 	public OABetweenFilter(String pp, Object val1, Object val2) {
-		this(pp == null ? null : new OAPropertyPath(pp), val1, val2);
+		this(pp == null ? null : new OAPath(pp), val1, val2);
 	}
 
 	/**

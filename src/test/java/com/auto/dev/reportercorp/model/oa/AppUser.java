@@ -9,10 +9,10 @@ import com.viaoa.annotation.OAId;
 import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAObjCallback;
 import com.viaoa.annotation.OAProperty;
+import com.viaoa.callback.OAObjectCallback;
+import com.viaoa.datetime.OADate;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCallback;
-import com.viaoa.util.OADate;
 
 @OAClass(lowerName = "appUser", pluralName = "AppUsers", shortName = "au", displayName = "App User", isLookup = true, isPreSelect = true, useDataSource = false, displayProperty = "displayName", noPojo = true)
 public class AppUser extends OAObject {

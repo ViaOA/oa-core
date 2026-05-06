@@ -18,11 +18,13 @@ package com.viaoa.filter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.compare.OACompare;
 import com.viaoa.filter.OAFilterDelegate.FinderInfo;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.*;
+import com.viaoa.path.OAPath;
+import com.viaoa.reflect.OAReflect;
 
 /**
  * Filter that evaluates equality between a property value and a comparison
@@ -41,7 +43,7 @@ import com.viaoa.util.*;
  * that the comparison is applied to the located target object.
  * </p>
  *
- * @see com.viaoa.util.OACompare#isEqual(Object, Object)
+ * @see com.viaoa.compare.OACompare#isEqual(Object, Object)
  */
 public class OAEqualFilter implements OAFilter {
     private static Logger LOG = Logger.getLogger(OAEqualFilter.class.getName());
@@ -62,7 +64,7 @@ public class OAEqualFilter implements OAFilter {
      * Optional property path used to obtain a nested value from the object
      * before performing the equality comparison.
      */
-    private OAPropertyPath pp;
+    private OAPath pp;
     
     /**
      * Finder created when the property path traverses multi-valued
@@ -96,7 +98,7 @@ public class OAEqualFilter implements OAFilter {
      * @param matchValue the value to compare against
      */
     public OAEqualFilter(String pp, Object matchValue) {
-        this(pp==null?null:new OAPropertyPath(pp), matchValue);
+        this(pp==null?null:new OAPath(pp), matchValue);
     }
     
     /**
@@ -106,7 +108,7 @@ public class OAEqualFilter implements OAFilter {
      * @param pp the property path used to retrieve values from the object
      * @param matchValue the value to compare against
      */
-    public OAEqualFilter(OAPropertyPath pp, Object matchValue) {
+    public OAEqualFilter(OAPath pp, Object matchValue) {
         this.pp = pp;
         this.matchValue = matchValue;
     }
@@ -120,7 +122,7 @@ public class OAEqualFilter implements OAFilter {
      * @param bIgnoreCase {@code true} to ignore case for string comparisons
      */
     public OAEqualFilter(String pp, Object matchValue,  boolean bIgnoreCase) {
-        this(pp==null?null:new OAPropertyPath(pp), matchValue, bIgnoreCase);
+        this(pp==null?null:new OAPath(pp), matchValue, bIgnoreCase);
     }
     
     /**
@@ -131,7 +133,7 @@ public class OAEqualFilter implements OAFilter {
      * @param matchValue the value to compare against
      * @param bIgnoreCase {@code true} to ignore case during string comparison
      */
-    public OAEqualFilter(OAPropertyPath pp, Object matchValue, boolean bIgnoreCase) {
+    public OAEqualFilter(OAPath pp, Object matchValue, boolean bIgnoreCase) {
         this.pp = pp;
         this.matchValue = matchValue;
         this.bIgnoreCase = bIgnoreCase;
@@ -147,7 +149,7 @@ public class OAEqualFilter implements OAFilter {
      * @param deciPlaces number of decimal places to use for float comparison
      */
     public OAEqualFilter(String pp, Object matchValue, int deciPlaces) {
-        this(pp==null?null:new OAPropertyPath(pp), matchValue, deciPlaces);
+        this(pp==null?null:new OAPath(pp), matchValue, deciPlaces);
     }
     
     /**
@@ -158,7 +160,7 @@ public class OAEqualFilter implements OAFilter {
      * @param matchValue the value to compare against
      * @param deciPlaces number of decimal places for equality checks
      */
-    public OAEqualFilter(OAPropertyPath pp, Object matchValue, int deciPlaces) {
+    public OAEqualFilter(OAPath pp, Object matchValue, int deciPlaces) {
         this.pp = pp;
         this.matchValue = matchValue;
         this.deciPlaces = deciPlaces;

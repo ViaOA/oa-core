@@ -18,22 +18,21 @@ package com.viaoa.filter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.compare.OACompare;
 import com.viaoa.filter.OAFilterDelegate.FinderInfo;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OACompare;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
+import com.viaoa.path.OAPath;
 
 /**
  * Filter that evaluates whether the string representation of a property
  * value does <em>not</em> match a SQL-style LIKE pattern.  Uses
- * {@link com.viaoa.util.OACompare#isLike(Object, Object)} internally and
+ * {@link com.viaoa.compare.OACompare#isLike(Object, Object)} internally and
  * negates the result.
  *
  * <p>
- * Nested property path traversal is supported via {@link OAPropertyPath}.
+ * Nested property path traversal is supported via {@link OAPath}.
  * If a many-relationship is encountered, an {@link OAFinder} is created and
  * a nested {@code OANotLikeFilter} is added to the finder so that the LIKE
  * evaluation is performed on the located object.
@@ -51,7 +50,7 @@ public class OANotLikeFilter implements OAFilter {
      * Optional property path used to retrieve the value from the evaluated
      * object before applying the NOT LIKE comparison.
      */
-    private OAPropertyPath pp;
+    private OAPath pp;
     
     /**
      * The SQL-style LIKE pattern whose negated match result determines
@@ -83,7 +82,7 @@ public class OANotLikeFilter implements OAFilter {
      * @param pp the property path used to extract the value
      * @param value the LIKE pattern to compare against
      */
-    public OANotLikeFilter(OAPropertyPath pp, Object value) {
+    public OANotLikeFilter(OAPath pp, Object value) {
         this.pp = pp;
         this.value = value;
     }
@@ -96,7 +95,7 @@ public class OANotLikeFilter implements OAFilter {
      * @param value the LIKE pattern to compare against
      */
     public OANotLikeFilter(String pp, Object value) {
-        this(pp==null?null:new OAPropertyPath(pp), value);
+        this(pp==null?null:new OAPath(pp), value);
     }
 
     /**

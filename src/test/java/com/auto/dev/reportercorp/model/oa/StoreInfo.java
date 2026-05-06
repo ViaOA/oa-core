@@ -9,9 +9,9 @@ import com.viaoa.annotation.OAId;
 import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OADateTime;
 
 @OAClass(lowerName = "storeInfo", pluralName = "StoreInfos", shortName = "sti", displayName = "Store Info", useDataSource = false, displayProperty = "statusInfo")
 public class StoreInfo extends OAObject {

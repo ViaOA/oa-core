@@ -29,11 +29,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.callback.OAObjectSerializerCallback;
 import com.viaoa.comm.multiplexer.OAMultiplexerServer;
 import com.viaoa.comm.multiplexer.io.VirtualServerSocket;
 import com.viaoa.comm.multiplexer.io.VirtualSocket;
+import com.viaoa.io.OACompressWrapper;
 import com.viaoa.object.*;
-import com.viaoa.remote.OARemoteThread;
+import com.viaoa.queue.OACircularQueue;
+import com.viaoa.reflect.OAReflect;
 import com.viaoa.remote.info.BindInfo;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.remote.multiplexer.io.RemoteObjectInputStream;
@@ -42,9 +45,8 @@ import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
-import com.viaoa.util.OACircularQueue;
-import com.viaoa.util.OACompressWrapper;
-import com.viaoa.util.OAReflect;
+import com.viaoa.runtime.thread.OARemoteThread;
+import com.viaoa.serialize.OAObjectSerializer;
 
 /**
  * Server-side implementation of OA's remoting layer built on top of the
@@ -1982,7 +1984,7 @@ public class OARemoteMultiplexerServer {
         public Session() {
             oaObjectSerializer = new OAObjectSerializer(null, false, new OAObjectSerializerCallback() {
                 @Override
-                protected void beforeSerialize(OAObject obj) {
+                public void beforeSerialize(OAObject obj) {
                     UUID x = obj.getGuid();
                     hmGuid.putIfAbsent(x, false);
                 }

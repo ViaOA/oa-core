@@ -17,17 +17,16 @@ package com.viaoa.filter;
 
 import java.util.logging.Logger;
 
+import com.viaoa.compare.OACompare;
 import com.viaoa.filter.OAFilterDelegate.FinderInfo;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OACompare;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
+import com.viaoa.path.OAPath;
 
 /**
  * Filter that evaluates whether a property value is considered empty,
- * according to {@link com.viaoa.util.OACompare#isEmpty(Object, boolean)}.
+ * according to {@link com.viaoa.compare.OACompare#isEmpty(Object, boolean)}.
  * A property path may be supplied to evaluate nested values.
  *
  * <p>
@@ -43,7 +42,7 @@ public class OAEmptyFilter implements OAFilter {
      * Optional property path used to extract a nested value from the
      * evaluated object before performing the empty check.
      */
-    private OAPropertyPath pp;
+    private OAPath pp;
     
     /**
      * Finder created when the property path traverses multi-valued
@@ -65,7 +64,7 @@ public class OAEmptyFilter implements OAFilter {
      *
      * @param pp the property path used to retrieve a nested value
      */
-    public OAEmptyFilter(OAPropertyPath pp) {
+    public OAEmptyFilter(OAPath pp) {
         this.pp = pp;
     }
     
@@ -76,7 +75,7 @@ public class OAEmptyFilter implements OAFilter {
      * @param pp the property path expression; may be {@code null}
      */
     public OAEmptyFilter(String pp) {
-        this(pp==null?null:new OAPropertyPath(pp));
+        this(pp==null?null:new OAPath(pp));
     }
     
     /**
@@ -97,7 +96,7 @@ public class OAEmptyFilter implements OAFilter {
      * if the property path traverses multi-valued references. If a finder
      * is used, the method returns whether a matching object is located.
      * Otherwise, emptiness is determined using
-     * {@link com.viaoa.util.OACompare#isEmpty(Object, boolean)}.
+     * {@link com.viaoa.compare.OACompare#isEmpty(Object, boolean)}.
      *
      * @param obj the object to evaluate
      * @return {@code true} if the evaluated value is empty; otherwise {@code false}

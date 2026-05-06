@@ -7,9 +7,9 @@ import java.util.Vector;
 import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
-import com.viaoa.datasource.query.OAQueryToken;
-import com.viaoa.datasource.query.OAQueryTokenType;
-import com.viaoa.datasource.query.OAQueryTokenizer;
+import com.viaoa.query.OAQueryToken;
+import com.viaoa.query.OAQueryTokenType;
+import com.viaoa.query.OAQueryTokenizer;
 
 public class OAQueryTokenizerTest extends OAUnitTest {
 

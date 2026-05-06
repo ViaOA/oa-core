@@ -9,16 +9,16 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
+import com.viaoa.compare.OANotExist;
+import com.viaoa.concurrent.OAThrottle;
+import com.viaoa.find.OAFinder;
+import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAFinder;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OASiblingHelper;
-import com.viaoa.util.OANotExist;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAString;
-import com.viaoa.util.OAThrottle;
+import com.viaoa.path.OAPath;
 
 public abstract class OAObjectSiblingService {
 	private static final Logger LOG = Logger.getLogger(OAObjectSiblingService.class.getName());
@@ -181,7 +181,7 @@ public abstract class OAObjectSiblingService {
 		Hub<?> getDetailHub = null;
 		String getDetailPropertyPath = null;
 
-		OAPropertyPath<?> ppGetDetailPropertyPath = null;
+		OAPath<?> ppGetDetailPropertyPath = null;
 
 		// 20180704
 		List<OASiblingHelper<?>> al = callThreadLocalGetSiblingHelpers();
@@ -221,7 +221,7 @@ public abstract class OAObjectSiblingService {
 				DetailInfo di = alDetailInfo.get(cntDetailInfo);
 				getDetailHub = di.siblingHelper.getHub();
 				getDetailPropertyPath = di.getDetailPropertyPath;
-				ppGetDetailPropertyPath = new OAPropertyPath<>(di.siblingHelper.getHub().getObjectClass(), getDetailPropertyPath);
+				ppGetDetailPropertyPath = new OAPath<>(di.siblingHelper.getHub().getObjectClass(), getDetailPropertyPath);
 			}
 
 			String ppPrefix = null;
@@ -298,10 +298,10 @@ public abstract class OAObjectSiblingService {
 			}
 
 			Hub hub = null;
-			OAPropertyPath ppReverse = null;
+			OAPath ppReverse = null;
 
 			if (getDetailHub != null && ppPrefix != null) {
-				OAPropertyPath<?> ppForward = new OAPropertyPath<>(getDetailHub.getObjectClass(), ppPrefix);
+				OAPath<?> ppForward = new OAPath<>(getDetailHub.getObjectClass(), ppPrefix);
 				OALinkInfo[] lis = ppForward.getLinkInfos();
 				boolean b = true;
 				if (lis != null) {

@@ -28,7 +28,7 @@ import java.net.Socket;
 import java.util.logging.Logger;
 
 import com.viaoa.comm.multiplexer.OAMultiplexerClient;
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
 
 /**
  * Client-side file transfer helper used by {@link com.viaoa.sync.OASyncClient}.

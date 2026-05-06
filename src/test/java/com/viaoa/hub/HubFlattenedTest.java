@@ -5,11 +5,11 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.find.OAFinder;
+import com.viaoa.hub.view.HubFlattened;
+import com.viaoa.lang.OAString;
 
 import static org.junit.Assert.*;
-
-import com.viaoa.object.OAFinder;
-import com.viaoa.util.OAString;
 
 import test.hifive.HifiveDataGenerator;
 import test.hifive.delegate.ModelDelegate;

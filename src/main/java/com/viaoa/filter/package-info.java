@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 /**
- * Provides a comprehensive set of {@link com.viaoa.util.OAFilter} subclasses
+ * Provides a comprehensive set of {@link com.viaoa.filter.OAFilter} subclasses
  * used to evaluate object-level conditions across Hubs, OASelect queries, and
  * the OA Object Graph.  Filters enable declarative, reusable, type-safe
  * selection logic without requiring SQL, reflection-based expression engines,
@@ -46,11 +46,11 @@
  * <ul>
  *   <li><b>Serializable</b> – filters can be distributed between client and server.</li>
  *   <li><b>Property path aware</b> – supports nested paths via
- *       {@link com.viaoa.object.OAPropertyPath}, including many-relationships.</li>
+ *       {@link com.viaoa.object.OAPath}, including many-relationships.</li>
  *   <li><b>Finder-enabled</b> – multi-valued segments automatically generate
  *       {@link com.viaoa.util.OAFinder} instances with embedded filters.</li>
  *   <li><b>Consistent comparison semantics</b> – all relational logic uses
- *       {@link com.viaoa.util.OACompare} for type-safe evaluation.</li>
+ *       {@link com.viaoa.compare.OACompare} for type-safe evaluation.</li>
  *   <li><b>Composable</b> – filters can be combined through logical AND, OR,
  *       XOR, and block aggregations.</li>
  * </ul>

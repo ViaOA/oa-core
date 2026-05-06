@@ -8,6 +8,7 @@ import static org.junit.Assert.assertNull;
 import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.lang.OAArray;
 
 import test.xice.tsac3.model.oa.Server;
 

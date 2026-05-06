@@ -5,8 +5,9 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import test.xice.tsam.delegate.oa.CommandDelegate;
 import test.xice.tsam.model.oa.Command;
+
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.hub.Hub;
-import com.viaoa.util.OADateTime;
 
 import test.xice.tsam.delegate.RemoteDelegate;
 import test.xice.tsam.model.delegate.OASyncDelegate;

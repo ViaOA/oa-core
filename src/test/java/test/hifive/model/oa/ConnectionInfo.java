@@ -2,8 +2,10 @@ package test.hifive.model.oa;
  
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
+import com.viaoa.lang.OAString;
 import com.viaoa.util.*;
 import com.viaoa.annotation.*;
+import com.viaoa.datetime.OADateTime;
  
 @OAClass(
     shortName = "ci",

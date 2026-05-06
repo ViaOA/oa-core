@@ -18,7 +18,84 @@ package com.viaoa.text;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
+
+/*qqqqqqqqqqqqq
+CODEX
+
+ - file/class/method: OATextEscape.escapeJson
+  - concrete failure scenario: JSON generated for UI/typeahead becomes invalid when value contains an apostrophe.
+  - example input: O'Brien
+  - expected result: O'Brien or O\u0027Brien inside JSON string
+  - actual or likely result: O\'Brien, which is not a valid JSON escape
+  - why it matters to OA: OAUITypeAheadController builds JSON using OAString.escapeJson; user data with apostrophes
+    can break JSON parsing.
+  - fix direction: Do not escape ' for JSON, or encode it as \u0027.
+
+
+ - file/class/method: OATextEscape.convertToXml(..., bCData=true)
+  - concrete failure scenario: CDATA output is broken when text contains the CDATA terminator.
+  - example input: abc]]>def
+  - expected result: CDATA-safe output, e.g. split ]]]]><![CDATA[>
+  - actual or likely result: raw abc]]>def inside <![CDATA[...]]>, prematurely closing CDATA
+  - why it matters to OA: OAXMLWriter.printCDATA uses this path; serialized XML can become malformed or corrupt
+    following content.
+  - fix direction: In CDATA mode, detect ]]> and split or encode it safely.
+
+
+  - file/class/method: OATextEscape.convertFromHtml
+  - concrete failure scenario: Round-trip HTML decoding double-decodes escaped entities.
+  - example input: &amp;lt;
+  - expected result: &lt;
+  - actual or likely result: <
+  - why it matters to OA: Literal text that looks like an entity can become markup after decode, affecting UI display
+    and serialized text.
+  - fix direction: Decode &amp; last, or use a single-pass entity decoder.
+
+  - file/class/method: OATextEscape.unescapeJson
+  - concrete failure scenario: Literal escaped backslash sequences are converted into control characters.
+  - example input: escaped JSON text representing literal \n: \\n
+  - expected result: \n as two characters
+  - actual or likely result: newline character
+  - why it matters to OA: JSON/string round-trips can corrupt stored display text, paths, or serialized values
+    containing backslash escapes.
+  - fix direction: Use a single-pass JSON unescaper that consumes escape sequences in order.
+
+ 15. Medium - OATextEscape.escapeJs
+     Concrete failure: embedded-HTML mode leaves backslashes as single backslashes, so "C:\\temp" can become a JS
+     string containing \t.
+     Expected: literal backslashes survive JS parsing.
+     Actual: JS escape sequences can be created accidentally.
+     Fix direction: escape backslash as \\, \x5C, or \u005C for JS string context.
+
+ 1. Medium - OATextEscape.convertTextToHtml
+     Scenario: plain text containing both < and > is treated as already-HTML and returned unescaped.
+     Example: OAString.convertTextToHtml("1 < 2 > 0", false) returns 1 < 2 > 0.
+     Impact: UI display can emit raw markup-like text instead of safe HTML text.
+
+ 2. Medium - OATextEscape.getHtmlAttributeMap
+     Scenario: quoted attribute values are returned with quote characters included.
+     Example: <input type="text" data-x='a b'> returns {type="text", data-x='a b'}.
+     Impact: callers expecting parsed HTML attribute values get corrupted values with delimiters included
+
+ 6. Medium - OATextEscape.escape
+     Scenario: public escaping helper throws on null input.
+     Example: OAString.escape(null) throws NullPointerException.
+     Impact: inconsistent with surrounding OA text escaping helpers that return null or empty safely; nullable
+     serialized/UI text paths can fail unexpectedly.
+
+  12. Medium - OATextEscape.decodeIllegalXml
+     Scenario: literal marker-looking text is decoded as an illegal XML character marker.
+     Example: OAString.decodeIllegalXml("<OAXML#65/>") returns "A".
+     Impact: XML round-trips can corrupt legitimate text containing OA marker syntax.
+
+ 20. Medium - OATextEscape.isLegalXml / convertToXml
+     Scenario: unpaired surrogate characters are treated as legal XML and emitted unchanged.
+     Example: OAString.isLegalXml("\uD800") returns true; convertToXml returns the invalid surrogate.
+     Impact: XML serialization can produce malformed XML for invalid Unicode input.
+
+
+*/
 
 /**
  * Encoding and escaping utilities for HTML, XML, JavaScript, and JSON text.

@@ -8,10 +8,10 @@ import com.viaoa.annotation.OAColumn;
 import com.viaoa.annotation.OAId;
 import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAProperty;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.hub.Hub;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAString;
 
 @OAClass(lowerName = "processStep", pluralName = "ProcessSteps", shortName = "prs", displayName = "Process Step", isLookup = true, isPreSelect = true, useDataSource = false, displayProperty = "step", sortProperty = "step")
 public class ProcessStep extends OAObject {

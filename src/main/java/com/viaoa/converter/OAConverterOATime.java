@@ -20,8 +20,8 @@ import java.sql.Time;
 import java.time.*;
 import java.util.Date;
 
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OATime;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.datetime.OATime;
 
 /**
  * Converter for transforming values into {@link OATime} and formatting

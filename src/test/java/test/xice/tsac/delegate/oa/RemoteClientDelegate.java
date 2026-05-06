@@ -4,8 +4,8 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.logging.Logger;
 
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.hub.Hub;
-import com.viaoa.util.OADateTime;
 
 import test.xice.tsac.delegate.ModelDelegate;
 import test.xice.tsac.delegate.RemoteDelegate;

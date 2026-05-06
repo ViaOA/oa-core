@@ -2,8 +2,12 @@
 package test.hifive.model.oa.filter;
 
 import com.viaoa.annotation.*;
+import com.viaoa.cache.OAObjectCacheHubAdder;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
+import com.viaoa.hub.filter.CustomHubFilter;
+import com.viaoa.hub.filter.HubFilter;
+import com.viaoa.lang.OAString;
 import com.viaoa.util.*;
 
 import test.hifive.model.oa.*;

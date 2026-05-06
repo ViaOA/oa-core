@@ -6,8 +6,8 @@ import static org.junit.Assert.*;
 import com.viaoa.OAUnitTest;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.jdbc.OADataSourceJDBC;
+import com.viaoa.filter.OAFilter;
 import com.viaoa.hub.Hub;
-import com.viaoa.util.OAFilter;
 
 import test.hifive.DataSource;
 import test.xice.tsac3.model.oa.*;

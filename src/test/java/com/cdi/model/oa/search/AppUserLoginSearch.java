@@ -7,11 +7,15 @@ import com.cdi.model.oa.*;
 import com.cdi.model.oa.propertypath.*;
 import com.viaoa.annotation.*;
 import com.viaoa.object.*;
+import com.viaoa.select.OASelect;
 import com.viaoa.hub.*;
+import com.viaoa.lang.OAArray;
+import com.viaoa.lang.OAString;
 import com.viaoa.util.*;
-import com.viaoa.util.OADateTime;
 import com.viaoa.datasource.*;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.filter.*;
+import com.viaoa.find.OAFinder;
 
 @OAClass(useDataSource=false, localOnly=true)
 public class AppUserLoginSearch extends OAObject {

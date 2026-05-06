@@ -14,10 +14,10 @@ import com.auto.dev.reportercorp.model.oa.StatusInfo;
 import com.auto.dev.reportercorp.model.oa.StoreInfo;
 import com.auto.dev.reportercorp.model.oa.ThreadInfo;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubCombined;
-import com.viaoa.hub.HubCopy;
-import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObjectModel;
+import com.viaoa.hub.copy.HubCopy;
+import com.viaoa.hub.view.HubCombined;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectModel;
 
 public class ReporterCorpModel extends OAObjectModel {
 	private static Logger LOG = Logger.getLogger(ReporterCorpModel.class.getName());

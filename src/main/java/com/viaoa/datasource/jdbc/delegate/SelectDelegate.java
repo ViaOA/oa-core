@@ -37,13 +37,13 @@ import com.viaoa.datasource.jdbc.query.ResultSetIterator;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.service.object.OAObjectKeyService;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.transaction.OATransaction;
-import com.viaoa.util.OAString;
 
 /**
  * Composes and executes {@code SELECT} queries for JDBC DataSources.

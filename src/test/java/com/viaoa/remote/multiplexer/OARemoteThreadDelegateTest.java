@@ -16,6 +16,8 @@ import org.junit.Test;
 import com.viaoa.OAUnitTest;
 import com.viaoa.comm.multiplexer.OAMultiplexerClient;
 import com.viaoa.comm.multiplexer.OAMultiplexerServer;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.info.RequestInfo;
@@ -25,8 +27,6 @@ import com.viaoa.remote.multiplexer.remote.RemoteBroadcastInterface;
 import com.viaoa.remote.multiplexer.remote.RemoteClientInterface;
 import com.viaoa.remote.multiplexer.remote.RemoteServerInterface;
 import com.viaoa.remote.multiplexer.remote.RemoteSessionInterface;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAString;
 
 public class OARemoteThreadDelegateTest extends OAUnitTest {
 	private OAMultiplexerServer multiplexerServer;

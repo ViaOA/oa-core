@@ -67,7 +67,7 @@
  *       through listeners, enabling reactive updates and distributed
  *       synchronization.</li>
  *   <li><b>Temporary and Recursive Support:</b>
- *       {@link com.viaoa.hub.HubTemp HubTemp} provides lightweight
+ *       {@link com.viaoa.hub.examples.HubTemp HubTemp} provides lightweight
  *       one-object contexts, and {@link com.viaoa.hub.HubRootDelegate
  *       HubRootDelegate} manages recursion roots.</li>
  * </ul>

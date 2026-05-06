@@ -17,8 +17,54 @@ package com.viaoa.text;
 
 import java.awt.Color;
 
-import com.viaoa.util.OAConverter;
-import com.viaoa.util.OAString;
+/*qqqqqqqqqqqqq
+CODEX
+
+ - file/class/method: OATextUtil.createPropertyPath
+  - concrete failure scenario: Empty path segments are included, producing invalid OA property paths.
+  - example input: createPropertyPath("Order", "", "Customer")
+  - expected result: Order.Customer
+  - actual or likely result: Order..Customer
+  - why it matters to OA: OAPath/property path construction can generate paths that fail parsing or resolve
+    incorrectly.
+  - fix direction: Skip empty strings the same way null segments are skipped.
+
+
+   Concrete failure: odd-length input "ABC" throws StringIndexOutOfBoundsException; invalid hex like "GG" silently
+     produces a bogus byte because Character.digit returns -1.
+     Expected: reject invalid/odd hex deterministically.
+     Actual: crash or corrupt bytes.
+     Fix direction: validate even length and require both nibbles >= 0.
+
+
+ 11. Medium - OATextUtil.makeJavaIdentifier
+     Concrete failure: makeJavaIdentifier("1abc") returns "1abc", which is not a valid Java identifier.
+     Expected: first character must satisfy Character.isJavaIdentifierStart.
+     Actual: only isJavaIdentifierPart is checked.
+     Fix direction: handle index 0 separately, replacing or prefixing with _.
+
+ 4. Medium - OATextUtil.colorToHex / OAString.colorToHex
+     Scenario: method emits #RRGGBBAA while converter/docs expect #RRGGBB.
+     Example: OAString.colorToHex(new Color(1,2,3)) returns #010203FF.
+     Impact: color string round-trips through OAConverterColor can reinterpret the bytes and corrupt the color.
+
+  13. Medium - OATextUtil.concat
+     Scenario: null separator is concatenated as literal "null".
+     Example: OAString.concat("a", "b", null) returns "anullb".
+     Impact: shared string/path/query composition can leak "null" into generated text.
+  14. Medium - OATextUtil.parseInt
+     Scenario: integer overflow silently wraps.
+     Example: OAString.parseInt("2147483648") returns -2147483648.
+     Impact: parsed IDs, sizes, or numeric tokens can be corrupted without failure.
+
+  18. Medium - OATextUtil.getBegin / getEnd
+     Scenario: substring helpers can split surrogate pairs.
+     Example: OAString.getFirst("😀x", 1) returns an unpaired high surrogate.
+     Impact: Unicode text can be corrupted by shared first/last helpers.
+
+
+
+*/
 
 /**
  * Utility methods for text composition, lightweight formatting, and
@@ -183,7 +229,7 @@ public class OATextUtil {
 		if (color == null) {
 			return null;
 		}
-		String colorStr = String.format("#%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue());
+		String colorStr = String.format("#%02X%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha());
 		return colorStr;
 	}
     

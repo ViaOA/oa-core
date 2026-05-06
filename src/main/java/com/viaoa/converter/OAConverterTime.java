@@ -19,8 +19,8 @@ import java.sql.Time;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OATime;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.datetime.OATime;
 
 /**
  * Converter for transforming values into {@link java.sql.Time} and formatting

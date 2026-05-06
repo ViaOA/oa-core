@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
+import com.viaoa.cascade.OACascade;
+import com.viaoa.compare.OACompare;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OACascade;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.util.OACompare;
 
 public class OAObjectFindService {
 	private static final Logger LOG = Logger.getLogger(OAObjectFindService.class.getName());

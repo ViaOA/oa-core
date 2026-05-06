@@ -2,8 +2,8 @@ package com.corptostore.model.delegate;
 
 import com.corptostore.model.oa.Store;
 import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 import com.viaoa.runtime.OARuntime;
 
 public class OAObjectInfoDelegate {

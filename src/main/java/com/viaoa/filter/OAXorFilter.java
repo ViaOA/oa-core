@@ -15,8 +15,6 @@
  */
 package com.viaoa.filter;
 
-import com.viaoa.util.OAFilter;
-
 /**
  * Filter that performs an exclusive-OR (XOR) between two {@link OAFilter}
  * instances.
@@ -39,7 +37,7 @@ import com.viaoa.util.OAFilter;
 public class OAXorFilter implements OAFilter {
 
 	/**
-	 * The two {@link com.viaoa.util.OAFilter} instances whose results are used in
+	 * The two {@link com.viaoa.filter.OAFilter} instances whose results are used in
 	 * the XOR evaluation. Either filter may be {@code null}.
 	 */
 	private OAFilter filter1, filter2;

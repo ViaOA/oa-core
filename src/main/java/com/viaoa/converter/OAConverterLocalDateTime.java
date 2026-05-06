@@ -24,9 +24,9 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
 
-import com.viaoa.util.OADate;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OATime;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.datetime.OATime;
 
 /**
  * Converter for transforming values into {@link LocalDateTime} and formatting
@@ -83,16 +83,16 @@ public class OAConverterLocalDateTime implements OAConverterInterface<LocalDateT
      * <ul>
      *     <li>{@code null} → {@code null}</li>
      *     <li>{@link LocalDateTime} – returned directly</li>
-     *     <li>{@link com.viaoa.util.OADateTime} – full date/time, millis → nanos</li>
-     *     <li>{@link com.viaoa.util.OADate} – midnight on same date</li>
-     *     <li>{@link com.viaoa.util.OATime} – combined with Epoch date (1970-01-01)</li>
+     *     <li>{@link com.viaoa.datetime.OADateTime} – full date/time, millis → nanos</li>
+     *     <li>{@link com.viaoa.datetime.OADate} – midnight on same date</li>
+     *     <li>{@link com.viaoa.datetime.OATime} – combined with Epoch date (1970-01-01)</li>
      *     <li>{@link java.sql.Timestamp} – converted using {@code toLocalDateTime()}</li>
      *     <li>{@link java.sql.Time} – Epoch date + {@code toLocalTime()}</li>
      *     <li>{@link LocalDate} – midnight</li>
      *     <li>{@link LocalTime} – Epoch date + time</li>
      *     <li>{@link ZonedDateTime} – {@code toLocalDateTime()}</li>
      *     <li>{@link Instant} – converted using the system default timezone</li>
-     *     <li>{@link String} – parsed with {@link com.viaoa.util.OADateTime#valueOf(String)}</li>
+     *     <li>{@link String} – parsed with {@link com.viaoa.datetime.OADateTime#valueOf(String)}</li>
      *     <li>{@link Number} – interpreted as epoch milliseconds</li>
      *     <li>{@code byte[]} – epoch milliseconds extracted from bytes</li>
      * </ul>
@@ -158,7 +158,7 @@ public class OAConverterLocalDateTime implements OAConverterInterface<LocalDateT
         	String s = ((String) fromValue).trim();
         	if (s.isEmpty()) return null;
             try {
-                OADateTime dt = OADateTime.valueOf(s);
+                OADateTime dt = OADateTime.valueOf(s, fmt);
                 int nanos = dt.getMilliSecond() * 1_000_000;
                 return LocalDateTime.of(dt.getYear(), dt.getMonth() + 1, dt.getDay(),
                         dt.getHour(), dt.getMinute(), dt.getSecond(), nanos);
@@ -184,19 +184,19 @@ public class OAConverterLocalDateTime implements OAConverterInterface<LocalDateT
 
     /**
      * Converts a {@link LocalDateTime} into a formatted {@link String} using OA
-     * {@link com.viaoa.util.OADateTime} formatting rules.
+     * {@link com.viaoa.datetime.OADateTime} formatting rules.
      *
      * <ul>
      *     <li>{@code null} → empty String {@code ""}</li>
-     *     <li>Value is wrapped into an {@link com.viaoa.util.OADateTime}, where
+     *     <li>Value is wrapped into an {@link com.viaoa.datetime.OADateTime}, where
      *         conversion to {@link java.util.Date} uses the system default timezone
      *     </li>
      *     <li>{@code fmt} is passed directly to
-     *         {@link com.viaoa.util.OADateTime#toString(String)}</li>
+     *         {@link com.viaoa.datetime.OADateTime#toString(String)}</li>
      * </ul>
      *
      * @param fromValue {@link LocalDateTime} to convert; may be {@code null}
-     * @param fmt optional format string; implementation depends on {@link com.viaoa.util.OADateTime}
+     * @param fmt optional format string; implementation depends on {@link com.viaoa.datetime.OADateTime}
      * @return formatted string, never {@code null}
      */    
     @Override

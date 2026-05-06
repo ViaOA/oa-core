@@ -6,7 +6,7 @@ import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADateTime;
+import com.viaoa.datetime.OADateTime;
 
 import test.hifive.model.delegate.OAObjectInfoDelegate;
 import test.hifive.model.oa.filter.*;

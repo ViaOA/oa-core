@@ -9,10 +9,10 @@ import com.viaoa.annotation.OAId;
 import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OADate;
-import com.viaoa.util.OADateTime;
 
 @OAClass(lowerName = "snapshotReportVersion", pluralName = "SnapshotReportVersions", shortName = "srv", displayName = "Snapshot Report Version", useDataSource = false, displayProperty = "id", noPojo = true)
 public class SnapshotReportVersion extends OAObject {

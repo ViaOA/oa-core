@@ -5,6 +5,7 @@ import java.util.logging.*;
 import java.sql.*;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
+import com.viaoa.lang.OAString;
 import com.viaoa.util.*;
 import test.xice.tsam.delegate.oa.EnvironmentTypeDelegate;
 import test.xice.tsam.model.delegate.OAObjectInfoDelegate;
@@ -14,9 +15,9 @@ import test.xice.tsam.model.oa.IDL;
 import test.xice.tsam.model.oa.Silo;
 import test.xice.tsam.model.oa.Site;
 import com.viaoa.annotation.*;
+import com.viaoa.converter.OAConverter;
 
 import java.awt.Color;
-import com.viaoa.util.OAConverter;
 
 import test.xice.tsam.delegate.oa.*;
 import test.xice.tsam.model.oa.filter.*;

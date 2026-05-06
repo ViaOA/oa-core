@@ -1,7 +1,7 @@
 package com.corptostore.delegate.oa;
 
 import com.corptostore.model.oa.Transmit;
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
 
 public class TransmitDelegate {
 

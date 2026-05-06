@@ -4,8 +4,8 @@ import com.remodel.model.oa.JsonColumn;
 import com.viaoa.graph.service.HubService;
 import com.viaoa.graph.service.OAObjectService;
 import com.viaoa.hub.Hub;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 import com.viaoa.runtime.OARuntime;
 
 public class OAObjectInfoDelegate {

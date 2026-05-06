@@ -1,6 +1,6 @@
 package com.viaoa.graph.api;
 
-import com.viaoa.object.OATrigger;
+import com.viaoa.trigger.OATrigger;
 
 public interface TriggerOps {
 	void addTrigger(OATrigger trigger);

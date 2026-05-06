@@ -4,13 +4,13 @@ import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.filter.OAFilter;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListenerAdapter;
-import com.viaoa.object.OAGroupBy;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.hub.view.OAGroupBy;
+import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.*;
 
 public abstract class HubAOService {
 	private final Logger LOG = Logger.getLogger(HubAOService.class.getName());

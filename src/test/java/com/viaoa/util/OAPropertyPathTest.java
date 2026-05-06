@@ -8,7 +8,8 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.path.OAPath;
 
 import test.hifive.model.oa.Program;
 import test.hifive.model.oa.propertypath.ProgramPP;
@@ -25,7 +26,7 @@ public class OAPropertyPathTest extends OAUnitTest {
 		init();
 
 		String spp = ProgramPP.locations().employees().pp;
-		OAPropertyPath<Program> pp = new OAPropertyPath<>(Program.class, spp);
+		OAPath<Program> pp = new OAPath<>(Program.class, spp);
 
 		OALinkInfo[] lis = pp.getRecursiveLinkInfos();
 		assertEquals(2, lis.length);
@@ -37,7 +38,7 @@ public class OAPropertyPathTest extends OAUnitTest {
 	@Test
 	public void test2() {
 		String spp = ProgramPP.locations().employees().lastName();
-		OAPropertyPath<Program> pp = new OAPropertyPath<>(Program.class, spp);
+		OAPath<Program> pp = new OAPath<>(Program.class, spp);
 
 		assertNull(pp.getEndLinkInfo());
 
@@ -45,7 +46,7 @@ public class OAPropertyPathTest extends OAUnitTest {
 
 	@Test
 	public void test3() {
-		OAPropertyPath<Program> pp = new OAPropertyPath<>(Program.class, ".");
+		OAPath<Program> pp = new OAPath<>(Program.class, ".");
 		Program p = new Program();
 		Object px = pp.getValue(p);
 		assertEquals(p, px);

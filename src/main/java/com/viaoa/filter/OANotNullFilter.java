@@ -19,13 +19,12 @@ import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.compare.OACompare;
 import com.viaoa.filter.OAFilterDelegate.FinderInfo;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OACompare;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
+import com.viaoa.path.OAPath;
 
 /**
  * Filter that evaluates whether a property's value is <em>not null</em>.
@@ -48,7 +47,7 @@ public class OANotNullFilter implements OAFilter {
      * Optional property path used to extract the value from the evaluated
      * object before applying the not-null check.
      */
-    private OAPropertyPath pp;
+    private OAPath pp;
     
     /**
      * Finder created when the supplied property path crosses a
@@ -69,7 +68,7 @@ public class OANotNullFilter implements OAFilter {
      *
      * @param pp the property path used to retrieve the value
      */
-    public OANotNullFilter(OAPropertyPath pp) {
+    public OANotNullFilter(OAPath pp) {
         this.pp = pp;
     }
     
@@ -80,7 +79,7 @@ public class OANotNullFilter implements OAFilter {
      * @param pp the property-path expression; may be {@code null}
      */
     public OANotNullFilter(String pp) {
-        this(pp==null?null:new OAPropertyPath(pp));
+        this(pp==null?null:new OAPath(pp));
     }
     
     /**

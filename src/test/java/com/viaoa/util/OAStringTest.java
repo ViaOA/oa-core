@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.lang.OAString;
 
 public class OAStringTest extends OAUnitTest {
 

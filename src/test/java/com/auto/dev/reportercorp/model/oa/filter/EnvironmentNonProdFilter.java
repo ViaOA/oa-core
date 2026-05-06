@@ -6,11 +6,11 @@ import com.auto.dev.reportercorp.model.oa.Environment;
 import com.auto.dev.reportercorp.model.oa.propertypath.EnvironmentPP;
 import com.viaoa.annotation.OAClass;
 import com.viaoa.annotation.OAClassFilter;
-import com.viaoa.hub.CustomHubFilter;
+import com.viaoa.cache.OAObjectCacheFilter;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubFilter;
+import com.viaoa.hub.filter.CustomHubFilter;
+import com.viaoa.hub.filter.HubFilter;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheFilter;
 
 @OAClass(useDataSource = false, localOnly = true)
 @OAClassFilter(name = "NonProd", displayName = "Non Prod", hasInputParams = false)

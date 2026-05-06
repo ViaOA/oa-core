@@ -7,7 +7,7 @@ import org.junit.Test;
 import com.viaoa.OAUnitTest;
 import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.datasource.objectcache.OADataSourceObjectCache;
-import com.viaoa.util.OAFilter;
+import com.viaoa.filter.OAFilter;
 
 import test.xice.tsac.model.oa.MRADClientCommand;
 import test.xice.tsac.model.oa.SSHExecute;

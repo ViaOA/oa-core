@@ -7,6 +7,7 @@ import static org.junit.Assert.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.Hub;
 
 import test.hifive.model.oa.*;

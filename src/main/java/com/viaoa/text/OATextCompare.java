@@ -17,7 +17,18 @@ package com.viaoa.text;
 
 import java.util.Locale;
 
-import com.viaoa.util.OACompare;
+import com.viaoa.compare.OACompare;
+
+/*qqqqqqqqqqqqqqqq
+CODEX
+
+  19. Medium - OATextCompare.indexOf / lastIndexOf
+     Scenario: ignore-case search lowercases whole strings, so characters that expand during case conversion shift
+     returned indexes.
+     Example: OATextCompare.indexOf("İx", "x", 0, true) returns 2; the real index in the original string is 1.
+     Impact: callers using the returned index for slicing/highlighting can cut the wrong position.
+
+*/
 
 /**
  * Utility class for comparing and matching {@link String} values.

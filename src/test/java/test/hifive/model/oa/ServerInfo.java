@@ -3,11 +3,13 @@ package test.hifive.model.oa;
 import java.sql.*;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
+import com.viaoa.lang.OAString;
 import com.viaoa.util.*;
 
 import test.hifive.model.oa.AwardCardOrder.CardType;
 
 import com.viaoa.annotation.*;
+import com.viaoa.datetime.OADateTime;
  
 @OAClass(
     shortName = "si",

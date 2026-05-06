@@ -18,9 +18,9 @@ package com.viaoa.pojo;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAPropertyInfo;
 
 /**
  * Utility methods for querying {@link Pojo} metadata and interpreting which
@@ -32,7 +32,7 @@ import com.viaoa.util.OAString;
  *       and {@link PojoLink} by name,</li>
  *   <li>helpers to retrieve all {@link PojoProperty} instances or only those
  *       that are marked as key parts (via {@code keyPos}), and</li>
- *   <li>{@link com.viaoa.object.OAObjectInfo}-aware helpers to determine
+ *   <li>{@link com.viaoa.metadata.OAObjectInfo}-aware helpers to determine
  *       whether a type has:
  *       <ul>
  *         <li>a primary-key based POJO key,</li>

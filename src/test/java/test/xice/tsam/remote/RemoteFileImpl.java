@@ -8,9 +8,10 @@ import java.io.FileOutputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.lang.OAString;
+
 import test.xice.tsam.remote.RemoteFileImpl;
 import test.xice.tsam.remote.RemoteFileInterface;
-import com.viaoa.util.OAString;
 
 public class RemoteFileImpl implements RemoteFileInterface {
     private static Logger LOG = Logger.getLogger(RemoteFileImpl.class.getName());

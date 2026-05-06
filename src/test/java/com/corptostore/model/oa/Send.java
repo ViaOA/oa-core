@@ -5,8 +5,8 @@ import java.util.*;
 import java.util.logging.*;
 import java.sql.*;
 import com.viaoa.object.*;
+import com.viaoa.schedule.*;
 import com.viaoa.hub.*;
-import com.viaoa.scheduler.*;
 import com.viaoa.util.*;
 import com.corptostore.delegate.oa.*;
 import com.corptostore.model.oa.filter.*;
@@ -21,7 +21,7 @@ import com.corptostore.model.oa.filter.SendClosedFilter;
 import com.corptostore.model.oa.filter.SendOpenFilter;
 import com.corptostore.model.oa.method.SendResendMethod;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADateTime;
+import com.viaoa.datetime.OADateTime;
  
 @OAClass(
     lowerName = "send",

@@ -11,7 +11,8 @@ import test.hifive.model.oa.propertypath.EmployeePP;
 
 import com.viaoa.OAUnitTest;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OATypeAhead.OATypeAheadParams;
+import com.viaoa.ui.typeahead.OATypeAhead;
+import com.viaoa.ui.typeahead.OATypeAhead.OATypeAheadParams;
 
 
 public class OATypeAheadTest extends OAUnitTest {

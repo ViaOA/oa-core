@@ -100,7 +100,7 @@
     </dependency>
 
 
-    <!-- might want to remove jaxb -->
+<!-- might want to remove jaxb qqqqqqqqqqqqqqqq 
     <dependency>
       <groupId>javax.xml.bind</groupId>
       <artifactId>jaxb-api</artifactId>
@@ -116,6 +116,9 @@
       <artifactId>jaxb-impl</artifactId>
       <version>4.0.1</version>
     </dependency>
+
+qqqqqqqqqqqqqqqqqq -->
+
 
     <dependency>
       <groupId>junit</groupId>

@@ -8,8 +8,8 @@ import com.viaoa.OAUnitTest;
 import com.viaoa.comm.multiplexer.OAMultiplexerClient;
 import com.viaoa.datasource.clientserver.OADataSourceClient;
 import com.viaoa.hub.Hub;
+import com.viaoa.log.OALogUtil;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OALogUtil;
 
 import test.hifive.delegate.ModelDelegate;
 import test.hifive.model.oa.Program;

@@ -20,10 +20,10 @@ import com.viaoa.annotation.OALinkTable;
 import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.hub.Hub;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAString;
 
 @OAClass(lowerName = "statusInfo", pluralName = "StatusInfos", shortName = "sti", displayName = "Status Info", useDataSource = false, displayProperty = "status")
 public class StatusInfo extends OAObject {

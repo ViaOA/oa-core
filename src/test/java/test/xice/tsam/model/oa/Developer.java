@@ -13,9 +13,9 @@ import com.viaoa.annotation.OALinkTable;
 import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATable;
+import com.viaoa.datetime.OADate;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OADate;
 
 @OAClass(shortName = "dev", displayName = "Developer", isLookup = true, isPreSelect = true, displayProperty = "fullName", sortProperty = "lastName")
 @OATable()

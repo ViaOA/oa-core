@@ -26,11 +26,16 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.viaoa.converter.OAConv;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceIterator;
-import com.viaoa.datasource.OASelect;
 import com.viaoa.datasource.objectcache.OADataSourceObjectCache;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.datetime.OATime;
+import com.viaoa.filter.OAFilter;
 import com.viaoa.filter.OAQueryFilter;
+import com.viaoa.find.OAFinder;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCacheService;
@@ -40,13 +45,15 @@ import com.viaoa.graph.service.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.json.OAJson;
 import com.viaoa.json.OAJson.StackItem;
+import com.viaoa.lang.OAArray;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OAFkeyInfo;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.model.oa.VString;
-import com.viaoa.object.OAFinder;
-import com.viaoa.object.OAFkeyInfo;
-import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAPropertyInfo;
+import com.viaoa.path.OAPath;
 import com.viaoa.pojo.PojoDelegate;
 import com.viaoa.pojo.PojoLink;
 import com.viaoa.pojo.PojoLinkOne;
@@ -56,14 +63,7 @@ import com.viaoa.pojo.PojoProperty;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
-import com.viaoa.util.OAArray;
-import com.viaoa.util.OAConv;
-import com.viaoa.util.OADate;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAString;
-import com.viaoa.util.OATime;
+import com.viaoa.select.OASelect;
 
 // todo: unit test with CorpToStore model ... to check multipart keys
 
@@ -762,7 +762,7 @@ public class OAJacksonDeserializerLoader {
 				break;
 			}
 
-			OAPropertyPath pp = new OAPropertyPath(stackItem.oi.getForClass(), pjp.getPropertyPath());
+			OAPath pp = new OAPath(stackItem.oi.getForClass(), pjp.getPropertyPath());
 			OAPropertyInfo pi = pp.getEndPropertyInfo();
 
 			Object objx = convert(jn, pi);
@@ -837,7 +837,7 @@ public class OAJacksonDeserializerLoader {
 		Object[] values = new Object[] {};
 
 		for (final PojoProperty pjp : alPojoProperty) {
-			OAPropertyPath pp = new OAPropertyPath(stackItem.oi.getForClass(), pjp.getPropertyPath());
+			OAPath pp = new OAPath(stackItem.oi.getForClass(), pjp.getPropertyPath());
 			OAPropertyInfo pi = pp.getEndPropertyInfo();
 
 			JsonNode jn = stackItem.node.get(pjp.getName());
@@ -910,7 +910,7 @@ public class OAJacksonDeserializerLoader {
 		Object[] values = new Object[] {};
 
 		for (final PojoProperty pjp : alPojoProperty) {
-			OAPropertyPath pp = new OAPropertyPath(stackItem.oi.getForClass(), pjp.getPropertyPath());
+			OAPath pp = new OAPath(stackItem.oi.getForClass(), pjp.getPropertyPath());
 			OAPropertyInfo pi = pp.getEndPropertyInfo();
 
 			JsonNode jn = stackItem.node.get(pjp.getName());
@@ -1081,7 +1081,7 @@ public class OAJacksonDeserializerLoader {
 			} else {
 				String pp = stackItem.li.getSelectFromPropertyPath();
 				if (OAString.isNotEmpty(pp)) {
-					OAPropertyPath ppx = new OAPropertyPath(stackItem.parent.oi.getForClass(), pp);
+					OAPath ppx = new OAPath(stackItem.parent.oi.getForClass(), pp);
 					hub = (Hub) ppx.getValue(stackItem.parent.obj);
 				}
 			}
@@ -1149,13 +1149,14 @@ public class OAJacksonDeserializerLoader {
 
 		OADataSourceIterator dsi = ds.select(stackItem.oi.getForClass(), sql, args, null, false);
 		Object objx = dsi.next();
-		
+		dsi.remove();
 
 		if (objx == null) {
 			OADataSource dsx = OARuntime.datasource().get(stackItem.oi.getForClass());
 			if (dsx != null && dsx != ds) {
 				OASelect sel = new OASelect(stackItem.oi.getForClass(), sql, args, null);
 				objx = sel.next();
+				sel.close();
 			}
 		}
 		stackItem.obj = (OAObject) objx;
@@ -1185,7 +1186,7 @@ public class OAJacksonDeserializerLoader {
 
 		if (stackItem.node.isObject()) {
 			for (PojoProperty pojoProp : alPojoProperyKeys) {
-				OAPropertyPath pp = new OAPropertyPath(stackItem.oi.getForClass(), pojoProp.getPropertyPath());
+				OAPath pp = new OAPath(stackItem.oi.getForClass(), pojoProp.getPropertyPath());
 				OAPropertyInfo pi = pp.getEndPropertyInfo();
 
 				JsonNode jn = stackItem.node.get(pojoProp.getName());
@@ -1210,7 +1211,7 @@ public class OAJacksonDeserializerLoader {
 			int pos = -1;
 			for (PojoProperty pojoProp : alPojoProperyKeys) {
 				pos++;
-				OAPropertyPath pp = new OAPropertyPath(stackItem.oi.getForClass(), pojoProp.getPropertyPath());
+				OAPath pp = new OAPath(stackItem.oi.getForClass(), pojoProp.getPropertyPath());
 				OAPropertyInfo pi = pp.getEndPropertyInfo();
 
 				Object val;
@@ -1259,7 +1260,7 @@ public class OAJacksonDeserializerLoader {
 			} else {
 				String pp = stackItem.li.getSelectFromPropertyPath();
 				if (OAString.isNotEmpty(pp)) {
-					OAPropertyPath ppx = new OAPropertyPath(stackItem.oi.getForClass(), pp);
+					OAPath ppx = new OAPath(stackItem.oi.getForClass(), pp);
 					hub = (Hub) ppx.getValue(stackItem.parent.obj);
 				}
 			}
@@ -1339,12 +1340,14 @@ public class OAJacksonDeserializerLoader {
 
 		OADataSourceIterator dsi = ds.select(stackItem.oi.getForClass(), sql, args, null, false);
 		Object objx = dsi.next();
+		dsi.remove();
 		
 		if (objx == null) {
 			OADataSource dsx = OARuntime.datasource().get(stackItem.oi.getForClass());
 			if (dsx != null && dsx != ds) {
 				OASelect sel = new OASelect(stackItem.oi.getForClass(), sql, args, null);
 				objx = sel.next();
+				sel.close();
 			}
 		}
 		stackItem.obj = (OAObject) objx;
@@ -1488,7 +1491,7 @@ public class OAJacksonDeserializerLoader {
 			ppFrom += extra;
 		}
 
-		OAPropertyPath pp = new OAPropertyPath(stackItem.li.getReverseLinkInfo().getToClass(), ppFrom);
+		OAPath pp = new OAPath(stackItem.li.getReverseLinkInfo().getToClass(), ppFrom);
 
 		// see if any of the props in Pp can be skipped - if they are in stack
 		int pos = 0;
@@ -1597,7 +1600,7 @@ public class OAJacksonDeserializerLoader {
 
 		// get the root object used in equalPp
 		String sppToMatch = liToRef.getEqualPropertyPath();
-		OAPropertyPath pp = new OAPropertyPath(stackItem.oi.getForClass(), sppToMatch);
+		OAPath pp = new OAPath(stackItem.oi.getForClass(), sppToMatch);
 
 		// see if any of the props in ppx can be skipped - if they are in stack
 		int pos = 0;
@@ -1646,7 +1649,7 @@ public class OAJacksonDeserializerLoader {
 				}
 			} else if (s.toLowerCase().startsWith(sppToMatch.toLowerCase())) {
 				int x = OAString.dcount(s, ".") - OAString.dcount(sppToMatch, ".");
-				OAPropertyPath ppx = new OAPropertyPath(stackItem.oi.getForClass(), s);
+				OAPath ppx = new OAPath(stackItem.oi.getForClass(), s);
 				ppx = ppx.getReversePropertyPath();
 				if (ppx != null) {
     				OALinkInfo[] lisx = ppx.getLinkInfos();
@@ -1665,7 +1668,7 @@ public class OAJacksonDeserializerLoader {
 
 			if (lix == stackItem.li.getReverseLinkInfo()) {
 				String pps = lix.getReverseLinkInfo().getEqualPropertyPath() + extraPp;
-				OAPropertyPath ppx = new OAPropertyPath(stackItem.parent.oi.getForClass(), pps);
+				OAPath ppx = new OAPath(stackItem.parent.oi.getForClass(), pps);
 
 				// see if any of the props in ppx can be skipped - if they are in stack
 				pos = 0;
@@ -1685,7 +1688,7 @@ public class OAJacksonDeserializerLoader {
 				eq.value = (OAObject) ppx.getValue(si.obj, pos);
 			} else {
 				String pps = lix.getEqualPropertyPath() + extraPp;
-				OAPropertyPath ppx = new OAPropertyPath(stackItem.oi.getForClass(), pps);
+				OAPath ppx = new OAPath(stackItem.oi.getForClass(), pps);
 				eq.value = (OAObject) ppx.getValue(stackItem.obj);
 			}
 			if (eq.value != null) {

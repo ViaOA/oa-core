@@ -25,31 +25,35 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.xml.bind.annotation.XmlTransient;
-
+import com.viaoa.callback.OAObjectCallback;
+import com.viaoa.compare.OACompare;
+import com.viaoa.compare.OANotExist;
+import com.viaoa.converter.OAConv;
+import com.viaoa.converter.OAConverter;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceIterator;
-import com.viaoa.datasource.OASelect;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.find.OAHierFinder;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.OAObjectService;
 import com.viaoa.hub.Hub;
+import com.viaoa.lang.OAString;
+import com.viaoa.log.OALogger;
+import com.viaoa.metadata.OAFkeyInfo;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.model.oa.VEnum;
 import com.viaoa.model.oa.VString;
+import com.viaoa.reflect.OAReflect;
 import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
+import com.viaoa.select.OASelect;
 import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.remote.RemoteServerInterface;
-import com.viaoa.util.OACompare;
-import com.viaoa.util.OAConv;
-import com.viaoa.util.OAConverter;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OALogger;
-import com.viaoa.util.OANotExist;
-import com.viaoa.util.OAReflect;
-import com.viaoa.util.OAString;
 
 /**
  * Core root class for all OA entity/model objects.
@@ -178,7 +182,6 @@ import com.viaoa.util.OAString;
  * @see OAObjectCacheDelegate
  * @see com.viaoa.hub.Hub
  */
-@XmlTransient()
 public class OAObject implements java.io.Serializable, Comparable<Object> {
 
 	
@@ -1224,7 +1227,6 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *
 	 * @param b the new-state value to assign
 	 */
-	@XmlTransient
 	public void setNew(boolean b) {
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		og.objectsInternal().callObjectSetNew(this, b);
@@ -1289,7 +1291,6 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *
 	 * @param tf {@code true} to mark the object as deleted; {@code false} to clear the deleted state
 	 */
-	@XmlTransient
 	public void setDeleted(boolean tf) {
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		og.objectsInternal().callObjectDeleteSetDeleted(this, tf);
@@ -1518,7 +1519,6 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *           owners) as changed; {@code false} to clear the changed state
 	 *           and remove original value tracking as defined by the delegates
 	 */
-	@XmlTransient
 	public void setChanged(boolean tf) {
 		if (changedFlag != tf) {
 			boolean bOld = changedFlag;
@@ -2870,7 +2870,6 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return {@code true} if automatic hub insertion is enabled;
 	 *         {@code false} otherwise
 	 */
-	@XmlTransient
 	public boolean getAutoAdd() {
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		return og.objectsInternal().callObjectGetAutoAdd(this);

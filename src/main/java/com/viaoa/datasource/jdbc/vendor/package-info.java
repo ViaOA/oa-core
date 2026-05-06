@@ -39,7 +39,7 @@
  *
  * <h2>Usage</h2>
  * Typically invoked through administrative utilities or maintenance scripts.
- * All operations are logged via {@link com.viaoa.util.OALogger} at FINE level.
+ * All operations are logged via {@link com.viaoa.log.OALogger} at FINE level.
  *
  * <h2>Example</h2>
  * <pre>{@code

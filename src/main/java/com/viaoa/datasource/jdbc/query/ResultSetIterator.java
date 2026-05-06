@@ -26,34 +26,30 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.concurrent.OAThrottle;
+import com.viaoa.converter.OAConv;
+import com.viaoa.converter.OAConverter;
 import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.datasource.jdbc.OADataSourceJDBC;
 import com.viaoa.datasource.jdbc.db.Column;
 import com.viaoa.datasource.jdbc.db.DBMetaData;
 import com.viaoa.datasource.jdbc.db.DataAccessObject;
-import com.viaoa.graph.OAGraph;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.datetime.OATime;
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectCacheService;
-import com.viaoa.graph.service.object.OAObjectInfoService;
-import com.viaoa.graph.service.object.OAObjectReflectService;
+import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.Hub;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAPerformance;
-import com.viaoa.object.OASiblingHelper;
+import com.viaoa.performance.OAPerformance;
+import com.viaoa.reflect.OAReflect;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
 import com.viaoa.transaction.OATransaction;
-import com.viaoa.util.ClassModifier;
-import com.viaoa.util.OAConv;
-import com.viaoa.util.OAConverter;
-import com.viaoa.util.OADate;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAString;
-import com.viaoa.util.OAThrottle;
-import com.viaoa.util.OATime;
 
 /**
  * Streams database results into OAObjects using JDBC and OA metadata.
@@ -997,7 +993,7 @@ public class ResultSetIterator implements OADataSourceIterator {
 			obj = ((Clob) obj).getSubString(1, (int) ((Clob) obj).length());
 		} else if (obj.getClass().isArray()) {
 			// 2006/06/01
-			Class c = ClassModifier.getClassWrapper(paramType);
+			Class c = OAReflect.getClassWrapper(paramType);
 			if (Number.class.isAssignableFrom(c)) {
 				obj = new java.math.BigInteger((byte[]) obj);
 			} else if (java.util.Date.class.isAssignableFrom(paramType)) {

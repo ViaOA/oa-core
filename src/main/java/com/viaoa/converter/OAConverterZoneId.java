@@ -19,7 +19,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.TimeZone;
 
-import com.viaoa.util.OADateTime;
+import com.viaoa.datetime.OADateTime;
 
 /**
  * Converter for transforming values into {@link ZoneId} and formatting them

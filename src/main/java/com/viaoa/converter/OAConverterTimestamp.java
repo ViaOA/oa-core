@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
-import com.viaoa.util.OADateTime;
+import com.viaoa.datetime.OADateTime;
 
 /**
  * Converter for transforming values into {@link java.sql.Timestamp} and

@@ -1,8 +1,8 @@
 package test.xice.tsac.model.delegate;
 
 import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.metadata.OAObjectModel;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectModel;
 import com.viaoa.runtime.OARuntime;
 import test.xice.tsac.model.oa.GSMRClient;
 

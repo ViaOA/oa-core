@@ -15,19 +15,19 @@
  */
 package com.viaoa.func;
 
+import com.viaoa.compare.OACompare;
+import com.viaoa.converter.OAConv;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAFinder;
+import com.viaoa.lang.OADouble;
+import com.viaoa.lang.OAInteger;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
 import com.viaoa.template.OATemplate;
-import com.viaoa.util.OACompare;
-import com.viaoa.util.OAConv;
-import com.viaoa.util.OADouble;
-import com.viaoa.util.OAInteger;
-import com.viaoa.util.OAString;
 
 /**
  * Utility functions that evaluate values across an OAObject graph using
- * property-path traversal. These functions use {@link com.viaoa.object.OAFinder}
+ * property-path traversal. These functions use {@link com.viaoa.find.OAFinder}
  * to walk relationships from a root {@link com.viaoa.object.OAObject} or
  * {@link com.viaoa.hub.Hub}, applying aggregation logic to the objects
  * encountered along the path. <p>
@@ -43,8 +43,8 @@ import com.viaoa.util.OAString;
  *
  * Each function splits property paths into navigation and terminal-property
  * segments when needed, and converts or compares values using OA utility
- * classes such as {@link com.viaoa.util.OAConv} and
- * {@link com.viaoa.util.OACompare}. Traversal always processes the full set of
+ * classes such as {@link com.viaoa.converter.OAConv} and
+ * {@link com.viaoa.compare.OACompare}. Traversal always processes the full set of
  * reachable objects and does not short-circuit. <p>
  *
  * OAFunction forms the foundation for high-level expressions used in

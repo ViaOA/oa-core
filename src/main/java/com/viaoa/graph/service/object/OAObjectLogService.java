@@ -3,11 +3,11 @@ package com.viaoa.graph.service.object;
 import java.util.logging.Logger;
 
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OALogRecord;
+import com.viaoa.lang.OAString;
+import com.viaoa.log.OALogRecord;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.util.OAString;
 import com.viaoa.xml.OAXMLReader;
 import com.viaoa.xml.OAXMLWriter;
 

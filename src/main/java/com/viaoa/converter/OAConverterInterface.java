@@ -20,7 +20,7 @@ package com.viaoa.converter;
  * and optionally formatting values of that type into a {@link String}.
  * <p>
  * Implementations of this interface are registered with and invoked through
- * {@link com.viaoa.util.OAConverter}, which selects the appropriate converter
+ * {@link com.viaoa.converter.OAConverter}, which selects the appropriate converter
  * based on the desired target class.
  * </p>
  *
@@ -56,7 +56,7 @@ package com.viaoa.converter;
  *
  * @param <T> the type that this converter converts <em>into</em>
  *
- * @see com.viaoa.util.OAConverter
+ * @see com.viaoa.converter.OAConverter
  */
 public interface OAConverterInterface<T> {
 

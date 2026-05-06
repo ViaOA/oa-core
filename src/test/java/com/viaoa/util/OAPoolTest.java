@@ -7,6 +7,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.concurrent.OAPool;
 
 public class OAPoolTest extends OAUnitTest{
     final int maxPoolSize = 5;

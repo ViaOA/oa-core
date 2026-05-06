@@ -3,6 +3,7 @@ package com.viaoa.object;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import com.viaoa.OAUnitTest;
+import com.viaoa.metadata.OAObjectInfo;
 
 import test.xice.tsam.datasource.DataSource;
 import test.xice.tsam.model.oa.*;

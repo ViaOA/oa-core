@@ -16,26 +16,26 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.cache.OAObjectCache;
+import com.viaoa.cache.OAObjectCacheListener;
+import com.viaoa.callback.OACallback;
+import com.viaoa.concurrent.OAThrottle;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.objectcache.OADataSourceObjectCache;
 import com.viaoa.filter.OAEqualFilter;
+import com.viaoa.filter.OAFilter;
 import com.viaoa.filter.OAFilterDelegate;
 import com.viaoa.filter.OAFilterDelegate.FinderInfo;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubTemp;
-import com.viaoa.object.OACallback;
-import com.viaoa.object.OAFinder;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.hub.examples.HubTemp;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCache;
-import com.viaoa.object.OAObjectCacheListener;
-import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
+import com.viaoa.path.OAPath;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAString;
-import com.viaoa.util.OAThrottle;
 
 /**
  * Internal service responsible for managing the OAGraph OAObject cache,
@@ -1365,7 +1365,7 @@ public abstract class OAObjectCacheService {
 		OAFinder<T,T> finder;
 		OAFilter filter = null;
 		if (!OAString.isEmpty(propertyPath)) {
-			OAPropertyPath pp = new OAPropertyPath(clazz, propertyPath);
+			OAPath pp = new OAPath(clazz, propertyPath);
 			FinderInfo fi;
 			try {
 				fi = OAFilterDelegate.createFinder(clazz, pp);

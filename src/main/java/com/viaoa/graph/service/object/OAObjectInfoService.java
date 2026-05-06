@@ -17,14 +17,14 @@ import java.util.logging.Logger;
 
 import com.viaoa.annotation.OAClass;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OACalcInfo;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.lang.OAArray;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OACalcInfo;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.util.OAArray;
-import com.viaoa.util.OAReflect;
-import com.viaoa.util.OAString;
+import com.viaoa.reflect.OAReflect;
 
 public abstract class OAObjectInfoService {
 	private static final Logger LOG = Logger.getLogger(OAObjectInfoService.class.getName());

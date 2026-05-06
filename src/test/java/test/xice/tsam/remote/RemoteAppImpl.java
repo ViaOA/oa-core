@@ -3,9 +3,9 @@ package test.xice.tsam.remote;
 
 import java.util.ArrayList;
 
-import test.xice.tsam.remote.RemoteAppInterface;
-import com.viaoa.util.OAProperties;
+import com.viaoa.config.OAProperties;
 
+import test.xice.tsam.remote.RemoteAppInterface;
 import test.xice.tsam.model.oa.AdminUser;
 import test.xice.tsam.model.oa.cs.ClientRoot;
 import test.xice.tsam.model.oa.cs.ServerRoot;

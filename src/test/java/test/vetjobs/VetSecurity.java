@@ -1,6 +1,8 @@
 package test.vetjobs;
 
 import com.viaoa.hub.*;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.*;
 
 public class VetSecurity extends OAObject {

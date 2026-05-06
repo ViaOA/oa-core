@@ -5,6 +5,8 @@ import java.util.logging.*;
 import com.cdi.model.oa.*;
 import com.cdi.model.oa.propertypath.*;
 import com.viaoa.annotation.*;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OATime;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;

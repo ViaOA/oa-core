@@ -4,6 +4,8 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
 
 import test.xice.tsac3.model.oa.*;
 

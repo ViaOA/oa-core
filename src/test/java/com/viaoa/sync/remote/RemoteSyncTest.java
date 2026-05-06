@@ -11,9 +11,9 @@ import com.viaoa.OAUnitTest;
 import com.viaoa.comm.multiplexer.OAMultiplexerClient;
 import com.viaoa.comm.multiplexer.OAMultiplexerServer;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectSerializer;
 import com.viaoa.remote.multiplexer.OARemoteMultiplexerClient;
 import com.viaoa.remote.multiplexer.OARemoteMultiplexerServer;
+import com.viaoa.serialize.OAObjectSerializer;
 import com.viaoa.sync.OASyncDelegate;
 import com.viaoa.sync.OASyncServer;
 

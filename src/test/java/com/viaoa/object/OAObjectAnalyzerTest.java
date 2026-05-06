@@ -5,6 +5,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.analysis.OAObjectAnalyzer;
 
 import test.hifive.HifiveDataGenerator;
 import test.xice.tsac3.model.oa.*;

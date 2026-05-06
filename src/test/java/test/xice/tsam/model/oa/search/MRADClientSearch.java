@@ -10,10 +10,15 @@ import test.xice.tsam.model.oa.OperatingSystem;
 import test.xice.tsam.model.oa.propertypath.MRADClientPP;
 import test.xice.tsam.model.oa.search.MRADClientSearch;
 import com.viaoa.annotation.*;
+import com.viaoa.compare.OACompare;
 import com.viaoa.datasource.*;
 import com.viaoa.object.*;
+import com.viaoa.select.OASelect;
 import com.viaoa.hub.*;
+import com.viaoa.lang.OAArray;
+import com.viaoa.lang.OAString;
 import com.viaoa.util.*;
+import com.viaoa.filter.OAFilter;
 import com.viaoa.filter.OAQueryFilter;
 
 import test.xice.tsam.model.oa.*;

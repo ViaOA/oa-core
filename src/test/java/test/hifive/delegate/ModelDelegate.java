@@ -11,7 +11,7 @@
 package test.hifive.delegate;
 
 import com.viaoa.hub.*;
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
 
 import test.hifive.model.oa.*;
 import test.hifive.model.oa.cs.ServerRoot;

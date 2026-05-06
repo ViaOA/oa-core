@@ -17,8 +17,8 @@ package com.viaoa.datasource.jdbc.db;
 
 import com.viaoa.annotation.OAClass;
 import com.viaoa.datasource.jdbc.delegate.DBMetaDataDelegate;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 
 // DBMetaData.ORACLE:  http://docs.oracle.com/javase/1.5.0/docs/guide/jdbc/getstart/mapping.html
 // SqlServer: http://msdn.microsoft.com/en-us/library/ms191530.aspx

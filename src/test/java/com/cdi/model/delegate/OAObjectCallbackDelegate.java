@@ -2,8 +2,8 @@ package com.cdi.model.delegate;
 
 import com.cdi.model.oa.WorkOrderPallet;
 import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.metadata.OAObjectModel;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectModel;
 import com.viaoa.runtime.OARuntime;
 
 public class OAObjectCallbackDelegate {

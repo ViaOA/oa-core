@@ -4,8 +4,8 @@ package com.corptostore.model.delegate;
 import com.corptostore.model.oa.Store;
 import com.viaoa.graph.service.HubService;
 import com.viaoa.hub.Hub;
+import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.object.OALinkInfo;
 import com.viaoa.object.OAObject;
 
 public class HubDetailDelegate {

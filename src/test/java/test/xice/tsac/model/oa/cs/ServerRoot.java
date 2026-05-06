@@ -5,6 +5,7 @@ package test.xice.tsac.model.oa.cs;
 import com.viaoa.annotation.*;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
+import com.viaoa.hub.merge.HubMerger;
 import com.viaoa.util.*;
 
 import test.xice.tsac.model.oa.*;

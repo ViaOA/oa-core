@@ -21,8 +21,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 import com.sun.management.OperatingSystemMXBean;
-
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
 
 /**
  * Diagnostic utility for inspecting thread activity and detecting potential

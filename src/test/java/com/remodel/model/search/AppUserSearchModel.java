@@ -4,9 +4,11 @@ package com.remodel.model.search;
 import java.util.logging.*;
 
 import com.viaoa.object.*;
+import com.viaoa.select.OASelect;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 import com.viaoa.filter.*;
+import com.viaoa.find.OAFinder;
 import com.remodel.delegate.ModelDelegate;
 import com.remodel.model.*;
 import com.remodel.model.oa.*;

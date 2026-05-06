@@ -4,6 +4,7 @@ package test.hifive.model.oa;
 import java.sql.*;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
+import com.viaoa.hub.filter.HubFilter;
 import com.viaoa.util.*;
 
 import test.hifive.model.delegate.OAObjectInfoDelegate;

@@ -12,10 +12,10 @@ import com.viaoa.annotation.OAId;
 import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATable;
+import com.viaoa.datetime.OADate;
 import com.viaoa.hub.Hub;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OADate;
-import com.viaoa.util.OAString;
 
 import test.xice.tsam.model.delegate.OAObjectInfoDelegate;
 import test.xice.tsam.model.oa.ApplicationStatus.Type;

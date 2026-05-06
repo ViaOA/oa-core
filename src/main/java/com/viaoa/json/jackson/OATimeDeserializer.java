@@ -21,7 +21,7 @@ import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.viaoa.util.OATime;
+import com.viaoa.datetime.OATime;
 
 /**
  * Jackson {@link com.fasterxml.jackson.databind.JsonDeserializer JsonDeserializer}

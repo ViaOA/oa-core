@@ -5,8 +5,8 @@ import static org.junit.Assert.assertNotNull;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAFinder;
 
 import test.hifive.delegate.ModelDelegate;
 import test.hifive.model.oa.AddOnItem;

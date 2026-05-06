@@ -1,7 +1,7 @@
 package test.xice.tsac.delegate.oa;
 
-import com.viaoa.object.OAFinder;
-import com.viaoa.util.OAString;
+import com.viaoa.find.OAFinder;
+import com.viaoa.lang.OAString;
 
 import test.xice.tsac.delegate.ModelDelegate;
 import test.xice.tsac.model.oa.ApplicationType;

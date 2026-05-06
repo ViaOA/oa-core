@@ -21,9 +21,9 @@ import javax.swing.undo.UndoableEdit;
 
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.hub.Hub;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.util.OAString;
 
 /**
  * Implementation of {@link javax.swing.undo.UndoableEdit} that captures a

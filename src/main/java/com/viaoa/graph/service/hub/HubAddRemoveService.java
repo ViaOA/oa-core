@@ -6,16 +6,16 @@ import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import com.viaoa.callback.OAObjectCallback;
+import com.viaoa.cascade.OACascade;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubDataMaster;
-import com.viaoa.object.OACascade;
-import com.viaoa.object.OAFkeyInfo;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OAFkeyInfo;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCallback;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.util.*;
 
 public abstract class HubAddRemoveService {
 	private final Logger LOG = Logger.getLogger(HubAddRemoveService.class.getName());

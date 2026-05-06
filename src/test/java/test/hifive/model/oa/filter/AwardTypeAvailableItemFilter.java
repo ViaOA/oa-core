@@ -6,11 +6,11 @@ import test.hifive.model.oa.*;
 
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
-import com.viaoa.hub.HubFilter;
 import com.viaoa.hub.HubListener;
 import com.viaoa.hub.HubListenerAdapter;
-import com.viaoa.hub.HubMerger;
-import com.viaoa.util.OAString;
+import com.viaoa.hub.filter.HubFilter;
+import com.viaoa.hub.merge.HubMerger;
+import com.viaoa.lang.OAString;
 
 /**
  * Used by AwardType.getAvailableItems() to populate the list of available items.

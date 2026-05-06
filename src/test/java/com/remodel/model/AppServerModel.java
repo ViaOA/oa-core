@@ -11,8 +11,8 @@ import com.remodel.model.oa.AppServer;
 import com.remodel.model.oa.AppUserLogin;
 import com.remodel.model.search.AppUserLoginSearchModel;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubCopy;
-import com.viaoa.object.OAObjectModel;
+import com.viaoa.hub.copy.HubCopy;
+import com.viaoa.metadata.OAObjectModel;
 
 public class AppServerModel extends OAObjectModel {
 	private static Logger LOG = Logger.getLogger(AppServerModel.class.getName());

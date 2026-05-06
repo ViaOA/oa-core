@@ -11,9 +11,9 @@ import com.viaoa.annotation.OAId;
 import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OADateTime;
 
 @OAClass(lowerName = "appUserLogin", pluralName = "AppUserLogins", shortName = "aul", displayName = "App User Login", useDataSource = false, isProcessed = true, displayProperty = "appUser.displayName", filterClasses = {
 		AppUserLoginConnectedFilter.class, AppUserLoginLastDayFilter.class }, noPojo = true, rootTreePropertyPaths = {

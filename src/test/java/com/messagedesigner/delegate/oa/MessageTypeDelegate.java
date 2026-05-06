@@ -6,7 +6,7 @@ import com.messagedesigner.model.oa.MessageGroup;
 import com.messagedesigner.model.oa.MessageRecord;
 import com.messagedesigner.model.oa.MessageType;
 import com.messagedesigner.model.oa.MessageTypeRecord;
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
 
 public class MessageTypeDelegate {
 

@@ -4,10 +4,10 @@ import java.awt.Window;
 import java.io.File;
 import javax.swing.JFileChooser;
 
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
+import com.viaoa.lang.OAString;
 import com.viaoa.undo.OAUndoManager;
-import com.viaoa.object.OAFinder;
-import com.viaoa.util.OAString;
 import com.viaoa.xml.OAXMLReader;
 import com.viaoa.xml.OAXMLWriter;
 

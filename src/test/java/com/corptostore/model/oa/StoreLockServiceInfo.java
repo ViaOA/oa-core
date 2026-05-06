@@ -16,10 +16,10 @@ import com.viaoa.annotation.OAMethod;
 import com.viaoa.annotation.OAObjCallback;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
+import com.viaoa.callback.OAObjectCallback;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCallback;
-import com.viaoa.util.OADateTime;
 
 @OAClass(lowerName = "storeLockServiceInfo", pluralName = "StoreLockServiceInfos", shortName = "sls", displayName = "Store Lock Service Info", useDataSource = false, isProcessed = true, displayProperty = "id")
 public class StoreLockServiceInfo extends OAObject {

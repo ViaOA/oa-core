@@ -4,7 +4,8 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
-import com.viaoa.object.OAObjectCallback.Type;
+import com.viaoa.callback.OAObjectCallback;
+import com.viaoa.callback.OAObjectCallback.Type;
 
 import test.xice.tsac3.model.oa.*;
 

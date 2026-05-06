@@ -33,26 +33,26 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import com.viaoa.compare.OACompare;
+import com.viaoa.converter.OAConverter;
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.datasource.OASelect;
+import com.viaoa.filter.OAFilter;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCSService;
 import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.service.object.OAObjectKeyService;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
-import com.viaoa.util.Base64;
-import com.viaoa.util.OACompare;
-import com.viaoa.util.OAConverter;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAString;
+import com.viaoa.secure.Base64;
+import com.viaoa.select.OASelect;
 
 /**
  * Legacy XML reader for OA's original (v1.x) XML serialization format.

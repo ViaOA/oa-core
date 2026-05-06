@@ -24,8 +24,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OATime;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.datetime.OATime;
 
 /**
  * Scheduled executor service backed by a single daemon thread for executing
@@ -33,8 +33,8 @@ import com.viaoa.util.OATime;
  *
  * Provides scheduling based on:
  * <ul>
- *   <li>{@link com.viaoa.util.OADateTime}: run once at a specific date/time.</li>
- *   <li>{@link com.viaoa.util.OATime}: run every day when the given time occurs.</li>
+ *   <li>{@link com.viaoa.datetime.OADateTime}: run once at a specific date/time.</li>
+ *   <li>{@link com.viaoa.datetime.OATime}: run every day when the given time occurs.</li>
  *   <li>Fixed delays or fixed-rate periodic execution.</li>
  * </ul>
  *

@@ -8,7 +8,8 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
-import com.viaoa.object.OAFinder;
+import com.viaoa.find.OAFinder;
+import com.viaoa.hub.merge.HubMerger;
 
 import test.hifive.HifiveDataGenerator;
 import test.hifive.delegate.ModelDelegate;

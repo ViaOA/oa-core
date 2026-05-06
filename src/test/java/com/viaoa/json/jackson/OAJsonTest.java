@@ -8,8 +8,8 @@ import org.junit.Test;
 import com.auto.dev.reportercorp.model.oa.ReportInstanceProcessorInfo;
 import com.auto.dev.reportercorp.model.oa.ReporterCorp;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.json.OAJson;
-import com.viaoa.util.OADateTime;
 
 public class OAJsonTest {
 	OAJson oaj;

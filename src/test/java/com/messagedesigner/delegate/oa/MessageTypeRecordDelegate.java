@@ -10,9 +10,9 @@ import com.messagedesigner.model.oa.MessageSource;
 import com.messagedesigner.model.oa.MessageTypeColumn;
 import com.messagedesigner.model.oa.MessageTypeRecord;
 import com.messagedesigner.model.oa.RpgType;
-import com.viaoa.object.OAFinder;
-import com.viaoa.util.OAConv;
-import com.viaoa.util.OAString;
+import com.viaoa.converter.OAConv;
+import com.viaoa.find.OAFinder;
+import com.viaoa.lang.OAString;
 
 public class MessageTypeRecordDelegate {
 

@@ -4,7 +4,7 @@ import com.messagedesigner.model.oa.JsonType;
 import com.messagedesigner.model.oa.MessageGroup;
 import com.viaoa.graph.service.HubService;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 

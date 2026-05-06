@@ -19,8 +19,8 @@ import java.util.logging.Logger;
 
 import com.viaoa.annotation.OAClass;
 import com.viaoa.annotation.OAProperty;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OADateTime;
 
 @OAClass(
     shortName = "dt",

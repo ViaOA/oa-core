@@ -17,7 +17,7 @@ package com.viaoa.converter;
 
 import java.util.*;
 
-import com.viaoa.util.OATimeZone;
+import com.viaoa.datetime.OATimeZone;
 
 
 /**

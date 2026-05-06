@@ -3,9 +3,9 @@ package test.xice.tsac.delegate.oa;
 import java.io.BufferedReader;
 import java.io.StringReader;
 
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAString;
 
 import test.xice.tsac.delegate.RemoteDelegate;
 import test.xice.tsac.model.delegate.OAObjectPropertyDelegate;

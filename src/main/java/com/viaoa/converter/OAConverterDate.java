@@ -22,8 +22,8 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Date;
 
-import com.viaoa.util.OADate;
-import com.viaoa.util.OADateTime;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
 
 /**
  * Converter for transforming values into {@link java.util.Date} instances and

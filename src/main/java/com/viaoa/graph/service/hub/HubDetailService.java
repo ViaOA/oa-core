@@ -6,11 +6,15 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.logging.Logger;
 
+import com.viaoa.filter.OAFilter;
 import com.viaoa.hub.*;
+import com.viaoa.hub.detail.HubDetail;
+import com.viaoa.hub.merge.HubMerger;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.*;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAString;
+import com.viaoa.path.OAPath;
 
 public abstract class HubDetailService {
 	private final Logger LOG = Logger.getLogger(HubDetailService.class.getName());
@@ -940,7 +944,7 @@ public abstract class HubDetailService {
 		// support for using HubMerger if property path has more then one ending object/hub
 		Class<? extends OAObject> clazz = thisHub.getObjectClass();
 
-		final OAPropertyPath ppx = new OAPropertyPath(clazz, path);
+		final OAPath ppx = new OAPath(clazz, path);
 		OALinkInfo[] lis = ppx.getLinkInfos();
 		boolean bLastMany = false;
 		int cntMany = 0;

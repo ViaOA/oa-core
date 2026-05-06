@@ -8,8 +8,8 @@ import com.viaoa.annotation.OAFkey;
 import com.viaoa.annotation.OAId;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OADateTime;
 
 @OAClass(lowerName = "appServer", pluralName = "AppServers", shortName = "as", displayName = "App Server", isLookup = true, isPreSelect = true, useDataSource = false, isProcessed = true, displayProperty = "appUserLogin.hostName", singleton = true, pojoSingleton = true, noPojo = true)
 public class AppServer extends OAObject {

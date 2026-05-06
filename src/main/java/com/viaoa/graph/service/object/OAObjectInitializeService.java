@@ -3,12 +3,12 @@ package com.viaoa.graph.service.object;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-import com.viaoa.object.OAFinder;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.find.OAFinder;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.util.OAString;
 
 public abstract class OAObjectInitializeService {
 	private static final Logger LOG = Logger.getLogger(OAObjectInitializeService.class.getName());

@@ -3,13 +3,13 @@ package com.viaoa.graph.service.object;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-import com.viaoa.datasource.OASelect;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAPropertyInfo;
+import com.viaoa.select.OASelect;
 
 /**
    Relies on OASyncService to coordinate internal OA CS (client/server) functionality.

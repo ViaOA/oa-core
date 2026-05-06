@@ -16,7 +16,7 @@
 package com.viaoa.datasource.jdbc.delegate;
 
 import com.viaoa.datasource.jdbc.db.DBMetaData;
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
 
 /**
  * Applies vendor-specific settings to {@link com.viaoa.datasource.jdbc.db.DBMetaData}

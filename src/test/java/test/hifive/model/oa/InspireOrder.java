@@ -16,10 +16,10 @@ import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATable;
+import com.viaoa.datetime.OADate;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.util.OADate;
 
 import test.hifive.model.delegate.OAObjectInfoDelegate;
 import test.hifive.model.delegate.OAObjectPropertyDelegate;

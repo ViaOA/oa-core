@@ -17,7 +17,7 @@ package com.viaoa.sync.model;
 
 import java.io.Serializable;
 
-import com.viaoa.util.OADateTime;
+import com.viaoa.datetime.OADateTime;
 
 /**
  * Describes a single client connected to an {@code OASyncServer}.

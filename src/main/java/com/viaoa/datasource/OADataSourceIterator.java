@@ -17,7 +17,8 @@ package com.viaoa.datasource;
 
 import java.util.Iterator;
 
-import com.viaoa.object.OASiblingHelper;
+import com.viaoa.graph.sibling.OASiblingHelper;
+import com.viaoa.select.OASelect;
 
 /**
  * Iterator abstraction for streaming objects returned from a

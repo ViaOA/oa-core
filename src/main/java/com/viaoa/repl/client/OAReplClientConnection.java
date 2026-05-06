@@ -3,13 +3,13 @@ package com.viaoa.repl.client;
 import java.net.InetAddress;
 import java.util.logging.Logger;
 import com.viaoa.comm.multiplexer.OAMultiplexerClient;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.remote.multiplexer.OARemoteMultiplexerClient;
 import com.viaoa.repl.OAReplicationMaster;
 import com.viaoa.repl.remote.RemoteClientInterface;
 import com.viaoa.repl.remote.RemoteMasterInterface;
 import com.viaoa.repl.remote.RemoteMasterRegisterInterface;
 import com.viaoa.sync.model.ClientInfo;
-import com.viaoa.util.OADateTime;
 
 public abstract class OAReplClientConnection {
     private static Logger LOG = Logger.getLogger(OAReplClientConnection.class.getName());

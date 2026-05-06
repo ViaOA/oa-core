@@ -8,12 +8,12 @@ import com.messagedesigner.model.oa.propertypath.RpgMessagePP;
 import com.messagedesigner.model.oa.filter.RpgMessageErrorFilter;
 import com.viaoa.annotation.OAClass;
 import com.viaoa.annotation.OAClassFilter;
-import com.viaoa.hub.CustomHubFilter;
+import com.viaoa.cache.OAObjectCacheFilter;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubFilter;
+import com.viaoa.hub.filter.CustomHubFilter;
+import com.viaoa.hub.filter.HubFilter;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheFilter;
-import com.viaoa.util.OAString;
 
 @OAClass(useDataSource = false, localOnly = true)
 @OAClassFilter(name = "Error", displayName = "Error", hasInputParams = false)

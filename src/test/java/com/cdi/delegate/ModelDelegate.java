@@ -13,7 +13,7 @@ import com.cdi.model.oa.cs.ClientRoot;
 import com.cdi.model.oa.cs.ServerRoot;
 import com.cdi.model.oa.filter.*;
 import com.viaoa.hub.*;
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
 
 /**
  * This is used to access all of the Root level Hubs.  This is so that they 

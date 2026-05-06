@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Stack;
 
+import com.viaoa.cascade.OACascade;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCacheService;
@@ -28,14 +30,12 @@ import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.service.object.OAObjectPropertyService;
 import com.viaoa.graph.service.object.OAObjectXMLService;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OACascade;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.util.Base64;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAString;
+import com.viaoa.secure.Base64;
 
 /**
  * Generates XML output for OAObject graphs in a format consumable by

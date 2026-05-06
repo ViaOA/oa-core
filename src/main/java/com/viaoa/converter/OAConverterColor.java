@@ -19,7 +19,7 @@ import java.awt.Color;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
 
 /**
  * Converter for transforming values into {@link Color} objects and formatting

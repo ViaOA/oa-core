@@ -4,8 +4,8 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
-import com.viaoa.util.OANotExist;
-import com.viaoa.util.OANullObject;
+import com.viaoa.compare.OANotExist;
+import com.viaoa.compare.OANullObject;
 
 import test.xice.tsac3.model.oa.*;
 

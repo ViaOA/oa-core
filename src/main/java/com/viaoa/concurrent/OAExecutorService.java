@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
 
 /**
  * Wrapper around {@link java.util.concurrent.ThreadPoolExecutor} that creates a

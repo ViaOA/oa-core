@@ -15,8 +15,7 @@
  */
 package com.viaoa.converter;
 
-import com.viaoa.util.*;
-
+import com.viaoa.lang.OAStr;
 
 /**
  * Converter for transforming a value into a {@link Character}, and formatting
@@ -51,7 +50,7 @@ import com.viaoa.util.*;
  * String s = conv.convertToString('Z', "R3"); // "  Z"
  * }</pre>
  *
- * @see com.viaoa.util.OAConverter
+ * @see com.viaoa.converter.OAConverter
  */
 public class OAConverterCharacter implements OAConverterInterface<Character> {
 

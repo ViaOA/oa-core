@@ -5,6 +5,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.hub.detail.DetailHub;
 
 import test.xice.tsac.DataGenerator;
 import test.xice.tsac.delegate.ModelDelegate;

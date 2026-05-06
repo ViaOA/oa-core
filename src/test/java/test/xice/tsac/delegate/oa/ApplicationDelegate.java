@@ -1,6 +1,6 @@
 package test.xice.tsac.delegate.oa;
 
-import com.viaoa.object.OAFinder;
+import com.viaoa.find.OAFinder;
 
 import test.xice.tsac.model.oa.*;
 import test.xice.tsac.model.oa.propertypath.*;

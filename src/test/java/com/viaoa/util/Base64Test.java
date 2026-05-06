@@ -4,6 +4,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.secure.Base64;
 
 import test.xice.tsac3.model.oa.*;
 
@@ -31,8 +32,8 @@ public class Base64Test extends OAUnitTest {
 		String[] ss = { "Vince", "Anthony", "Via" };
 		for (int i = 0; i < ss.length; i++) {
 			String s = ss[i];
-			String s2 = com.viaoa.util.Base64.encode(s);
-			String s3 = com.viaoa.util.Base64.decode(s2);
+			String s2 = com.viaoa.secure.Base64.encode(s);
+			String s3 = com.viaoa.secure.Base64.decode(s2);
 			System.out.println(s + " -> " + s2 + " -> " + s3);
 		}
 

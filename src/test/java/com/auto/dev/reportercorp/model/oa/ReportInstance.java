@@ -16,10 +16,10 @@ import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATable;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.hub.Hub;
 import com.viaoa.json.OAJson;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OADateTime;
 
 @OAClass(lowerName = "reportInstance", pluralName = "ReportInstances", shortName = "rpi", displayName = "Report Instance", displayProperty = "id", sortProperty = "id")
 @OATable(name = "report_instance", indexes = {

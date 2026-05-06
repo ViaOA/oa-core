@@ -15,8 +15,6 @@
  */
 package com.viaoa.filter;
 
-import com.viaoa.util.OAFilter;
-
 /**
  * Filter that performs a logical OR between two {@link OAFilter} instances.
  * <p>

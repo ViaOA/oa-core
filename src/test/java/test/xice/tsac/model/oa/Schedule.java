@@ -15,11 +15,11 @@ import com.viaoa.annotation.OAIndexColumn;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATable;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.datetime.OATime;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.util.OADate;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OATime;
 
 import test.xice.tsac.delegate.oa.ScheduleDelegate;
 import test.xice.tsac.model.delegate.OAObjectInfoDelegate;

@@ -8,12 +8,14 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.find.OAFinder;
+import com.viaoa.hub.copy.HubCopy;
+import com.viaoa.hub.merge.HubMerger;
+import com.viaoa.hub.view.HubGroupBy;
+import com.viaoa.hub.view.OAGroupBy;
+import com.viaoa.lang.OAString;
 
 import static org.junit.Assert.*;
-
-import com.viaoa.object.OAFinder;
-import com.viaoa.object.OAGroupBy;
-import com.viaoa.util.OAString;
 
 import test.xice.tsac.DataGenerator;
 import test.xice.tsac.model.Model;

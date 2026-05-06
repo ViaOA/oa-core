@@ -2,9 +2,11 @@ package com.viaoa.graph.service.hub;
 
 import java.util.logging.Logger;
 
+import com.viaoa.filter.OAFilter;
 import com.viaoa.hub.*;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.*;
-import com.viaoa.util.OAFilter;
 
 public abstract class HubRootService {
 	private final Logger LOG = Logger.getLogger(HubRootService.class.getName());

@@ -11,14 +11,14 @@ import com.auto.dev.reportercorp.model.oa.SnapshotReportVersion;
 import com.auto.dev.reportercorp.model.oa.propertypath.SnapshotReportVersionPP;
 import com.auto.dev.reportercorp.model.search.SnapshotReportTemplateSearchModel;
 import com.auto.dev.reportercorp.model.search.SnapshotReportVersionSearchModel;
+import com.viaoa.filter.OAFilter;
 import com.viaoa.filter.OAInFilter;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubCopy;
-import com.viaoa.hub.HubMakeCopy;
-import com.viaoa.hub.HubMerger;
-import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObjectModel;
-import com.viaoa.util.OAFilter;
+import com.viaoa.hub.copy.HubCopy;
+import com.viaoa.hub.copy.HubMakeCopy;
+import com.viaoa.hub.merge.HubMerger;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectModel;
 
 public class SnapshotReportVersionModel extends OAObjectModel {
 	private static Logger LOG = Logger.getLogger(SnapshotReportVersionModel.class.getName());

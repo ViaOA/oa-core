@@ -5,8 +5,8 @@ import java.util.*;
 import java.util.logging.*;
 import java.sql.*;
 import com.viaoa.object.*;
+import com.viaoa.schedule.*;
 import com.viaoa.hub.*;
-import com.viaoa.scheduler.*;
 import com.viaoa.util.*;
 import com.messagedesigner.delegate.oa.*;
 import com.messagedesigner.model.oa.filter.*;
@@ -19,7 +19,7 @@ import com.messagedesigner.model.oa.AppUserLogin;
 import com.messagedesigner.model.oa.filter.AppUserLoginConnectedFilter;
 import com.messagedesigner.model.oa.filter.AppUserLoginLastDayFilter;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADateTime;
+import com.viaoa.datetime.OADateTime;
  
 @OAClass(
     lowerName = "appUserLogin",

@@ -2,7 +2,6 @@ package test.vetjobs.oa;
 
 import java.sql.Types;
 
-import com.viaoa.datasource.OASelect;
 import com.viaoa.datasource.autonumber.NextNumber;
 import com.viaoa.datasource.jdbc.OADataSourceJDBC;
 import com.viaoa.datasource.jdbc.db.Column;
@@ -11,6 +10,7 @@ import com.viaoa.datasource.jdbc.db.Database;
 import com.viaoa.datasource.jdbc.db.Index;
 import com.viaoa.datasource.jdbc.db.Link;
 import com.viaoa.datasource.jdbc.db.Table;
+import com.viaoa.select.OASelect;
 
 public class DataSource {
 	protected OADataSourceJDBC datasource;

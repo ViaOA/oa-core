@@ -4,6 +4,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.hub.listener.HubChangeListener;
 import com.viaoa.model.oa.*;
 import com.viaoa.object.OAObject;
 

@@ -15,7 +15,7 @@
  */
 package com.viaoa.filter;
 
-import com.viaoa.util.OAPropertyPath;
+import com.viaoa.path.OAPath;
 
 /**
  * Convenience filter that always evaluates the supplied property (or
@@ -58,11 +58,11 @@ public class OATrueFilter extends OAEqualFilter {
 
 	/**
 	 * Creates a filter that evaluates the value resolved from the supplied
-	 * {@link OAPropertyPath} as {@code Boolean.TRUE}.
+	 * {@link OAPath} as {@code Boolean.TRUE}.
 	 *
 	 * @param pp the property path used to obtain the value
 	 */
-	public OATrueFilter(OAPropertyPath pp) {
+	public OATrueFilter(OAPath pp) {
 		super(pp, Boolean.TRUE);
 	}
 

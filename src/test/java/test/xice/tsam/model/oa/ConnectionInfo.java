@@ -4,12 +4,12 @@ package test.xice.tsam.model.oa;
 
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
+import com.viaoa.lang.OAString;
 
 import test.xice.tsac.model.oa.ConnectionInfo.Status;
 import test.xice.tsam.model.oa.ErrorInfo;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAString;
+import com.viaoa.datetime.OADateTime;
  
 @OAClass(
     shortName = "ci",

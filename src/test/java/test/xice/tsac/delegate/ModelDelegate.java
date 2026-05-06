@@ -4,7 +4,7 @@ package test.xice.tsac.delegate;
 
 import com.viaoa.annotation.OAOne;
 import com.viaoa.hub.*;
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
 
 import test.xice.tsac.model.oa.*;
 import test.xice.tsac.model.oa.cs.ClientRoot;

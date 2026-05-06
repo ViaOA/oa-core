@@ -4,6 +4,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.hub.view.OAGroupBy;
 
 import test.xice.tsam.model.oa.*;
 

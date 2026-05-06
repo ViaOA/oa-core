@@ -5,8 +5,8 @@ import java.util.logging.Logger;
 
 import com.messagedesigner.model.oa.MessageSource;
 import com.viaoa.annotation.OAClass;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OAString;
 
 @OAClass(useDataSource = false, localOnly = true)
 public class MessageSourceTableConfig extends OAObject {

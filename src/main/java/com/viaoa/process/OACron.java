@@ -18,12 +18,12 @@ package com.viaoa.process;
 import java.util.Arrays;
 import java.util.Calendar;
 
+import com.viaoa.converter.OAConv;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.hub.HubEvent;
-import com.viaoa.util.OAArray;
-import com.viaoa.util.OAConv;
-import com.viaoa.util.OADate;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAArray;
+import com.viaoa.lang.OAString;
 
 
 /**
@@ -62,7 +62,7 @@ import com.viaoa.util.OAString;
  * ranges, or wildcards. Parsed values are stored in sorted form as cron
  * integers. <p>
  *
- * The {@link #findNext(com.viaoa.util.OADateTime)} method walks forward from
+ * The {@link #findNext(com.viaoa.datetime.OADateTime)} method walks forward from
  * a given starting date and computes the earliest matching time. Subclasses
  * implement {@link #process(boolean)} to perform work when the cron fires.
  */

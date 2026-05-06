@@ -10,6 +10,7 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.log.OALogUtil;
 
 import test.xice.tsac3.model.oa.*;
 

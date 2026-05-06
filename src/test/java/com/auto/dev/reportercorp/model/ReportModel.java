@@ -18,14 +18,14 @@ import com.auto.dev.reportercorp.model.search.ReportInstanceSearchModel;
 import com.auto.dev.reportercorp.model.search.ReportSearchModel;
 import com.auto.dev.reportercorp.model.search.ReportTemplateSearchModel;
 import com.viaoa.filter.OAEqualPathFilter;
+import com.viaoa.filter.OAFilter;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubCombined;
-import com.viaoa.hub.HubCopy;
-import com.viaoa.hub.HubMakeCopy;
-import com.viaoa.hub.HubShareAO;
-import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObjectModel;
-import com.viaoa.util.OAFilter;
+import com.viaoa.hub.copy.HubCopy;
+import com.viaoa.hub.copy.HubMakeCopy;
+import com.viaoa.hub.view.HubCombined;
+import com.viaoa.hub.view.HubShareAO;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectModel;
 
 public class ReportModel extends OAObjectModel {
 	private static Logger LOG = Logger.getLogger(ReportModel.class.getName());

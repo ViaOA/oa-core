@@ -10,9 +10,12 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.cache.OAObjectCacheListener;
+import com.viaoa.callback.OACallback;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.autonumber.OADataSourceAuto;
 import com.viaoa.hub.Hub;
+import com.viaoa.metadata.OAObjectInfo;
 
 import test.xice.tsac3.model.oa.Server;
 import test.xice.tsac3.model.oa.ServerType;

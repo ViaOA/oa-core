@@ -16,6 +16,7 @@ import com.viaoa.filter.OALessOrEqualFilter;
 import com.viaoa.filter.OALikeFilter;
 import com.viaoa.filter.OANotEqualFilter;
 import com.viaoa.filter.OANotLikeFilter;
+import com.viaoa.path.OAPath;
 import com.viaoa.util.filter.*;
 
 import test.xice.tsac3.Tsac3DataGenerator;
@@ -309,7 +310,7 @@ public class OAFilterTest extends OAUnitTest {
         data.createSampleData();
         
         // test with pp that has class
-        OAEqualFilter f = new OAEqualFilter(new OAPropertyPath(Site.class, SitePP.environments().silos().servers().id()), 1);
+        OAEqualFilter f = new OAEqualFilter(new OAPath(Site.class, SitePP.environments().silos().servers().id()), 1);
         
         boolean b = f.isUsed(modelTsac.getSites().getAt(0));
         assertEquals(true, b);

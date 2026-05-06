@@ -3,19 +3,19 @@ package com.viaoa.graph.service.object;
 import java.util.List;
 import java.util.logging.Logger;
 
+import com.viaoa.callback.OACallback;
+import com.viaoa.cascade.OACascade;
+import com.viaoa.compare.OANotExist;
+import com.viaoa.find.OAFinder;
 import com.viaoa.graph.service.OAObjectService;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OACallback;
-import com.viaoa.object.OACascade;
-import com.viaoa.object.OAFinder;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.lang.OAArray;
+import com.viaoa.lang.OAStr;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.util.OAArray;
-import com.viaoa.util.OANotExist;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAStr;
+import com.viaoa.path.OAPath;
 
 public abstract class OAObjectDeleteService {
 	private static final Logger LOG = Logger.getLogger(OAObjectDeleteService.class.getName());
@@ -184,7 +184,7 @@ public abstract class OAObjectDeleteService {
     
                     String spp = liRev.getSelectFromPropertyPath();
                     if (OAStr.isNotEmpty(spp)) {
-                        OAPropertyPath pp = new OAPropertyPath(li.getToClass(), spp);
+                        OAPath pp = new OAPath(li.getToClass(), spp);
                         pp = pp.getReversePropertyPath();
                         if (pp == null) spp = null;
                         else spp = pp.getPropertyPath();
@@ -194,7 +194,7 @@ public abstract class OAObjectDeleteService {
                         if (OAStr.isNotEmpty(spp)) {
                             String s = liRev.getEqualPropertyPath();
                             if (OAStr.isNotEmpty(s)) {
-                                OAPropertyPath pp = new OAPropertyPath(li.getToClass(), s);
+                                OAPath pp = new OAPath(li.getToClass(), s);
                                 pp = pp.getReversePropertyPath();
                                 if (pp == null) spp = null;
                                 else {
@@ -287,7 +287,7 @@ public abstract class OAObjectDeleteService {
     				//  use find ... but dont want it to load reference (short curcuit on pp)
     				String spp = liRev.getSelectFromPropertyPath();
     				if (OAStr.isNotEmpty(spp)) {
-                        OAPropertyPath pp = new OAPropertyPath(li.getToClass(), spp);
+                        OAPath pp = new OAPath(li.getToClass(), spp);
     				    pp = pp.getReversePropertyPath();
     				    if (pp == null) spp = null;
     				    else spp = pp.getPropertyPath();
@@ -297,7 +297,7 @@ public abstract class OAObjectDeleteService {
     				    if (OAStr.isNotEmpty(spp)) {
     				        String s = liRev.getEqualPropertyPath();
     	                    if (OAStr.isNotEmpty(s)) {
-    	                        OAPropertyPath pp = new OAPropertyPath(li.getToClass(), s);
+    	                        OAPath pp = new OAPath(li.getToClass(), s);
     	                        pp = pp.getReversePropertyPath();
     	                        if (pp == null) spp = null;
     	                        else {

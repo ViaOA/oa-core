@@ -3,6 +3,9 @@ package com.viaoa.object;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import com.viaoa.OAUnitTest;
+import com.viaoa.metadata.OAMethodInfo;
+import com.viaoa.metadata.OAObjectInfo;
+
 import test.hifive.model.oa.Employee;
 
 public class OAObjectInfoTest extends OAUnitTest {

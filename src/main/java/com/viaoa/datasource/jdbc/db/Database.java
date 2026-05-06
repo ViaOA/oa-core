@@ -18,8 +18,8 @@ package com.viaoa.datasource.jdbc.db;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
+import com.viaoa.lang.OAArray;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OAArray;
 
 /**
  * Defines the in-memory representation of a database within the OA JDBC subsystem.

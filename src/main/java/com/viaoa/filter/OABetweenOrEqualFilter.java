@@ -18,18 +18,17 @@ package com.viaoa.filter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.compare.OACompare;
 import com.viaoa.filter.OAFilterDelegate.FinderInfo;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OACompare;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
+import com.viaoa.path.OAPath;
 
 /**
  * Filter that evaluates whether a property value is between two comparison
  * values, including equality on either boundary.  Supports both direct
- * comparison and values obtained through an {@link OAPropertyPath}.
+ * comparison and values obtained through an {@link OAPath}.
  *
  * <p>
  * If the property path traverses multiple objects, an {@link OAFinder}
@@ -37,7 +36,7 @@ import com.viaoa.util.OAPropertyPath;
  * located target object.
  * </p>
  *
- * @see com.viaoa.util.OACompare#isBetweenOrEqual(Object, Object, Object)
+ * @see com.viaoa.compare.OACompare#isBetweenOrEqual(Object, Object, Object)
  */
 public class OABetweenOrEqualFilter implements OAFilter {
     private static Logger LOG = Logger.getLogger(OABetweenOrEqualFilter.class.getName());
@@ -52,7 +51,7 @@ public class OABetweenOrEqualFilter implements OAFilter {
      * Optional property path used to extract the comparison value from the
      * evaluated object. When {@code null}, the object itself is used.
      */
-    private OAPropertyPath pp;
+    private OAPath pp;
     
     /**
      * Finder created when the property path traverses a multi-object
@@ -80,7 +79,7 @@ public class OABetweenOrEqualFilter implements OAFilter {
      * @param val1 the lower comparison value
      * @param val2 the upper comparison value
      */
-    public OABetweenOrEqualFilter(OAPropertyPath pp, Object val1, Object val2) {
+    public OABetweenOrEqualFilter(OAPath pp, Object val1, Object val2) {
         this.pp = pp;
         this.value1 = val1;
         this.value2 = val2;
@@ -88,14 +87,14 @@ public class OABetweenOrEqualFilter implements OAFilter {
 
     /**
      * Creates a filter from a string representation of a property path. The
-     * string is converted into an {@link OAPropertyPath} unless it is null.
+     * string is converted into an {@link OAPath} unless it is null.
      *
      * @param pp the property path expression
      * @param val1 the lower comparison value
      * @param val2 the upper comparison value
      */
     public OABetweenOrEqualFilter(String pp, Object val1, Object val2) {
-        this(pp==null?null:new OAPropertyPath(pp), val1, val2);
+        this(pp==null?null:new OAPath(pp), val1, val2);
     }
 
     /**

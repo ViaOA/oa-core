@@ -4,11 +4,13 @@ package test.xice.tsam.model.oa;
 import java.sql.*;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
+import com.viaoa.lang.OAString;
 import com.viaoa.util.*;
 
 import test.xice.tsac.model.oa.ServerInfo.Status;
 
 import com.viaoa.annotation.*;
+import com.viaoa.datetime.OADateTime;
  
 @OAClass(
     shortName = "si",

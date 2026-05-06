@@ -2,6 +2,7 @@ package com.viaoa.graph.service.hub;
 
 import java.util.logging.Logger;
 import com.viaoa.hub.*;
+import com.viaoa.hub.auto.HubAutoSequence;
 import com.viaoa.object.OAObject;
 
 public abstract class HubSequenceService {

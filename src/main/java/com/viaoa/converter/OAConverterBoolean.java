@@ -15,7 +15,8 @@
  */
 package com.viaoa.converter;
 
-import com.viaoa.util.*;
+import com.viaoa.lang.OAStr;
+import com.viaoa.lang.OAString;
 
 /**
  * Converter for transforming values into {@link Boolean} and formatting
@@ -70,7 +71,7 @@ import com.viaoa.util.*;
  * String s2 = conv.convertToString(null, "yes;no;none");         // "none"
  * }</pre>
  *
- * @see com.viaoa.util.OAConverter
+ * @see com.viaoa.converter.OAConverter
  * @see OAStr#format(String, String)
  */
 public class OAConverterBoolean implements OAConverterInterface<Boolean> {

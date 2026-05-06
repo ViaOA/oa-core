@@ -28,7 +28,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *   <li>all link properties ({@link PojoLink}) which in turn reference
  *       {@link PojoLinkOne} / {@link PojoLinkMany} structures.</li>
  * </ul>
- * This metadata is generated from {@link com.viaoa.object.OAObjectInfo}
+ * This metadata is generated from {@link com.viaoa.metadata.OAObjectInfo}
  * by {@link OAObjectPojoLoader} and is later used by the JSON/Jackson
  * integration to map between flat JSON POJOs and live {@code OAObject}
  * graphs during import/export.
@@ -39,7 +39,7 @@ public class Pojo implements java.io.Serializable {
 	/**
 	 * The name of the OAObject model represented by this POJO definition.
 	 * <p>
-	 * Typically matches {@link com.viaoa.object.OAObjectInfo#getName()}.
+	 * Typically matches {@link com.viaoa.metadata.OAObjectInfo#getName()}.
 	 */
 	protected volatile String name;
 

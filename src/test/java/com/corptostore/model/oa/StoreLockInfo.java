@@ -15,8 +15,8 @@ import com.viaoa.annotation.OAId;
 import com.viaoa.annotation.OAMethod;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OADateTime;
 
 @OAClass(lowerName = "storeLockInfo", pluralName = "StoreLockInfos", shortName = "sli", displayName = "Store Lock Info", useDataSource = false, isProcessed = true, displayProperty = "id")
 public class StoreLockInfo extends OAObject {

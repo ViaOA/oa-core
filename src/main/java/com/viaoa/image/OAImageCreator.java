@@ -22,7 +22,7 @@ import java.awt.*;
 import java.awt.image.*;
 //was: import com.sun.image.codec.jpeg.*;
 
-import com.viaoa.util.*;
+import com.viaoa.io.OAFile;
 
 /**
  * creates a gif, jpg, or png out of an image

@@ -21,7 +21,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.hub.*;
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
 
 /**
  * Event-driven refresher that listens to one or more {@link com.viaoa.hub.Hub}

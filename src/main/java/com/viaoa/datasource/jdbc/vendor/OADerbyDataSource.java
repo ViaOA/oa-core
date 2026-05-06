@@ -27,8 +27,8 @@ import java.util.logging.Logger;
 import com.viaoa.datasource.jdbc.OADataSourceJDBC;
 import com.viaoa.datasource.jdbc.db.DBMetaData;
 import com.viaoa.datasource.jdbc.db.Database;
-import com.viaoa.util.OALogger;
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
+import com.viaoa.log.OALogger;
 
 /**
  * Derby-specific extension of {@link com.viaoa.datasource.jdbc.OADataSourceJDBC}
@@ -56,7 +56,7 @@ import com.viaoa.util.OAString;
  *
  * <h2>Usage</h2>
  * Typically invoked through administrative utilities or maintenance scripts.
- * All operations are logged via {@link com.viaoa.util.OALogger} at FINE level.
+ * All operations are logged via {@link com.viaoa.log.OALogger} at FINE level.
  *
  * <h2>Example</h2>
  * <pre>{@code

@@ -6,10 +6,13 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.filter.OAFilter;
 import com.viaoa.hub.*;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.hub.copy.HubCopy;
+import com.viaoa.hub.filter.HubFilter;
+import com.viaoa.hub.view.HubShareAO;
+import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OAFilter;
 
 public abstract class HubShareService {
 	private final Logger LOG = Logger.getLogger(HubShareService.class.getName());

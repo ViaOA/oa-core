@@ -15,7 +15,7 @@
  */
 package com.viaoa.filter;
 
-import com.viaoa.util.OAPropertyPath;
+import com.viaoa.path.OAPath;
 
 /**
  * Filter that always returns {@code false}.  This is a utility filter used
@@ -49,11 +49,11 @@ public class OAFalseFilter extends OAEqualFilter {
 
 	/**
 	 * Creates a filter that always evaluates to {@code false}, using the
-	 * provided {@link OAPropertyPath} to retrieve the value being compared.
+	 * provided {@link OAPath} to retrieve the value being compared.
 	 *
 	 * @param pp the property path used to access the evaluated value
 	 */
-	public OAFalseFilter(OAPropertyPath pp) {
+	public OAFalseFilter(OAPath pp) {
 		super(pp, Boolean.FALSE);
 	}
 

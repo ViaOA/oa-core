@@ -3,9 +3,9 @@ package com.viaoa.datasource.query;
 import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
-import com.viaoa.datasource.query.OAQueryToken;
-import com.viaoa.datasource.query.OAQueryTokenManager;
-import com.viaoa.datasource.query.OAQueryTokenType;
+import com.viaoa.query.OAQueryToken;
+import com.viaoa.query.OAQueryTokenManager;
+import com.viaoa.query.OAQueryTokenType;
 
 public class OAQueryTokenManagerTest extends OAUnitTest {
 

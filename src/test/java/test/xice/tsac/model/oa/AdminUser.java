@@ -4,16 +4,16 @@ package test.xice.tsac.model.oa;
 import java.sql.*;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
+import com.viaoa.lang.OAString;
 import com.viaoa.util.*;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADateTime;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
 
 import test.xice.tsac.delegate.oa.RemoteClientDelegate;
 import test.xice.tsac.model.delegate.OAObjectInfoDelegate;
 import test.xice.tsac.model.oa.filter.*;
 import test.xice.tsac.model.oa.propertypath.*;
-
-import com.viaoa.util.OADate;
  
 @OAClass(
     shortName = "au",

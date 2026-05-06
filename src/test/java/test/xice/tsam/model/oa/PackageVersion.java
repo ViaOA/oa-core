@@ -14,13 +14,12 @@ import test.xice.tsam.model.oa.PackageType;
 import test.xice.tsam.model.oa.PackageVersion;
 import test.xice.tsam.model.oa.SiloConfigVersioin;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADateTime;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
 
 import test.xice.tsam.delegate.oa.*;
 import test.xice.tsam.model.oa.filter.*;
 import test.xice.tsam.model.oa.propertypath.*;
-
-import com.viaoa.util.OADate;
  
 @OAClass(
     shortName = "pv",

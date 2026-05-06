@@ -13,12 +13,18 @@ import com.messagedesigner.model.oa.propertypath.MessageTypeRecordPP;
 import com.messagedesigner.model.oa.search.MessageTypeColumnSearch;
 import com.messagedesigner.model.oa.search.MessageTypeRecordSearch;
 import com.viaoa.annotation.*;
+import com.viaoa.compare.OACompare;
 import com.viaoa.object.*;
+import com.viaoa.select.OASelect;
 import com.viaoa.hub.*;
+import com.viaoa.lang.OAArray;
+import com.viaoa.lang.OAString;
 import com.viaoa.util.*;
-import com.viaoa.util.OADateTime;
 import com.viaoa.datasource.*;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.filter.*;
+import com.viaoa.find.OAFinder;
+
 import java.io.*;
 
 @OAClass(useDataSource=false, localOnly=true)

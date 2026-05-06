@@ -18,23 +18,22 @@ package com.viaoa.filter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.compare.OACompare;
 import com.viaoa.filter.OAFilterDelegate.FinderInfo;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAFinder;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OACompare;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAString;
+import com.viaoa.path.OAPath;
 
 /**
  * Filter that evaluates whether a property's string value begins with a
  * specified prefix.  The property may be obtained directly from the object
- * or through an {@link OAPropertyPath}.
+ * or through an {@link OAPath}.
  *
  * <p><b>Deep property support:</b><br>
  * If the property path crosses a many-relationship, an {@link OAFinder} is
- * created using {@link OAFilterDelegate#createFinder(Class, OAPropertyPath)}.
+ * created using {@link OAFilterDelegate#createFinder(Class, OAPath)}.
  * A nested {@code OAStartsWithFilter} is attached to the finder so that the
  * match is executed on the resolved target object.
  * </p>
@@ -75,10 +74,10 @@ public class OAStartsWithFilter implements OAFilter {
      * the target object. When non-{@code null}, this path is evaluated to
      * obtain the object whose string value is tested.
      */
-    private OAPropertyPath pp;
+    private OAPath pp;
     
     /**
-     * Optional {@link com.viaoa.object.OAFinder} created when the property path
+     * Optional {@link com.viaoa.find.OAFinder} created when the property path
      * crosses a many-relationship, allowing this filter to evaluate matches
      * against related objects resolved by the finder.
      */
@@ -107,13 +106,13 @@ public class OAStartsWithFilter implements OAFilter {
      * @param value the comparison value whose string representation is used as
      *              the prefix in the {@code startsWith} test
      */
-    public OAStartsWithFilter(OAPropertyPath pp, Object value) {
+    public OAStartsWithFilter(OAPath pp, Object value) {
         this.pp = pp;
         this.value = value;
     }
     
     /**
-     * Convenience constructor that builds an {@link com.viaoa.util.OAPropertyPath}
+     * Convenience constructor that builds an {@link com.viaoa.path.OAPath}
      * from the supplied path string and creates a case-sensitive
      * {@link OAStartsWithFilter}.
      *
@@ -123,7 +122,7 @@ public class OAStartsWithFilter implements OAFilter {
      *              the prefix in the {@code startsWith} test
      */
     public OAStartsWithFilter(String pp, Object value) {
-        this(pp==null?null:new OAPropertyPath(pp), value);
+        this(pp==null?null:new OAPath(pp), value);
     }
 
     /**
@@ -156,14 +155,14 @@ public class OAStartsWithFilter implements OAFilter {
      *                    uppercasing both operands, {@code false} for a case-sensitive
      *                    comparison
      */
-    public OAStartsWithFilter(OAPropertyPath pp, Object value, boolean bIgnoreCase) {
+    public OAStartsWithFilter(OAPath pp, Object value, boolean bIgnoreCase) {
         this.pp = pp;
         this.value = value;
         this.bIgnoreCase = bIgnoreCase;
     }
 
     /**
-     * Convenience constructor that builds an {@link com.viaoa.util.OAPropertyPath}
+     * Convenience constructor that builds an {@link com.viaoa.path.OAPath}
      * from the supplied path string and creates an {@link OAStartsWithFilter} with
      * optional case-insensitive comparison.
      *
@@ -176,13 +175,13 @@ public class OAStartsWithFilter implements OAFilter {
      *                    comparison
      */
     public OAStartsWithFilter(String pp, Object value, boolean bIgnoreCase) {
-        this(pp==null?null:new OAPropertyPath(pp), value, bIgnoreCase);
+        this(pp==null?null:new OAPath(pp), value, bIgnoreCase);
     }
     
 
     /**
      * Indicates whether this filter has been initialized, including any creation
-     * and configuration of an {@link com.viaoa.object.OAFinder} based on the
+     * and configuration of an {@link com.viaoa.find.OAFinder} based on the
      * property path.
      */
     private boolean bSetup;
@@ -198,8 +197,8 @@ public class OAStartsWithFilter implements OAFilter {
      * <ul>
      *   <li>If the filter has not been set up and a property path and non-null
      *       object are available, it calls
-     *       {@link com.viaoa.filter.OAFilterDelegate#createFinder(Class, com.viaoa.util.OAPropertyPath)}
-     *       to determine if an {@link com.viaoa.object.OAFinder} is needed. When
+     *       {@link com.viaoa.filter.OAFilterDelegate#createFinder(Class, com.viaoa.path.OAPath)}
+     *       to determine if an {@link com.viaoa.find.OAFinder} is needed. When
      *       a finder is returned, it is stored and a nested {@link OAStartsWithFilter}
      *       is added to the finder.</li>
      *   <li>If a finder is present and the object is an {@link com.viaoa.object.OAObject}
@@ -208,7 +207,7 @@ public class OAStartsWithFilter implements OAFilter {
      *       found and {@code false} otherwise.</li>
      *   <li>Otherwise, the value to test is obtained via {@link #getPropertyValue(Object)},
      *       converted to a string along with the configured comparison value using
-     *       {@link com.viaoa.util.OAString#toString(Object)}, and both are compared
+     *       {@link com.viaoa.lang.OAString#toString(Object)}, and both are compared
      *       using {@code startsWith}. If either string is {@code null}, the method
      *       returns {@code false}. When {@code bIgnoreCase} is {@code true}, both
      *       strings are uppercased before comparison.</li>

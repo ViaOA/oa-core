@@ -18,13 +18,12 @@ package com.viaoa.filter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.compare.OACompare;
 import com.viaoa.filter.OAFilterDelegate.FinderInfo;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OACompare;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
+import com.viaoa.path.OAPath;
 
 /**
  * Filter that evaluates whether a property's value is less than a specified
@@ -43,7 +42,7 @@ public class OALessFilter implements OAFilter {
      * Optional property path used to retrieve the value from the evaluated
      * object before applying the less-than comparison.
      */
-    private OAPropertyPath pp;
+    private OAPath pp;
     
     /**
      * Finder created when the property path traverses a many-relationship,
@@ -75,7 +74,7 @@ public class OALessFilter implements OAFilter {
      * @param pp the property path used to extract the value from the object
      * @param value the value to compare against
      */
-    public OALessFilter(OAPropertyPath pp, Object value) {
+    public OALessFilter(OAPath pp, Object value) {
         this.pp = pp;
         this.value = value;
     }
@@ -88,7 +87,7 @@ public class OALessFilter implements OAFilter {
      * @param value the value to compare against
      */
     public OALessFilter(String pp, Object value) {
-        this(pp==null?null:new OAPropertyPath(pp), value);
+        this(pp==null?null:new OAPath(pp), value);
     }
 
     /**

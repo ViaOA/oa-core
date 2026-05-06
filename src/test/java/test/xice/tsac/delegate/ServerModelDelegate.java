@@ -3,7 +3,9 @@ package test.xice.tsac.delegate;
 
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.viaoa.config.OAProperties;
 import com.viaoa.hub.*;
+import com.viaoa.lang.OAString;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.util.*;
 

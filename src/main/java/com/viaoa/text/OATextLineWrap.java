@@ -18,6 +18,19 @@ package com.viaoa.text;
 import java.util.ArrayList;
 import java.util.List;
 
+/*qqqqqqqqqqqqqqqqqqq
+CODE
+
+ 16. Medium - OATextLineWrap.setMaxRows / OAString.lineBreak
+     Concrete failure: documented/default unlimited value 0 is rejected by setMaxRows(0).
+     Expected: 0 means unlimited rows.
+     Actual: IllegalArgumentException.
+     Fix direction: reject negatives, allow zero.
+
+
+
+*/
+
 /**
  * A configurable text line–wrapping and truncation utility designed for both
  * ASCII and full Unicode text. It supports automatic wrapping based on:

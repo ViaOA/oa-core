@@ -21,7 +21,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import com.viaoa.object.OAObjectCallback;
+import com.viaoa.callback.OAObjectCallback;
 
 /**
  * Declares a method or class-level callback used by {@link OAObjectCallback}

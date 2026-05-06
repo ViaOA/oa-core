@@ -19,13 +19,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceIterator;
+import com.viaoa.filter.OAFilter;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.hub.Hub;
+import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.util.OAFilter;
 
 
 //qqqqqqqq what about local (negative numbers)

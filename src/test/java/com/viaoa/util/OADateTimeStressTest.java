@@ -24,6 +24,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.*;
 
+import com.viaoa.datetime.OADateTime;
+
 public class OADateTimeStressTest {
 
     private static TimeZone originalJvmTz;

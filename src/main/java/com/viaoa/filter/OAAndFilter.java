@@ -15,8 +15,7 @@
  */
 package com.viaoa.filter;
 
-import com.viaoa.datasource.OASelect;
-import com.viaoa.util.OAFilter;
+import com.viaoa.select.OASelect;
 
 /**
  * Combines two {@link OAFilter} instances using logical AND.  Both filters

@@ -21,8 +21,8 @@ import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.service.object.OAObjectKeyService;
 import com.viaoa.object.*;
+import com.viaoa.reflect.OAReflect;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.util.OAReflect;
 
 /**
  * Represents a single column in a database table, including mapping

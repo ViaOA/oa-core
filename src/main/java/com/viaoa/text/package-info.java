@@ -103,7 +103,7 @@
  * </table>
  *
  * <p>
- * The {@link com.viaoa.util.OAString} class acts as the primary public facade,
+ * The {@link com.viaoa.lang.OAString} class acts as the primary public facade,
  * delegating functionality to the appropriate module in this package.
  * </p>
  */

@@ -18,18 +18,17 @@ package com.viaoa.filter;
 import java.util.logging.Logger;
 
 import com.viaoa.filter.OAFilterDelegate.FinderInfo;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAFinder;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAString;
+import com.viaoa.path.OAPath;
 
 /**
  * Filter that evaluates whether a property's string value contains the
  * specified substring.  The comparison may be case-sensitive or
  * case-insensitive, and the target value can be retrieved through an
- * {@link OAPropertyPath}.
+ * {@link OAPath}.
  *
  * <p>
  * When the property path traverses a many-relationship, an {@link OAFinder}
@@ -56,7 +55,7 @@ public class OAContainsFilter implements OAFilter {
 	 * Optional property path used to extract a target value from the
 	 * evaluated object. If {@code null}, the object itself is used.
 	 */
-	private OAPropertyPath pp;
+	private OAPath pp;
 	
 	/**
 	 * Optional finder created when the property path traverses a
@@ -83,7 +82,7 @@ public class OAContainsFilter implements OAFilter {
 	 * @param pp the property path used to retrieve a value from the object
 	 * @param value the substring to search for
 	 */
-	public OAContainsFilter(OAPropertyPath pp, Object value) {
+	public OAContainsFilter(OAPath pp, Object value) {
 		this.pp = pp;
 		this.value = value;
 	}
@@ -96,7 +95,7 @@ public class OAContainsFilter implements OAFilter {
 	 * @param value the substring to search for
 	 */
 	public OAContainsFilter(String pp, Object value) {
-		this(pp == null ? null : new OAPropertyPath(pp), value);
+		this(pp == null ? null : new OAPath(pp), value);
 	}
 
 	/**
@@ -121,7 +120,7 @@ public class OAContainsFilter implements OAFilter {
 	 * @param value the substring to search for
 	 * @param bIgnoreCase {@code true} to ignore case during comparison
 	 */
-	public OAContainsFilter(OAPropertyPath pp, Object value, boolean bIgnoreCase) {
+	public OAContainsFilter(OAPath pp, Object value, boolean bIgnoreCase) {
 		this.pp = pp;
 		this.value = value;
 		this.bIgnoreCase = bIgnoreCase;
@@ -137,7 +136,7 @@ public class OAContainsFilter implements OAFilter {
 	 * @param bIgnoreCase {@code true} to ignore case during comparison
 	 */
 	public OAContainsFilter(String pp, Object value, boolean bIgnoreCase) {
-		this(pp == null ? null : new OAPropertyPath(pp), value, bIgnoreCase);
+		this(pp == null ? null : new OAPath(pp), value, bIgnoreCase);
 	}
 
 	/**

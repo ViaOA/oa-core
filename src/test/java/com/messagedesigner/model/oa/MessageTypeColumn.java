@@ -6,8 +6,9 @@ import java.util.logging.*;
 import java.sql.*;
 import com.viaoa.util.*;
 import com.viaoa.object.*;
+import com.viaoa.schedule.*;
 import com.viaoa.hub.*;
-import com.viaoa.scheduler.*;
+import com.viaoa.lang.OAString;
 import com.messagedesigner.delegate.oa.*;
 import com.messagedesigner.model.oa.filter.*;
 import com.messagedesigner.model.oa.propertypath.*;
@@ -18,7 +19,8 @@ import com.messagedesigner.model.oa.MessageTypeRecord;
 import com.messagedesigner.model.oa.RpgType;
 import com.messagedesigner.model.oa.filter.MessageTypeColumnInvalidRpgTypeFilter;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADateTime;
+import com.viaoa.callback.OAObjectCallback;
+import com.viaoa.datetime.OADateTime;
  
 @OAClass(
     lowerName = "messageTypeColumn",

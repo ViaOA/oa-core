@@ -10,12 +10,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.api.TriggerOps;
 import com.viaoa.graph.api.internal.TriggerInternalOps;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OATrigger;
-import com.viaoa.object.OATriggerListener;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
+import com.viaoa.trigger.OATrigger;
+import com.viaoa.trigger.OATriggerListener;
 
 /**
  * Factory and manager for {@link OATrigger} instances.

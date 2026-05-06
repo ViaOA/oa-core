@@ -3,13 +3,13 @@ package com.viaoa.graph.service.hub;
 import java.util.Comparator;
 import java.util.logging.Logger;
 
+import com.viaoa.callback.OAObjectSerializerCallback;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectSerializer;
-import com.viaoa.object.OAObjectSerializerCallback;
+import com.viaoa.serialize.OAObjectSerializer;
 
 public abstract class HubCSService {
 	private final Logger LOG = Logger.getLogger(HubCSService.class.getName());
@@ -149,7 +149,7 @@ public abstract class HubCSService {
                 if (thisObj.isNew() && !callHubIsInHubWithMaster(thisObj, thisHub)) {
                     OAObjectSerializer oos = new OAObjectSerializer(thisObj, false, new OAObjectSerializerCallback() {
                         @Override
-                        protected void beforeSerialize(OAObject obj) {
+                        public void beforeSerialize(OAObject obj) {
                         }
                         @Override
                         public boolean shouldSerializeReference(OAObject oaObj, String propertyName, Object objRef, boolean bDefault) {

@@ -4,6 +4,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.serialize.OAObjectSerializer;
 
 import test.xice.tsac3.model.oa.*;
 
@@ -23,7 +24,7 @@ public class OAObjectSerializerTest extends OAUnitTest {
 		log.addHandler(ch);
 
 		Object obj = new String("abcedef");
-		com.viaoa.object.OAObjectSerializer wrap = new OAObjectSerializer(obj, true, false);
+		com.viaoa.serialize.OAObjectSerializer wrap = new OAObjectSerializer(obj, true, false);
 
 		ByteArrayOutputStream bos = new ByteArrayOutputStream(1024);
 		ObjectOutputStream oos = new ObjectOutputStream(bos);

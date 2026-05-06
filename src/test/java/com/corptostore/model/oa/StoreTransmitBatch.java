@@ -17,12 +17,12 @@ import com.viaoa.annotation.OAMethod;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATable;
-import com.viaoa.datasource.OASelect;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.util.OADate;
-import com.viaoa.util.OADateTime;
+import com.viaoa.select.OASelect;
 
 @OAClass(lowerName = "storeTransmitBatch", pluralName = "StoreTransmitBatches", shortName = "stb", displayName = "Store Transmit Batch", displayProperty = "transmitBatch", sortProperty = "transmitBatchDate")
 @OATable(name = "message_service_store_transmit_batch", indexes = {

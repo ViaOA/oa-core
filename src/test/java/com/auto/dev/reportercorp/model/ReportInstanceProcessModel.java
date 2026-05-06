@@ -24,14 +24,14 @@ import com.auto.dev.reportercorp.model.search.StoreInfoSearchModel;
 import com.auto.dev.reportercorp.model.search.ThreadInfoSearchModel;
 import com.viaoa.filter.OAAndFilter;
 import com.viaoa.filter.OAEqualPathFilter;
+import com.viaoa.filter.OAFilter;
 import com.viaoa.filter.OAInFilter;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubCombined;
-import com.viaoa.hub.HubCopy;
-import com.viaoa.hub.HubMerger;
-import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObjectModel;
-import com.viaoa.util.OAFilter;
+import com.viaoa.hub.copy.HubCopy;
+import com.viaoa.hub.merge.HubMerger;
+import com.viaoa.hub.view.HubCombined;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectModel;
 
 public class ReportInstanceProcessModel extends OAObjectModel {
 	private static Logger LOG = Logger.getLogger(ReportInstanceProcessModel.class.getName());

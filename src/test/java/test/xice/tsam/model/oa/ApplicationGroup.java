@@ -19,6 +19,7 @@ import test.xice.tsam.model.oa.Silo;
 import test.xice.tsam.model.oa.Site;
 import test.xice.tsam.model.oa.propertypath.ApplicationGroupPP;
 import com.viaoa.annotation.*;
+import com.viaoa.find.OAFinder;
  
 @OAClass(
     shortName = "ag",

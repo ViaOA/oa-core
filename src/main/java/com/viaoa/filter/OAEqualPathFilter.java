@@ -17,19 +17,18 @@ package com.viaoa.filter;
 
 import java.util.logging.Logger;
 
-import com.viaoa.datasource.OASelect;
+import com.viaoa.find.OAFinder;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAFinder;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;
+import com.viaoa.path.OAPath;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAString;
+import com.viaoa.select.OASelect;
 
 /**
- * Filter that compares the values of two {@link OAPropertyPath} expressions
+ * Filter that compares the values of two {@link OAPath} expressions
  * on the same object (or located target object) for equality.  Both property
  * paths are resolved and the resulting values are compared using standard
  * OA equality rules.
@@ -90,7 +89,7 @@ public class OAEqualPathFilter implements OAFilter {
 	 * Parsed representation of the "from" property path used to resolve the
 	 * comparison source value.
 	 */
-	private OAPropertyPath ppFrom;
+	private OAPath ppFrom;
 
 	/**
 	 * Property-path expression used to retrieve the comparison target value
@@ -102,7 +101,7 @@ public class OAEqualPathFilter implements OAFilter {
 	 * Parsed representation of the "to" property path applied to the
 	 * evaluated object during comparison.
 	 */
-	private OAPropertyPath ppTo;
+	private OAPath ppTo;
 
 	/**
 	 * Optional finder created when the "from" property path traverses a
@@ -186,7 +185,7 @@ public class OAEqualPathFilter implements OAFilter {
 		final Class clazz = hubFrom != null ? hubFrom.getObjectClass() : objFrom != null ? objFrom.getClass() : null;
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
 
-		this.ppFrom = new OAPropertyPath(clazz, strFromPropPath);
+		this.ppFrom = new OAPath(clazz, strFromPropPath);
 
 		if (!bHasFilter) {
 			String[] ss = ppFrom.getFilterNames();
@@ -250,7 +249,7 @@ public class OAEqualPathFilter implements OAFilter {
 				} else {
 					strFromPropPath = OAString.field(strFromPropPath, '.', cntGetMasterObject + 1, 99);
 				}
-				this.ppFrom = new OAPropertyPath(objFrom.getClass(), strFromPropPath);
+				this.ppFrom = new OAPath(objFrom.getClass(), strFromPropPath);
 			}
 			objFromPPValue = ppFrom.getValue(objFrom);
 		}
@@ -262,7 +261,7 @@ public class OAEqualPathFilter implements OAFilter {
 	 *
 	 * @return the property path applied to the source object
 	 */
-	public OAPropertyPath getPropertyPath() {
+	public OAPath getPropertyPath() {
 		return ppFrom;
 	}
 
@@ -303,7 +302,7 @@ public class OAEqualPathFilter implements OAFilter {
 		}
 
 		if (ppTo == null) {
-			ppTo = new OAPropertyPath(obj.getClass(), strToPropPath);
+			ppTo = new OAPath(obj.getClass(), strToPropPath);
 			//qqqqqqq put in OAInFilter ?
 			if (!bHasFilter) {
 				String[] ss = ppTo.getFilterNames();
@@ -357,7 +356,7 @@ public class OAEqualPathFilter implements OAFilter {
 				if (li != null && li.getType() == OALinkInfo.MANY) {
 					return true;
 				}
-				OAPropertyPath ppRev = ppTo.getReversePropertyPath(true);
+				OAPath ppRev = ppTo.getReversePropertyPath(true);
 				select.setWhereObject((OAObject) objFromPPValue, ppRev.getPropertyPath());
 				if (bHasFilter) {
 					return true;

@@ -17,14 +17,13 @@ package com.viaoa.filter;
 
 import java.util.logging.Logger;
 
+import com.viaoa.compare.OACompare;
 import com.viaoa.filter.OAFilterDelegate.FinderInfo;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAFinder;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OACompare;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAString;
+import com.viaoa.path.OAPath;
 
 /**
  * Filter that evaluates whether the string representation of a property
@@ -32,7 +31,7 @@ import com.viaoa.util.OAString;
  * substring matching with positional requirements.
  *
  * <p>
- * Supports deep property traversal via {@link OAPropertyPath}.  If the path
+ * Supports deep property traversal via {@link OAPath}.  If the path
  * crosses a multi-valued reference, an {@link OAFinder} is used to resolve
  * the comparison target before applying the index-based match.
  * </p>
@@ -61,7 +60,7 @@ public class OAIndexOfFilter implements OAFilter {
      * Optional property path used to extract the target value from the
      * evaluated object prior to performing substring search.
      */
-    private OAPropertyPath pp;
+    private OAPath pp;
     
     /**
      * Finder created when the property path traverses a many-relationship,
@@ -88,7 +87,7 @@ public class OAIndexOfFilter implements OAFilter {
      * @param pp the property path used to extract the value
      * @param value the substring to search for
      */
-    public OAIndexOfFilter(OAPropertyPath pp, Object value) {
+    public OAIndexOfFilter(OAPath pp, Object value) {
         this.pp = pp;
         this.value = value;
     }
@@ -100,7 +99,7 @@ public class OAIndexOfFilter implements OAFilter {
      * @param value the substring to search for
      */
     public OAIndexOfFilter(String pp, Object value) {
-        this(pp==null?null:new OAPropertyPath(pp), value);
+        this(pp==null?null:new OAPath(pp), value);
     }
 
     /**
@@ -125,7 +124,7 @@ public class OAIndexOfFilter implements OAFilter {
      * @param value the substring to search for
      * @param bIgnoreCase whether to ignore case
      */
-    public OAIndexOfFilter(OAPropertyPath pp, Object value, boolean bIgnoreCase) {
+    public OAIndexOfFilter(OAPath pp, Object value, boolean bIgnoreCase) {
         this.pp = pp;
         this.value = value;
         this.bIgnoreCase = bIgnoreCase;
@@ -140,7 +139,7 @@ public class OAIndexOfFilter implements OAFilter {
      * @param bIgnoreCase whether to ignore case
      */
     public OAIndexOfFilter(String pp, Object value, boolean bIgnoreCase) {
-        this(pp==null?null:new OAPropertyPath(pp), value, bIgnoreCase);
+        this(pp==null?null:new OAPath(pp), value, bIgnoreCase);
     }
     
     /**

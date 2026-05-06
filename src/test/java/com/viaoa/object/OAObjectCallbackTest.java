@@ -6,10 +6,14 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.viaoa.OAUnitTest;
+import com.viaoa.callback.OAObjectCallback;
+import com.viaoa.callback.OAObjectCallback.Type;
 import com.viaoa.context.OAContext;
+import com.viaoa.datetime.OADate;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAObjectCallback.Type;
-import com.viaoa.util.OADate;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAPropertyInfo;
 
 import test.hifive.model.oa.*;
 

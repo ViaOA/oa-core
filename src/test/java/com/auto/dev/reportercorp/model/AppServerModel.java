@@ -9,8 +9,8 @@ import com.auto.dev.reportercorp.model.oa.AppServer;
 import com.auto.dev.reportercorp.model.oa.AppUserLogin;
 import com.auto.dev.reportercorp.model.search.AppUserLoginSearchModel;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubCopy;
-import com.viaoa.object.OAObjectModel;
+import com.viaoa.hub.copy.HubCopy;
+import com.viaoa.metadata.OAObjectModel;
 
 public class AppServerModel extends OAObjectModel {
 	private static Logger LOG = Logger.getLogger(AppServerModel.class.getName());

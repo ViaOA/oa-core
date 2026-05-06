@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  * </ul>
  * The name corresponds to the OA link name on the source {@code OAObject}
  * type. The {@link OAObjectPojoLoader} populates this structure when it
- * converts {@link com.viaoa.object.OAObjectInfo} metadata into POJO
+ * converts {@link com.viaoa.metadata.OAObjectInfo} metadata into POJO
  * descriptors.
  */
 public class PojoLink implements java.io.Serializable {

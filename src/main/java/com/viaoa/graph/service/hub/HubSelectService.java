@@ -7,14 +7,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.datasource.OASelect;
+import com.viaoa.filter.OAFilter;
 import com.viaoa.hub.*;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAString;
+import com.viaoa.path.OAPath;
+import com.viaoa.select.OASelect;
 
 public abstract class HubSelectService {
 	private final Logger LOG = Logger.getLogger(HubSelectService.class.getName());
@@ -814,8 +814,8 @@ public abstract class HubSelectService {
 		if (OAString.isEmpty(pp)) {
 			return false;
 		}
-		OAPropertyPath<?> propPath = new OAPropertyPath(hubSelectWhere.getObjectClass(), pp, true);
-		OAPropertyPath ppRev = propPath.getReversePropertyPath();
+		OAPath<?> propPath = new OAPath(hubSelectWhere.getObjectClass(), pp, true);
+		OAPath ppRev = propPath.getReversePropertyPath();
 
 		String s = ppRev.getFirstPropertyName();
 		if (!propName.equalsIgnoreCase(s)) {

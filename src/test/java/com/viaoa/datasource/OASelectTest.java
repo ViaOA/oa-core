@@ -5,9 +5,9 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
-import com.viaoa.datasource.OASelect;
-import com.viaoa.object.OAFinder;
-import com.viaoa.util.OAFilter;
+import com.viaoa.filter.OAFilter;
+import com.viaoa.find.OAFinder;
+import com.viaoa.select.OASelect;
 
 import test.xice.tsac3.model.Model;
 import test.xice.tsac3.Tsac3DataGenerator;

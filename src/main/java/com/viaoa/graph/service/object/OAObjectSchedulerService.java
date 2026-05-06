@@ -3,11 +3,13 @@ package com.viaoa.graph.service.object;
 import java.lang.reflect.Method;
 import java.util.logging.Logger;
 
+import com.viaoa.datetime.OADate;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.*;
-import com.viaoa.scheduler.OAScheduler;
-import com.viaoa.util.OADate;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAString;
+import com.viaoa.path.OAPath;
+import com.viaoa.schedule.OAScheduler;
 
 public abstract class OAObjectSchedulerService {
 	private final Logger LOG = Logger.getLogger(OAObjectSchedulerService.class.getName());
@@ -41,7 +43,7 @@ public abstract class OAObjectSchedulerService {
      * <ul>
      *   <li>Ensures {@code objThis} and {@code property} are not null or empty.</li>
      *   <li>Locates the corresponding {@link OALinkInfo} either directly or via a
-     *       dot-notation {@link OAPropertyPath}.</li>
+     *       dot-notation {@link OAPath}.</li>
      *   <li>Retrieves the scheduler callback {@link Method}, if defined.</li>
      * </ul>
      *
@@ -63,7 +65,7 @@ public abstract class OAObjectSchedulerService {
         OALinkInfo li = oi.getLinkInfo(property);
         if (li == null) {
             if (property.indexOf(".") < 0) return null;
-            OAPropertyPath pp = new OAPropertyPath(objThis.getClass(), property);
+            OAPath pp = new OAPath(objThis.getClass(), property);
             OALinkInfo[] lis = pp.getLinkInfos();
             if (lis == null || lis.length == 0) return null;
             li = lis[0];

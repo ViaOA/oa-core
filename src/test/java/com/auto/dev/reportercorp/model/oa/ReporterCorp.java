@@ -12,10 +12,10 @@ import com.viaoa.annotation.OAMethod;
 import com.viaoa.annotation.OAObjCallback;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
+import com.viaoa.callback.OAObjectCallback;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCallback;
-import com.viaoa.util.OADateTime;
 
 @OAClass(lowerName = "reporterCorp", pluralName = "ReporterCorps", shortName = "rpc", displayName = "Reporter Corp", isPreSelect = true, useDataSource = false, displayProperty = "nodeName", pojoSingleton = true)
 public class ReporterCorp extends OAObject {

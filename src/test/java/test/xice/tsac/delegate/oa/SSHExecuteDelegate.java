@@ -3,7 +3,7 @@ package test.xice.tsac.delegate.oa;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
 
 import test.xice.tsac.model.oa.MRADClient;
 import test.xice.tsac.model.oa.MRADClientCommand;

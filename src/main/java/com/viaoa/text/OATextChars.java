@@ -16,6 +16,20 @@
 package com.viaoa.text;
 
 
+/*qqqqqqqqqqqqq
+CODEX
+
+ 13. Medium - OATextChars.upper / OATextChars.lower
+     Concrete failure: under Turkish default locale, upper("id") can produce "İD" instead of "ID".
+     Expected: infrastructure identifiers and path/query tokens use locale-stable casing.
+     Actual: JVM default locale affects results.
+     Fix direction: use Locale.ROOT.
+
+
+
+
+*/
+
 /**
  * Low-level character classification and transformation helpers.
  * <p>

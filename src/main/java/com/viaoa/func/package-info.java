@@ -21,7 +21,7 @@
  * {@link com.viaoa.object.OAObject} instances and {@link com.viaoa.hub.Hub}
  * collections, including aggregation, property evaluation, and text template
  * processing. These functions rely on OA's dynamic property-path navigation
- * and the {@link com.viaoa.object.OAFinder} traversal engine. <p>
+ * and the {@link com.viaoa.find.OAFinder} traversal engine. <p>
  *
  * Features include:
  * <ul>

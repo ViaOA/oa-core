@@ -12,10 +12,10 @@ import com.auto.dev.reportercorp.model.oa.ReportInstanceProcess;
 import com.auto.dev.reportercorp.model.oa.ReportInstanceProcessStep;
 import com.auto.dev.reportercorp.model.search.ReportInstanceProcessSearchModel;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubCombined;
-import com.viaoa.hub.HubCopy;
-import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObjectModel;
+import com.viaoa.hub.copy.HubCopy;
+import com.viaoa.hub.view.HubCombined;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectModel;
 
 public class ReportInstanceProcessStepModel extends OAObjectModel {
 	private static Logger LOG = Logger.getLogger(ReportInstanceProcessStepModel.class.getName());

@@ -18,12 +18,46 @@ package com.viaoa.text;
 import java.io.UnsupportedEncodingException;
 import java.util.regex.Pattern;
 
-import com.viaoa.util.OAConv;
-import com.viaoa.util.OAConverter;
-import com.viaoa.util.OADate;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAString;
-import com.viaoa.util.OATime;
+import com.viaoa.converter.OAConv;
+import com.viaoa.converter.OAConverter;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.datetime.OATime;
+import com.viaoa.lang.OAString;
+
+/*qqqqqqqqqqqqq
+CODEX
+
+ - file/class/method: OATextFormat.isInteger
+  - concrete failure scenario: Decimal strings validate as integers.
+  - example input: "1.2"
+  - expected result: false
+  - actual or likely result: true
+  - why it matters to OA: UI/query validation can accept non-integer input for integer fields, then later truncate or
+    convert inconsistently.
+  - fix direction: Validate integer syntax directly, or require parsed value to have no fractional portion.
+
+ 12. Medium - OATextFormat.toUTF8
+     Concrete failure: toUTF8("é") encodes the Java String as ISO-8859-1 bytes, then decodes those bytes as UTF-8,
+     producing replacement text.
+     Expected: preserve "é" or accept bytes with an explicit source charset.
+     Actual: character corruption.
+     Fix direction: clarify contract; avoid converting Java String through mismatched charsets
+
+ 5. Medium - OATextFormat.unindent
+     Scenario: public OAString wrapper accepts a nullable text utility path, but implementation dereferences text.
+     Example: OAString.unindent(null) throws NullPointerException.
+     Impact: shared formatting helpers are inconsistent with OA’s null-safe string utility behavior and can break UI/
+     code formatting paths on nullable text.
+
+  11. Medium - OATextFormat.indent / unindent
+     Scenario: trailing empty lines are lost because String.split("\n") drops trailing empty tokens.
+     Example: OAString.indent("a\n", 2) returns "  a" instead of preserving the final line break.
+     Impact: code generation or formatted serialized text can lose line structure.
+
+
+*/
+
 
 /**
  * Flexible, string formatting and masking engine. Primarily used for

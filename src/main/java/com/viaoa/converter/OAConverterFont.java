@@ -16,7 +16,6 @@
 package com.viaoa.converter;
 
 import java.awt.Font;
-import com.viaoa.util.*;
 
 /**
  * Converter for transforming values into {@link Font} objects and formatting

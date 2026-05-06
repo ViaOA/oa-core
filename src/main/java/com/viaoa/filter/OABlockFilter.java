@@ -15,8 +15,6 @@
  */
 package com.viaoa.filter;
 
-import com.viaoa.util.OAFilter;
-
 /**
  * Aggregates multiple {@link OAFilter} instances and applies them as a
  * logical AND block.  All contained filters must return {@code true} for

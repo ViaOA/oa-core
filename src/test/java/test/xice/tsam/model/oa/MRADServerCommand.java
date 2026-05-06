@@ -15,7 +15,7 @@ import test.xice.tsam.model.oa.MRADServer;
 import test.xice.tsam.model.oa.MRADServerCommand;
 import test.xice.tsam.model.oa.SSHExecute;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADateTime;
+import com.viaoa.datetime.OADateTime;
 
 import test.xice.tsam.delegate.RemoteDelegate;
 import test.xice.tsam.delegate.ServerModelDelegate;

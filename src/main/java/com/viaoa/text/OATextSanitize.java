@@ -15,7 +15,7 @@
  */
 package com.viaoa.text;
 
-import com.viaoa.util.OAConverter;
+import com.viaoa.converter.OAConverter;
 
 /**
  * Text sanitization helpers that ensure safe use of String values throughout

@@ -34,7 +34,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
  *       that can be used for matching.</li>
  * </ul>
  * The {@link OAObjectPojoLoader} populates this structure based on
- * {@link com.viaoa.object.OALinkInfo} metadata.
+ * {@link com.viaoa.metadata.OALinkInfo} metadata.
  */
 public class PojoLinkOne implements java.io.Serializable {
 	private static final long serialVersionUID = 1L;

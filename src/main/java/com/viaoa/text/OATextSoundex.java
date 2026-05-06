@@ -17,6 +17,19 @@ package com.viaoa.text;
 
 import java.util.Locale;
 
+/*qqqqqqqqqqqqq
+ CODEX
+ 
+ 
+ 22. Medium - OATextSoundex.soundex
+     Scenario: leading non-letters are preserved instead of ignored.
+     Example: OATextSoundex.soundex("1Smith") returns 1253.
+     Impact: phonetic matching for names with punctuation/digits prefixes produces invalid Soundex keys.
+ 
+ 
+ */
+
+
 /**
  * Utility for generating U.S. Census Soundex codes to support matching of
  * phonetically similar names (e.g., "Vincent" → "V523").

@@ -16,9 +16,9 @@ import com.messagedesigner.model.oa.MessageType;
 import com.messagedesigner.model.oa.MessageTypeRecord;
 import com.messagedesigner.model.oa.propertypath.MessageSourcePP;
 import com.viaoa.OAUnitTest;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.json.OAJson;
 import com.viaoa.object.OAObjectCacheDelegate;
-import com.viaoa.util.OADateTime;
 
 public class OAJacksonTest extends OAUnitTest {
 

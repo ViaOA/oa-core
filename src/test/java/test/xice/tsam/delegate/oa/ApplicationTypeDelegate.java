@@ -5,11 +5,11 @@ import java.io.File;
 import java.io.StringReader;
 import java.util.logging.Logger;
 
+import com.viaoa.converter.OAConv;
+import com.viaoa.io.OAFile;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OAConv;
-import com.viaoa.util.OAFile;
-import com.viaoa.util.OAString;
-import com.viaoa.util.OAYamlReader;
+import com.viaoa.serialization.yaml.OAYamlReader;
 
 import test.xice.tsam.delegate.ModelDelegate;
 import test.xice.tsam.delegate.oa.ApplicationTypeDelegate;

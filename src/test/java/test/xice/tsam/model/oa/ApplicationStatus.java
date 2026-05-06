@@ -5,12 +5,15 @@ import java.util.logging.*;
 import java.sql.*;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
+import com.viaoa.lang.OAString;
 import com.viaoa.util.*;
 
 import test.xice.tsam.model.delegate.OAObjectInfoDelegate;
 import test.xice.tsam.model.oa.Application;
 import test.xice.tsam.model.oa.ApplicationStatus;
 import com.viaoa.annotation.*;
+import com.viaoa.converter.OAConverter;
+import com.viaoa.datetime.OADateTime;
 
 import test.xice.tsac.model.oa.ApplicationStatus.Type;
 import test.xice.tsam.delegate.oa.*;

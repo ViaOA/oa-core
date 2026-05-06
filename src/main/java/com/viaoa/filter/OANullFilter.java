@@ -17,17 +17,16 @@ package com.viaoa.filter;
 
 import java.util.logging.Logger;
 
+import com.viaoa.compare.OACompare;
 import com.viaoa.filter.OAFilterDelegate.FinderInfo;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OACompare;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
+import com.viaoa.path.OAPath;
 
 /**
  * Filter that evaluates whether a property's value is {@code null}.  The
- * value may be accessed directly or through an {@link OAPropertyPath}.
+ * value may be accessed directly or through an {@link OAPath}.
  *
  * <p>
  * If the property path traverses a many-relationship, an {@link OAFinder}
@@ -46,7 +45,7 @@ public class OANullFilter implements OAFilter {
      * Optional property path used to extract the value from the evaluated
      * object before applying the null check.
      */
-    private OAPropertyPath pp;
+    private OAPath pp;
     
     /**
      * Finder created when the property path traverses a many-relationship.
@@ -66,7 +65,7 @@ public class OANullFilter implements OAFilter {
      *
      * @param pp the property path used to retrieve the value
      */
-    public OANullFilter(OAPropertyPath pp) {
+    public OANullFilter(OAPath pp) {
         this.pp = pp;
     }
     
@@ -77,7 +76,7 @@ public class OANullFilter implements OAFilter {
      * @param pp the property-path expression; may be {@code null}
      */
     public OANullFilter(String pp) {
-        this(pp==null?null:new OAPropertyPath(pp));
+        this(pp==null?null:new OAPath(pp));
     }
     
     /**

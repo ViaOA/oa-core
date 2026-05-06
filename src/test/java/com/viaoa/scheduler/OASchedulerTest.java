@@ -2,8 +2,10 @@ package com.viaoa.scheduler;
 
 import org.junit.Test;
 
-import com.viaoa.util.OADate;
-import com.viaoa.util.OADateTime;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.schedule.OADateTimeRange;
+import com.viaoa.schedule.OASchedule;
 
 import static org.junit.Assert.*;
 

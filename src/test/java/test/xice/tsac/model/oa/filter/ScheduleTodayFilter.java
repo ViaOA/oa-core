@@ -2,8 +2,11 @@
 package test.xice.tsac.model.oa.filter;
 
 import com.viaoa.annotation.*;
+import com.viaoa.cache.OAObjectCacheHubAdder;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
+import com.viaoa.hub.filter.CustomHubFilter;
+import com.viaoa.hub.filter.HubFilter;
 import com.viaoa.util.*;
 
 import test.xice.tsac.delegate.oa.ScheduleDelegate;

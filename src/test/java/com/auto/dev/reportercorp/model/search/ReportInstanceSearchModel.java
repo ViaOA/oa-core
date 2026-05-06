@@ -9,13 +9,13 @@ import com.auto.dev.reportercorp.model.oa.Report;
 import com.auto.dev.reportercorp.model.oa.ReportInstance;
 import com.auto.dev.reportercorp.model.oa.ReportVersion;
 import com.auto.dev.reportercorp.model.oa.search.ReportInstanceSearch;
-import com.viaoa.datasource.OASelect;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubCopy;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListener;
 import com.viaoa.hub.HubListenerAdapter;
-import com.viaoa.object.OAFinder;
+import com.viaoa.hub.copy.HubCopy;
+import com.viaoa.select.OASelect;
 
 public class ReportInstanceSearchModel {
 	private static Logger LOG = Logger.getLogger(ReportInstanceSearchModel.class.getName());

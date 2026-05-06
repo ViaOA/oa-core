@@ -29,8 +29,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.comm.multiplexer.OAMultiplexerServer;
+import com.viaoa.io.OAFile;
 import com.viaoa.remote.multiplexer.OARemoteMultiplexerServer;
-import com.viaoa.util.OAFile;
 
 /**
  * Server-side file transfer service used by {@link com.viaoa.sync.OASyncServer}.
@@ -44,7 +44,7 @@ import com.viaoa.util.OAFile;
  * Each accepted socket is processed on its own worker thread.
  *
  * <h2>Directory Safety</h2>
- * All filenames are normalized using {@link com.viaoa.util.OAFile} and checked
+ * All filenames are normalized using {@link com.viaoa.io.OAFile} and checked
  * for disallowed patterns (such as {@code ".."}) to prevent directory traversal
  * or access to files outside the configured server directory.
  *

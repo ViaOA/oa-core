@@ -23,13 +23,13 @@ import java.util.*;
 import org.xml.sax.*;
 import org.xml.sax.helpers.DefaultHandler;
 
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
 
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.XMLConstants;
-import javax.xml.bind.Unmarshaller;
+//import javax.xml.bind.Unmarshaller;
 import javax.xml.parsers.SAXParser;
 
 /**

@@ -14,11 +14,11 @@ import com.viaoa.datasource.jdbc.db.Database;
 import com.viaoa.datasource.jdbc.db.Index;
 import com.viaoa.datasource.jdbc.db.Link;
 import com.viaoa.datasource.jdbc.db.Table;
+import com.viaoa.lang.OAArray;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.Base64;
-import com.viaoa.util.OAArray;
-import com.viaoa.util.OAReflect;
-import com.viaoa.util.OAString;
+import com.viaoa.reflect.OAReflect;
+import com.viaoa.secure.Base64;
 
 import test.hifive.model.delegate.OAObjectAnnotationDelegate;
 import test.hifive.model.delegate.OAObjectCacheDelegate;

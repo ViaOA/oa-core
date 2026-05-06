@@ -2,8 +2,8 @@ package com.viaoa.runtime;
 
 import java.util.logging.Logger;
 
-import com.viaoa.remote.OARemoteThread;
 import com.viaoa.remote.info.RequestInfo;
+import com.viaoa.runtime.thread.OARemoteThread;
 
 public abstract class OARemoteThreadService {
 	private Logger LOG = Logger.getLogger(OARemoteThreadService.class.getName());

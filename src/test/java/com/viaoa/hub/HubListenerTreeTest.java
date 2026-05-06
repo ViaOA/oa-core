@@ -1,10 +1,10 @@
 package com.viaoa.hub;
 
 import com.viaoa.OAUnitTest;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectInfoDelegate;
-import com.viaoa.object.OATrigger;
-import com.viaoa.util.OADate;
+import com.viaoa.datetime.OADate;
+import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAObjectInfoDelegate;
+import com.viaoa.trigger.OATrigger;
 
 import test.hifive.model.oa.*;
 import test.hifive.model.oa.propertypath.EmployeeAwardPP;

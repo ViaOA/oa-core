@@ -19,6 +19,7 @@ import com.corptostore.model.oa.TransmitBatch;
 import com.corptostore.model.oa.propertypath.AppUserPP;
 import com.viaoa.annotation.*;
 import com.viaoa.hub.*;
+import com.viaoa.hub.merge.HubMerger;
 import com.viaoa.object.*;
 import com.viaoa.util.*;
 

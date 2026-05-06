@@ -12,8 +12,8 @@ import java.util.logging.Logger;
 
 import com.messagedesigner.delegate.ScheduledExecutorServiceDelegate;
 import com.viaoa.concurrent.OAScheduledExecutorService;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OATime;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.datetime.OATime;
 
 public class ScheduledExecutorServiceDelegate {
     private static Logger LOG = Logger.getLogger(ScheduledExecutorServiceDelegate.class.getName());

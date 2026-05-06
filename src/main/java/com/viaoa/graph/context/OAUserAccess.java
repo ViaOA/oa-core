@@ -19,13 +19,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
-import com.viaoa.datasource.OASelect;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.lang.OAArray;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OAArray;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAString;
+import com.viaoa.path.OAPath;
+import com.viaoa.select.OASelect;
 
 /**
  * Used to set the "boundaries" of what objects & properties/methods can be accessed by a user (or system). <br>
@@ -68,7 +68,7 @@ Used by OAContext<p>
  *   <li>Which classes are visible or enabled.</li>
  *   <li>Which properties of those classes are visible or enabled.</li>
  *   <li>Which objects are reachable from one or more root objects or hubs via
- *       configured {@link com.viaoa.util.OAPropertyPath} instances.</li>
+ *       configured {@link com.viaoa.path.OAPath} instances.</li>
  *   <li>Negative rules (“not visible”, “not enabled”) that override positive
  *       rules.</li>
  *   <li>Chained access evaluation across multiple OAUserAccess instances.</li>
@@ -227,10 +227,10 @@ public class OAUserAccess {
 		OAObject obj;
 		
 		/** Forward property path used for searching from the root. */
-		OAPropertyPath pp;
+		OAPath pp;
 
 		/** Reverse property path for searching backward from the target object. */
-		OAPropertyPath ppReverse;
+		OAPath ppReverse;
 		
 		/** If true, only the final segment of the property path is evaluated. */
 		boolean bOnlyEndProperty;
@@ -250,7 +250,7 @@ public class OAUserAccess {
 		 */
 		public UserAccess(OAObject obj, String pp, boolean bOnlyEndProperty) {
 			this.obj = obj;
-			this.pp = new OAPropertyPath(obj.getClass(), pp);
+			this.pp = new OAPath(obj.getClass(), pp);
 			this.ppReverse = this.pp.getReversePropertyPath();
 			this.bOnlyEndProperty = bOnlyEndProperty;
 		}
@@ -264,7 +264,7 @@ public class OAUserAccess {
 		 */
 		public UserAccess(Hub hub, String pp, boolean bOnlyEndProperty) {
 			this.obj = obj;
-			this.pp = new OAPropertyPath(hub.getObjectClass(), pp);
+			this.pp = new OAPath(hub.getObjectClass(), pp);
 			this.ppReverse = this.pp.getReversePropertyPath();
 			this.bOnlyEndProperty = bOnlyEndProperty;
 		}

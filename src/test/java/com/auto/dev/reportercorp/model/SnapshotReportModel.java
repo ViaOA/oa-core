@@ -13,9 +13,9 @@ import com.auto.dev.reportercorp.model.search.EnvironmentSnapshotSearchModel;
 import com.auto.dev.reportercorp.model.search.SnapshotReportSearchModel;
 import com.auto.dev.reportercorp.model.search.SnapshotReportTemplateSearchModel;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubCopy;
-import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObjectModel;
+import com.viaoa.hub.copy.HubCopy;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectModel;
 
 public class SnapshotReportModel extends OAObjectModel {
 	private static Logger LOG = Logger.getLogger(SnapshotReportModel.class.getName());

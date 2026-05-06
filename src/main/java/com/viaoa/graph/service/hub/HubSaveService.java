@@ -2,9 +2,9 @@ package com.viaoa.graph.service.hub;
 
 import java.util.logging.Logger;
 
+import com.viaoa.cascade.OACascade;
 import com.viaoa.hub.*;
-import com.viaoa.object.OACascade;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;
 
 public abstract class HubSaveService {

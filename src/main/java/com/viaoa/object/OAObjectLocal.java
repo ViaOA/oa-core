@@ -15,6 +15,8 @@
  */
 package com.viaoa.object;
 
+import com.viaoa.metadata.OAObjectInfo;
+
 /**
  * Base class for transient or local-only {@link OAObject} instances
  * that are excluded from persistence, caching, and initialization.

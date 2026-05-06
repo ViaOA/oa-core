@@ -4,6 +4,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.hub.*;
+import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
 

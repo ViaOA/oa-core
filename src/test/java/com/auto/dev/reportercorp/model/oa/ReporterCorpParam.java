@@ -9,9 +9,9 @@ import com.viaoa.annotation.OAFkey;
 import com.viaoa.annotation.OAId;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAString;
 
 @OAClass(lowerName = "reporterCorpParam", pluralName = "ReporterCorpParams", shortName = "rcp", displayName = "Reporter Corp Param", useDataSource = false, displayProperty = "id")
 public class ReporterCorpParam extends OAObject {

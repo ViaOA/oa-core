@@ -18,19 +18,18 @@ package com.viaoa.filter;
 
 import java.util.logging.Logger;
 
+import com.viaoa.compare.OACompare;
 import com.viaoa.filter.OAFilterDelegate.FinderInfo;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OACompare;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
+import com.viaoa.path.OAPath;
 
 /**
  * Filter that evaluates whether a property's value is greater than a
  * specified comparison value.  Comparison is performed using
  * {@link OACompare#isGreater(Object, Object)} and supports both direct
- * properties and values retrieved through an {@link OAPropertyPath}.
+ * properties and values retrieved through an {@link OAPath}.
  *
  * <p>
  * If the property path crosses a many-relationship, an {@link OAFinder}
@@ -45,7 +44,7 @@ public class OAGreaterFilter implements OAFilter {
      * Optional property path used to obtain a nested value from the evaluated
      * object before performing the greater-than comparison.
      */
-    private OAPropertyPath pp;
+    private OAPath pp;
     
     /**
      * The comparison value used to determine whether the evaluated property
@@ -76,7 +75,7 @@ public class OAGreaterFilter implements OAFilter {
      * @param pp the property path used to retrieve the target value
      * @param value the value to compare against
      */
-    public OAGreaterFilter(OAPropertyPath pp, Object value) {
+    public OAGreaterFilter(OAPath pp, Object value) {
         this.pp = pp;
         this.value = value;
     }
@@ -89,7 +88,7 @@ public class OAGreaterFilter implements OAFilter {
      * @param value the value to compare against
      */
     public OAGreaterFilter(String pp, Object value) {
-        this(pp==null?null:new OAPropertyPath(pp), value);
+        this(pp==null?null:new OAPath(pp), value);
     }
     
     /**

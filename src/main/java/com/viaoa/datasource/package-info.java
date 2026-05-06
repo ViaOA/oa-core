@@ -31,13 +31,13 @@
  *       CRUD and query contract for persistence providers.</li>
  *   <li>{@link com.viaoa.datasource.OADataSourceInterface} — formal interface used by
  *       all implementations to ensure compatibility.</li>
- *   <li>{@link com.viaoa.datasource.OASelect} — executes object-based queries and
+ *   <li>{@link com.viaoa.select.OASelect} — executes object-based queries and
  *       streams results through {@link com.viaoa.datasource.OADataSourceIterator}.</li>
  *   <li>{@link com.viaoa.datasource.OADataSourceDelegate} — utility for locating and
  *       managing registered DataSources.</li>
- *   <li>{@link com.viaoa.datasource.OASelectManager} — background manager that monitors
+ *   <li>{@link com.viaoa.select.OASelectManager} — background manager that monitors
  *       and cleans up active query iterators.</li>
- *   <li>{@link com.viaoa.datasource.OASelectFilter} — filter bridge for in-memory and
+ *   <li>{@link com.viaoa.select.OASelectFilter} — filter bridge for in-memory and
  *       DataSource-level selection logic.</li>
  * </ul>
  *
@@ -63,6 +63,6 @@
  *
  * @see com.viaoa.object.OAObject
  * @see com.viaoa.datasource.OADataSource
- * @see com.viaoa.datasource.OASelect
+ * @see com.viaoa.select.OASelect
  */
 package com.viaoa.datasource;

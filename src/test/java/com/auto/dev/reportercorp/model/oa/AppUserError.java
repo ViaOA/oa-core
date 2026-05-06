@@ -8,9 +8,9 @@ import com.viaoa.annotation.OAFkey;
 import com.viaoa.annotation.OAId;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OADate;
-import com.viaoa.util.OADateTime;
 
 @OAClass(lowerName = "appUserError", pluralName = "AppUserErrors", shortName = "aue", displayName = "App User Error", useDataSource = false, isProcessed = true, displayProperty = "dateTime", noPojo = true)
 public class AppUserError extends OAObject {

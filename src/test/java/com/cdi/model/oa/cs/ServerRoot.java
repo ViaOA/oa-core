@@ -6,6 +6,7 @@ import com.cdi.model.oa.propertypath.*;
 import com.viaoa.annotation.*;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
+import com.viaoa.hub.merge.HubMerger;
 import com.viaoa.util.*;
 
 /**

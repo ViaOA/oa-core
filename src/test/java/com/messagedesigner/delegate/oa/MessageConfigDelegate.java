@@ -25,7 +25,7 @@ import com.messagedesigner.model.pojo.MessageGroupDef;
 import com.messagedesigner.model.pojo.MessageRecordDef;
 import com.messagedesigner.model.pojo.RecordDef;
 import com.messagedesigner.model.pojo.RpgTypeDef;
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
 
 public class MessageConfigDelegate {
 

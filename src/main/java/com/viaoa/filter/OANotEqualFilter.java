@@ -19,13 +19,12 @@ import java.lang.reflect.Method;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.compare.OACompare;
 import com.viaoa.filter.OAFilterDelegate.FinderInfo;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAFinder;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OACompare;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
+import com.viaoa.path.OAPath;
 
 /**
  * Filter that evaluates whether a property value is <em>not equal</em> to
@@ -46,7 +45,7 @@ import com.viaoa.util.OAPropertyPath;
  *
  * <p>
  * All other comparisons delegate to
- * {@link com.viaoa.util.OACompare#isEqual(Object, Object, boolean)} and
+ * {@link com.viaoa.compare.OACompare#isEqual(Object, Object, boolean)} and
  * invert the result.
  * </p>
  */
@@ -67,7 +66,7 @@ public class OANotEqualFilter implements OAFilter {
      * Optional property path used to retrieve the value from the evaluated
      * object before applying the not-equal comparison.
      */
-    private OAPropertyPath pp;
+    private OAPath pp;
     
     /**
      * Finder created when the property path traverses a many-relationship.
@@ -106,7 +105,7 @@ public class OANotEqualFilter implements OAFilter {
      * @param pp the property path used to retrieve the value
      * @param value the comparison value
      */
-    public OANotEqualFilter(OAPropertyPath pp, Object value) {
+    public OANotEqualFilter(OAPath pp, Object value) {
         this.pp = pp;
         this.value = value;
     }
@@ -119,7 +118,7 @@ public class OANotEqualFilter implements OAFilter {
      * @param value the comparison value
      */
     public OANotEqualFilter(String pp, Object value) {
-        this(pp==null?null:new OAPropertyPath(pp), value);
+        this(pp==null?null:new OAPath(pp), value);
     }
 
     /**
@@ -131,7 +130,7 @@ public class OANotEqualFilter implements OAFilter {
      * @param value the comparison value
      * @param bIgnoreCase whether to ignore case during comparison
      */
-    public OANotEqualFilter(OAPropertyPath pp, Object value, boolean bIgnoreCase) {
+    public OANotEqualFilter(OAPath pp, Object value, boolean bIgnoreCase) {
         this.pp = pp;
         this.value = value;
         this.bIgnoreCase = bIgnoreCase;
@@ -146,7 +145,7 @@ public class OANotEqualFilter implements OAFilter {
      * @param bIgnoreCase whether to ignore case during comparison
      */
     public OANotEqualFilter(String pp, Object value, boolean bIgnoreCase) {
-        this(pp==null?null:new OAPropertyPath(pp), value, bIgnoreCase);
+        this(pp==null?null:new OAPath(pp), value, bIgnoreCase);
     }
 
 

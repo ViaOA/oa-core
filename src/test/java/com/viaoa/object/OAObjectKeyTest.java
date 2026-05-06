@@ -4,7 +4,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
-import com.viaoa.util.OACompare;
+import com.viaoa.compare.OACompare;
 
 import test.xice.tsac3.model.oa.Server;
 

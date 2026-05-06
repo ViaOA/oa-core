@@ -2,9 +2,9 @@ package com.viaoa.graph.service.object;
 
 import java.util.logging.Logger;
 
-import com.viaoa.datasource.OASelect;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OAString;
+import com.viaoa.select.OASelect;
 
 public abstract class OAObjectUniqueService {
 	private static final Logger LOG = Logger.getLogger(OAObjectUniqueService.class.getName());

@@ -2,11 +2,11 @@ package com.viaoa.graph.service;
 
 import java.util.logging.Logger;
 
+import com.viaoa.cascade.OACascade;
 import com.viaoa.datasource.clientserver.OADataSourceClient;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.api.SyncOps;
 import com.viaoa.graph.api.internal.SyncInternalOps;
-import com.viaoa.object.OACascade;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.remote.info.RequestInfo;

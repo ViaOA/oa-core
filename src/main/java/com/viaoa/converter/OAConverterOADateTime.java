@@ -15,15 +15,14 @@
  */
 package com.viaoa.converter;
 
-import java.sql.Date;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 
-import com.viaoa.util.OADate;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OATime;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.datetime.OATime;
 
 /**
  * Converter for transforming values into {@link OADateTime} instances and
@@ -95,8 +94,14 @@ public class OAConverterOADateTime implements OAConverterInterface<OADateTime> {
 		if (fromValue instanceof java.sql.Time) {
 			return new OADateTime((java.sql.Time) fromValue);
 		}
-		if (fromValue instanceof Date) {
-			return new OADateTime((Date) fromValue);
+		if (fromValue instanceof java.sql.Timestamp) {
+			return new OADateTime((java.sql.Timestamp) fromValue);
+		}
+		if (fromValue instanceof java.sql.Date) {
+			return new OADateTime((java.sql.Date) fromValue);
+		}
+		if (fromValue instanceof java.util.Date) {
+			return new OADateTime((java.util.Date) fromValue);
 		}
 		if (fromValue instanceof byte[]) {
 			return new OADateTime(new java.math.BigInteger((byte[]) fromValue).longValue());

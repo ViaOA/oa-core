@@ -4,12 +4,12 @@ import java.lang.reflect.Method;
 import java.util.Hashtable;
 import java.util.logging.Logger;
 
+import com.viaoa.compare.OACompare;
+import com.viaoa.compare.OANullObject;
 import com.viaoa.hub.*;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.util.OACompare;
-import com.viaoa.util.OANullObject;
 
 public abstract class HubPropertyService {
 	private final Logger LOG = Logger.getLogger(HubPropertyService.class.getName());

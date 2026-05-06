@@ -6,12 +6,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import com.viaoa.cascade.OACascade;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.*;
-import com.viaoa.object.OACascade;
-import com.viaoa.object.OAFinder;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.hub.filter.HubFilter;
+import com.viaoa.hub.merge.HubMerger;
+import com.viaoa.hub.view.HubCombined;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 
 public abstract class HubStatusService {
 	private final Logger LOG = Logger.getLogger(HubStatusService.class.getName());

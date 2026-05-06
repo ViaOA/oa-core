@@ -20,16 +20,16 @@ import java.sql.Types;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import com.viaoa.converter.OAConverter;
 import com.viaoa.datasource.jdbc.db.Column;
 import com.viaoa.datasource.jdbc.db.DBMetaData;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.datetime.OATime;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.util.OAConverter;
-import com.viaoa.util.OADate;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAReflect;
-import com.viaoa.util.OAString;
-import com.viaoa.util.OATime;
+import com.viaoa.reflect.OAReflect;
 
 /**
  * Converts OA property values into SQL-ready literal text (or parameter values)

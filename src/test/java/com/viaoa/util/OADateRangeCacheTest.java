@@ -9,7 +9,9 @@ import java.util.List;
 import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
-import com.viaoa.util.OADateRangeCache.DateRange;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.cache.OADateRangeCache;
+import com.viaoa.datetime.cache.OADateRangeCache.DateRange;
 
 public class OADateRangeCacheTest extends OAUnitTest {
 

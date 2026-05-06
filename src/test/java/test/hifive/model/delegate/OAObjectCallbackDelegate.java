@@ -1,8 +1,8 @@
 package test.hifive.model.delegate;
 
 import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.metadata.OAObjectModel;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectModel;
 import com.viaoa.runtime.OARuntime;
 import test.hifive.model.oa.Ecard;
 

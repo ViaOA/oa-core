@@ -2,7 +2,7 @@ package test.xice.tsac.delegate.oa;
 
 import java.io.File;
 
-import com.viaoa.util.OADateTime;
+import com.viaoa.datetime.OADateTime;
 
 import test.xice.tsac.model.oa.Application;
 import test.xice.tsac.model.oa.Server;

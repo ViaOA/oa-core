@@ -6,10 +6,10 @@ import java.util.logging.Logger;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.autonumber.OADataSourceAuto;
 import com.viaoa.datasource.objectcache.OADataSourceObjectCache;
+import com.viaoa.log.OALogUtil;
 import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectDelegate;
 import com.viaoa.object.OAThreadLocalDelegate;
-import com.viaoa.util.OALogUtil;
 
 public class OAUnitTest {
 	private static Logger LOG = Logger.getLogger(OAUnitTest.class.getName());

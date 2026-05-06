@@ -18,16 +18,15 @@ package com.viaoa.filter;
 import java.lang.reflect.Constructor;
 import java.util.logging.Logger;
 
-import com.viaoa.datasource.OASelect;
+import com.viaoa.find.OAFinder;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OAFinder;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;
+import com.viaoa.path.OAPath;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAString;
+import com.viaoa.select.OASelect;
 
 /**
  * Filter that evaluates whether the property's value appears within a target
@@ -92,7 +91,7 @@ public class OAInFilter implements OAFilter {
 	 * Parsed representation of the property path used to retrieve the
 	 * value that will be tested for membership.
 	 */
-	private OAPropertyPath pp;
+	private OAPath pp;
 	
 	/**
 	 * The Hub used for membership testing. If set, the filter evaluates
@@ -104,7 +103,7 @@ public class OAInFilter implements OAFilter {
 	 * Reverse-direction property path used when the filter must first
 	 * traverse a reverse link before performing the membership lookup.
 	 */
-	private OAPropertyPath ppReverse;
+	private OAPath ppReverse;
 	
 	/**
 	 * String representation of the reverse property-path expression.
@@ -194,7 +193,7 @@ public class OAInFilter implements OAFilter {
 		final Class clazz = hubFrom != null ? hubFrom.getObjectClass() : objFrom != null ? objFrom.getClass() : null;
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
 
-		this.pp = new OAPropertyPath(clazz, strPropPath);
+		this.pp = new OAPath(clazz, strPropPath);
 
 		if (pp.getEndLinkInfo() == null) {
 			throw new RuntimeException("invalid propPath " + strPropPath + ", must end in a Link");
@@ -246,7 +245,7 @@ public class OAInFilter implements OAFilter {
 				} else {
 					strPropPath = OAString.field(strPropPath, '.', cntGetMasterObject + 1, 99);
 				}
-				this.pp = new OAPropertyPath(objFrom.getClass(), strPropPath);
+				this.pp = new OAPath(objFrom.getClass(), strPropPath);
 				lis = pp.getLinkInfos();
 			}
 		}
@@ -264,7 +263,7 @@ public class OAInFilter implements OAFilter {
 
 			objFrom = (OAObject) objx;
 			strPropPath = OAString.field(strPropPath, '.', 2, 99);
-			this.pp = new OAPropertyPath(objFrom.getClass(), strPropPath);
+			this.pp = new OAPath(objFrom.getClass(), strPropPath);
 			lis = pp.getLinkInfos();
 		}
 
@@ -316,7 +315,7 @@ public class OAInFilter implements OAFilter {
 			return;
 		}
 
-		OAPropertyPath ppx = new OAPropertyPath(objFrom.getClass(), ppNew1);
+		OAPath ppx = new OAPath(objFrom.getClass(), ppNew1);
 		// see if it ends in a Hub and does not have any other many links before it
 		lis = ppx.getLinkInfos();
 		for (int i = 0; i < lis.length; i++) {
@@ -344,7 +343,7 @@ public class OAInFilter implements OAFilter {
 	 *
 	 * @return the property path associated with this filter
 	 */
-	public OAPropertyPath getPropertyPath() {
+	public OAPath getPropertyPath() {
 		return pp;
 	}
 
@@ -388,7 +387,7 @@ public class OAInFilter implements OAFilter {
 		objFind = obj;
 		if (strReversePropPath != null) {
 			if (ppReverse == null) {
-				ppReverse = new OAPropertyPath(obj.getClass(), strReversePropPath);
+				ppReverse = new OAPath(obj.getClass(), strReversePropPath);
 			}
 			if (obj instanceof OAObject) objFind = ppReverse.getValue((OAObject) obj);
 			else objFind = obj;

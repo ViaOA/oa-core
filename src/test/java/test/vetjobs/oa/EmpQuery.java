@@ -3,7 +3,7 @@ package test.vetjobs.oa;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADate;
+import com.viaoa.datetime.OADate;
  
  
 @OAClass(

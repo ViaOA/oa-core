@@ -5,7 +5,7 @@ import java.util.logging.Logger;
 import com.remodel.delegate.ModelDelegate;
 import com.remodel.model.oa.DataType;
 import com.remodel.model.oa.SqlType;
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
 
 public class SqlTypeDelegate {
 

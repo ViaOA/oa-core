@@ -19,7 +19,7 @@ import com.viaoa.annotation.OAId;
 import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubMerger;
+import com.viaoa.hub.merge.HubMerger;
 import com.viaoa.object.OAObject;
 
 /**

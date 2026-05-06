@@ -1,5 +1,11 @@
 package com.viaoa.object;
 
+import com.viaoa.metadata.OACalcInfo;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAPropertyInfo;
+import com.viaoa.serialize.OAObjectSerializer;
+
 // friend access to classes that have FriendAccess innerclass to access package protected properties and methods.
 // OA internal — not public API — subject to chan
 public class OAObjectInternalBridge {

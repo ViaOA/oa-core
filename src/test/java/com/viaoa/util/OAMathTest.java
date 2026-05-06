@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.math.OAMath;
 
 public class OAMathTest extends OAUnitTest {
 	

@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.util.OALogUtil;
+import com.viaoa.log.OALogUtil;
 
 /**
  * Server-side discovery component that broadcasts its availability to

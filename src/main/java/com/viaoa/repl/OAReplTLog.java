@@ -2,7 +2,7 @@ package com.viaoa.repl;
 
 import java.io.Serializable;
 
-import com.viaoa.util.OADateTime;
+import com.viaoa.datetime.OADateTime;
 
 public class OAReplTLog implements Serializable {
 

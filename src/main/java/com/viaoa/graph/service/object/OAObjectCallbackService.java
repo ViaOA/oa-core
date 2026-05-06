@@ -5,26 +5,26 @@ import java.util.logging.Logger;
 
 import javax.swing.JLabel;
 
+import com.viaoa.callback.OAObjectCallback;
+import com.viaoa.callback.OAObjectCallback.Type;
+import com.viaoa.cascade.OACascade;
+import com.viaoa.compare.OAUnknownObject;
+import com.viaoa.converter.OAConv;
 import com.viaoa.graph.context.OAContext;
 import com.viaoa.graph.context.OAUserAccess;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubChangeListener;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListener;
-import com.viaoa.object.OACalcInfo;
-import com.viaoa.object.OACascade;
-import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAMethodInfo;
+import com.viaoa.hub.listener.HubChangeListener;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OACalcInfo;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAMethodInfo;
+import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAObjectModel;
+import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCallback;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAObjectModel;
-import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.object.OAObjectCallback.Type;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.util.OAConv;
-import com.viaoa.util.OAString;
-import com.viaoa.util.OAUnknownObject;
 
 /**
  * Rule and permission engine for {@link OAObject} interactions.

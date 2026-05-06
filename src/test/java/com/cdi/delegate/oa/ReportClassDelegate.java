@@ -7,6 +7,8 @@ import com.cdi.delegate.ModelDelegate;
 import com.cdi.model.delegate.OAObjectInfoDelegate;
 import com.cdi.model.oa.*;
 import com.viaoa.hub.Hub;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.*;
 
 public class ReportClassDelegate {

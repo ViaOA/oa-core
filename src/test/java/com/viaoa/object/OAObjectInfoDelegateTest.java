@@ -12,6 +12,8 @@ import org.junit.Test;
 import com.viaoa.OAUnitTest;
 import com.viaoa.datasource.objectcache.OADataSourceObjectCache;
 import com.viaoa.hub.Hub;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 
 import test.hifive.model.oa.CurrencyType;
 import test.hifive.model.oa.EmailType;

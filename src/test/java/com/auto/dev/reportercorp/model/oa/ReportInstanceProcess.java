@@ -11,9 +11,9 @@ import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAMethod;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OADateTime;
 
 @OAClass(lowerName = "reportInstanceProcess", pluralName = "ReportInstanceProcesses", shortName = "rip", displayName = "Report Instance Process", useDataSource = false, displayProperty = "pypeReportMessage")
 public class ReportInstanceProcess extends OAObject {

@@ -26,9 +26,9 @@ import java.util.Map;
 
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectPropertyService;
+import com.viaoa.lang.Tuple;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.util.Tuple;
 
 /**
  * Customized {@link ObjectInputStream} used to deserialize OAObject streams

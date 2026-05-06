@@ -7,7 +7,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.object.OALock;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 

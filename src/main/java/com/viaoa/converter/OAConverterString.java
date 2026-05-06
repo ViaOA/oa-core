@@ -15,9 +15,12 @@
  */
 package com.viaoa.converter;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.sql.*;
 
-import com.viaoa.util.*;
+import com.viaoa.lang.OAStr;
+import com.viaoa.lang.OAString;
 
 /**
  * Converter used to convert various object types into {@link String} values,
@@ -44,7 +47,7 @@ import com.viaoa.util.*;
  *   <li>Other types — delegated to associated converter or {@code toString()}</li>
  * </ul>
  *
- * @see com.viaoa.util.OAConverter
+ * @see com.viaoa.converter.OAConverter
  * @see OAString
  */
 public class OAConverterString implements OAConverterInterface<String> {
@@ -86,14 +89,13 @@ public class OAConverterString implements OAConverterInterface<String> {
         if (value instanceof Blob) {
         	try {
         		Blob blob = (Blob) value;
-        		return new String(blob.getBytes(0, (int) blob.length()));
+        		return new String(blob.getBytes(1, (int) blob.length()));
         	}
         	catch (Exception e) {
         		throw new RuntimeException(e);
         	}
         }        
-        
-        if (value instanceof byte[]) return new String((byte[]) value);
+        if (value instanceof byte[]) return new String((byte[]) value, StandardCharsets.UTF_8);
         if (value instanceof char[]) return new String((char[]) value);
 
         if (value instanceof Clob) {

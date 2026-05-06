@@ -14,9 +14,9 @@ import com.viaoa.annotation.OAIndexColumn;
 import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATable;
+import com.viaoa.datetime.OADate;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.util.OADate;
 
 @OAClass(lowerName = "storeBatch", pluralName = "StoreBatches", shortName = "stb", displayName = "Store Batch", displayProperty = "batch")
 @OATable(name = "message_service_store_batch", indexes = {

@@ -8,7 +8,9 @@ import java.util.Arrays;
 
 import com.viaoa.OAUnitTest;
 import com.viaoa.annotation.OACalculatedProperty;
-import com.viaoa.util.OAArray;
+import com.viaoa.lang.OAArray;
+import com.viaoa.metadata.OACalcInfo;
+import com.viaoa.metadata.OAObjectInfo;
 
 import test.xice.tsac3.model.oa.*;
 import test.xice.tsam.model.oa.Server;

@@ -4,17 +4,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-import com.viaoa.datasource.OASelect;
 import com.viaoa.filter.OAQueryFilter;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
 import com.viaoa.json.OAJson;
-import com.viaoa.object.OAFinder;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.lang.OAArray;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.util.OAArray;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAString;
+import com.viaoa.path.OAPath;
+import com.viaoa.select.OASelect;
 
 public abstract class OAObjectImportMatchService {
 	private static final Logger LOG = Logger.getLogger(OAObjectImportMatchService.class.getName());
@@ -202,7 +202,7 @@ public abstract class OAObjectImportMatchService {
 				params = OAArray.add(params, val);
 
 				if (liToOwner != null && val instanceof OAObject) {
-					OAPropertyPath ppx = new OAPropertyPath(importMatch.liTo.getToClass(), ppToObjectEqual);
+					OAPath ppx = new OAPath(importMatch.liTo.getToClass(), ppToObjectEqual);
 					if (liToOwner == ppx.getEndLinkInfo() && ppx.getLinkInfos().length == 1) {
 						objOwner = (OAObject) val;
 					}
@@ -280,7 +280,7 @@ public abstract class OAObjectImportMatchService {
 	protected <T extends OAObject> void createHierObjects(final T objThis, final OAObjectInfo oiThis, final String propertyPath,
 			final Object value) {
 
-		OAPropertyPath<T> pp = new OAPropertyPath<T>(oiThis.getForClass(), propertyPath);
+		OAPath<T> pp = new OAPath<T>(oiThis.getForClass(), propertyPath);
 		OALinkInfo[] linkInfos = pp.getLinkInfos();
 
 		if (linkInfos == null || linkInfos.length == 0) {

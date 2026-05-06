@@ -19,6 +19,7 @@ import java.awt.Color;
 import java.awt.Rectangle;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.ParsePosition;
 import java.util.ArrayList;
@@ -26,12 +27,11 @@ import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Pattern;
 
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.lang.OAStr;
+import com.viaoa.lang.OAString;
 import com.viaoa.model.oa.VEnum;
-import com.viaoa.util.OAConverter;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAReflect;
-import com.viaoa.util.OAStr;
-import com.viaoa.util.OAString;
+import com.viaoa.reflect.OAReflect;
 
 /**
  * Converter for parsing and formatting numeric values, supporting a wide variety
@@ -359,7 +359,9 @@ public class OAConverterNumber implements OAConverterInterface<Number> {
 					fp.fmt = fmt;
 				}
 				else {
-					fp = new FormatPool(fmt, new DecimalFormat(fmt));
+					DecimalFormat dfx = new DecimalFormat(fmt);
+					dfx.setRoundingMode(RoundingMode.HALF_UP);
+					fp = new FormatPool(fmt, dfx);
 					alFormatPool.add(fp);
 				}
 			}

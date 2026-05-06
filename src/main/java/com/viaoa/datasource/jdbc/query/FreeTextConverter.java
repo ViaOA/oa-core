@@ -17,7 +17,7 @@ package com.viaoa.datasource.jdbc.query;
 
 import java.util.StringTokenizer;
 
-import com.viaoa.util.OAString;
+import com.viaoa.lang.OAString;
 
 /**
  * Utility for converting free-text search tokens into database-specific SQL fragments.

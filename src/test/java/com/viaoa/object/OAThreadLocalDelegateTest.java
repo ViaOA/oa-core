@@ -4,7 +4,8 @@ package com.viaoa.object;
 import com.cdi.model.oa.*;
 import com.viaoa.OAUnitTest;
 import com.viaoa.context.OAContext;
-import com.viaoa.util.OADate;
+import com.viaoa.datetime.OADate;
+import com.viaoa.runtime.thread.OAThreadLocal;
 
 import org.junit.Before;
 import org.junit.Test;

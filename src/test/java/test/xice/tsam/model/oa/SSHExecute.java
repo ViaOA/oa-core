@@ -12,7 +12,7 @@ import test.xice.tsam.model.oa.MRADClientCommand;
 import test.xice.tsam.model.oa.MRADServerCommand;
 import test.xice.tsam.model.oa.SSHExecute;
 import com.viaoa.annotation.*;
-import com.viaoa.util.OADateTime;
+import com.viaoa.datetime.OADateTime;
 
 import test.xice.tsam.delegate.oa.*;
 import test.xice.tsam.model.oa.filter.*;

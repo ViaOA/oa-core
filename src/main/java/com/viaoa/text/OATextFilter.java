@@ -15,6 +15,29 @@
  */
 package com.viaoa.text;
 
+/*qqqqqqqqqqq
+CODEX
+
+ 14. Medium - OATextFilter.convert
+     Concrete failure: convert("abcabc", "a", "X", false, true, 0, -1) returns only the replaced prefix, likely "X",
+     instead of "Xbcabc".
+     Expected: replace first match and append the remaining text.
+     Actual: loop breaks without appending the suffix.
+     Fix direction: when bFirstOnly matches, append the untouched remainder; also honor first-only when replacement is
+     empty.
+
+  15. Medium - OATextFilter.convert
+     Scenario: negative startPos throws.
+     Example: OAString.convert("abc", "a", "x", false, false, -1, -1) throws StringIndexOutOfBoundsException.
+     Impact: range-based replacement is not edge-safe for caller-provided indexes.
+
+ 16. Medium - OATextFilter.removeEndingChars
+     Scenario: negative amount throws.
+     Example: OATextFilter.removeEndingChars("abc", -1) throws StringIndexOutOfBoundsException.
+     Impact: shared trimming helper can fail on unchecked count values.
+*/
+
+
 /**
  * Utility methods for filtering or transforming text by removing characters or
  * substrings that are not desired for display, storage, or parsing.

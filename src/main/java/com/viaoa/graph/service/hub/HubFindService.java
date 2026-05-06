@@ -3,6 +3,7 @@ package com.viaoa.graph.service.hub;
 import java.util.logging.Logger;
 
 import com.viaoa.filter.*;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
 
@@ -49,7 +50,7 @@ public abstract class HubFindService {
 	 * @param propertyPath the property path to evaluate for matching
 	 * @param findValue the value to compare against using a like-filter match
 	 * @param bSetAO if {@code true}, sets the active object to the found object
-	 * @param lastFoundObject the last object found, used by {@link com.viaoa.object.OAFinder#findNext}
+	 * @param lastFoundObject the last object found, used by {@link com.viaoa.find.OAFinder#findNext}
 	 * @return the first matching object, or {@code null} if none found
 	 */
 	@SuppressWarnings("unchecked")

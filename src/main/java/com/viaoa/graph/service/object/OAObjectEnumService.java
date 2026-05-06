@@ -3,10 +3,10 @@ package com.viaoa.graph.service.object;
 import java.util.logging.Logger;
 
 import com.viaoa.hub.Hub;
+import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.model.oa.VEnum;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAPropertyInfo;
 
 public abstract class OAObjectEnumService {
 	private static final Logger LOG = Logger.getLogger(OAObjectEnumService.class.getName());

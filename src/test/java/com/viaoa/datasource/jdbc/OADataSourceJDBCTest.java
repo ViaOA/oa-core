@@ -3,8 +3,8 @@ package com.viaoa.datasource.jdbc;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import com.viaoa.OAUnitTest;
-import com.viaoa.datasource.OASelect;
 import com.viaoa.datasource.jdbc.OADataSourceJDBC;
+import com.viaoa.select.OASelect;
 import com.viaoa.transaction.OATransaction;
 
 import test.hifive.DataSource;

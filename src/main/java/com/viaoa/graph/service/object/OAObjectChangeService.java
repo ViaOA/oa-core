@@ -3,11 +3,11 @@ package com.viaoa.graph.service.object;
 import java.util.List;
 import java.util.logging.Logger;
 
+import com.viaoa.cascade.OACascade;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OACascade;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 
 public abstract class OAObjectChangeService {
 	private static final Logger LOG = Logger.getLogger(OAObjectChangeService.class.getName());

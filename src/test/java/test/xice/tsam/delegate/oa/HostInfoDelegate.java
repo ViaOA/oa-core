@@ -9,9 +9,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import test.xice.tsam.delegate.oa.HostInfoDelegate;
-import com.viaoa.util.OAConv;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAString;
+
+import com.viaoa.converter.OAConv;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.lang.OAString;
 
 import test.xice.tsam.delegate.oa.ApplicationTypeDelegate;
 import test.xice.tsam.delegate.oa.OperatingSystemDelegate;

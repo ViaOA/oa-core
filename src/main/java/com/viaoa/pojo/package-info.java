@@ -22,7 +22,7 @@
  * used by the OA JSON/Jackson integration to translate flat JSON structures
  * into a correctly linked {@code OAObject} graph. This metadata is generated
  * once per OAObject type by {@link com.viaoa.pojo.OAObjectPojoLoader}, based
- * on {@link com.viaoa.object.OAObjectInfo}.
+ * on {@link com.viaoa.metadata.OAObjectInfo}.
  *
  * <p>
  * The resulting structure mirrors an OAObject definition, but in a POJO-centric

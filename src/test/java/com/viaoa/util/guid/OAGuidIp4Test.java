@@ -1,6 +1,7 @@
 package com.viaoa.util.guid;
 
-import com.viaoa.util.OAInteger;
+import com.viaoa.guid.OAGuidIp4;
+import com.viaoa.lang.OAInteger;
 
 public class OAGuidIp4Test {
 

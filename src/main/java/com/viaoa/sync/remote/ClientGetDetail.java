@@ -18,6 +18,8 @@ package com.viaoa.sync.remote;
 import java.util.*;
 import java.util.logging.Logger;
 
+import com.viaoa.callback.OAObjectSerializerCallback;
+import com.viaoa.compare.OANotExist;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphInternal;
@@ -26,17 +28,15 @@ import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.service.object.OAObjectKeyService;
 import com.viaoa.graph.service.object.OAObjectPropertyService;
 import com.viaoa.graph.service.object.OAObjectReflectService;
+import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAObjectSerializer;
-import com.viaoa.object.OAObjectSerializerCallback;
-import com.viaoa.object.OAPerformance;
-import com.viaoa.object.OASiblingHelper;
+import com.viaoa.performance.OAPerformance;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
-import com.viaoa.util.OANotExist;
+import com.viaoa.serialize.OAObjectSerializer;
 
 /**
  * Server-side helper used during {@code RemoteClient.getDetail(...)} operations.
@@ -448,7 +448,7 @@ public class ClientGetDetail {
 			HashSet<UUID> hsSendingGuid = new HashSet();
 
 			@Override
-			protected void afterSerialize(OAObject obj) {
+			public void afterSerialize(OAObject obj) {
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
 				UUID guid = og.objectsInternal().callObjectKeyGetKey(obj).getGuid();
 				boolean bx = hsSendingGuid.remove(guid);

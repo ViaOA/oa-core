@@ -9,8 +9,8 @@ import com.auto.dev.reportercorp.model.oa.StoreImport;
 import com.auto.dev.reportercorp.model.oa.StoreImportReport;
 import com.auto.dev.reportercorp.model.oa.StoreImportTemplate;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubCopy;
-import com.viaoa.object.OAObjectModel;
+import com.viaoa.hub.copy.HubCopy;
+import com.viaoa.metadata.OAObjectModel;
 
 public class StoreImportModel extends OAObjectModel {
 	private static Logger LOG = Logger.getLogger(StoreImportModel.class.getName());

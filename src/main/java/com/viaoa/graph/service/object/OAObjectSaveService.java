@@ -4,8 +4,13 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.viaoa.callback.OAObjectSerializerCallback;
+import com.viaoa.cascade.OACascade;
 import com.viaoa.hub.Hub;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.*;
+import com.viaoa.serialize.OAObjectSerializer;
 import com.viaoa.sync.remote.RemoteSyncInterface;
 
 public abstract class OAObjectSaveService {
@@ -29,7 +34,7 @@ public abstract class OAObjectSaveService {
 		if (thisObj.isNew() && !callHubIsInHubWithMaster(thisObj)) {
             OAObjectSerializer<OAObject> oos = new OAObjectSerializer<>(thisObj, false, new OAObjectSerializerCallback() {
                 @Override
-                protected void beforeSerialize(OAObject obj) {
+                public void beforeSerialize(OAObject obj) {
                 }
                 @Override
                 public boolean shouldSerializeReference(OAObject oaObj, String propertyName, Object objRef, boolean bDefault) {

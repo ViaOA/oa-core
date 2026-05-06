@@ -8,8 +8,8 @@ import com.auto.dev.reportercorp.model.delegate.OAObjectCallbackDelegate;
 import com.auto.dev.reportercorp.model.oa.StatusInfo;
 import com.auto.dev.reportercorp.model.oa.StatusInfoMessage;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubCopy;
-import com.viaoa.object.OAObjectModel;
+import com.viaoa.hub.copy.HubCopy;
+import com.viaoa.metadata.OAObjectModel;
 
 public class StatusInfoModel extends OAObjectModel {
 	private static Logger LOG = Logger.getLogger(StatusInfoModel.class.getName());

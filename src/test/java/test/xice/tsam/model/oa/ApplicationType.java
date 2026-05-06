@@ -14,8 +14,8 @@ import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATable;
 import com.viaoa.graph.service.OAObjectService;
 import com.viaoa.hub.Hub;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 import com.viaoa.runtime.OARuntime;
 
 import test.xice.tsac.model.oa.GSMRClient;

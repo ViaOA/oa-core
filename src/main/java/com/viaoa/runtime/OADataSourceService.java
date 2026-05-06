@@ -5,7 +5,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.util.OAFilter;
+import com.viaoa.filter.OAFilter;
 
 public class OADataSourceService {
 	private Logger LOG = Logger.getLogger(OADataSourceService.class.getName());

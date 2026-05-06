@@ -7,8 +7,9 @@ import java.util.logging.*;
 import java.sql.*;
 
 import com.viaoa.object.*;
-import com.viaoa.remote.OARemoteThread;
+import com.viaoa.runtime.thread.OARemoteThread;
 import com.viaoa.hub.*;
+import com.viaoa.lang.OAString;
 import com.viaoa.util.*;
 
 import test.xice.tsam.delegate.oa.*;
@@ -22,6 +23,7 @@ import test.xice.tsam.model.oa.Silo;
 import test.xice.tsam.model.oa.Site;
 
 import com.viaoa.annotation.*;
+import com.viaoa.datetime.OADateTime;
 
  
 @OAClass(

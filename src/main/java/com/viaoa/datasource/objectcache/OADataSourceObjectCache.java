@@ -26,12 +26,17 @@ import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
+import com.viaoa.callback.OACallback;
 import com.viaoa.comm.io.OAObjectInputStream;
+import com.viaoa.compare.OAComparator;
+import com.viaoa.compare.OACompare;
 import com.viaoa.datasource.*;
 import com.viaoa.datasource.autonumber.OADataSourceAuto;
 import com.viaoa.filter.OAAndFilter;
 import com.viaoa.filter.OAEqualFilter;
+import com.viaoa.filter.OAFilter;
 import com.viaoa.filter.OAQueryFilter;
+import com.viaoa.find.OAFinder;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCacheService;
@@ -40,9 +45,16 @@ import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.service.object.OAObjectKeyService;
 import com.viaoa.graph.service.object.OAObjectPropertyService;
 import com.viaoa.hub.Hub;
+import com.viaoa.lang.OAArray;
+import com.viaoa.lang.OAStr;
+import com.viaoa.lang.OAString;
+import com.viaoa.log.OALogger;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.*;
+import com.viaoa.path.OAPath;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.util.*;
+import com.viaoa.serialize.OAObjectSerializer;
 
 /**
  * In-memory implementation of {@link com.viaoa.datasource.OADataSource}
@@ -178,7 +190,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             if (li == null) {
                 // check to see if propertyFromWhereObject is a propertyPath. 
                 //   If so, then add to the query and re-select
-                OAPropertyPath pp = new OAPropertyPath(whereObject.getClass(), propertyFromWhereObject);
+                OAPath pp = new OAPath(whereObject.getClass(), propertyFromWhereObject);
 
                 OALinkInfo[] lis = pp.getLinkInfos();
                 if (lis != null && lis.length > 0) {
@@ -199,7 +211,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
                             pos = propertyFromWhereObject.indexOf('.', pos2);
                         }
                         propertyFromWhereObject = propertyFromWhereObject.substring(pos + 1);
-                        pp = new OAPropertyPath(whereObject.getClass(), propertyFromWhereObject);
+                        pp = new OAPath(whereObject.getClass(), propertyFromWhereObject);
                     }
                 }
                 else {
@@ -249,7 +261,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             final OALinkInfo liRev = li.getReverseLinkInfo();
             String spp = liRev.getSelectFromPropertyPath();
             if (OAStr.isNotEmpty(spp)) {
-                OAPropertyPath pp = new OAPropertyPath(li.getToClass(), spp);
+                OAPath pp = new OAPath(li.getToClass(), spp);
                 pp = pp.getReversePropertyPath();
                 if (pp == null) spp = null;
                 else spp = pp.getPropertyPath();
@@ -259,7 +271,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
                 if (OAStr.isNotEmpty(spp)) {
                     String s = liRev.getEqualPropertyPath();
                     if (OAStr.isNotEmpty(s)) {
-                        OAPropertyPath pp = new OAPropertyPath(li.getToClass(), s);
+                        OAPath pp = new OAPath(li.getToClass(), s);
                         pp = pp.getReversePropertyPath();
                         if (pp == null) spp = null;
                         else {

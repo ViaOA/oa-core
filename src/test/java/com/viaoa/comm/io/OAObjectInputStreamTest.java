@@ -4,7 +4,7 @@ import java.io.*;
 
 import org.junit.Test;
 
-import com.viaoa.util.OAFile;
+import com.viaoa.io.OAFile;
 
 import test.xice.tsac.model.oa.Server;
 

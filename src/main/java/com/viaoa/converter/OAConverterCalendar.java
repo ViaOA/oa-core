@@ -17,7 +17,7 @@ package com.viaoa.converter;
 
 import java.util.Calendar;
 
-import com.viaoa.util.OADateTime;
+import com.viaoa.datetime.OADateTime;
 
 /**
  * Converter for transforming values into {@link Calendar} instances and

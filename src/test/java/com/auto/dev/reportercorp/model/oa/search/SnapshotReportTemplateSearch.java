@@ -7,16 +7,16 @@ import com.auto.dev.reportercorp.model.oa.SnapshotReportTemplate;
 import com.auto.dev.reportercorp.model.oa.propertypath.SnapshotReportTemplatePP;
 import com.viaoa.annotation.OAClass;
 import com.viaoa.annotation.OAOne;
-import com.viaoa.datasource.OASelect;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.filter.OAAndFilter;
+import com.viaoa.filter.OAFilter;
 import com.viaoa.filter.OAQueryFilter;
-import com.viaoa.object.OAFinder;
+import com.viaoa.find.OAFinder;
+import com.viaoa.lang.OAArray;
+import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OAArray;
-import com.viaoa.util.OADate;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAFilter;
-import com.viaoa.util.OAString;
+import com.viaoa.select.OASelect;
 
 @OAClass(useDataSource = false, localOnly = true)
 public class SnapshotReportTemplateSearch extends OAObject {

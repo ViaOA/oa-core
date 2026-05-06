@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.hub.filter.HubFilter;
 import com.viaoa.object.OAObjectHubDelegate;
 
 import test.hifive.model.oa.Address;

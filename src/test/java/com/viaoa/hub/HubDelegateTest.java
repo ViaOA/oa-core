@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.hub.merge.HubMerger;
 
 import test.hifive.model.oa.Employee;
 import test.hifive.model.oa.Location;

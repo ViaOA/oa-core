@@ -13,11 +13,12 @@ import org.junit.Test;
 import com.viaoa.OAUnitTest;
 import com.viaoa.filter.OAAndFilter;
 import com.viaoa.filter.OAEqualFilter;
+import com.viaoa.filter.OAFilter;
 import com.viaoa.filter.OAGreaterFilter;
 import com.viaoa.filter.OALessFilter;
 import com.viaoa.filter.OAOrFilter;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.util.OAFilter;
 
 import test.hifive.HifiveDataGenerator;
 import test.hifive.delegate.ModelDelegate;

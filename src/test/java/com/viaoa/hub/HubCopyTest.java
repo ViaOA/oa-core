@@ -4,6 +4,8 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.hub.copy.HubCopy;
+import com.viaoa.hub.filter.HubFilter;
 import com.viaoa.object.OAObject;
 
 import test.vetjobs.VetUser;

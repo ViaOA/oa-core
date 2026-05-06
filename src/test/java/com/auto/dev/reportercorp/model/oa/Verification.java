@@ -7,9 +7,9 @@ import com.viaoa.annotation.OAColumn;
 import com.viaoa.annotation.OAId;
 import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAProperty;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
-import com.viaoa.util.OADateTime;
 
 @OAClass(lowerName = "verification", pluralName = "Verifications", shortName = "vrf", displayName = "Verification", useDataSource = false, displayProperty = "id", noPojo = true)
 public class Verification extends OAObject {

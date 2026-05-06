@@ -11,7 +11,7 @@ import org.junit.Test;
 import com.viaoa.OAUnitTest;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceMock;
-import com.viaoa.datasource.OASelect;
+import com.viaoa.select.OASelect;
 
 import test.xice.tsam.model.oa.Server;
 

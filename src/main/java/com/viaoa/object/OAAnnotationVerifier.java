@@ -46,9 +46,14 @@ import com.viaoa.graph.service.object.OAObjectAnnotationService;
 import com.viaoa.graph.service.object.OAObjectHubService;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.hub.Hub;
+import com.viaoa.hub.HubInternalBridge;
+import com.viaoa.lang.OAArray;
+import com.viaoa.metadata.OACalcInfo;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.text.OATextCode;
-import com.viaoa.util.OAArray;
 
 /**
  * Validates that OA model annotations match the runtime metadata generated
@@ -80,6 +85,8 @@ public class OAAnnotationVerifier {
 
 	private static Logger LOG = Logger.getLogger(OAAnnotationVerifier.class.getName());
 
+	
+	
 	/**
 	 * Verifies that the annotations declared on the class associated with the
 	 * given {@link OAObjectInfo} match the metadata computed in the
@@ -915,46 +922,46 @@ public class OAAnnotationVerifier {
 	 * @return {@code true} if the metadata matches; otherwise {@code false}
 	 */
 	public boolean compare(OAObjectInfo oi1, OAObjectInfo oi2) {
-		if (oi1.thisClass != oi2.thisClass) {
+		if (oi1.getForClass() != oi2.getForClass()) {
 			p("class mismatch");
 			return false;
 		}
-		if (oi1.bUseDataSource != oi2.bUseDataSource) {
+		if (oi1.getUseDataSource() != oi2.getUseDataSource()) {
 			p("class bUseDataSource");
 			return false;
 		}
-		if (oi1.bLocalOnly != oi2.bLocalOnly) {
+		if (oi1.getLocalOnly() != oi2.getLocalOnly()) {
 			p("class bLocalOnly");
 			return false;
 		}
-		if (oi1.bAddToCache != oi2.bAddToCache) {
+		if (oi1.getAddToCache() != oi2.getAddToCache()) {
 			p("class bAddToCache");
 			return false;
 		}
-		if (oi1.bInitializeNewObjects != oi2.bInitializeNewObjects) {
+		if (oi1.getInitializeNewObjects() != oi2.getInitializeNewObjects()) {
 			p("class bInitializeNewObjects");
 			return false;
 		}
-		if (oi1.displayName != oi2.displayName) {
-			if (oi1.displayName == null || !oi1.displayName.equalsIgnoreCase(oi2.displayName)) {
+		if (oi1.getDisplayName() != oi2.getDisplayName()) {
+			if (oi1.getDisplayName() == null || !oi1.getDisplayName().equalsIgnoreCase(oi2.getDisplayName())) {
 				// p("class displayName");
 			}
 		}
-		if (oi1.idProperties != oi2.idProperties) {
+		if (oi1.getIdProperties() != oi2.getIdProperties()) {
 			boolean b = true;
-			if (oi1.idProperties == null || oi2.idProperties == null) {
+			if (oi1.getIdProperties() == null || oi2.getIdProperties() == null) {
 				b = false;
 			} else {
-				if (oi1.idProperties.length != oi2.idProperties.length) {
+				if (oi1.getIdProperties().length != oi2.getIdProperties().length) {
 					b = false;
 				} else {
-					int x = oi1.idProperties.length;
+					int x = oi1.getIdProperties().length;
 					for (int i = 0; i < x; i++) {
-						if (oi1.idProperties[i] == null || oi2.idProperties[i] == null) {
+						if (oi1.getIdProperties()[i] == null || oi2.getIdProperties()[i] == null) {
 							b = false;
 							break;
 						}
-						if (!oi1.idProperties[i].equalsIgnoreCase(oi2.idProperties[i])) {
+						if (!oi1.getIdProperties()[i].equalsIgnoreCase(oi2.getIdProperties()[i])) {
 							b = false;
 							break;
 						}
@@ -967,21 +974,23 @@ public class OAAnnotationVerifier {
 			}
 		}
 
-		if (oi1.primitiveProps != oi2.primitiveProps) {
+		oi1.getFriendAccess().getPrimitiveProps(oi1);
+		
+		if (OAObjectInfo.getFriendAccess().getPrimitiveProps(oi1) != OAObjectInfo.getFriendAccess().getPrimitiveProps(oi2)) {
 			boolean b = true;
-			if (oi1.primitiveProps == null || oi2.primitiveProps == null) {
+			if (OAObjectInfo.getFriendAccess().getPrimitiveProps(oi1) == null || OAObjectInfo.getFriendAccess().getPrimitiveProps(oi2) == null) {
 				b = false;
 			} else {
-				if (oi1.primitiveProps.length != oi2.primitiveProps.length) {
+				if (OAObjectInfo.getFriendAccess().getPrimitiveProps(oi1).length != OAObjectInfo.getFriendAccess().getPrimitiveProps(oi2).length) {
 					b = false;
 				} else {
-					int x = oi1.primitiveProps.length;
+					int x = OAObjectInfo.getFriendAccess().getPrimitiveProps(oi1).length;
 					for (int i = 0; i < x; i++) {
-						if (oi1.primitiveProps[i] == null || oi2.primitiveProps[i] == null) {
+						if (OAObjectInfo.getFriendAccess().getPrimitiveProps(oi1)[i] == null || OAObjectInfo.getFriendAccess().getPrimitiveProps(oi2)[i] == null) {
 							b = false;
 							break;
 						}
-						if (!oi1.primitiveProps[i].equalsIgnoreCase(oi2.primitiveProps[i])) {
+						if (!OAObjectInfo.getFriendAccess().getPrimitiveProps(oi1)[i].equalsIgnoreCase(OAObjectInfo.getFriendAccess().getPrimitiveProps(oi2)[i])) {
 							b = false;
 							break;
 						}
@@ -1033,7 +1042,7 @@ public class OAAnnotationVerifier {
 			boolean b = false;
 			for (int j = 0; j < x; j++) {
 				OACalcInfo ci2 = (OACalcInfo) alCalc2.get(j);
-				if (ci.name != null && ci.name.equalsIgnoreCase(ci2.name)) {
+				if (ci.getName() != null && ci.getName().equalsIgnoreCase(ci2.getName())) {
 					if (!compare(ci, ci2)) {
 						return false;
 					}

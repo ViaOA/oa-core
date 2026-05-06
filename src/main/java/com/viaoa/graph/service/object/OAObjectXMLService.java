@@ -6,18 +6,18 @@ import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import com.viaoa.cascade.OACascade;
+import com.viaoa.converter.OAConv;
+import com.viaoa.converter.OAConverter;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.datetime.OATime;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OACascade;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAPropertyInfo;
-import com.viaoa.util.OAConv;
-import com.viaoa.util.OAConverter;
-import com.viaoa.util.OADate;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAString;
-import com.viaoa.util.OATime;
 import com.viaoa.xml.OAXMLWriter;
 
 public abstract class OAObjectXMLService {

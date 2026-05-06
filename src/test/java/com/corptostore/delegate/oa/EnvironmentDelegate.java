@@ -2,7 +2,7 @@ package com.corptostore.delegate.oa;
 
 import com.corptostore.model.oa.CorpToStore;
 import com.corptostore.model.oa.Environment;
-import com.viaoa.util.OADateTime;
+import com.viaoa.datetime.OADateTime;
 
 public class EnvironmentDelegate {
 

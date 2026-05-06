@@ -7,6 +7,9 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.viaoa.OAUnitTest;
+import com.viaoa.log.OALogUtil;
+import com.viaoa.queue.OACircularQueue;
+
 import static org.junit.Assert.*;
 
 /**

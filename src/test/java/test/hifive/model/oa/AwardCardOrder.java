@@ -4,8 +4,13 @@ package test.hifive.model.oa;
 import java.sql.*;
 import com.viaoa.object.*;
 import com.viaoa.hub.*;
+import com.viaoa.hub.detail.DetailHub;
+import com.viaoa.hub.filter.HubFilter;
+import com.viaoa.lang.OAString;
 import com.viaoa.util.*;
 import com.viaoa.annotation.*;
+import com.viaoa.compare.OACompare;
+import com.viaoa.datetime.OADate;
 
 import test.hifive.model.delegate.OAObjectInfoDelegate;
 import test.hifive.model.delegate.OAObjectPropertyDelegate;

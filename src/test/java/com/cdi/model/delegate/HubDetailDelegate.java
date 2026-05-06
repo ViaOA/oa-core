@@ -3,7 +3,7 @@ package com.cdi.model.delegate;
 import com.cdi.model.oa.WorkOrderPallet;
 import com.viaoa.graph.service.HubService;
 import com.viaoa.hub.Hub;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 

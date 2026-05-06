@@ -17,10 +17,10 @@ package com.viaoa.datasource;
 
 import java.util.Iterator;
 
+import com.viaoa.filter.OAFilter;
+import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.util.OAFilter;
 
 /**
  * Defines the standard contract that all OA persistence providers must implement.
@@ -72,7 +72,7 @@ import com.viaoa.util.OAFilter;
  *
  * @see com.viaoa.datasource.OADataSource
  * @see com.viaoa.datasource.OADataSourceIterator
- * @see com.viaoa.datasource.OASelect
+ * @see com.viaoa.select.OASelect
  */
 public interface OADataSourceInterface {
 

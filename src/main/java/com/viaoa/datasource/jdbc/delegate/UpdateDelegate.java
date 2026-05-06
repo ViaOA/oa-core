@@ -20,6 +20,7 @@ import java.sql.Statement;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import com.viaoa.compare.OANotExist;
 import com.viaoa.datasource.jdbc.OADataSourceJDBC;
 import com.viaoa.datasource.jdbc.db.Column;
 import com.viaoa.datasource.jdbc.db.DBMetaData;
@@ -30,12 +31,11 @@ import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.service.object.OAObjectKeyService;
 import com.viaoa.graph.service.object.OAObjectPropertyService;
 import com.viaoa.graph.service.object.OAObjectReflectService;
+import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAPropertyInfo;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.util.OANotExist;
 
 /**
  * Manages updates for JDBC datasource.

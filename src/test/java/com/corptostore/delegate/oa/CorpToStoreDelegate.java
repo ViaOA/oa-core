@@ -1,10 +1,10 @@
 package com.corptostore.delegate.oa;
 
 import com.corptostore.model.oa.CorpToStore;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.hub.HubEvent;
+import com.viaoa.lang.OAString;
 import com.viaoa.remote.rest.OARestClient;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAString;
 
 public class CorpToStoreDelegate {
 

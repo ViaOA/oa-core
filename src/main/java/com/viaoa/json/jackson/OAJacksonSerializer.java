@@ -22,6 +22,11 @@ import java.util.ArrayList;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
+import com.viaoa.converter.OAConv;
+import com.viaoa.converter.OAConverter;
+import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
+import com.viaoa.datetime.OATime;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.service.object.OAObjectPropertyService;
@@ -29,11 +34,13 @@ import com.viaoa.graph.service.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.json.OAJson;
 import com.viaoa.json.OAJson.StackItem;
-import com.viaoa.object.OALinkInfo;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectInfo;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.object.OAPropertyInfo;
+import com.viaoa.path.OAPath;
 import com.viaoa.pojo.Pojo;
 import com.viaoa.pojo.PojoImportMatch;
 import com.viaoa.pojo.PojoLink;
@@ -45,13 +52,6 @@ import com.viaoa.pojo.PojoProperty;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
-import com.viaoa.util.OAConv;
-import com.viaoa.util.OAConverter;
-import com.viaoa.util.OADate;
-import com.viaoa.util.OADateTime;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAString;
-import com.viaoa.util.OATime;
 
 // todo: needs to use "compoundKey"
 // qqqqqq concat string, separated by '-'
@@ -137,7 +137,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 				if (OAString.isNotEmpty(oi.getImportMatchPropertyNames())) {
 					boolean b = false;
 					for (String pp : oi.getImportMatchPropertyPaths()) {
-						OAPropertyPath ppx = new OAPropertyPath(oi.getForClass(), pp);
+						OAPath ppx = new OAPath(oi.getForClass(), pp);
 						if (pp.indexOf('.') < 0 && pp.equalsIgnoreCase(pi.getName())) {
 							b = true;
 							break;
@@ -435,7 +435,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 	/**
 	 * Writes a single POJO property determined by {@link PojoProperty}.
 	 * <p>
-	 * Resolves the OA property via {@link OAPropertyPath}, applies callbacks,
+	 * Resolves the OA property via {@link OAPath}, applies callbacks,
 	 * and writes the value in JSON format.
 	 *
 	 * @param oaj    OAJson context
@@ -449,7 +449,7 @@ public class OAJacksonSerializer extends JsonSerializer<OAObject> {
 			final PojoProperty pjp) throws IOException {
 		String propertyName = pjp.getName();
 		String pp = pjp.getPropertyPath();
-		OAPropertyPath ppx = new OAPropertyPath(oi.getForClass(), pp);
+		OAPath ppx = new OAPath(oi.getForClass(), pp);
 		OAPropertyInfo pi = ppx.getEndPropertyInfo();
 
 		Object objx = oaObj.getProperty(pp);

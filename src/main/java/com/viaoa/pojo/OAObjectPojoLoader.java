@@ -19,13 +19,13 @@ import java.io.Serializable;
 
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
-import com.viaoa.object.OAFkeyInfo;
-import com.viaoa.object.OALinkInfo;
-import com.viaoa.object.OAObjectInfo;
-import com.viaoa.object.OAPropertyInfo;
+import com.viaoa.lang.OAString;
+import com.viaoa.metadata.OAFkeyInfo;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAPropertyInfo;
+import com.viaoa.path.OAPath;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.util.OAPropertyPath;
-import com.viaoa.util.OAString;
 
 /**
  * Builds a {@link Pojo} metadata tree from an {@link OAObjectInfo} so that
@@ -313,7 +313,7 @@ public class OAObjectPojoLoader implements Serializable {
 			return;
 		}
 
-		OALinkInfo lpx = new OAPropertyPath(lp.getToClass(), pp).getReversePropertyPath().getEndLinkInfo();
+		OALinkInfo lpx = new OAPath(lp.getToClass(), pp).getReversePropertyPath().getEndLinkInfo();
 		if (lpx == null) {
 			return;
 		}
