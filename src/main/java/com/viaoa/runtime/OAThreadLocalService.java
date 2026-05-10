@@ -15,7 +15,6 @@ import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
-import com.viaoa.json.OAJson;
 import com.viaoa.lang.OAArray;
 import com.viaoa.lang.OAStr;
 import com.viaoa.lang.OAString;
@@ -30,6 +29,100 @@ import com.viaoa.serialize.OAObjectSerializer;
 import com.viaoa.transaction.OATransaction;
 import com.viaoa.undo.OAUndoManager;
 
+
+/* qqqqqqqqqqqqq
+CODEX
+
+ #2 — invariant risk
+  File/class/method: src/main/java/com/viaoa/runtime/OAThreadLocalService.java:213, src/main/java/com/
+  viaoa/runtime/thread/OAThreadLocal.java:53
+  Exact concern: mutable OAThreadLocal is public and directly exposed.
+  Why it matters: callers can mutate counters/flags directly and bypass OAThreadLocalService global fast-
+  path counters. That can make isLoading, isRefreshing, isSendingEvent, serializer state, sibling-helper
+  state, etc. return wrong answers.
+  Minimal fix: pre-4.0, either restrict direct exposure or clearly mark OAThreadLocal as internal and add
+  tests proving all framework code uses service methods. Longer term, expose read-only/debug access
+  separately.
+  Suggested invariant ID/name: THREAD_LOCAL_STATE_MUTATED_ONLY_BY_SERVICE
+  Suggested test coverage: service counters remain consistent after loading/refreshing/hub-event/sibling-
+  helper enter/exit; no production code mutates fields directly except runtime service.
+
+
+
+ #4 — bug
+  File/class/method: src/main/java/com/viaoa/runtime/OAThreadLocalService.java:538
+  Exact concern: endServerOnly() can decrement cntStartServerOnly below zero. Once negative, later
+  startServerOnly() increments to zero and does not save sendSyncMessagesHold, so restore semantics are
+  broken.
+  Why it matters: sendSyncMessages is central to sync/replication behavior. A counter underflow can cause
+  sync messages to remain enabled or disabled incorrectly.
+  Minimal fix: guard underflow. If count is already zero, no-op/log or throw in debug mode. Restore only on
+  transition 1 -> 0.
+  Suggested invariant ID/name: SERVER_ONLY_SCOPE_BALANCED_AND_RESTORES_SEND_SYNC
+  Suggested test coverage: nested start/end restores original value; extra end cannot corrupt future
+  scopes.
+
+ #6 — invariant risk
+  File/class/method: src/main/java/com/viaoa/runtime/thread/OARemoteThread.java:79, src/main/java/com/
+  viaoa/runtime/OAThreadLocalService.java:1638, src/main/java/com/viaoa/runtime/
+  OARemoteThreadService.java:83
+  Exact concern: remote request state exists in two places: OARemoteThread.requestInfo and
+  OAThreadLocal.requestInfo. Runtime APIs read different stores.
+  Why it matters: replication currently reads thread-local request info, while remote-thread service reads
+  the thread field. These can diverge.
+  Minimal fix: define one canonical source. Prefer OARemoteThreadService.getRequestInfo() delegating
+  consistently, or have remote thread setup always synchronize both states and reset both.
+  Suggested invariant ID/name: REMOTE_REQUEST_INFO_HAS_SINGLE_CANONICAL_SOURCE
+  Suggested test coverage: client/server remote thread setup exposes same RequestInfo through both APIs;
+  cleanup clears both.
+
+  #7 — bug  (Fixed??)
+  File/class/method: src/main/java/com/viaoa/runtime/OAThreadLocalService.java:1536
+  Exact concern: global aiTotalSiblingHelper decrements before confirming the helper exists in the current
+  thread list.
+  Why it matters: removing a non-present helper can make the global fast-path counter too low or negative.
+  Then getSiblingHelpers() / hasSiblingHelpers() can skip real helpers in other threads.
+  Minimal fix: decrement only if ti.alSiblingHelper.remove(sh) returns true.
+  Suggested invariant ID/name: SIBLING_HELPER_GLOBAL_COUNT_EQUALS_REGISTERED_HELPERS
+  Suggested test coverage: remove non-present helper does not decrement; clear removes exactly list size;
+  helpers in other threads remain discoverable.
+
+  #8 — invariant risk
+  File/class/method: src/main/java/com/viaoa/runtime/OAThreadLocalService.java:314, src/main/java/com/
+  viaoa/runtime/OAThreadLocalService.java:2274, src/main/java/com/viaoa/runtime/
+  OAThreadLocalService.java:1279, src/main/java/com/viaoa/runtime/OAThreadLocalService.java:1794
+  Exact concern: paired counter APIs allow local/global counters to go negative; they log but do not
+  prevent invariant damage.
+  Why it matters: these counters drive fast paths and event suppression. Counter drift can make runtime
+  think no special state exists when it does, or vice versa.
+  Minimal fix: guard decrement when local count is zero; in debug/test mode throw or assert.
+  Suggested invariant ID/name: THREAD_LOCAL_SCOPED_COUNTERS_NEVER_NEGATIVE
+  Suggested test coverage: every scoped counter supports nested enter/exit and rejects/ignores extra exit.
+
+ #9 — bug
+  File/class/method: src/main/java/com/viaoa/runtime/OAThreadLocalService.java:1411
+  Exact concern: compound undo is not depth-safe. Calling startUndoable twice overwrites
+  compoundUndoableName; a single endUndoable clears tracking and decrements the global counter once. Extra
+  end can decrement below zero.
+  Why it matters: graph event undo capture is runtime-visible and currently tied into object event service.
+  Nested callers can corrupt undo capture state.
+  Minimal fix: add a compound undo depth counter or reject nested compound scopes.
+  Suggested invariant ID/name: UNDOABLE_SCOPE_IS_BALANCED_AND_DEPTH_SAFE
+  Suggested test coverage: nested compound scopes either work predictably or throw; global counter returns
+  to zero.
+
+#12 — boundary risk
+  File/class/method: src/main/java/com/viaoa/runtime/OAThreadLocalService.java:30 plus com.viaoa.undo use
+  Exact concern: runtime service directly depends on OAUndoManager, which currently depends on
+  javax.swing.undo.
+  Why it matters: runtime itself does not import Swing undo, but it inherits that boundary leak through
+  core undo implementation.
+  Minimal fix: later pre-4.0, introduce OA-native undo contract in core and move Swing adapter out.
+  Suggested invariant ID/name: RUNTIME_UNDO_CONTRACT_IS_UI_NEUTRAL
+  Suggested test coverage: runtime undo capture works without loading Swing undo adapter.
+
+
+*/
 
 /**
  * Central service for OA thread-local execution state.
@@ -154,12 +247,6 @@ public class OAThreadLocalService {
 	 * on Hubs. Used to optimize hub-position update behavior.
 	 */
 	private final AtomicInteger aiTotalDontAdjustHub = new AtomicInteger();
-	
-	/**
-	 * Diagnostic counter tracking usage of per-thread OAJson (Jackson) helpers.
-	 * Useful for profiling JSON serialization operations.
-	 */
-	private final AtomicInteger aiTotalJackson = new AtomicInteger();
 	
 	/**
 	 * Counts threads currently performing Hub.refresh operations. Enables
@@ -1561,12 +1648,12 @@ public class OAThreadLocalService {
 		if (ti == null || sh == null) {
 			return;
 		}
-		int x = aiTotalSiblingHelper.decrementAndGet();
 
 		if (ti.alSiblingHelper == null) {
 			return;
 		}
-		ti.alSiblingHelper.remove(sh);
+		if (!ti.alSiblingHelper.remove(sh)) return;
+		int x = aiTotalSiblingHelper.decrementAndGet();
 
 		if (x > 20 || x < 0 || ti.alSiblingHelper.size() > 10) {
 			msSiblingHelper = throttleLOG("TotalSiblingHelper.remove, tot=" + x + ", this.size=" + ti.alSiblingHelper.size() + ", thread="
@@ -2169,48 +2256,6 @@ public class OAThreadLocalService {
 	}
 
 	/**
-	 * Assigns the supplied OAJson instance to the current thread-local instance
-	 * and returns the previous value.
-	 *
-	 * @param jackson the new OAJson instance or null
-	 * @return the previous OAJson instance
-	 */
-	public OAJson getOAJackson() {
-		if (aiTotalJackson.get() == 0) {
-			return null;
-		}
-		OAThreadLocal ti = getThreadLocal(false);
-		if (ti == null) {
-			return null;
-		}
-		return ti.oajackson;
-	}
-	
-	/**
-	 * Assigns the supplied OAJson instance to the current thread-local instance
-	 * and returns the previous value.
-	 *
-	 * @param jackson the new OAJson instance or null
-	 * @return the previous OAJson instance
-	 */
-	public OAJson setOAJackson(OAJson jackson) {
-		if (jackson == null && aiTotalJackson.get() == 0) {
-			return null;
-		}
-
-		if (jackson != null) {
-			aiTotalJackson.incrementAndGet();
-		} else {
-			aiTotalJackson.decrementAndGet();
-		}
-
-		OAThreadLocal ti = getThreadLocal(true);
-		OAJson hold = ti.oajackson;
-		ti.oajackson = jackson;
-		return hold;
-	}
-	
-	/**
 	 * Registers the supplied hub as one that should not be auto-adjusted for the
 	 * current thread.
 	 *
@@ -2417,7 +2462,7 @@ public class OAThreadLocalService {
 			return ;
 		}
 		if (ti.fastLoadingHub != null) {
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(ti.fastLoadingHub);
 			og.hubsInternal().callHubEventFireOnNewListEvent(ti.fastLoadingHub, true);
 		}
 		ti.fastLoadingHub = hub;

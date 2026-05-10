@@ -65,9 +65,13 @@ public class OAThread extends Thread {
 		if (context != null) {
 			OARuntime.thread().setContext(context);
 		}
+		try {
 		runnable.run();
-		if (context != null) {
-			OARuntime.thread().setContext(null);
+		}
+		finally {
+			if (context != null) {
+				OARuntime.thread().setContext(null);
+			}
 		}
 	}
 

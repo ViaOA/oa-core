@@ -22,6 +22,25 @@ import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
 
+/*qqqqqqqqqqq
+CODEX
+
+ #5 — invariant risk
+  File/class/method: src/main/java/com/viaoa/runtime/thread/OARemoteThread.java:218
+  Exact concern: reset only restores sendSyncMessages, context, and admin. It does not clear loading,
+  deleting, flags, locks, serializers, hub events, refresh state, sibling helpers, process, replication
+  source, or remote request info in OAThreadLocal.
+  Why it matters: OARemoteThread instances are reused. Any unbalanced request path can leak runtime state
+  into the next remote request.
+  Minimal fix: either make reset() assert a clean thread-local state and clear known per-request fields, or
+  split into resetForNextRemoteRequest() with explicit cleanup contract.
+  Suggested invariant ID/name: REMOTE_THREAD_RESET_LEAVES_CLEAN_THREAD_LOCAL
+  Suggested test coverage: set each per-request field, call reset on the remote thread, verify next request
+  starts with clean state.
+
+
+*/
+
 /**
  * A specialized thread used by OA's remote messaging framework to process
  * incoming remote method calls, broadcasts, and ripple-effect events.

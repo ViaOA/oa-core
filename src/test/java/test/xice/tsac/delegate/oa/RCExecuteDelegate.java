@@ -15,7 +15,7 @@ import com.viaoa.datetime.OADateTime;
 import com.viaoa.io.OAFile;
 import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
-import com.viaoa.serialization.yaml.OAYamlReader;
+import com.viaoa.serialize.yaml.OAYamlReader;
 
 import test.xice.tsac.model.oa.RCCommand;
 import test.xice.tsac.model.oa.RCExecute;

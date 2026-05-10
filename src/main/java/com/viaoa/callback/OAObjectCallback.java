@@ -168,7 +168,7 @@ public class OAObjectCallback {
 	 * Optional Swing label used for UI-related callback types that allow
 	 * label configuration or rendering customization.
 	 */
-	private Object label; // used for UI rendering control
+	private OACallbackLabel label; // used for UI rendering control
 
 	/**
 	 * Optional response message assigned by callback logic, typically returned
@@ -914,7 +914,7 @@ public class OAObjectCallback {
 	 *
 	 * @return the label, or {@code null} if none is set
 	 */
-	public Object getLabel() {
+	public OACallbackLabel getLabel() {
 		return label;
 	}
 
@@ -923,7 +923,7 @@ public class OAObjectCallback {
 	 *
 	 * @param label the label to assign
 	 */
-	public void setLabel(Object label) {
+	public void setLabel(OACallbackLabel label) {
 		this.label = label;
 	}
 

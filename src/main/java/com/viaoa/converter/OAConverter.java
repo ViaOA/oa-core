@@ -110,11 +110,13 @@ public class OAConverter {
 		addConverter(com.viaoa.datetime.OADate.class, new OAConverterOADate());
 		addConverter(com.viaoa.datetime.OATime.class, new OAConverterOATime());
 		addConverter(Calendar.class, new OAConverterCalendar());
+/* moved to oa-corre-ui repo		
 		addConverter(java.awt.Point.class, new OAConverterPoint());
 		addConverter(java.awt.Dimension.class, new OAConverterDimension());
 		addConverter(java.awt.Rectangle.class, new OAConverterRectangle());
 		addConverter(java.awt.Color.class, new OAConverterColor());
 		addConverter(java.awt.Font.class, new OAConverterFont());
+*/		
 		addConverter(Enum.class, new OAConverterEnum());
 		addConverter(VEnum.class, new OAConverterVEnum());
 		addConverter(TimeZone.class, new OAConverterTimeZone());

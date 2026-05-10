@@ -9,7 +9,7 @@ import com.viaoa.converter.OAConv;
 import com.viaoa.io.OAFile;
 import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
-import com.viaoa.serialization.yaml.OAYamlReader;
+import com.viaoa.serialize.yaml.OAYamlReader;
 
 import test.xice.tsam.delegate.ModelDelegate;
 import test.xice.tsam.delegate.oa.ApplicationTypeDelegate;

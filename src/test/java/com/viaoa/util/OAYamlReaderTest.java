@@ -11,7 +11,7 @@ import com.viaoa.OAUnitTest;
 import com.viaoa.io.OAFile;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectPropertyDelegate;
-import com.viaoa.serialization.yaml.OAYamlReader;
+import com.viaoa.serialize.yaml.OAYamlReader;
 
 public class OAYamlReaderTest extends OAUnitTest {
 

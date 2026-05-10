@@ -28,8 +28,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
-import javax.swing.SwingUtilities;
-
 import com.viaoa.compare.OACompare;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.find.OAFinder;
@@ -40,8 +38,8 @@ import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
 import com.viaoa.path.OAPath;
 import com.viaoa.performance.OAPerformance;
-import com.viaoa.pojo.OAObjectPojoLoader;
-import com.viaoa.pojo.Pojo;
+import com.viaoa.metadata.pojo.OAObjectPojoLoader;
+import com.viaoa.metadata.pojo.Pojo;
 import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
@@ -1741,9 +1739,11 @@ public class OAObjectInfo { //implements java.io.Serializable {
 			}
 		}
 
+		
+		
 		boolean b = false;
-		if (!ti.trigger.getUseBackgroundThread() && ti.trigger.getUseBackgroundThreadIfNeeded() && SwingUtilities.isEventDispatchThread()) {
-			// if swing thread, then run in bg thread if it has to do a many reverse pp, or if no rev pp
+		if (!ti.trigger.getUseBackgroundThread() && ti.trigger.getUseBackgroundThreadIfNeeded() && OARuntime.thread().isUIThread()) {
+			// if UI thread, then run in bg thread if it has to do a many reverse pp, or if no rev pp
 			if (ti.bNoReverseFinder) {
 				b = true;
 			} else if (ti.bReverseHasMany) {

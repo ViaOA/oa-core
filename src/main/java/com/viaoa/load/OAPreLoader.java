@@ -20,9 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
-import com.viaoa.datasource.OADataSource;
-import com.viaoa.datasource.jdbc.OADataSourceJDBC;
-import com.viaoa.datasource.jdbc.db.ManyToMany;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAString;
@@ -244,61 +241,7 @@ public class OAPreLoader {
 		if (linkInfo == null || !linkInfo.isMany2Many()) {
 			return;
 		}
-		OADataSource ds = OARuntime.datasource().get(linkInfo.getToClass());
-		if (!(ds instanceof OADataSourceJDBC)) {
-			return;
-		}
-
-		OALinkInfo liA = linkInfo;
-		OALinkInfo liB = linkInfo.getReverseLinkInfo();
-		if (liB == null) {
-			return;
-		}
-
-		Class classA = liB.getToClass();
-		Class classB = liA.getToClass();
-
-		ArrayList<ManyToMany> alManyToMany = ((OADataSourceJDBC) ds).getManyToMany(linkInfo);
-		if (alManyToMany == null) {
-			return;
-		}
-
-		OAGraphInternal ogA = (OAGraphInternal) OARuntime.graph(classA);
-    	OAGraphInternal ogB = (OAGraphInternal) OARuntime.graph(classB);
-		
-		for (ManyToMany mm : alManyToMany) {
-			Object objA = ogA.objectsInternal().callObjectCacheGet(classA, mm.ok1);
-			Object objB = ogB.objectsInternal().callObjectCacheGet(classB, mm.ok2);
-			if (objA == null || objB == null) {
-				continue;
-			}
-
-			if (!liA.getPrivateMethod()) {
-				Hub hub;
-				OAGraphInternal ogX = (OAGraphInternal) OARuntime.graph((OAObject) objA);
-				Object objx = ogX.objectsInternal().callObjectPropertyGetProperty((OAObject) objA, liA.getName(), false, true);
-				if (objx instanceof Hub) {
-					hub = (Hub) objx;
-				} else {
-					hub = new Hub(classB);
-					ogX.objectsInternal().callObjectPropertySetProperty((OAObject) objA, liA.getName(), hub);
-				}
-				hub.add((OAObject) objB);
-			}
-
-			if (!liB.getPrivateMethod()) {
-				Hub hub;
-				OAGraphInternal ogX = (OAGraphInternal) OARuntime.graph((OAObject) objB);
-				Object objx = ogX.objectsInternal().callObjectPropertyGetProperty((OAObject) objB, liB.getName(), false, true);
-				if (objx instanceof Hub) {
-					hub = (Hub) objx;
-				} else {
-					hub = new Hub(classA);
-					ogX.objectsInternal().callObjectPropertySetProperty((OAObject) objB, liB.getName(), hub);
-				}
-				hub.add((OAObject) objA);
-			}
-		}
+		return;
 	}
 
 	/**

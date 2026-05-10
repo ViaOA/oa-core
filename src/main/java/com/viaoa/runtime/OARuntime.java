@@ -8,8 +8,66 @@ import java.util.logging.Logger;
 
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphImpl;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
+
+/* qqqqqqqqqqqqq
+CODEX
+
+ #11 — cleanup-only / invariant risk
+  File/class/method: src/main/java/com/viaoa/runtime/OARuntime.java:235
+  Exact concern: public reset method is effectively a guarded no-op with old commented cache reset logic.
+  Why it matters: OA 4.0 unit tests need deterministic runtime isolation. A reset method that does not
+  reset runtime state can hide test contamination.
+  Minimal fix: either implement a real runtime test reset or remove/rename this until ready.
+  Suggested invariant ID/name: RUNTIME_TEST_RESET_RESTORES_CORE_SINGLETON_STATE
+  Suggested test coverage: graph helper cache, datasource registry, thread-local state, and known runtime
+  maps are reset or explicitly preserved.
+
+#2 — bug
+  File/class/method: src/main/java/com/viaoa/runtime/OARuntime.java:78, src/main/java/com/viaoa/runtime/
+  OARuntime.java:183
+  Concern: graphInternal(pkg) can cache default graph in hmPackageNameGraphHelper; if createGraph(pkg) later fails,
+  the helper cache is not cleared. Future graph(pkg) returns cached default before checking hmPackageNameException.
+  Why it matters: a failed graph package can silently continue using default graph after a previous lookup. That
+  hides initialization failure and routes objects to the wrong graph.
+  Severity: bug
+  Minimal fix: clear hmPackageNameGraphHelper before graph creation attempt or in both success and failure paths.
+  Check exception before helper lookup for exact package names.
+  Suggested invariant: FAILED_GRAPH_CREATION_NEVER_FALLS_BACK_TO_DEFAULT
+  Suggested test coverage: call graph("bad.pkg"), then force createGraph("bad.pkg") failure, then verify
+  graph("bad.pkg") throws the cached failure instead of returning default.
+
+ #3 — lifecycle risk
+  File/class/method: src/main/java/com/viaoa/runtime/OARuntime.java:88
+  Concern: failed graph initialization is cached permanently in hmPackageNameException with no retry/clear
+  lifecycle.
+  Why it matters: package scanning/classloading can fail because of classloader timing, generated classes, or test
+  setup. Once poisoned, the package cannot recover without JVM restart.
+  Severity: invariant risk
+  Minimal fix: provide an explicit test/runtime reset path for graph exceptions, or make retry behavior deliberate
+  and documented.
+  Suggested invariant: GRAPH_INIT_FAILURE_CACHE_HAS_EXPLICIT_LIFECYCLE
+  Suggested test coverage: failed graph init is either permanently sticky by contract or can be cleared by runtime
+  reset.
+
+ #4 — invariant risk
+  File/class/method: src/main/java/com/viaoa/runtime/OARuntime.java:140
+  Concern: subclasses of an OAObject subclass are canonicalized to the nearest superclass under OAObject, and cached
+  in hmClassHelper.
+  Why it matters: this is useful for proxies/enhanced classes, but it means a real model subclass in a different
+  package can never resolve to its own package graph.
+  Severity: invariant risk
+  Minimal fix: make the rule explicit: either “subclasses always use root OAObject model class graph” or add a
+  marker/hook to distinguish proxy/helper subclasses from real model subclasses.
+  Suggested invariant: GRAPH_CLASS_CANONICALIZATION_IS_EXPLICIT
+  Suggested test coverage: subclass in same package, subclass in different package, and proxy/helper subclass all
+  resolve according to documented contract.
+
+
+*/
+
 
 public final class OARuntime {
 	private static Logger LOG = Logger.getLogger(OARuntime.class.getName());
@@ -30,13 +88,7 @@ public final class OARuntime {
 	}
 	
 	static {
-		runtime.graphDefault = new OAGraphImpl(""); 
-		try {
-			runtime.graphDefault.initialize();
-		}
-		catch (Exception e) {
-			LOG.log(Level.WARNING, "Exception creating OAGraph graphDefault", e);
-		}
+		runtime.graphDefault = (OAGraphImpl) runtime.createGraphInternal("");
 	}
 	
 	public static OARuntime get() {
@@ -48,8 +100,9 @@ public final class OARuntime {
 	}
 
 	private OAGraph createGraphInternal(final Package pkg) {
-		if (pkg == null) return null;
-		final String pn = pkg.getName();
+		String pn;
+		if (pkg != null) pn = pkg.getName();
+		else pn = null;
 		return createGraphInternal(pn);
 	}	
 	

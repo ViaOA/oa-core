@@ -16,7 +16,6 @@
 package com.viaoa.datasource;
 
 import java.util.List;
-import java.util.Vector;
 
 import com.viaoa.filter.OAFilter;
 import com.viaoa.graph.OAGraphInternal;

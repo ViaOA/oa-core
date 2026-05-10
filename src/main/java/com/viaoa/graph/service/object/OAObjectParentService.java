@@ -26,7 +26,6 @@ import com.viaoa.hub.HubListener;
 import com.viaoa.hub.auto.HubAutoMatch;
 import com.viaoa.hub.auto.HubAutoSequence;
 import com.viaoa.hub.sort.HubSortListener;
-import com.viaoa.json.OAJson;
 import com.viaoa.metadata.OACalcInfo;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
@@ -42,7 +41,6 @@ import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.remote.RemoteServerInterface;
 import com.viaoa.sync.remote.RemoteSessionInterface;
 import com.viaoa.sync.remote.RemoteSyncInterface;
-import com.viaoa.xml.OAXMLWriter;
 
 
 /**
@@ -66,7 +64,7 @@ public abstract class OAObjectParentService {
     private OAObjectChangeService srvcOAObjectChange;
     private OAObjectCallbackService srvcOAObjectCallback;
     private OAObjectCSService srvcOAObjectCS;
-    private OAObjectDatabaseService srvcOAObjectDatabase;
+    // private OAObjectDatabaseService srvcOAObjectDatabase;
     private OAObjectDeleteService srvcOAObjectDelete;
     private OAObjectDSService srvcOAObjectDS;
     private OAObjectEnumService srvcOAObjectEnum;
@@ -80,7 +78,7 @@ public abstract class OAObjectParentService {
     private OAObjectInitializeService srvcOAObjectInitialize; 
     private OAObjectKeyService srvcOAObjectKey;
     private OAObjectLockService srvcOAObjectLock;
-    private OAObjectLogService srvcOAObjectLog;
+//    private OAObjectLogService srvcOAObjectLog;
     private OAObjectPropertyService srvcOAObjectProperty;
     private OAObjectRecurseService srvcOAObjectRecurse;
     private OAObjectReflectService srvcOAObjectReflect;
@@ -89,7 +87,6 @@ public abstract class OAObjectParentService {
     private OAObjectSerializeService srvcOAObjectSerialize;
     private OAObjectSiblingService srvcOAObjectSibling;
     private OAObjectUniqueService srvcOAObjectUnique;
-    private OAObjectXMLService srvcOAObjectXML;
     
 	/**
 	 * Reserved property name representing an object's "new" lifecycle state.
@@ -127,7 +124,7 @@ public abstract class OAObjectParentService {
 	    getOAObjectChangeService();
 	    getOAObjectCallbackService();
 	    getOAObjectCSService();
-	    getOAObjectDatabaseService();
+	    // getOAObjectDatabaseService();
 	    getOAObjectDeleteService();
 	    getOAObjectDSService();
 	    getOAObjectEnumService();
@@ -141,7 +138,7 @@ public abstract class OAObjectParentService {
 	    getOAObjectInitializeService(); 
 	    getOAObjectKeyService();
 	    getOAObjectLockService();
-	    getOAObjectLogService();
+//	    getOAObjectLogService();
 	    getOAObjectPropertyService();
 	    getOAObjectRecurseService();
 	    getOAObjectReflectService();
@@ -150,8 +147,6 @@ public abstract class OAObjectParentService {
 	    getOAObjectSerializeService();
 	    getOAObjectSiblingService();
 	    getOAObjectUniqueService();
-	    getOAObjectXMLService();
-		
 	}
 	
 	protected HubService getHubService() {
@@ -449,6 +444,7 @@ public abstract class OAObjectParentService {
     	return srvcOAObjectCS;
     }
     
+/*qqqqqq    
     public OAObjectDatabaseService getOAObjectDatabaseService() {
     	if (srvcOAObjectDatabase != null) return srvcOAObjectDatabase;
     	srvcOAObjectDatabase = new OAObjectDatabaseService() {
@@ -463,7 +459,7 @@ public abstract class OAObjectParentService {
     	};
     	return srvcOAObjectDatabase;
     }
-    
+*/    
     public OAObjectDeleteService getOAObjectDeleteService() {
     	if (srvcOAObjectDelete != null) return srvcOAObjectDelete;
         srvcOAObjectDelete = new OAObjectDeleteService(faBridge.getObjectFriendAccess()) {
@@ -619,10 +615,12 @@ public abstract class OAObjectParentService {
 			public OALinkInfo callInfoGetReverseLinkInfo(OALinkInfo li) {
 				return OAObjectParentService.this.getOAObjectInfoService().getReverseLinkInfo(li);
 			}
+			/*qqqqqqqqq
 			@Override
 			public void callLogToXmlFile(OAObject oaObj, boolean bSave) {
 				OAObjectParentService.this.getOAObjectLogService().logToXmlFile(oaObj, bSave);
 			}
+			*/
 			@Override
 			public void callReflectSetProperty(OAObject oaObj, String propName, Object value, String fmt) {
 				OAObjectParentService.this.getOAObjectReflectService().setProperty(oaObj, propName, value, fmt);
@@ -1056,10 +1054,6 @@ public abstract class OAObjectParentService {
 				return OAObjectParentService.this.srvcThreadLocal.isLoading();
 			}
 			@Override
-			public OAJson callThreadLocalGetOAJackson() {
-				return OAObjectParentService.this.srvcThreadLocal.getOAJackson();
-			}
-			@Override
 			public <T extends OAObject> T callReflectCreateNewObject(Class<T> clazz) {
 				return OAObjectParentService.this.getOAObjectReflectService().createNewObject(clazz);
 			}
@@ -1297,6 +1291,7 @@ public abstract class OAObjectParentService {
     	return srvcOAObjectLock;
     }
 
+/*qqqqqqq    
     public OAObjectLogService getOAObjectLogService() {
     	if (srvcOAObjectLog != null) return srvcOAObjectLog;
     	srvcOAObjectLog = new OAObjectLogService() {
@@ -1315,6 +1310,7 @@ public abstract class OAObjectParentService {
 		};
     	return srvcOAObjectLog;
     }
+*/    
 
     public OAObjectPropertyService getOAObjectPropertyService() {
     	if (srvcOAObjectProperty != null) return srvcOAObjectProperty; 
@@ -1738,10 +1734,12 @@ public abstract class OAObjectParentService {
 			public void callDSSave(OAObject oaObj) {
 				OAObjectParentService.this.getOAObjectDSService().save(oaObj);
 			}
+/*qqqqq			
 			@Override
 			public void callLogLogToXmlFile(OAObject oaObj, boolean bSave) {
 				OAObjectParentService.this.getOAObjectLogService().logToXmlFile(oaObj, bSave);
 			}
+*/			
 			@Override
 			public <T extends OAObject> void callHubEventFireBeforeSaveEvent(Hub<T> thisHub, T obj) {
 				OAObjectParentService.this.srvcHub.getHubEventService().fireBeforeSaveEvent(thisHub, obj);
@@ -1973,44 +1971,6 @@ public abstract class OAObjectParentService {
 		};
     	return srvcOAObjectUnique;
     }
-    
-    public OAObjectXMLService getOAObjectXMLService() {
-//  srvcOAObjectXML = new OAObjectXMLService(this, faBridge.getObjectFriendAccess(), srvcHub);
-    	if (srvcOAObjectXML != null) return srvcOAObjectXML;
-
-    	srvcOAObjectXML = new OAObjectXMLService() {
-			@Override
-			public OAObjectInfo callInfoGetOAObjectInfo(OAObject obj) {
-				return OAObjectParentService.this.getOAObjectInfoService().getOAObjectInfo(obj);
-			}
-			@Override
-			public Object callReflectGetProperty(OAObject oaObj, String propPath) {
-				return OAObjectParentService.this.getOAObjectReflectService().getProperty(oaObj, propPath);
-			}
-			@Override
-			public String[] callPropertyGetPropertyNames(OAObject oaObj) {
-				return OAObjectParentService.this.getOAObjectPropertyService().getPropertyNames(oaObj);
-			}
-			@Override
-			public Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef) {
-				return OAObjectParentService.this.getOAObjectPropertyService().getProperty(oaObj, name, bReturnNotExist, bConvertWeakRef);
-			}
-			@Override
-			public OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName) {
-				return OAObjectParentService.this.getOAObjectInfoService().getLinkInfo(oi, propertyName);
-			}
-			@Override
-			public void callHubXMLWrite(Hub<?> thisHub, OAXMLWriter ow, String tagName, int writeType, OACascade cascade) {
-				srvcHub.getHubXMLService().write(thisHub, ow, tagName, writeType, cascade);
-			}
-			@Override
-			public UUID callGuidGetGuid(OAObject oaObj) {
-				return OAObjectParentService.this.getOAObjectGuidService().getGuid(oaObj);
-			}
-		};
-    	return srvcOAObjectXML;
-    }
-
     
 	/**
 	 * Updates the {@code newFlag} of the specified {@link OAObject} and fires the

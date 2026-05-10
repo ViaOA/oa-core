@@ -27,8 +27,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.swing.SwingUtilities;
-
 import com.viaoa.cascade.OACascade;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.sibling.OASiblingHelper;
@@ -2424,7 +2422,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 return;
             }
 
-            if (getUseBackgroundThread() || SwingUtilities.isEventDispatchThread()) {
+            if (getUseBackgroundThread() || OARuntime.thread().isUIThread()) {
                 return; // let run in the background
             }
 

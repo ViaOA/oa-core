@@ -28,7 +28,6 @@ import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.thread.OARemoteThread;
 import com.viaoa.serialize.OAObjectSerializer;
-import com.viaoa.xml.OAXMLWriter;
 
 /**
  * 
@@ -68,7 +67,6 @@ public abstract class HubParentService {
 	private HubSizeService srvcHubSize;
 	private HubSortService srvcHubSort;
 	private HubStatusService srvcHubStatus;
-	private HubXMLService srvcHubXML;
 	
 	public HubParentService() {
 		this.faHub = faBridge.getHubFriendAccess();
@@ -109,7 +107,6 @@ public abstract class HubParentService {
 		getHubSizeService();
 		getHubSortService();
 		getHubStatusService();
-		getHubXMLService();
 	}
 	
 	
@@ -1567,19 +1564,4 @@ public abstract class HubParentService {
 		};
 		return srvcHubStatus;
 	}
-	
-	public HubXMLService getHubXMLService() {
-		if (srvcHubXML != null) return srvcHubXML;
-		
-    	srvcHubXML = new HubXMLService() {
-			@Override
-			public void callObjectXMLWrite(OAObject oaObj, OAXMLWriter ow, String tagName, boolean bKeyOnly, OACascade cascade) {
-				srvcObject.getOAObjectXMLService().write(oaObj, ow, tagName, bKeyOnly, cascade);
-			}
-    	};
-		
-		return srvcHubXML;
-	}
-	
-	
 }

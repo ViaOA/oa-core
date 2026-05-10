@@ -3,8 +3,7 @@ package com.viaoa.graph.service.object;
 import java.lang.reflect.Method;
 import java.util.logging.Logger;
 
-import javax.swing.JLabel;
-
+import com.viaoa.callback.OACallbackLabel;
 import com.viaoa.callback.OAObjectCallback;
 import com.viaoa.callback.OAObjectCallback.Type;
 import com.viaoa.cascade.OACascade;
@@ -24,7 +23,6 @@ import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.metadata.OAObjectModel;
 import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.object.OAObject;
-import com.viaoa.runtime.OARuntime;
 
 /**
  * Rule and permission engine for {@link OAObject} interactions.
@@ -448,7 +446,7 @@ public abstract class OAObjectCallbackService {
 	 * @param propertyName the property associated with the label
 	 * @param label        the label to be updated
 	 */
-	public void renderLabel(OAObject obj, String propertyName, JLabel label) {
+	public void renderLabel(OAObject obj, String propertyName, OACallbackLabel label) {
 		OAObjectCallback em = new OAObjectCallback(Type.RenderLabel);
 		em.setObject(obj);
 		em.setLabel(label);
@@ -465,7 +463,7 @@ public abstract class OAObjectCallbackService {
 	 * @param propertyName the property associated with the label
 	 * @param label        the label to update
 	 */
-	public void updateLabel(OAObject obj, String propertyName, JLabel label) {
+	public void updateLabel(OAObject obj, String propertyName, OACallbackLabel label) {
 		OAObjectCallback em = new OAObjectCallback(Type.UpdateLabel);
 		em.setObject(obj);
 		em.setPropertyName(propertyName);

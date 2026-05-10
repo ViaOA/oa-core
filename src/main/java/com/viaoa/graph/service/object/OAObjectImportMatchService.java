@@ -7,7 +7,6 @@ import java.util.logging.Logger;
 import com.viaoa.filter.OAQueryFilter;
 import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.json.OAJson;
 import com.viaoa.lang.OAArray;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OALinkInfo;
@@ -322,8 +321,6 @@ public abstract class OAObjectImportMatchService {
 				}
 			}
 
-			// final OAJson oaj = callThreadLocalGetOAJackson();
-
 			createHierObjects(objNext, oiNext, propertyPathNext, value);
 		}
 		objThis.setProperty(liNext.getName(), objNext);
@@ -334,6 +331,5 @@ public abstract class OAObjectImportMatchService {
 	public abstract <T extends OAObject> T callReflectCreateNewObject(Class<T> clazz);
 	public abstract boolean callThreadLocalIsLoading();
 	public abstract boolean callThreadLocalSetLoading(boolean b);
-	public abstract OAJson callThreadLocalGetOAJackson();
 }
 

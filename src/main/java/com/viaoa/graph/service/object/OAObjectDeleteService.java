@@ -647,7 +647,6 @@ public abstract class OAObjectDeleteService {
 			return;
 		}
 		if (callSyncIsServer()) {
-			callLogToXmlFile(oaObj, false);
 			callDSDelete(oaObj);
 		}
 		oaObj.afterDelete();
@@ -674,7 +673,6 @@ public abstract class OAObjectDeleteService {
 	public abstract OALinkInfo callInfoGetReverseLinkInfo(OALinkInfo thisLi);
 	public abstract String callKeyVerifyKeyChange(final OAObject oaObj, final OAObjectKey newObjectKey);
 	public abstract boolean callKeyIsForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey ok1, final OAObjectKey ok2);
-	public abstract void callLogToXmlFile(OAObject oaObj, boolean bSave);
 	public abstract boolean callReflectIsReferenceNullOrNotLoadedOrEmptyHub(OAObject oaObj, String propertyName);
 	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath);
 	public abstract <T extends OAObject> Hub<T> callReflectGetReferenceHub(final OAObject oaObj, final String linkPropertyName, String sortOrder, boolean bSequence, Hub<T> hubMatch);

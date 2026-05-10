@@ -4,7 +4,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
-import com.viaoa.hub.examples.HubTemp;
+import com.viaoa.hub.util.HubTemp;
 
 import test.xice.tsac3.model.oa.*;
 

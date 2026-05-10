@@ -33,7 +33,7 @@ import com.viaoa.model.oa.VString;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.schedule.OAScheduler;
-import com.viaoa.xml.OAXMLWriter;
+import com.viaoa.serialize.OASerializeWriter;
 
 public class OAObjectService extends OAObjectParentService implements ObjectsInternalOps {
 	private static final Logger LOG = Logger.getLogger(OAObjectService.class.getName());
@@ -849,12 +849,6 @@ public class OAObjectService extends OAObjectParentService implements ObjectsInt
 	@Override
 	public <T extends OAObject> T callObjectUniqueGetUnique(Class<T> clazz, String propertyName, Object uniqueKey, boolean bAutoCreate) {
 	    return (T) getOAObjectUniqueService().getUnique(clazz, propertyName, uniqueKey, bAutoCreate);
-	}
-
-	// XMLService ======
-	@Override
-	public void callObjectXMLWrite(OAObject obj, OAXMLWriter oaxmlWriter, String tagName, boolean bKeyOnly, OACascade cascade) {
-	    getOAObjectXMLService().write(obj, oaxmlWriter, tagName, bKeyOnly, cascade);
 	}
 
 }

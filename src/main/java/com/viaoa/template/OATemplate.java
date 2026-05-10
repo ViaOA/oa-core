@@ -36,7 +36,6 @@ import com.viaoa.path.OAPath;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
-import com.viaoa.ui.grid.OAObjectGrid;
 
 /*qqqqqqqqqqqqq
 CODEX
@@ -154,7 +153,7 @@ CODEX
 
   Description:
   hmPropertyToColumn.get(sppLinks) is unboxed to int without a null check. If a generated property path was not
-  included in createObjectGrid, rendering throws NullPointerException.
+  included in createMatrix, rendering throws NullPointerException.
 
   Why it matters:
   Nested template constructs or unsupported property paths can crash output instead of falling back to normal
@@ -1372,14 +1371,14 @@ public class OATemplate<F extends OAObject> {
 				}
 
 				if (objValue instanceof Hub) {
-	                final OAObjectGrid og = createObjectGrid(node, (Hub) objValue);
+	                final OAMatrix og = createMatrix(node, (Hub) objValue);
 	                if (og != null) {
 	                    cntInDataGrid++;
 	                    int x = og.getRowCount();
 	                    
 	                    final Map<String, Integer> hmPropertyToColumn = new HashMap();
                         int col = 0;
-                        for (OAObjectGrid.Column colx : og.getColumns()) {
+                        for (OAMatrix.Column colx : og.getColumns()) {
                             String spp = og.getPropertyPathFromRoot(colx, "");
                             hmPropertyToColumn.put(spp, col);
                             col++;
@@ -1614,17 +1613,17 @@ public class OATemplate<F extends OAObject> {
 	}
 
 	/**
-	 * Constructs an OAObjectGrid based on the property paths referenced within a
+	 * Constructs an OAMatrix based on the property paths referenced within a
 	 * foreach block. Columns are added according to link traversal, and the grid
 	 * is materialized before iteration.
 	 *
 	 * @param node foreach node whose children define the required property paths
 	 * @param hub hub providing source objects for grid expansion
-	 * @return an OAObjectGrid instance or null if not required
+	 * @return an OAMatrix instance or null if not required
 	 */
-	protected OAObjectGrid createObjectGrid(TreeNode node, Hub hub) {
-        OAObjectGrid og = new OAObjectGrid();
-        final OAObjectGrid.Column colRoot = og.addColumn(hub);
+	protected OAMatrix createMatrix(TreeNode node, Hub hub) {
+        OAMatrix og = new OAMatrix();
+        final OAMatrix.Column colRoot = og.addColumn(hub);
         
         node = node.alChildren.get(0); // nodes between foreach .. end
         boolean bRequired = false;
@@ -1640,8 +1639,8 @@ public class OATemplate<F extends OAObject> {
                 continue; // root column
             }
             
-            OAObjectGrid.Column colParent = colRoot;
-            OAObjectGrid.Column colFound = null;
+            OAMatrix.Column colParent = colRoot;
+            OAMatrix.Column colFound = null;
             for (OALinkInfo li : lis) {
                 if (li.getType() == OALinkInfo.TYPE_MANY) {
                     if (cn.tagType != TagType.ForEach) {
@@ -1649,7 +1648,7 @@ public class OATemplate<F extends OAObject> {
                     }
                 }
                 boolean bFound = false;
-                for (OAObjectGrid.Column colx : og.getColumns()) {
+                for (OAMatrix.Column colx : og.getColumns()) {
                     if (colFound != null) {
                         if (colx.getFromColumn() != colFound) continue;
                     }

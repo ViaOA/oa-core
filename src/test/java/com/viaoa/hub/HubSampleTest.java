@@ -4,7 +4,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
-import com.viaoa.hub.examples.HubSample;
+import com.viaoa.hub.util.HubSample;
 
 import test.hifive.model.oa.Card;
 

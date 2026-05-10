@@ -28,7 +28,7 @@ import com.viaoa.filter.OAFilterDelegate;
 import com.viaoa.filter.OAFilterDelegate.FinderInfo;
 import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
-import com.viaoa.hub.examples.HubTemp;
+import com.viaoa.hub.util.HubTemp;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;

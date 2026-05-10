@@ -17,8 +17,7 @@ import com.viaoa.hub.sort.HubSortListener;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.select.OASelect;
-import com.viaoa.xml.OAXMLWriter;
-
+import com.viaoa.serialize.OASerializeWriter;
 
 /**
  * 
@@ -172,9 +171,12 @@ public interface HubsInternalOps {
 	public void callHubSequenceSetAutoSequence(Hub<?> hub, String property, int startNumber, boolean bKeepSeq);
 	public void callHubSequenceResequence(Hub<?> hub);
 
-	// Serialize
+	// Java Serialize
 	public void callHubSerializeWriteObject(Hub<?> hub, ObjectOutputStream stream) throws IOException;
 	public Object callHubSerializeReadResolve(Hub<?> hub) throws ObjectStreamException;
+
+	// Other Serialize
+//	public void callHubSerializeWrite(Hub<?> hub, OASerializeWriter ow, final String tagName, boolean bKeyOnly, OACascade cascade);
 	
 	// Share
 	public <T extends OAObject> void callHubShareSetSharedHub(Hub<T> hub, Hub<T> sharedMasterHub, boolean shareActiveObject);
@@ -201,7 +203,4 @@ public interface HubsInternalOps {
 	public boolean callHubStatusIsValid(Hub<?> hub);
 	public boolean callHubStatusGetChanged(Hub<?> thisHub, int iCascadeRule, OACascade cascade); 
 	public <T extends OAObject> HubCurrentStateEnum callHubStatusGetCurrentState(Hub<T> thisHub, Hub<T> hubNew, ArrayList<T> alNew);
-	
-	// XML
-	public void callHubXMLWrite(Hub<?> hub, OAXMLWriter ow, final String tagName, boolean bKeyOnly, OACascade cascade);
 }

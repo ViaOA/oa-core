@@ -31,7 +31,7 @@ import com.viaoa.model.oa.VString;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.schedule.OAScheduler;
-import com.viaoa.xml.OAXMLWriter;
+import com.viaoa.serialize.OASerializeWriter;
 
 
 /**
@@ -239,17 +239,19 @@ public interface ObjectsInternalOps {
 	// Scheduler
 	public OAScheduler callObjectSchedulerGetScheduler(OAObject oaObj, String property, OADate date);
 	
-	// Serialize
+	// Java Serialize
 	public void callObjectSerializeReadObject(OAObject oaObj, ObjectInputStream in) throws IOException, ClassNotFoundException;
 	public Object callObjectSerializeReadResolve(OAObject oaObj) throws ObjectStreamException;
 	public void callObjectSerializeWriteObject(OAObject oaObj, ObjectOutputStream stream) throws IOException;
 
+	// Other Serialize
+//qqqqqqqqqqq	
+//	public void callObjectSerializeWrite(OAObject obj, OASerializeWriter oaxmlWriter, String tagName, boolean bKeyOnly, OACascade cascade);
+	
 	// Sibling
 	public OAObjectKey[] callObjectSiblingGetSiblings(OAObject oaObj, String property, int maxAmount, ConcurrentHashMap<UUID, Boolean> hmIgnoreSibling);
 	
 	// Unique
 	public <T extends OAObject> T callObjectUniqueGetUnique(Class<T> clazz, String propertyName, Object uniqueKey, boolean bAutoCreate);
 
-	// XML
-	public void callObjectXMLWrite(OAObject obj, OAXMLWriter oaxmlWriter, String tagName, boolean bKeyOnly, OACascade cascade);
 }

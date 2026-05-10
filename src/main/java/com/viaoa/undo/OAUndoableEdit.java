@@ -12,7 +12,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
+**/ 
 package com.viaoa.undo;
 
 import javax.swing.undo.CannotRedoException;
@@ -24,6 +24,7 @@ import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
+
 
 /**
  * Implementation of {@link javax.swing.undo.UndoableEdit} that captures a
@@ -74,10 +75,12 @@ import com.viaoa.runtime.OARuntime;
  *   <li>{@link #createUndoableRemove(String, Hub, Object, int)}</li>
  *   <li>{@link #createUndoablePropertyChange(String, Object, String, Object, Object)}</li>
  * </ul>
- *
- * <p>
+ * 
  * This class is used extensively by OA GUI controllers and
  * {@link com.viaoa.undo.OAUndoManager} to provide application-level undo/redo.
+ * <p>
+ * Note: this currently uses javax.swing.undo as a lightweight JDK undo/edit
+ * abstraction. It is not intended to imply a Swing UI dependency.
  */
 public class OAUndoableEdit implements UndoableEdit {
 

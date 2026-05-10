@@ -1,9 +1,9 @@
 package com.viaoa.graph.service;
 
-import com.viaoa.repl.OAReplicationClient;
-import com.viaoa.repl.OAReplicationMaster;
 import com.viaoa.sync.OASyncServer;
 import com.viaoa.graph.api.internal.*;
+import com.viaoa.replication.OAReplicationClient;
+import com.viaoa.replication.OAReplicationMaster;
 
 /**
  * Used with OASyncServer to Replicate with another OASyncServer.

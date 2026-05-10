@@ -45,7 +45,6 @@ import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.model.oa.VEnum;
-import com.viaoa.model.oa.VString;
 import com.viaoa.reflect.OAReflect;
 import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;

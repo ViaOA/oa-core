@@ -584,6 +584,7 @@ public abstract class OAObjectSerializeService {
 		}
 	}
 
+	
 	public abstract void callGuidSetGuid(OAObject oaObj, UUID guid);    
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz);
 	public abstract void callPropertyUnsafeSetPropertyIfEmpty(OAObject oaObj, String name, Object value);
@@ -609,4 +610,5 @@ public abstract class OAObjectSerializeService {
 	public abstract boolean callSyncClientIsObjectOnServer(OAObject obj);
 	public abstract void callSyncClientObjectSentToServer(OAObject obj);
 	public abstract OAObjectSerializer callThreadLocalGetCurrentObjectSerializer();
+
 }

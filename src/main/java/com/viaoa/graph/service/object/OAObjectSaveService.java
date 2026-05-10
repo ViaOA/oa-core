@@ -351,7 +351,7 @@ public abstract class OAObjectSaveService {
 			oaObj.setChanged(false);
 
 			callDSSave(oaObj);
-			callLogLogToXmlFile(oaObj, true);
+//			callLogLogToXmlFile(oaObj, true);
 			if (bIsNew) {
 				callObjectSetNew(oaObj, false);
 			}
@@ -379,7 +379,7 @@ public abstract class OAObjectSaveService {
 	public abstract void callHubSaveAll(Hub<?> hub, int iCascadeRule, OACascade cascade);
 	public abstract Object callReflectGetRawReference(OAObject oaObj, String name);
 	public abstract void callDSSave(OAObject oaObj); 
-	public abstract void callLogLogToXmlFile(OAObject oaObj, boolean bSave);
+//	public abstract void callLogLogToXmlFile(OAObject oaObj, boolean bSave);
 	public abstract <T extends OAObject> void callHubEventFireBeforeSaveEvent(Hub<T> thisHub, T obj);
 	public abstract <T extends OAObject> void callHubEventFireAfterSaveEvent(Hub<T> thisHub, T obj);
 	public abstract boolean callThreadLocalIsDeleting();

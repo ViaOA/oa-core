@@ -20,7 +20,6 @@ import java.util.List;
 
 import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.*;
-import com.viaoa.json.OAJson;
 import com.viaoa.lang.Tuple3;
 import com.viaoa.object.OAObject;
 import com.viaoa.process.OAProcess;
@@ -261,6 +260,7 @@ public class OAThreadLocal {
 		return ++cntStartServerOnly;
 	}
 	public int decStartServerOnly() {
+		if (cntStartServerOnly == 0) return 0; 
 		return --cntStartServerOnly;
 	}
 	
@@ -467,12 +467,6 @@ public class OAThreadLocal {
 	 * for this thread. When true, OAContext.isAdmin() returns true.
 	 */
 	public boolean isAdmin;
-
-	/**
-	 * JSON serialization/deserialization helper for this thread.
-	 * Used when converting objects to/from JSON formats.
-	 */
-	public OAJson oajackson;
 
 	/**
 	 * List of hubs that should bypass automatic adjustment of the

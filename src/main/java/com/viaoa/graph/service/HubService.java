@@ -20,7 +20,6 @@ import com.viaoa.hub.sort.HubSortListener;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.select.OASelect;
-import com.viaoa.xml.OAXMLWriter;
 
 public class HubService extends HubParentService implements HubsInternalOps {
 	private final Logger LOG = Logger.getLogger(HubService.class.getName());
@@ -719,15 +718,4 @@ public class HubService extends HubParentService implements HubsInternalOps {
 	public <T extends OAObject> HubCurrentStateEnum callHubStatusGetCurrentState(Hub<T> thisHub, Hub<T> hubNew, ArrayList<T> alNew) {
 	    return getHubStatusService().getCurrentState(thisHub, hubNew, alNew);
 	}
-	
-	
-	// XML =========================
-	@Override
-	public void callHubXMLWrite(Hub<?> hub, OAXMLWriter ow, String tagName, boolean bKeyOnly, OACascade cascade) {
-	    getHubXMLService().write(hub, ow, tagName, bKeyOnly, cascade);
-	}
-	
-	
-
-
 }
