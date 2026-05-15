@@ -72,7 +72,7 @@ public class MultiplexerServerSocketController {
      * incoming VirtualSocket creations. Ensures that each VirtualSocket is delivered
      * to exactly one waiting accept() call.
      */
-    private Object ACCEPTLOCK = new Object();
+    private final Object ACCEPTLOCK = new Object();
 
     /**
      * Lock used by the timeout thread to wait and signal when connection validation
@@ -113,19 +113,21 @@ public class MultiplexerServerSocketController {
     /**
      * Background thread responsible for accepting new real client connections.
      */
-    private Thread _threadAccept;
+    private volatile Thread _threadAccept;
 
     /**
      * Background thread that monitors new connections for handshake timeout
      * (5-second limit).
      */
-    private Thread _threadTimeout;
+    private volatile Thread _threadTimeout;
 
     /**
      * Indicates whether the controller and underlying server socket have been
      * closed. When true, accept loops and timeout loops exit.
      */
     private volatile boolean _bClosed;
+    
+    private volatile boolean _bStopAccepting;
 
     /**
      * List of all active MultiplexerSocketController instances. Each entry
@@ -188,6 +190,8 @@ public class MultiplexerServerSocketController {
 
         if (_threadAccept != null) return;
         this._serverSocket = ss;
+    	this._bStopAccepting = false;
+
 
         // create a thread to accept all new connections.
         _threadAccept = new Thread(new Runnable() {
@@ -200,15 +204,17 @@ public class MultiplexerServerSocketController {
         _threadAccept.start();
 
         // thread to timeout connections
-        _threadTimeout = new Thread(new Runnable() {
-            // @Override
-            public void run() {
-                MultiplexerServerSocketController.this.timeoutConnections();
-            }
-        }, "MultiplexerServerSocket.timeout");
-        _threadTimeout.setDaemon(true);
-        _threadTimeout.setPriority(Thread.MIN_PRIORITY);
-        _threadTimeout.start();
+        if (_threadTimeout == null) {
+	        _threadTimeout = new Thread(new Runnable() {
+	            // @Override
+	            public void run() {
+	                MultiplexerServerSocketController.this.timeoutConnections();
+	            }
+	        }, "MultiplexerServerSocket.timeout");
+	        _threadTimeout.setDaemon(true);
+	        _threadTimeout.setPriority(Thread.MIN_PRIORITY);
+	        _threadTimeout.start();
+        }
     }
 
     /**
@@ -218,14 +224,14 @@ public class MultiplexerServerSocketController {
      * <p>Terminates when the controller is closed.</p>
      */
     private void acceptConnections() {
-        for (int i = 0; !_bClosed; i++) {
+    	for (int i = 0; !_bClosed && !_bStopAccepting; i++) {
             try {
                 Socket socket = this._serverSocket.accept();
-                if (_bClosed) continue;
+                if (_bClosed || _bStopAccepting) continue;
                 onAcceptRealClientConnection(socket);
             }
             catch (Exception e) {
-                LOG.finer("MultiplexerServerSocketController: exception while accepting new connections, ex="+ e);
+            	throw new RuntimeException("MultiplexerServerSocketController: exception while accepting new connections", e);
             }
         }
     }
@@ -281,7 +287,7 @@ public class MultiplexerServerSocketController {
 
         /**
          * This will create a new SocketController that will manage the new connection. Methods are
-         * overwritten to so that new MultiplexerSocket connections can be given to the correct
+         * overwritten so that new MultiplexerSocket connections can be given to the correct
          * MultiplexerServerSocket.
          */
         MultiplexerSocketController sc = new MultiplexerSocketController(socket, connectionId) {
@@ -300,14 +306,13 @@ public class MultiplexerServerSocketController {
                 // vserversocket accept().
                 VirtualServerSocket serverSocket = hashServerSocketName.get(serverSocketName);
                 if (serverSocket == null) {
-                    LOG.warning("serverSocket not found, socketName=" + serverSocketName);
-                    return null; // invalid request
+        			throw new IOException("serverSocket not found, socketName=" + serverSocketName);
                 }
 
                 VirtualSocket vs = super.createSocket(connectionId, id, serverSocketName);
 
                 synchronized (ACCEPTLOCK) {
-                    for (;;) {
+                    for ( ; !MultiplexerServerSocketController.this._bClosed && !isClosed(); ) {
                         if (_nextSocket == null) {
                             _nextServerSocketName = serverSocketName;
                             _nextSocket = vs;
@@ -321,6 +326,7 @@ public class MultiplexerServerSocketController {
                         catch (Exception e) {
                         }
                     }
+                    return null;
                 }
             }
 
@@ -339,6 +345,7 @@ public class MultiplexerServerSocketController {
         
         // add the socketcontroller to list.
         add(sc);
+        sc.start();
     }
 
     /**
@@ -348,7 +355,7 @@ public class MultiplexerServerSocketController {
      * <p>Connections that fail validation within the timeout interval are closed.</p>
      */
     protected void timeoutConnections() {
-        for (; !_bClosed;) {
+        for (; !_bClosed && !_bStopAccepting; ) {
             boolean bFound = _timeoutConnections();
             try {
                 if (!bFound) {
@@ -479,8 +486,9 @@ public class MultiplexerServerSocketController {
             @Override
             public Socket accept() throws IOException {
                 synchronized (ACCEPTLOCK) {
-                    for (;;) {
-                        if (_nextSocket != null && _nextServerSocketName != null && _nextServerSocketName.equals(serverSocketName)) {
+                    for (; !_bClosed && !_bStopAccepting; ) {
+                    	String s = _nextServerSocketName;
+                        if (_nextSocket != null && s != null && s.equals(serverSocketName)) {
                             VirtualSocket sock = _nextSocket;
                             _nextSocket = null;
                             _nextServerSocketName = null;
@@ -495,7 +503,10 @@ public class MultiplexerServerSocketController {
                         catch (Exception e) {
                         }
                     }
+                    if (_bClosed) throw new IOException("Server Socket has been closed");
+                    if (_bStopAccepting) throw new IOException("Server Socket has stopped accepting connections");
                 }
+                return null;
             }
         };
         hashServerSocketName.put(serverSocketName, serverSocket);
@@ -512,6 +523,8 @@ public class MultiplexerServerSocketController {
     public void close() throws Exception {
         LOG.fine("closing all connections");
         _bClosed = true;
+    	stopAccepting();
+        
         MultiplexerSocketController[] vscs = getSocketControllers();
         for (MultiplexerSocketController vsc : vscs) {
             try {
@@ -520,9 +533,22 @@ public class MultiplexerServerSocketController {
             catch (Exception e) {
             }
         }
+
+        synchronized (ACCEPTLOCK) {
+        	ACCEPTLOCK.notifyAll();
+        }
+        
         if (_serverSocket != null) _serverSocket.close();
     }
 
+    public void stopAccepting() {
+    	_bStopAccepting = true;
+        synchronized (ACCEPTLOCK) {
+        	ACCEPTLOCK.notifyAll();
+        }
+        _threadAccept = null;
+    }
+    
     /**
      * Called when a new client connection completes a valid multiplexer handshake.
      * Default implementation does nothing.

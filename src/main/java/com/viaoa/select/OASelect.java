@@ -440,7 +440,11 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	 */
 	public void add(String whereClause, Object[] params) {
 		this.where = OAString.concat(this.where, whereClause, " AND ");
-		this.params = OAArray.add(Object.class, this.params, params);
+		if (params != null) {
+			for (Object param : params) {
+				this.params = OAArray.add(Object.class, this.params, param);
+			}
+		}
 	}
 
 	/**
@@ -1108,6 +1112,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 		amountRead = 0;
 		amountCount = -1;
 		bUseFinder = false;
+		bHasNextCompleted = false;
 
 		//qqqqqqq
 		// 20221209
@@ -1165,6 +1170,9 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 				finder.addFilter(filter);
 
 				alFinderResults = finder.find();
+				if (alFinderResults == null) {
+					alFinderResults = new ArrayList<>(); 
+				}
 
 				// sort the array
 				if (alFinderResults.size() > 0) {
@@ -1328,9 +1336,9 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 			int x = alFinderResults.size();
 			if (posFinderResults >= x) {
 				alFinderResults = null;
-				return null;
+				obj = null;
 			}
-			obj = alFinderResults.get(posFinderResults++);
+			else obj = alFinderResults.get(posFinderResults++);
 		} else {
 			if (query == null) {
 				return null;
@@ -1448,7 +1456,11 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 				return false;
 			}
 			int x = alFinderResults.size();
-			return (posFinderResults < x);
+			if  (posFinderResults >= x) {
+				closeQuery();
+				return false;
+			}
+			return true;
 		}
 
 		boolean b = query != null && query.hasNext();

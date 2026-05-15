@@ -2434,10 +2434,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 	public void save(int iCascadeRule) {
 		if (!canSave()) {
-			if (iCascadeRule == CASCADE_NONE) {
-				throw new RuntimeException("can Save returned false for " + getClass().getSimpleName());
-			}
-			return; // else allow it to keep going
+			throw new RuntimeException("can Save returned false for " + getClass().getSimpleName());
 		}
 
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
@@ -2516,7 +2513,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * optional cause.
 	 * <p>
 	 * When validation succeeds, the actual deletion process is delegated to
-	 * {@link OAObjectDeleteDelegate#delete(OAObject)}, which performs all framework-
+	 * {@link OAObjectDeleteService#delete(OAObject)}, which performs all framework-
 	 * level deletion handling including event firing, Hub removal, and datasource
 	 * delete operations.
 	 */
@@ -2716,11 +2713,17 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return {@code true} if the object is running on the server;
 	 *         {@code false} otherwise
 	 */
+/*qqqqqq remove	
 	public boolean isServer() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.syncInternal().callSyncIsServer();
+		return og.syncInternal().isServer();
 	}
 
+	public boolean isSingleUser() {
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.syncInternal().isSingleUser();
+	}
+*/	
 	/**
 	 * Determines whether this object is executing in a client context.
 	 * <p>
@@ -2730,11 +2733,12 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *
 	 * @return {@code true} if running on a client; {@code false} otherwise
 	 */
+/*qqqqqqq remove	
 	public boolean isClient() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return !og.syncInternal().callSyncIsServer();
+		return og.syncInternal().isClient();
 	}
-
+*/
 	/**
 	 * Determines whether the current thread is an OA remote thread, used to process
 	 * OASync messages.
@@ -3044,11 +3048,11 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
 		
 		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
-		if (og.syncInternal().callSyncIsServer() || srvcOARemoteThread.isRemoteThread()) {
+		if (!og.syncInternal().isClient() || srvcOARemoteThread.isRemoteThread()) {
 			throw new RuntimeException("method " + mname + ", isRemoable=false, thread=" + Thread.currentThread());
 		}
 
-		final OASyncClient sc = og.syncInternal().getSyncClient();
+		final OASyncClient sc = og.syncInternal().getClient();
 		if (sc == null) {
 			throw new RuntimeException("method " + mname + ", OASyncClient=null, thread=" + Thread.currentThread());
 		}
@@ -3102,7 +3106,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		}
 
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		final OASyncClient sc = og.syncInternal().getSyncClient();
+		final OASyncClient sc = og.syncInternal().getClient();
 		if (sc == null) {
 			throw new RuntimeException("method " + mname + ", OASyncClient=null, thread=" + Thread.currentThread());
 		}
@@ -3193,7 +3197,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		if (srvcOARemoteThread.isRemoteThread()) {
 			return false;
 		}
-		return isClient();
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.syncInternal().isClient();
 	}
 
 
@@ -3218,7 +3223,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		}
 		final Class clazz = hub.getObjectClass();
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-		if (og.syncInternal().callSyncIsServer()) {
+		if (!og.syncInternal().isClient()) {
 			return false;
 		}
 		return true;
@@ -3341,7 +3346,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 			return false;
 		}
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		if (!og.syncInternal().callSyncIsServer()) {
+		if (!og.syncInternal().isServer()) {
 			return false;
 		}
 
@@ -3369,7 +3374,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 			return;
 		}
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		if (!og.syncInternal().callSyncIsServer()) {
+		if (!og.syncInternal().isServer()) {
 			return;
 		}
 
@@ -3715,10 +3720,12 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		}
 		
 		if (newValue == null) {
+			/* 20260513 this will make it look like a '0' instead of null.
 			OAPropertyInfo pi = fi.getToPropertyInfo();
 			if (pi.getIsPrimitive()) {
 				newValue = OAReflect.getEmptyPrimitive(pi.getClassType());
 			}
+			*/
 		}
 		objs[pos] = newValue;
 
@@ -3883,7 +3890,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		if (isNew()) return;
 
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		OASyncClient sc = og.syncInternal().getSyncClient();
+		OASyncClient sc = og.syncInternal().getClient();
 		if (sc != null) {
 			og.syncInternal().callRemoteClientRefresh(getClass(), getObjectKey());
 			return;
@@ -3919,7 +3926,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	public void refresh(String linkPropertyName) {
 
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		OASyncClient sc = og.syncInternal().getSyncClient();
+		OASyncClient sc = og.syncInternal().getClient();
 		if (sc != null) {
 			og.syncInternal().callRemoteClientRefresh(getClass(), getObjectKey(), linkPropertyName);
 			return;

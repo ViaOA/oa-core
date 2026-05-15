@@ -128,7 +128,7 @@ public class OAThreadLocal {
 	 * DataSource. While non-zero, verification, listeners, sync events, and
 	 * certain Hub behaviors are suppressed.
 	 */
-	protected int loading;
+	protected boolean loading;
 
 	/**
 	 * Used by OASync to know if sync message should be sent to others. 
@@ -209,11 +209,11 @@ public class OAThreadLocal {
 		this.transaction = transaction;
 	}
 
-	public int getLoading() {
+	public boolean getLoading() {
 		return loading;
 	}
 
-	public void setLoading(int loading) {
+	public void setLoading(boolean loading) {
 		this.loading = loading;
 	}
 

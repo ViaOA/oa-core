@@ -1571,7 +1571,7 @@ public abstract class OAObjectCallbackService {
 				OAObject user = callContextGetContext().getContextObject();
 				if (user == null) {
 					
-					if (!callSyncIsServer()) {
+					if (callSyncIsClient()) {
 						objectCallback.setAllowed(false);
 					}
 				} else {
@@ -1788,7 +1788,7 @@ public abstract class OAObjectCallbackService {
 
 				OAObject user = callContextGetContext().getContextObject();
 				if (user == null) {
-					if (!callSyncIsServer()) {
+					if (callSyncIsClient()) {
 						bPassed = false;
 					}
 				} else {
@@ -1835,7 +1835,7 @@ public abstract class OAObjectCallbackService {
 					b = li.getContextVisibleValue();
 					OAObject user = callContextGetContext().getContextObject();
 					if (user == null) {
-						if (!callSyncIsServer()) {
+						if (callSyncIsClient()) {
 							bPassed = false;
 						}
 					} else {
@@ -2392,7 +2392,7 @@ public abstract class OAObjectCallbackService {
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub<? extends OAObject> hub);
 	public abstract <T extends OAObject> HubListener<T>[] callHubEventGetAllListeners(Hub<T> hub);
 
-	public abstract boolean callSyncIsServer();
+	public abstract boolean callSyncIsClient();
 	protected abstract OAContext callContextGetContext();
 }
 

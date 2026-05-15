@@ -131,6 +131,7 @@ public final class OARuntime {
 			} catch (ClassNotFoundException | IOException e) {
 				RuntimeException ex = new RuntimeException("Could not initialize OAGraph, package name is " + pkgName, e);
 				hmPackageNameGraph.remove(pkgName);
+				hmPackageNameGraphHelper.clear();
 				hmPackageNameException.put(pkgName, ex);
 				throw ex;
 			}

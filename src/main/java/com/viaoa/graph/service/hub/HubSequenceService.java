@@ -31,7 +31,7 @@ public abstract class HubSequenceService {
 		// 20091030 only set for server for detail hubs
 		boolean bServerOnly = false;
 		if (thisHub.getMasterObject() != null) {
-			if (!callHubCSIsServer(thisHub)) {
+			if (callHubCSIsClient(thisHub)) {
 				return; // only set up for server
 			}
 			bServerOnly = true;
@@ -70,7 +70,7 @@ public abstract class HubSequenceService {
 		}
 	}
 
-	public abstract boolean callHubCSIsServer(Hub<?> thisHub);
+	public abstract boolean callHubCSIsClient(Hub<?> thisHub);
 	public abstract void callHubSortCancelSort(Hub<?> hub);
 
 }

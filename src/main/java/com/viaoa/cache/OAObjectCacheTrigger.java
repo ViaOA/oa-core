@@ -21,14 +21,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.viaoa.callback.OACallback;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.lang.OAArray;
 import com.viaoa.object.OAObject;
-import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
@@ -162,7 +159,7 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
         if (clazz == null) throw new RuntimeException("class can not be null");
         this.clazz = clazz;
  
-        if (filter != null) addFilter(filter);
+        if (filter != null) addFilter(filter, false);
         
         if (dependentPropPaths != null) {
             for (String pp : dependentPropPaths) {

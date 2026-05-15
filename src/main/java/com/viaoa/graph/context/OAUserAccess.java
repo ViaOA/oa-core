@@ -15,6 +15,69 @@
  */
 package com.viaoa.graph.context;
 
+/*qqqqqqqqqq
+CODEX
+
+ #3
+  file/class/method: src/main/java/com/viaoa/graph/context/OAUserAccess.java:571, src/main/java/com/viaoa/graph/
+  context/OAUserAccess.java:679
+  exact concern: packageValid logic is inconsistent. getVisible allows classes outside the package and evaluates
+  classes inside it. getEnabled immediately returns true for classes inside the package, bypassing enabled/disabled
+  rules.
+  why it matters: this can grant enabled access to every class in the restricted package and ignore explicit deny
+  rules. Visibility and enabled semantics diverge in a way that looks accidental and security-relevant.
+  severity: bug
+  minimal fix: align getEnabled with getVisible if the package contract is “only evaluate this package, allow
+  others.” Otherwise document the different enabled contract and add tests proving it.
+  suggested invariant ID/name: UA-PACKAGE-SCOPE-CONSISTENT
+  suggested test coverage: set packageValid, add explicit not-enabled/not-visible rules for a class in that package,
+  verify both methods apply package scoping consistently.
+
+#4
+  file/class/method: src/main/java/com/viaoa/graph/context/OAUserAccess.java:747
+  exact concern: getIsInSamePropertyPath assumes ua.pp.getLinkInfos() is non-null and immediately uses lis.length.
+  Public addEnabled/addVisible/addNot... methods accept empty or scalar property paths and create OAPath without
+  guarding link info.
+  why it matters: a valid-looking rule with an empty/scalar path can fail later during permission evaluation instead
+  of behaving as root-only/no-traversal access.
+  severity: bug
+  minimal fix: guard lis == null || lis.length == 0 and treat it as no traversal after direct object/Hub AO checks.
+  Also guard ppReverse/reverse link info before reverse traversal.
+  suggested invariant ID/name: UA-EMPTY-PATH-NO-THROW
+  suggested test coverage: add access rules with "", null if allowed, and scalar-only paths; call enabled/visible
+  checks against root and unrelated objects.
+
+#5
+  file/class/method: src/main/java/com/viaoa/graph/context/OAUserAccess.java:832
+  exact concern: reverse traversal calculates indexes from liz but loops with k < lis.length and indexes liz[k].
+  why it matters: if forward and reverse link arrays ever differ, this can skip reverse links or throw
+  ArrayIndexOutOfBoundsException. Even if normal paths usually match, the invariant is implicit and fragile around
+  casts/calculated/private links.
+  severity: invariant risk
+  minimal fix: loop against liz.length, guard liz != null, and validate k >= 0.
+  suggested invariant ID/name: UA-REVERSE-PATH-BOUNDS
+  suggested test coverage: permission paths with multi-hop links, casts, calculated endpoints, and non-one links;
+  verify reverse/common-master matching and no index exceptions.
+
+
+#6
+  file/class/method: src/main/java/com/viaoa/graph/context/OAUserAccess.java:89
+  exact concern: access rule collections are mutable ArrayList/HashSet/HashMap and are read during permission checks
+  without synchronization or snapshotting.
+  why it matters: if an OAUserAccess is shared through OAContext while another thread mutates rules, permission
+  results can be inconsistent or throw ConcurrentModificationException.
+  severity: invariant risk
+  minimal fix: define the contract as configure-before-publish, or publish immutable/snapshot views when installing
+  into OAContext.
+  suggested invariant ID/name: UA-CONFIGURE-BEFORE-PUBLISH
+  suggested test coverage: install access object in context, concurrently evaluate and mutate rules; either assert
+  unsupported mutation is documented or make evaluation stable.
+  
+
+
+
+*/
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -263,7 +326,7 @@ public class OAUserAccess {
 		 * @param bOnlyEndProperty whether only the final segment applies
 		 */
 		public UserAccess(Hub hub, String pp, boolean bOnlyEndProperty) {
-			this.obj = obj;
+			this.hub = hub;
 			this.pp = new OAPath(hub.getObjectClass(), pp);
 			this.ppReverse = this.pp.getReversePropertyPath();
 			this.bOnlyEndProperty = bOnlyEndProperty;

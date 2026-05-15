@@ -20,15 +20,35 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectStreamClass;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectPropertyService;
-import com.viaoa.lang.Tuple;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
+
+/*qqqqqqqqqqqq
+CODEX
+
+ 1. file/class/method
+     src/main/java/com/viaoa/comm/io/OAObjectInputStream.java:174 — readClassDescriptor
+  2. exact execution path
+     Serialized stream references a class that no longer exists. The code intends to map missing classes to IODummy,
+     but the actual class existence check is commented out and bReplace is always reset to false.
+  3. why it is a real correctness bug
+     The documented compatibility behavior does not happen; deserialization can fail with ClassNotFoundException
+     instead of producing IODummy.
+  4. semantic/invariant violated
+     Legacy/moved/missing serialized OA classes must resolve deterministically according to the stream’s
+     compatibility contract.
+  5. minimal fix or CODEX/defer recommendation
+     Fix now or CODEX if legacy serialization is deferred: restore explicit class resolution and map failures to
+     IODummy, preferably without relying on private ObjectStreamClass.name mutation.
+  6. suggested regression test
+     Serialize a stream containing a class name remapped to a missing class, then read through OAObjectInputStream
+     and verify an IODummy is created instead of throwing.
+*/
+
 
 /**
  * Customized {@link ObjectInputStream} used to deserialize OAObject streams

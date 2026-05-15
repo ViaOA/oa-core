@@ -933,8 +933,8 @@ public abstract class OAObjectInfoService {
 			return true;
 		}
 
-		boolean bIsServer = callSyncIsServer();
-		if (bIsServer) {
+		boolean bIsClient = callSyncIsClient();
+		if (!bIsClient) {
 			// dont cache on server if there is not storage
 			//   by returning false, it will not be stored as a weakRef
 			if (!getOAObjectInfo(li.getToClass()).getSupportsStorage()) {
@@ -1870,5 +1870,5 @@ public abstract class OAObjectInfoService {
 	public abstract void callAnnotationUpdate(OAObjectInfo oi, Class<?> clazz); 
 	public abstract Object callReflectGetRawReference(OAObject oaObj, String name);
 	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath);
-	public abstract boolean callSyncIsServer();
+	public abstract boolean callSyncIsClient();
 }

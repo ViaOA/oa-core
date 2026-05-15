@@ -24,6 +24,27 @@ import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 
+/*qqqqqqqqqq
+CODEX
+ 1. file/class/method
+     src/main/java/com/viaoa/comm/ssl/OASslBase.java — output(...) / wrap(...)
+  2. exact execution path
+     output(...) calls wrap(...) in a loop until consumed bytes reaches len. If SSLEngine.wrap(...) returns CLOSED
+     or otherwise returns zero consumed and zero produced without changing handshake state, wrap(...) returns 0, and
+     output(...) loops forever.
+  3. why it is a real correctness bug
+     A closed or non-progressing SSL engine can hang the caller instead of failing visibly.
+  4. semantic/invariant violated
+     Communication send must either make progress or fail; it must not spin forever.
+  5. minimal fix or CODEX/defer recommendation
+     Handle SSLEngineResult.Status.CLOSED and zero-progress results by throwing SSLException, unless handshake
+     status explicitly requires a task/wrap/unwrap that will make progress.
+  6. suggested regression test
+     Use a closed SSLEngine or a test double/subclass path that produces zero consumed/zero produced, call
+     output(...), and verify it throws instead of looping.
+
+*/
+
 /**
  * Base class for SSL client and server components that perform encrypted
  * communication using {@link SSLEngine}. This class abstracts the SSLContext
@@ -283,17 +304,48 @@ public abstract class OASslBase {
     }
 
     /**
-     * Processes inbound encrypted bytes during SSL communication. Decrypts them
-     * using {@link SSLEngine#unwrap(ByteBuffer, ByteBuffer)} and, for application
-     * data, forwards the plaintext to {@link #receiveInput(byte[], int, int)}.
+     * Processes one complete inbound TLS record supplied by the OA transport layer.
      *
-     * <p>Also performs delegated tasks and notifies any threads waiting on
-     * handshake progress.</p>
+     * <p>
+     * The transport contract for this method is:
+     * </p>
+     * <ul>
+     *   <li>Exactly one complete TLS record must be supplied per invocation.</li>
+     *   <li>Partial TLS records are not allowed.</li>
+     *   <li>Multiple TLS records in the same invocation are not allowed.</li>
+     * </ul>
      *
-     * @param bs buffer containing encrypted bytes
+     * <p>
+     * The encrypted bytes are decrypted using
+     * {@link SSLEngine#unwrap(ByteBuffer, ByteBuffer)} and any produced
+     * application bytes are forwarded to
+     * {@link #receiveInput(byte[], int, int)}.
+     * </p>
+     *
+     * <p>
+     * This method also:
+     * </p>
+     * <ul>
+     *   <li>executes delegated SSL tasks when required,</li>
+     *   <li>wakes threads waiting on handshake progress,</li>
+     *   <li>validates that the TLS record was fully consumed.</li>
+     * </ul>
+     *
+     * <p>
+     * Any of the following conditions are treated as transport/protocol
+     * contract violations and result in an exception:
+     * </p>
+     * <ul>
+     *   <li>{@link SSLEngineResult.Status#BUFFER_UNDERFLOW}</li>
+     *   <li>{@link SSLEngineResult.Status#BUFFER_OVERFLOW}</li>
+     *   <li>{@link SSLEngineResult.Status#CLOSED}</li>
+     *   <li>remaining encrypted bytes after unwrap completes</li>
+     * </ul>
+     *
+     * @param bs encrypted TLS record bytes
      * @param len number of encrypted bytes available
-     * @param bHandshakeOnly whether data is being processed exclusively for handshake
-     * @throws Exception if unwrap fails or a protocol error occurs
+     * @param bHandshakeOnly true if processing handshake-only traffic
+     * @throws Exception if unwrap fails or the transport contract is violated
      */
     protected void input(final byte[] bs, final int len, final boolean bHandshakeOnly) throws Exception {
         //log("input");
@@ -311,8 +363,14 @@ public abstract class OASslBase {
             case BUFFER_UNDERFLOW: // not enough data to do SSL, should never happen for unwrap: since
                                    // we make sure all data is in buffer
                 throw new SSLException("Buffer_Underflow, should not happen for an unwrap");
+            case CLOSED:
+                throw new SSLException("SSL Closed, should not happen for an unwrap");
             }
 
+            if (bb.hasRemaining()) {
+                throw new SSLException("Unexpected extra encrypted bytes, should not happen for an unwrap");
+            }            
+            
             if (result.getHandshakeStatus() == HandshakeStatus.NEED_TASK) {
                 Runnable runnable;
                 while ((runnable = getSSLEngine().getDelegatedTask()) != null) {

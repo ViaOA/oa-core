@@ -613,6 +613,9 @@ public class OATextFilter {
 		if (s == null) {
 			return null;
 		}
+		if (pos1 < 0) return "";
+		if (pos1 > pos2) return "";
+		
 		if (s.length() <= pos1) {
 			return "";
 		}

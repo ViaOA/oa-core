@@ -15,6 +15,27 @@
  */
 package com.viaoa.hub;
 
+/*qqqqqqqqqq
+CODEX
+
+1. file/class/method: src/main/java/com/viaoa/hub/Hub.java:2789 addAll, src/main/java/com/viaoa/hub/Hub.java:2809
+     addAll(int, Collection), src/main/java/com/viaoa/hub/Hub.java:2829 removeAll, src/main/java/com/viaoa/hub/
+     Hub.java:2846 retainAll
+  2. exact execution path: call addAll with an empty collection, all duplicates, or objects rejected by add; call
+     removeAll with objects not present; or call retainAll with no membership changes. Each method returns true
+     regardless of whether the Hub changed.
+  3. why it is a real correctness bug: Hub implements List, and these methods use the Collection contract where the
+     boolean reports whether the collection changed. Returning true for no-op or failed mutation creates false-
+     success behavior for callers using the return value to drive persistence, events, retry, or tests.
+  4. semantic/invariant violated: HUB_COLLECTION_MUTATION_RETURN_VALUE_REFLECTS_ACTUAL_CHANGE
+  5. minimal fix or CODEX/defer recommendation: accumulate the result of each delegated add/remove/retain operation
+     and return true only when membership actually changed. Null collection behavior should be decided explicitly;
+     for List, null should throw, but if OA keeps null-as-no-op, return false.
+  6. suggested regression test: addAll(Collections.emptyList()), addAll(existingObjects), removeAll(nonMembers), and
+     retainAll(allCurrentObjects) should return false and leave Hub membership unchanged.
+
+*/
+
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
@@ -2573,11 +2594,16 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 *
 	 * @return true if server-side
 	 */
+/*qqqqqqqqqq remove	
 	public boolean isServer() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.syncInternal().callSyncIsServer();
+		return og.syncInternal().isServer();
 	}
-
+	public boolean isclient() {
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		return og.syncInternal().isClient();
+	}
+*/
 	/**
 	 * Returns whether an object can be added to this Hub by delegating to
 	 * {@link HubAddRemoveDelegate#canAdd(Hub, Object)}.
@@ -2717,9 +2743,9 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 *
 	 * @param b true to enable loading mode
 	 */
-	public void setLoading(boolean b) {
+	public boolean setLoading(boolean b) {
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
-		srvcOAThreadLocal.setLoading(b);
+		return srvcOAThreadLocal.setLoading(b);
 	}
 
 	/**

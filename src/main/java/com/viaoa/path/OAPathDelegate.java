@@ -17,9 +17,11 @@ package com.viaoa.path;
 
 import java.util.List;
 
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.runtime.OARuntime;
 
 /**
  * Convenience helper for constructing a root {@link OAPath}. This
@@ -55,16 +57,17 @@ public class OAPathDelegate {
 	 * @return a dot-delimited property path, or {@code null} if a segment cannot be
 	 *         resolved
 	 */
-	public static String getPropertyPathforClasses(Hub hub, Class[] classes) {
-		if (classes == null) {
+	public static String getPropertyPathforClasses(final Hub hub, Class[] classes) {
+		if (hub == null || classes == null) {
 			return null;
 		}
+
+		OAObjectInfo oi = hub.getOAObjectInfo();
 		Class c = hub.getObjectClass();
+
 		String path = null;
 		int x = classes.length;
 		for (int i = 0; i < x; i++) {
-			OAObjectInfo oi = hub.getOAObjectInfo();
-
 			// find property to use
 			List al = oi.getLinkInfos();
 			OALinkInfo liFound = null;
@@ -92,6 +95,7 @@ public class OAPathDelegate {
 				path += "." + liFound.getName();
 			}
 			c = classes[i];
+			oi = liFound.getToObjectInfo();
 		}
 		return path;
 	}

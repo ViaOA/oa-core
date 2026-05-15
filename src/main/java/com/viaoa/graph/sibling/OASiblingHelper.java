@@ -25,6 +25,28 @@ import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.path.OAPath;
 
+/*qqqqqqqqqq
+CODEX
+
+#7
+  file/class/method: src/main/java/com/viaoa/graph/sibling/OASiblingHelper.java:143, src/main/java/com/viaoa/graph/
+  service/hub/HubSortService.java:221, src/main/java/com/viaoa/runtime/OAThreadLocalService.java:1591
+  exact concern: OASiblingHelper.setUseSameThread(true) is set by Hub sorting, but getUseSameThread() is never read
+  anywhere in src/main/java.
+  why it matters: the flag documents a same-thread correctness guarantee, but the runtime does not enforce it. Since
+  OASiblingHelper mutates nodeLastFound and its learned node tree, accidental cross-thread reuse can produce wrong
+  sibling paths.
+  severity: invariant risk
+  minimal fix: either remove the semantic claim and treat helpers as thread-local by registration only, or enforce
+  the flag in OAThreadLocalService/sibling lookup by owner thread.
+  suggested invariant ID/name: SIB-SAME-THREAD-ENFORCED
+  suggested test coverage: create a helper with useSameThread=true, register/use it from another thread, verify it
+  is ignored or explicitly rejected.
+
+
+*/
+
+
 /**
  * Learns and resolves property-paths from a root {@link Hub} so that
  * "sibling" data can be located efficiently. As references are accessed

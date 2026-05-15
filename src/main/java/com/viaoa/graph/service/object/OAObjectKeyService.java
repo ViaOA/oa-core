@@ -13,6 +13,13 @@ import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 
+/*qqqqqqqqqqqqqq
+CODEX
+
+
+
+*/
+
 public abstract class OAObjectKeyService {
 	private static final Logger LOG = Logger.getLogger(OAObjectKeyService.class.getName());
 
@@ -172,14 +179,44 @@ public abstract class OAObjectKeyService {
 	 * @param ok2  the second key to compare
 	 * @return {@code true} if both keys refer to the same object; otherwise {@code false}
 	 */
-	public boolean isForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey ok1, final OAObjectKey ok2) {
+	public <T extends OAObject> boolean isForSameOAObject(final Class<T> clazz, final OAObjectKey ok1, final OAObjectKey ok2) {
+		if (ok1 == ok2) return true;
 		if (ok1 == null || ok2 == null) return false;
 		UUID g1 = ok1.getGuid();
 		UUID g2 = ok2.getGuid();
-		if (g1 != null || g2 != null) {
+		if (g1 != null && g2 != null) {
 	        return Objects.equals(g1, g2);  
 		}
-		return Arrays.equals(ok1.getObjectIds(), ok2.getObjectIds());	    
+
+		
+		Object[] ids1 = ok1.hasValidObjectIds() ? ok1.getObjectIds() : null;
+		Object[] ids2 = ok2.hasValidObjectIds() ? ok2.getObjectIds() : null;
+		if (ids1 == null && ids2 == null) return false;
+		
+		if (ids1 != null && ids2 != null) {
+			return Arrays.equals(ids1, ids2);
+		}
+		
+		if (clazz == null) return false;
+		if (g1 == null && g2 == null) return false;
+		
+		if (g1 != null && ids1 == null) {
+			T objx = callCacheGet(clazz, g1);
+			if (objx == null) return false;
+			OAObjectKey okx = objx.getObjectKey();
+			if (okx.hasValidObjectIds()) {
+				return isForSameOAObject(null, okx, ok2);
+			}
+		}
+		else if (g2 != null && ids2 == null) {
+			T objx = callCacheGet(clazz, g2);
+			if (objx == null) return false;
+			OAObjectKey okx = objx.getObjectKey();
+			if (okx.hasValidObjectIds()) {
+				return isForSameOAObject(null, ok1, okx);
+			}
+		}
+		return false;
 	}
 
 	public boolean hasSameGuid(final OAObjectKey a, final OAObjectKey b) {
@@ -410,7 +447,7 @@ public abstract class OAObjectKeyService {
 			if (oi == null) {
 				oi = callInfogetObjectInfo(oaObj.getClass());
 			}
-			if (!oi.getLocalOnly() && callCSIsWorkstation(oaObj)) {
+			if (!oi.getLocalOnly() && callCSIsClient(oaObj)) {
 				// check on server.  If server has same object as this, resolve() will return this object
 				objInCache = callCSGetServerObject(oaObj.getClass(), newObjectKey);
 			}
@@ -505,7 +542,12 @@ public abstract class OAObjectKeyService {
 	public abstract void callCachePropertyKeyValueChanged(OAObject obj);
 	public abstract <T extends OAObject> T callCacheGet(Class<T> clazz, Object key);
 	public abstract void callCacheRemoveObject(final OAObject obj); 
-	public abstract boolean callCSIsWorkstation(OAObject obj);
+	
+	public abstract boolean callCSIsSingleUser(OAObject obj);
+	public abstract boolean callCSIsServer(OAObject obj);
+	public abstract boolean callCSIsClient(OAObject obj);
+	
+	
 	public abstract <T extends OAObject> T callCSGetServerObject(Class<T> clazz, OAObjectKey key);
 	
 	public abstract boolean callDSIsAssigningId(OAObject obj);

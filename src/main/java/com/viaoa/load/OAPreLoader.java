@@ -117,11 +117,11 @@ public class OAPreLoader {
 		}
 		List<?> al = null;
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+		boolean bWasLoading = srvcOAThreadLocal.setLoading(true);
 		try {
-			srvcOAThreadLocal.setLoading(true);
 			al = _load(linkInfos);
 		} finally {
-			srvcOAThreadLocal.setLoading(false);
+			srvcOAThreadLocal.setLoading(bWasLoading);
 		}
 		return al;
 	}

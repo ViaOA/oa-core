@@ -11,6 +11,61 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.serialize.OAObjectSerializer;
 
+/*qqqqqqqqqqqqqqq
+CODEX
+
+
+ #5
+  1. file/class/method: src/main/java/com/viaoa/graph/service/hub/HubCSService.java, addToHub(...),
+     insertInHub(...), removeFromHub(...), moveObjectInHub(...), sort(...), clearHubChanges(...)
+  2. exact execution path: synced Hub operation calls the corresponding remote sync method. Several boolean-
+     returning remote calls are ignored, and insertInHub(...) returns true after callSyncSyncInsertInHub(...)
+     regardless of the remote result.
+  3. why this is a real bug under the clarified partial-failure semantics: remote Hub mutation failure can be hidden
+     while local Hub mutation continues or the caller believes the remote operation was sent. This can silently
+     diverge Hub membership/order/change state across sync peers.
+  4. semantic/invariant violated: Hub sync mutation return values must reflect whether the remote operation was
+     accepted.
+  5. minimal fix: honor every boolean remote sync result. Return false or throw when remote mutation is not
+     accepted; do not report sent/success if the remote call returned false.
+  6. suggested test: remote addToHub or insertInHub returns false; perform local Hub add/insert in client/server
+     sync mode; assert operation fails visibly or does not locally commit as synced.
+
+
+#6
+  1. file/class/method: src/main/java/com/viaoa/graph/service/hub/HubCSService.java, deleteAll(...)
+  2. exact execution path: client calls Hub.deleteAll(...); HubDeleteService.deleteAll(...) calls
+     callHubCSDeleteAll(...); HubCSService.deleteAll(...) sees a calculated reverse link that is not server-side
+     calc and returns false without sending remote delete; HubDeleteService.deleteAll(...) treats false as
+     “delegated to server” and returns.
+  3. why this is a real bug under the clarified partial-failure semantics: delete-all is not done locally or
+     remotely, and caller receives no visible failure.
+  4. semantic/invariant violated: false from callHubCSDeleteAll must mean the delete was actually delegated, not
+     silently rejected.
+  5. minimal fix: return true when no remote delegation occurred so local semantics can decide, or throw/not-allowed
+     explicitly for unsupported calculated links.
+  6. suggested test: client-side Hub with calculated non-server-side reverse link; call deleteAll; assert it either
+     deletes locally or throws, but does not silently no-op.
+
+
+#3
+  File/class/method: src/main/java/com/viaoa/graph/service/hub/HubCSService.java:390, deleteAll(...)
+
+  Exact changed-code path: callSyncClientDeleteAll(...) result is assigned to b, but ignored; method always returns
+  true.
+
+  Why this is a regression: failed/rejected remote deleteAll is reported as completed, so
+  HubDeleteService.deleteAll(...) returns without local or remote deletion.
+
+  Minimal fix: honor the remote result. For client authoritative routing, throw on false rather than falling back to
+  local delete.
+
+  Suggested regression test: client Hub deleteAll where remote returns false; assert caller gets visible failure and
+  Hub contents remain unchanged.
+
+
+*/
+
 public abstract class HubCSService {
 	private final Logger LOG = Logger.getLogger(HubCSService.class.getName());
 
@@ -127,59 +182,48 @@ public abstract class HubCSService {
         if (master == null) return;
 	    if (callObjectInfoGetObjectInfo(master).getLocalOnly()) return;
 
-	    /* 20160826 removed, since this is only needed when loading oaobj.hub, which already suppresses messages when loading
-	    if (OASync.isServer() && thisHub.isFetching()) {
-	        return; // 20140309
-	    }
-	    */
-	    
-        final boolean bIsLoading = callThreadLocalIsLoading(); 
-        if (bIsLoading) {
-            if (!callSyncClientIsObjectOnServer(master)) {
-                if (callSyncIsServer()) {
-                    return; 
-                }
+        if (callThreadLocalIsLoading()) {
+            if (callSyncIsClient() && !callSyncClientIsObjectOnServer(master)) {
+                return; 
             }
         }
         
         // 20110323 note: must send object, other clients might not have it.
-        if (!callSyncIsSingleUser()) {
-            if (callSyncIsServer()) {
-                // if server, then send extra references if obj is new, so that client will not have to ask for it
-                if (thisObj.isNew() && !callHubIsInHubWithMaster(thisObj, thisHub)) {
-                    OAObjectSerializer oos = new OAObjectSerializer(thisObj, false, new OAObjectSerializerCallback() {
-                        @Override
-                        public void beforeSerialize(OAObject obj) {
-                        }
-                        @Override
-                        public boolean shouldSerializeReference(OAObject oaObj, String propertyName, Object objRef, boolean bDefault) {
-                            if (!bDefault) return false;
-                            boolean b = _shouldSerializeReference(oaObj, propertyName, objRef, bDefault);
-                            return b;
-                        }
-                        
-                        private boolean _shouldSerializeReference(OAObject oaObj, String propertyName, Object objRef, boolean bDefault) {
-                            if (oaObj != thisObj) return false;
-                            if (objRef instanceof Hub) return true;
-                            if (objRef instanceof OAObject) {
-                                if (thisHub.getMasterObject() == objRef) return false;
-                                if (((OAObject) objRef).isNew()) {
-                                    if (callHubIsInHubWithMaster((OAObject)objRef)) return false;                                    
-                                    return true;
-                                }
+        if (callSyncIsServer()) {
+            // if server, then send extra references if obj is new, so that client will not have to ask for it
+            if (thisObj.isNew() && !callHubIsInHubWithMaster(thisObj, thisHub)) {
+                OAObjectSerializer oos = new OAObjectSerializer(thisObj, false, new OAObjectSerializerCallback() {
+                    @Override
+                    public void beforeSerialize(OAObject obj) {
+                    }
+                    @Override
+                    public boolean shouldSerializeReference(OAObject oaObj, String propertyName, Object objRef, boolean bDefault) {
+                        if (!bDefault) return false;
+                        boolean b = _shouldSerializeReference(oaObj, propertyName, objRef, bDefault);
+                        return b;
+                    }
+                    
+                    private boolean _shouldSerializeReference(OAObject oaObj, String propertyName, Object objRef, boolean bDefault) {
+                        if (oaObj != thisObj) return false;
+                        if (objRef instanceof Hub) return true;
+                        if (objRef instanceof OAObject) {
+                            if (thisHub.getMasterObject() == objRef) return false;
+                            if (((OAObject) objRef).isNew()) {
+                                if (callHubIsInHubWithMaster((OAObject)objRef)) return false;                                    
+                                return true;
                             }
-                            return false;
                         }
-                    });
-					callSyncSyncAddNewToCache(oos);
-                }
+                        return false;
+                    }
+                });
+				callSyncSyncAddNewToCache(oos);
             }
-            
-            callSyncSyncAddToHub(
-                faHub.getHubDataMaster(thisHub).getMasterObject().getClass(), 
-                faHub.getHubDataMaster(thisHub).getMasterObject().getObjectKey(), 
-                callHubDetailGetPropertyFromMasterToDetail(thisHub), thisObj);
         }
+        
+        callSyncSyncAddToHub(
+            faHub.getHubDataMaster(thisHub).getMasterObject().getClass(), 
+            faHub.getHubDataMaster(thisHub).getMasterObject().getObjectKey(), 
+            callHubDetailGetPropertyFromMasterToDetail(thisHub), thisObj);
 	}	
 
 	/**
@@ -277,6 +321,10 @@ public abstract class HubCSService {
         return callSyncIsServer();
 	}		
 
+	public boolean isClient(Hub<?> thisHub) {
+        return callSyncIsClient();
+	}		
+	
 	/**
 	 * Returns whether the current thread is executing as a remote
 	 * synchronization thread.
@@ -328,35 +376,35 @@ public abstract class HubCSService {
 	 * or {@code false} if it was delegated to a remote server.
 	 *
 	 * @param thisHub the hub whose contents should be deleted
-	 * @return {@code true} if deletion is local; otherwise {@code false} means that it's being done on server.
+	 * @return {@code true} if deletion was completed on remote.
 	 */
     public boolean deleteAll(Hub<?> thisHub) {
 		if (thisHub == null) return false;
-        if (callSyncIsServer()) return true;  // invoke on the server
-        if (!callThreadLocalGetSendSyncMessages()) return true;
+        if (!callSyncIsClient()) return false;  // invoke on the server
+        if (!callThreadLocalGetSendSyncMessages()) return false;
         LOG.fine("hub="+thisHub);
 
         OAObjectInfo oi = callObjectInfoGetObjectInfo(thisHub.getObjectClass());
-        if (oi.getLocalOnly()) return true; 
+        if (oi.getLocalOnly()) return false; 
         
         OALinkInfo li = faHub.getHubDataMaster(thisHub).getDetailToMasterLinkInfo();
         if (li != null) {
             OALinkInfo liRev = callObjectInfoGetReverseLinkInfo(li);
             if (liRev != null && liRev.getCalculated()) {
                 if (!callSyncIsServer() || !liRev.getServerSideCalc()) {
-                    return false;
+                    return true;
                 }
             }
         }
 
         OAObject master = thisHub.getMasterObject();
-        if (master == null) return true;
+        if (master == null) return false;
 
         String prop = callHubDetailGetPropertyFromMasterToDetail(thisHub);
-        if (prop == null) return true;
+        if (prop == null) return false;
 
-        callSyncClientDeleteAll(master.getClass(), master.getObjectKey(), prop);
-        return false;
+        boolean b = callSyncClientDeleteAll(master.getClass(), master.getObjectKey(), prop);
+        return true;
     }
     
     /**

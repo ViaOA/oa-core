@@ -17,6 +17,66 @@ import com.viaoa.runtime.OAThreadService;
 import com.viaoa.trigger.OATrigger;
 import com.viaoa.trigger.OATriggerListener;
 
+/*qqqqqqqqqq
+CODEX
+
+#10 — boundary risk
+  File/class/method: src/main/java/com/viaoa/graph/service/OATriggerService.java:61, addTrigger/removeTrigger; src/
+  main/java/com/viaoa/graph/service/object/OAObjectAnnotationService.java:1065
+  Concern: trigger registration looks up OARuntime.graph(rootClass) from inside graph services instead of using the
+  owning graph service instance.
+  Why it matters: calling graphA.addTrigger(triggerForGraphB) silently registers in graph B. That may be convenient,
+  but it bypasses graph facade ownership and makes service layering less explicit.
+  Minimal fix: either enforce current graph ownership at OAGraphImpl.addTrigger, or document/reroute deliberately
+  through OARuntime.graph(rootClass).
+  Invariant: GRAPH_TRIGGER_REGISTRATION_TARGET_IS_EXPLICIT
+  Test coverage: register triggers through matching and non-matching graph instances; verify target graph.
+
+#11 — invariant risk
+  File/class/method: src/main/java/com/viaoa/graph/service/OATriggerService.java:138, runTrigger/getExecutorService
+  Concern: async trigger execution uses one static global executor with an effectively unbounded queue and no graph
+  lifecycle hook.
+  Why it matters: trigger work can outlive graph lifecycle, mix graph workloads, and accumulate without graph-level
+  backpressure or shutdown control.
+  Minimal fix: make this a runtime-managed executor with explicit lifecycle, or document it as JVM-wide graph
+  trigger infrastructure and add queue/cleanup invariants.
+  Invariant: GRAPH_TRIGGER_EXECUTOR_HAS_RUNTIME_LIFECYCLE
+  Test coverage: async trigger preserves context/loading state, does not leak after graph reset/shutdown, and
+  handles overload deterministically.
+
+ #9 — boundary risk
+  File/class/method: src/main/java/com/viaoa/graph/service/OATriggerService.java:91, addTrigger/removeTrigger
+  Exact concern: OATriggerService has no owning graph reference and resolves the target graph through
+  OARuntime.graph(trigger.getRootClass()).
+  Why it matters: unlike object/hub parent services, trigger service is not graph-owned in its wiring. Calling
+  through one graph can register against another graph based on trigger root class.
+  Minimal fix: inject the owning graph or explicitly document target-by-root-class routing.
+  Suggested invariant: GRAPH_TRIGGER_TARGET_GRAPH_IS_EXPLICIT
+  Suggested test coverage: register a trigger through a non-owning graph and verify documented behavior.
+
+ #10 — invariant risk
+  File/class/method: src/main/java/com/viaoa/graph/service/OATriggerService.java:132, TriggerRunnable
+  Exact concern: async trigger execution preserves only context and loading state. It does not preserve
+  sendSyncMessages or other runtime/thread-local flags.
+  Why it matters: a caller can suppress sync messages during a graph operation, but async trigger work may run later
+  with executor-thread defaults and emit sync unexpectedly.
+  Minimal fix: capture and restore the thread-local flags that affect graph/runtime behavior, especially
+  sendSyncMessages.
+  Suggested invariant: GRAPH_ASYNC_TRIGGER_PRESERVES_RUNTIME_THREAD_FLAGS
+  Suggested test coverage: disable send-sync, enqueue async trigger, verify trigger work does not send sync.
+
+ #11 — invariant risk
+  File/class/method: src/main/java/com/viaoa/graph/service/OATriggerService.java:180, getExecutorService()
+  Exact concern: trigger executor is static/global, unbounded, and has no graph lifecycle hook.
+  Why it matters: trigger work can outlive graph lifecycle and mix workloads from multiple graphs.
+  Minimal fix: make it runtime-managed with explicit lifecycle, or document/test it as JVM-wide trigger
+  infrastructure.
+  Suggested invariant: GRAPH_TRIGGER_EXECUTOR_LIFECYCLE_IS_EXPLICIT
+  Suggested test coverage: graph reset/shutdown does not leave stale trigger work with graph state.
+
+
+*/
+
 /**
  * Factory and manager for {@link OATrigger} instances.
  * <p>
@@ -91,6 +151,7 @@ public class OATriggerService implements TriggerOps, TriggerInternalOps {
 	protected static class TriggerRunnable implements Runnable {
 		Runnable runnable;
 		boolean bIsLoading;
+		boolean bSendMessages;
 		public Object context;
 
 		/**
@@ -104,6 +165,7 @@ public class OATriggerService implements TriggerOps, TriggerInternalOps {
 			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 			this.bIsLoading = srvcOAThreadLocal.isLoading();
 			this.context = srvcOAThreadLocal.getContext();
+			this.bSendMessages = srvcOAThreadLocal.getSendSyncMessages();
 		}
 
 		/**
@@ -113,17 +175,21 @@ public class OATriggerService implements TriggerOps, TriggerInternalOps {
 		@Override
 		public void run() {
 			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+			boolean bWasLoading = true;
+			boolean bHold2 = srvcOAThreadLocal.getSendSyncMessages();
 			try {
 				srvcOAThreadLocal.setContext(context);
 				if (bIsLoading) {
-					srvcOAThreadLocal.setLoading(true);
+					bWasLoading = srvcOAThreadLocal.setLoading(true);
 				}
+				srvcOAThreadLocal.setSendSyncMessages(bSendMessages);
 				runnable.run();
 			} finally {
 				srvcOAThreadLocal.setContext(null);
 				if (bIsLoading) {
-					srvcOAThreadLocal.setLoading(false);
+					srvcOAThreadLocal.setLoading(bWasLoading);
 				}
+				srvcOAThreadLocal.setSendSyncMessages(bHold2);
 			}
 		}
 	}

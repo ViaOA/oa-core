@@ -715,31 +715,13 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	protected boolean shouldSerializeReference(OAObject oaObj, String propertyName, Object obj, OALinkInfo linkInfo) {
 		boolean b = _shouldSerializeReference(oaObj, propertyName, obj);
 
-		// 20141023 dont send more back then cache is setup for
-		if (b && linkInfo != null && linkInfo.getType() == OALinkInfo.MANY) {
-			int x = linkInfo.getCacheSize();
-			if (x > 0) {
-				if (hmLinkInfoCount == null) {
-					hmLinkInfoCount = new HashMap<OALinkInfo, Integer>();
-				}
-				Object objx = hmLinkInfoCount.get(linkInfo);
-				if (objx instanceof Integer) {
-					int x2 = ((Integer) objx).intValue();
-					if (x2 >= x) {
-						return false;
-					}
-					hmLinkInfoCount.put(linkInfo, Integer.valueOf(x2 + 1));
-				}
-				else hmLinkInfoCount.put(linkInfo, 1);
-			}
-		}
 		if (callback != null) {
 			b = callback.shouldSerializeReference(oaObj, propertyName, obj, b);
 		}
 		if (!b) {
 			return false;
 		}
-
+		
 		if (levelsDeep >= overflowLimit && obj != null) {
 			Overflow overFlow = new Overflow();
 			overFlow.parentObject = oaObj;
@@ -756,6 +738,26 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 			// LOG.finer("adding to overflow, levelsDeep="+levelsDeep+", object class="+oaObj.getClass().getName()+", property="+propertyName+", overFlowSize="+listOverflow.size());            
 			return false;
 		}
+
+		// 20141023 dont send more back then cache is setup for
+		if (linkInfo != null && linkInfo.getType() == OALinkInfo.MANY) {
+			int x = linkInfo.getCacheSize();
+			if (x > 0) {
+				if (hmLinkInfoCount == null) {
+					hmLinkInfoCount = new HashMap<OALinkInfo, Integer>();
+				}
+				Object objx = hmLinkInfoCount.get(linkInfo);
+				if (objx instanceof Integer) {
+					int x2 = ((Integer) objx).intValue();
+					if (x2 >= x) {
+						return false;
+					}
+					hmLinkInfoCount.put(linkInfo, Integer.valueOf(x2 + 1));
+				}
+				else hmLinkInfoCount.put(linkInfo, 1);
+			}
+		}
+
 		return true;
 	}
 
@@ -895,7 +897,7 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	 * @param stream the output stream receiving the serialized data
 	 * @throws IOException if serialization fails
 	 */
-	private void _writeObject(ObjectOutputStream stream) throws IOException {
+	private void _writeObject(final ObjectOutputStream stream) throws IOException {
 		long ts = System.currentTimeMillis();
 
 		stream.writeInt(getId()); // 20171216
@@ -1019,8 +1021,6 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 		}
 	}
 
-	public static boolean bReadId = true; // 20171218, set to false to read older data  (ex: unit test binary file) 
-
 	/**
 	 * Reads this wrapper from the input stream, capturing the number of new and
 	 * duplicate objects created during deserialization. Delegates object reading
@@ -1054,9 +1054,8 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 	private void _readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
 		long ts = System.currentTimeMillis();
 
-		if (bReadId) {
-			this.id = stream.readInt(); // 20171216
-		}
+		this.id = stream.readInt();
+
 		bCompress = stream.readBoolean();
 		String msg;
 		if (bCompress) {
@@ -1086,6 +1085,8 @@ public final class OAObjectSerializer<TYPE> implements Serializable {
 
 			long sizeBefore = inflater.getBytesRead();
 			long sizeAfter = inflater.getBytesWritten();
+			
+			inflater.end();
 
 			long ts2 = System.currentTimeMillis();
 

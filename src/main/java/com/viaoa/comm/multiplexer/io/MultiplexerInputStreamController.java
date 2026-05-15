@@ -16,6 +16,7 @@
 package com.viaoa.comm.multiplexer.io;
 
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -363,7 +364,8 @@ public abstract class MultiplexerInputStreamController {
             synchronized (vs._lockObject) {
                 if (vs._id == _nextReadId) {
                     readAmt = _dataInputStream.read(bs, off, Math.min(len, (_nextReadLen - _nextReadOffset)));
-                    _nextReadOffset += readAmt;
+                    if (readAmt > 0) _nextReadOffset += readAmt;
+                    else if (readAmt < 0) throw new EOFException("Socket is closed");
                     return readAmt;
                 }
                 try {
@@ -390,9 +392,15 @@ public abstract class MultiplexerInputStreamController {
      * @throws IOException if EOF occurs
      */
     private void skipFully(int skipAmount) throws IOException {
+    	byte[] bs = null;
         for (; skipAmount > 0;) {
             long x = _dataInputStream.skip(skipAmount);
             if (x < 0) break; // EOF
+            if (x == 0) {
+            	if (bs == null) bs = new byte[1];
+            	_dataInputStream.readFully(bs);
+            	x = 1;
+            }
             skipAmount -= x;
         }
     }

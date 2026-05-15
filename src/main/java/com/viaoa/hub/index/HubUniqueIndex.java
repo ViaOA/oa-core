@@ -24,6 +24,41 @@ import com.viaoa.hub.HubListenerAdapter;
 import com.viaoa.object.OAObject;
 import com.viaoa.path.OAPath;
 
+/*qqqqqqqqqqqq
+CODEX
+
+1. file/class/method
+     src/main/java/com/viaoa/hub/index/HubUniqueIndex.java — constructor listener / afterPropertyChange
+  2. exact execution path
+     Create new HubUniqueIndex<>(hub, "department.name"). Initial indexing works through OAPath. Then either:
+
+  - the object’s department reference changes, or
+  - the department object’s name changes.
+
+  The listener only updates when:
+
+  property.equalsIgnoreCase(e.getPropertyName())
+
+  For nested paths, the event name will not be "department.name".
+
+  3. why this is a real correctness bug
+     The class explicitly supports property paths, but nested path changes leave the index stale. get(oldName) can
+     continue returning the object after the path value changed, and get(newName) can return null.
+  4. semantic/invariant violated
+     A live Hub index must remain consistent with the indexed property-path value.
+  5. minimal fix or CODEX/defer recommendation
+     Fix now or CODEX/defer if nested paths are not required yet: register a dependent-property listener for nested
+     paths, or rebuild/update the affected object when any dependency in the path changes.
+  6. suggested regression test
+     Index employees by "department.name", change an employee’s department name or department reference, then verify
+     old key lookup is removed and new key lookup returns the employee.
+
+
+
+
+
+*/
+
 /**
  * Maintains a live, thread-safe unique index for a {@link Hub} based on a single
  * property path.

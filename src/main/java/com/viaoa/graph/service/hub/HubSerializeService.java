@@ -9,6 +9,28 @@ import com.viaoa.hub.*;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;
 
+/*qqqqqqqqqqqq
+CODEX
+
+
+ #10 — invariant risk
+  file/class/method: src/main/java/com/viaoa/graph/service/hub/HubSerializeService.java:25, _writeObject
+  exact concern: Hub serialization mutates runtime state by loading all remaining select data before
+  defaultWriteObject. Sync messages are suppressed, but normal load/select side effects can still occur.
+  why it matters: Serialization should have clear ownership: either it snapshots already-loaded Hub state or
+  explicitly guarantees full materialization. Current behavior can turn serialization into a datasource-loading
+  operation.
+  severity: invariant risk
+  minimal fix: Document/test this as intentional, or gate full materialization behind serializer policy. At minimum,
+  assert loading does not fire Hub events or sync messages.
+  suggested invariant ID/name: HUB-SER-LOAD-001: Hub serialization materialization is deterministic and side-effect
+  bounded
+  suggested test coverage: Serialize partially loaded Hub; assert loaded count, event count, sync suppression, and
+  select state.
+
+
+*/
+
 public abstract class HubSerializeService {
 	private final Logger LOG = Logger.getLogger(HubSerializeService.class.getName());
 

@@ -28,6 +28,63 @@ import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.thread.OARemoteThread;
 import com.viaoa.serialize.OAObjectSerializer;
+import com.viaoa.sync.OASyncClient;
+import com.viaoa.sync.remote.RemoteClientInterface;
+import com.viaoa.sync.remote.RemoteSyncInterface;
+
+
+/*qqqqqqqqqqqqqqqqqqq
+CODEX
+
+ #1 — invariant risk
+  File/class/method: src/main/java/com/viaoa/graph/service/hub/HubParentService.java:76, initialize(...)
+  Exact concern: HubParentService.initialize has no “already initialized” guard, while
+  OAObjectParentService.initialize does.
+  Why it matters: a second initialize call can replace parent service references after child services already exist.
+  The anonymous child hooks close over HubParentService.this, so later calls may use a new srvcObject, srvcSync, or
+  thread service unexpectedly.
+  Minimal fix: add the same one-shot initialization guard used by OAObjectParentService.
+  Suggested invariant: GRAPH_PARENT_SERVICES_INITIALIZE_ONCE
+  Suggested test coverage: call HubService.initialize twice and verify the second call fails.
+
+#2 — boundary risk
+  File/class/method: src/main/java/com/viaoa/graph/service/hub/HubParentService.java:113, public child getters; src/
+  main/java/com/viaoa/graph/service/object/OAObjectParentService.java:156, public child getters
+  Exact concern: parent services expose concrete child services through public inherited getters.
+  Why it matters: callers with HubService or OAObjectService can bypass the parent orchestration API and call deep
+  child services directly. That weakens the “parent owns child services” boundary.
+  Minimal fix: make child getters protected/package-private where possible, or explicitly mark them unsupported
+  internal wiring.
+  Suggested invariant: GRAPH_CHILD_SERVICES_ARE_NOT_PUBLIC_APP_SURFACE
+  Suggested test coverage: architecture test that non-graph packages do not call child-service getters.
+
+ #3 — invariant risk
+  File/class/method: src/main/java/com/viaoa/graph/service/hub/HubParentService.java:113, child-service lazy
+  getters; src/main/java/com/viaoa/graph/service/object/OAObjectParentService.java:156, child-service lazy getters
+  Exact concern: child service creation is lazy, mutable, and unsynchronized.
+  Why it matters: initialization eagerly creates the services, but public getters can still be called before/during
+  initialization or concurrently on directly constructed services. That can create duplicate child instances or
+  child services with incomplete parent dependencies.
+  Minimal fix: enforce parent initialization before child access and/or synchronize child creation.
+  Suggested invariant: GRAPH_CHILD_SERVICE_CREATION_IS_SINGLE_AND_AFTER_PARENT_INIT
+  Suggested test coverage: concurrent getter access around initialization creates exactly one child service and
+  never observes null parent dependencies.
+
+#3 — boundary risk
+  file/class/method: src/main/java/com/viaoa/graph/service/hub/HubParentService.java:540, HubCS remote hooks
+  exact concern: HubCS parent hooks directly call srvcSync.getRemoteSync() / getRemoteClient() without null guards
+  across add/remove/insert/move/sort/refresh/clear-changes/delete-all.
+  why it matters: Child Hub services already decide whether sync should happen, but the parent boundary should still
+  preserve runtime invariants. A stale role branch becomes an NPE instead of a no-op/local path.
+  severity: invariant risk
+  minimal fix: Parent hooks should return false/no-op if the required sync endpoint is absent, or HubCS should
+  expose explicit client/server-only methods.
+  suggested invariant ID/name: HUB-CS-HOOK-001: remote sync hooks are null-safe
+  suggested test coverage: Each HubCS operation in single-user, server-without-remoteSync, and client-without-
+  remoteClient setup.
+
+
+*/
 
 /**
  * 
@@ -383,8 +440,8 @@ public abstract class HubParentService {
 				HubParentService.this.srvcObject.getOAObjectSaveService().save(oaObj, iCascadeRule, cascade);
 			}
 			@Override
-			public boolean callSyncIsServer() {
-				return HubParentService.this.srvcSync.isServer();
+			public boolean callSyncIsClient() {
+				return HubParentService.this.srvcSync.isClient();
 			}
 			@Override
 			public <T extends OAObject> T[] callHubAddRemoveGetAddedObjects(Hub<T> thisHub) {
@@ -494,11 +551,15 @@ public abstract class HubParentService {
 			}
 			@Override
 			public boolean callSyncClientIsObjectOnServer(OAObject obj) {
-				return HubParentService.this.srvcSync.getSyncClient().isObjectOnServer(obj);
+				OASyncClient sc = HubParentService.this.srvcSync.getClient();
+				if (sc == null) return false;  
+				return sc.isObjectOnServer(obj);
 			}
 			@Override
 			public boolean callSyncSyncSort(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName, String propertyPaths, boolean bAscending, Comparator<?> comp) {
-				return HubParentService.this.srvcSync.getRemoteSync().sort(objectClass, objectKey, hubPropertyName, propertyPaths, bAscending, comp);
+				RemoteSyncInterface rsi = HubParentService.this.srvcSync.getRemoteSync(); 
+				if (rsi == null) return false;
+				return rsi.sort(objectClass, objectKey, hubPropertyName, propertyPaths, bAscending, comp);
 			}
 			@Override
 			public boolean callThreadLocalGetSendSyncMessages() {
@@ -506,40 +567,58 @@ public abstract class HubParentService {
 			}
 			@Override
 			public boolean callSyncRemoteSyncRemoveFromHub(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName, Class<? extends OAObject> objectClassX, OAObjectKey objectKeyX) {
-				return HubParentService.this.srvcSync.getRemoteSync().removeFromHub(objectClass, objectKey, hubPropertyName, objectClassX, objectKeyX);
+				RemoteSyncInterface rsi = HubParentService.this.srvcSync.getRemoteSync();
+				if (rsi == null) return false;
+				return rsi.removeFromHub(objectClass, objectKey, hubPropertyName, objectClassX, objectKeyX);
 			}
 			@Override
 			public boolean callSyncRemoteSyncRemoveAllFromHub(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName) {
-				return HubParentService.this.srvcSync.getRemoteSync().removeAllFromHub(objectClass, objectKey, hubPropertyName);
+				RemoteSyncInterface rsi = HubParentService.this.srvcSync.getRemoteSync();
+				if (rsi == null) return false;
+				return rsi.removeAllFromHub(objectClass, objectKey, hubPropertyName);
 			}
 			@Override
 			public void callSyncSyncRefresh(Class<? extends OAObject> masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName) {
-				HubParentService.this.srvcSync.getRemoteSync().refresh(masterObjectClass, masterObjectKey, hubPropertyName);
+				RemoteSyncInterface rsi = HubParentService.this.srvcSync.getRemoteSync();
+				if (rsi == null) return;
+				rsi.refresh(masterObjectClass, masterObjectKey, hubPropertyName);
 			}
 			@Override
 			public boolean callSyncSyncMoveObjectInHub(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName, int posFrom, int posTo) {
-				return HubParentService.this.srvcSync.getRemoteSync().moveObjectInHub(objectClass, objectKey, hubPropertyName, posFrom, posTo);
+				RemoteSyncInterface rsi = HubParentService.this.srvcSync.getRemoteSync();
+				if (rsi == null) return false;
+				return rsi.moveObjectInHub(objectClass, objectKey, hubPropertyName, posFrom, posTo);
 			}
 			@Override
 			public boolean callSyncSyncInsertInHub(Class<? extends OAObject> masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, Object obj, int pos) {
-				return HubParentService.this.srvcSync.getRemoteSync().insertInHub(masterObjectClass, masterObjectKey, hubPropertyName, obj, pos);
+				RemoteSyncInterface rsi = HubParentService.this.srvcSync.getRemoteSync();
+				if (rsi == null) return false;
+				return rsi.insertInHub(masterObjectClass, masterObjectKey, hubPropertyName, obj, pos);
 			}
 			@Override
 			public void callSyncSyncClearHubChanges(Class<? extends OAObject> masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName) {
-				HubParentService.this.srvcSync.getRemoteSync().clearHubChanges(masterObjectClass, masterObjectKey, hubPropertyName);				
+				RemoteSyncInterface rsi = HubParentService.this.srvcSync.getRemoteSync();
+				if (rsi == null) return;
+				rsi.clearHubChanges(masterObjectClass, masterObjectKey, hubPropertyName);				
 			}
 			@Override
 			public boolean callSyncSyncAddToHub(Class<? extends OAObject> masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, Object obj) {
-				return HubParentService.this.srvcSync.getRemoteSync().addToHub(masterObjectClass, masterObjectKey, hubPropertyName, obj);
+				RemoteSyncInterface rsi = HubParentService.this.srvcSync.getRemoteSync();
+				if (rsi == null) return false;
+				return rsi.addToHub(masterObjectClass, masterObjectKey, hubPropertyName, obj);
 			}
 			
 			@Override
 			public void callSyncSyncAddNewToCache(OAObjectSerializer obj) {
-				HubParentService.this.srvcSync.getRemoteSync().addNewToCache(obj);
+				RemoteSyncInterface rsi = HubParentService.this.srvcSync.getRemoteSync();
+				if (rsi == null) return;
+				rsi.addNewToCache(obj);
 			}
 			@Override
 			public boolean callSyncClientDeleteAll(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName) {
-				return HubParentService.this.srvcSync.getRemoteClient().deleteAll(objectClass, objectKey, hubPropertyName);
+				RemoteClientInterface rci = HubParentService.this.srvcSync.getRemoteClient();
+				if (rci == null) return false;
+				return rci.deleteAll(objectClass, objectKey, hubPropertyName);
 			}
 			@Override
 			public boolean callSyncIsSingleUser() {
@@ -686,8 +765,8 @@ public abstract class HubParentService {
 				return HubParentService.this.srvcThreadLocal.isLoading();
 			}
 			@Override
-			public boolean callSyncIsServer() {
-				return HubParentService.this.srvcSync.isServer();
+			public boolean callSyncIsClient() {
+				return HubParentService.this.srvcSync.isClient();
 			}
 			@Override
 			public int callHubDataGetCurrentSize(Hub<?> thisHub) {
@@ -828,6 +907,10 @@ public abstract class HubParentService {
 			@Override
 			public boolean callSyncIsServer() {
 				return HubParentService.this.srvcSync.isServer();
+			}
+			@Override
+			public boolean callSyncIsClient() {
+				return HubParentService.this.srvcSync.isClient();
 			}
 			@Override
 			public boolean callThreadLocalGetCanAdjustHub(Hub<?> hub) {
@@ -1233,8 +1316,8 @@ public abstract class HubParentService {
 		if (srvcHubSequence != null) return srvcHubSequence;
 		srvcHubSequence = new HubSequenceService(faHub) {
 			@Override
-			public boolean callHubCSIsServer(Hub<?> thisHub) {
-				return HubParentService.this.getHubCSService().isServer(thisHub);
+			public boolean callHubCSIsClient(Hub<?> thisHub) {
+				return HubParentService.this.getHubCSService().isClient(thisHub);
 			}
 			@Override
 			public void callHubSortCancelSort(Hub<?> hub) {
@@ -1526,8 +1609,8 @@ public abstract class HubParentService {
 				return HubParentService.this.srvcObject.getOAObjectChangeService().getChanged(oaObj, iCascadeRule, cascade);
 			}
 			@Override
-			public boolean callSyncIsServer() {
-				return HubParentService.this.srvcSync.isServer();
+			public boolean callSyncIsClient() {
+				return HubParentService.this.srvcSync.isClient();
 			}
 			@Override
 			public OAObjectInfo callObjectInfoGetOAObjectInfo(Class<?> clazz) {

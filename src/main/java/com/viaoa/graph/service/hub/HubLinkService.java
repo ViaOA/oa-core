@@ -16,6 +16,12 @@ import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.*;
 import com.viaoa.reflect.OAReflect;
 
+/*qqqqqqqqqqq
+CODEX
+
+
+*/
+
 public abstract class HubLinkService {
 	private final Logger LOG = Logger.getLogger(HubLinkService.class.getName());
 

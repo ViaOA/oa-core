@@ -24,6 +24,7 @@ import com.viaoa.filter.OABetweenFilter;
 import com.viaoa.filter.OABetweenOrEqualFilter;
 import com.viaoa.filter.OABlockFilter;
 import com.viaoa.filter.OAEqualFilter;
+import com.viaoa.filter.OAFalseFilter;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.filter.OAGreaterFilter;
 import com.viaoa.filter.OAGreaterOrEqualFilter;
@@ -1099,14 +1100,15 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 
 			try {
 				final boolean bx = bServerSideOnly;
+				boolean bWasLoading = false;
 				try {
 					if (!bx) {
-						srvcOAThreadLocal.setLoading(true);
+						bWasLoading = srvcOAThreadLocal.setLoading(true);
 					}
 					bCompleted = _initialize(cnt);
 				} finally {
 					if (!bx) {
-						srvcOAThreadLocal.setLoading(false);
+						srvcOAThreadLocal.setLoading(bWasLoading);
 					}
 				}
 				if (hub != null && bCompleted) {
@@ -1512,7 +1514,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	 * @param propPath the property path to evaluate
 	 */
 	public void addFalseFilter(final String propPath) {
-		_addFilter(propPath, new OATrueFilter());
+		_addFilter(propPath, new OAFalseFilter());
 	}
 
 	/**

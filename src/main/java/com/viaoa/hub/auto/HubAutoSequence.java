@@ -28,6 +28,28 @@ import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
 
+
+/*qqqqqqqqq
+  CODEX
+  1. file/class/method: src/main/java/com/viaoa/hub/auto/HubAutoSequence.java:176 constructor and src/main/java/com/
+     viaoa/hub/auto/HubAutoSequence.java:240 setHub(...)
+  2. exact execution path: construct new HubAutoSequence(hub, badProperty, ...). The constructor calls setHub(hub),
+     which attaches this object as a Hub listener before setPropertyName(badProperty) validates the setter. If
+     validation throws, the caller sees construction fail, but the partially constructed listener remains attached
+     to the Hub.
+  3. why this is a real correctness bug: later unrelated Hub add/insert/sort/new-list events call resequence(),
+     where propertySetMethod is null or invalid, causing unexpected runtime failures from a helper whose
+     construction already failed.
+  4. semantic/invariant violated: HUB_AUTO_SEQUENCE_FAILED_INIT_DOES_NOT_LEAVE_ACTIVE_LISTENER
+  5. minimal fix or CODEX/defer recommendation: resolve and validate the property setter before attaching the
+     listener, or detach the listener in the constructor/setup failure path.
+  6. suggested regression test: attempt to create HubAutoSequence with an invalid property, catch the exception,
+     then add an object to the Hub and verify no stale sequencing listener fires.
+  
+  
+  
+ */
+
 /**
  * Automatically maintains a numeric sequence property on every object in a {@link Hub},
  * keeping the property value equal to the object’s position in that Hub.

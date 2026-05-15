@@ -15,16 +15,23 @@
  */
 package com.viaoa.cache;
 
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.viaoa.compare.OACompare;
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectKeyService;
-import com.viaoa.lang.OAArray;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
+
+/*qqqqqqqqqqqqqqqqqqqqqq
+CODEX
+
+
+
+*/
+
+
 
 /**
  * Maintains a runtime index of OAObject instances by their primary/business key
@@ -213,13 +220,19 @@ public class OAObjectIndex {
 	 */
 	public void updateIndex(final OAObject obj, OAObjectKey okNew, OAObjectKey okOld) {
 		if (obj == null) return;
-		if (okNew != null && okNew.equals(okOld)) return;
-
-		if (okNew != null) {
-			addToIndex(obj, okNew);
+		if (okNew != null && okOld != null) {
+			Object[] idsNew = okNew.getObjectIds();
+			Object[] idsOld = okOld.getObjectIds();
+		    if (idsNew != null && idsOld != null) {
+		    	if (Arrays.equals(idsNew, idsOld)) return;	    
+		    }
 		}
+
 		if (okOld != null) {
 			removeFromIndex(obj.getClass(), okOld);
+		}
+		if (okNew != null) {
+			addToIndex(obj, okNew);
 		}
 	}
 	

@@ -12,14 +12,8 @@ import com.viaoa.sync.remote.RemoteServerInterface;
 
 public interface SyncInternalOps extends SyncOps {
 
-
-//qqqqqqqqqqq make all of the method names "call*"	
-	
-	
-	public boolean isServer();
-	public boolean isClient();
-	public boolean isSingleUser();
-	
+	public OASyncClient getClient();
+	public OASyncServer getServer();
 	
 	public boolean isConnected();
 	public int getConnectionId();
@@ -31,12 +25,11 @@ public interface SyncInternalOps extends SyncOps {
 
 	public void saveCache( OACascade cascade, int iCascadeRule);
 
-	
 	public void performDGC();
 	
-	
-	public boolean callSyncIsServer();
-	
+	public boolean isServer();
+	public boolean isClient();
+	public boolean isSingleUser();
 	
 	public void callRemoteClientRefresh(Class<? extends OAObject> class1, OAObjectKey objectKey);
 	public void callRemoteClientRefresh(Class<? extends OAObject> class1, OAObjectKey objectKey, String linkPropertyName);
@@ -45,7 +38,6 @@ public interface SyncInternalOps extends SyncOps {
 
 	public RemoteServerInterface getRemoteServer();
 	
-	public OASyncClient getSyncClient();
 	
 	
 }

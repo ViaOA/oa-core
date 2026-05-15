@@ -15,6 +15,54 @@
  */
 package com.viaoa.comm.multiplexer.io;
 
+/*qqqqqqqqqq
+CODEX
+
+• 1. file/class/method
+     src/main/java/com/viaoa/comm/multiplexer/io/MultiplexerSocketController.java — createSocket(String) /
+     createSocket(int, int, String)
+  2. exact execution path
+     Client calls createSocket(serverSocketName). createSocket(int, int, String) creates a local VirtualSocket, puts
+     it in _hmVirtualSocket, then sends CMD_CreateVSocket. If sendCommand throws, the caller sees IOException, but
+     the local virtual socket remains in the live map.
+  3. why it is a real correctness bug
+     A failed create leaves hidden local connection state behind. Retry uses a new id while the failed id remains
+     live locally, skewing live socket count and leaving a local-only virtual socket that can participate in later
+     cleanup/close paths.
+  4. semantic/invariant violated
+     A failed virtual socket create must not leave an active local socket registration.
+  5. minimal fix or CODEX/defer recommendation
+     If sendCommand(CMD_CreateVSocket, ...) fails, remove the socket from _hmVirtualSocket, mark it closed, and
+     notify its lock before rethrowing.
+  6. suggested regression test
+     Force sendCommand to throw during createSocket. Verify createSocket throws and getLiveSocketCount() remains
+     unchanged.
+
+ 1. file/class/method
+     src/main/java/com/viaoa/comm/multiplexer/io/MultiplexerSocketController.java — closeSocket(VirtualSocket vs,
+     boolean bSendCommand)
+  2. exact execution path
+     Caller closes a VirtualSocket. The override calls super.close() first, then closeSocket(..., true). If
+     sendCommand(CMD_CloseVSocket, ...) throws, closeSocket exits before notifying waiters or removing the socket
+     from _hmVirtualSocket.
+  3. why it is a real correctness bug
+     The socket is locally marked closed, but still registered as live. Blocked readers might not be notified, and
+     retrying close can continue failing before cleanup.
+  4. semantic/invariant violated
+     Local close cleanup must happen even if peer close notification fails.
+  5. minimal fix or CODEX/defer recommendation
+     Move local notify/remove into a finally, or remove first and attempt peer notification after local cleanup.
+     Preserve the IOException for caller visibility.
+  6. suggested regression test
+     Force close-command send failure. Verify close() throws, but the virtual socket is removed from the map and
+     waiting reads wake.
+
+
+
+
+
+*/
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
@@ -176,7 +224,7 @@ public class MultiplexerSocketController {
         performHandshake();
 
         // start the real socket reader thread.
-        startSocketReaderThread(false);
+        bRequiresHandshakeOnStart = false;
     }
 
     /**
@@ -196,9 +244,17 @@ public class MultiplexerSocketController {
         this._msStarted = System.currentTimeMillis();
         LOG.fine("new client connection, id="+id);
         // start real socket reader thread, and have it validate/handshake in that thread.
-        startSocketReaderThread(true);
+        bRequiresHandshakeOnStart = true;
     }
 
+    private final boolean bRequiresHandshakeOnStart;
+    
+    public void start() {
+    	if (_thread != null) return;
+        startSocketReaderThread(bRequiresHandshakeOnStart);
+    }
+    
+    
     /**
      * Creates and starts the dedicated daemon thread that:
      * <ol>

@@ -474,7 +474,7 @@ public class MultiplexerOutputStreamController {
 	 */
 	protected void sendCommand(int cmd, int param, String serverSocketName) throws IOException {
 		if (this._bIsClosed) {
-			return;
+			throw new IOException("Socket has been closed");
 		}
 		getOutputStream();
 		try {

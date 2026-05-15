@@ -19,6 +19,26 @@ import com.viaoa.object.OAObjectKey;
 import com.viaoa.select.OASelect;
 import com.viaoa.trigger.OATrigger;
 
+
+/*qqqqqqqqqq
+CODEX
+
+ #10 — boundary risk
+  File/class/method: src/main/java/com/viaoa/graph/OAGraph.java:902, addTrigger/removeTrigger; src/main/java/com/
+  viaoa/graph/api/TriggerOps.java:164
+  Exact concern: TriggerOps exists, but OAGraph does not expose trigger(). Instead it exposes only partial direct
+  trigger methods: no addTrigger(trigger, skip) and no boolean result from remove.
+  Why it matters: trigger facade is split and inconsistent; apps cannot use the full public TriggerOps contract
+  through the primary graph facade.
+  Minimal fix: add TriggerOps trigger() to OAGraph, or make OAGraph direct methods match TriggerOps.
+  Suggested invariant: GRAPH_TRIGGER_PUBLIC_SURFACE_IS_SINGLE_AND_COMPLETE
+  Suggested test coverage: all public trigger operations are reachable through OAGraph.
+
+
+
+
+*/
+
 /**
  * Object Graph runtime for a model package.
  * <p>

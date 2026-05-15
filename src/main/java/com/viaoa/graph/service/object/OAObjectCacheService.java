@@ -37,6 +37,14 @@ import com.viaoa.object.OAObjectKey;
 import com.viaoa.path.OAPath;
 import com.viaoa.runtime.OARuntime;
 
+
+/*qqqqqqqqqqqqqq
+CODEX
+
+
+
+*/
+
 /**
  * Internal service responsible for managing the OAGraph OAObject cache,
  * ensuring global identity consistency and fast lookup by either GUID or
@@ -1435,7 +1443,7 @@ public abstract class OAObjectCacheService {
 		}
 		LOG.fine("refreshing " + clazz.getSimpleName());
 
-		if (!callSyncIsServer()) {
+		if (callSyncIsClient()) {
 			callSyncRemoteServerRefreshCache(clazz);
 			LOG.fine("refreshing " + clazz.getSimpleName() + " will be ran on the server");
 			return;
@@ -1542,7 +1550,7 @@ public abstract class OAObjectCacheService {
 	public abstract <T extends OAObject> Hub<T>[] callHubGetHubReferences(T oaObj);	
 	public abstract OALinkInfo callDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
 	public abstract boolean callHubSelectRefreshSelect(Hub<?> thisHub);
-	public abstract boolean callSyncIsServer();	
+	public abstract boolean callSyncIsClient();	
 	public abstract void callSyncRemoteServerRefreshCache(Class<? extends OAObject> clazz);	
 	public abstract int callThreadLocalGetObjectCacheAddMode();
 }

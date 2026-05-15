@@ -445,17 +445,16 @@ public abstract class OAObjectReflectService {
 			if (bCallSetMethod) {
 				m.invoke(oaObj, new Object[] { value });
 			}
-		} catch (Exception e) {
-			String s = "property=" + propName + ", obj=" + oaObj + ", value=" + value;
-			LOG.log(Level.WARNING, s, e);
-			// e.printStackTrace();
-			throw new RuntimeException("Exception in setProperty(), " + s, e);
-		} finally {
 			if (bPrimitiveNull) {
 				// 20131101 calling firePropetyChange will call setPrimitiveNull
 				// setPrimitiveNull(oaObj, propNameU);
 				callEventFirePropertyChange(oaObj, propName, previousValue, null, oi.getLocalOnly(), true); // setting to null
 			}
+		} catch (Exception e) {
+			String s = "property=" + propName + ", obj=" + oaObj + ", value=" + value;
+			LOG.log(Level.WARNING, s, e);
+			// e.printStackTrace();
+			throw new RuntimeException("Exception in setProperty(), " + s, e);
 		}
 		return true;
 	}
@@ -585,7 +584,6 @@ public abstract class OAObjectReflectService {
 	 * @param fmt       optional formatter used during conversion
 	 */
 	private void setHubProperty(OAObject oaObj, String propName, String propNameU, Object value, OAObjectInfo oi, String fmt) {
-		// this is for a Hub.  OAXMLReader uses setProperty to set MANY references using Object Id value for objects
 		if (value == null) {
 			return;
 		}
@@ -598,12 +596,21 @@ public abstract class OAObjectReflectService {
 			return;
 		}
 
-		
 		OALinkInfo li = callInfoGetLinkInfo(oi, propNameU);
 		if (li == null) {
 			return;
 		}
 
+		if (!(value instanceof OAObject)) {
+		    if (!(value instanceof OAObjectKey)) {
+		        value = callKeyCreateObjectKey(li.getToClass(), value);
+		    }
+			if (value instanceof OAObjectKey) {
+				value = getObject(li.getToClass(), value);
+				if (value == null) return;
+			}
+		}		
+		
 		if (objOrig != null) {
 			if (!(objOrig instanceof Hub)) {
 				throw new RuntimeException("stored object for " + propName + " is not a hub");
@@ -614,20 +621,7 @@ public abstract class OAObjectReflectService {
 			callPropertySetProperty(oaObj, propName, hub);
 		}
 
-		if (!(value instanceof OAObject)) {
-			if (!(value instanceof OAObjectKey)) { // convert to OAObjectKey
-				if (value instanceof Hub) {
-					throw new RuntimeException("cant not set the Hub for " + propName);
-				}
-				value = callKeyCreateObjectKey(li.getToClass(), value);
-			}
-		}
-
-		if (value instanceof OAObjectKey) {
-			Class<? extends OAObject> c = hub.getObjectClass();
-			value = getObject(c, value);
-		}
-		if (value instanceof OAObject && !hub.contains(value)) {
+		if (!hub.contains(value)) {
 			hub.add((OAObject) value);
 		}
 	}
@@ -746,7 +740,7 @@ public abstract class OAObjectReflectService {
 				}
 			}
 
-			if (callCSIsServer()) {
+			if (!callCSIsClient()) {
 				// 20150130 the same thread that is loading it could be accessing it again. (ex: matching and hubmerger during getReferenceHub)
 				if (callLockIsPropertyLocked(oaObj, linkPropertyName)) {
 					return (Hub<T>) hub;
@@ -884,7 +878,7 @@ public abstract class OAObjectReflectService {
 			boolean bSequence, Hub<?> hubMatch, final OAObjectInfo oi, final OALinkInfo linkInfo, final List<OAObject> alSiblinkLock ) {
 
 		Object propertyValue = callPropertyGetProperty(oaObj, linkPropertyName, true, true);
-		final boolean bThisIsServer = callCSIsServer();
+		final boolean bIsClient = callCSIsClient();
 		// dont get calcs from server, calcs are maintained locally, events are not sent
 		boolean bIsCalc = (linkInfo != null && linkInfo.getCalculated());
 		boolean bIsServerSideCalc = (linkInfo != null && linkInfo.getServerSideCalc());
@@ -934,7 +928,7 @@ public abstract class OAObjectReflectService {
 		if (propertyValue instanceof Hub) {
 			hub = (Hub<?>) propertyValue;
 			Class<? extends OAObject> c = hub.getObjectClass();
-			if (!bThisIsServer) {
+			if (bIsClient) {
 				boolean bAsc = true;
 				String s = callHubSortGetSortProperty(hub); // use sort order from orig hub
 				if (OAString.isEmpty(s)) {
@@ -970,7 +964,7 @@ public abstract class OAObjectReflectService {
 
 		if (hub != null) {
 			// no-op
-		} else if (!bThisIsServer && !oi.getLocalOnly() && (!bIsCalc || bIsServerSideCalc)
+		} else if (bIsClient && !oi.getLocalOnly() && (!bIsCalc || bIsServerSideCalc)
 				&& callSyncIsObjectOnServer(oaObj)) {
 			// request from server
 			hub = getCSGetServerReferenceHub(oaObj, linkPropertyName);
@@ -1004,10 +998,10 @@ public abstract class OAObjectReflectService {
 				// 20141109
 				hub = new Hub(linkClass, oaObj, liReverse, false);
 
-				if (!bIsCalc && bThisIsServer) {
+				if (!bIsCalc && !bIsClient) {
 					// 20171225 support for selecting siblings at same time
 					OALinkInfo rli = linkInfo.getReverseLinkInfo();
-					if (!bThisIsServer || linkInfo.getRecursive() || rli == null || rli.getType() == OALinkInfo.TYPE_MANY
+					if (linkInfo.getRecursive() || rli == null || rli.getType() == OALinkInfo.TYPE_MANY
 							|| rli.getPrivateMethod() || (hubMatch != null) || (matchProperty != null && matchProperty.length() > 0)) {
 						// not yet supported
 						siblingKeys = null;
@@ -1048,10 +1042,8 @@ public abstract class OAObjectReflectService {
 
 						select.setParams(new Object[] { alOk });
 					} else {
-						if (bThisIsServer) {
-							select.setWhereObject(oaObj);
-							select.setPropertyFromWhereObject(linkInfo.getName());
-						}
+						select.setWhereObject(oaObj);
+						select.setPropertyFromWhereObject(linkInfo.getName());
 					}
 				}
 
@@ -1065,7 +1057,7 @@ public abstract class OAObjectReflectService {
 				//was: if (!srvcObject.getOAObjectInfoService().isMany2Many(linkInfo) && (bThisIsServer || bIsCalc) && linkInfo.isOwner()) {
 
 				// 20131009 new LinkProperty recursive flag.  If owned+recursive, then select root
-				if (bThisIsServer && !bIsCalc) {
+				if (!bIsClient && !bIsCalc) {
 					if (linkInfo.getOwner() && linkInfo.getRecursive()) {
 						OAObjectInfo oi2 = getOAObjectInfo(linkInfo.getToClass());
 						OALinkInfo li2 = callInfoGetRecursiveLinkInfo(oi2, OALinkInfo.ONE);
@@ -1111,7 +1103,7 @@ public abstract class OAObjectReflectService {
 		        }
 		    }
 		 */
-		if ((bThisIsServer || (bIsCalc && !bIsServerSideCalc)) && sortOrder != null && sortOrder.length() > 0) {
+		if ((!bIsClient || (bIsCalc && !bIsServerSideCalc)) && sortOrder != null && sortOrder.length() > 0) {
 			String s = bSortAsc ? "" : " DESC";
 			if (hub.getSelect() != null) {
 				hub.setSelectOrder(sortOrder + s);
@@ -1121,15 +1113,15 @@ public abstract class OAObjectReflectService {
 		}
 
 		// needs to loadAllData first, otherwise another thread could get the hub without using the lock
-		if (bThisIsServer || (bIsCalc && !bIsServerSideCalc)) {
+		if (!bIsClient || (bIsCalc && !bIsServerSideCalc)) {
 			// 20171225 support for selecting multiple at one time
 			if (siblingKeys != null && siblingKeys.length > 0) {
 				OALinkInfo rli = linkInfo.getReverseLinkInfo();
 				final boolean bWas = callThreadLocalGetSendSyncMessages();
-				final boolean bWas2 = callThreadLocalGetLoading();
+				boolean bWasLoading = false;
 				try {
 					callThreadLocalSetSendSyncMessages(false);
-					callThreadLocalSetLoading(true);
+					bWasLoading = callThreadLocalSetLoading(true);
 					for (; select.hasMore();) {
 						OAObject objx = select.next();
 						// find masterObj to put it in
@@ -1153,7 +1145,7 @@ public abstract class OAObjectReflectService {
 						}
 					}
 				} finally {
-					callThreadLocalSetLoading(bWas2);
+					callThreadLocalSetLoading(bWasLoading);
 					callThreadLocalSetSendSyncMessages(bWas);
 				}
 			} else {
@@ -1168,7 +1160,7 @@ public abstract class OAObjectReflectService {
 				callHubDataResizeToFit(hub);
 			}
 
-			if (bThisIsServer) {
+			if (!bIsClient) {
 				if (bSequence) {
 					if (callHubGetAutoSequence(hub) == null) {
 						hub.setAutoSequence(seqProperty); // server will keep autoSequence property updated - clients dont need autoSeq (server side managed)
@@ -1238,7 +1230,7 @@ public abstract class OAObjectReflectService {
 		}
 
 		// 20171108 moved here from above
-		if (bThisIsServer || callPropertyGetProperty(oaObj, linkPropertyName, false, false) == null) {
+		if (!bIsClient || callPropertyGetProperty(oaObj, linkPropertyName, false, false) == null) {
 			// set property
 			if (callInfoCacheHub(linkInfo, hub)) {
 				callPropertySetProperty(oaObj, linkPropertyName, new WeakReference(hub));
@@ -1247,13 +1239,13 @@ public abstract class OAObjectReflectService {
 			}
 		}
 		// 20171113 moved from above
-		if (hubMatch != null && (bThisIsServer || (bIsCalc && !bIsServerSideCalc))) {
+		if (hubMatch != null && (!bIsClient || (bIsCalc && !bIsServerSideCalc))) {
 			if (OAString.isNotEmpty(matchProperty)) {
 				hub.setAutoMatch(matchProperty, hubMatch, true, oaObj, linkInfo.getMatchStopProperty());
 			}
 		}
 
-		if (bThisIsServer || (bIsCalc && !bIsServerSideCalc)) {
+		if (!bIsClient || (bIsCalc && !bIsServerSideCalc)) {
 			// 20220802
 			String autoCreatProperty = linkInfo == null ? null : linkInfo.getAutoCreateProperty();
 			if (OAString.isNotEmpty(autoCreatProperty)) {
@@ -1543,7 +1535,7 @@ public abstract class OAObjectReflectService {
 		}
 		OAObjectInfo io = getOAObjectInfo(obj.getClass());
 		List<OALinkInfo> al = io.getLinkInfos();
-		boolean bIsServer = callCSIsServer();
+		boolean bIsClient = callCSIsClient();
 		for (OALinkInfo li : al) {
 			if (li == null) {
 				continue;
@@ -1566,7 +1558,7 @@ public abstract class OAObjectReflectService {
 			if (val instanceof OAObjectKey) {
 				return false;
 			}
-			if (val instanceof Hub && bIsServer) {
+			if (val instanceof Hub && !bIsClient) {
 				Hub<?> hubx = (Hub) val;
 				// see if autoMatch (if used) is set up
 				String matchProperty = li.getMatchProperty();
@@ -2231,7 +2223,7 @@ public abstract class OAObjectReflectService {
 				return null;
 			}
 
-			if (!callCSIsServer()) {
+			if (callCSIsClient()) {
 				val = callCSGetServerReferenceBlob(oaObj, propertyName);
 			} else {
 				OADataSource ds = callDSGetDataSource(oaObj.getClass());
@@ -2324,7 +2316,7 @@ public abstract class OAObjectReflectService {
 			return null;
 		}
 
-		final boolean bIsServer = callCSIsServer();
+		final boolean bIsClient = callCSIsClient();
 		final boolean bIsCalc = li != null && li.getCalculated();
 
 		Object ref = null;
@@ -2380,7 +2372,7 @@ public abstract class OAObjectReflectService {
 			if (callInfoIsOne2One(li)) {
 				if (!oaObj.isNew()) {
 					OALinkInfo liReverse = callInfoGetReverseLinkInfo(li);
-					if (!bIsServer && !bIsCalc) {
+					if (bIsClient&& !bIsCalc) {
 						if (oaObj.isDeleted()) {
 							return null;
 						}
@@ -2412,7 +2404,7 @@ public abstract class OAObjectReflectService {
 				if (ref == null && li.getPrivateMethod()) {
 					OADataSource ds = callDSGetDataSource(li.getToClass());
 					if (ds != null && ds.supportsStorage()) {
-						if (!bIsServer && !bIsCalc) {
+						if (bIsClient && !bIsCalc) {
 							if (oaObj.isDeleted()) {
 								return null;
 							}
@@ -2441,7 +2433,7 @@ public abstract class OAObjectReflectService {
 			ref = callCacheGet(li.getToClass(), key);
 
 			if (ref == null) {
-				if (!bIsServer && !bIsCalc && !oi.getLocalOnly()) {
+				if (bIsClient && !bIsCalc && !oi.getLocalOnly()) {
 					ref = callCSGetServerReference(oaObj, linkPropertyName);
 				} else {
 					OAObjectKey[] siblingKeys;
@@ -2510,10 +2502,10 @@ public abstract class OAObjectReflectService {
 		
 		if (ref == null && li.getAutoCreateNew() && !bIsCalc) {
 			boolean b = callInfoIsOne2One(li);
-			if (b && oaObj.isDeleted() && !bIsServer) {
+			if (b && oaObj.isDeleted() && bIsClient) {
 				// 20151117 dont autocreate new if this is deleted
 			} else {
-				if (!bIsServer && callSyncIsObjectOnServer(oaObj)) {
+				if (bIsClient && callSyncIsObjectOnServer(oaObj)) {
 					ref = callCSGetServerReference(oaObj, linkPropertyName);
 				} else {
 					ref = createNewObject(li.getToClass());
@@ -3046,7 +3038,7 @@ public abstract class OAObjectReflectService {
 		// run on server only - otherwise objects can not be updated, since setLoadingObject is true
 		OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
 		if (!oi.getLocalOnly()) {
-			if (!callCSIsServer()) {
+			if (callCSIsClient()) {
 				// 20130505 needs to be put in msg queue
 				newObject = callCSCreateCopy(oaObj, excludeProperties);
 				return newObject;
@@ -3054,9 +3046,8 @@ public abstract class OAObjectReflectService {
 		}
 
 		final boolean bWas = callThreadLocalGetSendSyncMessages();
-		final boolean bWas2 = callThreadLocalGetLoading();
+		final boolean bWasLoading = callThreadLocalSetLoading(true);
 		try {
-			callThreadLocalSetLoading(true);
 			callThreadLocalSetSendSyncMessages(false);
 
 			newObject = (OAObject) createNewObject(oaObj.getClass());
@@ -3066,7 +3057,7 @@ public abstract class OAObjectReflectService {
 
 		} finally {
 			callThreadLocalSetSendSyncMessages(bWas);
-			callThreadLocalSetLoading(bWas2);
+			callThreadLocalSetLoading(bWasLoading);
 		}
 		callCacheAdd(newObject);
 		return newObject;
@@ -3110,13 +3101,12 @@ public abstract class OAObjectReflectService {
 			HashMap<UUID, OAObject> hmNew) {
 
 		final boolean bWas = callThreadLocalGetSendSyncMessages();
+		boolean bWasLoading = callThreadLocalSetLoading(true);
 		try {
-			callThreadLocalSetLoading(true);
 			callThreadLocalSetSendSyncMessages(false);
-
 			_copyInto(oaObj, newObject, excludeProperties, copyCallback, hmNew);
 		} finally {
-			callThreadLocalSetLoading(false);
+			callThreadLocalSetLoading(bWasLoading);
 			callThreadLocalSetSendSyncMessages(bWas);
 		}
 	}
@@ -3973,7 +3963,7 @@ public abstract class OAObjectReflectService {
 	public abstract int callThreadLocalGetObjectCacheAddMode();
 	public abstract boolean callThreadLocalAddSiblingHelper(OASiblingHelper sh);
 	public abstract void callThreadLocalRemoveSiblingHelper(OASiblingHelper sh);
-	public abstract void callThreadLocalSetLoading(boolean b);
+	public abstract boolean callThreadLocalSetLoading(boolean b);
 	public abstract boolean callThreadLocalGetLoading();
 	public abstract boolean callRemoteThreadIsRemoteThread();
 	public abstract boolean callThreadLocalGetSendSyncMessages();

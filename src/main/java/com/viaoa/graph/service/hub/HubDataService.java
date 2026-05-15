@@ -282,7 +282,7 @@ public abstract class HubDataService {
 	        boolean b = (obj instanceof OAObject);	        
             if (b) {
                 b = (faHub.getHubDataMaster(thisHub).getTrackChanges() || faHub.getHubData(thisHub).getTrackChanges());
-                if (!b && callSyncIsServer()) {
+                if (!b && !callSyncIsClient()) {
                     if ( ((OAObject) obj).isChanged()) {
                         if (faHub.getHubDataMaster(thisHub).getMasterObject() != null) {
                             // could be ServerRoot
@@ -1137,7 +1137,7 @@ public abstract class HubDataService {
 	public abstract void callThreadLocalUnlock(Object object);
 	public abstract void callRemoteThreadStartNextThread();
 	public abstract boolean callThreadLocalIsLoading();
-	public abstract boolean callSyncIsServer();
+	public abstract boolean callSyncIsClient();
 	public abstract int callHubDataGetCurrentSize(Hub<?> thisHub);
 	public abstract int callHubShareGetSharedWeakHubSize(Hub<?> thisHub);
 	public abstract void callHubStatusSetChanged(Hub<?> thisHub, boolean b);

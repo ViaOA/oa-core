@@ -13,6 +13,89 @@ import com.viaoa.object.*;
 import com.viaoa.serialize.OAObjectSerializer;
 import com.viaoa.sync.remote.RemoteSyncInterface;
 
+/*qqqqqqqqqqqqqq
+CODEX
+
+#2 — bug
+  file/class/method: src/main/java/com/viaoa/graph/service/object/OAObjectSaveService.java:34, save(OAObject,int)
+  and src/main/java/com/viaoa/graph/service/object/OAObjectParentService.java:1779, callRemoteSyncAddNewToCache
+  exact concern: New objects call srvcSync.getRemoteSync().addNewToCache(oos) before confirming sync-client/server
+  role or null remote sync availability.
+  why it matters: Saving a new, non-mastered object in single-user/unconfigured runtime can dereference a null
+  remote sync service. It also leaks sync replication behavior into local save before the routing decision.
+  severity: bug
+  minimal fix: Only call addNewToCache when sync is active and the remote sync contract is available, or move this
+  behind explicit client/server sync-role handling.
+  suggested invariant ID/name: OBJ-SAVE-SYNC-001: local save must not require RemoteSyncInterface
+  suggested test coverage: Save a new root object in single-user mode with no sync services; verify local datasource
+  path is used and no remote hook is touched.
+
+
+ #3 — bug
+  file/class/method: src/main/java/com/viaoa/graph/service/object/OAObjectSaveService.java:248, recursive save of
+  new ONE reference
+  exact concern: If callDSSaveWithoutReferences(oaRef) throws, the code still executes callObjectSetNew(oaRef,
+  false) before rethrowing.
+  why it matters: A failed partial save can leave an unsaved object marked not-new. Later save/delete/identity logic
+  can treat it as persisted even though the datasource rejected it.
+  severity: bug
+  minimal fix: Move callObjectSetNew(oaRef, false) after the exception check, or restore new=true on failure.
+  suggested invariant ID/name: OBJ-SAVE-STATE-001: failed saveWithoutReferences preserves new state
+  suggested test coverage: Force datasource failure from saveWithoutReferences; assert referenced object remains
+  new.
+
+ #4 — invariant risk
+  file/class/method: src/main/java/com/viaoa/graph/service/object/OAObjectSaveService.java:348, onSave
+  exact concern: setDeleted(false) and setChanged(false) happen before callDSSave(oaObj). The top-level save retry
+  path restores changed state, but lower/internal callers can leave the object clean after a failed datasource save.
+  why it matters: Persistence failure must not clear dirty/deleted lifecycle state. Otherwise runtime and
+  replication can lose pending changes.
+  severity: invariant risk
+  minimal fix: Clear changed/deleted state only after successful datasource save, or restore prior flags in a catch/
+  finally for every caller path.
+  suggested invariant ID/name: OBJ-SAVE-STATE-002: failed datasource save preserves dirty lifecycle flags
+  suggested test coverage: Exercise both top-level save and internal object-only save with datasource failure.
+
+ #2
+  file/class/method: src/main/java/com/viaoa/graph/service/object/OAObjectSaveService.java:137 save(...)
+
+  exact execution path that triggers the bug: save(oaObj, rule, cascade) -> cascade.depthAdd() -> any exception
+  before line 191, such as _save(...), before-save listener, onSave(...), or MANY cascade -> method exits without
+  cascade.depthSubtract().
+
+  why it is a real correctness risk: the shared OACascade object is left with inflated depth. Any caller reusing
+  that cascade can incorrectly hit overflow/depth behavior and skip or defer graph saves.
+
+  severity: invariant bug
+
+  minimal fix: wrap the body after depthAdd() in try/finally and always call depthSubtract().
+
+  suggested test case: pass a shared OACascade, force _save or a before-save listener to throw, then assert cascade
+  depth is restored.
+
+
+#1
+  file/class/method: src/main/java/com/viaoa/graph/service/object/OAObjectSaveService.java, save(...)
+
+  exact execution path: save(...) enters retry loop, onSave(oaObj) throws on attempt 1, catch logs, sets changed
+  true, calls _save(...), does not continue, then falls through to the “onSave returned false” warning and break.
+
+  why this is still a real correctness bug: a thrown datasource/save exception is converted into a visible warning
+  path, then after-save events still fire and MANY cascade save continues. The operation falsely appears completed.
+
+  semantic/invariant violated: failed authoritative save must not fire after-save or continue cascade as though save
+  completed.
+
+  minimal additional fix: after catch recovery on attempts < 3, continue; on attempt 3, throw. Also avoid the false-
+  return warning after exception paths.
+
+  suggested regression test: force callDSSave to throw on first attempt; assert no after-save event fires, MANY
+  cascade does not run, and retry behavior is explicit.
+
+
+
+*/
+
 public abstract class OAObjectSaveService {
 	private final Logger LOG = Logger.getLogger(OAObjectSaveService.class.getName());
 
@@ -58,7 +141,7 @@ public abstract class OAObjectSaveService {
     	}
 		
 		
-		if (callCSIsWorkstation()) {
+		if (callCSIsClient(oaObj)) {
 			callCSSave(oaObj, iCascadeRule);
 			return;
 		}
@@ -120,7 +203,9 @@ public abstract class OAObjectSaveService {
 					}
 					LOG.log(Level.WARNING, msg, e);
 					oaObj.setChanged(true);
-					_save(oaObj, true, iCascadeRule, cascade); // "ONE" relationships
+					if (i == 0) _save(oaObj, true, iCascadeRule, cascade); // "ONE" relationships
+					
+					if (i == 3) throw new RuntimeException("Exception saving", e);
 					continue;
 				}
 
@@ -248,24 +333,20 @@ public abstract class OAObjectSaveService {
 							if (bSave) {
 								// have to save new reference object before oaObj can be saved.
 								OAObjectInfo oiRef = callInfoGetOAObjectInfo(oaRef.getClass());
-								Exception ex = null;
 								try {
 									callDSSaveWithoutReferences(oaRef);
+									callObjectSetNew(oaRef, false);
+									faObject.setChangedFlag(oaRef, true); // so that it will be save/updated
 								} catch (Exception e) {
-									ex = e;
-								}
-								callObjectSetNew(oaRef, false);
-								faObject.setChangedFlag(oaRef, true); // so that it will be save/updated
-
-								synchronized (hmSaveNewLock) {
-									hmSaveNewLock.remove(oaRef.getGuid());
-									hmSaveNewLock.notifyAll();
-								}
-
-								if (ex != null) {
 									String msg = "error calling saveWithoutReferences, class=" + oaRef.getClass().getName() + ", key="
 											+ oaRef.getObjectKey();
-									throw new RuntimeException(msg, ex);
+									throw new RuntimeException(msg, e);
+								}
+								finally {
+									synchronized (hmSaveNewLock) {
+										hmSaveNewLock.remove(oaRef.getGuid());
+										hmSaveNewLock.notifyAll();
+									}
 								}
 							}
 						} else {
@@ -348,9 +429,9 @@ public abstract class OAObjectSaveService {
 		try {
 			// 20130504 moved before actual save, in case another thread makes a change
 			oaObj.setDeleted(false); // in case it was deleted, and then re-saved
-			oaObj.setChanged(false);
 
 			callDSSave(oaObj);
+			oaObj.setChanged(false);
 //			callLogLogToXmlFile(oaObj, true);
 			if (bIsNew) {
 				callObjectSetNew(oaObj, false);
@@ -367,7 +448,7 @@ public abstract class OAObjectSaveService {
 		return true;
 	}
 
-	public abstract boolean callCSIsWorkstation(); 
+	public abstract boolean callCSIsClient(OAObject oaOjb); 
 	public abstract boolean callCSSave(OAObject oaObj, int iCascadeRule);
 	public abstract <T extends OAObject> Hub<T>[] callHubGetHubReferences(T oaObj); 
 	public abstract OAObjectInfo callInfoGetObjectInfo(OAObject obj); 

@@ -12,6 +12,33 @@ import com.viaoa.hub.view.OAGroupBy;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;
 
+/*qqqqqqqqqqq
+ CODEX
+
+ #1
+  File/Class/Method: src/main/java/com/viaoa/graph/service/hub/HubAOService.java, setActiveObject(...)
+
+  Exact execution path: setActiveObject(...) locks the Hub and immediately writes HubDataActive.activeObject =
+  object. It then updates detail hubs and link properties. If callHubDetailUpdateAllDetail(...) or
+  callHubLinkUpdateLinkProperty(...) throws, the active object remains changed, but detail/link state and after-
+  change event publication do not complete.
+
+  Why it is a correctness bug: the Hub AO becomes authoritative before dependent graph state succeeds. Detail Hubs
+  can still reflect the previous AO while the master Hub reports the new AO.
+
+  Semantic/invariant violated: active-object transitions must atomically update AO, detail hubs, link state, and
+  event publication, or rollback on failure.
+
+  Minimal fix: stage the old AO/pos, perform dependent updates in a guarded block, and restore old AO on failure; or
+  move AO assignment to the commit point after validations that can throw.
+
+  Suggested test: Hub with detail hub whose update throws during AO change; assert AO remains the previous object
+  and no after-AO event fires.
+
+
+
+ */
+
 public abstract class HubAOService {
 	private final Logger LOG = Logger.getLogger(HubAOService.class.getName());
 

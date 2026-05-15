@@ -11,6 +11,27 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.select.OASelect;
 
+
+/*qqqqqqqqqqq
+CODEX
+
+#2
+  File/class/method: src/main/java/com/viaoa/graph/service/object/OAObjectCSService.java:154, delete(...)
+
+  Exact changed-code path: callSyncSyncServerDelete(...) result is assigned to b, but ignored; method always returns
+  true.
+
+  Why this is a regression: if remote sync delete is unavailable or rejected, caller treats delete as completed and
+  skips local delete. That is false success.
+
+  Minimal fix: if active sync routing returns false, throw or otherwise fail visibly; only return true when remote
+  delete was accepted/completed.
+
+  Suggested regression test: in client sync mode, make remote delete return false; assert object delete does not
+  silently return success.
+
+*/
+
 /**
    Relies on OASyncService to coordinate internal OA CS (client/server) functionality.
 	qqqqqqqqqqqq needs updated
@@ -32,6 +53,16 @@ public abstract class OAObjectCSService {
 		return callSyncIsServer();
 	}
 
+	public boolean isClient(OAObject obj) {
+		//qqqqqqq obj not used, remove qqqqq todo:
+		return callSyncIsClient();
+	}
+
+	public boolean isSingleUser(OAObject obj) {
+		//qqqqqqq obj not used, remove qqqqq todo:
+		return callSyncIsSingleUser();
+	}
+
 	
 	/**
 	 * Determines whether this runtime is operating in workstation (client) mode for
@@ -44,6 +75,7 @@ public abstract class OAObjectCSService {
 	 * @param obj the object whose class is evaluated for workstation mode
 	 * @return {@code true} if not running as a server; otherwise {@code false}
 	 */
+/*qqqqqqqq 20260511 needs to change Workstation to Client, SingleUser	
 	public boolean isWorkstation(OAObject obj) {
 		return !callSyncIsServer();
 	}
@@ -51,10 +83,10 @@ public abstract class OAObjectCSService {
 	public boolean isWorkstation() {
 		return !callSyncIsServer();
 	}
-	
+*/	
 	/**
 	 * Notifies the synchronization client that an object has been created on a
-	 * workstation. Invoked by {@code OAObjectDelegate.initialize()}.
+	 * sync client. Invoked by {@code OAObjectDelegate.initialize()}.
 	 *
 	 * @param obj the newly created object; ignored if {@code null}
 	 */
@@ -122,27 +154,26 @@ public abstract class OAObjectCSService {
      * deletion should occur locally or be forwarded to the server.
      *
      * @param obj the object to delete
-     * @return {@code true} if deletion should occur locally;
-     *         {@code false} if performed on the server
+     * @return {@code true} if deletion was completed
+     *         {@code false} if delete was not done and should be done locally
      */
     public boolean delete(final OAObject obj) {
         if (obj == null) return false;
         LOG.finer("obj="+obj);
 
         if (callSyncIsSingleUser()) {
-            return true; // run delete
+            return false; 
         }
 
         OAObjectInfo oi = callInfoGetObjectInfo(obj.getClass());
-        if (oi.getLocalOnly()) return true; 
+        if (oi.getLocalOnly()) return false; 
         
         if (callSyncIsClient()) { 
-	        if (!callThreadLocalGetSendSyncMessages()) return true;
+	        if (!callThreadLocalGetSendSyncMessages()) return false;
         }
         
-        callSyncSyncServerDelete(obj.getClass(), obj.getObjectKey());  // will call OAObjectDeleteDelegate
-        
-        return false;
+        boolean b = callSyncSyncServerDelete(obj.getClass(), obj.getObjectKey());  // will call OAObjectDeleteDelegate
+        return true;
     }
 	
 	
@@ -250,26 +281,24 @@ public abstract class OAObjectCSService {
 	public <T extends OAObject> boolean loadReferenceHubDataOnServer(Hub<T> thisHub, OASelect<T> select) {
         if (thisHub == null) return false;
         boolean bResult;
-        if (callSyncIsServer()) {
-            //LOG.finest("hub="+hub);
+        if (!callSyncIsServer()) return false;
+        //LOG.finest("hub="+hub);
 
-            // 20140328 performance improvement 
-            if (thisHub.getSelect() == null && select == null) return true;
-            
-            
-            bResult = true;
-            final boolean bWas = callThreadLocalGetSendSyncMessages();
-            // load all data without sending messages
-            // even though Hub.writeObject does this, this data could be used on server application
-        	try {
-        		callThreadLocalSetSendSyncMessages(false);
-        		callHubSelectLoadAllData(thisHub, select);
-        	}
-        	finally {
-        		callThreadLocalSetSendSyncMessages(bWas);        	
-        	}
-        }
-        else bResult = false;
+        // 20140328 performance improvement 
+        if (thisHub.getSelect() == null && select == null) return true;
+        
+        
+        bResult = true;
+        final boolean bWas = callThreadLocalGetSendSyncMessages();
+        // load all data without sending messages
+        // even though Hub.writeObject does this, this data could be used on server application
+    	try {
+    		callThreadLocalSetSendSyncMessages(false);
+    		callHubSelectLoadAllData(thisHub, select);
+    	}
+    	finally {
+    		callThreadLocalSetSendSyncMessages(bWas);        	
+    	}
         return bResult;
 	}
 
@@ -286,7 +315,7 @@ public abstract class OAObjectCSService {
     public void fireBeforePropertyChange(OAObject obj, String propertyName, Object oldValue, Object newValue) {
         if (obj == null) return;
 		
-		if (!callSyncIsServer() && !callSyncIsClient()) return;
+		if (callSyncIsSingleUser()) return;
         
         if (!callThreadLocalGetSendSyncMessages()) return;
         if (callThreadLocalIsLoading()) return;

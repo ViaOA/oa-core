@@ -20,6 +20,13 @@ import com.viaoa.remote.multiplexer.io.RemoteObjectInputStream;
 import com.viaoa.remote.multiplexer.io.RemoteObjectOutputStream;
 import com.viaoa.serialize.OAObjectSerializer;
 
+/*qqqqqqqqqqqqqq
+CODEX
+
+
+
+*/
+
 public abstract class OAObjectSerializeService {
 	private static final Logger LOG = Logger.getLogger(OAObjectSerializeService.class.getName());
 
@@ -83,7 +90,7 @@ public abstract class OAObjectSerializeService {
 		in.defaultReadObject();
 		
 		final OAObjectInfo oi = callInfoGetObjectInfo(oaObj.getClass());
-		final boolean bIsServer = callCSIsServer();
+		final boolean bIsClient = callCSIsClient();
 
 		// read properties
 		for (;;) {
@@ -99,7 +106,7 @@ public abstract class OAObjectSerializeService {
 				value = null;
 			}
 
-			if (bIsServer) {
+			if (!bIsClient) {
 				// 20160206 dont read calcProps if server, they need to be recalc'ed 
 				OALinkInfo li = oi.getLinkInfo(key);
 				if (li != null && li.getCalculated()) {
@@ -318,8 +325,11 @@ public abstract class OAObjectSerializeService {
 			for (OAObject objx : hub) {
 				Object ref = callPropertyGetProperty(objx, revName, false, true);
 				if (ref == null) {
-				} else if (ref == oaObjFrom || ref instanceof OAObjectKey) {
+					// no-op
+				} else if (ref == oaObjFrom) {
 					callPropertySetPropertyCAS(objx, revName, oaObjTo, oaObjFrom);
+				} else if (ref instanceof OAObjectKey && callKeyIsForSameOAObject(null, (OAObjectKey) ref, callKeyGetKey(oaObjFrom))) {
+					callPropertySetPropertyCAS(objx, revName, oaObjTo, ref);
 				} else if (ref instanceof Hub) {
 					callHubSerializeReplaceObject((Hub) ref, oaObjFrom, oaObjTo);
 				}
@@ -332,8 +342,11 @@ public abstract class OAObjectSerializeService {
 			if (ref == null) {
 				return true;
 			}
-			if (ref == oaObjFrom || ( (ref instanceof OAObjectKey) && callKeyIsForSameOAObject(null, (OAObjectKey)ref, callKeyGetKey(oaObjFrom))) )  {
+			if (ref == oaObjFrom)  {
 				callPropertySetPropertyCAS(objx, revName, oaObjTo, oaObjFrom);
+			}
+			else if ( (ref instanceof OAObjectKey) && callKeyIsForSameOAObject(null, (OAObjectKey)ref, callKeyGetKey(oaObjFrom)) )  {
+				callPropertySetPropertyCAS(objx, revName, oaObjTo, ref);
 			} else {
 				if (ref instanceof WeakReference) {
 					ref = ((WeakReference) ref).get();
@@ -381,14 +394,14 @@ public abstract class OAObjectSerializeService {
 		}
 		
 		final OAObjectInfo oi = callInfoGetObjectInfo(oaObj);
-		final boolean bIsServer = callCSIsServer();
-		final boolean bIsObjectOnServer = bIsServer || callSyncClientIsObjectOnServer(oaObj);
+		final boolean bIsClient = callCSIsClient();
+		final boolean bIsObjectOnServer = !bIsClient || callSyncClientIsObjectOnServer(oaObj);
 
 		
 		if (stream instanceof RemoteObjectOutputStream) {
 			if (!bIsObjectOnServer) {
 				stream.writeByte((byte) 2);
-			} else if (!callCSIsServer()) {
+			} else if (callCSIsClient()) {
 				// only need to send key to the server
 				stream.writeByte((byte) 1);
 				stream.writeObject(oaObj.getObjectKey());
@@ -403,7 +416,7 @@ public abstract class OAObjectSerializeService {
 
 		stream.defaultWriteObject(); // does not write references (transient)
 
-		_writeProperties(oi, bIsServer, oaObj, stream, serializer, bIsObjectOnServer); // this will write transient properties
+		_writeProperties(oi, bIsClient, oaObj, stream, serializer, bIsObjectOnServer); // this will write transient properties
 
 		// 20200102 include blobs
 		if (serializer != null && serializer.getIncludeBlobs()) {
@@ -456,14 +469,14 @@ public abstract class OAObjectSerializeService {
 	 * </ul>
 	 *
 	 * @param oi metadata describing the object's properties
-	 * @param bIsServer whether the current runtime is operating as the server
+	 * @param bIsClient whether the current runtime is operating as a client
 	 * @param oaObj the object whose properties are being serialized
 	 * @param stream the target output stream
 	 * @param serializer optional callback controlling reference serialization
 	 * @param bIsObjectSentOnServer whether the object was already sent by the server
 	 * @throws IOException if any property fails to serialize
 	 */
-	public void _writeProperties(final OAObjectInfo oi, final boolean bIsServer, final OAObject oaObj,
+	public void _writeProperties(final OAObjectInfo oi, final boolean bIsClient, final OAObject oaObj,
 			final java.io.ObjectOutputStream stream, final OAObjectSerializer serializer, final boolean bIsObjectSentOnServer)
 			throws IOException {
 		// this method can not support synchronized blocks, since multiple threads could be calling it and then cause deadlock
@@ -491,7 +504,7 @@ public abstract class OAObjectSerializeService {
 			OALinkInfo li = oi.getLinkInfo(key);
 
 			if (li != null && li.getCalculated()) {
-				if (!bIsServer || !li.getServerSideCalc()) {
+				if (bIsClient || !li.getServerSideCalc()) {
 					continue;
 				}
 			}
@@ -536,7 +549,7 @@ public abstract class OAObjectSerializeService {
 				// see if something can be sent
 				if (obj instanceof OAObject) {
 					// always send OAObjectKey to reference objects
-					if (bIsServer) {
+					if (!bIsClient) {
 						obj = callKeyGetKey((OAObject) obj);
 					}
 					bShouldSerialize = true;
@@ -552,7 +565,7 @@ public abstract class OAObjectSerializeService {
 					    bShouldSerialize = false; // dont send
 					} else {
 						// if hx.size=0
-						if (!bIsServer || li == null) {
+						if (bIsClient || li == null) {
 							obj = null;
 							bShouldSerialize = true;
 						} else {
@@ -602,7 +615,7 @@ public abstract class OAObjectSerializeService {
 	public abstract Object callPropertySetPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue, boolean bMustNotExist, boolean bReturnNotExist); 
 	public abstract void callPropertyReleasePropertyLock(OAObject oaObj, String name);
 	public abstract boolean callInfoCacheHub(OALinkInfo li, final Hub<?> hub);
-	public abstract boolean callCSIsServer();
+	public abstract boolean callCSIsClient();
 	public abstract int callHubSerializeReplaceObject(Hub<?> thisHub, OAObject objFrom, OAObject objTo);
 	public abstract boolean callHubSerializeIsResolved(Hub<?> thisHub); 
 	public abstract <T extends OAObject> void callHubSerializeReplaceMasterObject(Hub<T> thisHub, T objFrom, T objTo);

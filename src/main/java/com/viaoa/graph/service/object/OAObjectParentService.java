@@ -42,6 +42,25 @@ import com.viaoa.sync.remote.RemoteServerInterface;
 import com.viaoa.sync.remote.RemoteSessionInterface;
 import com.viaoa.sync.remote.RemoteSyncInterface;
 
+/*qqqqqqqqqq
+CODEX
+
+ #7 — invariant risk
+  File/class/method: src/main/java/com/viaoa/graph/service/object/OAObjectParentService.java:373, sync child hooks;
+  src/main/java/com/viaoa/graph/service/hub/HubParentService.java:496, sync child hooks
+  Exact concern: child-service hooks frequently call srvcSync.getClient(), getRemoteSync(), getRemoteClient(), or
+  getRemoteServer() directly. Some calls guard role/null, others do not.
+  Why it matters: parent service orchestration should centralize sync role validation. Current hooks rely on each
+  child call site to know the correct mode, which is fragile for OA 4.0 runtime invariants.
+  Minimal fix: add guarded parent-level helper methods for required sync roles and use them consistently.
+  Suggested invariant: GRAPH_CHILD_SYNC_HOOKS_USE_PARENT_ROLE_GUARDS
+  Suggested test coverage: child sync hooks in single-user/server/client modes either no-op or fail with documented
+  role errors.
+
+
+
+*/
+
 
 /**
  * 
@@ -243,8 +262,8 @@ public abstract class OAObjectParentService {
 				return OAObjectParentService.this.getHubService().getHubSelectService().refreshSelect(hub);
 			}
 			@Override
-			public boolean callSyncIsServer() {
-				return OAObjectParentService.this.srvcSync.isServer();
+			public boolean callSyncIsClient() {
+				return OAObjectParentService.this.srvcSync.isClient();
 			}
 			@Override
 			public void callSyncRemoteServerRefreshCache(Class<? extends OAObject> clazz) {
@@ -303,8 +322,8 @@ public abstract class OAObjectParentService {
 				return OAObjectParentService.this.getHubService().getHubEventService().getAllListeners(hub);
 			}
 			@Override
-			public boolean callSyncIsServer() {
-				return OAObjectParentService.this.srvcSync.isServer();
+			public boolean callSyncIsClient() {
+				return OAObjectParentService.this.srvcSync.isClient();
 			}
 			@Override
 			protected OAContext callContextGetContext() {
@@ -371,7 +390,7 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public Object callSyncClientGetDetail(OAObject masterObject, String propertyName) {
-				return OAObjectParentService.this.srvcSync.getSyncClient().getDetail(masterObject, propertyName);
+				return OAObjectParentService.this.srvcSync.getClient().getDetail(masterObject, propertyName);
 			}
 			@Override
 			public boolean callRemoteSyncPropertyChange(Class<? extends OAObject> objectClass, OAObjectKey origKey, String propertyName, Object newValue, boolean bIsBlob) {
@@ -379,11 +398,11 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public void callSyncClientObjectCreated(OAObject obj) {
-				OAObjectParentService.this.srvcSync.getSyncClient().objectCreated(obj);
+				OAObjectParentService.this.srvcSync.getClient().objectCreated(obj);
 			}
 			@Override
 			public void callSyncClientObjectFinalized(UUID guid) {
-				OAObjectParentService.this.srvcSync.getSyncClient().objectFinalized(guid);
+				OAObjectParentService.this.srvcSync.getClient().objectFinalized(guid);
 			}
 			@Override
 			public <T extends OAObject> void callHubSelectLoadAllData(Hub<T> thisHub, OASelect<T> select) {
@@ -391,7 +410,7 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public void callSyncClientUpdateObjectsWithoutHubs(OAObject obj) {
-				OASyncClient sc = OAObjectParentService.this.srvcSync.getSyncClient();
+				OASyncClient sc = OAObjectParentService.this.srvcSync.getClient();
 				if (sc != null) sc.updateObjectsWithoutHubs(obj);
 			}
 			@Override
@@ -712,7 +731,7 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public boolean callSyncIsObjectOnServer(OAObject obj) {
-				OASyncClient sc = srvcSync.getSyncClient();
+				OASyncClient sc = srvcSync.getClient();
 				return (sc != null && sc.isObjectOnServer(obj));
 			}
 			@Override
@@ -1070,8 +1089,8 @@ public abstract class OAObjectParentService {
     	
     	srvcOAObjectInfo = new OAObjectInfoService(faBridge.getObjectFriendAccess(), faBridge.getObjectInfoFriendAccess()) {
 			@Override
-			public boolean callSyncIsServer() {
-				return OAObjectParentService.this.srvcSync.isServer();
+			public boolean callSyncIsClient() {
+				return OAObjectParentService.this.srvcSync.isClient();
 			}
 			@Override
 			public Object callReflectGetRawReference(OAObject oaObj, String name) {
@@ -1123,7 +1142,7 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public void callSyncClientObjectCreated(OAObject obj) {
-				OAObjectParentService.this.srvcSync.getSyncClient().objectCreated(obj);
+				OAObjectParentService.this.srvcSync.getClient().objectCreated(obj);
 			}
 			@Override
 			public void callReflectSetProperty(OAObject oaObj, String propName, Object value, String fmt) {
@@ -1248,8 +1267,16 @@ public abstract class OAObjectParentService {
 				return OAObjectParentService.this.getOAObjectCacheService().get(clazz, ok);
 			}
 			@Override
-			public boolean callCSIsWorkstation(OAObject obj) {
-				return OAObjectParentService.this.getOAObjectCSService().isWorkstation(obj);
+			public boolean callCSIsSingleUser(OAObject obj) {
+				return OAObjectParentService.this.getOAObjectCSService().isSingleUser(obj);
+			}
+			@Override
+			public boolean callCSIsServer(OAObject obj) {
+				return OAObjectParentService.this.getOAObjectCSService().isServer(obj);
+			}
+			@Override
+			public boolean callCSIsClient(OAObject obj) {
+				return OAObjectParentService.this.getOAObjectCSService().isClient(obj);
 			}
 			@Override
 			public OAObject callCSGetServerObject(Class clazz, OAObjectKey key) {
@@ -1380,8 +1407,8 @@ public abstract class OAObjectParentService {
 				return OAObjectParentService.this.getOAObjectCSService().getServerReferenceHub(oaObj, linkPropertyName);
 			}
 			@Override
-			public void callThreadLocalSetLoading(boolean b) {
-				OAObjectParentService.this.srvcThreadLocal.setLoading(b);
+			public boolean callThreadLocalSetLoading(boolean b) {
+				return OAObjectParentService.this.srvcThreadLocal.setLoading(b);
 			}
 			@Override
 			public void callThreadLocalRemoveSiblingHelper(OASiblingHelper sh) {
@@ -1405,7 +1432,7 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public boolean callSyncIsObjectOnServer(OAObject obj) {
-				return OAObjectParentService.this.srvcSync.getSyncClient().isObjectOnServer(obj);
+				return OAObjectParentService.this.srvcSync.getClient().isObjectOnServer(obj);
 			}
 			@Override
 			public void callSiblingOnGetObjectReference(OAObject obj, String linkPropertyName) {
@@ -1687,8 +1714,8 @@ public abstract class OAObjectParentService {
     	if (srvcOAObjectSave != null) return srvcOAObjectSave;
     	srvcOAObjectSave = new OAObjectSaveService(faBridge.getObjectFriendAccess()) {
 			@Override
-			public boolean callCSIsWorkstation() {
-				return OAObjectParentService.this.getOAObjectCSService().isWorkstation();
+			public boolean callCSIsClient(OAObject obj) {
+				return OAObjectParentService.this.getOAObjectCSService().isClient(obj);
 			}
 			@Override
 			public boolean callCSSave(OAObject oaObj, int iCascadeRule) {
@@ -1849,8 +1876,8 @@ public abstract class OAObjectParentService {
 				return OAObjectParentService.this.getOAObjectInfoService().cacheHub(li, hub);
 			}
 			@Override
-			public boolean callCSIsServer() {
-				return OAObjectParentService.this.getOAObjectCSService().callSyncIsServer();
+			public boolean callCSIsClient() {
+				return OAObjectParentService.this.getOAObjectCSService().callSyncIsClient();
 			}
 			@Override
 			public int callHubSerializeReplaceObject(Hub<?> thisHub, OAObject objFrom, OAObject objTo) {
@@ -1870,11 +1897,14 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public boolean callSyncClientIsObjectOnServer(OAObject obj) {
-				return OAObjectParentService.this.srvcSync.getSyncClient().isObjectOnServer(obj);
+				OASyncClient sc = OAObjectParentService.this.srvcSync.getClient();
+				if (sc == null) return false;
+				return sc.isObjectOnServer(obj);
 			}
 			@Override
 			public void callSyncClientObjectSentToServer(OAObject obj) {
-				OAObjectParentService.this.srvcSync.getSyncClient().objectSentToServer(obj);				
+				OASyncClient sc = OAObjectParentService.this.srvcSync.getClient();
+				if (sc != null) sc.objectSentToServer(obj);				
 			}
 			@Override
 			public OAObjectSerializer callThreadLocalGetCurrentObjectSerializer() {
@@ -1941,12 +1971,12 @@ public abstract class OAObjectParentService {
     	if (srvcOAObjectUnique != null) return srvcOAObjectUnique;
     	srvcOAObjectUnique = new OAObjectUniqueService() {
 			@Override
-			public void callThreadLocalSetLoading(boolean b) {
-				OAObjectParentService.this.srvcThreadLocal.setLoading(b);				
+			public boolean callThreadLocalSetLoading(boolean b) {
+				return OAObjectParentService.this.srvcThreadLocal.setLoading(b);				
 			}
 			@Override
 			public OAObject callSyncClientGetUnique(Class<? extends OAObject> clazz, String propertyName, Object uniqueKey, boolean bAutoCreate) {
-				OASyncClient sc = OAObjectParentService.this.srvcSync.getSyncClient();
+				OASyncClient sc = OAObjectParentService.this.srvcSync.getClient();
 				RemoteServerInterface rsi;
 				try {
 					rsi = sc.getRemoteServer();

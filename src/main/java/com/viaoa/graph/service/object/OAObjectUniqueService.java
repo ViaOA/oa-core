@@ -77,12 +77,12 @@ public abstract class OAObjectUniqueService {
             oaObj = getUnique(clazz, propertyName, uniqueKey, false);
             if (oaObj != null) return oaObj;
             oaObj = (OAObject) callReflectCreateNewObject(clazz);
+        	boolean bWasLoading = callThreadLocalSetLoading(true);
             try {
-            	callThreadLocalSetLoading(true);
                 oaObj.setProperty(propertyName, uniqueKey);
             }
             finally {
-            	callThreadLocalSetLoading(false);
+            	callThreadLocalSetLoading(bWasLoading);
             }
         }
         
@@ -93,5 +93,5 @@ public abstract class OAObjectUniqueService {
 	public abstract Object callReflectCreateNewObject(Class<?> clazz); 
 	public abstract boolean callCSIsClient();
 	public abstract OAObject callSyncClientGetUnique(Class<? extends OAObject> clazz, final String propertyName, Object uniqueKey, boolean bAutoCreate);
-	public abstract void callThreadLocalSetLoading(boolean b);
+	public abstract boolean callThreadLocalSetLoading(boolean b);
 }

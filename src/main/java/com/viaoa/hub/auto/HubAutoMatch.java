@@ -15,6 +15,26 @@
  */
 package com.viaoa.hub.auto;
 
+/*qqqqqqqqq
+CODEX
+
+ 1. file/class/method: src/main/java/com/viaoa/hub/auto/HubAutoMatch.java:204 init(...)
+  2. exact execution path: create with default constructor, then call init(hub, badProperty, hubMaster, ...). init()
+     sets bInit = true, assigns hub/hubMaster, and registers itself as a listener on hubMaster before
+     setProperty(badProperty) validates getter/setter methods. If validation throws, caller can catch the exception,
+     but the HubAutoMatch instance is now marked initialized and remains attached to hubMaster.
+  3. why this is a real correctness bug: this is not just caller-visible partial progress. The failed initialization
+     leaves a live listener behind and prevents retry because future init(...) calls immediately return on bInit.
+     Later master Hub events can invoke a partially initialized matcher and mutate the target Hub incorrectly or
+     throw from unrelated Hub operations.
+  4. semantic/invariant violated: HUB_AUTO_MATCH_FAILED_INIT_DOES_NOT_ATTACH_LISTENER_OR_POISON_RETRY
+  5. minimal fix or CODEX/defer recommendation: validate property/method compatibility before setting bInit and
+     before listener registration, or roll back listener/state in a catch block and leave the instance retryable.
+  6. suggested regression test: default-construct HubAutoMatch, call init with an invalid property and catch the
+     exception, then verify no listener remains on hubMaster and a second init with a valid property succeeds.
+
+*/
+
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -24,9 +44,7 @@ import com.viaoa.converter.OAConv;
 import com.viaoa.converter.OAConverter;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.model.oa.VEnum;
-import com.viaoa.model.oa.VString;
 import com.viaoa.object.*;
-import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;

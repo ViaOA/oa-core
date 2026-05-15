@@ -1,6 +1,16 @@
 package com.viaoa.graph.api;
 
 
+
+/*qqqqqqq
+CODEX
+
+
+
+*/
+
+
+
 /**
  * Real-time synchronization operations for an {@link OAGraph}.
  * <p>
@@ -19,7 +29,8 @@ package com.viaoa.graph.api;
  * This represents real-time coordination of the Object Graph. For eventual
  * consistency with offline support and server-to-server convergence, see
  * {@link ReplOps}.
- */public interface SyncOps {
+ */
+public interface SyncOps {
 
 	 /**
 	  * Configures this graph to operate as a synchronization server.
@@ -87,6 +98,8 @@ package com.viaoa.graph.api;
 	 */	
 	void stop() throws Exception;
 
+	boolean isSingleUser();
+	
 	/**
 	 * Returns whether this graph is configured as a synchronization server.
 	 * <p>

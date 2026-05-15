@@ -63,6 +63,22 @@ CODEX
      Impact: CSV export can emit malformed rows for quoted text.
 
 
+1. file/class/method: src/main/java/com/viaoa/text/OATextTokenizer.java / OATextTokenizer.parseLine
+
+  exact execution path: parseLine("\"a\" ,b", ',', true) reads the closing quote and sets lastQpos, then sees the
+  whitespace before the comma and resets lastQpos to -1. When the comma is reached, the parser thinks the quoted
+  value is still open and treats the comma as part of the quoted field. The result is a single corrupted field
+  instead of ["a", "b"].
+
+  why it is an obvious concrete bug: the method contract says leading/trailing whitespace for each column is
+  trimmed, and quoted values are supported. A normal CSV-style value with whitespace after the closing quote before
+  the delimiter is parsed incorrectly.
+
+  minimal fix: once a closing quote is seen, preserve that closed-quote state across trailing whitespace until
+  delimiter/EOL. Do not reset lastQpos on whitespace after the closing quote.
+
+  suggested test: assert parseLine("\"a\" ,b", ',', true) returns two fields: "a" and "b"; also test "\"a\" "
+  returns "a" without quotes.
 
 */
 

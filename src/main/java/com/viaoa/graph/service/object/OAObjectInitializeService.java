@@ -10,6 +10,34 @@ import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 
+
+/*qqqqqqqqqqqqqq
+CODEX
+
+#2
+  File/Class/Method: src/main/java/com/viaoa/graph/service/object/OAObjectInitializeService.java, initialize(...)
+
+  Exact execution path: with bAddToCache=true, initialize(...) assigns GUID/default links and calls
+  callCacheAdd(...), then later runs client-sync initialization and datasource ID assignment. If
+  callSyncClientObjectCreated(...) or callDSAssignId(...) throws, the object has already been inserted into cache
+  with partial initialization.
+
+  Why it is a correctness bug: failed initialization can leave a runtime-visible cached object that lacks
+  authoritative CS/DS initialization, making identity lookup and later retries ambiguous.
+
+  Semantic/invariant violated: cache publication must happen after authoritative initialization succeeds, or must be
+  rolled back on failure.
+
+  Minimal fix: move cache add until after CS/DS success, or remove the object from cache in the failure path.
+
+  Suggested test: datasource assigns IDs on create and throws from assignId; call initialize with bAddToCache=true;
+  assert object is not findable from cache afterward.
+
+
+*/
+
+
+
 public abstract class OAObjectInitializeService {
 	private static final Logger LOG = Logger.getLogger(OAObjectInitializeService.class.getName());
 
@@ -224,11 +252,11 @@ public abstract class OAObjectInitializeService {
 			}
 			if (!bWasLoading && bInitializeWithDS) {
 				if (callDSGetAssignIdOnCreate(oaObj)) {
-					callThreadLocalSetLoading(false);
+					callThreadLocalSetLoading(false); 
 					try {
 						callDSAssignId(oaObj);
 					} finally {
-						callThreadLocalSetLoading(true);
+						callThreadLocalSetLoading(true); // outer code has it set to true
 					}
 				}
 			}
@@ -237,7 +265,7 @@ public abstract class OAObjectInitializeService {
 			}
 		} finally {
 			// note: this has to be false, not bWasLoading, since it also increments a counter in threadLocalDelegate
-			callThreadLocalSetLoading(false);
+			callThreadLocalSetLoading(bWasLoading);
 		}
 		if (!bWasLoading) {
 			callCacheFireAfterLoadEvent(oaObj);

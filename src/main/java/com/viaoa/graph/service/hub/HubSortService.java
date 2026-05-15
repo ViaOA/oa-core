@@ -14,6 +14,25 @@ import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.thread.OAThread;
 
+/*qqqqqqq
+CODEX
+
+#9 — invariant risk
+  file/class/method: src/main/java/com/viaoa/graph/service/hub/HubSortService.java:648, _performSortX
+  exact concern: Sort retries ConcurrentModificationException up to 25 times, then silently exits and afterSort
+  still fires.
+  why it matters: Listeners and callers can observe “sort complete” while the Hub remains unsorted. That violates
+  event semantics.
+  severity: invariant risk
+  minimal fix: Track sort success; if all retries fail, throw or suppress afterSort and leave an explicit failure
+  path.
+  suggested invariant ID/name: HUB-SORT-ORDER-001: afterSort fires only after a completed sort
+  suggested test coverage: Comparator/listener-induced concurrent modification during sort.
+
+
+
+*/
+
 public abstract class HubSortService {
 	private final Logger LOG = Logger.getLogger(HubSortService.class.getName());
 
@@ -234,15 +253,19 @@ public abstract class HubSortService {
 		final HubData<T> hd = faHub.getHubData(thisHub);
 	    hd.incrementChangeCount();
 	    
+	    ConcurrentModificationException ex = null;
 	    for (int i=0; i<25; i++) {
+	    	ex = null;
 	        try {
     	        Collections.sort(hd.getVector(), hd.getSortListener().getComparator());
     	        break;
 	        }
 	        catch (ConcurrentModificationException e) {
+	        	ex = e;
 	        	OAThread.delay(1);
 	        }
 	    }
+	    if (ex != null) throw ex;
 	}
 	
 	/**

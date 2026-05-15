@@ -64,10 +64,10 @@ public class HubLink {
      * @param toProperty the property in the destination Hub to update
      */
     public HubLink(Hub fromHub, Hub toHub, String toProperty) {
-        if (fromHub != null && toHub != null) fromHub.setLinkHub(toHub, toProperty);
         this.fromHub = fromHub;
         this.toHub = toHub;
         this.toProperty = toProperty;
+        if (fromHub != null && toHub != null) fromHub.setLinkHub(toHub, toProperty);
     }
 
     /**
@@ -80,10 +80,18 @@ public class HubLink {
      * @param toProperty the property in the destination Hub to update
      */
     public HubLink(Hub fromHub, boolean bUseHubPosition, Hub toHub, String toProperty) {
-        if (fromHub != null && toHub != null) fromHub.setLinkHub(toHub, toProperty);
         this.fromHub = fromHub;
         this.bUseHubPosition = bUseHubPosition;
+        this.toHub = toHub;
         this.toProperty = toProperty;
+        if (fromHub != null && toHub != null) {
+        	if (bUseHubPosition) {
+            	fromHub.setLinkHubOnPos(toHub, toProperty);
+        	}
+        	else {
+	        	fromHub.setLinkHub(toHub, toProperty);
+	        }
+        }
     }
 
     /**
@@ -96,11 +104,11 @@ public class HubLink {
      * @param toProperty the property on the destination Hub's active object
      */
     public HubLink(Hub fromHub, String fromProperty, Hub toHub, String toProperty) {
-        if (fromHub != null && toHub != null) fromHub.setLinkHub(toHub);
         this.fromHub = fromHub;
-        this.toHub = toHub;
         this.fromProperty = fromProperty;
+        this.toHub = toHub;
         this.toProperty = toProperty;
+        if (fromHub != null && toHub != null) fromHub.setLinkHub(toHub);
     }
     
     /**
@@ -111,9 +119,9 @@ public class HubLink {
      * @param toHub the destination Hub
      */
     public HubLink(Hub fromHub, Hub toHub) {
-        if (fromHub != null && toHub != null) fromHub.setLinkHub(toHub);
         this.fromHub = fromHub;
         this.toHub = toHub;
+        if (fromHub != null && toHub != null) fromHub.setLinkHub(toHub);
     }
 
     /**
@@ -126,13 +134,13 @@ public class HubLink {
      * @param bAutoCreate true to auto-create a new object in toHub
      */
     public HubLink(Hub fromHub, Hub toHub, String toProperty, boolean bAutoCreate) {
-        if (fromHub != null && toHub != null) {
-        	fromHub.setLinkHub(toHub, toProperty, bAutoCreate);
-        }
         this.fromHub = fromHub;
         this.toHub = toHub;
         this.toProperty = toProperty;
         this.bAutoCreate = bAutoCreate;
+        if (fromHub != null && toHub != null) {
+        	fromHub.setLinkHub(toHub, toProperty, bAutoCreate);
+        }
     }
 
     /**

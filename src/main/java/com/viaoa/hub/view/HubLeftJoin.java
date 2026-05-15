@@ -31,6 +31,28 @@ import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
 
+
+/*qqqqqqqqqq
+CODEX
+
+ 1. file/class/method: src/main/java/com/viaoa/hub/view/HubLeftJoin.java:106 constructor and src/main/java/com/
+     viaoa/hub/view/HubLeftJoin.java:124 setup()
+  2. exact execution path: create new HubLeftJoin(hubA, hubB, propertyPath, false). Then change the combined Hub AO
+     or hubB AO. setup() always installs AO listeners that propagate AO changes between hubCombined, hubA, and hubB;
+     the stored bSetAO flag is never checked.
+  3. why this is a real correctness bug: the public constructor explicitly offers a “do not synchronize AO” mode,
+     but AO state is still mutated. This can silently change source Hub active objects from a view-only left-join
+     helper.
+  4. semantic/invariant violated: HUB_LEFT_JOIN_BSETAO_FALSE_DOES_NOT_PROPAGATE_ACTIVE_OBJECT
+  5. minimal fix or CODEX/defer recommendation: wrap the AO listener registration and AO propagation bodies with if
+     (bSetAO), or do not install those listeners when bSetAO == false.
+  6. suggested regression test: build a HubLeftJoin with bSetAO=false, set AO on the combined Hub and on hubB, and
+     verify hubA.getAO() / hubB.getAO() / combined.getAO() are not changed by the helper.
+
+
+
+*/
+
 /**
  * Creates a live "left join" view between two {@link Hub}s, conceptually similar
  * to a SQL LEFT JOIN.
@@ -252,7 +274,7 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 				og.hubsInternal().callHubAddRemoveClear(hubCombined, false, false); // 20240403 dont send newList event
 				
 				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
-				srvcOAThreadLocal.setLoading(true);
+				boolean bWasLoading = srvcOAThreadLocal.setLoading(true);
 				try {
     				for (A a : hubA) {
     					hubCombined.add(new OALeftJoin(a, null));
@@ -262,7 +284,7 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
     				}
 				}
 				finally {
-	                srvcOAThreadLocal.setLoading(false);
+	                srvcOAThreadLocal.setLoading(bWasLoading);
                     hubCombined.setActiveObject(null);
 	                og.hubsInternal().callHubEventFireOnNewListEvent(hubCombined, true);
 				}

@@ -17,6 +17,55 @@ import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.object.OAObject;
 
+
+/*qqqqqqqqqqq
+CODEX
+
+ #3
+  File/Class/Method: src/main/java/com/viaoa/graph/service/hub/HubAddRemoveService.java, _clear(...)
+
+  Exact execution path: on a remote thread, _clear(...) calls callRemoteThreadSetStartedNextThread(true), then
+  performs AO reset, select cancel, before-remove-all event, CS remove-all, vector clear, change tracking, and
+  reverse cleanup. If any step before the explicit reset throws, startedNextThread is never restored and
+  startNextThread() is not called.
+
+  Why it is a correctness bug: one failed clear can stall remote-thread message progression and leave the remote-
+  thread scheduler in a suppressed state.
+
+  Semantic/invariant violated: remote-thread suppression flags must be restored in finally.
+
+  Minimal fix: wrap the body after setStartedNextThread(true) in try/finally and restore/start-next in the finally
+  path.
+
+  Suggested test: remote-thread clear where a before-remove-all listener throws; assert startedNextThread is
+  restored and next remote message can run.
+
+ #5
+  File/Class/Method: src/main/java/com/viaoa/graph/service/hub/HubAddRemoveService.java, _add(...), remove(...),
+  move(...)
+
+  Exact execution path: _add(...) sends callHubCSAddToHub(...) before internalAdd(...); remove(...) sends
+  callHubCSRemoveFromHub(...) before callHubData_remove(...); move(...) sends callHubCSMoveObjectInHub(...) before
+  callHubData_move(...). If the local mutation later fails or returns false, the remote/server side may already have
+  accepted the mutation.
+
+  Why it is a correctness bug: sync messages can describe a Hub transition that did not commit locally, causing
+  local/server divergence under listener reentrancy, races, or local vector failure.
+
+  Semantic/invariant violated: sync publication must correspond to a committed local transition, or the call must be
+  explicitly authoritative and rollback local state on failure.
+
+  Minimal fix: either move CS publication after successful local mutation, or make the CS call an authoritative
+  prepare/commit with local rollback/abort semantics when local mutation fails.
+
+  Suggested test: before-add listener or injected HubData failure causes internalAdd(...) to fail after CS add is
+  sent; assert no remote add is emitted unless local membership exists.
+>NOTE: CS is done first to have it 'ran' on Server, which can fail with exception, that is thrown on local
+
+
+
+*/
+
 public abstract class HubAddRemoveService {
 	private final Logger LOG = Logger.getLogger(HubAddRemoveService.class.getName());
 
@@ -609,8 +658,7 @@ public abstract class HubAddRemoveService {
 		if (!bIsLoading && faHub.getHubData(thisHub).getSortListener() != null) {
 			// use getCurrentSize to "guess" that it will go at the end, in
 			//  cases where this is loaded in order.
-			insert(thisHub, obj, thisHub.getCurrentSize());
-			return true;
+			return insert(thisHub, obj, thisHub.getCurrentSize());
 		}
 
 		if (!bIsLoading && !callRemoteThreadIsRemoteThread()) {
@@ -1289,7 +1337,7 @@ public abstract class HubAddRemoveService {
 					callObjectDSRemoveReference(obj, dm.getDetailToMasterLinkInfo());
 					//was: OAObjectSaveDelegate._saveObjectOnly(obj, cascade);
 				}
-			} else if (bIsSaving && dm != null && dm.getDetailToMasterLinkInfo() != null && !bHasMethod && callSyncIsServer() && !obj.isDeleted()) {
+			} else if (bIsSaving && dm != null && dm.getDetailToMasterLinkInfo() != null && !bHasMethod && !callSyncIsClient() && !obj.isDeleted()) {
 				// 20181126 if it is a removed object from ServerRoot, need to save now
 				callObjectSaveSave(obj, iCascadeRule, cascade);
 			}
@@ -1456,5 +1504,5 @@ public abstract class HubAddRemoveService {
 	public abstract void callRemoteThreadSetStartedNextThread(boolean b);
 	
 	// Sync
-	public abstract boolean callSyncIsServer();
+	public abstract boolean callSyncIsClient();
 }

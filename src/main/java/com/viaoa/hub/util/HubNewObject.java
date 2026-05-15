@@ -254,13 +254,13 @@ public class HubNewObject<F extends OAObject> {
 	public F createNewObject() {
 		F obj = null;
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+		boolean bWasLoading = srvcOAThreadLocal.setLoading(true);
 		try {
-			srvcOAThreadLocal.setLoading(true);
 			Class<F> clazz = hubMain.getObjectClass();
     		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
 			obj = (F) og.objectsInternal().callObjectReflectCreateNewObject(clazz);
 		} finally {
-			srvcOAThreadLocal.setLoading(false);
+			srvcOAThreadLocal.setLoading(bWasLoading);
 		}
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
 		og.objectsInternal().callObjectInitializeInitializeAfterLoading((OAObject) obj);

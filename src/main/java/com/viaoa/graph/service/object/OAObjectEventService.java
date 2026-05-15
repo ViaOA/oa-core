@@ -28,6 +28,71 @@ import com.viaoa.reflect.OAReflect;
 import com.viaoa.undo.OAUndoManager;
 import com.viaoa.undo.OAUndoableEdit;
 
+/*qqqqqqqq
+CODEX
+
+#6
+  File/Class/Method: src/main/java/com/viaoa/graph/service/object/OAObjectEventService.java, firePropertyChange(...)
+
+  Exact execution path: for link-property changes, firePropertyChange(...) updates the stored property/CAS, sets
+  temporary changed state, fires Hub/cache after-property-change events, then later calls updateLink(...). If
+  updateLink(...) throws, reverse Hub/detail ownership updates may not complete even though observers and cache
+  listeners already saw the property change.
+
+  Why it is a correctness bug: forward reference state and published events can commit before reverse-link graph
+  consistency is established.
+
+  Semantic/invariant violated: link property transitions must update forward and reverse graph state before after-
+  events/sync publication.
+
+  Minimal fix: perform updateLink(...) before external after-change/cache publication, or add rollback/explicit
+  partial-failure handling around reverse-link update failures.
+
+  Suggested test: link setter where reverse Hub getter returns an invalid non-Hub or reverse update throws; assert
+  no after-property-change event is fired unless forward and reverse state are consistent.
+
+
+
+#1
+
+  1. file/class/method
+     src/main/java/com/viaoa/graph/service/object/OAObjectEventService.java:816
+     OAObjectEventService.updateLink(...)
+  2. exact execution path
+     A link property changes successfully. firePropertyChange(...) reaches updateLink(...). For a reverse ONE link,
+     the method attempts to clear the old reverse reference or set the new reverse reference inside:
+
+  try {
+      ...
+      callReflectSetProperty(...)
+      ...
+  } catch (Exception e) {
+  }
+
+  For reverse MANY/hub maintenance, old-hub removal is also swallowed, and new-hub add logs but does not fail the
+  operation.
+
+  3. why this is a real correctness bug
+     The primary property change succeeds and caller sees success, but reverse link/hub maintenance can fail
+     silently. That can leave child.parent == newParent while newParent.children does not contain child, or
+     oldParent.children still contains it.
+  4. semantic/invariant violated
+     Bidirectional relationship maintenance must either complete or fail visibly. Silent inverse-link failure
+     corrupts hub membership/reference consistency.
+  5. minimal fix
+     Do not swallow these exceptions. Propagate them, or explicitly mark the reverse-update as best-effort only with
+     a reconciliation path. At minimum, replace empty catches with thrown runtime exceptions carrying object/
+     property context.
+  6. suggested regression test
+     Create a bidirectional ONE/MANY or ONE/ONE relationship where the reverse setter/listener throws. Set the
+     forward property. Assert the caller gets an exception and the graph does not report a successful forward-only
+     relationship transition.
+
+
+
+
+*/
+
 public abstract class OAObjectEventService {
 	private static final Logger LOG = Logger.getLogger(OAObjectEventService.class.getName());
 

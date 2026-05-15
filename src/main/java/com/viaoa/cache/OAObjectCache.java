@@ -241,6 +241,7 @@ import com.viaoa.runtime.OARuntime;
 		
 		if (bsWasFound[0]) {
 			objectIndex.updateIndex(obj, ok, oldRef[0].key);
+			oldRef[0].key = ok;
 		}
 		else {
 		    if (oldRef[0] != null) {
@@ -293,7 +294,14 @@ import com.viaoa.runtime.OARuntime;
 			if (wr == null) break;
 			++cntGCd;
 			ConcurrentHashMap<UUID, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(wr.clazz);
-			if (hm != null) hm.remove(wr.key.getGuid());
+			
+			if (hm != null) {
+				boolean removed = hm.remove(wr.key.getGuid(), wr);
+				if (!removed) {
+				    continue; // stale queued weak ref; newer cache entry owns this GUID now
+				}
+			}
+			
 			objectIndex.removeFromIndex(wr.clazz, wr.key);
 			
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(wr.clazz);
@@ -331,7 +339,9 @@ import com.viaoa.runtime.OARuntime;
 		if (hm == null) return;
 		for (OAWeakRef<T> wr : hm.values()) {
 			T obj = wr.get();
-			if (obj != null) callback.updateObject(obj);
+			if (obj != null) {
+				if (!callback.updateObject(obj)) break;;
+			}
 		}
 	}
 	
@@ -377,7 +387,7 @@ import com.viaoa.runtime.OARuntime;
 					return obj;
 				}
 				alResults.add(obj);
-				if (alResults.size() >= fetchAmount) {
+				if (fetchAmount > 0 && alResults.size() >= fetchAmount) {
 					return obj;
 				}
 			}
@@ -396,6 +406,9 @@ import com.viaoa.runtime.OARuntime;
 	}
 	
 	public OAObject getRandom(Class<? extends OAObject> clazz, int max) {
+		if (clazz == null) return null;
+		if (max <= 0) return null;
+		
 		ConcurrentHashMap<UUID, OAWeakRef<? extends OAObject>> hm = hmOAObjectByGuid.get(clazz);
 		if (hm == null) return null;
 		
@@ -406,13 +419,16 @@ import com.viaoa.runtime.OARuntime;
 	    int pos = (int) (Math.random() * max);
 
 	    int i = 0;
+	    OAObject obj = null;
 	    for (OAWeakRef<? extends OAObject> wr : hm.values()) {
+	    	OAObject objx = wr.get();
+	    	if (objx != null) obj = objx;
+	    	
 	        if (i++ >= pos) {
-	        	OAObject objx = wr.get();
-	        	if (objx != null) return objx;
+	        	if (objx != null) break;
 	        }
 	    }
-	    return null;
+	    return obj;
 	}
 }
 

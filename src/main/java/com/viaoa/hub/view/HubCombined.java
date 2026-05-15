@@ -297,9 +297,9 @@ public class HubCombined<TYPE extends OAObject> {
 			@Override
 			public void onNewList(HubEvent<TYPE> e) {
 				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+				boolean bWasLoading = srvcOAThreadLocal.setLoading(true);
 				try {
 					bUpdatingMasterHub = true;
-					srvcOAThreadLocal.setLoading(true);
 					for (Object obj : hubMaster) {
 						boolean bUsed = false;
 						for (Hub<TYPE> hx : alHub) {
@@ -317,7 +317,7 @@ public class HubCombined<TYPE extends OAObject> {
 					}
 				} finally {
 					bUpdatingMasterHub = false;
-					srvcOAThreadLocal.setLoading(false);
+					srvcOAThreadLocal.setLoading(bWasLoading);
 				}
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
 				og.hubsInternal().callHubEventFireOnNewListEvent(hubMaster, true);

@@ -82,7 +82,8 @@ public class OATextGrammar {
 				}
 			} else if (c == '_') {
 				c = ' ';
-			} else if (cLast == '_') {
+			} else if (cLast == ' ') {
+				if (c == ' ') continue;
 				if (Character.isLowerCase(c)) {
 					c = Character.toUpperCase(c);
 				}

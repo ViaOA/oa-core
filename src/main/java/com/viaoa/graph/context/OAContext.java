@@ -10,6 +10,43 @@ import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 
+/*qqqqqqqqqq
+CODEX
+#1
+  file/class/method: src/main/java/com/viaoa/graph/context/OAContext.java:401 OAContext.removeContext(Object),
+  removeContext()
+  exact concern: removeContext(null) normalizes null for the Hub map, then calls hmContextUserAccess.remove(context)
+  with context == null, which throws NullPointerException on ConcurrentHashMap. removeContext() also only removes
+  the Hub mapping and leaves NullContext user-access behind.
+  why it matters: context cleanup is not deterministic; access rules can leak for the default/null context, and
+  valid cleanup with null can fail at runtime.
+  severity: bug
+  minimal fix: normalize context once before removing from both maps; make removeContext() delegate to
+  removeContext(null).
+  suggested invariant ID/name: CTX-REMOVE-NULL-CLEARS-ALL
+  suggested test coverage: set context Hub and OAUserAccess for null context, call both removeContext() and
+  removeContext(null), assert no exception and both maps resolve null afterward.
+
+ #2
+  file/class/method: src/main/java/com/viaoa/graph/context/OAContext.java:306, src/main/java/com/viaoa/graph/
+  context/OAContext.java:363, src/main/java/com/viaoa/graph/context/OAContext.java:447
+  exact concern: context Hub and OAUserAccess are stored only through WeakReference. setContextObject creates a new
+  local Hub and stores no strong reference in OAContext.
+  why it matters: context identity and access rules can disappear after GC while the context key still exists. That
+  makes permission checks nondeterministic across requests/threads and is risky for server/runtime access semantics.
+  severity: invariant risk
+  minimal fix: decide the ownership contract explicitly. If context registration means “active until removed,” store
+  strong references. If weak ownership is intentional, require caller-owned strong references and document/test that
+  contract.
+  suggested invariant ID/name: CTX-ACCESS-LIFETIME-DETERMINISTIC
+  suggested test coverage: register context object/access, force GC pressure, verify whether access must remain or
+  may expire according to the chosen contract.
+
+
+
+
+*/
+
 public class OAContext {
 
 	/**
@@ -98,7 +135,7 @@ public class OAContext {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
 		
 		// default for main server thread (context=null) is always true
-		if (context == NullContext && og.syncInternal().isServer()) {
+		if (context == NullContext && !og.syncInternal().isClient()) {
 			if (oaObj == null) {
 				return true;
 			}
@@ -168,7 +205,7 @@ public class OAContext {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
 
 		// default for main server thread (context=null) is always true
-		if (context == NullContext && og.syncInternal().isServer()) {
+		if (context == NullContext && !og.syncInternal().isClient()) {
 			if (oaObj == null) {
 				return true;
 			}
@@ -273,7 +310,7 @@ public class OAContext {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
 
 		// default for main server thread (context=null) is always true
-		if (context == NullContext && og.syncInternal().isServer()) {
+		if (context == NullContext && !og.syncInternal().isClient()) {
 			if (oaObj == null) {
 				return true;
 			}
@@ -400,6 +437,7 @@ public class OAContext {
 	 */
 	public void removeContext(Object context) {
 		removeContextHub(context);
+		if (context != null) hmContextUserAccess.remove(context);
 	}
 
 	/**

@@ -308,8 +308,9 @@ public abstract class OAObjectImportMatchService {
 
 		if (objNext == null) {
 			boolean b = callThreadLocalIsLoading();
+			boolean bWasLoading = false;
 			if (b) {
-				callThreadLocalSetLoading(false);
+				bWasLoading = callThreadLocalSetLoading(false);
 			}
 
 			try {
@@ -317,7 +318,7 @@ public abstract class OAObjectImportMatchService {
 			}
 			finally {
 				if (b) {
-					callThreadLocalSetLoading(true);
+					callThreadLocalSetLoading(bWasLoading);
 				}
 			}
 

@@ -34,6 +34,25 @@ CODEX
      Impact: Unicode UI/text formatting widths become wrong.
 
 
+1. file/class/method: src/main/java/com/viaoa/text/OATextAlign.java / OATextAlign.leftPad
+
+  exact execution path: leftPad("abc", 5, ' ') calls padStart("abc", 5, ' '); padStart treats 5 as pad amount,
+  computes target width as 5 + value.length(), and returns "     abc".
+
+  why it is an obvious concrete bug: leftPad documents width as the target result width, but it produces a result of
+  value.length() + width. A caller expecting width 5 gets width 8.
+
+  minimal fix: have leftPad call alignRight(value, width, padChar) directly, or change the contract if the old OA
+  behavior intentionally means “pad amount”.
+
+  suggested test: assert leftPad("abc", 5, ' ').equals("  abc").
+
+
+
+
+
+
+
 */
 
 

@@ -41,6 +41,90 @@ import com.viaoa.runtime.OAThreadService;
 import com.viaoa.select.OASelect;
 import com.viaoa.trigger.OATrigger;
 
+/*qqqqqqqqqq
+CODEX
+
+#9 — boundary / ownership risk
+  File/class/method: src/main/java/com/viaoa/graph/OAGraphImpl.java:136, create/get/save/delete/createHub
+  Concern: graph verbs do not verify that the class/object/Hub belongs to the graph instance receiving the call.
+  Why it matters: someGraph.create(ForeignObject.class) can route through this graph’s object services even when
+  OARuntime.graph(ForeignObject.class) would resolve to another graph. That weakens graph ownership invariants.
+  Minimal fix: add graph membership checks for class-based verbs, or document these as convenience delegates that
+  may route by object/class graph.
+  Invariant: GRAPH_VERBS_OPERATE_ON_OWNED_MODEL_TYPES
+  Test coverage: two package graphs; call create/get/save/delete with foreign model classes and verify expected
+  reject or reroute behavior.
+
+ #12 — bug / lifecycle risk
+  File/class/method: src/main/java/com/viaoa/graph/OAGraphImpl.java:61, initialize()
+  Concern: bInit is set before service construction and package scanning complete.
+  Why it matters: a partially initialized graph can report initialized if failure occurs after line 63. This is
+  especially risky around package scanning/class loading.
+  Minimal fix: set bInit = true only after all services are initialized and class scanning succeeds.
+  Invariant: GRAPH_INITIALIZED_MEANS_ALL_CORE_SERVICES_READY
+  Test coverage: inject/fake package scan failure and verify wasInitCalled() remains false and no partial graph is
+  exposed.
+
+
+#1 — invariant risk
+  File/class/method: src/main/java/com/viaoa/graph/OAGraphImpl.java:111, initialize()
+  Exact concern: bInit is set before service creation and package class scanning complete.
+  Why it matters: a failed initialization can leave the graph reporting initialized while services/metadata are only
+  partially ready.
+  Minimal fix: set bInit = true only after all services are created, initialized, and package metadata scan
+  succeeds.
+  Suggested invariant: GRAPH_INITIALIZED_MEANS_ALL_SERVICES_READY
+  Suggested test coverage: force class-scan failure and verify wasInitCalled() remains false and graph is not
+  usable.
+
+  #2 — boundary risk
+  File/class/method: src/main/java/com/viaoa/graph/OAGraphImpl.java:107, constructor; src/main/java/com/viaoa/graph/
+  OAGraphImpl.java:111, initialize()
+  Exact concern: OAGraphImpl has a public constructor and public lifecycle method, so callers can bypass OARuntime
+  package ownership and create unregistered graphs.
+  Why it matters: OA 4.0 graph singleton/package ownership assumptions become unenforceable if apps can instantiate
+  implementation graphs directly.
+  Minimal fix: make construction/lifecycle package-owned if possible, or document OAGraphImpl as runtime-internal
+  and test that public access goes through OARuntime.
+  Suggested invariant: GRAPH_INSTANCES_ARE_RUNTIME_OWNED
+  Suggested test coverage: graph created through OARuntime is canonical; direct implementation construction is
+  unsupported or guarded.
+
+  #3 — invariant risk
+  File/class/method: src/main/java/com/viaoa/graph/OAGraphImpl.java:186, create/get/save/delete/createHub/select/
+  info
+  Exact concern: facade verbs do not validate that the class/object/Hub belongs to this graph’s package.
+  Why it matters: graphA.create(ForeignObject.class) can execute through graph A’s services even though runtime
+  ownership belongs to graph B.
+  Minimal fix: add graph-membership checks, or explicitly define these verbs as convenience delegates that may
+  reroute by runtime graph ownership.
+  Suggested invariant: GRAPH_VERBS_OPERATE_ON_OWNED_TYPES
+  Suggested test coverage: two package graphs; invoke verbs with foreign classes/objects/Hubs and verify reject or
+  documented reroute.
+
+  #11 — invariant risk
+  File/class/method: src/main/java/com/viaoa/graph/OAGraphImpl.java:303, combine()
+  Exact concern: combine() creates a HubCombined controller and discards the handle.
+  Why it matters: the combined view has lifecycle behavior, including close/removal of listeners. The facade gives
+  callers no way to manage that lifecycle.
+  Minimal fix: return HubCombined<T> or document that combine() creates an unmanaged live binding.
+  Suggested invariant: GRAPH_LIVE_VIEW_CONTROLLERS_HAVE_EXPLICIT_LIFECYCLE
+  Suggested test coverage: combine creates live updates and can be closed or is documented as graph-owned/unmanaged.
+
+
+ #12 — invariant risk
+  File/class/method: src/main/java/com/viaoa/graph/OAGraphImpl.java:358, flatten(Hub)
+  Exact concern: convenience flatten(Hub) creates a HubFlattened controller but returns only the target Hub.
+  Why it matters: like combine, this hides the lifecycle handle for a live binding.
+  Minimal fix: document lifecycle ownership or provide a handle-returning convenience form.
+  Suggested invariant: GRAPH_CONVENIENCE_LIVE_VIEWS_DECLARE_CONTROLLER_OWNERSHIP
+  Suggested test coverage: returned flattened Hub remains live and lifecycle behavior is defined.
+
+
+*/
+
+
+
 public class OAGraphImpl implements OAGraphInternal {
 	private static Logger LOG = Logger.getLogger(OAGraphImpl.class.getName());
 

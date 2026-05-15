@@ -420,7 +420,7 @@ public abstract class HubStatusService {
 		if (hub == null) {
 			return;
 		}
-		if (!callSyncIsServer()) {
+		if (callSyncIsClient()) {
 			return;
 		}
 
@@ -466,7 +466,7 @@ public abstract class HubStatusService {
 	public abstract <T extends OAObject> Hub<T> callHubLinkGetHubWithLink(final Hub<T> thisHub, boolean bIncludeCopiedHubs);
 	public abstract boolean callObjectChangeGetChanged(final OAObject oaObj, int iCascadeRule, OACascade cascade);
     
-	public abstract boolean callSyncIsServer();
+	public abstract boolean callSyncIsClient();
 	public abstract OAObjectInfo callObjectInfoGetOAObjectInfo(Class<?> clazz);
 	public abstract boolean callObjectInfoIsWeakReferenceable(OAObjectInfo oi);
 	public abstract OAObject callHubMasterGetMasterObject(Hub<?> hub);

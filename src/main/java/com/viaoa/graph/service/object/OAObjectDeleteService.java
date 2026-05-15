@@ -17,6 +17,73 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.path.OAPath;
 
+
+/*qqqqqqqqqqqqqq
+CODEX
+
+ #5 — New Concrete Bug
+  File/Class/Method: src/main/java/com/viaoa/graph/service/object/OAObjectDeleteService.java, delete(...)
+
+  Exact execution path: delete(...) deletes children first via deleteChildren(...), then calls onDelete(oaObj) for
+  the parent. If parent datasource delete fails after children have been deleted, the child deletes have already
+  committed but the parent remains.
+
+  Why it is a correctness bug: delete cascade can leave the object graph and datasource in a partially deleted
+  state: children gone, parent still present. This is a concrete cascade failure path outside Hub.deleteAll.
+
+  Minimal fix: define transactional requirements. Minimal hardening is to delete parent first when safe, or require
+  datasource transaction wrapping for parent/child cascade and fail without mutating in-memory graph when no
+  transaction boundary exists.
+
+  Suggested test: parent with children; child deletes succeed; parent datasource delete throws; assert either the
+  whole cascade rolls back or the in-memory graph clearly preserves/marks partial failure instead of silently losing
+  children.
+
+
+#1
+  File/Class/Method: src/main/java/com/viaoa/graph/service/object/OAObjectDeleteService.java, setDeleted(...)
+
+  Exact execution path: setDeleted(obj, false) fires before-change, sets deleted flag false, fires after-change,
+  then verifies key uniqueness and re-adds to cache. If callKeyVerifyKeyChange(...) fails, the object remains
+  undeleted and listeners/sync already saw the undelete transition.
+
+  Why it is a correctness bug: invalid undelete can become visible even though identity/cache validation rejected
+  it.
+
+  Semantic/invariant violated: lifecycle transitions must validate identity before publishing authoritative state/
+  events.
+
+  Minimal fix: when tf == false, verify key and cache-add viability before changing the deleted flag or firing
+  events; or rollback flag and emit compensating semantics on failure.
+
+  Suggested test: deleted object with conflicting key; call setDeleted(false); assert exception leaves deleted=true
+  and no deleted-property event is observed.
+
+
+
+
+
+
+
+
+
+> *** change to match ... default: partial deletes can happen if exceptin.  If OATransaction is true, then "work" with it to be atomic
+	//Default delete cascade semantics allow partial progress if an exception occurs.
+	//Successfully completed child/reference/hub/datasource deletes are not automatically
+	//rolled back by OG.
+	//
+	//If an OATransaction is active, delete cascade must cooperate with it so the caller
+	//can get atomic/all-or-nothing persistence behavior.
+	//
+	//Even with partial progress, the object whose delete fails must remain retryable:
+	//do not mark it deleted, remove it from hubs, fire after-delete events, or emit
+	//sync delete messages unless its datasource delete completed successfully.
+
+*/
+
+
+
+
 public abstract class OAObjectDeleteService {
 	private static final Logger LOG = Logger.getLogger(OAObjectDeleteService.class.getName());
 
@@ -41,7 +108,7 @@ public abstract class OAObjectDeleteService {
 			return;
 		}
 		boolean b = callCSDelete(oaObj);
-		if (!b) {
+		if (b) {
 			return;
 		}
 		OACascade cascade = new OACascade();
@@ -312,8 +379,8 @@ public abstract class OAObjectDeleteService {
                     if (OAStr.isNotEmpty(spp)) {
                         OAFinder<T,?> f = new OAFinder(spp) {
                             protected boolean isUsed(OAObject obj) {
-                                Object objx = liRev.getValue(obj);
-                                if (objx instanceof OAObjectKey) {
+                            	Object objx = liRev.getValue(obj);
+                                if (objx instanceof OAObjectKey) { //qqqqq wont happen, it will resolve to oaobj if objkey
                                     if (!callKeyIsForSameOAObject(null, (OAObjectKey) objx, oaObj.getObjectKey())) {
                                         return false;
                                     }

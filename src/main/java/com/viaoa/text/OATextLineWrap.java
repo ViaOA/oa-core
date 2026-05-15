@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /*qqqqqqqqqqqqqqqqqqq
-CODE
+CODEX
 
  16. Medium - OATextLineWrap.setMaxRows / OAString.lineBreak
      Concrete failure: documented/default unlimited value 0 is rejected by setMaxRows(0).
@@ -27,6 +27,38 @@ CODE
      Actual: IllegalArgumentException.
      Fix direction: reject negatives, allow zero.
 
+
+1. file/class/method: src/main/java/com/viaoa/text/OATextLineWrap.java / OATextLineWrap.wrap via emitRow
+
+  exact execution path: new OATextLineWrap(1, "|").wrap("abc"). For the first row, emitRow reaches forced
+  hyphenation, sets leftCps from 1 to 0, adds an empty row, returns the unchanged position, and then wrap fallback
+  adds "a". The same happens for "b".
+
+  why it is an obvious concrete bug: width 1 is allowed by the constructor/setter, but wrapping a normal non-empty
+  word emits spurious empty rows. That is wrong output, not just an edge formatting preference.
+
+  minimal fix: in forced hyphenation, do not emit a zero-width row. For maxWidth <= 1, hard-cut one code point
+  without adding the preliminary empty row, or make emitRow return without mutating alRow when it cannot advance.
+
+  suggested test: assert new OATextLineWrap(1, "|").wrap("abc") returns ["a", "b", "c"] or the chosen width-1
+  contract, but no empty rows.
+
+
+1. file/class/method: src/main/java/com/viaoa/text/OATextLineWrap.java / OATextLineWrap.emitRowTruncated
+
+  exact execution path: new OATextLineWrap(10, "|").withMaxRows(1).wrap("abc defghijkl"). The truncation path scans
+  up to the ellipsis budget and records lastBreakCharPos, but never uses it. It cuts at the raw budget, producing a
+  row like "abc def...", splitting the second word even though a whitespace break was available after "abc".
+
+  why it is an obvious concrete bug: the method explicitly tracks the last break position and the class contract
+  says final-row truncation respects whitespace separation when possible. The tracked delimiter is ignored, so
+  normal text truncation can produce avoidable partial words.
+
+  minimal fix: when lastBreakCharPos > startChar, use that as endChar for the truncated base instead of always using
+  advanceByCodePoints(..., budget).
+
+  suggested test: with width 10, maxRows 1, and text "abc defghijkl", assert the truncated row uses the whitespace
+  break, e.g. "abc...", according to the intended truncation contract.
 
 
 */
@@ -326,7 +358,7 @@ public class OATextLineWrap {
      * <ul>
      *   <li>Delegates to {@link #wrapToString(String)} and splits the result using
      *       {@link #separator}.</li>
-     *   <li>Always returns a non-null list; empty input yields a single empty row.</li>
+     *   <li>Always returns a non-null list; empty input yields no rows.</li>
      * </ul>
      *
      * @param text the text to wrap; null becomes ""

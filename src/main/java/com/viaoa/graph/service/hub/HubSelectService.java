@@ -16,6 +16,41 @@ import com.viaoa.object.OAObject;
 import com.viaoa.path.OAPath;
 import com.viaoa.select.OASelect;
 
+/*qqqqqqqqqqq
+CODEX
+
+ #8 — invariant risk
+  file/class/method: src/main/java/com/viaoa/graph/service/hub/HubSelectService.java:866, _refresh
+  exact concern: _refresh sets sel.setDirty(true) and only restores dirty state at the end. If select/add/remove/
+  move throws, dirty state is not restored.
+  why it matters: Select dirty state affects future refresh/select behavior. A failed refresh should not leave stale
+  control flags.
+  severity: invariant risk
+  minimal fix: Restore dirty state in finally.
+  suggested invariant ID/name: HUB-SELECT-REFRESH-001: failed refresh restores select dirty flag
+  suggested test coverage: Throw during refresh select iteration or add/remove reconciliation and assert dirty flag
+  restoration.
+
+
+#5
+  file/class/method: src/main/java/com/viaoa/graph/service/hub/HubSelectService.java:979 refreshSelect(...)
+
+  exact execution path that triggers the bug: refreshSelect(hub) -> stores current AO -> sets select dirty true ->
+  sel.select() or iteration/add/remove throws -> line 990 dirty restore and line 1001 AO restore are skipped.
+
+  why it is a real correctness risk: failed refresh can leave both select dirty state and active object changed/
+  lost. That affects detail hubs, listeners, and UI/runtime state that depend on AO stability.
+
+  severity: bug
+
+  minimal fix: restore dirty state and AO in finally. If Hub content mutation fails, define whether partial content
+  is allowed or must be rolled back.
+
+  suggested test case: Hub with AO set; force exception during refreshSelect; assert AO and select dirty state are
+  restored.
+
+*/
+
 public abstract class HubSelectService {
 	private final Logger LOG = Logger.getLogger(HubSelectService.class.getName());
 
@@ -105,8 +140,7 @@ public abstract class HubSelectService {
 					}
 					try {
 						hmHubFetch.put(thisHub, 1); // 1 == waiters present (debug/diagnostic); cleared when fetch lock released elsewhere
-						Thread.yield();
-						//was: hmHubFetch.wait(1);
+						hmHubFetch.wait(1);
 					} catch (Exception e) {
 					}
 				}
@@ -192,11 +226,11 @@ public abstract class HubSelectService {
 						callHubDataEnsureCapacity(thisHub, capacity);
 					}
 					
+					boolean bWasLoading = callThreadLocalSetLoading(true);
 					try {
-						callThreadLocalSetLoading(true);
 						callHubAddRemoveAdd(thisHub, obj);
 					} finally {
-						callThreadLocalSetLoading(false);
+						callThreadLocalSetLoading(bWasLoading);
 					}
 					size++;
 					cnt++;
@@ -570,20 +604,20 @@ public abstract class HubSelectService {
 	 * OASelect instance if none exists and the sort property is non-empty.
 	 *
 	 * @param thisHub the Hub whose sort order is being modified
-	 * @param s       the ORDER BY clause string
+	 * @param orderBy the ORDER BY clause string
 	 */
 	@SuppressWarnings({"unchecked","rawtypes"})
-	public <T extends OAObject> void setSelectOrder(Hub<T> thisHub, String s) {
+	public <T extends OAObject> void setSelectOrder(Hub<T> thisHub, String orderBy) {
 		if (thisHub == null) return;
-		faHub.getHubData(thisHub).setSortProperty(s);
+		faHub.getHubData(thisHub).setSortProperty(orderBy);
 
 		OASelect<T> sel = getSelect(thisHub);
-		if (!OAString.isEmpty(s) && sel == null) {
+		if (!OAString.isEmpty(orderBy) && sel == null) {
 			Class<OAObject> classX = (Class) thisHub.getObjectClass();
 			sel = new OASelect(classX);
 			faHub.getHubData(thisHub).setSelect(sel);
 		}
-		sel.setOrder(s);
+		if (sel != null) sel.setOrder(orderBy);
 	}
 
 	/**

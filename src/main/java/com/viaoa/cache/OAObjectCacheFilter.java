@@ -168,7 +168,10 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
                 if (obj.isLoading()) return;
                 // new object is created
                 final Hub<T> hub = wrHub.get();
-                if (hub == null) return;
+                if (hub == null) {
+                	close();
+                	return;
+                }
                 if (isUsed((T) obj)) {
                 	if (bServerSideOnly) {
                 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
@@ -343,9 +346,9 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
         boolean b = og.hubsInternal().callHubDataSetLoadingAllData(hub, true);
-        boolean bWas = hub.isLoading();
+        boolean bWas = hub.setLoading(true);
         try {
-            hub.setLoading(true);
+            
             if (changeRefresher != null && changeRefresher.hasChanged()) return;
             reselect();
             if (changeRefresher != null && changeRefresher.hasChanged()) return;
@@ -571,6 +574,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
             public void onTrigger(final T rootObject, final HubEvent hubEvent, final String propertyPathFromRoot) throws Exception {
                 final Hub<T> hub = wrHub.get();
                 if (hub == null) {
+                	close();
                     return;
                 }
                 

@@ -16,6 +16,15 @@ import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.*;
 import com.viaoa.path.OAPath;
 
+
+/*qqqqqqqqqqqqqqqqqq
+CODEX
+
+
+
+
+*/
+
 public abstract class HubDetailService {
 	private final Logger LOG = Logger.getLogger(HubDetailService.class.getName());
 
@@ -203,7 +212,7 @@ public abstract class HubDetailService {
 			//if (detailObject instanceof OAObjectKey) return;
 
 			// 20140616 if hub is not loaded and isClient, then dont need to load
-			if (!callSyncIsServer()) {
+			if (callSyncIsClient()) {
 				if (!callObjectReflectIsReferenceHubLoaded((OAObject) detailObject, dm.getDetailToMasterLinkInfo().getName())) {
 					return;
 				}
@@ -1679,6 +1688,7 @@ public abstract class HubDetailService {
 	public abstract OALinkInfo callObjectInfoGetLinkInfo(OAObjectInfo oi, OAObject fromObject, Hub<?> hub);
 	public abstract OAObjectInfo callObjectInfoGetObjectInfo(Class<? extends OAObject> clazz);
 	public abstract boolean callSyncIsServer();
+	public abstract boolean callSyncIsClient();
 	public abstract boolean callThreadLocalGetCanAdjustHub(Hub<?> hub);
 	public abstract <T extends OAObject> T callHubAOSetActiveObject(Hub<T> thisHub, int pos, boolean bUpdateLink, boolean bForce, boolean bCalledByShareHub);
 	public abstract <T extends OAObject> void callHubAOSetActiveObject(final Hub<T> thisHub, T object, int pos, boolean bUpdateLink, boolean bForce, boolean bCalledByShareHub);

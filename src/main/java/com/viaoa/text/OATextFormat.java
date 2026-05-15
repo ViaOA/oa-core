@@ -56,6 +56,7 @@ CODEX
      Impact: code generation or formatted serialized text can lose line structure.
 
 
+
 */
 
 
@@ -430,9 +431,13 @@ public class OATextFormat {
 		if (x == 0) return 0;
 		boolean bSkipZeros = true;
 		int cnt = 0;
+		boolean bFnd = false;
 		for (int i=x-1; i>=0; i--) {
 			char ch = num.charAt(i);
-			if (ch == '.') break;
+			if (ch == '.') {
+				bFnd = true;
+				break;
+			}
 			if (!Character.isDigit(ch)) return 0;
 			if (bSkipZeros) { 
 				if (ch == '0' && bIgnoreTrailingZeros) continue;
@@ -440,6 +445,7 @@ public class OATextFormat {
 			}
 			cnt++;
 		}
+		if (!bFnd) cnt = 0;
 		return cnt;
 	}
 
@@ -777,11 +783,8 @@ public class OATextFormat {
 			char ch = text.charAt(i);
 
 			if (Character.isWhitespace(ch)) {
-				if (ch == ' ') {
-					if (chLast != ' ') {
-						bAddSpace = true;
-					}
-					chLast = ch;
+				if (chLast != ' ') {
+					bAddSpace = true;
 				}
 				if (sb == null) {
 					sb = new StringBuilder(x);

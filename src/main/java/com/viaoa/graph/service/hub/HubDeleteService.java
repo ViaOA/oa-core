@@ -1,5 +1,7 @@
 package com.viaoa.graph.service.hub;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -9,6 +11,54 @@ import com.viaoa.hub.Hub;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
+
+
+/*qqqqqqqqqqqqqqqqqq
+CODEX
+
+#6 — bug
+  file/class/method: src/main/java/com/viaoa/graph/service/hub/HubDeleteService.java:61, _runDeleteAll; src/main/
+  java/com/viaoa/graph/service/hub/HubDeleteService.java:127, _deleteAll
+  exact concern: Both delete-all paths clear the Hub/vector before deleting the objects. If object delete fails mid-
+  loop, the in-memory Hub has already been emptied and remote/listener remove-all may already have been sent.
+  why it matters: A failed delete can leave runtime graph state inconsistent with datasource state and with clients.
+  severity: invariant risk
+  minimal fix: Define failure semantics. Minimal hardening is to preserve the object snapshot and restore
+  membership/change state on delete failure, or delete first and clear only after successful delete cascade.
+  suggested invariant ID/name: HUB-DELETE-STATE-001: failed deleteAll does not silently lose Hub membership
+  suggested test coverage: Force object delete failure during Hub.deleteAll() and verify Hub membership, change
+  state, and events.
+
+ #8
+  file/class/method: src/main/java/com/viaoa/graph/service/hub/HubDeleteService.java:91, src/main/java/com/viaoa/
+  graph/service/hub/HubDeleteService.java:143
+
+  exact execution path that triggers the bug: Hub.deleteAll() -> snapshot objects -> clear Hub/vector before
+  deleting objects -> one object delete fails -> Hub membership is already gone, change tracking may already be
+  updated, and remove-all effects may already have been sent.
+
+  why it is a real correctness risk: failed delete can leave in-memory graph state inconsistent with datasource
+  state. Objects that still exist in storage are no longer in the Hub.
+
+  severity: high-risk bug
+
+  minimal fix: delete first and clear only after successful delete, or preserve enough snapshot/change state to
+  restore membership on failure.
+
+  suggested test case: Hub with multiple objects; force delete failure on second object; assert Hub membership and
+  change state remain consistent with storage.
+  
+see: comment in code for #8  
+Invariant:
+HUB-DELETEALL-STOPS-ON-FIRST-FAILURE
+deleteAll processes objects in snapshot order. Each successful delete is committed to Hub state. If a delete fails, 
+processing stops, the failed object and all unprocessed objects remain in the Hub, and the exception is propagated.
+
+HUB-DELETEALL-USES-SNAPSHOT:
+deleteAll operates only on the Hub contents captured at start. Objects added during deleteAll are not part of that delete operation and must remain in the Hub.
+
+*/
+
 
 public abstract class HubDeleteService {
 	private final Logger LOG = Logger.getLogger(HubDeleteService.class.getName());
@@ -29,19 +79,23 @@ public abstract class HubDeleteService {
 	 *
 	 * @param thisHub the hub whose contents will be deleted
 	 */
-    public void deleteAll(Hub<?> thisHub) {
+    public <T extends OAObject> void deleteAll(Hub<T> thisHub) {
     	if (thisHub == null) return;
         // 20150206 send to server
         if (thisHub.getSize() == 0) return;
-        if (!callHubCSDeleteAll(thisHub)) {
+        if (callHubCSDeleteAll(thisHub)) {
             return; // sent to server to be done.
         }
 
         boolean bWas = callThreadLocalGetSendSyncMessages();
+//qqqqqqqqqqqqq todo: #8 codex         
+// 20260512 add new array to track which objs were deleted/removed ... will need to change Hub msg and sync remoting for this        
+        List<T> alDeletedObjects = new ArrayList<>();            
         try {
             callThreadLocalSetDeleting(thisHub, true);
             callThreadLocalSetSendSyncMessages(true);
-            _runDeleteAll(thisHub);
+            
+            _runDeleteAll(thisHub, alDeletedObjects);
         }
         finally {
         	callThreadLocalSetSendSyncMessages(bWas);
@@ -58,24 +112,25 @@ public abstract class HubDeleteService {
      *
      * @param thisHub the hub whose contents are being deleted
      */
-    private <T extends OAObject> void _runDeleteAll(Hub<T> thisHub) {
+    private <T extends OAObject> void _runDeleteAll(Hub<T> thisHub, List<T> alDeletedObjects) {
     	if (thisHub == null) return;
         T[] objs = thisHub.toArray();
 
-        callHubAddRemoveClear(thisHub); // single event to remove all from hub (sent to clients)
-        callHubDataClearHubChanges(thisHub);
+		callHubAddRemoveClear(thisHub); // single event to remove all from hub (sent to clients)
+		callHubDataClearHubChanges(thisHub);
 
         if (objs != null) {
             OACascade cascade = new OACascade();
             for (T obj : objs) {
-                callObjectDeleteDelete(obj, cascade);
+        		callObjectDeleteDelete(obj, cascade);
+            	alDeletedObjects.add(obj);
             }
             for (T obj : objs) {
                 callHubAddRemoveRemove(thisHub, obj, false, false, true, false, false, true);
             }
         }
     }
-
+    
     /**
      * Indicates whether the specified hub is currently in the process of having all
      * its objects deleted. This flag is maintained using thread-local tracking.

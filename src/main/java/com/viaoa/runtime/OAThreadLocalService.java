@@ -121,8 +121,70 @@ CODEX
   Suggested invariant ID/name: RUNTIME_UNDO_CONTRACT_IS_UI_NEUTRAL
   Suggested test coverage: runtime undo capture works without loading Swing undo adapter.
 
-
 */
+
+
+/*
+CHATGPT, CODEX / OG 4.0 EVENT TRACKING
+
+Add OG-managed event propagation tracking using OAThreadLocalService.
+
+Goal:
+Event propagation must be measurable, bounded, explainable, and policy-controlled.
+
+Current concern:
+OG centralizes graph semantics, listeners, hub events, reverse-link updates,
+sync propagation, replication capture, calculated properties, and UI updates.
+This creates event storm and recursive propagation risk.
+
+Add event-frame tracking support:
+- event stack/frame tracking
+- event depth tracking
+- root-event tracking
+- causal parent/source tracking
+- event count per root operation
+- sync-eligible vs suppressed event tracking
+- internal-maintenance vs external/domain event classification
+- timing/measurement hooks
+- optional graph ownership/context tracking
+
+Initial phase:
+MEASUREMENT + LOGGING ONLY.
+Do not change runtime behavior yet.
+
+Possible runtime reactions later:
+- warning logging
+- threshold detection
+- suppression
+- throttling
+- fail-fast
+- quarantine/debug mode
+
+Possible invariants:
+
+EVENT-STACK-001
+Every event frame push must restore/pop via finally.
+
+EVENT-DEPTH-001
+Event propagation depth must remain bounded and measurable.
+
+EVENT-CAUSE-001
+Derived events must preserve causal lineage.
+
+EVENT-SUPPRESS-001
+Internal maintenance operations must support event/sync suppression.
+
+EVENT-STORM-001
+Root operations must not create unbounded recursive event propagation.
+
+EVENT-SYNC-001
+Only authoritative eligible events may emit sync/replication messages.
+
+Important:
+Event propagation is a managed OG runtime behavior,
+not an uncontrolled callback side effect.
+*/
+
 
 /**
  * Central service for OA thread-local execution state.
@@ -395,7 +457,7 @@ public class OAThreadLocalService {
 		if (ti == null) {
 			return false;
 		}
-		return ti.getLoading() > 0;
+		return ti.getLoading();
 	}
 	
 	/**
@@ -422,21 +484,19 @@ public class OAThreadLocalService {
 		if (ti == null) {
 			return false;
 		}
-		int x, x2;
-		boolean bPreviousValue;
-		x = ti.getLoading();
-		bPreviousValue = (x > 0);
+		
+		final boolean bPreviousValue = ti.getLoading();
+		if (bPreviousValue == b) return b;
 
+		int x;
 		if (b) {
-			x++;
-			x2 = aiTotalIsLoading.getAndIncrement();
+			x = aiTotalIsLoading.getAndIncrement();
 		} else {
-			x--;
-			x2 = aiTotalIsLoading.decrementAndGet();
+			x = aiTotalIsLoading.decrementAndGet();
 		}
-		ti.setLoading(x);
-		if (x > 50 || x < 0 || x2 > 50 || x2 < 0) {
-			msLoadingObject = throttleLOG("TotalIsLoading=" + x2 + ", ti=" + x, msLoadingObject);
+		ti.setLoading(b);
+		if (x > 50 || x < 0) {
+			msLoadingObject = throttleLOG("TotalIsLoading=" + x + ", ti=" + x, msLoadingObject);
 		}
 		return bPreviousValue;
 	}
@@ -639,8 +699,8 @@ public class OAThreadLocalService {
 	 * @see OAObject#endServerOnly()
 	 */
 	public void endServerOnly() {
-		OAThreadLocal ti  = getThreadLocal(true);
-		if (ti.decStartServerOnly() == 0) {
+		OAThreadLocal ti  = getThreadLocal(false);
+		if (ti != null && ti.decStartServerOnly() == 0) {
 			ti.setSendSyncMessages(ti.getSendSyncMessagesHold());
 		}
 	}
@@ -2382,6 +2442,7 @@ public class OAThreadLocalService {
 		}
 		int x, x2;
 		boolean bPreviousValue;
+		
 		x = ti.getRefreshing();
 		if (b) {
 			bPreviousValue = (x > 0);

@@ -170,8 +170,10 @@ public class OAMultiplexerServer {
      * @throws Exception if the controller cannot be closed
      */
     public void stop() throws Exception {
+    	stopServerSocket();
         getServerSocketController().close();
-        _bAllowConnections = false;
+        _serverSocket = null;
+        _controlServerSocket = null;
     }
     
     /**
@@ -183,7 +185,8 @@ public class OAMultiplexerServer {
      */
     public void stopServerSocket() throws Exception {
         if (!_bAllowConnections || _serverSocket == null) return;
-        LOG.fine("stopping");
+        getServerSocketController().stopAccepting();
+        LOG.fine("stop serversocket accept");
         _bAllowConnections = false;
         _serverSocket.close();
     }

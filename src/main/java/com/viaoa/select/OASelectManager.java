@@ -85,6 +85,7 @@ public class OASelectManager {
      * @param seconds the number of seconds of allowed inactivity
      */
     public static void setTimeLimit(int seconds) {
+    	if (seconds <= 0) throw new IllegalArgumentException("time limit must be greater than zero");
         timeLimitInSeconds = seconds;
     }
     

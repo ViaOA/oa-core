@@ -18,9 +18,7 @@ package com.viaoa.cache;
 import java.lang.ref.WeakReference;
 
 import com.viaoa.callback.OACallback;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
@@ -149,6 +147,7 @@ public class OAObjectCacheHubAdder<T extends OAObject> implements OAObjectCacheL
         if (isUsed(obj)) {
             Hub<T> h = wfHub.get();
             if (h != null) h.add(obj);
+            else close();
         }
     }
     

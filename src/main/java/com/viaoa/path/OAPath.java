@@ -231,7 +231,8 @@ public class OAPath<TYPE extends OAObject> {
 	 *
 	 * <p>This value is lazily created when requested.</p>
 	 */
-	private OAPath revPropertyPath;
+	private OAPath revPropertyPathTrue;
+	private OAPath revPropertyPathFalse;
 
 	// the ending propery in the property path will be one of these
 	/**
@@ -328,9 +329,18 @@ public class OAPath<TYPE extends OAObject> {
 	 * @return the reverse property path, or {@code null} if not available
 	 */
 	public OAPath getReversePropertyPath(final boolean bAllowPrivateLinks) {
-		if (revPropertyPath != null) {
-			return revPropertyPath;
+		
+		if (bAllowPrivateLinks) {
+			if (revPropertyPathTrue != null) {
+				return revPropertyPathTrue;
+			}
 		}
+		else {
+			if (revPropertyPathFalse != null) {
+				return revPropertyPathFalse;
+			}
+		}
+		
 		if (linkInfos == null || linkInfos.length == 0) {
 			return null;
 		}
@@ -341,6 +351,7 @@ public class OAPath<TYPE extends OAObject> {
 			OALinkInfo li = linkInfos[i];
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(li.getToClass());
 			OALinkInfo liRev = og.objectsInternal().callObjectInfoGetReverseLinkInfo(li);
+			if (liRev == null) return null;
 			if (!bAllowPrivateLinks && liRev.getPrivateMethod()) {
 				return null;
 			}
@@ -351,8 +362,15 @@ public class OAPath<TYPE extends OAObject> {
 		}
 		c = linkInfos[linkInfos.length - 1].getToClass();
 
-		revPropertyPath = new OAPath(c, pp, bAllowPrivateLinks);
-		return revPropertyPath;
+		OAPath ppx = new OAPath(c, pp, bAllowPrivateLinks);
+
+		if (bAllowPrivateLinks) {
+			revPropertyPathTrue = ppx;
+		}
+		else {
+			revPropertyPathFalse = ppx;
+		}
+		return ppx;
 	}
 
 	/**
@@ -925,15 +943,7 @@ Severity: critical
 		int cnter = 0;
 		for (; posDot >= 0; prevPosDot = posDot + 1) {
 			cnter++;
-
-/*			
-	qqqqqqqqqqqqqqqqqqqqqqqqq
-	 - Severity: low
-  - File/class/method: src/main/java/com/viaoa/util/OAPropertyPath.java:879
-  - Finding: Parser has a hard 20-segment cap.
-			
-*/			
-			if (cnter > 20) {
+			if (cnter > 50) {
 				throw new RuntimeException("cant parse propertyPath=" + propertyPath + ", class=" + clazz);
 			}
 
@@ -1248,7 +1258,7 @@ Severity: critical
 							if (x < 3) {
 								s = "";
 							} else {
-								s = s.substring(1, x - 2);
+								s = s.substring(1, x - 1);
 							}
 						}
 						if (s.equals("?")) {
@@ -1270,7 +1280,7 @@ Severity: critical
 				}
 			}
 			if (filterClass != null && filterConstructor == null) {
-				//throw new RuntimeException("Could not find constructor for Filter, name="+filterName);
+				throw new RuntimeException("Could not find constructor for Filter, filter name="+filterName);
 			}
 			this.filterConstructors = (Constructor[]) OAArray.add(Constructor.class, this.filterConstructors, filterConstructor);
 
@@ -1473,12 +1483,12 @@ Severity: critical
 			}
 			if (OAReflect.isInteger(c)) {
 				if (cp.isCurrency()) {
-					String format = OAConv.getCurrencyFormat();
+					String fx = OAConv.getCurrencyFormat();
 					int x = cp.decimalPlaces();
 					if (x < 0) {
 						x = 0;
 					}
-					format = getDecimalFormat(format, x);
+					format = getDecimalFormat(fx, x);
 				} else {
 					format = OAConv.getIntegerFormat();
 					format = getDecimalFormat(format, cp.decimalPlaces());

@@ -19,6 +19,25 @@ import com.viaoa.object.OAObject;
 import com.viaoa.select.OASelect;
 import com.viaoa.serialize.OASerializeWriter;
 
+
+/*qqqqqqq
+CODEX
+
+ #5 — boundary risk
+  File/class/method: src/main/java/com/viaoa/graph/api/internal/HubsInternalOps.java:11, src/main/java/com/viaoa/
+  graph/api/internal/HubsInternalOps.java:205
+  Exact concern: internal API depends on HubStatusService.HubCurrentStateEnum, a nested type from a concrete service
+  implementation package.
+  Why it matters: API/internal should define the internal contract; it should not depend upward on a service
+  implementation detail.
+  Minimal fix: move the enum to internal API or a neutral graph/hub contract type.
+  Suggested invariant: GRAPH_INTERNAL_API_DOES_NOT_IMPORT_SERVICE_IMPLEMENTATION_TYPES
+  Suggested test coverage: import-boundary test for graph.api.internal against graph.service.*.
+
+
+
+*/
+
 /**
  * 
  *  methods needed internally by OA and OA tools.  Used by OG.Hubs (HubService)

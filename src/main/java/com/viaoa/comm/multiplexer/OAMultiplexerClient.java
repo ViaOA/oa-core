@@ -173,6 +173,7 @@ public class OAMultiplexerClient {
             }
         };
         setThrottleLimit(this.mbThrottleLimit);
+        _controlSocket.start();
         runKeepAliveThread();        
         if (_controlSocket.isClosed()) throw new Exception("socket is closed");
         _bCreated = true;
