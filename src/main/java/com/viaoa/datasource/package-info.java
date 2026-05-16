@@ -66,3 +66,42 @@
  * @see com.viaoa.select.OASelect
  */
 package com.viaoa.datasource;
+
+/*qqqqqqqqqqqqqqqqqqqqqq
+CODEX
+
+
+INVARIANTS
+
+
+once all of the reported items are addressed, how do you feel it is ready to move forward for Production
+  Application development?
+
+• Yes, assuming the reported items are fixed or explicitly CODEX-deferred with tests around the intended behavior,
+  com.viaoa.datasource looks ready to move forward for production application development.
+
+  My confidence would be highest if these invariants are proven by tests:
+
+  - datasource routing always picks the correct datasource by class, enabled state, and getLast()
+  - OADataSourceAuto only participates as intended for ID assignment
+  - client/server select/count/save/delete paths behave identically to local datasource paths where they should
+  - iterators are always closed through the OA select lifecycle
+  - object-cache datasource returns correct identity-stable objects
+  - save/delete failures do not create false success
+  - SingleUser, Server, and Client modes each use the correct datasource path
+  - read-only / ignore-writes behavior is either enforced or documented as advisory
+
+  The design is not toy-level. It is a real kernel persistence abstraction: local storage, object cache,
+  autonumbering, and remote datasource delegation all sit behind one semantic contract. Once the known correctness
+  edges are covered, I would consider it production-suitable for OA applications.
+
+  The next risk is not the datasource package by itself. It is integration: graph lifecycle, hub loading, object
+  identity, sync/replication, and datasource routing must be tested together. If those cross-package tests pass,
+  this is ready to build serious production systems on.
+
+
+
+
+*/
+
+

@@ -17,6 +17,7 @@ package com.viaoa.filter;
 
 import java.util.logging.Logger;
 
+import com.viaoa.compare.OACompare;
 import com.viaoa.find.OAFinder;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.hub.Hub;
@@ -302,6 +303,7 @@ public class OAEqualPathFilter implements OAFilter {
 		}
 
 		if (ppTo == null) {
+			if (obj == null) return false;
 			ppTo = new OAPath(obj.getClass(), strToPropPath);
 			//qqqqqqq put in OAInFilter ?
 			if (!bHasFilter) {
@@ -325,7 +327,7 @@ public class OAEqualPathFilter implements OAFilter {
 			b = ((Hub) objx).contains(objFromPPValue); 
 		}
 		else {
-			b = (objx == objFromPPValue);
+			b = OACompare.isEqual(objx, objFromPPValue);
 		}
 		return b;
 	}
@@ -357,6 +359,9 @@ public class OAEqualPathFilter implements OAFilter {
 					return true;
 				}
 				OAPath ppRev = ppTo.getReversePropertyPath(true);
+				if (ppRev == null) return true;
+
+				if (!(objFromPPValue instanceof OAObject)) return true;
 				select.setWhereObject((OAObject) objFromPPValue, ppRev.getPropertyPath());
 				if (bHasFilter) {
 					return true;

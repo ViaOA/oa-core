@@ -31,6 +31,62 @@ import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.remote.RemoteClientInterface;
 
+/*qqqqqqqqqqqqqqqq
+CODEX
+
+ 3. OADataSourceClient registration path
+      - Exact path: OASyncService.createClient() creates new OADataSourceClient(og.getPackageName()); the
+        constructor only assigns packageName; no registration occurs; later OASelect.getDataSource() calls
+        OARuntime.datasource().get(clazz, filter) and can return null.
+      - Why bug: sync client datasource can be created but never discoverable through the runtime datasource
+        registry, causing silent select cancellation/no datasource behavior.
+      - Minimal fix: either register OADataSourceClient when sync creates it, or restore constructor/creation-time
+        registration if that is the intended datasource contract.
+      - Suggested test: start client sync path, then assert OARuntime.datasource().get(SomeServerBackedClass.class)
+        returns the client datasource.
+
+
+1. RemoteDataSource.getDataSource() / getDataSource(Class)
+      - Exact path: RemoteDataSource.datasource(...) handles classless commands like IS_AVAILABLE,
+        GET_ASSIGN_ID_ON_CREATE, SUPPORTSSTORAGE, and EXECUTE by calling getDataSource(). That delegates to
+        getDataSource(null). The fallback-to-first-datasource block is now commented out, so getDataSource(null)
+        always returns null.
+      - Why bug: the fix correctly prevents unsupported class-specific commands from falling through to an unrelated
+        datasource, but it also disables valid classless datasource commands that historically require the default/
+        first datasource.
+      - Semantic/invariant violated: class-specific routing must require class support; classless datasource
+        commands may still use the default datasource.
+      - Minimal fix: split the behavior:
+
+        protected OADataSource getDataSource(Class c) {
+            if (c == null) return getDataSource();
+            return OARuntime.datasource().get(c);
+        }
+
+        protected OADataSource getDataSource() {
+            for (OADataSource ds : OARuntime.datasource().getAll()) {
+                return ds;
+            }
+            return null;
+        }
+        Or equivalent, as long as class-specific calls do not fallback and classless calls still can.
+
+      - Suggested test: register one datasource, call remote SUPPORTSSTORAGE/IS_AVAILABLE/EXECUTE and verify it
+        reaches that datasource; separately verify unsupported class-specific IS_CLASS_SUPPORTED returns false.
+
+
+4. src/main/java/com/viaoa/datasource/clientserver/OADataSourceClient.java, getMaxLength(...)
+      - Exact execution path: multiple threads call getMaxLength concurrently; hmMax is a plain HashMap mutated
+        without synchronization.
+      - Why concrete bug: datasource clients are runtime shared infrastructure; concurrent metadata lookups can race
+        and corrupt/cache stale values unpredictably.
+      - Minimal fix: use ConcurrentHashMap<String, Integer> or synchronize the cache access.
+      - Suggested test: concurrent repeated getMaxLength calls for different class/property keys using a fake remote
+        client; verify stable results and no map corruption.
+
+
+*/
+
 /**
  * Client-side {@link com.viaoa.datasource.OADataSource} implementation that forwards
  * all data access requests to a remote OA Server through {@link com.viaoa.sync.remote.RemoteClientInterface}.
@@ -410,8 +466,8 @@ public class OADataSourceClient extends OADataSource {
 				return true;
 			}
 		}
+		if (getRemoteClient() == null) return false;		
 
-		verifyConnection();
 		Object obj = getRemoteClient().datasource(IS_CLASS_SUPPORTED, new Object[] { clazz });
 		boolean b = false;
 		if (obj instanceof Boolean) {
@@ -754,7 +810,7 @@ public class OADataSourceClient extends OADataSource {
 		 * Local buffer containing the most recently fetched batch of results
 		 * from the remote datasource. Used by {@link #hasNext()} and {@link #next()}.
 		 */
-		OAObject[] cache;
+		Object[] cache;
 		
 		/**
 		 * Current read position within the {@link #cache} array.
@@ -857,7 +913,7 @@ public class OADataSourceClient extends OADataSource {
 		 */
 		protected synchronized void getMoreFromServer() {
 			cachePos = 0;
-			cache = (OAObject[]) getRemoteClient().datasource(IT_NEXT, new Object[] { id });
+			cache = (Object[]) getRemoteClient().datasource(IT_NEXT, new Object[] { id });
 			if (cache == null || cache.length == 0) {
 				cache = null;
 				//20190130
@@ -870,12 +926,11 @@ public class OADataSourceClient extends OADataSource {
 				siblingHelper = new OASiblingHelper(this.hubReadAhead);
 			}
 
-			for (OAObject obj : cache) {
-				if (obj == null) {
-					break;
-				}
+			for (Object objx : cache) {
+				if (objx == null) continue;
+				OAObject obj = (OAObject) objx;
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj.getClass());
-				og.objectsInternal().callObjectCSUpdateObjectsWithoutHubs((OAObject) obj);
+				og.objectsInternal().callObjectCSUpdateObjectsWithoutHubs(obj);
                 hubReadAhead.add(obj);
 			}
 		}

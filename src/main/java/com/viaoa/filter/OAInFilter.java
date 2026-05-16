@@ -363,6 +363,7 @@ public class OAInFilter implements OAFilter {
 	 */
 	@Override
 	public boolean isUsed(final Object obj) {
+		if (obj == null) return false;
 		if (hubFrom != null) {
 			Hub hubx = hubFrom;
 			Object objx = null;

@@ -119,13 +119,16 @@ public abstract class OAObjectAnnotationService {
 				oi.setAddToCache(oaclass.addToCache());
 				oi.setInitializeNewObjects(oaclass.initialize());
 
-				oi.setDisplayName(oaclass.displayName());
+				s = oaclass.displayName();
+				if (OAStr.isNotEmpty(s)) oi.setDisplayName(s);
 
 				String[] pps = oaclass.rootTreePropertyPaths();
 				oi.setRootTreePropertyPaths(pps);
 				oi.setLookup(oaclass.isLookup());
 				oi.setProcessed(oaclass.isProcessed());
-				oi.setPluralName(oaclass.pluralName());
+				
+				s = oaclass.pluralName();
+				if (OAStr.isNotEmpty(s))  oi.setPluralName(s);
 				
 	            s = oaclass.lowerName();
 	            if (OAStr.isEmpty(s)) s = OAString.mfcl(clazz.getSimpleName()); 

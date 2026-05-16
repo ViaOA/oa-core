@@ -1500,21 +1500,21 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	}
 
 	/**
-	 * Adds a filter that evaluates to true when the property value is non-null.
+	 * Adds a filter that evaluates to true when the property value is true.
 	 *
 	 * @param propPath the property path to evaluate
 	 */
 	public void addTrueFilter(final String propPath) {
-		_addFilter(propPath, new OATrueFilter());
+		_addFilter(propPath, new OATrueFilter(propPath));
 	}
 
 	/**
-	 * Adds a filter that always evaluates to true. (Equivalent to a true filter.)
+	 * Adds a filter that evaluates to true when the property value is false.
 	 *
 	 * @param propPath the property path to evaluate
 	 */
 	public void addFalseFilter(final String propPath) {
-		_addFilter(propPath, new OAFalseFilter());
+		_addFilter(propPath, new OAFalseFilter(propPath));
 	}
 
 	/**

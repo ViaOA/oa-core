@@ -17,7 +17,6 @@ package com.viaoa.datasource.objectcache;
 
 import java.io.*;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.*;
 import java.util.logging.Logger;
@@ -37,13 +36,7 @@ import com.viaoa.filter.OAEqualFilter;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.filter.OAQueryFilter;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectCacheService;
-import com.viaoa.graph.service.object.OAObjectGuidService;
-import com.viaoa.graph.service.object.OAObjectInfoService;
-import com.viaoa.graph.service.object.OAObjectKeyService;
-import com.viaoa.graph.service.object.OAObjectPropertyService;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAArray;
 import com.viaoa.lang.OAStr;
@@ -88,12 +81,8 @@ import com.viaoa.serialize.OAObjectSerializer;
 public class OADataSourceObjectCache extends OADataSourceAuto {
     private static final Logger LOG = OALogger.getLogger(OADataSourceObjectCache.class);
 
-    /**
-     * Thread-safe map storing the in-memory object sets for each OAObject class.
-     * Each key is a class type, and each value is the set of its instantiated
-     * objects currently held in the cache.
-     */
-    private final ConcurrentHashMap<Class, Set> hmClass = new ConcurrentHashMap<>();
+    private final Set<Class<? extends OAObject>> hsClass = ConcurrentHashMap.newKeySet();
+    
     
     /**
      * Read/write lock protecting modifications to the in-memory object sets
@@ -102,11 +91,12 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     /**
-     * Creates a new object-cache data source and registers it as the active
-     * data source. Delegates to {@link #OADataSourceObjectCache(boolean)} with
+     * Creates a new object-cache data source. 
+     * Delegates to {@link #OADataSourceObjectCache(boolean)} with
      * {@code true}.
      */
     public OADataSourceObjectCache() {
+    	this(true);
     }
 
     public OADataSourceObjectCache(boolean bMakeLastDataSource) {
@@ -118,7 +108,6 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
      * operations as well as registration and ordering flags.
      *
      * @param hubNextNumber hub used for autonumbering operations
-     * @param bRegister whether to register this data source
      * @param bMakeLastDataSource whether this instance should be last in the
      *                            data-source chain
      */
@@ -259,6 +248,8 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             
             // find using selectFromPropertyPath, or equalPropertyPath
             final OALinkInfo liRev = li.getReverseLinkInfo();
+        	if (liRev == null) return new OADataSourceEmptyIterator();
+            
             String spp = liRev.getSelectFromPropertyPath();
             if (OAStr.isNotEmpty(spp)) {
                 OAPath pp = new OAPath(li.getToClass(), spp);
@@ -269,7 +260,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             else {
                 spp = li.getEqualPropertyPath();
                 if (OAStr.isNotEmpty(spp)) {
-                    String s = liRev.getEqualPropertyPath();
+                    String s = liRev == null ? null : liRev.getEqualPropertyPath();
                     if (OAStr.isNotEmpty(s)) {
                         OAPath pp = new OAPath(li.getToClass(), s);
                         pp = pp.getReversePropertyPath();
@@ -393,45 +384,6 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
     }
 
     /**
-     * Determines whether multiple data sources are currently registered.
-     *
-     * @return {@code true} if more than one data source exists; otherwise false
-     */
-    protected boolean isOtherDataSource() {
-		OADataSource[] dss = OARuntime.datasource().getAll();
-        return dss.length > 1;
-    }
-
-    /**
-     * Determines whether the specified class is supported by this in-memory
-     * data source. Support depends on the presence of other data sources and
-     * whether all objects for the class have been loaded.
-     *
-     * @param clazz the class to check
-     * @param filter optional filter for conditional support
-     * @return true if the class is fully supported for selection
-     */
-    @Override
-    public boolean isClassSupported(Class clazz, OAFilter filter) {
-        if (filter == null) {
-            if (isOtherDataSource()) {
-                return false;
-            }
-            return super.isClassSupported(clazz, null);
-        }
-        // only if all objects are loaded, or no other DS
-        if (!isOtherDataSource()) {
-            return true;
-        }
-
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-        if (og.objectsInternal().callObjectCacheGetSelectAllHub(clazz) != null) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
      * Inserts the given object into the in-memory cache after delegating to
      * the superclass for autonumber and reference handling. The object's class
      * set is updated under write-lock protection.
@@ -444,17 +396,27 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
         if (object == null) {
             return;
         }
-        Set hs = getSet(object.getClass());
-        
-        try {
-            lock.writeLock().lock();
-            hs.add(object);
-        }
-        finally {
-            lock.writeLock().unlock();
-        }        
+        final Class<? extends OAObject> c = object.getClass();
+        hsClass.add(c);
     }
 
+    /**
+     * Inserts the given object into the cache without processing references.
+     * If the object is not already present in its class set, it is added under
+     * write-lock protection.
+     *
+     * @param obj the object to insert without reference handling
+     */
+    @Override
+    public void insertWithoutReferences(OAObject obj) {
+        super.insertWithoutReferences(obj);
+        if (obj == null) {
+            return;
+        }
+        hsClass.add(obj.getClass());
+    }
+    
+    
     /**
      * Saves all cached objects—and an optional extra object—to a compressed
      * storage file. The method writes using a {@link DeflaterOutputStream}
@@ -483,12 +445,16 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             _saveToStorageFile(file, oos, extraObject);
         }
         finally {
-            deflaterOutputStream.finish();
-            deflaterOutputStream.close();
-            bos.close();
-            fos.close();
-
-            lock.writeLock().unlock();
+        	try {
+		        deflaterOutputStream.finish();
+		        deflaterOutputStream.close();
+		        bos.close();
+		        fos.close();
+        	}
+        	finally {
+		        deflater.end();
+        		lock.writeLock().unlock();
+        	}
         }
         LOG.fine("saved to storage file=" + file);
     }        
@@ -511,27 +477,35 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             wrap.setIncludeBlobs(true);
             oos.writeObject(wrap);
         }
-        
-        for (Entry<Class, Set> entry : hmClass.entrySet()) {
-            Class c = entry.getKey();
-            if (!isClassSupported(c)) {
-                continue;
-            }
 
+        for (Class<? extends OAObject> cx: hsClass) {
             oos.writeBoolean(true);
-            oos.writeObject(c);
+            oos.writeObject(cx);
 
-            Set hs = entry.getValue();
+            OAGraphInternal og = (OAGraphInternal) OARuntime.graph(cx);
+            
+            final Set<OAObject> hs = new HashSet<>();
+            
+            OACallback<OAObject> callback = new OACallback<>() {
+				@Override
+				public boolean updateObject(OAObject obj) {
+					hs.add(obj);
+					return true;
+				}
+			}; 
+			
+            og.objectsInternal().callObjectCacheVisit(cx, (OACallback) callback);
+            
             OAObjectSerializer wrap = new OAObjectSerializer(hs, false, true);
             wrap.setIncludeBlobs(true);
             oos.writeObject(wrap);
         }
+        
         oos.writeBoolean(false);
-        oos.close();
     }
 
     /**
-     * Loads cached objects from a compressed storage file, replacing in-memory
+     * Loads cached objects from a compressed storage file, adding to in-memory
      * data. The method uses an {@link InflaterInputStream} and protects all
      * modifications with the write-lock.
      *
@@ -556,12 +530,11 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
         InflaterInputStream inflaterInputStream = new InflaterInputStream(fis, inflater, 32 * 1024);
 
 
-        final Set<Class<?>> hsClasses = new HashSet<>();
         OAObjectInputStream ois = new OAObjectInputStream(inflaterInputStream) {
         	@Override
         	protected Object resolveObject(Object obj) throws IOException {
         		if (obj instanceof OAObject) {
-        			hsClasses.add(obj.getClass());
+        	        hsClass.add((Class<? extends OAObject>) obj.getClass());
         		}
         		return super.resolveObject(obj);
         	}
@@ -570,13 +543,17 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
         boolean bResult = false;
         try {
             lock.writeLock().lock();
-            bResult = _loadFromStorageFile(file, ois, hsClasses);
+            bResult = _loadFromStorageFile(file, ois);
         }
         finally {
-            ois.close();
-            fis.close();
-
-            lock.writeLock().unlock();
+        	try {
+	            ois.close();
+	            fis.close();
+        	}
+            finally {
+	            inflater.end();
+            	lock.writeLock().unlock();
+            }
         }
         LOG.fine("loaded storage file=" + file);
         return bResult;
@@ -592,7 +569,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
      * @return true if any objects or extra data were loaded
      * @throws Exception if deserialization fails
      */
-    protected boolean _loadFromStorageFile(final File file, OAObjectInputStream ois, final Set<Class<?>> hsClasses) throws Exception {
+    protected boolean _loadFromStorageFile(final File file, OAObjectInputStream ois) throws Exception {
         int cnt = 0;
         
         boolean b = ois.readBoolean();
@@ -602,22 +579,6 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             cnt++;
         }
 
-        for (final Class c : hsClasses) {
-            final Set hs = getSet(c);
-            if (!OAObject.class.isAssignableFrom(c)) {
-            	continue;
-            }
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
-			og.objectsInternal().callObjectCacheCallback(c, new OACallback() {
-                @Override
-                public boolean updateObject(Object obj) {
-                	UUID guid = og.objectsInternal().callObjectGuidGetGuid((OAObject) obj);
-                    hs.add(obj);
-                    return true;
-                }
-            });
-        }
-        
         for (;;) {
             b = ois.readBoolean();
             if (!b) {
@@ -625,108 +586,13 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             }
             cnt++;
             Class c = (Class) ois.readObject();
+            hsClass.add(c);
+            
             OAObjectSerializer wrap = (OAObjectSerializer) ois.readObject();
-            Set hs = (Set) wrap.getObject();
-            
-            Set hs2 = getSet(c);
-            if (hs2 != null) hs.addAll(hs2);
-            
-            hmClass.put(c, hs);
+            wrap.getObject();
         }
         return (cnt > 0);
     }
 
-    /**
-     * Retrieves the object set for the specified class, creating it if necessary.
-     *
-     * @param c the class whose object set is requested
-     * @return the set associated with the class, or null if class is null
-     */
-    private Set getSet(Class c) {
-        if (c == null) {
-            return null;
-        }
-        Set hs = hmClass.computeIfAbsent(c, k -> new HashSet());
-        return hs;
-    }
-
-    /**
-     * Inserts the given object into the cache without processing references.
-     * If the object is not already present in its class set, it is added under
-     * write-lock protection.
-     *
-     * @param obj the object to insert without reference handling
-     */
-    @Override
-    public void insertWithoutReferences(OAObject obj) {
-        super.insertWithoutReferences(obj);
-        if (obj == null) {
-            return;
-        }
-        Set hs = getSet(obj.getClass());
-        
-        try {
-            lock.writeLock().lock();
-            if (!hs.contains(obj)) {
-                hs.add(obj);
-            }
-        }
-        finally {
-            lock.writeLock().unlock();
-        }
-    }
-
-    /**
-     * Removes the specified object from the in-memory cache after delegating to
-     * the superclass for reference cleanup. If the object's class set exists, the
-     * object is removed under write-lock protection.
-     *
-     * @param obj the object to delete
-     */
-    @Override
-    public void delete(OAObject obj) {
-        super.delete(obj);
-        if (obj == null) {
-            return;
-        }
-        final Class c = obj.getClass();
-        Set hs = (Set) hmClass.get(c);
-        if (hs != null) {
-            try {
-                lock.writeLock().lock();
-                hs.remove(obj);
-            }
-            finally {
-                lock.writeLock().unlock();
-            }
-        }
-    }
-
-    /**
-     * Removes all objects of the specified class from the in-memory cache and
-     * delegates to {@link OAObjectCacheDelegate#removeAllObjects(Class)} to clear
-     * the global cache. The class set is cleared under write-lock protection.
-     *
-     * @param c the class whose objects should be removed
-     */
-    @Override
-    public void deleteAll(Class c) {
-        super.deleteAll(c);
-        if (c == null) {
-            return;
-        }
-        Set hs = (Set) hmClass.get(c);
-        if (hs != null) {
-            try {
-                lock.writeLock().lock();
-                hs.clear();
-            }
-            finally {
-                lock.writeLock().unlock();
-            }
-        }
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
-		og.objectsInternal().callObjectCacheRemoveAllObjects(c);
-    }
 
 }

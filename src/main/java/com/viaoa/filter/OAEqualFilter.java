@@ -231,6 +231,7 @@ public class OAEqualFilter implements OAFilter {
                 this.finder = fi.finder;
                 OAEqualFilter f = new OAEqualFilter(fi.pp, matchValue);
                 f.setIgnoreCase(bIgnoreCase);
+                f.setDeciPlaces(deciPlaces);
                 finder.addFilter(f);
             }
         }

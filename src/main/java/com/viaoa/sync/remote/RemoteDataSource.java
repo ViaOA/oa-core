@@ -32,6 +32,44 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
 
+
+/*qqqqqqqqqqq
+CODEX
+
+
+1. src/main/java/com/viaoa/sync/remote/RemoteDataSource.java, datasource(...) COUNT / SELECT
+      - Exact execution path: client sends a select/count with whereClass + whereKey; server resolves whereObject =
+        getObject(whereClass, whereKey); if the master object was deleted or cannot be loaded, whereObject remains
+        null but propFromWhereObject is still passed into ds.count(...) / ds.select(...).
+      - Why concrete bug: object-cache datasource skips the where-object filtering block when whereObject == null,
+        so a detail select can become an unscoped select for the target class. That can return/count unrelated
+        objects instead of an empty result.
+      - Minimal fix: if whereClass != null && whereKey != null and resolution returns null, return 0 for count and a
+        null/empty iterator id for select.
+      - Suggested test: remote select detail children for a missing/deleted master key; verify no children are
+        returned and count is 0.
+  2. src/main/java/com/viaoa/sync/remote/RemoteDataSource.java, datasource(...) GET_PROPERTY
+      - Exact execution path: client calls OADataSourceClient.getPropertyBlobValue(obj, prop); server resolves
+        object by key; if object is missing, it still calls ds.getPropertyBlobValue(null, prop).
+      - Why concrete bug: a stale client object key can turn into datasource-specific NPE or incorrect null-object
+        handling instead of a clean “blob unavailable” result.
+      - Minimal fix: if whereObject == null, return null before calling the datasource.
+      - Suggested test: request a blob for a client object whose server object has been deleted; verify null is
+        returned without datasource exception.
+  3. src/main/java/com/viaoa/sync/remote/RemoteDataSource.java, datasource(...) UPDATE_MANY2MANY_LINKS
+      - Exact execution path: client sends many-to-many link update using master class/key; server getObject(clazz,
+        objects[1]) returns null for a stale/deleted master; code still calls ds.updateMany2ManyLinks(null, adds,
+        removes, prop).
+      - Why concrete bug: link-table updates require an authoritative master. Passing null can produce datasource
+        NPE or wrong link update behavior.
+      - Minimal fix: if master resolution fails, throw a clear stale-master exception or return without claiming
+        success, depending intended CS contract.
+      - Suggested test: delete master on server, then send client many-to-many update for that master key; verify no
+        datasource update is attempted.
+
+
+*/
+
 /**
  * Server-side datasource proxy used by {@link RemoteClientImpl} to execute
  * {@link OADataSource} operations initiated by a remote client.
@@ -339,8 +377,10 @@ public abstract class RemoteDataSource {
 				iterator = ds.selectPassthru(	clazz, (String) objects[1], (String) objects[2], (Integer) objects[3], null,
 												(Boolean) objects[4]);
 				obj = "select" + aiSelectCount.incrementAndGet();
-				hashIterator.put((String) obj, iterator);
-				LOG.finer("add iterator, size=" + hashIterator.size());
+				if (iterator != null) {
+					hashIterator.put((String) obj, iterator);
+					LOG.finer("add iterator, size=" + hashIterator.size());
+				}
 			} else {
 				obj = null;
 			}
@@ -419,9 +459,11 @@ public abstract class RemoteDataSource {
 			}
 		}
 
+		/*qqqqqq remove
 		for (OADataSource ds : OARuntime.datasource().getAll()) {
 			return ds;
 		}
+		*/
 		return null;
 	}
 

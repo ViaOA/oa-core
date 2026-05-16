@@ -34,6 +34,7 @@ import com.viaoa.find.OAFinder;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.lang.OAArray;
+import com.viaoa.lang.OAStr;
 import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
 import com.viaoa.path.OAPath;
@@ -520,7 +521,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 * @return true if import match properties are defined.
 	 */
 	public boolean hasImportMatchProperties() {
-		return getImportMatchPropertyNames().length > 0;
+		String[] ss = getImportMatchPropertyNames();
+		return ss != null && getImportMatchPropertyNames().length > 0;
 	}
 
 	/**
@@ -793,7 +795,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		getCalcInfos().add(ci);
 		if (ci.bIsForHub) {
 			String s = ci.getName();
-			if (s != null) {
+			if (OAStr.isNotEmpty(s)) {
 				hsHubCalcInfoName.add(s.toUpperCase());
 			}
 		}
@@ -1176,7 +1178,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 */
 	public String getPluralName() {
 		if (pluralName == null && thisClass != null) {
-			pluralName = OAString.getPlural(thisClass.getName());
+			pluralName = OAString.getPlural(thisClass.getSimpleName());
 		}
 		return pluralName;
 	}
@@ -1570,35 +1572,37 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		}
 		synchronized (hmTriggerInfo) {
 			// find all that use this trigger (1+)
-			for (CopyOnWriteArrayList<TriggerInfo> al : hmTriggerInfo.values()) {
-				TriggerInfo tiFound = null;
-				for (TriggerInfo ti : al) {
-					if (ti.trigger == trigger) {
-						tiFound = ti;
+			for (CopyOnWriteArrayList<TriggerInfo> alTriggerInfo : hmTriggerInfo.values()) {
+				for (;;) {				
+					TriggerInfo tiFound = null;
+					for (TriggerInfo ti : alTriggerInfo) {
+						if (ti.trigger == trigger) {
+							tiFound = ti;
+							break;
+						}
+					}
+					if (tiFound == null) {
 						break;
 					}
-				}
-				if (tiFound == null) {
-					continue;
-				}
-				al.remove(tiFound);
-				int x = aiTrigger.decrementAndGet();
-				aiAllTrigger.decrementAndGet();
-				
-				if (trigger.getUseBackgroundThread()) {
-					aiTriggerBackgroundThread.decrementAndGet();
-				}
-				
-				if (al.size() == 0) {
-					hmTriggerInfo.remove(tiFound.listenProperty.toUpperCase());
-				}
-
-				String s = (thisClass.getSimpleName() + ", name=" + trigger.getName() + ", prop=" + tiFound.listenProperty + ", revPropPath="
-						+ tiFound.ppToRootClass + ", trigger.cnt=" + x + ", total=" + aiAllTrigger.get());
-				LOG.fine(s);
-				if (false && OAPerformance.IncludeTriggers) {
-					OAPerformance.LOG.fine(s);
-				}
+					alTriggerInfo.remove(tiFound);
+					int x = aiTrigger.decrementAndGet();
+					aiAllTrigger.decrementAndGet();
+					
+					if (trigger.getUseBackgroundThread()) {
+						aiTriggerBackgroundThread.decrementAndGet();
+					}
+					
+					if (alTriggerInfo.size() == 0) {
+						hmTriggerInfo.remove(tiFound.listenProperty.toUpperCase());
+					}
+	
+					String s = (thisClass.getSimpleName() + ", name=" + trigger.getName() + ", prop=" + tiFound.listenProperty + ", revPropPath="
+							+ tiFound.ppToRootClass + ", trigger.cnt=" + x + ", total=" + aiAllTrigger.get());
+					LOG.fine(s);
+					if (false && OAPerformance.IncludeTriggers) {
+						OAPerformance.LOG.fine(s);
+					}
+				}				
 			}
 		}
 	}
@@ -1685,7 +1689,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(fromObject);
 		if (ti.trigger.getServerSideOnly()) {
-			if (!og.syncInternal().isServer()) return;
+			if (og.syncInternal().isClient()) return;
 		}
 
 		String s = "";
@@ -1734,7 +1738,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(fromObject);
 
 		if (ti.trigger.getServerSideOnly()) {
-			if (!og.syncInternal().isServer()) {
+			if (og.syncInternal().isClient()) {
 				return;
 			}
 		}

@@ -39,7 +39,7 @@ public class OAFindNull {
 	/**
 	 * Tracks visited objects to detect and prevent circular reference traversal.
 	 */
-	private IdentityHashMap<Object, Object> hm = new IdentityHashMap<Object, Object>();
+	private IdentityHashMap<Object, Object> hmVisit = new IdentityHashMap<Object, Object>();
     
 	/**
 	 * Initiates a recursive search for null values starting from the given object.
@@ -49,7 +49,7 @@ public class OAFindNull {
 	 * @throws IllegalAccessException if field access fails
 	 */
     public boolean findNull(Object obj) throws IllegalAccessException {
-        hm.clear();
+        hmVisit.clear();
         String s = obj == null ? "" : obj.getClass().getName();
         int x = s.lastIndexOf('.');
         if (x > 0) s = s.substring(x+1);
@@ -69,8 +69,8 @@ public class OAFindNull {
             foundOne(propertyPath);
             return true;
         }
-        if (hm.get(obj) != null) return false;
-        hm.put(obj, obj);
+        if (hmVisit.get(obj) != null) return false;
+        hmVisit.put(obj, obj);
 
         if (obj instanceof String) {
             return false;
@@ -79,10 +79,10 @@ public class OAFindNull {
         if (obj.getClass().isArray()) {
             int x = Array.getLength(obj);
 
-            boolean bMatch = true;
-            for (int i=0; i<x; i++) {
+            boolean bMatch = false;
+            for (int i=0; i<x && !bMatch; i++) {
                 Object o1 = Array.get(obj, i);
-                boolean b = _findNull(propertyPath+"["+i+"]", o1);
+                bMatch = _findNull(propertyPath+"["+i+"]", o1);
             }
             return bMatch;
         }

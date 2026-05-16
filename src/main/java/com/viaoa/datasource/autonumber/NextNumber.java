@@ -37,6 +37,9 @@ public class NextNumber extends OAObject {
 	static final long serialVersionUID = 1L;
 	private static Logger LOG = Logger.getLogger(NextNumber.class.getName());
 
+	public static final String P_Id = "Id";
+	
+	
 	protected String id; // class name
 	protected int nextNum = 1;
 	protected String propertyName;

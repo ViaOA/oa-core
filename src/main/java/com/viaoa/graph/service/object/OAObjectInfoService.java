@@ -18,6 +18,7 @@ import java.util.logging.Logger;
 import com.viaoa.annotation.OAClass;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAArray;
+import com.viaoa.lang.OAStr;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OACalcInfo;
 import com.viaoa.metadata.OALinkInfo;
@@ -583,11 +584,12 @@ public abstract class OAObjectInfoService {
 			thisOI.setLocalOnly(oaclass.localOnly());
 			thisOI.setAddToCache(oaclass.addToCache());
 			thisOI.setInitializeNewObjects(oaclass.initialize());
-			thisOI.setDisplayName(oaclass.displayName());
+			
+			String s = oaclass.displayName();
+			if (OAStr.isNotEmpty(s)) thisOI.setDisplayName(s);
 		}
 
 		// combine PropertyInfos
-		List alThis = thisOI.getPropertyInfos();
 		for (int x = 0; x < 2; x++) {
 			ArrayList al;
 			if (x == 0) {
@@ -600,11 +602,11 @@ public abstract class OAObjectInfoService {
 				OAPropertyInfo pi = (OAPropertyInfo) al.get(i);
 
 				for (int ii = 0;; ii++) {
-					if (ii == alThis.size()) {
-						alThis.add(pi);
+					if (ii == thisOI.getPropertyInfos().size()) {
+						thisOI.addPropertyInfo(pi);
 						break;
 					}
-					OAPropertyInfo piThis = (OAPropertyInfo) alThis.get(ii);
+					OAPropertyInfo piThis = thisOI.getPropertyInfos().get(ii);
 					if (pi.getName().equalsIgnoreCase(piThis.getName())) {
 						break;
 					}
@@ -626,7 +628,6 @@ public abstract class OAObjectInfoService {
 		faObjectInfo.setPrimitiveProps(thisOI, ss);
 
 		// combine LinkInfos
-		alThis = thisOI.getLinkInfos();
 		for (int x = 0; x < 2; x++) {
 			List<OALinkInfo> al;
 			if (x == 0) {
@@ -637,11 +638,11 @@ public abstract class OAObjectInfoService {
 
 			for (OALinkInfo li : al) {
 				for (int ii = 0;; ii++) {
-					if (ii == alThis.size()) {
-						alThis.add(li);
+					if (ii == thisOI.getLinkInfos().size()) {
+						thisOI.addLinkInfo(li);
 						break;
 					}
-					OALinkInfo liThis = (OALinkInfo) alThis.get(ii);
+					OALinkInfo liThis = thisOI.getLinkInfos().get(ii);
 					if (li.getName().equalsIgnoreCase(liThis.getName())) {
 						break;
 					}
@@ -650,7 +651,6 @@ public abstract class OAObjectInfoService {
 		}
 
 		// combine CalcInfos
-		alThis = thisOI.getCalcInfos();
 		for (int x = 0; x < 2; x++) {
 			ArrayList<?> al;
 			if (x == 0) {
@@ -662,11 +662,11 @@ public abstract class OAObjectInfoService {
 			for (int i = 0; i < al.size(); i++) {
 				OACalcInfo ci = (OACalcInfo) al.get(i);
 				for (int ii = 0;; ii++) {
-					if (ii == alThis.size()) {
-						alThis.add(ci);
+					if (ii == thisOI.getCalcInfos().size()) {
+						thisOI.addCalcInfo(ci);
 						break;
 					}
-					OACalcInfo ciThis = (OACalcInfo) alThis.get(ii);
+					OACalcInfo ciThis = thisOI.getCalcInfos().get(ii);
 					if (ci.getName().equalsIgnoreCase(ciThis.getName())) {
 						break;
 					}
@@ -721,7 +721,7 @@ public abstract class OAObjectInfoService {
 	 */
 	public void addCalcInfo(OAObjectInfo thisOI, OACalcInfo ci) {
 		if (ci != null) {
-			thisOI.getCalcInfos().add(ci);
+			thisOI.addCalcInfo(ci);
 		}
 	}
 

@@ -61,7 +61,7 @@ public class OADataSourceListIterator implements OADataSourceIterator {
      */
     @Override
     public boolean hasNext() {
-        return al != null && al.size() < pos;
+        return al != null && pos < al.size();
     }
     
     /**

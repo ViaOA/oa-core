@@ -26,6 +26,27 @@ import com.viaoa.runtime.OARuntime;
 import com.viaoa.select.OASelect;
 import com.viaoa.transaction.OATransaction;
 
+/*qqqqqqqqqqqqqqqqqqqqqqq
+CODEX
+
+2. OADataSource, setReadOnly/setIgnoreWrites
+      - Exact path: caller sets ds.setReadOnly(true) or ds.setIgnoreWrites(true);
+        OAObjectDSService.save/delete/removeReference/saveWithoutReferences calls insert/update/delete directly; no
+        core datasource path checks either flag.
+      - Why bug: these flags are exposed as datasource runtime controls, but normal OA save/delete paths do not
+        enforce them. A caller can believe writes are blocked or ignored while writes still execute.
+      - Semantic/invariant violated: datasource write-policy flags must be authoritative if exposed by the
+        datasource contract.
+      - Minimal fix or CODEX/defer: either enforce in the shared OAObjectDSService write gateway before invoking
+        datasource writes, or add a CODEX contract comment that these flags are advisory and must be enforced by
+        concrete datasource implementations.
+      - Suggested test: set read-only/ignore-writes on a registered datasource, save/delete an object through normal
+        OAObject/graph path, verify write is blocked/ignored according to intended contract.
+
+
+ */
+
+
 /**
  * Abstract base class for all OA persistence providers.
  * <p>
@@ -214,9 +235,13 @@ public abstract class OADataSource implements OADataSourceInterface {
 
 		T obj = null;
 		OADataSourceIterator<T> it = select(clazz, query, key.getObjectIds(), "", bDirty);
-		if (it != null && it.hasNext()) {
-			obj = it.next();
-			it.remove();
+		if (it != null) {
+			try {
+				if (it.hasNext()) obj = it.next();
+			}
+			finally {
+				it.remove();
+			}
 		}
 		return obj;
 	}
@@ -262,7 +287,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 	}
 
 	/**
-	 * Constructs and registers this DataSource.
+	 * Constructs this DataSource.
 	 *
 	 * @see #OADataSource(boolean)
 	 */

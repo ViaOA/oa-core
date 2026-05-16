@@ -18,7 +18,6 @@ package com.viaoa.metadata.pojo;
 import java.io.Serializable;
 
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OAFkeyInfo;
 import com.viaoa.metadata.OALinkInfo;
@@ -540,9 +539,9 @@ public class OAObjectPojoLoader implements Serializable {
 
 			PojoLink pl = plo.getPojoLink();
 			OALinkInfo li = oi.getLinkInfo(pl.getName());
-			OAPropertyInfo pi = li.getToObjectInfo().getPropertyInfo(OAString.field(pp.getPropertyPath(), ".", 2));
 
 			if (pp != null) {
+				OAPropertyInfo pi = li.getToObjectInfo().getPropertyInfo(OAString.fieldAt(pp.getPropertyPath(), ".", 1));
 				int kpos = pi.getPojoKeyPos();
 				pp.setKeyPos(kpos == 0 ? 1 : kpos);
 				bFound = true;

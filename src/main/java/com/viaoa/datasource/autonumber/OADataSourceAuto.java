@@ -15,6 +15,7 @@
  */
 package com.viaoa.datasource.autonumber;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.viaoa.datasource.OADataSource;
@@ -29,6 +30,32 @@ import com.viaoa.runtime.OARuntime;
 
 
 //qqqqqqqq what about local (negative numbers)
+
+/*qqqqqqqqqqqqqqq
+CODEX
+
+4. src/main/java/com/viaoa/datasource/clientserver/OADataSourceClient.java, getMaxLength(...)
+      - Exact execution path: multiple threads call getMaxLength concurrently; hmMax is a plain HashMap mutated
+        without synchronization.
+      - Why concrete bug: datasource clients are runtime shared infrastructure; concurrent metadata lookups can race
+        and corrupt/cache stale values unpredictably.
+      - Minimal fix: use ConcurrentHashMap<String, Integer> or synchronize the cache access.
+      - Suggested test: concurrent repeated getMaxLength calls for different class/property keys using a fake remote
+        client; verify stable results and no map corruption.
+
+
+5. src/main/java/com/viaoa/datasource/autonumber/OADataSourceAuto.java, getNextNumber(...) / assignId(...)
+      - Exact execution path: startNextNumber > 0; two threads concurrently assign IDs for the same class;
+        getNextNumber adjusts nn.next outside synchronized(nn), while assignId increments inside synchronized(nn).
+      - Why concrete bug: one thread can reset nn.next back to the start value after another thread has already
+        incremented it, creating duplicate assigned IDs.
+      - Minimal fix: perform the startNextNumber adjustment inside synchronized(nn), ideally in the same critical
+        section used to read/increment nn.next.
+      - Suggested test: set starting next number, concurrently create/assign IDs for many objects of the same class,
+        verify no duplicate IDs and no value below the configured start.
+
+
+*/
 
 /**
  * A lightweight {@link OADataSource} implementation that does not support
@@ -57,7 +84,7 @@ public class OADataSourceAuto extends OADataSource {
 	 * Global Hub of {@link NextNumber} objects used to store autonumber sequences
 	 * shared across all OADataSourceAuto instances unless overridden.
 	 */
-	private static Hub hubNextNumberGlobal; // new numbers for seq ids
+	private static Hub<NextNumber> hubNextNumberGlobal; // new numbers for seq ids
 
 	/**
 	 * Indicates whether this datasource should respond positively to class-support
@@ -70,19 +97,27 @@ public class OADataSourceAuto extends OADataSource {
 	 * Hub containing {@link NextNumber} instances for autonumber assignment. This
 	 * may point to a caller-supplied Hub or the global shared Hub.
 	 */
-	private Hub hubNextNumber; // new numbers for seq ids
+	private Hub<NextNumber> hubNextNumber; // new numbers for seq ids
 
 	/**
 	 * Cache mapping classes to their corresponding {@link NextNumber} objects or
 	 * placeholder mappings to indicate that no autonumber assignment should occur
 	 * for a given class.
 	 */
-	private final ConcurrentHashMap<Class, NextNumber> hmIgnoreClass = new ConcurrentHashMap();
+	private final Map<Class<?>, NextNumber> hmClassNextNumber = new ConcurrentHashMap<>();
 
 	private int startNextNumber;
 	
+	
 	/**
-	 * Creates a new OADataSourceAuto instance that registers itself and configures
+	 * Synchronization lock object used when lazily creating {@link NextNumber}
+	 * instances for previously unseen classes.
+	 */
+	private Object LOCK = new Object();
+
+	
+	/**
+	 * Creates a new OADataSourceAuto instance that configures
 	 * itself as the last datasource. Uses or initializes the global Hub of
 	 * {@link NextNumber} sequences.
 	 */
@@ -106,17 +141,9 @@ public class OADataSourceAuto extends OADataSource {
 	 *
 	 * @param hubNextNumber Hub containing NextNumber instances
 	 */
-	public OADataSourceAuto(Hub hubNextNumber, boolean makeLast) {
+	public OADataSourceAuto(Hub<NextNumber> hubNextNumber, boolean makeLast) {
 		this(makeLast);
-		if (hubNextNumber == null) {
-			hubNextNumber = hubNextNumberGlobal;
-			if (hubNextNumber == null) {
-				hubNextNumber = new Hub(NextNumber.class);
-			}
-		}
-		setGlobalNextNumber(hubNextNumber);
-
-		setHub(hubNextNumber);
+		this.hubNextNumber = hubNextNumber;
 		setName("OADataSourceAuto DataSource");
 	}
 
@@ -124,21 +151,15 @@ public class OADataSourceAuto extends OADataSource {
 		this(hubNextNumber, true);
 	}
 	
-	public void setStartingNextNumber(int x) {
-		this.startNextNumber = x;
-	}
-	public int getStartingNextNumber() {
-		return this.startNextNumber;
-	}	
-	
-	/**
-	 * Configures the global Hub of {@link NextNumber} instances used for
-	 * autonumber assignment across all OADataSourceAuto instances.
-	 *
-	 * @param hubNextNumber the Hub to install as the global sequence source
-	 */
-	public static void setGlobalNextNumber(Hub hubNextNumber) {
-		hubNextNumberGlobal = hubNextNumber;
+
+	public Hub<NextNumber> getNextNumbers() {
+		if (hubNextNumber == null) {
+			hubNextNumber = getGlobalNextNumbers();
+			if (hubNextNumber == null) {
+				hubNextNumber = new Hub<>(NextNumber.class);
+			}
+		}
+		return hubNextNumber;
 	}
 
 	/**
@@ -146,33 +167,27 @@ public class OADataSourceAuto extends OADataSource {
 	 *
 	 * @return the shared Hub of autonumber sequences
 	 */
-	public static Hub<NextNumber> getGlobalNextNumber() {
+	public static Hub<NextNumber> getGlobalNextNumbers() {
 		return hubNextNumberGlobal;
 	}
-
+	
 	/**
-	 * Sets the Hub used to store {@link NextNumber} objects for autonumbering.
-	 * The Hub must be typed for {@link NextNumber} objects.
+	 * Configures the global Hub of {@link NextNumber} instances used for
+	 * autonumber assignment across all OADataSourceAuto instances.
 	 *
-	 * @param hubNextNumber the Hub to use for autonumber storage
-	 * @throws IllegalArgumentException if the Hub is not for NextNumber objects
+	 * @param hubNextNumber the Hub to install as the global sequence source
 	 */
-	public void setHub(Hub hubNextNumber) {
-		if (hubNextNumber == null || !hubNextNumber.getObjectClass().equals(NextNumber.class)) {
-			throw new IllegalArgumentException("OADataSourceNextNumber() Hub must be for NextNumber2.class objects");
-		}
-		this.hubNextNumber = hubNextNumber;
+	public static void setGlobalNextNumbers(Hub<NextNumber> hubNextNumber) {
+		hubNextNumberGlobal = hubNextNumber;
 	}
 
-	/**
-	 * Returns the Hub that stores {@link NextNumber} objects used for autonumber
-	 * assignment.
-	 *
-	 * @return the NextNumber Hub
-	 */
-	public Hub getHub() {
-		return hubNextNumber;
+	public void setStartingNextNumber(int x) {
+		this.startNextNumber = x;
 	}
+
+	public int getStartingNextNumber() {
+		return this.startNextNumber;
+	}	
 
 	/**
 	 * Always returns false. OADataSourceAuto does not support any form of storage.
@@ -205,7 +220,7 @@ public class OADataSourceAuto extends OADataSource {
 	 * Determines whether autonumber assignment should be allowed for the
 	 * specified class. When {@link #bSupportAllClasses} is true, all classes
 	 * are treated as supported unless explicitly ignored. Otherwise, a class
-	 * must already exist in the {@link #hmIgnoreClass} map or the NextNumber Hub.
+	 * must already exist in the {@link #hmClassNextNumber} map or the NextNumber Hub.
 	 *
 	 * @param clazz  the class to test
 	 * @param filter optional filter (ignored for this datasource)
@@ -224,24 +239,9 @@ public class OADataSourceAuto extends OADataSource {
 		return (nn != null);
 	}
 
-	/**
-	 * Synchronization lock object used when lazily creating {@link NextNumber}
-	 * instances for previously unseen classes.
-	 */
-	private Object LOCK = new Object();
 
-	/**
-	 * Internal reference used during NextNumber creation. Reserved for internal
-	 * processing; not externally visible.
-	 */
-	private NextNumber nextNumberNextNumber;
 
-	/**
-	 * Internal guard flag used to prevent recursive or reentrant calls during
-	 * NextNumber lookup and creation.
-	 */
-	private boolean bGettingNextNumber;
-
+	
 	/**
 	 * Retrieves or creates the {@link NextNumber} sequence object associated with the
 	 * specified class.
@@ -265,48 +265,41 @@ public class OADataSourceAuto extends OADataSource {
 	 * @param clazz the class whose autonumber sequence is requested
 	 * @return the {@link NextNumber} for the class, or {@code null} if unsupported
 	 */
-	private NextNumber getNextNumber(final Class<?> clazz) {
+	protected NextNumber getNextNumber(final Class<?> clazz) {
 		NextNumber nn = _getNextNumber(clazz);
-		if (startNextNumber > 0 && nn.getNext() < startNextNumber) nn.setNext(startNextNumber);
+		if (nn != null && startNextNumber > 0) {
+			if (nn.getNext() < startNextNumber) nn.setNext(startNextNumber);
+		}
 		return nn;
 	}
 	
 	private NextNumber _getNextNumber(final Class<?> clazz) {
-		NextNumber nn = hmIgnoreClass.get(clazz);
+		NextNumber nn = hmClassNextNumber.get(clazz);
 		if (nn != null) {
 			return nn;
 		}
 
-		if (!bSupportAllClasses) {
-			return null;
+		if (NextNumber.class.equals(clazz)) {
+			return null; 
 		}
-
-		if (hmIgnoreClass.containsKey(clazz)) {
-			return null;
-		}
-
+		
 		synchronized (LOCK) {
-			nn = hmIgnoreClass.get(clazz);
-			if (nn != null || hmIgnoreClass.containsKey(clazz)) {
-				return nn;
-			}
+			nn = hmClassNextNumber.get(clazz);
+			if (nn != null) return nn;
 
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-			final OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(clazz);
-			final String[] props = oi.getIdProperties();
-
-			if (NextNumber.class.equals(clazz)) {
-				return null; 
-			}
-
-			final OAGraphInternal og2 = (OAGraphInternal) OARuntime.graph(NextNumber.class);
-			nn = og2.objectsInternal().callObjectCacheGetObject(NextNumber.class, clazz.getName());
-
+			nn = getNextNumbers().find(NextNumber.P_Id, clazz.getName());
 			
 			if (nn == null) {
+				if (!bSupportAllClasses) {
+					return null;
+				}
+				
 				nn = new NextNumber();
 				nn.setId(clazz.getName());
 	
+				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+				final OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(clazz);
+				final String[] props = oi.getIdProperties();
 				if (props != null) {
 					for (String s : props) {
 						OAPropertyInfo pi = oi.getPropertyInfo(s);
@@ -316,9 +309,9 @@ public class OADataSourceAuto extends OADataSource {
 						}
 					}
 				}
+				getNextNumbers().add(nn);
 			}
-			hubNextNumber.add(nn);
-			hmIgnoreClass.put(clazz, nn);
+			hmClassNextNumber.put(clazz, nn);
 		}
 		return nn;
 	}

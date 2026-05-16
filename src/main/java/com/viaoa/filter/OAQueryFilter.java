@@ -22,7 +22,6 @@ import java.util.Vector;
 
 import com.viaoa.converter.OAConv;
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.object.OAObjectKey;
@@ -728,6 +727,7 @@ public class OAQueryFilter<TYPE> implements OAFilter<TYPE> {
 				f = new OAOrFilter(f, fx);
 			}
 		}
+		if (f == null) f = new OAFalseFilter();
 		stack.push(f);
 		nextToken = nextToken();
 		return nextToken;
@@ -806,6 +806,7 @@ public class OAQueryFilter<TYPE> implements OAFilter<TYPE> {
 						f = new OAOrFilter(f, fx);
 					}
 				}
+				if (f == null) f = new OAFalseFilter();
 				break;
 			}
 

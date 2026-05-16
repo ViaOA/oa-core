@@ -18,28 +18,24 @@ package com.viaoa.filter;
 import com.viaoa.path.OAPath;
 
 /**
- * Filter that always returns {@code false}.  This is a utility filter used
- * when an empty result set is required, or as a placeholder to disable
- * another filter dynamically.
+ * Filter that always returns {@code false} or uses and equal to false 
+ * when using OAPath.  
  *
- * <p>
- * Since this filter never selects any object, it is often used
- * programmatically to suppress results or short-circuit other filtering logic.
- * </p>
  */
 public class OAFalseFilter extends OAEqualFilter {
+	
+	private boolean bAlwaysFalse;
 
 	/**
-	 * Creates a filter that always returns {@code false} by configuring the
-	 * superclass with a comparison value of {@link Boolean#FALSE}.
+	 * Creates a filter that always returns {@code Boolean.FALSE}.
 	 */
 	public OAFalseFilter() {
 		super(Boolean.FALSE);
+		bAlwaysFalse = true;
 	}
 
 	/**
-	 * Creates a filter that always returns {@code false}, applying the filter
-	 * to the value obtained through the supplied property-path expression.
+	 * Creates a filter that always checks for path to be equal to {@code false}.
 	 *
 	 * @param pp the property-path expression used to retrieve the evaluated value
 	 */
@@ -48,8 +44,7 @@ public class OAFalseFilter extends OAEqualFilter {
 	}
 
 	/**
-	 * Creates a filter that always evaluates to {@code false}, using the
-	 * provided {@link OAPath} to retrieve the value being compared.
+	 * Creates a filter that always checks for path to be equal to {@code false}.
 	 *
 	 * @param pp the property path used to access the evaluated value
 	 */
@@ -57,4 +52,10 @@ public class OAFalseFilter extends OAEqualFilter {
 		super(pp, Boolean.FALSE);
 	}
 
+	@Override
+	public boolean isUsed(Object obj) {
+		if (bAlwaysFalse) return false;
+		return super.isUsed(obj);
+	}
+	
 }
