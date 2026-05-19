@@ -69,6 +69,7 @@ public class OAInteger {
 		return this.subtract(1);
 	}
 
+/*qqqqqqqqq remove, testing only	
 	public static void viewBytes(byte i) {
 		int[] ints = new int[1];
 		ints[0] = i & 0xFF;
@@ -96,7 +97,7 @@ public class OAInteger {
 		ints[7] = (int) (i & 0xFF);
 		ints = null;
 	}
-
+*/
 	public boolean isSet() {
 		return bIsSet;
 	}

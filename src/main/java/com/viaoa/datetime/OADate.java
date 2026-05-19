@@ -22,6 +22,30 @@ import java.util.*;
 
 import com.viaoa.lang.OAString;
 
+/*qqqqqqqqqqqqqqqqqqqqqq
+CODEX
+
+1. file/class/method
+     src/main/java/com/viaoa/datetime/OADate.java — OADate(LocalDate ld)
+  2. concrete bug
+     LocalDate conversion uses deprecated new Date(year, month, day), which resolves midnight in the JVM default
+     timezone instead of OA’s configured date semantics.
+  3. runtime scenario
+     If OA default timezone is UTC but the JVM default timezone is America/Chicago, new OADate(LocalDate.of(2026, 5,
+     18)) stores an epoch millis based on Chicago midnight. Serialized, compared, or reconstructed elsewhere, that
+     backing millis can represent a different date boundary than the OA runtime expects.
+  4. why this violates OA/OG datetime semantics
+     LocalDate is date-only and should not silently inherit JVM-default timezone behavior. OA date-only values need
+     deterministic distributed semantics.
+  5. minimal fix direction
+     Construct using an explicit OA timezone/calendar, or store date-only fields using the same normalized path
+     intended for OADate.
+  6. suggested CODEX comment location
+     Above OADate(LocalDate ld).
+
+
+*/
+
 /**
  * Immutable date-only value that represents a calendar day independent from
  * time-of-day. OADate is suitable for business rules where wall-clock time is

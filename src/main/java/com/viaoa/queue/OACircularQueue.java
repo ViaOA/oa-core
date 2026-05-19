@@ -106,6 +106,175 @@ CODEX
     while sessions still hold old positions, breaking ordering and overrun math.
   - Classification: CODEX/DEFER
 
+
+1. file/class/method
+     src/main/java/com/viaoa/queue/OACircularQueue.java / OACircularQueue / setSize(int)
+
+  concrete bug
+  Calling setSize on a live queue replaces msgQueue with a new empty array while preserving queueHeadPosition,
+  queueLowPosition, lastUsedPos, and registered session positions.
+
+  runtime scenario
+  A queue has registered sessions and queued messages. Code resizes the queue for capacity tuning. After resize,
+  consumers still have logical positions pointing into the old queue history, but the backing array has been cleared.
+
+  why this violates OA/OG queue semantics
+  Previously enqueued work can be silently lost, while the queue still reports logical positions as if the work
+  exists. This can produce null/wrong reads, stale session state, and retry behavior that cannot reconstruct the
+  discarded messages.
+
+  minimal fix direction
+  Either make setSize only legal before first use, or make resize an explicit reset/clear operation that also resets
+  head/low/session positions. If live resize is intended, copy retained live messages by logical position under
+  LOCKQueue.
+
+  suggested CODEX comment location
+  At the start of setSize(int), before assigning this.queueSize.
+
+  2. file/class/method
+     src/main/java/com/viaoa/queue/OACircularQueue.java / OACircularQueue / addMessageToQueue(TYPE,int,int)
+
+  concrete bug
+  The throttle sleep catches all Exception, logs to System.out, and continues. InterruptedException is swallowed and
+  the interrupt status is not restored.
+
+  runtime scenario
+  A producer thread is interrupted during throttling because the runtime is shutting down or cancelling background
+  work. The method ignores the interrupt, keeps looping, and may still enqueue the message and return success.
+
+  why this violates OA/OG queue semantics
+  Interrupt/cancel can become invisible to the caller, and queued work can be accepted after the caller/runtime
+  attempted to stop the producer. That is false-success behavior for shutdown-sensitive queue usage.
+
+  minimal fix direction
+  Catch InterruptedException separately, restore interrupt with Thread.currentThread().interrupt(), and either throw/
+  return failure or document that enqueue is uninterruptible.
+
+  suggested CODEX comment location
+  Inside addMessageToQueue, around the Thread.sleep(-x) catch block.
+
+  3. file/class/method
+     src/main/java/com/viaoa/queue/OACircularQueue.java / OACircularQueue / _addMessage(TYPE,int,int)
+
+  concrete bug
+  shouldWaitOnSlowSession(...) can request that a producer wait for a slow session, but after 200 retries _addMessage
+  stops throttling and enqueues anyway without visibly failing enqueue or explicitly marking that protected slow
+  session as abandoned/overrun at that decision point.
+
+  runtime scenario
+  A subclass overrides shouldWaitOnSlowSession to protect a replication/session consumer from overwrite. Under
+  sustained producer pressure, the retry limit expires and the producer writes the next message anyway.
+
+  why this violates OA/OG queue semantics
+  The hook contract appears to allow a session to block overwrite, but the retry cap silently overrides it. Valid OA
+  usage can lose messages for a session that the policy said should be protected.
+
+  minimal fix direction
+  Make the bounded-wait behavior explicit: either keep waiting while the hook returns true, fail/return visibly after
+  the limit, or mark the affected session inactive/overrun before proceeding so the consumer cannot believe it is
+  still ordered and current.
+
+  suggested CODEX comment location
+  In _addMessage, where slowSessionFound and retryCnt < 200 are evaluated.
+
+  4. file/class/method
+     src/main/java/com/viaoa/queue/OACircularQueue.java / OACircularQueue / getMessages(int,long,int,long)
+
+  concrete bug
+  If a non-negative sessionId is supplied but no matching session exists, the method silently performs an untracked
+  read instead of failing or requiring registration.
+
+  runtime scenario
+  A session is unregistered during reconnect/cleanup. A stale consumer still calls getMessages(sessionId, ...). It can
+  receive messages, but session.queuePos, msLastRead, inactivity, and overrun tracking are not updated because session
+  == null.
+
+  why this violates OA/OG queue semantics
+  A caller can believe it is using protected session-based consumption, while the queue treats it as raw positional
+  reading. Cleanup/throttling can then ignore that consumer, creating silent message-loss risk.
+
+  minimal fix direction
+  If sessionId >= 0 and the session is missing, fail visibly or return a documented “session not registered” result.
+  Do not silently downgrade to untracked reads.
+
+  suggested CODEX comment location
+  In getMessages(int sessionId, ...), immediately after Session session = hmSession.get(sessionId).
+
+  5. file/class/method
+     src/main/java/com/viaoa/queue/OACircularQueue.java / OACircularQueue / getAmountAvailable(long)
+
+  concrete bug
+  When posTail > queueHeadPosition, the method returns a negative availability count.
+
+  runtime scenario
+  A consumer/session position gets ahead of the current head because of reconnect, re-registration, or caller state
+  drift. getAmountAvailable returns a negative number instead of clamping to zero or reporting invalid position.
+
+  why this violates OA/OG queue semantics
+  Availability/count APIs should not silently return impossible queue state. Negative availability can cause callers
+  to skip work, miscalculate flow control, or hide a corrupted consumer position.
+
+  minimal fix direction
+  Use the same normalization policy as _getMessages: clamp future tail to head and return zero, or throw/report
+  invalid consumer position.
+
+  suggested CODEX comment location
+  At the start of getAmountAvailable(long posTail), before calculating amt.
+
+
+
+1. file/class/method
+     src/main/java/com/viaoa/queue/OACircularQueue.java / OACircularQueue / registerSession(int)
+
+  concrete bug
+  A newly registered session starts with msLastRead == 0.
+
+  runtime scenario
+  A remote async client registers a queue session, then producers add messages before the reader thread performs its
+  first getMessages(...). _addMessage(...) sees the new session as not having read since epoch time. In the actual
+  remote override, shouldWaitOnSlowSession(...) returns false when msSinceLastRead > 5000, so the brand-new session
+  can be marked inactive before it had a chance to read.
+
+  why this violates OA/OG queue semantics
+  A registered session should be protected from overrun starting at its registration position. This path can
+  temporarily remove that protection and allow producer progress as if the session were stale, increasing silent
+  message-loss/overrun risk for a valid new consumer.
+
+  minimal fix direction
+  Initialize session.msLastRead = System.currentTimeMillis() inside the LOCKQueue block in registerSession(...), at
+  the same time queuePos is initialized.
+
+  suggested CODEX comment location
+  In registerSession(int), immediately after session.queuePos = x.
+
+2. file/class/method
+     src/main/java/com/viaoa/queue/OACircularQueue.java / OACircularQueue / getMessages(int,long,int,long)
+
+  concrete bug
+  If a session caller passes posTail > queueHeadPosition, _getMessages(...) clamps its local posTail down to
+  queueHeadPosition, but the outer getMessages(...) later advances session.queuePos using the original caller-supplied
+  posTail.
+
+  runtime scenario
+  A stale/reconnected consumer accidentally calls getMessages(sessionId, 100, ...) while the queue head is 10.
+  _getMessages(...) normalizes the read to head 10 and may return new messages. The caller then sets session.queuePos
+  = 100 + msgs.length, making the session appear to have consumed messages that never existed or were never delivered.
+
+  why this violates OA/OG queue semantics
+  Session progress can jump ahead of actual delivery. Producer cleanup/throttle logic will trust that future queuePos,
+  which can silently skip later messages and mark queue state as consumed when it was not.
+
+  minimal fix direction
+  Do not silently clamp for session reads, or return the normalized start position from _getMessages(...) so
+  session.queuePos advances from the actual read position. The stricter fix is to reject posTail > queueHeadPosition
+  for registered sessions.
+
+  suggested CODEX comment location
+  In _getMessages(...) at the if (posTail > queueHeadPosition) clamp, and in getMessages(int,...) where
+  session.queuePos is updated.
+
+
+
 */
 
 /**

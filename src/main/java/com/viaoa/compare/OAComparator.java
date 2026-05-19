@@ -51,6 +51,54 @@ CODEX
   - Classification: CODEX/DEFER
 
 
+ #2 — OAComparator.init() / compare(...)
+
+  File/class/method: src/main/java/com/viaoa/compare/OAComparator.java, init and compare(Object,Object)
+
+  Concrete bug: lazy initialization publishes methodss before bAscendings is initialized.
+
+  Runtime scenario: two threads share the same OAComparator during first use. Thread A assigns methodss; before it
+  assigns bAscendings, Thread B enters compare, sees methodss != null, skips init, and compares all properties using
+  the default bAscending. A path such as "lastName DESC, firstName ASC" can temporarily sort with the wrong direction.
+
+  Why this violates OA/OG comparison semantics: Hub sorting must be deterministic. A first-use race can produce wrong
+  ordering without an exception.
+
+  Minimal fix direction: build local Method[][] and boolean[] fully, then publish them together under synchronization
+  or with a volatile initialized-state. Alternatively make eager initialization happen in the constructor.
+
+
+1. file/class/method
+     src/main/java/com/viaoa/compare/OAComparator.java — init()
+  2. concrete bug
+     A space between ASC/DESC and the comma can shift per-property sort directions onto the wrong property.
+  3. runtime scenario
+     For an order string like:
+
+  "lastName DESC , firstName DESC"
+
+  tokenization sees the space after DESC, sets bAllowDesc = true, then the comma adds the default bAscending direction
+  as an extra entry. The internal direction list becomes effectively:
+
+  lastName -> DESC
+  firstName -> default ASC
+
+  The second explicit DESC is pushed out of alignment and ignored for firstName.
+
+  4. why this violates OA/OG comparison semantics
+     OA sort/order strings are user-facing through Hub sort/select and object-cache select paths. Whitespace around
+     commas is normal order-clause formatting. A harmless formatting difference silently changes sort direction,
+     causing wrong Hub/select ordering without an exception.
+  5. minimal fix direction
+     When ASC or DESC is consumed, keep a state that prevents a following whitespace token before , from re-enabling
+     “missing direction” handling for the just-completed property. More robustly, parse each comma-separated segment
+     independently, trim it, then detect trailing ASC/DESC per segment.
+  6. suggested CODEX comment location
+     In OAComparator.init(), near the StringTokenizer(propertyPaths, ", ", true) loop and the prop.equals(" ") branch.
+
+
+
+
 */
 
 /**

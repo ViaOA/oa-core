@@ -17,6 +17,11 @@ package com.viaoa.remote.info;
 
 import java.lang.reflect.Method;
 
+/*qqqqqqqqqqqqqq
+CODEX
+
+*/
+
 /**
  * Metadata describing a single remotely invocable method. Instances are created
  * while scanning a remote interface and contain all information needed to

@@ -19,19 +19,78 @@ import java.lang.reflect.Method;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectCacheService;
-import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.hub.Hub;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
 import com.viaoa.sync.model.ClientInfo;
+
+/*qqqqqqqqqqq
+CODEX
+
+1. src/main/java/com/viaoa/sync/remote/RemoteServerImpl.java:121 / src/main/java/com/viaoa/graph/service/object/
+     OAObjectSaveService.java:109
+
+  Concrete bug:
+  RemoteServerImpl.save(...) only looks in server cache. Unlike getObject(...), it does not load from datasource when
+  the object was GC’d/evicted from cache. If not found, it returns false.
+
+  Runtime scenario:
+  Client saves an existing object. Server no longer has that object in cache, but the datasource can load it by key.
+  RemoteServerImpl.save(...) returns false; OAObjectCSService.save(...) returns that boolean, but
+  OAObjectSaveService.save(...) ignores the result and returns from the client save path.
+
+  Why this violates sync semantics:
+  A client save can silently appear completed even though the authoritative server did not save anything.
+
+  Minimal fix direction:
+  Make server save resolve from datasource like getObject(...), or make the client save path treat false as visible
+  failure.
+
+  Suggested CODEX comment location:
+  RemoteServerImpl.save(...), around cache lookup; also OAObjectSaveService.save(...), around callCSSave(...).
+
+  Suggested regression test:
+  testClientSaveFailsVisiblyWhenServerSaveReturnsFalseAfterCacheMiss()
+
+
+>> Important, fix this:
+1. file/class/method
+     src/main/java/com/viaoa/sync/remote/RemoteServerImpl.java:191
+     RemoteServerImpl.getObject(...) and getObjectUsingPkey(...)
+
+  concrete bug
+  On server cache miss, both methods load from datasource and return the object without preserving/reassigning the
+  original GUID from the requested OAObjectKey.
+
+  runtime scenario
+  A client asks the server for an object by key/GUID. The server cache no longer contains it, so ds.getObject(...)
+  reloads it. If datasource hydration creates an object with a new runtime GUID, the object returned to the client no
+  longer matches the GUID identity the sync request was based on.
+
+  why this violates OA/OG sync semantics
+  Sync identity is GUID-driven. Reloading by datasource identity must not drift from the requested sync identity, or
+  later sync filters, object-cache lookup, reference serialization, and client/server identity checks can target
+  different GUIDs for the same logical object.
+
+  minimal fix direction
+  After datasource load, preserve the requested GUID identity, or route through a GUID-aware load path that guarantees
+  the returned object has the objectKey GUID.
+
+  suggested CODEX comment location
+  RemoteServerImpl.getObject(...) after ds.getObject(...), and getObjectUsingPkey(...) after datasource reload.
+
+  suggested regression test
+  testRemoteServerGetObjectPreservesGuidAfterDatasourceReload()
+  testRemoteServerGetObjectUsingPkeyPreservesGuidAfterDatasourceReload()
+
+
+
+*/
 
 /**
  * Base class for server-side implementations of {@link RemoteServerInterface}.

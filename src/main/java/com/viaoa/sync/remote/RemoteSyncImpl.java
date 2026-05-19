@@ -26,6 +26,35 @@ import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.serialize.OAObjectSerializer;
 
+/*qqqqqqqqqqqqq
+
+CODEX
+7. src/main/java/com/viaoa/sync/remote/RemoteSyncImpl.java — removeAllFromHub(...)
+     Concrete bug: when the client receives removeAllFromHub for an object it has but whose hub reference is not
+     loaded, getHub returns null and the method sets the property to null.
+     Runtime scenario: server clears a detail hub; client has the master object but has never loaded that hub.
+     Why this violates sync semantics: an unloaded reference can be converted into a loaded-empty/null state,
+     preventing later lazy load from retrieving the real server state.
+     Minimal fix direction: if the client hub is not loaded, do not set the property to null; leave it unloaded, or
+     mark an explicit invalidated/unloaded state.
+     Suggested CODEX comment location: RemoteSyncImpl.removeAllFromHub, around lines 243-248.
+  8. src/main/java/com/viaoa/sync/remote/RemoteSyncImpl.java and RemoteClientImpl.java — getObject(...)
+     Concrete bug: comments say a datasource-reloaded object must use the original GUID, but the GUID reassignment is
+     commented out.
+     Runtime scenario: server cache no longer has an object, sync replay/load resolves it from datasource using
+     business key, and the returned live object has a different runtime GUID than the client/original key.
+     Why this violates sync semantics: GUID identity and business-key identity can drift during replay/sync
+     application, causing filtering, object references, and subsequent sync messages to target different runtime
+     identities.
+     Minimal fix direction: restore/replace GUID reassignment through the current OAObject GUID service, or explicitly
+     prove datasource reload preserves the original GUID before accepting the object.
+     Suggested CODEX comment location: RemoteSyncImpl.getObject, around lines 331-338, and RemoteClientImpl.getObject,
+     around lines 416-420.
+
+
+
+*/
+
 /**
  * Concrete implementation of {@link RemoteSyncInterface} used by both server
  * and clients to propagate live changes to OAObjects and Hubs.

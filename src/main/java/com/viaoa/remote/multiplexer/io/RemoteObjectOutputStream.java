@@ -27,6 +27,48 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.viaoa.comm.multiplexer.io.VirtualSocket;
 
+/*qqqqqqqqqqqqqq
+CODEX
+
+#1
+
+  1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/io/RemoteObjectOutputStream.java
+     writeClassDescriptor(...) / flush()
+     src/main/java/com/viaoa/remote/multiplexer/io/RemoteObjectInputStream.java
+     readClassDescriptor()
+  2. concrete bug
+     The shared class-descriptor ID cache can be used across multiple virtual sockets before the receiving side has
+     learned the descriptor.
+  3. runtime scenario
+     Server writes a new class descriptor on virtual socket A:
+
+  - writeClassDescriptor writes full descriptor with new id
+  - flush() promotes the id into the server-side shared hmClassDescOutput
+
+  Before the client reads socket A, server writes an object of the same class on virtual socket B:
+
+  - output stream sees the shared id and writes only the id
+  - client reads socket B first
+  - client hmClassDescInput does not yet contain that id
+  - readClassDescriptor() returns null
+
+  4. why this violates OA/OG remote semantics
+     Valid OA traffic over multiple virtual sockets can become order-dependent across independent streams. A response/
+     callback on one socket can fail deserialization because a class descriptor was introduced on another socket but
+     not yet consumed there.
+  5. minimal fix direction
+     Descriptor IDs need stream/session ordering guarantees. Minimal hardening: if an id is missing on input, throw a
+     clear stream-corruption exception instead of returning null. Correct fix likely requires per-virtual-stream
+     descriptor caches, or only sharing descriptor IDs after the receiver has deterministically seen them.
+  6. suggested CODEX comment location
+     RemoteObjectOutputStream.flush() near promotion of hmTemp, and RemoteObjectInputStream.readClassDescriptor()
+     where hmClassDesc.get(id) can return null.
+
+
+*/
+
+
 /**
  * Customized {@link ObjectOutputStream} used by OA's remoting system.
  * Implements a compact class-descriptor protocol that sends full class

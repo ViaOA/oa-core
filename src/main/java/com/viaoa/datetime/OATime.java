@@ -20,6 +20,28 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Vector;
 
+/*qqqqqqqqqq
+CODEX
+
+ 1. file/class/method
+     src/main/java/com/viaoa/datetime/OATime.java — OATime(String strTime) / OATime(String strTime, String fmt)
+  2. concrete bug
+     Invalid or null parse results flow into OATime(OADateTime od), which dereferences od and throws
+     NullPointerException.
+  3. runtime scenario
+     new OATime("bad-time") calls OATime.valueOf(...), gets null, then calls this((OADateTime) null). The constructor
+     eventually executes od.getTimeZone().
+  4. why this violates OA/OG datetime semantics
+     Parsing failure should fail with an intentional parse/argument exception or return null through valueOf, not a
+     constructor NPE. This can corrupt UI/property conversion error handling.
+  5. minimal fix direction
+     Mirror OADate(String) behavior: use a valueOf2-style helper that throws IllegalArgumentException when parsing
+     fails, or explicitly check for null before constructor delegation.
+  6. suggested CODEX comment location
+     Above OATime(String strTime) and OATime(String strTime, String fmt).
+
+*/
+
 /**
  * Time class that combines Calendar, Time and SimpleDateFormat into a single class.
  * <p>

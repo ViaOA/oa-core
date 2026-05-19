@@ -26,6 +26,66 @@ import com.viaoa.remote.multiplexer.annotation.OARemoteInterface;
 import com.viaoa.remote.multiplexer.annotation.OARemoteMethod;
 import com.viaoa.remote.multiplexer.annotation.OARemoteParameter;
 
+
+/*qqqqqqqqqqqqqq
+CODEX
+
+ #7
+
+  1. file/class/method
+     src/main/java/com/viaoa/remote/info/BindInfo.java
+     loadMethodInfo()
+  2. concrete bug
+     Remote method dispatch signatures can collide for overloaded methods.
+  3. runtime scenario
+     methodNameSignature is built from method name plus a small hash/modulo calculation over parameter class names.
+     Two overloads can produce the same signature and overwrite each other in hmNameToMethod.
+  4. why this violates OA/OG remote semantics
+     A valid remote call can dispatch to the wrong overload or fail correlation with the intended method. That is
+     silent wrong remote execution.
+  5. minimal fix direction
+     Use an exact parameter descriptor string, or detect collisions during bind setup and fail visibly.
+  6. suggested CODEX comment location
+     Where mi.methodNameSignature is calculated and inserted into hmNameToMethod.
+
+#8
+
+  1. file/class/method
+     BindInfo.java
+     loadMethodInfo()
+  2. concrete bug
+     Parameter annotation handling assumes the first annotation is OARemoteParameter.
+  3. runtime scenario
+     A remote method parameter has another annotation before OARemoteParameter, or any normal OA annotation appears
+     first. The code casts anns[i][0] directly to OARemoteParameter.
+  4. why this violates OA/OG remote semantics
+     Valid OA code with multiple annotations can fail remote bind setup with ClassCastException.
+  5. minimal fix direction
+     Iterate parameter annotations and use the first instanceof OARemoteParameter.
+  6. suggested CODEX comment location
+     At the parameter annotation extraction block in loadMethodInfo().
+
+  #9
+
+  1. file/class/method
+     BindInfo.java
+     loadMethodInfo()
+  2. concrete bug
+     Remote parameter interface correction is logged but not applied.
+  3. runtime scenario
+     A parameter is annotated as remote but declared as a concrete class implementing a remote interface. The code
+     finds the interface cx and logs that it will use it, but stores mi.remoteParams[i] = c instead of cx.
+  4. why this violates OA/OG remote semantics
+     Proxy creation later can use the concrete class rather than the remote interface, causing dispatch/proxy failure
+     for an otherwise supported declaration.
+  5. minimal fix direction
+     Assign mi.remoteParams[i] = cx when the remote interface is discovered.
+  6. suggested CODEX comment location
+     Near the warning that says the remote interface will be used.
+
+
+*/
+
 /**
  * Holds runtime binding information for a remote object participating in OA’s
  * multiplexer-based remoting system. One side (client or server) contains the

@@ -20,6 +20,31 @@ import java.util.List;
 
 import com.viaoa.datetime.OADate;
 
+/*qqqqqqqqqqqqq
+CODEX
+
+ 1. file/class/method
+     src/main/java/com/viaoa/datetime/cache/OADateRangeCache.java — add(DateRange dateRange) / findMissingGaps(...)
+  2. concrete bug
+     A DateRange with a null list can be added and later treated as a cached/covered range by findMissingGaps, even
+     though getCacheItems skips it and returns no data.
+  3. runtime scenario
+     Caller gets missing gaps, adds a DateRange(begin,end) before populating its list, or accidentally adds a range
+     without data. Future findMissingGaps(begin,end) returns no missing range, but getCacheItems(begin,end) returns
+     nothing for that covered interval.
+  4. why this violates OA/OG datetime semantics
+     This cache’s contract is “missing gaps identify what still needs loading.” A range with no backing data can
+     falsely mark data as loaded, creating silent missing results.
+  5. minimal fix direction
+     Either require DateRange.list to be non-null when adding cached coverage, or document/support “coverage without
+     loaded items” explicitly with a separate marker. Minimal guard: reject or CODEX-comment add(DateRange) when list
+     == null.
+  6. suggested CODEX comment location
+     Above OADateRangeCache.add(DateRange dateRange).
+
+
+*/
+
 /**
  * Helper for caching data that is naturally grouped by date ranges. The cache
  * tracks a collection of {@link DateRange} entries, each with a begin and end

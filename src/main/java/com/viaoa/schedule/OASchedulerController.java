@@ -30,6 +30,82 @@ import com.viaoa.path.OAPath;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.select.OASelect;
 
+
+/*qqqqqqqqqqqqqqqqqqq
+CODEX
+
+ 8. src/main/java/com/viaoa/schedule/OASchedulerController.java:289 set
+     Bug/risk: duplicate detection for separate date/time properties compares date properties to OADateTime values and
+     ignores time properties.
+     Production impact: existing schedule entries with matching OADate/OATime are not recognized, so normal use can
+     create duplicate schedule/link entries for the same slot.
+     Severity: High
+     Minimal hardening: compare ppDateFrom to new OADate(dtFrom), ppTimeFrom to new OATime(dtFrom), and the
+     corresponding To values.
+
+9. src/main/java/com/viaoa/schedule/OASchedulerController.java:226 setup / src/main/java/com/viaoa/schedule/
+     OASchedulerController.java:280 set
+     Bug/risk: if reverse path metadata is missing (lis == null || lis.length == 0), type remains 0. set() can then
+     create/update a schedule object but skip all assignment branches.
+     Production impact: false-success/no-op behavior: caller sees no exception, but the schedule is not linked to the
+     source object.
+     Severity: Medium
+     Minimal hardening: fail fast in setup() when schedule relationship type cannot be resolved, or make set() reject
+     type == 0.
+  10. src/main/java/com/viaoa/schedule/OASchedulerController.java:374 set
+     Bug/risk: OASelect is opened and next() is called without an explicit close.
+     Production impact: datasource iterator/result resources can leak under repeated schedule assignment lookups,
+     depending on the datasource implementation.
+     Severity: Medium
+     Minimal hardening: close the select in a finally or use the package-standard select cleanup pattern.
+
+
+1. src/main/java/com/viaoa/schedule/OASchedulerController.java:389 set
+     Bug/risk: separate date/time datasource query construction duplicates the existing SQL prefix. sql +=
+     OAString.append(sql, nextCondition, " AND ") turns a second condition into firstConditionfirstCondition AND
+     secondCondition.
+     Production impact: normal date/time-mode lookup can issue invalid or wrong criteria, causing existing schedule
+     slots to be missed and duplicate schedule objects to be created.
+     Severity: High
+     Minimal hardening: assign instead of append-to-self: sql = OAString.append(sql, condition, " AND ").
+
+2. src/main/java/com/viaoa/schedule/OASchedulerController.java:360 set
+     Bug/risk: global cache/datasource lookup for an existing schedule object only runs for type == 2 || type == 4.
+     The comments describe type == 1 and type == 3 as shared, non-date-changing timeslot modes, but those paths create
+     a new schedule when the current object has none.
+     Production impact: shared timeslot models can silently create duplicate schedule objects for the same date/time
+     instead of reusing the existing shared slot.
+     Severity: High
+     Minimal hardening: run the existing schedule lookup for shared “choose existing timeslot” modes too, or
+     explicitly document/create separate semantics for “always create new shared slot.”
+
+
+3. src/main/java/com/viaoa/schedule/OASchedule.java:116 clear
+     Bug/risk: when a clear range splits one existing range into left and right pieces, only the left piece preserves
+     the original range as a child. The right piece is added without addChild(dtr).
+     Production impact: callers iterating split ranges lose the original reference/child provenance for the right-side
+     remainder.
+     Severity: Medium
+     Minimal hardening: add the original range as a child to both split segments.
+  4. src/main/java/com/viaoa/schedule/OASchedule.java:310 clear() and src/main/java/com/viaoa/schedule/
+     OASchedule.java:151 add
+     Bug/risk: schedule mutations do not reset cursor state (dtrLast, bEol). After a caller partially iterates,
+     clears/rebuilds the schedule, then calls next(), traversal resumes relative to stale range state.
+     Production impact: new ranges can be skipped or iteration can falsely appear exhausted after normal mutation/
+     reuse.
+     Severity: Medium
+     Minimal hardening: reset cursor state on every structural mutation, or remove object-level cursor state entirely.
+  5. src/main/java/com/viaoa/schedule/OASchedulerController.java:313 set
+     Bug/risk: reversed ranges are accepted. dtTo.before(dtFrom) is not rejected before creating/updating schedule
+     objects.
+     Production impact: schedule records can be written with end before begin, which later availability/range logic
+     treats inconsistently or ignores.
+     Severity: Medium
+     Minimal hardening: fail fast or no-op visibly when dtTo.before(dtFrom).
+
+
+*/
+
 /**
  * Controller used for selecting and assigning schedule date–time values to the
  * active object of a {@link com.viaoa.hub.Hub}. The controller interprets the

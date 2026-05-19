@@ -22,6 +22,29 @@ import java.time.LocalTime;
 import com.viaoa.datetime.OADateTime;
 import com.viaoa.datetime.OATime;
 
+/*qqqqqqqqqqq
+CODEX
+
+#11 — OAConverterTime.convert(...) / OAConverterTimestamp.convert(...)
+
+  File/class/method:
+  src/main/java/com/viaoa/converter/OAConverterTime.java, convert
+  src/main/java/com/viaoa/converter/OAConverterTimestamp.java, convert
+
+  Concrete bug: both methods trim string input into s, check s.isEmpty(), then parse the original untrimmed string.
+
+  Runtime scenario: a normal UI/datasource/template value such as " 2026-05-18 10:30 " or " 10:30 " can fail
+  conversion even though the code clearly intended trimmed input to be accepted.
+
+  Why this violates OA/OG converter semantics: this is silent failed conversion from normal whitespace-padded values.
+  Other converter classes already parse the trimmed string.
+
+  Minimal fix direction: pass s to OADateTime.valueOf(s, fmt) instead of casting and parsing the original fromValue.
+
+
+
+*/
+
 /**
  * Converter for transforming values into {@link java.sql.Time} and formatting
  * {@link java.sql.Time} instances into {@link String} values.

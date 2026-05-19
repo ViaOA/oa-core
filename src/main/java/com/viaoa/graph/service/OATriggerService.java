@@ -75,6 +75,61 @@ CODEX
   Suggested test coverage: graph reset/shutdown does not leave stale trigger work with graph state.
 
 
+2. file/class/method: src/main/java/com/viaoa/graph/service/OATriggerService.java:204 runTrigger
+
+  concrete bug: Background trigger failures are silently captured by ExecutorService.submit.
+
+  runtime scenario: A trigger uses bUseBackgroundThread or is shifted to background by bUseBackgroundThreadIfNeeded.
+  runTrigger wraps it and calls submit(rx). If the trigger throws, the exception is stored in the returned Future, but
+  the Future is discarded.
+
+  why this violates OA/OG trigger semantics: Trigger execution can fail without caller visibility, logging, retry
+  signaling, or any observable failure path. This is silent false-success for async trigger execution.
+
+  minimal fix direction: Use execute with a top-level catch/log/failure hook, or retain/inspect the Future through an
+  executor afterExecute hook so trigger failures are observable.
+
+  suggested CODEX comment location: At line 207 where submit(rx) is called.
+
+
+1. file/class/method: src/main/java/com/viaoa/graph/service/OATriggerService.java:220 runTrigger /
+     getExecutorService
+
+  concrete bug: Background trigger execution does not preserve trigger event ordering.
+
+  runtime scenario: Two eligible trigger events are submitted in order for the same object/path, but the executor is a
+  fixed pool of 5 threads. The later event can run or complete before the earlier event.
+
+  why this violates OA/OG trigger semantics: Trigger ordering can matter for derived state, Hub membership, cache-
+  filter updates, sync side effects, and business-rule callbacks. A committed event stream should not be reordered
+  silently when the trigger is marked background.
+
+  minimal fix direction: Use ordered execution per trigger/root/event stream, or explicitly contract background
+  triggers as unordered and restrict use where ordering matters. If OA expects ordering, route background trigger work
+  through a single ordered queue or keyed serial executor.
+
+  suggested CODEX comment location: Around src/main/java/com/viaoa/graph/service/OATriggerService.java:235, where the
+  multi-thread executor is created.
+
+2. file/class/method: src/main/java/com/viaoa/graph/service/OATriggerService.java:139 removeTrigger
+
+  concrete bug: removeTrigger returns true for any non-null trigger, even when no registration was removed.
+
+  runtime scenario: Caller removes a trigger that was never registered, was already removed, or failed partial
+  registration. removeTrigger calls oi.removeTrigger(trigger) and unconditionally returns true.
+
+  why this violates OA/OG trigger semantics: The method’s boolean return is the only observable removal result at this
+  API level. Returning success when no trigger was removed is false-success behavior and can hide stale registration
+  assumptions in cache filters, Hub listeners, or future runtime cleanup code.
+
+  minimal fix direction: Have OAObjectInfo.removeTrigger return a removed count/boolean, including dependent triggers,
+  and propagate that result from OATriggerService.removeTrigger.
+
+  suggested CODEX comment location: Around src/main/java/com/viaoa/graph/service/OATriggerService.java:144, before/
+  after the oi.removeTrigger(trigger) call.
+  
+  
+
 */
 
 /**

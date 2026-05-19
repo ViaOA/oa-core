@@ -15,12 +15,33 @@
  */
 package com.viaoa.converter;
 
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
 
 import com.viaoa.lang.OAStr;
 import com.viaoa.lang.OAString;
+
+
+/*qqqqqqqqqqq
+CODEX
+
+#12 — OAConverterString.convert(...)
+
+  File/class/method: src/main/java/com/viaoa/converter/OAConverterString.java, convert
+
+  Concrete bug: Blob bytes are converted with the platform default charset, while raw byte[] uses UTF-8.
+
+  Runtime scenario: OA stores or receives UTF-8 text bytes in a Blob; conversion output depends on the JVM/platform
+  default charset instead of OA’s explicit UTF-8 byte convention.
+
+  Why this violates OA/OG converter semantics: string conversion should be deterministic across servers, clients,
+  datasource drivers, and replication nodes. Platform-dependent text decoding can silently produce wrong text.
+
+  Minimal fix direction: decode Blob bytes with StandardCharsets.UTF_8, or define and document a specific Blob text
+  charset contract.
+
+
+*/
 
 /**
  * Converter used to convert various object types into {@link String} values,

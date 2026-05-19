@@ -22,7 +22,6 @@ import com.viaoa.filter.OAFilter;
 import com.viaoa.filter.OANotEmptyFilter;
 import com.viaoa.filter.OANotNullFilter;
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.metadata.OAPropertyInfo;
@@ -244,7 +243,7 @@ public class OAHierFinder<F extends OAObject> {
      * @param pos the current property-path index
      * @param bRecursiveCheckOnly whether only recursive-parent paths
      *                            should be checked at this stage
-     * @param cntRecursive the current recursive-depth counter
+     * @param cntRecursive the current recursive-depth counter for hierarchy links that are themself recursive.
      * @return {@code true} if a matching value has been found
      */
     private boolean findFirstValue(final OAObject obj, OAFilter filter, final int pos, final boolean bRecursiveCheckOnly, final int cntRecursive) {

@@ -18,6 +18,31 @@ package com.viaoa.converter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
+
+/*qqqqqqqqqq
+CODEX
+
+#7 — OAConverterBigDecimal.convert(...)
+
+  File/class/method: src/main/java/com/viaoa/converter/OAConverterBigDecimal.java, convert
+
+  Concrete bug: string-to-BigDecimal conversion can silently lose precision because it delegates through
+  OAConverterNumber.convert(Number.class, ...), which parses with DecimalFormat as a generic Number. Large decimal
+  strings can become Double before being wrapped with BigDecimal.valueOf(n.doubleValue()).
+
+  Runtime scenario: converting a datasource/UI/import value like "12345678901234567890.12" to BigDecimal.class can
+  produce a rounded decimal instead of the exact value represented by the string.
+
+  Why this violates OA/OG converter semantics: BigDecimal conversion is usually used for money, quantities, keys, and
+  persisted values. Silent precision loss corrupts OA property values while appearing successful.
+
+  Minimal fix direction: when target is BigDecimal, parse string input with DecimalFormat.setParseBigDecimal(true) or
+  a direct cleaned-string BigDecimal path. Avoid the intermediate Double.
+
+
+
+*/
+
 /**
  * Converter for creating and formatting {@link java.math.BigDecimal} values.
  * <p>

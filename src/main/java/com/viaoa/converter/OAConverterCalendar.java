@@ -19,6 +19,29 @@ import java.util.Calendar;
 
 import com.viaoa.datetime.OADateTime;
 
+/*qqqqqqqqqq
+CODEX
+
+#8 — OAConverterCalendar.convertToString(...)
+
+  File/class/method: src/main/java/com/viaoa/converter/OAConverterCalendar.java, convertToString
+
+  Concrete bug: converting a Calendar to String returns "" for normal Calendar values.
+
+  Runtime scenario: OAConverter.toString(Calendar.getInstance(), fmt) resolves the Calendar converter, then
+  OAConverterCalendar.convertToString calls dtConv.convert(OADateTime.class, fromValue, fmt).
+  OAConverterOADateTime.convert does not handle Calendar, so it returns null and the calendar formats as an empty
+  string.
+
+  Why this violates OA/OG converter semantics: this is silent wrong output. A populated calendar value appears blank
+  in UI/report/template/serialization-style formatting.
+
+  Minimal fix direction: convert the Calendar directly using its time/timezone, e.g. new OADateTime(fromValue) if
+  supported, or new OADateTime(fromValue.getTime()) with timezone handling preserved as needed.
+
+*/
+
+
 /**
  * Converter for transforming values into {@link Calendar} instances and
  * formatting {@link Calendar} values into display-friendly {@link String}

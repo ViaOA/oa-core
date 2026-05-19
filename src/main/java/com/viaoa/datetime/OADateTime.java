@@ -129,6 +129,207 @@ CODEX
   COMPLETE
 
 
+
+1. file/class/method
+     src/main/java/com/viaoa/datetime/OADateTime.java — set12Hour(int hr)
+  2. concrete bug
+     set12Hour discards the existing AM/PM state and always writes the hour into the AM half of the day.
+  3. runtime scenario
+     For an instance representing 3:00 PM:
+
+  dt.set12Hour(4);
+
+  Expected wall-clock result is usually 4:00 PM, preserving PM. Current code does:
+
+  int h = (hr % 12);
+  setHour(h);
+
+  So the result becomes 4:00 AM.
+
+  4. why this violates OA/OG datetime semantics
+     This can corrupt UI/form-driven time edits where hour and AM/PM are edited independently. OA time semantics must
+     preserve the intended time-only/datetime wall-clock value unless the caller explicitly changes AM/PM.
+  5. minimal fix direction
+     Use the existing AM_PM state when converting 12-hour input to 24-hour time, or set Calendar.HOUR instead of
+     HOUR_OF_DAY while preserving Calendar.AM_PM.
+  6. suggested CODEX comment location
+     Above OADateTime.set12Hour(int hr).
+
+
+1. file/class/method
+     src/main/java/com/viaoa/datetime/OADateTime.java — addDays(int amount)
+  2. concrete bug
+     addDays(0) returns this, while the method contract says it returns a new OADateTime object.
+  3. runtime scenario
+
+  OADate d1 = new OADate(2026, 4, 18);
+  OADate d2 = (OADate) d1.addDays(0);
+  d2.setDay(19);
+
+  Because d2 == d1, mutating the result mutates the original. Other arithmetic methods generally return a new object,
+  so this is an aliasing trap.
+
+  4. why this violates OA/OG datetime semantics
+     OA date/time wrappers are mutable in practice. Arithmetic methods that claim to return a new value must not
+     sometimes return the original instance. This can corrupt scheduler/date-range/cache logic when the amount happens
+     to be zero.
+
+5.1. file/class/method
+  src/main/java/com/viaoa/datetime/OADateTime.java — set12Hour(int hr)
+
+  2. concrete bug
+     set12Hour discards the current AM/PM state and always writes the hour as AM.
+  3. runtime scenario
+     For an instance representing 3:30 PM, calling:
+
+  dt.set12Hour(4);
+
+  sets the hour to 04:30 AM, not 04:30 PM.
+
+  Execution path:
+
+  int h = (hr % 12);
+  setHour(h);
+
+  4. why this violates OA/OG datetime semantics
+     A 12-hour setter should preserve or explicitly coordinate with AM_PM. OA scheduling, UI binding, template/report
+     formatting, and property editing can split hour and AM/PM controls. This silently changes the instant by 12
+     hours.
+  5. minimal fix direction
+     Implement set12Hour using the current getAM_PM() value, or set Calendar.HOUR rather than HOUR_OF_DAY. For
+     example, preserve PM by adding 12 when current AM_PM is PM and hr != 12.
+  6. suggested CODEX comment location
+     Above OADateTime.set12Hour(int hr).
+
+
+ 1. file/class/method
+     src/main/java/com/viaoa/datetime/OADateTime.java — valueOfMain(...)
+  2. concrete bug
+     Parsing uses lenient SimpleDateFormat, so invalid dates/times can silently normalize to different valid values.
+  3. runtime scenario
+     Inputs like these can parse successfully instead of failing:
+
+  OADate.valueOf("2026-02-31")
+  OATime.valueOf("25:00")
+  OADateTime.valueOf("2026-13-01 10:00")
+
+  SimpleDateFormat can roll these into another date/time instead of rejecting them.
+
+  4. why this violates OA/OG datetime semantics
+     Datasource values, query criteria, serialized values, UI input, and filter/template values must not silently
+     become a different date/time. This is a false-success parse.
+  5. minimal fix direction
+     Set sdf.setLenient(false) before parsing, and keep the existing CODEX full-consumption requirement as a separate
+     check.
+  6. suggested CODEX comment location
+     Inside OADateTime.valueOfMain(...), immediately after sdf.applyPattern(format).
+
+ 1. file/class/method
+     src/main/java/com/viaoa/datetime/OADateTime.java — addDays(int amount)
+  2. concrete bug
+     addDays(0) returns this, while the method contract says it returns a new date/time instance.
+  3. runtime scenario
+     Caller code can accidentally alias the original:
+
+  OADate d1 = new OADate();
+  OADate d2 = (OADate) d1.addDays(0);
+  d2.setDay(1); // mutates d1 too
+
+  Other add methods generally return a new object, so this zero-day path is inconsistent.
+
+  4. why this violates OA/OG datetime semantics
+     OA date/time wrappers are mutable. Returning the same object from a method documented as producing a new value
+     can corrupt caller state, date-range calculations, scheduling logic, and cache keys.
+  5. minimal fix direction
+     For amount == 0, return a new instance of the same semantic type (OADate, OATime, or OADateTime) instead of this.
+  6. suggested CODEX comment location
+     At the top of OADateTime.addDays(int amount), above the if (amount == 0) branch.
+
+  1. file/class/method
+     src/main/java/com/viaoa/datetime/OADateTime.java — OADateTime(LocalDateTime ldt)
+  2. concrete bug
+     LocalDateTime conversion uses ZoneId.systemDefault() instead of OA’s configured defaultTimeZone.
+  3. runtime scenario
+     If OA sets:
+
+  OADateTime.setDefaultTimeZone(TimeZone.getTimeZone("UTC"));
+
+  on a JVM running in America/Chicago, then:
+
+  new OADateTime(LocalDateTime.of(2026, 5, 18, 10, 0))
+
+  interprets 10:00 in the JVM system zone, not OA’s configured default zone.
+
+  4. why this violates OA/OG datetime semantics
+     OA exposes a default timezone for date/time semantics. Bypassing it can create persisted/serialized/comparison
+     values that drift between servers, clients, replication nodes, or tests with different JVM defaults.
+  5. minimal fix direction
+     Resolve LocalDateTime using OADateTime.getDefaultTimeZone().toZoneId() unless the contract explicitly says Java
+     LocalDateTime always uses JVM default.
+  6. suggested CODEX comment location
+     Above OADateTime(LocalDateTime ldt).
+
+
+  1. file/class/method
+     src/main/java/com/viaoa/datetime/OADateTime.java — betweenYears(Object obj) / betweenMonths(Object obj)
+  2. concrete bug
+     Elapsed year/month calculations ignore lower-order fields. Adjacent dates crossing a year/month boundary can
+     return 1 year/month even when only one day apart.
+  3. runtime scenario
+     new OADate(2025, 11, 31).betweenYears(new OADate(2026, 0, 1)) returns 1.
+     new OADate(2026, 0, 31).betweenMonths(new OADate(2026, 1, 1)) returns 1.
+  4. why this violates OA/OG datetime semantics
+     If these methods are used for elapsed age, duration, scheduling, query windows, or report calculations, they
+     silently overstate elapsed time.
+  5. minimal fix direction
+     Define the contract explicitly: field-boundary difference vs full elapsed units. If full elapsed units are
+     intended, account for month/day/time before counting the final year/month.
+  6. suggested CODEX comment location
+     Above betweenYears(Object obj) and betweenMonths(Object obj).
+
+
+1. file/class/method
+     src/main/java/com/viaoa/datetime/OADateTime.java — field constructors and setters: OADateTime(int...),
+     setDate(...), setYear(...), setMonth(...), setDay(...), setTime(...); also inherited by OADate(int...) /
+     OATime(int...)
+  2. concrete bug
+     Field-based construction/mutation uses lenient Date / Calendar behavior, so invalid field combinations silently
+     normalize to a different valid date/time.
+  3. runtime scenario
+     new OADate(2026, Calendar.FEBRUARY, 31) can become a March date.
+     dt.setMonth(Calendar.FEBRUARY) on a March 31 value can roll into March instead of producing February semantics or
+     failing.
+     new OATime(25, 0, 0) can normalize to 01:00.
+  4. why this violates OA/OG datetime semantics
+     OA date/time values are used for persisted values, query criteria, schedules, UI edits, and replication. Silent
+     rollover is false-success mutation: caller asked for one semantic value and got another.
+  5. minimal fix direction
+     Validate field ranges and actual date validity before committing _time, or use non-lenient calendar construction.
+     Month/day edits need an explicit contract: reject invalid day/month combinations or clamp only if that is
+     documented.
+  6. suggested CODEX comment location
+     Above the field-based constructors, setDate, setMonth, setDay, and setTime.
+
+ 1. file/class/method
+     src/main/java/com/viaoa/datetime/OADateTime.java — compareTo(Object obj), indirectly after(Object) /
+     isAfter(Object)
+  2. concrete bug
+     compareTo returns positive 2 when the object is not convertible, and after() treats any positive value as true.
+  3. runtime scenario
+     new OADateTime().after(new Object()) returns true because convert(obj, false) returns null, compareTo returns 2,
+     and after checks > 0.
+  4. why this violates OA/OG datetime semantics
+     A non-comparable value should not silently mean “this date is after that value.” That can produce false-positive
+     filters, comparisons, or business rules if an unexpected value type reaches date comparison.
+  5. minimal fix direction
+     Make non-convertible comparison fail visibly or return a comparison sentinel that before/after/between do not
+     treat as ordered. Minimal local fix: after/isAfter should only treat known ordered positive comparison as true,
+     not the non-comparable sentinel.
+  6. suggested CODEX comment location
+     Above compareTo(Object obj) and the after/isAfter helpers.
+
+
+
 */
 
 import java.io.IOException;

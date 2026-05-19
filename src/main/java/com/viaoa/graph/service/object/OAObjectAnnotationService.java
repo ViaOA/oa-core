@@ -43,6 +43,34 @@ import com.viaoa.trigger.OATrigger;
 import com.viaoa.trigger.OATriggerListener;
 import com.viaoa.trigger.OATriggerMethodListener;
 
+/*qqqqqqqqqqqq
+CODEX
+
+1. file/class/method: src/main/java/com/viaoa/graph/service/object/OAObjectAnnotationService.java:86 update2 /
+     _update2
+
+  concrete bug: Inherited @OATriggerMethod methods are registered against the declaring superclass, not the concrete
+  OAObjectInfo class being initialized.
+
+  runtime scenario: BaseOrder defines a public @OATriggerMethod, and SpecialOrder extends BaseOrder.
+  update2(oiForSpecialOrder, SpecialOrder.class) walks superclass methods, but _update2 constructs
+  OATriggerMethodListener(clazz, ...) and new OATrigger(..., clazz, ...) where clazz is BaseOrder.
+  OATriggerService.addTrigger then registers against BaseOrder metadata. Property changes on SpecialOrder use
+  SpecialOrder object info, so the inherited trigger can be missed for subclass instances.
+
+  why this violates OA/OG trigger semantics: Annotation traversal explicitly walks superclasses, so inherited trigger
+  methods should apply to the concrete class metadata being built. Registering to the declaring class silently narrows
+  the trigger target and can miss required derived-state/business-rule execution.
+
+  minimal fix direction: For inherited trigger annotations, use oi.getForClass() as the trigger root class and
+  listener root class, while still invoking the superclass Method on the concrete instance.
+
+  suggested CODEX comment location: Around src/main/java/com/viaoa/graph/service/object/
+  OAObjectAnnotationService.java:1066, where the listener and trigger are created with clazz.
+
+
+*/
+
 public abstract class OAObjectAnnotationService {
 	private static final Logger LOG = Logger.getLogger(OAObjectAnnotationService.class.getName());
 

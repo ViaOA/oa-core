@@ -39,6 +39,71 @@ import com.viaoa.path.OAPath;
 // empty rows
 // stack text 
 
+/*qqqqqqqqqqqqqqq
+CODEX
+
+ 5. file/class/method
+     src/main/java/com/viaoa/template/OAMatrix.java / getRowCount(Column)
+
+  exact execution path
+  Caller passes a non-root child column. The loop checks col.colFrom != null but only updates colRoot, never col.
+
+  why it is a concrete bug
+  The loop never terminates for child columns.
+
+  minimal fix or CODEX/defer recommendation
+  Use for (; colRoot.colFrom != null; colRoot = colRoot.colFrom).
+
+6. file/class/method
+     src/main/java/com/viaoa/template/OAMatrix.java / getObject(int row, int col)
+
+  exact execution path
+  Caller invokes getObject(validRow, -1).
+
+  why it is a concrete bug
+  Bounds check does not reject negative col, then alColumn.get(col) throws instead of matching method contract
+  returning null for out-of-bounds.
+
+  minimal fix or CODEX/defer recommendation
+  Add col < 0 to the guard.
+
+ 7. file/class/method
+     src/main/java/com/viaoa/template/OAMatrix.java / addGroupByColumn
+
+  exact execution path
+  Caller adds a group-by column from a detail/non-root column. That column normally has no hub and no object, so
+  validation evaluates colLeft.object.getClass().
+
+  why it is a concrete bug
+  A valid parent-column shape can throw NullPointerException during setup instead of validating against the correct
+  root/parent type.
+
+  minimal fix or CODEX/defer recommendation
+  Resolve the proper source class through the root column or the parent property path before validation; otherwise
+  reject with a controlled exception.
+
+3. file/class/method
+     src/main/java/com/viaoa/template/OAMatrix.java / createGrid
+
+  exact execution path
+  Caller adds more than one root column with addColumn(hub1) and addColumn(hub2), then calls createGrid(). For each
+  root column, row is reset to 0, so the second root column writes into the same row range instead of appending after
+  the first root’s rows.
+
+  why it is a concrete bug
+  The public API allows multiple root columns, but grid rows from later roots overlay earlier rows instead of
+  producing a complete matrix. This can silently return missing/mixed row data.
+
+  minimal fix or CODEX/defer recommendation
+  Carry the current row offset across root columns, or explicitly reject multiple root columns if unsupported.
+
+  suggested regression test
+  matrixMultipleRootColumnsDoNotOverwriteRows()
+
+
+
+*/
+
 /**
  * Framework component that constructs a two-dimensional grid of
  * {@link OAObject} references derived from one or more linked

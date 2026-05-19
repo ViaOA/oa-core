@@ -17,6 +17,32 @@ package com.viaoa.trigger;
 
 import com.viaoa.object.OAObject;
 
+
+/*qqqqqqqqqqqqqqqq
+CODEX
+
+
+4. file/class/method: src/main/java/com/viaoa/trigger/OATrigger.java:121 OATrigger constructor / getPropertyPaths
+
+  concrete bug: propertyPaths is externally mutable after registration, which can leave stale trigger registrations
+  behind on unregister.
+
+  runtime scenario: Caller constructs a trigger with a String[], registers it, then mutates the original array or the
+  array returned by getPropertyPaths(). Later OAObjectInfo.removeTrigger traverses the current property paths to
+  remove trigger registrations from linked OAObjectInfo instances. If the paths changed, linked registrations for the
+  original paths can remain and still fire after unregister.
+
+  why this violates OA/OG trigger semantics: Removing/unregistering a trigger must prevent future eligible executions.
+  External mutation of the trigger’s dependency path array can make unregister incomplete without an obvious failure.
+
+  minimal fix direction: Defensively copy propertyPaths in the constructor and return a copy from getPropertyPaths().
+  Treat dependent trigger arrays similarly if they are intended to be externally visible.
+
+  suggested CODEX comment location: At line 121 and/or line 197.
+
+
+*/
+
 /**
  * Defines a trigger that reacts to changes within an {@link OAObject} graph.
  * <p>

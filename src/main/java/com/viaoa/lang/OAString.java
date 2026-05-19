@@ -20,7 +20,6 @@ import java.io.File;
 import java.nio.charset.Charset;
 import java.util.Map;
 
-import com.viaoa.classloader.OAClassUtil;
 import com.viaoa.converter.OAConv;
 import com.viaoa.datetime.OADate;
 import com.viaoa.datetime.OADateTime;
@@ -39,6 +38,51 @@ import com.viaoa.text.OATextSanitize;
 import com.viaoa.text.OATextSoundex;
 import com.viaoa.text.OATextTokenizer;
 import com.viaoa.text.OATextUtil;
+
+
+/*qqqqqqqqqqqqq
+CODEX
+
+
+1. file/class/method
+     src/main/java/com/viaoa/filter/OAContainsFilter.java / isUsed
+     src/main/java/com/viaoa/filter/OAIndexOfFilter.java / isUsed
+     src/main/java/com/viaoa/filter/OAStartsWithFilter.java / isUsed
+
+  exact execution path
+  Use any of these filters with bIgnoreCase == true while the JVM default locale is Turkish or another locale with
+  non-English case rules. The code uppercases both strings using String.toUpperCase() with the default locale before
+  indexOf / startsWith.
+
+  why it is a real filter correctness bug
+  Case-insensitive OA filtering should be deterministic across runtimes. With locale-sensitive uppercasing, the same
+  filter and same data can match on one server and not match on another depending on default JVM locale.
+
+  semantic/invariant violated
+  Case-insensitive filter matching must be locale-stable unless the API explicitly says it is locale-sensitive.
+
+  minimal fix or CODEX/defer recommendation
+  Use locale-neutral case folding:
+  toUpperCase(Locale.ROOT) or toLowerCase(Locale.ROOT) in all three filters.
+
+  suggested regression test
+  testContainsFilterIgnoreCaseIsLocaleStable
+  testIndexOfFilterIgnoreCaseIsLocaleStable
+  testStartsWithFilterIgnoreCaseIsLocaleStable
+
+==> from Chat:
+That’s a legit find and easy fix.
+Use: import java.util.Locale;
+
+Then change: s.toUpperCase()
+to:
+s.toUpperCase(Locale.ROOT)
+
+s.toLowerCase(Locale.ROOT)
+
+
+
+*/
 
 /**
  * Public OA text utility façade for all things String / Text.
@@ -1033,7 +1077,7 @@ public class OAString {
 	 */
 	public static String format(int value, String format) {
 		// see which format to use
-		String s = format.toUpperCase();
+		String s = format == "" ? null : format.toUpperCase();
 		if (s.indexOf('R') >= 0 || s.indexOf('L') >= 0 || s.indexOf('C') >= 0) {
 			return OAString.format(Integer.toString(value), format);
 		}
@@ -1048,7 +1092,7 @@ public class OAString {
 	 * @return the formatted string
 	 */
 	public static String format(double value, String format) {
-		String s = format.toUpperCase();
+		String s = format == "" ? null : format.toUpperCase();
 		if (s.indexOf('R') >= 0 || s.indexOf('L') >= 0 || s.indexOf('C') >= 0) {
 			return OAString.format(Double.toString(value), format);
 		}

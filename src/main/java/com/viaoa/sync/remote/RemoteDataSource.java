@@ -24,10 +24,7 @@ import java.util.logging.Logger;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.clientserver.OADataSourceClient;
 import com.viaoa.filter.OAFilter;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectCacheService;
-import com.viaoa.graph.service.object.OAObjectKeyService;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
@@ -66,6 +63,91 @@ CODEX
         success, depending intended CS contract.
       - Suggested test: delete master on server, then send client many-to-many update for that master key; verify no
         datasource update is attempted.
+
+
+1. src/main/java/com/viaoa/sync/remote/RemoteDataSource.java — datasource(...), WILLCREATEPROPERTYVALUE
+     Concrete bug: OADataSourceClient.willCreatePropertyValue(...) sends command WILLCREATEPROPERTYVALUE = 17, but
+     RemoteDataSource.datasource(...) has no case for command 17.
+     Runtime scenario: sync client asks whether the server datasource will create a property value, for example an
+     auto-created/generated value. Server falls through and returns null; client interprets that as false.
+     Why this violates OA/OG sync semantics: the client receives a silent false result for a server-side datasource
+     capability, which can change object/property initialization behavior.
+     Minimal fix direction: add a WILLCREATEPROPERTYVALUE case that resolves the datasource for the object class and
+     returns Boolean.valueOf(ds.willCreatePropertyValue(object, propertyName)).
+     Suggested CODEX comment location: RemoteDataSource.datasource(...), near the command switch around GET_PROPERTY.
+  2. src/main/java/com/viaoa/sync/remote/RemoteDataSource.java — datasourceNext(String)
+     Concrete bug: when a remote iterator is exhausted, datasourceNext calls iterator.remove() before removing it from
+     hashIterator.
+     Runtime scenario: client drains a remote select; OADataSourceClient.MyIterator.hasNext() requests one more batch;
+     server iterator has no more rows; x == 0; server calls iterator.remove().
+     Why this violates OA/OG sync semantics: EOF cleanup must not mutate the datasource iterator’s last element or
+     throw IllegalStateException/provider-specific errors. It should only close/release server-side iterator state.
+     Minimal fix direction: remove the iterator.remove() call from EOF cleanup. If datasource iterators need close
+     semantics, use a dedicated close hook/contract instead of Iterator.remove().
+     Suggested CODEX comment location: RemoteDataSource.datasourceNext, around lines 532-536.
+  3. src/main/java/com/viaoa/sync/remote/RemoteDataSource.java / src/main/java/com/viaoa/datasource/clientserver/
+     OADataSourceClient.java — remote iterator close path
+     Concrete bug: normal client-side iterator close() only clears local read-ahead state; it does not notify
+     RemoteDataSource to remove the server-side iterator unless iteration reaches EOF or caller invokes remove().
+     Runtime scenario: client runs a select, reads a few objects, then closes the iterator early. The server keeps the
+     iterator in hashIterator.
+     Why this violates OA/OG sync semantics: server-side select resources can leak under normal OA usage, especially
+     for large selects or abandoned UI/report iterations.
+     Minimal fix direction: add/route an explicit remote iterator close command, or make MyIterator.close() send a
+     non-mutating close request to remove the server-side iterator.
+     Suggested CODEX comment location: RemoteDataSource.hashIterator / OADataSourceClient.MyIterator.close().
+
+  4. src/main/java/com/viaoa/sync/remote/RemoteDataSource.java:201, src/main/java/com/viaoa/sync/remote/
+     RemoteDataSource.java:208, src/main/java/com/viaoa/sync/remote/RemoteDataSource.java:330, src/main/java/com/
+     viaoa/sync/remote/RemoteDataSource.java:339
+
+  Concrete bug:
+  Classless remote datasource commands call getDataSource(), which delegates to getDataSource(null). That now always
+  returns null because the fallback over OARuntime.datasource().getAll() is commented out.
+
+  Runtime scenario:
+  Client calls OADataSourceClient.isAvailable(), getAssignIdOnCreate(), supportsStorage(), or execute(...). Server has
+  a valid datasource registered by class, but the classless command resolves no datasource. isAvailable() returns
+  false, getAssignIdOnCreate() caches false, supportsStorage() returns null, and execute(...) returns null.
+
+  Why this violates sync semantics:
+  Valid client/server datasource capability checks can silently report wrong server datasource behavior. The
+  getAssignIdOnCreate() false cache is especially risky because it can change client object ID behavior.
+
+  Minimal fix direction:
+  Either restore a deliberate default datasource resolution for classless commands, or change these commands to pass a
+  class/package context.
+
+  Suggested CODEX comment location:
+  RemoteDataSource.getDataSource() and the classless command cases.
+
+  Suggested regression test:
+  testRemoteDatasourceClasslessCommandsResolveConfiguredDatasource()
+
+2. file/class/method
+     src/main/java/com/viaoa/sync/remote/RemoteDataSource.java:486
+     RemoteDataSource.getObject(...)
+
+  concrete bug
+  Remote datasource command handling resolves whereObject from cache or datasource, but datasource reload does not
+  preserve the original OAObjectKey GUID.
+
+  runtime scenario
+  Client sends a remote count/select/get-property/update-many-to-many command with a whereObject key. Server cache
+  misses that object, datasource reloads it, and the command proceeds using a rehydrated object with a different
+  runtime GUID.
+
+  why this violates OA/OG sync semantics
+  Datasource commands that include an OA object context must preserve the requested object identity. GUID drift here
+  can create duplicate cache identity, wrong object-context query behavior, or future sync filtering mistakes.
+
+  minimal fix direction
+  After datasource reload in RemoteDataSource.getObject(...), preserve the requested key/GUID or delegate to a central
+  GUID-preserving object resolution service.
+
+  suggested CODEX comment location
+  RemoteDataSource.getObject(...), after objNew = ds.getObject(objectClass, key).
+
 
 
 */

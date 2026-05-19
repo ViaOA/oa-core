@@ -16,8 +16,32 @@
 package com.viaoa.math;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.RoundingMode;
 
+
+/*qqqqqqqqqqqqqqq
+CODEX
+
+1. file/class/method
+     src/main/java/com/viaoa/math/OAMath.java / round(...), performMathOp(...), toBigDecimal(...)
+
+  exact execution path
+  double d = OAMath.divide(1, 0); returns Double.NaN by contract. A normal chained call such as OAMath.round(d, 2) or
+  OAMath.add(d, 1) then reaches BigDecimal.valueOf(Double.NaN) and throws NumberFormatException.
+
+  why it is a concrete math correctness bug
+  divide intentionally uses Double.NaN as its divide-by-zero result, but the rest of the same utility cannot safely
+  consume that result. That makes valid OAMath output become invalid OAMath input and breaks predictable numeric
+  propagation.
+
+  minimal fix or CODEX/defer recommendation
+  Define non-finite handling. Minimal option: in round and toBigDecimal, detect Double.isNaN/isInfinite for floating
+  inputs and either return/propagate NaN or throw IllegalArgumentException consistently. Since divide already returns
+  NaN, propagation is probably the least surprising contract.
+
+
+*/
 
 /**
  * Utility class that provides precision-safe mathematical operations using {@link BigDecimal}.
@@ -56,6 +80,7 @@ import java.math.RoundingMode;
      */
 	public static double round(double d, int decimalPlaces, int roundType) {
 		if (roundType < 0) roundType = BigDecimal.ROUND_HALF_UP;
+		else if (roundType > BigDecimal.ROUND_UNNECESSARY) throw new IllegalArgumentException("unknown roundTpype "+roundType);
 		BigDecimal bd = BigDecimal.valueOf(d); // important NOT to use new BigDecimal(d)
 		if (decimalPlaces >= 0) bd = bd.setScale(decimalPlaces, roundType);
 		return bd.doubleValue();
@@ -752,22 +777,13 @@ import java.math.RoundingMode;
      */
 	public static double performMathOp(int opType, Number n1, Number n2, int decimalPlaces, int roundType) {
 		if (roundType < 0) roundType = BigDecimal.ROUND_HALF_UP;
-		BigDecimal bd1;
-		if (n1 instanceof BigDecimal) {
-			bd1 = (BigDecimal) n1;
-		} else {
-			bd1 = BigDecimal.valueOf(n1 == null ? 0.0 : n1.doubleValue());
-		}
+		else if (roundType > BigDecimal.ROUND_UNNECESSARY) throw new IllegalArgumentException("unknown roundTpype "+roundType);
+		BigDecimal bd1 = toBigDecimal(n1);
 		if (decimalPlaces >= 0) {
 			bd1 = bd1.setScale(decimalPlaces, roundType);
 		}
 
-		BigDecimal bd2;
-		if (n2 instanceof BigDecimal) {
-			bd2 = (BigDecimal) n2;
-		} else {
-			bd2 = BigDecimal.valueOf(n2 == null ? 0.0 : n2.doubleValue());
-		}
+		BigDecimal bd2 = toBigDecimal(n2);
 		if (decimalPlaces >= 0) {
 			bd2 = bd2.setScale(decimalPlaces, roundType);
 		}
@@ -790,11 +806,25 @@ import java.math.RoundingMode;
 		case MATH_OP_SUBTRACT:
 			bd1 = bd1.subtract(bd2);
 			break;
+		default:
+			throw new IllegalArgumentException("unknown operation code "+opType);
 		}
 
 		if (decimalPlaces >= 0) {
 			bd1 = bd1.setScale(decimalPlaces, roundType);
 		}
 		return bd1.doubleValue();
+	}
+	
+	private static BigDecimal toBigDecimal(Number n) {
+	    if (n == null) return BigDecimal.ZERO;
+	    if (n instanceof BigDecimal) return (BigDecimal) n;
+	    if (n instanceof BigInteger) return new BigDecimal((BigInteger) n);
+
+	    if (n instanceof Byte || n instanceof Short || n instanceof Integer || n instanceof Long) {
+	        return BigDecimal.valueOf(n.longValue());
+	    }
+
+	    return BigDecimal.valueOf(n.doubleValue());
 	}
 }

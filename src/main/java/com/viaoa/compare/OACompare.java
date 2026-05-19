@@ -96,6 +96,197 @@ CODEX
 
 
 
+#1 — OACompare.compare(Object, Object, int)
+
+  File/class/method: src/main/java/com/viaoa/compare/OACompare.java, compare(Object, Object, int)
+
+  Concrete bug: decimalPlaces == 0 is ignored when both numeric operands have the same wrapper class.
+
+  Runtime scenario: OACompare.isEqual(1.2d, 1.4d, 0) compares exact Double values and returns false. But mixed numeric
+  inputs such as Double vs BigDecimal fall through to compare(double,double,0), which rounds to whole-number precision
+  and can return true.
+
+  Why this violates OA/OG comparison semantics: the same requested decimal precision produces different equality
+  results depending only on the runtime numeric wrapper classes. That can break filters, query-like matching, Hub
+  selection, and report criteria.
+
+  Minimal fix direction: treat only decimalPlaces < 0 as “no rounding.” Let decimalPlaces == 0 go through the rounding
+  path consistently for all numeric classes.
+
+ #3 — OACompare.compare(Object, Object, int) with OAGreaterThanZero / OALessThanZero
+
+  File/class/method: src/main/java/com/viaoa/compare/OACompare.java, compare(Object, Object, int)
+
+  Concrete bug: OAGreaterThanZero and OALessThanZero implement OASpecialCompareObject, but the OACompare special-
+  object branch does not handle them.
+
+  Runtime scenario: OACompare.isEqual(5, OAGreaterThanZero.instance) returns false even though
+  OAGreaterThanZero.instance.equals(5) returns true. Same for negative values with OALessThanZero.
+
+  Why this violates OA/OG comparison semantics: special compare tokens should work through OA’s central comparison
+  path, not only by direct token.equals(value) calls. Otherwise filters/matchers that use OACompare get false
+  negatives.
+
+  Minimal fix direction: add explicit branches in the OASpecialCompareObject block that delegate to the token’s
+  predicate semantics for both operand orders.
+
+
+#1 — OACompare.compare(Object, Object, int)
+
+  File/class/method: src/main/java/com/viaoa/compare/OACompare.java, compare(Object, Object, int)
+
+  Concrete bug: decimalPlaces == 0 is ignored when both numeric operands have the same wrapper class.
+
+  Runtime scenario: OACompare.isEqual(1.2d, 1.4d, 0) compares exact Double values and returns false. But mixed numeric
+  inputs such as Double vs BigDecimal fall through to compare(double,double,0), which rounds to whole-number precision
+  and can return true.
+
+  Why this violates OA/OG comparison semantics: the same requested decimal precision produces different equality
+  results depending only on the runtime numeric wrapper classes. That can break filters, query-like matching, Hub
+  selection, and report criteria.
+
+  Minimal fix direction: treat only decimalPlaces < 0 as “no rounding.” Let decimalPlaces == 0 go through the rounding
+  path consistently for all numeric classes.
+
+#2 — OAComparator.init() / compare(...)
+
+  File/class/method: src/main/java/com/viaoa/compare/OAComparator.java, init and compare(Object,Object)
+
+  Concrete bug: lazy initialization publishes methodss before bAscendings is initialized.
+
+  Runtime scenario: two threads share the same OAComparator during first use. Thread A assigns methodss; before it
+  assigns bAscendings, Thread B enters compare, sees methodss != null, skips init, and compares all properties using
+  the default bAscending. A path such as "lastName DESC, firstName ASC" can temporarily sort with the wrong direction.
+
+  Why this violates OA/OG comparison semantics: Hub sorting must be deterministic. A first-use race can produce wrong
+  ordering without an exception.
+
+  Minimal fix direction: build local Method[][] and boolean[] fully, then publish them together under synchronization
+  or with a volatile initialized-state. Alternatively make eager initialization happen in the constructor.
+
+#3 — OACompare.compare(Object, Object, int) with OAGreaterThanZero / OALessThanZero
+
+  File/class/method: src/main/java/com/viaoa/compare/OACompare.java, compare(Object, Object, int)
+
+  Concrete bug: OAGreaterThanZero and OALessThanZero implement OASpecialCompareObject, but the OACompare special-
+  object branch does not handle them.
+
+  Runtime scenario: OACompare.isEqual(5, OAGreaterThanZero.instance) returns false even though
+  OAGreaterThanZero.instance.equals(5) returns true. Same for negative values with OALessThanZero.
+
+  Why this violates OA/OG comparison semantics: special compare tokens should work through OA’s central comparison
+  path, not only by direct token.equals(value) calls. Otherwise filters/matchers that use OACompare get false
+  negatives.
+
+  Minimal fix direction: add explicit branches in the OASpecialCompareObject block that delegate to the token’s
+  predicate semantics for both operand orders.
+
+#5 — OACompare.compare(Object, Object, int)
+
+  File/class/method: src/main/java/com/viaoa/compare/OACompare.java, compare(Object, Object, int)
+
+  Concrete bug: string/date-style comparisons can be operand-order dependent for non-OA temporal types.
+
+  Runtime scenario: comparing a java.util.Date, java.sql.Date, LocalDate, LocalDateTime, Instant, etc. to a String
+  follows the generic conversion path. If the temporal value is on the left, OA first converts the temporal value to
+  String; if the string is on the left, OA first tries to parse the string into the temporal target type. Those two
+  paths can produce different equality/order results for the same logical operands.
+
+  Example shape:
+
+  OACompare.compare(dateValue, "2026-05-18")
+  OACompare.compare("2026-05-18", dateValue)
+
+  These can disagree because one side formats the date using OA/default formatting while the other parses the string
+  as a date.
+
+  Why this violates OA/OG comparison semantics: comparison must be symmetric and deterministic. Operand-order-
+  dependent date/string coercion can break filters, query criteria, Hub matching, report decisions, and datasource-
+  style comparisons.
+
+  Minimal fix direction: add explicit string-to-temporal coercion branches for supported non-OA temporal types, or
+  prefer parsing the String into the non-string semantic type whenever either operand is a string and the other side
+  is a known temporal type.
+
+  Suggested CODEX comment location: in OACompare.compare, before the generic bNeedToConvert block around the date/
+  string coercion branches near OACompare.java:1097.
+
+
+#6 — OACompare.compare(double, double, int) / getLongCompareValue(...)
+
+  File/class/method: src/main/java/com/viaoa/compare/OACompare.java, compare(double,double,int) and
+  getLongCompareValue
+
+  Concrete bug: decimal-place comparison can collapse very large finite doubles to equality because scaled values are
+  rounded into long.
+
+  Runtime scenario: OACompare.compare(1e20, 1e21, 0) can return 0 because both values exceed the useful long range
+  after scaling/rounding and saturate to the same long comparison value.
+
+  Why this violates OA/OG comparison semantics: ordering comparisons must not silently report equality for distinct
+  finite values. This can affect numeric filters, report criteria, Hub sorting/filtering, and query-like comparisons
+  using decimal precision.
+
+  Minimal fix direction: before converting scaled values to long, detect values outside safe long range and fall back
+  to Double.compare or a BigDecimal/decimal-string comparison strategy for the requested precision.
+
+
+
+1. file/class/method
+     src/main/java/com/viaoa/compare/OACompare.java — compare(Object value, Object matchValue, int decimalPlaces)
+  2. concrete bug
+     OAUnknownObject can incorrectly match broad special tokens before the unknown-value branch is reached.
+  3. runtime scenario
+     OACompare.compare(OAUnknownObject.instance, OANotNullObject.instance) returns 0 because
+     OAUnknownObject.instance != null.
+     OACompare.compare(OAUnknownObject.instance, OANotEmptyObject.instance) also returns 0.
+     OACompare.compare(OAUnknownObject.instance, OAAnyValueObject.instance) returns 0 immediately.
+  4. why this violates OA/OG comparison semantics
+     OAUnknownObject documents that it represents an opaque/unknown value where no comparison should succeed except
+     its own singleton identity. Matching it as “not null”, “not empty”, or “any value” creates false positives in
+     filters, criteria, diff logic, partial-deserialization comparison, and Hub/query-style matching.
+  5. minimal fix direction
+     Handle OAUnknownObject before broad special tokens such as OAAnyValueObject, OANotNullObject, and
+     OANotEmptyObject, or explicitly document that OAAnyValueObject overrides unknown semantics. Based on current
+     OAUnknownObject javadoc, unknown should probably be checked first.
+  6. suggested CODEX comment location
+     In OACompare.compare(...), at the start of the OASpecialCompareObject block, before the OAAnyValueObject branch.
+
+
+1. file/class/method
+     src/main/java/com/viaoa/compare/OACompare.java — compare(Object value, Object matchValue, int decimalPlaces)
+  2. concrete bug
+     null can compare equal to numeric and boolean default values because OACompare converts a null operand to the
+     other operand’s type before comparison.
+  3. runtime scenario
+     These can return equality:
+
+  OACompare.isEqual(null, 0)
+  OACompare.isEqual(null, 0L)
+  OACompare.isEqual(null, BigDecimal.ZERO)
+  OACompare.isEqual(null, false)
+
+  Execution path:
+
+  if (value == null) {
+      value = OAConverter.convert(classMatchValue, value);
+  }
+
+  For numeric targets, OAConverterNumber returns zero for null. For BigDecimal, OAConverterBigDecimal returns
+  BigDecimal.ZERO. For Boolean, OAConverterBoolean returns Boolean.FALSE.
+
+  4. why this violates OA/OG comparison semantics
+     OACompare is used by filters, select/object-cache filtering, Hub matching, property-change comparison, and finder
+     logic. A missing/null value silently matching 0 or false can produce false positives where the caller asked for
+     an actual zero/false value, not null/default coercion. OA already has explicit special tokens for null/empty
+     semantics, so this implicit null-to-default equality is risky.
+  5. minimal fix direction
+     Before converting a null operand to the opposite operand’s concrete type, decide whether OACompare’s contract
+     really allows null/default equality. If not, preserve null ordering and only allow null equality through explicit
+     null, OANullObject, OAEmptyObject, or a documented primitive-null path.
+  6. suggested CODEX comment location
+     In OACompare.compare(...), immediately above:
+
 
 */
 

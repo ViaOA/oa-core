@@ -293,6 +293,91 @@ CODEX
   Minimal safe action:
   Optional comment only; no correctness change needed.
 
+
+
+2. file/class/method
+     src/main/java/com/viaoa/template/OATemplate.java / parseTokens
+
+  exact execution path
+  A normal property token such as <%=foreachCount%> is parsed as TagType.ForEach because detection uses
+  tag.startsWith("foreach").
+
+  why it is a concrete bug
+  Property names beginning with foreach are treated as block directives, causing missing-end parse errors or wrong
+  output instead of property substitution.
+
+  minimal fix or CODEX/defer recommendation
+  Require exact directive syntax: foreach or foreach , not any prefix.
+
+3. file/class/method
+     src/main/java/com/viaoa/template/OATemplate.java / _generate, data-grid foreach branch
+
+  exact execution path
+  A foreach block requires OAMatrix because one child references a many-link path. A sibling child is an if, format,
+  or other block that needs the current foreach object. The loop only sets oa for direct GetProp or ForEach nodes;
+  other child nodes are rendered with oa=null.
+
+  why it is a concrete bug
+  Conditions or nested formatting inside a matrix-backed foreach can evaluate against no object and silently skip or
+  render wrong content.
+
+  minimal fix or CODEX/defer recommendation
+  For non-path child nodes in the matrix loop, pass the row’s root/current foreach object, likely column 0, instead of
+  null.
+
+ 4. file/class/method
+     src/main/java/com/viaoa/template/OATemplate.java / process, getHasParseError
+
+  exact execution path
+  First render parses a bad template and increments parseErrorCnt. Second render reuses cached rootTreeNode, but
+  process resets parseErrorCnt=0 and does not reparse.
+
+  why it is a concrete bug
+  getHasParseError() can return false for a cached tree that still contains parse error nodes.
+
+  minimal fix or CODEX/defer recommendation
+  Store parse-error state with the parsed tree, or do not clear parseErrorCnt unless reparsing.
+
+
+1. file/class/method
+     src/main/java/com/viaoa/template/OATemplate.java / getValue
+
+  exact execution path
+  Template renders an object property with an explicit typed format, e.g. <%=order.date, MM/dd/yyyy%> or another non-
+  boolean formatted value. getValue reads the object value, but calls OAConv.toString(objx, fmtx) where fmtx is only
+  the metadata/default format and remains null when explicit fmt is supplied. The explicit fmt is then applied later
+  with OAString.format(result, fmt) after the value has already been converted to a string.
+
+  why it is a concrete bug
+  Date/time/number property formats can produce wrong output because the format is not applied to the typed value. It
+  is applied to the already-converted string instead.
+
+  minimal fix or CODEX/defer recommendation
+  When fmt is explicit, pass it to OAConv.toString(objx, fmt) for typed values and prevent the later string-format
+  pass where appropriate.
+
+ 2. file/class/method
+     src/main/java/com/viaoa/template/OATemplate.java / Format block in _generate
+
+  exact execution path
+  setOutputTextConversion("a", "aa") is configured. A format block contains a property that resolves to "a", e.g.
+  <%=format 10%><%=name%><%=end%>. The child GetProp applies getOutputText once, producing "aa", then the enclosing
+  Format block applies getOutputText again to the whole block, producing "aaaa".
+
+  why it is a concrete bug
+  Output conversion/highlighting is applied inconsistently inside format blocks: literal text is converted once, but
+  property output is converted twice.
+
+  minimal fix or CODEX/defer recommendation
+  Avoid applying output conversion inside child generation when rendering into a format-buffer, or skip the outer
+  conversion for already-generated child output.
+
+  suggested regression test
+  templateFormatBlockAppliesOutputConversionOnce()
+
+
+
+
 */
 
 /**
@@ -1482,6 +1567,12 @@ public class OATemplate<F extends OAObject> {
 				bProcessChildren = OAString.isEqual(s, node.arg2);
 				break;
 
+			case IfNotEquals:
+				s = getValue(obj, node.arg1, 0, null, props, false);
+
+				bProcessChildren = OAString.isNotEqual(s, node.arg2);
+				break;
+				
 			case IfGt:
 				s = getValue(obj, node.arg1, 0, null, props, false);
 				if (OAString.isNumber(s) && OAString.isNumber(node.arg2)) {

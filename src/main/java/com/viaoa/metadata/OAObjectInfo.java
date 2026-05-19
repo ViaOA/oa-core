@@ -48,6 +48,178 @@ import com.viaoa.runtime.OAThreadService;
 import com.viaoa.trigger.OATrigger;
 import com.viaoa.trigger.OATriggerListener;
 
+/*qqqqqqqqqqqqqqq
+CODEX
+
+1. file/class/method: src/main/java/com/viaoa/metadata/OAObjectInfo.java:1902 _runOnChange2
+
+  concrete bug: Exceptions thrown by the trigger listener during reverse-finder dispatch are caught as if the reverse
+  finder failed.
+
+  runtime scenario: A trigger has a usable reverse path. finder.find(fromObject) reaches onFound, invokes
+  ti.trigger.getTriggerListener().onTrigger(...), and the listener throws. The catch at lines 1904-1907 catches that
+  listener failure, sets ti.bNoReverseFinder = true, and recursively retries through the no-reverse fallback path.
+
+  why this violates OA/OG trigger semantics: Trigger execution failure is not the same as path traversal failure. This
+  can duplicate trigger side effects, hide the original failure if the fallback path succeeds or swallows, and
+  permanently changes future dispatch behavior for that trigger.
+
+  minimal fix direction: Only fall back when the failure is known to be reverse-path/data traversal related. Listener
+  invocation failures from onFound should propagate without setting bNoReverseFinder.
+
+  suggested CODEX comment location: At the catch block around line 1904.
+
+
+3. file/class/method: src/main/java/com/viaoa/metadata/OAObjectInfo.java:1434 _addTrigger
+
+  concrete bug: Trigger registration dedupes by listener identity and propPath, ignoring the trigger instance and
+  execution flags.
+
+  runtime scenario: OA code registers two triggers using the same OATriggerListener and same property path but
+  different trigger options, such as server-side-only, background execution, or loaded-data behavior. _addTrigger
+  returns the existing TriggerInfo at lines 1445-1449, so the second trigger is never committed.
+
+  why this violates OA/OG trigger semantics: A committed trigger registration should become visible with its own
+  execution contract. This path silently collapses distinct trigger registrations and can miss expected execution mode
+  or unregister behavior.
+
+  minimal fix direction: Either dedupe only exact same trigger instance, or include all execution-affecting trigger
+  options in the dedupe key. If listener/path idempotency is intended, document it as a hard registration contract.
+
+  suggested CODEX comment location: Above the dedupe loop at lines 1445-1449.
+
+
+
+2. file/class/method: src/main/java/com/viaoa/metadata/OAObjectInfo.java:1698 onChange / _onChange2
+
+  concrete bug: Recursive trigger protection does not cover the actual execution of async triggers.
+
+  runtime scenario: A trigger is configured to run in the background. The original event increments recursive trigger
+  count, schedules the work, then decrements before the trigger body runs. If the background trigger changes the same
+  property again, each new event schedules a fresh async task with a reset recursion count, so a self-triggering loop
+  can enqueue indefinitely instead of hitting the recursion guard.
+
+  why this violates OA/OG trigger semantics: Recursive/reentrant protection should suppress invalid trigger recursion
+  without depending on whether the trigger runs inline or async. This can cause duplicate/infinite trigger execution
+  and unbounded queued work.
+
+  minimal fix direction: Carry trigger recursion/depth state into TriggerRunnable, or maintain a trigger-chain guard
+  around actual async execution rather than only around scheduling.
+
+  suggested CODEX comment location: Around src/main/java/com/viaoa/metadata/OAObjectInfo.java:1812, where async
+  trigger work is scheduled.
+
+
+ 1. file/class/method: src/main/java/com/viaoa/metadata/OAObjectInfo.java:1436 createTrigger
+
+  concrete bug: Multi-path trigger registration is partially committed before all paths are validated.
+
+  runtime scenario: A trigger is created with multiple property paths, for example ["valid.path", "bad.path"].
+  createTrigger registers TriggerInfo entries for the valid path as it loops. When the later path fails during new
+  OAPath(...) or later metadata traversal, the exception is visible to the caller, but the earlier path remains
+  registered and can fire.
+
+  why this violates OA/OG trigger semantics: Trigger registration must become visible only when fully committed. A
+  failed registration should not leave a partially active trigger that the caller believes failed to add.
+
+  minimal fix direction: Pre-validate all property paths and calculated dependent paths before mutating hmTriggerInfo,
+  or collect planned registrations first and commit them only after validation succeeds. Alternatively, roll back
+  already-added registrations in a catch block.
+
+  suggested CODEX comment location: Around src/main/java/com/viaoa/metadata/OAObjectInfo.java:1436, before the
+  property-path registration loop.
+
+
+2. file/class/method: src/main/java/com/viaoa/metadata/OAObjectInfo.java:1499 _addTrigger
+
+  concrete bug: Trigger add/dedupe is not atomic under concurrent registration.
+
+  runtime scenario: Two runtime threads register the same trigger/listener/path at the same time, such as dynamic
+  cache filters or Hub filters being configured concurrently. Both threads can observe the same CopyOnWriteArrayList
+  before either has added its TriggerInfo, both pass the dedupe loop, and both add equivalent trigger entries.
+
+  why this violates OA/OG trigger semantics: A single committed trigger registration can become duplicated, causing
+  duplicate trigger execution for the same object/property event. This is a real runtime issue because triggers are
+  not only static metadata; cache/hub filter paths add and replace triggers dynamically.
+
+  minimal fix direction: Synchronize registration per OAObjectInfo/listen-property, or use an atomic compute/update
+  block that performs dedupe and add together.
+
+  suggested CODEX comment location: Around src/main/java/com/viaoa/metadata/OAObjectInfo.java:1505, where the list is
+  fetched and dedupe begins.
+  
+
+1. file/class/method: src/main/java/com/viaoa/metadata/OAObjectInfo.java:1581 _addTrigger
+
+  concrete bug: Calculated-property dependency propagation is owned by the first trigger registered for that
+  calculated property.
+
+  runtime scenario: Trigger A is registered for calculated property fullName, so _addTrigger creates a dependent
+  trigger for fullName’s dependent properties. Trigger B is later registered for the same calculated property; since
+  the listen-property list already exists, no dependent trigger is created for B. If Trigger A is removed, its
+  dependent trigger is removed at lines 1656-1664. Trigger B remains registered for fullName, but changes to
+  firstName/lastName no longer synthesize the fullName trigger event, so B silently stops firing for dependency
+  changes.
+
+  why this violates OA/OG trigger semantics: Removing one trigger must not break another committed trigger’s
+  dependency chain. Calculated-property trigger expansion should remain active as long as any trigger depends on that
+  calculated property.
+
+  minimal fix direction: Manage calculated-property dependency triggers per calculated property/listen-property with
+  reference counting or shared ownership, not as a child of whichever trigger registered first. Remove the dependent
+  trigger only when the last trigger depending on that calculated property is removed.
+
+  suggested CODEX comment location: Around src/main/java/com/viaoa/metadata/OAObjectInfo.java:1581, where calculated
+  dependent triggers are created only when the property list is first created.
+  
+2. file/class/method: src/main/java/com/viaoa/metadata/OAObjectInfo.java:1598 _addTrigger
+
+  concrete bug: Shared calculated-property dependency triggers inherit execution flags from the first trigger
+  registered.
+
+  runtime scenario: Trigger A for calculated property fullName is registered with serverSideOnly=true or
+  onlyUseLoadedData=true. Trigger B later registers for the same calculated property with different execution needs.
+  Since no new dependent trigger is created for B, changes to the underlying dependencies are governed by Trigger A’s
+  child trigger flags.
+
+  why this violates OA/OG trigger semantics: Trigger execution flags are part of the trigger contract. A later trigger
+  should not miss dependency-driven execution because the first trigger on the same calculated property had narrower
+  flags.
+
+  minimal fix direction: Either create separate dependent triggers per parent trigger, or make the shared calculated-
+  property dependency trigger use the union/broadest required execution behavior and dispatch per-trigger flags at the
+  final listener stage.
+
+  suggested CODEX comment location: Around src/main/java/com/viaoa/metadata/OAObjectInfo.java:1598, where trigger2
+  copies flags from the first trigger.
+
+
+1. file/class/method: src/main/java/com/viaoa/metadata/OAObjectInfo.java:1953 _runOnChange2
+
+  concrete bug: A chained trigger with fromObject == null can silently miss downstream triggers that have a reverse
+  path.
+
+  runtime scenario: A calculated property trigger is created for a dependent path that cannot reverse back to the
+  calculated-property owner. That child trigger correctly calls its listener with obj == null, and the listener calls
+  onChange(null, listenProperty, hubEvent) for the calculated property. If another trigger is listening through a path
+  such as orders.totalCalc, its TriggerInfo has a non-empty ppToRootClass. _runOnChange2 then tries
+  finder.find(fromObject) with fromObject == null; OAFinder.find(null) returns null without calling onDataNotFound, so
+  the listener is never invoked through the no-root fallback.
+
+  why this violates OA/OG trigger semantics: If OA cannot resolve the root object for a trigger event, it should use
+  the no-root trigger path so listeners can scan/select affected roots. Here the no-root state is lost when dispatch
+  chains through a calculated property, causing silent missed trigger execution.
+
+  minimal fix direction: In _runOnChange2, if fromObject == null, skip reverse-finder use and call
+  ti.trigger.getTriggerListener().onTrigger(null, hubEvent, ti.ppFromRootClass) directly. Also use the trigger/root
+  class graph rather than OARuntime.graph(fromObject) for role checks when fromObject is null.
+
+  suggested CODEX comment location: Around src/main/java/com/viaoa/metadata/OAObjectInfo.java:1953, before the
+  reverse-finder branches.
+
+*/
+
+
 /**
  * Metadata definition for an OAObject type. OAObjectInfo describes the full
  * structural blueprint of a domain class including its persistent properties,

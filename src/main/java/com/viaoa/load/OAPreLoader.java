@@ -32,6 +32,108 @@ import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
 import com.viaoa.select.OASelect;
 
+/*qqqqqqqqq
+CODEX
+
+1. file/class/method
+     src/main/java/com/viaoa/load/OAPreLoader.java — loadMtoM(OALinkInfo linkInfo)
+  2. concrete bug
+     Many-to-many preload is a no-op even when metadata says the link is many-to-many.
+  3. runtime scenario
+     OAPreLoader is configured with a property path that includes a many-to-many link. _load(...) detects
+     linkInfo.isMany2Many() and calls loadMtoM(linkInfo), but the method returns without hydrating either side’s Hub
+     relationships.
+  4. why this violates OA/OG load semantics
+     Preload reports/returns as if the configured graph path was processed, but many-to-many relationships remain
+     unhydrated. That creates false-success preload behavior and can produce missing Hub membership later.
+  5. minimal fix direction
+     Either implement many-to-many hydration or explicitly reject/mark unsupported many-to-many preload so callers can
+     detect incomplete preload.
+  6. suggested CODEX comment location
+     At the start of OAPreLoader.loadMtoM(...).
+
+ 1. file/class/method
+     src/main/java/com/viaoa/load/OAPreLoader.java — _load(OALinkInfo[] linkInfos)
+  2. concrete bug
+     The preloader silently stops processing the configured property path at the first non-MANY link.
+  3. runtime scenario
+     A normal graph path such as order.customer.contacts has a ONE segment (order.customer) followed by a MANY
+     segment. _load(...) sees the ONE link and executes break, returning root objects as if preload completed.
+  4. why this violates OA/OG load semantics
+     The caller supplied a property path to preload. Silently stopping early is false-success behavior: linked objects
+     beyond the ONE segment remain unloaded, but the load operation gives no signal that the requested path was only
+     partially processed.
+  5. minimal fix direction
+     Either support ONE traversal in OAPreLoader, or fail visibly / document and reject unsupported paths containing
+     non-MANY links before starting the load.
+  6. suggested CODEX comment location
+     At _load(...), directly above:
+
+  if (linkInfo.getType() != OALinkInfo.MANY) {
+      break;
+  }
+
+
+1. file/class/method
+     src/main/java/com/viaoa/load/OAPreLoader.java — load(Class clazz, OALinkInfo linkInfo)
+  2. concrete bug
+     When recursive sort order and link sort order differ, the reselect uses the recursive sort again instead of the
+     link sort.
+  3. runtime scenario
+     A class has a recursive MANY link sorted by sequence, but the parent/detail link being hydrated is sorted by
+     name. Initial select uses the recursive sort. The code detects that s and s2 differ, but then does:
+
+  sel.setOrder(s);
+
+  instead of using s2.
+
+  4. why this violates OA/OG load semantics
+     loadOtoM(...) adds objects to parent Hubs in the order of alx. If the wrong order is selected, preloaded detail
+     Hubs can be hydrated with the wrong membership order.
+  5. minimal fix direction
+     In the reselect block, use the active linkInfo sort (s2) for the second select, or explicitly separate recursive-
+     hub hydration order from detail-link hydration order.
+  6. suggested CODEX comment location
+     In load(Class clazz, OALinkInfo linkInfo), at the reselect block around sel.setOrder(s).
+
+1. file/class/method
+     src/main/java/com/viaoa/load/OAPreLoader.java — load(Class clazz, OALinkInfo linkInfo)
+  2. concrete bug
+     OASelect instances are not closed in a finally block if selection or relationship hydration throws.
+  3. runtime scenario
+     sel.next() starts datasource iteration and then a datasource exception, object hydration exception, or later
+     loadRecursive(...) exception occurs. The method exits without sel.close().
+  4. why this violates OA/OG load semantics
+     Load operations must not leak datasource/select resources on failure. Partial progress is acceptable only if the
+     exception is visible, but the datasource iterator still needs cleanup.
+  5. minimal fix direction
+     Wrap each OASelect lifecycle in try/finally { sel.close(); }. If exhausted OASelect self-closes, this remains
+     harmless and protects exception paths.
+  6. suggested CODEX comment location
+     In load(Class clazz, OALinkInfo linkInfo), immediately after each new OASelect<>(clazz).
+
+
+1. file/class/method
+     src/main/java/com/viaoa/load/OAPreLoader.java — _load(...) class/list cache plus load(Class, OALinkInfo)
+  2. concrete bug
+     The preloader caches loaded objects only by target class, but different links to the same class can require
+     different sort orders for Hub hydration.
+  3. runtime scenario
+     A path includes two MANY links to the same target class through different relationships, one sorted by name,
+     another by seq. _load(...) reuses hm.get(c) for the second link and does not call load(c, linkInfo) with that
+     link’s sort order. loadOtoM(...) then hydrates the second Hub using the first link’s object order.
+  4. why this violates OA/OG load semantics
+     Preloaded Hub membership order must match the relationship metadata. Reusing class-level results across link-
+     specific sort contracts can silently initialize detail Hubs in the wrong order.
+  5. minimal fix direction
+     Cache loaded lists by link identity or by (class, sortOrder) instead of class alone, or re-sort/reselect per link
+     before hydrating that relationship.
+  6. suggested CODEX comment location
+     In _load(...), around List<?> alx = hm.get(c).
+
+
+*/
+
 /**
  * Supports asynchronous background preloading of {@link OAObject} data for
  * Hubs or object graphs.

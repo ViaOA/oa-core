@@ -51,6 +51,394 @@ import com.viaoa.runtime.OAThreadService;
 import com.viaoa.runtime.thread.OARemoteThread;
 
 
+/*qqqqqqqqqqqqqq
+CODEX
+
+1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/OARemoteMultiplexerClient.java
+     onInvokeForCtoS(...)
+  2. concrete bug
+     Queued C-to-S calls with return/OASync can release the same VirtualSocket twice.
+  3. runtime scenario
+     getSocketForCtoS() assigns socket; the finally block releases it. Then the queued-response branch later calls
+     releaseSocketForCtoS(socket) again because socket was not nulled.
+  4. why this violates OA/OG remote semantics
+     The same virtual socket can be placed back into the pool twice, allowing concurrent reuse of one request/response
+     stream. That can corrupt framing, response correlation, and remote call ordering.
+  5. minimal fix direction
+     Use a single release path, or set socket = null immediately after the first release.
+  6. suggested CODEX comment location
+     Near the finally release block in onInvokeForCtoS.
+
+  #2
+
+  1. file/class/method
+     OARemoteMultiplexerClient.java
+     onInvokeForCtoS(...)
+  2. concrete bug
+     Timed-out queued requests remain in hmAsyncRequestInfo.
+  3. runtime scenario
+     A queued C-to-S request is added to hmAsyncRequestInfo, waits for response, times out or disconnects, sets
+     exceptionMessage, and throws. The pending map entry is not removed unless a later response arrives.
+  4. why this violates OA/OG remote semantics
+     A failed remote call remains pending after caller-visible failure. This leaks request state and allows late
+     responses to correlate to a request that the caller already considers failed.
+  5. minimal fix direction
+     Remove the pending request on timeout/disconnect before throwing. Late responses should be treated as orphaned
+     and logged/ignored.
+  6. suggested CODEX comment location
+     Near the queued response wait timeout handling in onInvokeForCtoS.
+
+  #3
+
+  1. file/class/method
+     OARemoteMultiplexerClient.java
+     createSyncRunnableQueueThread()
+  2. concrete bug
+     OARemoteThread.requestInfo is not cleared after a queued runnable finishes.
+  3. runtime scenario
+     The sync runnable worker sets this.requestInfo = tup.a, runs the runnable, decrements busy, but leaves the old
+     request info attached until the next loop iteration resets the thread.
+  4. why this violates OA/OG remote semantics
+     Remote-thread state can remain stale while the worker is idle or between queued work items. Nested runnable
+     checks or remote-thread state inspection can see the previous request context.
+  5. minimal fix direction
+     Clear requestInfo in the runnable finally block after r.run() completes.
+  6. suggested CODEX comment location
+     Inside the worker runnable execution finally block.
+
+
+#1
+
+  1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/OARemoteMultiplexerClient.java
+     lookup(String)
+  2. concrete bug
+     The CtoS socket is not released on valid server error paths.
+  3. runtime scenario
+     lookup() gets a socket, sends CtoS_GetLookupInfo, then:
+
+  - server returns false, client closes ois and throws before releaseSocketForCtoS(socket), or
+  - server returns a broadcast bind and lookup() throws “must use lookupBroadcast” before releasing the socket.
+
+  4. why this violates OA/OG remote semantics
+     A failed lookup is caller-visible, but the checked-out virtual socket is silently lost from the client pool.
+     Repeated failed lookups can exhaust CtoS socket capacity and cause later valid remote calls to stall or allocate
+     unnecessary sockets.
+  5. minimal fix direction
+     Wrap lookup socket usage in try/finally; release or close/discard the socket according to whether the stream
+     completed cleanly.
+  6. suggested CODEX comment location
+     Around lookup(String), immediately after VirtualSocket socket = getSocketForCtoS().
+
+
+#1
+
+  1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/OARemoteMultiplexerClient.java
+     lookupBroadcast(...) / registerBroadcast(...)
+  2. concrete bug
+     Re-registering a broadcast lookup with a new callback silently keeps the old callback binding.
+  3. runtime scenario
+     First registerBroadcast("x", callback1) creates the proxy/bind and caches it in hmLookup. Later
+     registerBroadcast("x", callback2) returns the cached proxy immediately from hmLookup and never updates the
+     BindInfo object reference to callback2.
+  4. why this violates OA/OG remote semantics
+     The API appears to register the new callback, but incoming server broadcast calls still route to the old
+     callback, or to a GC’d callback. That creates stale remote session/proxy state with silent wrong dispatch.
+  5. minimal fix direction
+     Either reject duplicate broadcast registration visibly, or update the existing bind/callback reference
+     consistently when the same lookup name is re-registered.
+  6. suggested CODEX comment location
+     At the early hmLookup.get(lookupName) return in lookupBroadcast(...).
+
+#5
+
+  1. file/class/method
+     OARemoteMultiplexerClient.java
+     createSocketForStoC(...) / processStoCSocket(...)
+  2. concrete bug
+     A reused RemoteObjectInputStream can remain in use after a stream-processing exception.
+  3. runtime scenario
+     The StoC socket thread stores ois across calls. If processStoCSocket(socket, id, ois) throws while processing a
+     reused object stream, the outer catch logs and then loops with the same ois reference. The stream may already be
+     mid-frame or corrupt.
+  4. why this violates OA/OG remote semantics
+     The thread can repeatedly read from a broken object stream, producing repeated failures or stalled StoC
+     processing instead of closing/discarding the socket/stream and forcing a clean reconnect path.
+  5. minimal fix direction
+     On processStoCSocket exception, close/discard the current RemoteObjectInputStream and likely close the virtual
+     socket unless the protocol has a known safe resynchronization point.
+  6. suggested CODEX comment location
+     In the catch block inside the StoC socket thread loop in createSocketForStoC(...).
+
+#3
+
+  1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/OARemoteMultiplexerClient.java
+     close()
+  2. concrete bug
+     Closing the remote client does not fail or wake pending async remote calls.
+  3. runtime scenario
+     A thread is waiting in onInvokeForCtoS(...) for a queued response in hmAsyncRequestInfo. Another thread calls
+     OARemoteMultiplexerClient.close(). close() only sets bClosed = true; it does not mark pending RequestInfo entries
+     failed or notify their monitors.
+  4. why this violates OA/OG remote semantics
+     Shutdown can leave callers blocked until timeout even though the remote layer has been explicitly closed. That is
+     a remote lifecycle false-stall rather than prompt caller-visible failure.
+  5. minimal fix direction
+     On close, iterate pending async requests, set an exception/exceptionMessage, remove them from hmAsyncRequestInfo,
+     and notify waiters. Also consider closing/discarding pooled sockets if ownership is here.
+  6. suggested CODEX comment location
+     In OARemoteMultiplexerClient.close().
+
+#1
+
+  1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/OARemoteMultiplexerClient.java
+     sendResponseForStoC(...)
+  2. concrete bug
+     The async response path can leak a CtoS virtual socket if response writing fails.
+  3. runtime scenario
+     Client processes a server-to-client queued request and needs to send CtoS_QueuedResponse. sendResponseForStoC
+     gets a socket with getSocketForCtoS(), writes the response, flushes, closes the stream, then releases the socket.
+     If serialization/write/flush throws before releaseSocketForCtoS(socket), the checked-out socket is never returned
+     or discarded.
+  4. why this violates OA/OG remote semantics
+     A valid remote callback failure can silently reduce the CtoS socket pool and eventually stall later remote
+     responses/calls. The remote failure is visible, but the transport resource leak is hidden.
+  5. minimal fix direction
+     Wrap the async response socket path in try/finally; release only if the response frame completed cleanly,
+     otherwise close/discard the socket.
+  6. suggested CODEX comment location
+     Inside sendResponseForStoC(...), around the branch that creates VirtualSocket socket = getSocketForCtoS().
+
+
+1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/OARemoteMultiplexerClient.java
+     _onInvokeForCtoS(...)
+  2. concrete bug
+     Async request state is inserted into hmAsyncRequestInfo before the request is guaranteed to be sent.
+  3. runtime scenario
+     For queued requests with a return value:
+
+  hmAsyncRequestInfo.put(ri.messageId, ri);
+  createSocketForStoC();
+  ...
+  oos.writeByte(...);
+  ...
+  oos.flush();
+
+  If createSocketForStoC, serialization, write, or flush fails, the caller receives the exception, but the pending map
+  entry remains for a request that was not successfully delivered.
+
+  4. why this violates OA/OG remote semantics
+     A failed send should not leave live request-correlation state. This can leak pending remote state and allow a
+     later response/collision path to interact with a request the caller already knows failed.
+  5. minimal fix direction
+     Track whether the frame was successfully sent. If setup/write fails after hmAsyncRequestInfo.put, remove the
+     entry in the failure path.
+  6. suggested CODEX comment location
+     In _onInvokeForCtoS(...), around hmAsyncRequestInfo.put(ri.messageId, ri).
+
+1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/OARemoteMultiplexerClient.java
+     _processSocket(...), queued response branch
+  2. concrete bug
+     The client removes the pending request before response conversion/materialization succeeds.
+  3. runtime scenario
+     Queued response handling does:
+
+  RequestInfo rix = hmAsyncRequestInfo.remove(ri.messageId);
+  ...
+  ri.response = ((OACompressWrapper) ri.response).getObject();
+  ...
+  rix.methodInvoked = true;
+  rix.notifyAll();
+
+  If compressed-return unwrapping, proxy materialization, or response conversion throws, the pending request has
+  already been removed and the waiting caller is not notified with the real failure.
+
+  4. why this violates OA/OG remote semantics
+     Response correlation must remain valid until the response reaches a terminal success/failure state. Otherwise a
+     concrete response-processing failure becomes timeout/misclassification.
+  5. minimal fix direction
+     Do response conversion inside a guarded block that sets rix.exception or rix.exceptionMessage and notifies the
+     waiter. Remove from hmAsyncRequestInfo only after terminal handling is guaranteed, or restore/notify on failure.
+  6. suggested CODEX comment location
+     In _processSocket(...), queued response branch, immediately after hmAsyncRequestInfo.remove(ri.messageId).
+
+
+1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/OARemoteMultiplexerClient.java
+     lookupBroadcast(...)
+  2. concrete bug
+     lookupBroadcast(...) does not release or discard the CtoS socket if request/response I/O fails before
+     releaseSocketForCtoS(socket).
+  3. runtime scenario
+     Client calls registerBroadcast(...) / lookupBroadcast(...). The method checks out a CtoS socket, writes
+     CtoS_GetBroadcastClass, then reads the response. If serialization, flush, response read, or stream construction
+     throws, the checked-out socket is not returned to the pool or closed.
+  4. why this violates OA/OG remote semantics
+     A normal OA transport failure during broadcast registration can silently shrink/leak the CtoS socket pool.
+     Repeated failures can stall later valid remote calls.
+  5. minimal fix direction
+     Wrap socket usage in try/finally; release only after a clean frame exchange, otherwise close/discard/remove the
+     socket from the pool.
+  6. suggested CODEX comment location
+     Inside lookupBroadcast(...), immediately after VirtualSocket socket = getSocketForCtoS().
+
+1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/OARemoteMultiplexerClient.java
+     _processSocket(...), StoC_QueuedRequestNoResponse branch
+  2. concrete bug
+     A missing client bind for a no-response queued StoC request is silently dropped without logging or server-visible
+     failure.
+  3. runtime scenario
+     Server sends StoC_QueuedRequestNoResponse. Client reads bind/method/args, then:
+
+  ri.bind = getBindInfo(ri.bindName);
+  if (ri.bind == null) {
+      ri.exceptionMessage = "could not find bind object";
+      return false;
+  }
+
+  Because _processSocket(...) returns false, processStoCSocket(...) does not call afterInvokForStoC(ri), and the
+  request is not queued to _processMessageForStoC(...), where no-return failures are normally logged.
+
+  4. why this violates OA/OG remote semantics
+     No-response means the server caller does not wait for a return value, but failed local dispatch should still be
+     observable. This path silently loses valid OA-controlled remote work when a callback bind is stale or GC’d.
+  5. minimal fix direction
+     Either return true so afterInvokForStoC(...) logs the failure, or explicitly log the stale bind before returning
+     false.
+  6. suggested CODEX comment location
+     In _processSocket(...), inside the StoC_QueuedRequestNoResponse branch where ri.bind == null.
+
+1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/OARemoteMultiplexerClient.java
+     createSocketForStoC()
+  2. concrete bug
+     The StoC reader thread exits after errorCnt > 50 without closing/discarding the VirtualSocket and without
+     clearing/recovering bFirstStoCsocketCreated.
+  3. runtime scenario
+     A normal OA transport/read failure repeats on the StoC reader socket. The loop breaks at the error threshold, but
+     the socket can remain open from the client’s perspective and the client still believes the first StoC socket
+     exists.
+  4. why this violates OA/OG remote semantics
+     Server-to-client callbacks/queued responses can silently stop being read. Since bFirstStoCsocketCreated remains
+     true, later client calls do not necessarily recreate the required StoC receive path.
+  5. minimal fix direction
+     On terminal StoC reader exit, close/discard the socket and reset/recover the StoC socket-created state, or force
+     a connection/session failure so pending remote work fails visibly.
+  6. suggested CODEX comment location
+     At the if (errorCnt > 50) break; branch in createSocketForStoC().
+
+
+1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/OARemoteMultiplexerClient.java
+     addSyncRunnable(RequestInfo, Runnable)
+  2. concrete bug
+     If queSyncRunnable.put(...) throws, especially from interruption, the runnable is dropped after logging and the
+     caller has no failure signal.
+  3. runtime scenario
+     During remote sync/event processing, an OARemoteThread.addRunnable(...) delegates to addSyncRunnable(...). If the
+     thread is interrupted while enqueueing, the catch logs the exception and continues as if scheduling was handled.
+  4. why this violates OA/OG remote semantics
+     Queued sync/event continuation work must not be silently lost. A dropped runnable can skip OA event processing or
+     sync follow-up work while the remote request appears to continue normally.
+  5. minimal fix direction
+     Catch InterruptedException separately, restore interrupt status, and make the failure visible through the
+     associated RequestInfo or a caller-visible exception path. Avoid treating failed enqueue as success.
+  6. suggested CODEX comment location
+     Inside addSyncRunnable(...), around the queSyncRunnable.put(new Tuple(ri, r)) catch block.
+
+1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/OARemoteMultiplexerClient.java
+     getRemoteThread(RequestInfo, boolean)
+  2. concrete bug
+     Interrupted waits while looking for a reusable remote thread are swallowed.
+  3. runtime scenario
+     A shutdown/disconnect path interrupts a thread waiting in alRemoteThread.wait(25). The catch block ignores it and
+     the allocation loop continues, potentially creating or waiting for remote worker state after cancellation was
+     requested.
+  4. why this violates OA/OG remote semantics
+     Remote worker allocation participates in callback and sync processing. Ignoring interrupts can delay shutdown,
+     keep remote work alive after cancellation, and hide lifecycle failure from the caller.
+  5. minimal fix direction
+     Catch InterruptedException separately, restore the interrupt flag, and return/fail visibly instead of continuing
+     as if no cancellation occurred.
+  6. suggested CODEX comment location
+     Inside getRemoteThread(...), around the alRemoteThread.wait(25) catch block.
+
+
+1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/OARemoteMultiplexerServer.java
+     _processSocketCtoSRequest(RequestInfo, Session)
+  2. concrete bug
+     RemoteObjectInputStream is closed only on the success path.
+  3. runtime scenario
+     Server accepts a normal CtoS virtual socket request and creates RemoteObjectInputStream. If
+     _processSocketCtoSRequest(ri, session, ois) throws while reading, resolving, writing, queueing, or processing a
+     response, ois.close() is skipped.
+  4. why this violates OA/OG remote semantics
+     A failed frame/read path must either fully clean up or fail the connection cleanly. Leaving the stream unclosed
+     after a partially processed request can leak stream resources and preserve corrupted per-socket stream state.
+  5. minimal fix direction
+     Wrap the delegate call in try/finally and close ois in the finally. If close fails after a processing exception,
+     preserve the original exception and discard/fail the socket.
+  6. suggested CODEX comment location
+     At _processSocketCtoSRequest(RequestInfo, Session), around lines where RemoteObjectInputStream ois is created and
+     closed.
+
+
+
+  1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/OARemoteMultiplexerClient.java
+     setupSyncRequestQueueThread()
+  2. concrete bug
+     A sync request can time out locally and the sync queue continues even though the assigned OARemoteThread is still
+     processing that same request.
+  3. runtime scenario
+     SyncRequestQueueThread assigns ri to a remote thread, waits up to maxSeconds, logs a warning if t.requestInfo ==
+     ri && !ri.methodInvoked, then continues to poll/process later sync requests. The timed-out request can still
+     finish later on the remote thread.
+  4. why this violates OA/OG remote semantics
+     This can break sync/event ordering. The code treats timeout as “continue” rather than a terminal failure or
+     explicit out-of-order mode, so later sync work can run before the earlier sync request has actually completed.
+  5. minimal fix direction
+     On timeout, either fail/close the remote connection/request path visibly, or keep the sync queue blocked until
+     completion if strict ordering is required. If out-of-order continuation is intended, document it as a hard
+     contract and make the request state explicit.
+  6. suggested CODEX comment location
+     Inside setupSyncRequestQueueThread(), immediately after the timeout warning where it continues after !
+     ri.methodInvoked.
+
+
+1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/OARemoteMultiplexerClient.java
+     putQueSyncRequestInfo(RequestInfo)
+  2. concrete bug
+     Interrupted queue insertion propagates out after the incoming frame has already been read, with no correlated
+     response/notification for some paths.
+  3. runtime scenario
+     Client receives an incoming server message that must be routed through queSyncRequestInfo.
+     putQueSyncRequestInfo(ri) calls queSyncRequestInfo.put(ri). If interrupted, _processSocket(...) throws up to the
+     StoC reader loop. The message bytes have already been consumed, but the request is not queued and the original
+     waiting request may not be notified.
+  4. why this violates OA/OG remote semantics
+     A consumed remote frame must reach a terminal state: queued, responded, or connection-failed. Here interruption
+     can turn a valid OA sync/queued message into a dropped frame and later timeout.
+  5. minimal fix direction
+     Catch InterruptedException separately, restore interrupt status, and mark the affected request/connection failed
+     visibly. For correlated requests, notify the waiter with an exception before returning.
+  6. suggested CODEX comment location
+     At putQueSyncRequestInfo(...), around queSyncRequestInfo.put(ri).
+
+
+*/
+
+
 /**
  * Client-side implementation for OA's remote-method invocation (RMI) layer
  * when running over the Multiplexer communication system.

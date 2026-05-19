@@ -62,6 +62,27 @@ CODEX
   - Direction: Classify boolean tokens in tokenizer or normalize them in both parsers.
  
  
+ 1. file/class/method
+     src/main/java/com/viaoa/filter/OAQueryFilter.java / constructor + parse, parseBlock
+
+  exact execution path
+  Create a query with valid leading expression plus trailing tokens, for example name = 'A' garbage = 'B'.
+  parseForEqual() builds the name = 'A' filter, consumes one next token at line 415, and returns the trailing token up
+  the parse chain. parseBlock() ignores the returned token and pops the valid filter. Constructor only checks
+  stack.size(), not whether all tokens were consumed.
+
+  why it is a real filter correctness bug
+  A syntactically invalid query can be accepted and silently evaluated as only its leading valid expression. That
+  causes false positives/false negatives instead of failing fast.
+
+  semantic/invariant violated
+  Query filters must either parse the complete expression or reject it. Unconsumed tokens must not be silently
+  ignored.
+
+  minimal fix or CODEX/defer recommendation
+  After parseBlock() completes, verify posToken >= vecToken.size() or otherwise that the returned token state is fully
+  consumed. Throw a parse exception for trailing tokens.
+ 
  */
 
 

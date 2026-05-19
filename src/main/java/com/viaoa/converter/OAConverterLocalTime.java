@@ -26,6 +26,30 @@ import com.viaoa.datetime.OADate;
 import com.viaoa.datetime.OADateTime;
 import com.viaoa.datetime.OATime;
 
+
+/*qqqqqqqqqqqqqqqqqq
+CODEX
+
+#10 — OAConverterLocalTime.convert(...)
+
+  File/class/method: src/main/java/com/viaoa/converter/OAConverterLocalTime.java, convert
+
+  Concrete bug: conversion to LocalTime does not handle OADateTime, java.util.Date, or LocalDateTime, even though all
+  have deterministic time-of-day content.
+
+  Runtime scenario: OA receives an OADateTime or LocalDateTime value for a LocalTime property. Conversion returns
+  null, while related converters like OAConverterOATime already support these source types.
+
+  Why this violates OA/OG converter semantics: this creates inconsistent temporal coercion and silent value loss for
+  normal OA runtime values.
+
+  Minimal fix direction: add explicit branches for OADateTime, java.util.Date, and LocalDateTime, using the same
+  local/system-zone rules already used elsewhere in the converter package.
+
+
+
+*/
+
 /**
  * Converter for transforming values into {@link LocalTime} and formatting them
  * using OA {@link OATime} rules.

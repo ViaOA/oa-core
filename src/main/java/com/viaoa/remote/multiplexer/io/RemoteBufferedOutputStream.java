@@ -19,6 +19,61 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+/*qqqqqqqqqqq
+CODEX
+
+1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/io/RemoteBufferedOutputStream.java
+     close()
+  2. concrete bug
+     close() can discard buffered bytes instead of flushing them.
+  3. runtime scenario
+     RemoteBufferedOutputStream.write(...) buffers data in bsBuffer. If caller closes the stream without an explicit
+     prior flush(), close() does:
+
+  freeBuffer();
+  super.close();
+
+  freeBuffer() releases/nulls bsBuffer before FilterOutputStream.close() gets a chance to flush. The buffered bytes
+  are lost.
+
+  4. why this violates OA/OG remote semantics
+     OA remote framing depends on every written byte reaching the virtual socket in order. Even though many current
+     call sites explicitly call flush() before close(), this class violates the normal OutputStream.close() contract
+     and can silently truncate a frame for any normal OA path that relies on close-to-flush behavior.
+  5. minimal fix direction
+     Call writeBuffer() or flush() before freeBuffer() in close(). Ensure the buffer is released in a finally so
+     write/flush failures do not leak pooled buffers.
+  6. suggested CODEX comment location
+     At the start of RemoteBufferedOutputStream.close(), before freeBuffer().
+
+1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/io/RemoteBufferedOutputStream.java
+     flush()
+  2. concrete bug
+     A pooled buffer is not released if the underlying out.flush() throws.
+  3. runtime scenario
+     RemoteObjectOutputStream.flush() calls through to RemoteBufferedOutputStream.flush(). writeBuffer() writes
+     buffered bytes, then out.flush() throws because the virtual socket/connection failed. Since freeBuffer() runs
+     only after out.flush(), the pooled buffer remains marked in-use.
+  4. why this violates OA/OG remote semantics
+     Remote I/O failures are normal production paths during disconnect/reconnect. A failed remote flush should fail
+     the frame/connection visibly, but it should not leak pooled buffer state. Repeated failed writes can drain the
+     static buffer pool and permanently degrade the remoting layer.
+  5. minimal fix direction
+     Use try/finally around writeBuffer() / out.flush() so freeBuffer() always runs. The original IOException should
+     still propagate.
+  6. suggested CODEX comment location
+     At RemoteBufferedOutputStream.flush(), around:
+
+  writeBuffer();
+  out.flush();
+  freeBuffer();
+
+
+
+*/
+
 /**
  * High-performance buffered output stream used by OA's remoting and
  * multiplexer layers. Unlike {@link java.io.BufferedOutputStream}, this

@@ -24,7 +24,6 @@ import com.viaoa.filter.OABetweenFilter;
 import com.viaoa.filter.OABetweenOrEqualFilter;
 import com.viaoa.filter.OABlockFilter;
 import com.viaoa.filter.OAEqualFilter;
-import com.viaoa.filter.OAFalseFilter;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.filter.OAGreaterFilter;
 import com.viaoa.filter.OAGreaterOrEqualFilter;
@@ -33,12 +32,8 @@ import com.viaoa.filter.OALessOrEqualFilter;
 import com.viaoa.filter.OALikeFilter;
 import com.viaoa.filter.OANotEqualFilter;
 import com.viaoa.filter.OANotLikeFilter;
-import com.viaoa.filter.OATrueFilter;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.hub.HubAddRemoveService;
-import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubData;
 import com.viaoa.hub.HubEvent;
@@ -55,6 +50,35 @@ import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
+
+/*qqqqqqqqqqqqqqqqqq
+CODEX
+
+3. file/class/method: src/main/java/com/viaoa/hub/filter/HubFilter.java:476 addTrigger / src/main/java/com/viaoa/
+     hub/filter/HubFilter.java:410 close
+
+  concrete bug: Triggers created by HubFilter.addTrigger are never retained or removed on close.
+
+  runtime scenario: A HubFilter calls addTrigger, which delegates to hubMaster.addTriggerListener(...). That creates
+  and registers an OATrigger, but no handle is returned or stored. HubFilter.close() removes Hub listeners but
+  explicitly does not remove created triggers. After close, the trigger remains globally registered and still fires
+  into a listener capturing the closed HubFilter.
+
+  why this violates OA/OG trigger semantics: Removing/closing a trigger owner should prevent future eligible
+  executions. This leaves stale trigger registration state, keeps the filter/listener reachable, and continues
+  dispatching closed-filter trigger work.
+
+  minimal fix direction: Make Hub.addTriggerListener return the created OATrigger, store those triggers in HubFilter,
+  and remove them during close().
+
+  suggested CODEX comment location: Around src/main/java/com/viaoa/hub/filter/HubFilter.java:435, where the existing
+  TODO notes created triggers are not removed.
+
+
+
+
+*/
+
 
 /**
  * Base filter component used by a {@link Hub} to include or exclude objects
@@ -1505,7 +1529,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	 * @param propPath the property path to evaluate
 	 */
 	public void addTrueFilter(final String propPath) {
-		_addFilter(propPath, new OATrueFilter(propPath));
+		_addFilter(propPath, new OAEqualFilter(Boolean.TRUE));
 	}
 
 	/**
@@ -1514,7 +1538,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	 * @param propPath the property path to evaluate
 	 */
 	public void addFalseFilter(final String propPath) {
-		_addFilter(propPath, new OAFalseFilter(propPath));
+		_addFilter(propPath, new OAEqualFilter(Boolean.FALSE));
 	}
 
 	/**

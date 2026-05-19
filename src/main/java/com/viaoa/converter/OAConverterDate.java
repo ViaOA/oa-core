@@ -25,6 +25,32 @@ import java.util.Date;
 import com.viaoa.datetime.OADate;
 import com.viaoa.datetime.OADateTime;
 
+/*qqqqqqqqqqq
+CODEX
+
+#13 — OAConverterDate.convertToString(...)
+
+  File/class/method: src/main/java/com/viaoa/converter/OAConverterDate.java, convertToString
+
+  Concrete bug: formatting a java.util.Date converts it through new OADate(fromValue), which clears the time portion
+  before formatting.
+
+  Runtime scenario: OAConverter.toString(date, "yyyy-MM-dd HH:mm:ss") where date contains 2026-05-18 14:30:45 can
+  render as midnight for that date instead of preserving 14:30:45.
+
+  Why this violates OA/OG converter semantics: java.util.Date represents an instant/date-time value, not a date-only
+  value. If the caller supplies a time-bearing format, silently clearing time produces wrong UI/report/template/
+  serialization output.
+
+  Minimal fix direction: use OADateTime for java.util.Date formatting, or only use OADate when the source type is
+  semantically date-only.
+
+  Suggested CODEX comment location: directly above OADate od = new OADate(fromValue); in
+  OAConverterDate.convertToString.
+
+
+*/
+
 /**
  * Converter for transforming values into {@link java.util.Date} instances and
  * formatting {@link java.util.Date} into display-friendly {@link String} values.

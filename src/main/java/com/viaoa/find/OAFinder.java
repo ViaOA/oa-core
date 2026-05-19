@@ -21,13 +21,7 @@ import java.util.*;
 import com.viaoa.cascade.OACascade;
 import com.viaoa.compare.OACompare;
 import com.viaoa.filter.*;
-import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphImpl;
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.HubService;
-import com.viaoa.graph.service.object.OAObjectInfoService;
-import com.viaoa.graph.service.object.OAObjectPropertyService;
-import com.viaoa.graph.service.object.OAObjectSiblingService;
 import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.*;
 import com.viaoa.hub.filter.CustomHubFilter;
@@ -41,6 +35,32 @@ import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
 import com.viaoa.runtime.thread.OAThreadLocal;
+
+/*qqqqqqqqqqqqqqqqq
+CODEX
+
+1. file/class/method
+     src/main/java/com/viaoa/find/OAFinder.java / setup(Class) and callers find(F), find(List<F>,F), _find(Hub<F>,F)
+  2. exact execution path
+     A find call initializes alFound/stack, then calls setup(...) before the traversal try/finally. _setup(...)
+     creates propertyPath, initializes linkInfos, methods, cascades, and can append embedded property-path filters to
+     filter. If embedded filter creation throws after any filter was added, the caller-visible exception escapes
+     before the find cleanup finally runs.
+  3. why it is a real finder correctness bug
+     The finder remains reusable but has partial setup state and a partially mutated filter chain. A later retry can
+     search with duplicated or incomplete embedded filters, causing silent false matches/false negatives.
+  4. semantic/invariant violated
+     Failed setup must not leave a finder partially initialized or partially filtered.
+  5. minimal fix or CODEX/defer recommendation
+     Make setup transactional: save propertyPath, linkInfos, recursiveLinkInfos, methods, cascades, liRecursiveRoot,
+     filter, bAddOrFilter, bAddAndFilter, and bSetup before _setup(c), then restore them on failure. Also put
+     setup(...) inside the public find cleanup window, or make setup(...) itself roll back all state it mutates.
+  6. suggested regression test
+     testFinderSetupFailureRollsBackEmbeddedFiltersAndState
+
+*/
+
+
 
 /**
  * Utility for searching the OA Object Graph along a declarative
@@ -558,11 +578,14 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	 * @return the list of matching objects
 	 */
 	public List<T> find(List<F> alRoot, F objectLastUsed) {
+		
 		if (!bEnableRecursiveRootWasCalled) {
 			bEnableRecursiveRoot = false;
 		}
 
 		alFound = new ArrayList<T>();
+		if (alRoot == null) return alFound;
+
 		if (bEnableStack) {
 			stack = new StackValue[5];
 		}
@@ -575,7 +598,14 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 			return alFound;
 		}
 
-		F sample = alRoot.get(0);
+		F sample = null;
+		for (F objx : alRoot) {
+			if (objx != null) {
+				sample = objx;
+				break;
+			}
+		}
+		if (sample == null) return alFound;
 
 		bStop = false;
 		setup(sample.getClass());
@@ -587,22 +617,28 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 			pos = alRoot.indexOf(objectLastUsed) + 1;
 		}
 
-		for (; pos < x; pos++) {
-			F objectRoot = alRoot.get(pos);
-			if (objectRoot == null) {
-				continue;
+		List<T> al = null;
+		
+		try {
+			for (; pos < x; pos++) {
+				F objectRoot = alRoot.get(pos);
+				if (objectRoot == null) {
+					continue;
+				}
+				stackPos = 0;
+				performFind(objectRoot);
+				if (bStop) {
+					break;
+				}
 			}
-			stackPos = 0;
-			performFind(objectRoot);
-			if (bStop) {
-				break;
-			}
+			al = alFound;
 		}
-		List<T> al = alFound;
-		this.alFound = null;
-		this.stack = null;
-		this.stackPos = 0;
-		this.cascades = null;
+		finally {
+			this.alFound = null;
+			this.stack = null;
+			this.stackPos = 0;
+			this.cascades = null;
+		}		
 		return al;
 	}
 
@@ -620,6 +656,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	 * @return the list of matching objects
 	 */
 	public List<T> find(Hub<F> hubRoot, F objectLastUsed) {
+		final boolean bEnableRecursiveRootHold = bEnableRecursiveRoot; 
 		if (!bEnableRecursiveRootWasCalled) {
 			if (hubRoot != null) {
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubRoot);
@@ -635,7 +672,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 
 		OASiblingHelper<F> siblingHelper = null;
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
-		if (!bUseOnlyLoadedData) {
+		if (hubRoot != null && !bUseOnlyLoadedData) {
 			siblingHelper = new OASiblingHelper<F>(hubRoot);
 			siblingHelper.add(strPropertyPath);
 			srvcOAThreadLocal.addSiblingHelper(siblingHelper);
@@ -646,6 +683,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 			if (siblingHelper != null) {
 				srvcOAThreadLocal.removeSiblingHelper(siblingHelper);
 			}
+			bEnableRecursiveRoot = bEnableRecursiveRootHold;
 		}
 		return al;
 	}
@@ -677,22 +715,27 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 			rootHubPos = hubRoot.getPos(objectLastUsed) + 1;
 		}
 
-		for (;; rootHubPos++) {
-			F objectRoot = hubRoot.getAt(rootHubPos);
-			if (objectRoot == null) {
-				break;
+		List<T> al = null;
+		try {
+			for (;; rootHubPos++) {
+				F objectRoot = hubRoot.getAt(rootHubPos);
+				if (objectRoot == null) {
+					break;
+				}
+				stackPos = 0;
+				performFind(objectRoot);
+				if (bStop) {
+					break;
+				}
 			}
-			stackPos = 0;
-			performFind(objectRoot);
-			if (bStop) {
-				break;
-			}
+			al = alFound;
 		}
-		List<T> al = alFound;
-		this.alFound = null;
-		this.stack = null;
-		this.stackPos = 0;
-		cascades = null;
+		finally {
+			this.alFound = null;
+			this.stack = null;
+			this.stackPos = 0;
+			cascades = null;
+		}
 		return al;
 	}
 
@@ -726,10 +769,15 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	 */
 	public boolean canFindFirst(F objectRoot) {
 		int holdMax = getMaxFound();
-		setMaxFound(1);
-		List<T> al = find(objectRoot);
-		if (getMaxFound() == 1) {
-			setMaxFound(holdMax);
+		List<T> al = null;
+		try {
+			setMaxFound(1);
+			al = find(objectRoot);
+		}
+		finally {
+			if (getMaxFound() == 1) {
+				setMaxFound(holdMax);
+			}
 		}
 		return (al != null && al.size() > 0);
 	}
@@ -759,48 +807,60 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 			return null;
 		}
 		int holdMax = getMaxFound();
-		setMaxFound(1);
-		List<T> al = find(objectRoot);
-		T obj;
-		if (al != null && al.size() > 0) {
-			obj = al.get(0);
-		} else {
-			obj = null;
+		T obj = null;
+		try {
+			setMaxFound(1);
+			List<T> al = find(objectRoot);
+			if (al != null && al.size() > 0) {
+				obj = al.get(0);
+			} else {
+				obj = null;
+			}
 		}
-		if (getMaxFound() == 1) {
-			setMaxFound(holdMax);
+		finally {
+			if (getMaxFound() == 1) {
+				setMaxFound(holdMax);
+			}
 		}
 		return obj;
 	}
 
 	public T findFirst(Hub<F> hub) {
 		int holdMax = getMaxFound();
-		setMaxFound(1);
-		List<T> al = find(hub);
-		T obj;
-		if (al.size() > 0) {
-			obj = al.get(0);
-		} else {
-			obj = null;
+		T obj = null;
+		try {
+			setMaxFound(1);
+			List<T> al = find(hub);
+			if (al.size() > 0) {
+				obj = al.get(0);
+			} else {
+				obj = null;
+			}
 		}
-		if (getMaxFound() == 1) {
-			setMaxFound(holdMax);
+		finally {
+			if (getMaxFound() == 1) {
+				setMaxFound(holdMax);
+			}
 		}
 		return obj;
 	}
 
 	public T findNext(Hub<F> hub, F objectLastUsed) {
 		int holdMax = getMaxFound();
-		setMaxFound(1);
-		List<T> al = find(hub, objectLastUsed);
-		T obj;
-		if (al.size() > 0) {
-			obj = al.get(0);
-		} else {
-			obj = null;
+		T obj = null;
+		try {
+			setMaxFound(1);
+			List<T> al = find(hub, objectLastUsed);
+			if (al.size() > 0) {
+				obj = al.get(0);
+			} else {
+				obj = null;
+			}
 		}
-		if (getMaxFound() == 1) {
-			setMaxFound(holdMax);
+		finally {
+			if (getMaxFound() == 1) {
+				setMaxFound(holdMax);
+			}
 		}
 		return obj;
 	}
@@ -866,76 +926,142 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
     
     
     public T findLargest(final String pp) {
-        CompareFilter cf = new CompareFilter(pp) {
+        CompareFilter compareFilter = new CompareFilter(pp) {
             @Override
             boolean isCompareUsed(int compareValue) {
                 return compareValue >= 0;
             }
         };
-        addFilter(cf);
-        T t = findLast();
-        cf.cancel();
+        T t = null;
+        OAFilter holdFilter = this.filter;
+        boolean bHold1 = bAddOrFilter;
+        boolean bHold2 = bAddAndFilter;
+        try {
+	        addFilter(compareFilter);
+	        t = findLast();
+	        compareFilter.cancel();
+        }
+        finally {
+        	this.filter = holdFilter;
+            this.bAddOrFilter = bHold1;
+            this.bAddAndFilter = bHold2;
+        }
         return t;
     }
     public T findLargest(F objectRoot, String pp) {
-        CompareFilter cf = new CompareFilter(pp) {
+        CompareFilter compareFilter = new CompareFilter(pp) {
             @Override
             boolean isCompareUsed(int compareValue) {
                 return compareValue >= 0;
             }
         };
-        addFilter(cf);
-        T t = findLast(objectRoot);
-        cf.cancel();
+        T t = null;
+        OAFilter holdFilter = this.filter;
+        boolean bHold1 = bAddOrFilter;
+        boolean bHold2 = bAddAndFilter;
+        try {
+	        addFilter(compareFilter);
+	        t = findLast(objectRoot);
+	        compareFilter.cancel();
+        }
+        finally {
+        	this.filter = holdFilter;
+            this.bAddOrFilter = bHold1;
+            this.bAddAndFilter = bHold2;
+        }
         return t;
     }
     public T findLargest(Hub<F> hub, String pp) {
-        CompareFilter cf = new CompareFilter(pp) {
+        CompareFilter compareFilter = new CompareFilter(pp) {
             @Override
             boolean isCompareUsed(int compareValue) {
                 return compareValue >= 0;
             }
         };
-        addFilter(cf);
-        T t = findLast(hub);
-        cf.cancel();
+        T t = null;
+        OAFilter holdFilter = this.filter;
+        boolean bHold1 = bAddOrFilter;
+        boolean bHold2 = bAddAndFilter;
+        try {
+	        addFilter(compareFilter);
+	        t = findLast(hub);
+	        compareFilter.cancel();
+        }
+        finally {
+        	this.filter = holdFilter;
+            this.bAddOrFilter = bHold1;
+            this.bAddAndFilter = bHold2;
+        }
         return t;
     }
     
     public T findSmallest(final String pp) {
-        CompareFilter cf = new CompareFilter(pp) {
+        CompareFilter compareFilter = new CompareFilter(pp) {
             @Override
             boolean isCompareUsed(int compareValue) {
                 return compareValue <= 0;
             }
         };
-        addFilter(cf);
-        T t = findLast();
-        cf.cancel();
+        T t = null;
+        OAFilter holdFilter = this.filter;
+        boolean bHold1 = bAddOrFilter;
+        boolean bHold2 = bAddAndFilter;
+        try {
+	        addFilter(compareFilter);
+	        t = findLast();
+	        compareFilter.cancel();
+        }
+        finally {
+        	this.filter = holdFilter;
+            this.bAddOrFilter = bHold1;
+            this.bAddAndFilter = bHold2;
+        }
         return t;
     }
     public T findSmallest(F objectRoot, String pp) {
-        CompareFilter cf = new CompareFilter(pp) {
+        CompareFilter compareFilter = new CompareFilter(pp) {
             @Override
             boolean isCompareUsed(int compareValue) {
                 return compareValue <= 0;
             }
         };
-        addFilter(cf);
-        T t = findLast(objectRoot);
-        cf.cancel();
+        T t = null;
+        OAFilter holdFilter = this.filter;
+        boolean bHold1 = bAddOrFilter;
+        boolean bHold2 = bAddAndFilter;
+        try {
+	        addFilter(compareFilter);
+	        t = findLast(objectRoot);
+	        compareFilter.cancel();
+        }
+        finally {
+        	this.filter = holdFilter;
+            this.bAddOrFilter = bHold1;
+            this.bAddAndFilter = bHold2;
+        }
         return t;
     }
     public T findSmallest(Hub<F> hub, String pp) {
-        CompareFilter cf = new CompareFilter(pp) {
+        CompareFilter compareFilter = new CompareFilter(pp) {
             @Override
             boolean isCompareUsed(int compareValue) {
                 return compareValue <= 0;
             }
         };
-        addFilter(cf);
-        T t = findLast(hub);
-        cf.cancel();
+        T t = null;
+        OAFilter holdFilter = this.filter;
+        boolean bHold1 = bAddOrFilter;
+        boolean bHold2 = bAddAndFilter;
+        try {
+	        addFilter(compareFilter);
+	        t = findLast(hub);
+	        compareFilter.cancel();
+        }
+        finally {
+        	this.filter = holdFilter;
+            this.bAddOrFilter = bHold1;
+            this.bAddAndFilter = bHold2;
+        }
         return t;
     }
 
@@ -976,17 +1102,29 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
      * Note: null values are not included.
      */
     public List<T> findDuplicates(F objectRoot, String pp) {
-        DuplicateFilter f = new DuplicateFilter(pp);
-        addFilter(f);
-        List<T> al = find(objectRoot);
-        if (al == null) al = new ArrayList<T>();
-        f.cancel();
-        f.hm.clear();
-        
-        for (Map.Entry<Object, OAObject> entry : f.hm2.entrySet()) {
-            al.add((T) entry.getValue());
-        }
-        f.hm2.clear();
+    	OAFilter holdFilter = this.filter;
+        boolean bHold1 = bAddOrFilter;
+        boolean bHold2 = bAddAndFilter;
+    	DuplicateFilter f = new DuplicateFilter(pp);
+        List<T> al = null;
+    	try {
+	        addFilter(f);
+	        al = find(objectRoot);
+	        
+	        if (al == null) al = new ArrayList<T>();
+	        f.cancel();
+	        f.hm.clear();
+	        
+	        for (Map.Entry<Object, OAObject> entry : f.hm2.entrySet()) {
+	            al.add((T) entry.getValue());
+	        }
+	        f.hm2.clear();
+    	}
+    	finally {
+    		this.filter = holdFilter;
+            this.bAddOrFilter = bHold1;
+            this.bAddAndFilter = bHold2;
+    	}
         return al;
     }
     
@@ -1011,12 +1149,18 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 
 		bStop = false;
 		setup(objectRoot.getClass());
-		performFind(objectRoot);
-		List<T> al = alFound;
-		this.alFound = null;
-		this.stack = null;
-		this.stackPos = 0;
-		this.cascades = null;
+		List<T> al = null;
+		
+		try {
+			performFind(objectRoot);
+			al = alFound;
+		}
+		finally {
+			this.alFound = null;
+			this.stack = null;
+			this.stackPos = 0;
+			this.cascades = null;
+		}
 		return al;
 	}
 
@@ -1025,7 +1169,6 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	}
 
 	protected void setup(Class c) {
-
 		if (bSetup) {
 			if (cascades == null && linkInfos != null) {
 				cascades = new OACascade[linkInfos.length];
@@ -1035,12 +1178,17 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 			}
 			return;
 		}
-		bSetup = true;
-
-		if (propertyPath != null || c == null) {
-			return;
+		if (c == null) return;
+		try {
+			_setup(c);
+			bSetup = true;
 		}
-
+		finally {
+		}
+	}
+	
+	
+	private void _setup(Class c) {
 		propertyPath = new OAPath(c, strPropertyPath, false);
 
 		linkInfos = propertyPath.getLinkInfos();

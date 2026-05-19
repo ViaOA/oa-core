@@ -28,6 +28,26 @@ import com.viaoa.datetime.OADate;
 import com.viaoa.datetime.OADateTime;
 import com.viaoa.datetime.OATime;
 
+
+/*qqqqqqqqqqqqqqqq
+CODEX
+#6 — OAConverterLocalDateTime.convert(...)
+
+Concrete bug: byte[] conversion requires 8 bytes via ByteBuffer.getLong(), unlike other date/time converters that
+accept variable-length numeric byte arrays.
+
+Runtime scenario: datasource/serialization passes epoch millis as a BigInteger byte array shorter than 8 bytes.
+Other converters accept it, but LocalDateTime throws BufferUnderflowException.
+
+Why this violates converter semantics: this creates inconsistent converter behavior and an uncontrolled runtime
+exception for a normal numeric byte representation.
+
+Minimal fix direction: use new BigInteger((byte[]) fromValue).longValue() like the related converters, or explicitly
+reject invalid byte lengths by returning null.
+
+*/
+
+
 /**
  * Converter for transforming values into {@link LocalDateTime} and formatting
  * them for display using OA {@link OADateTime} rules.

@@ -18,6 +18,37 @@ package com.viaoa.converter;
 import com.viaoa.lang.OAStr;
 import com.viaoa.lang.OAString;
 
+/*qqqqqqqqqqqqqqqqqq
+CODEX
+
+#2 — OAConverterBoolean.convert(...)
+
+  Concrete bug: signed numeric zero strings convert to true.
+
+  Runtime scenario: "-0", "+0", or "-0.00" pass OAString.isNumber(str), then the sign character is treated as non-
+  zero, so the converter returns true.
+
+  Why this violates converter semantics: numeric boolean coercion should treat numeric zero as false. This silently
+  stores or compares the wrong boolean value.
+
+  Minimal fix direction: parse the numeric string and compare to zero, or explicitly ignore a leading +/- in the
+  current scan loop.
+
+#4 — OAConverterBoolean.convert(...)
+
+  Concrete bug: custom boolean format with only one field can throw NullPointerException.
+
+  Runtime scenario: a format like "yes" matches the documented optional-format style, but for non-yes input the second
+  OAString.field(fmt, ";", 2) can return null, then s.equalsIgnoreCase(str) throws.
+
+  Why this violates converter semantics: failed conversion should be controlled and caller-visible as null/failed
+  conversion, not an incidental NPE from optional format handling.
+
+  Minimal fix direction: null-check each format field before equalsIgnoreCase; define whether missing false-token
+  means “unrecognized returns null”.
+
+*/
+
 /**
  * Converter for transforming values into {@link Boolean} and formatting
  * Boolean values into text using optional format rules.

@@ -53,6 +53,30 @@ CODEX
   Suggested invariant: GRAPH_SYNC_SERVER_OPS_REQUIRE_SERVER_ROLE
   Suggested test coverage: saveCache in server mode succeeds; non-server modes fail predictably.  
   
+5. src/main/java/com/viaoa/graph/service/OASyncService.java:138
+
+  Concrete bug:
+  OASyncService.start() sets bRunning = true only after syncServer.start() or syncClient.start() completes. If startup
+  partially allocates resources and then throws, bRunning remains false, and OASyncService.stop() immediately returns
+  without cleanup.
+
+  Runtime scenario:
+  Server or client startup starts sockets/threads/files, then fails later in the startup sequence. Caller catches the
+  startup exception and calls OASyncService.stop() to clean up. stop() returns because bRunning is false.
+
+  Why this violates sync semantics:
+  Partial startup failure can leave sync/remote resources running while the service reports not running and refuses
+  cleanup.
+
+  Minimal fix direction:
+  Track “starting/resources allocated” separately, or make start() cleanup in its own catch. stop() should be able to
+  clean partially-started server/client resources.
+
+  Suggested CODEX comment location:
+  OASyncService.start() and stop() around the bRunning guard.
+
+  Suggested regression test:
+  testOASyncServiceStopCleansUpAfterPartialStartFailure()
   
 */
 

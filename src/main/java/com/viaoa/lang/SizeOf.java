@@ -22,6 +22,44 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
 
+/*qqqqqqqqqq
+Codex
+
+1. file/class/method
+     src/main/java/com/viaoa/lang/SizeOf.java / _sizeOf(Object objx)
+  2. exact execution path
+     An object has two or more fields pointing to the same referenced object. The first field adds _sizeOf(shared) -
+     defaultSize. The second field sees the same object in hashMap, so _sizeOf(shared) returns 0, and the caller still
+     subtracts defaultSize.
+  3. why it is an obvious concrete bug
+     Repeated/shared references reduce the computed size by defaultSize each time after the first. The result can
+     undercount and, with enough repeated references, become visibly wrong.
+  4. minimal fix or CODEX/defer recommendation
+     Store the child size in a local variable and only subtract defaultSize when the child contributed a positive/
+     reference size, or move pointer-subtraction logic into _sizeOf with explicit “already seen” semantics.
+  5. suggested regression test
+     testSizeOfSharedReferenceDoesNotSubtractPointerForAlreadySeenObject
+
+
+
+6. file/class/method
+     src/main/java/com/viaoa/lang/SizeOf.java / _sizeOf(Object objx) object-array branch
+  7. exact execution path
+     sizeOf(new Object[] { child }, true) enters the array branch. It starts with the array object’s shallow size,
+     which already includes reference slots, then adds _sizeOf(child) without subtracting the reference slot size.
+     Object fields use _sizeOf(obj) - defaultSize, but object arrays do not.
+  8. why it is an obvious concrete bug
+     Object arrays overcount referenced element sizes compared with normal object fields. The same child reference has
+     different accounting depending on whether it is stored in a field or an array.
+  9. minimal fix or CODEX/defer recommendation
+     Apply the same reference-slot adjustment for non-null object-array elements, while avoiding the repeated-
+     reference undercount from issue #1.
+  10. suggested regression test
+     testSizeOfObjectArrayDoesNotDoubleCountReferenceSlot
+
+
+*/
+
 
 /*
  * Used to get the actual object size, similar to C sizeof method.

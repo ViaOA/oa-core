@@ -11,6 +11,59 @@ import com.viaoa.replication.remote.RemoteMasterInterface;
 import com.viaoa.replication.remote.RemoteMasterRegisterInterface;
 import com.viaoa.sync.model.ClientInfo;
 
+
+/*qqqqqqqqqqqqqqqqqqqqq
+CODEX
+
+5. file/class/method
+     src/main/java/com/viaoa/replication/client/OAReplClientConnection.java:53 start
+
+  concrete bug
+  bIsStarted is set before connection/proxy setup succeeds, and partial startup failure does not clean up opened
+  resources.
+
+  runtime scenario
+  getMultiplexerClient().start() succeeds, then getRemoteMaster() or remote setup fails. The object remains bIsStarted
+  = true, bIsConnected = false; stop() returns early because !bIsConnected, so partial resources can remain open and
+  the instance cannot be safely restarted.
+
+  why this violates OA/OG replication semantics
+  Reconnect/retry after partial connection failure can leak transport state or leave stale replication connection
+  state.
+
+  minimal fix direction
+  Set started/connected only after successful setup, and wrap startup in try/catch that closes any partially opened
+  multiplexer/socket resources.
+
+  suggested CODEX comment location
+  At the top of OAReplClientConnection.start() before bIsStarted = true.
+
+6. file/class/method
+     src/main/java/com/viaoa/replication/client/OAReplClientConnection.java:104 stop
+
+  concrete bug
+  If remoteMaster.setEnabled(false) throws, getMultiplexerClient().close() is skipped.
+
+  runtime scenario
+  Connection is broken while stopping. The remote disable call throws. Because close is after that call and there is
+  no finally, socket/multiplexer cleanup does not run.
+
+  why this violates OA/OG replication semantics
+  Replication disconnect cleanup can leave resources and stale connection state alive, affecting reconnect and worker
+  shutdown behavior.
+
+  minimal fix direction
+  Always close the multiplexer in a finally; treat remote disable as best-effort cleanup.
+
+  suggested CODEX comment location
+  Inside stop() around remoteMaster.setEnabled(false).
+
+  suggested regression test
+  testReplClientConnectionStopClosesMultiplexerWhenRemoteDisableFails
+
+*/
+
+
 public abstract class OAReplClientConnection {
     private static Logger LOG = Logger.getLogger(OAReplClientConnection.class.getName());
 

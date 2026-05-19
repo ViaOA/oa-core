@@ -48,6 +48,404 @@ import com.viaoa.runtime.OAThreadService;
 import com.viaoa.runtime.thread.OARemoteThread;
 import com.viaoa.serialize.OAObjectSerializer;
 
+/*qqqqqqqqqqqqqq
+CODEX
+
+1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/OARemoteMultiplexerServer.java
+     _processSocketCtoSRequest(...)
+  2. concrete bug
+     Queued C-to-S requests with missing/invalid bind can throw NPE instead of returning the intended remote error.
+  3. runtime scenario
+     ri.exceptionMessage is set when the bind or method cannot be resolved. For CtoS_QueuedRequest, code still
+     dereferences ri.bind.asyncQueueName.
+  4. why this violates OA/OG remote semantics
+     A stale proxy/bind error should be correlated back to the caller. Instead, the server reader can fail internally
+     and the client waits until timeout, creating false transport failure instead of remote dispatch failure.
+  5. minimal fix direction
+     If ri.exceptionMessage != null, send/queue the error response without using ri.bind, or fail the request
+     immediately.
+  6. suggested CODEX comment location
+     At the CtoS_QueuedRequest branch before session.setupAsyncQueueSender(...).
+
+  #5
+
+  1. file/class/method
+     OARemoteMultiplexerServer.java
+     onInvokeForStoC(Session, RequestInfo)
+  2. concrete bug
+     Queued callback requests are inserted into hmClientCallbackRequestInfo before queue enqueue succeeds, and failure
+     can leave stale pending state.
+  3. runtime scenario
+     hmClientCallbackRequestInfo.put(ri.messageId, ri) runs, then cq.addMessageToQueue(ri) throws or the queue is
+     unavailable. The remove happens only after the wait path.
+  4. why this violates OA/OG remote semantics
+     The server retains a pending request that was never successfully delivered to the client queue. That leaks
+     correlation state and can confuse later diagnostics/callback response handling.
+  5. minimal fix direction
+     Wrap the put/enqueue/wait/remove sequence in try/finally, or put only after delivery is guaranteed.
+  6. suggested CODEX comment location
+     Around the queued StoC callback branch where hmClientCallbackRequestInfo.put is called.
+
+  #6
+
+  1. file/class/method
+     OARemoteMultiplexerServer.java
+     onInvokeForStoC(...)
+  2. concrete bug
+     A direct StoC socket can be returned to the session pool after write/read failure.
+  3. runtime scenario
+     The server gets a StoC socket, writes a request, reads a response, and releases the socket on success. If an
+     exception occurs while the stream is partially written/read, the outer finally re-adds ri.socket to the pool.
+  4. why this violates OA/OG remote semantics
+     A socket with a partial frame or failed response can be reused for later calls, causing framing corruption or
+     wrong response delivery.
+  5. minimal fix direction
+     Track whether the request/response completed cleanly. Only return the socket to the pool on success; otherwise
+     close/discard it.
+  6. suggested CODEX comment location
+     Outer finally that calls session.addSocketForStoC(ri.socket).
+
+ #10
+
+  1. file/class/method
+     OARemoteMultiplexerServer.java
+     waitForMethodInvoked(...), waitForProcessedByServer(...)
+  2. concrete bug
+     InterruptedException is swallowed during remote wait loops.
+  3. runtime scenario
+     A remote worker or shutdown path interrupts a thread waiting for invocation/processing. The catch-all catch
+     (Exception e) ignores it and continues waiting, including potentially indefinite waits.
+  4. why this violates OA/OG remote semantics
+     Shutdown/disconnect should not leave remote workers permanently stalled. Swallowing interrupts breaks Java thread
+     semantics and can block remote cleanup.
+  5. minimal fix direction
+     Catch InterruptedException separately, restore interrupt status, set failure state, and return/throw visibly.
+  6. suggested CODEX comment location
+     Inside both wait loops around the wait(...) calls.
+
+#2
+
+  1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/OARemoteMultiplexerServer.java
+     _processSocketCtoSRequest(...)
+  2. concrete bug
+     CtoS_ReturnOnQueueSocket bind/method resolution errors do not send a response to the waiting client.
+  3. runtime scenario
+     Client sends CtoS_ReturnOnQueueSocket. Server cannot resolve bind or method and sets ri.exceptionMessage. The
+     branch does:
+
+  if (ri.exceptionMessage != null) return true;
+
+  No queued-socket error response is written.
+
+  4. why this violates OA/OG remote semantics
+     This request type expects a correlated response. The client sees a timeout instead of the actual dispatch error,
+     so remote failure is misclassified as transport/correlation failure.
+  5. minimal fix direction
+     For CtoS_ReturnOnQueueSocket, write an error response on the queue socket or same correlation path before
+     returning.
+  6. suggested CODEX comment location
+     At the CtoS_ReturnOnQueueSocket branch before the return true.
+
+  #3
+
+  1. file/class/method
+     OARemoteMultiplexerServer.java
+     _processSocketCtoSRequest(...)
+  2. concrete bug
+     CtoS_QueuedBroadcast dereferences ri.bind without checking bind/method resolution failure.
+  3. runtime scenario
+     A valid OA client has a stale broadcast proxy or server-side broadcast bind was removed. Server sets
+     ri.exceptionMessage = "bind Object not found on server" but later does:
+
+  OACircularQueue<RequestInfo> cq = hmAsyncCircularQueue.get(ri.bind.asyncQueueName);
+
+  4. why this violates OA/OG remote semantics
+     Instead of returning/logging the intended stale-bind failure, the CtoS socket processor can throw NPE. That can
+     drop the broadcast processing path and leave the caller waiting for an ack/processed signal.
+  5. minimal fix direction
+     If ri.exceptionMessage != null, avoid ri.bind dereference and send/queue a correlated error/ack according to
+     broadcast semantics.
+  6. suggested CODEX comment location
+     At the CtoS_QueuedBroadcast processing branch.
+
+  #4
+
+  1. file/class/method
+     OARemoteMultiplexerServer.java
+     createLookup(...) / getBindInfo(...)
+  2. concrete bug
+     Re-registering an existing lookup name does not update the bound implementation object.
+  3. runtime scenario
+     createLookup("x", oldObj, iface, ...) creates a BindInfo. Later createLookup("x", newObj, iface, ...) calls
+     getBindInfo, which returns the existing bind via computeIfAbsent. createLookup stores newObj in hmBindObject, but
+     the existing BindInfo.weakRef still points to oldObj.
+  4. why this violates OA/OG remote semantics
+     Clients continue invoking the old object, or a GC’d old object, while the server API appears to have registered
+     the new implementation. That is stale remote dispatch state.
+  5. minimal fix direction
+     Either reject duplicate lookup names visibly, or update the existing BindInfo object/reference and validate
+     compatible interface/queue settings.
+  6. suggested CODEX comment location
+     In createLookup(...) after BindInfo bind = getBindInfo(...), or inside getBindInfo(...) when an existing bind is
+     returned.
+
+  #5
+
+  1. file/class/method
+     OARemoteMultiplexerServer.java
+     createBroadcast(...)
+  2. concrete bug
+     Re-creating a broadcast with the same bind name and a new callback does not update the callback used for inbound
+     client broadcasts.
+  3. runtime scenario
+     First call creates the bind through computeIfAbsent. A later call with the same bindName and a different callback
+     returns the existing BindInfo. The code adds the new callback to hmBindObject, but does not call
+     bind.setObject(...), so bind.getObject() still returns the original callback/null.
+  4. why this violates OA/OG remote semantics
+     The server appears to register a new broadcast callback, but inbound broadcast messages still target stale
+     callback state or fail as “remote object impl is null”.
+  5. minimal fix direction
+     For an existing bind, either reject callback replacement or update the bind weak reference and held object
+     consistently.
+  6. suggested CODEX comment location
+     In createBroadcast(...) immediately after getBindInfo(...).
+
+  #6
+
+  1. file/class/method
+     OARemoteMultiplexerServer.java
+     createBroadcast(...) / onInvokeBroadcast(...)
+  2. concrete bug
+     Broadcast proxy invocation can silently return success/default when onInvokeBroadcast records an exception
+     message.
+  3. runtime scenario
+     onInvokeBroadcast sets ri.exceptionMessage for a missing method or invalid broadcast dispatch path and returns
+     ri. The proxy invocation handler always returns ri.response and does not throw when ri.exception or
+     ri.exceptionMessage is set.
+  4. why this violates OA/OG remote semantics
+     Broadcast dispatch failure can appear successful to server code. For non-void return types this can return null/
+     default; for void methods the caller gets no visible failure even though no valid broadcast dispatch occurred.
+  5. minimal fix direction
+     After onInvokeBroadcast, the invocation handler should throw ri.exception / ri.exceptionMessage before returning
+     ri.response.
+  6. suggested CODEX comment location
+     In the broadcast proxy InvocationHandler.invoke(...).
+
+#2
+
+  1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/OARemoteMultiplexerServer.java
+     processQueueMessagesOnServer(...)
+  2. concrete bug
+     The broadcast/server queue reader can replay already-processed messages after an exception.
+  3. runtime scenario
+     setupBroadcastQueueReader captures final long qPos and repeatedly calls processQueueMessagesOnServer(cq,
+     bindName, qPos). Inside processQueueMessagesOnServer, the local qpos advances as messages are read. If any
+     exception escapes, the outer loop logs and restarts the method with the original qPos, not the last committed
+     queue position.
+  4. why this violates OA/OG remote semantics
+     A transient exception can cause duplicate remote execution or duplicate broadcast processing for messages that
+     were already processed before the failure. That violates remote ordering/delivery semantics.
+  5. minimal fix direction
+     Maintain the queue position outside the processing method, or have the method return the last committed position
+     and resume from there after failure.
+  6. suggested CODEX comment location
+     At setupBroadcastQueueReader(...), where qPos is captured and reused after catch/retry.
+
+  #3
+
+  1. file/class/method
+     OARemoteMultiplexerServer.java
+     _invokeByRemoteThread(...) / processCtoSArguments(...) / Session._writeQueueMessages(...)
+  2. concrete bug
+     Client-originated broadcast arguments can be mutated for server-side callback handling before they are forwarded
+     to other clients.
+  3. runtime scenario
+     A client sends CtoS_QueuedBroadcast with remote/compressed parameters. The server queue reader invokes
+     _invokeByRemoteThread, which calls processCtoSArguments(ri, session) and mutates ri.args in-place. The same
+     RequestInfo remains in the circular queue and Session._writeQueueMessages later writes ri.args to other clients.
+  4. why this violates OA/OG remote semantics
+     Server-local argument conversion can corrupt the broadcast payload seen by other clients. Remote bind names can
+     become server-side proxy objects, and compressed payloads can be unwrapped before fan-out.
+  5. minimal fix direction
+     Use separate argument arrays for server callback invocation vs client fan-out, or preserve the original wire
+     arguments before server-side conversion.
+  6. suggested CODEX comment location
+     At _invokeByRemoteThread(...) before processCtoSArguments(...), or at the CtoS_QueuedBroadcast write branch in
+     _writeQueueMessages(...).
+
+  #4
+
+  1. file/class/method
+     OARemoteMultiplexerServer.java
+     Session.setupAsyncQueueSender(...) / writeQueueMessages(...)
+  2. concrete bug
+     If an async queue sender thread dies, the session marker prevents it from being restarted.
+  3. runtime scenario
+     setupAsyncQueueSender puts hmAsyncQueue.put(asyncQueueName, "") before starting the sender thread. If
+     writeQueueMessages later throws while the real socket is still open, the thread logs and stops. The marker
+     remains in hmAsyncQueue, so future setupAsyncQueueSender(asyncQueueName) returns immediately and no replacement
+     sender is created.
+  4. why this violates OA/OG remote semantics
+     The session can remain connected but stop delivering queued remote/sync/broadcast messages for that queue. That
+     is silent message loss/stall for normal OA transport failure/recovery paths.
+  5. minimal fix direction
+     On sender thread exit, remove the async queue marker and socket entry, or explicitly disconnect the session so
+     callers do not believe queue delivery is still active.
+  6. suggested CODEX comment location
+     In the catch block of the async queue sender thread, and/or the finally of writeQueueMessages(...).
+
+#2
+
+  1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/OARemoteMultiplexerServer.java
+     Session.getBindInfo(Object obj)
+  2. concrete bug
+     Session-local bind lookup uses obj.equals(bindx.weakRef.get()) instead of identity comparison.
+  3. runtime scenario
+     A client sends two distinct remote callback/proxy objects whose equals() returns true. The server session scans
+     bind entries and can return the first equal bind instead of the bind for the actual object instance.
+  4. why this violates OA/OG remote semantics
+     Remote bind identity must be object-reference identity, not semantic equality. Otherwise calls can be routed
+     through the wrong bind name and execute against the wrong remote object/proxy.
+  5. minimal fix direction
+     Use == consistently, matching the global server/client bind lookup behavior.
+  6. suggested CODEX comment location
+     Inside Session.getBindInfo(Object obj) at the obj.equals(...) comparison.
+
+
+#2
+
+  1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/OARemoteMultiplexerServer.java
+     _processSocketCtoSRequest(...), CtoS_QueuedResponse branch
+  2. concrete bug
+     A client callback response can be removed from the pending map before return-value conversion and queueing
+     succeed.
+  3. runtime scenario
+     Server receives CtoS_QueuedResponse, does:
+
+  RequestInfo rix = hmClientCallbackRequestInfo.remove(ri.messageId);
+  ...
+  processCtoSReturnValue(rix, session);
+  ...
+  cq.addMessageToQueue(rix);
+
+  If processCtoSReturnValue or queue insertion throws, the original waiting RequestInfo is no longer in
+  hmClientCallbackRequestInfo and is not notified with the real failure.
+
+  4. why this violates OA/OG remote semantics
+     The server-side caller can time out instead of receiving the actual callback return processing error. Correlation
+     state is lost before the response reaches a terminal state.
+  5. minimal fix direction
+     Do conversion and queueing in a guarded path that sets rix.exception / exceptionMessage and notifies or queues
+     the failed response. Remove from the pending map only after terminal handling is guaranteed.
+  6. suggested CODEX comment location
+     In the CtoS_QueuedResponse branch immediately after hmClientCallbackRequestInfo.remove(...).
+
+ #3
+
+  1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/OARemoteMultiplexerServer.java
+     invokeUsingRemoteThread(...)
+  2. concrete bug
+     Remote client thread selection can fail after AtomicInteger overflow.
+  3. runtime scenario
+     aiRemoteClientThreadPos.incrementAndGet() % x is used as an ArrayList index. After enough remote dispatches,
+     incrementAndGet() can overflow negative. Java % can return a negative remainder, causing
+     alRemoteClientThread.get(negativeIndex).
+  4. why this violates OA/OG remote semantics
+     A long-running OA server can start failing valid remote dispatches after counter overflow. This is not hostile
+     input; it is normal high-volume runtime behavior.
+  5. minimal fix direction
+     Use Math.floorMod(aiRemoteClientThreadPos.incrementAndGet(), x) or mask to a non-negative value before indexing.
+  6. suggested CODEX comment location
+     At the alRemoteClientThread.get(...) expression inside invokeUsingRemoteThread(...).
+
+
+1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/OARemoteMultiplexerServer.java
+     Session._writeOnQueueSocketX(...)
+  2. concrete bug
+     CtoS_ReturnOnQueueSocket can fail to send any terminal response if the async queue socket is missing.
+  3. runtime scenario
+     Server processes a queued-return request, invokes the method, then calls:
+
+  session.setupAsyncQueueSender(ri.bind.asyncQueueName);
+  session.writeOnQueueSocket(ri);
+
+  Inside _writeOnQueueSocketX(...):
+
+  VirtualSocketInfo vsi = hmAsyncQueueSocket.get(qname);
+  if (vsi == null) {
+      ri.exceptionMessage = "...";
+      return;
+  }
+
+  No response is written and no caller is notified.
+
+  4. why this violates OA/OG remote semantics
+     This request type requires a correlated response. A valid OA queue-socket setup race/failure becomes a client
+     timeout instead of a concrete remote failure.
+  5. minimal fix direction
+     If no queue socket exists, throw or route a terminal failure through the same request correlation path. Do not
+     just set ri.exceptionMessage and return silently.
+  6. suggested CODEX comment location
+     At _writeOnQueueSocketX(...), immediately before the if (vsi == null) return.
+
+
+1. file/class/method
+     src/main/java/com/viaoa/remote/multiplexer/OARemoteMultiplexerServer.java
+     _invokeByRemoteThread(...)
+  2. concrete bug
+     Exceptions outside the actual reflected method invocation can leave the remote request without a terminal
+     response/notification.
+  3. runtime scenario
+     _invokeByRemoteThread(...) only catches exceptions around:
+
+  ri.response = ri.method.invoke(...);
+
+  But these normal OA-controlled steps are outside that guarded terminal path:
+
+  processCtoSArguments(ri, session);
+  processCtoSReturnValue(ri, session);
+  cq.addMessageToQueue(ri);
+  session.writeOnQueueSocket(ri);
+
+  Concrete examples:
+
+  - compressed argument unwrap fails
+  - remote parameter proxy/bind creation fails
+  - remote return bind creation fails
+  - compressed return wrapping path fails
+  - response queue insertion fails
+  - queue-socket write fails after method execution
+
+  For several request types, the remote worker catches/logs the escaped exception at the thread loop, clears
+  requestInfo, and does not set ri.exception, ri.exceptionMessage, or methodInvoked in a way the waiting caller can
+  observe.
+
+  4. why this violates OA/OG remote semantics
+     Remote invocation failure must become a correlated terminal failure. Here, a real server-side request-processing
+     failure can become a client timeout or silent queue stall, misclassifying a dispatch/serialization/bind failure
+     as transport delay.
+  5. minimal fix direction
+     Wrap the full invoke/package/respond sequence in a terminal request guard. Any exception after request ownership
+     is established should set ri.exception or ri.exceptionMessage and then notify/queue/write a failure response
+     according to request type. For CtoS_ReturnOnQueueSocket, write failure should fail the connection or otherwise
+     wake the waiting caller, not just set ri.exception locally.
+  6. suggested CODEX comment location
+     At _invokeByRemoteThread(...), before processCtoSArguments(ri, session), with specific notes around
+     processCtoSReturnValue(...), cq.addMessageToQueue(...), and session.writeOnQueueSocket(...).
+
+
+
+
+
+*/
+
 /**
  * Server-side implementation of OA's remoting layer built on top of the
  * Multiplexer messaging subsystem. This class receives remote method calls

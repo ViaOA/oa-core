@@ -314,17 +314,37 @@ public class OAConverterNumber implements OAConverterInterface<Number> {
 	 * @return a cleaned numeric string suitable for parsing
 	 */
 	String cleanNumber(String value) {
+		if (value == null) return null;
 		value = CLEAN_PATTERN.matcher(value).replaceAll("");
 
-		int x = value.length();
-		if (x > 0) {
-			char c = value.charAt(x - 1);
-			if (c == 'k' || c == 'K') {
-				value = value.substring(0, x - 1) + "000";
-			}
-			else if (c == 'm' || c == 'M') {
-				value = value.substring(0, x - 1) + "000000";
-			}
+		int len = value.length();
+		if (len == 0) return value;
+
+		char c = value.charAt(len - 1);
+		String add = null;
+		if (c == 'k' || c == 'K') {
+			value = value.substring(0, len - 1);
+			add = "000";
+		}
+		else if (c == 'm' || c == 'M') {
+			value = value.substring(0, len - 1);
+			add = "000000";
+		}
+		
+		
+		String beg = null;
+		String end = null;
+		int dpos = value.indexOf('.');
+		if (dpos >= 0) {
+			beg = OAStr.substring(value, 0, dpos);
+			end = OAStr.substring(value, dpos, len);
+		}
+		else {
+			beg = value;
+			end = "";
+		}
+		if (beg != null || end != null || add != null) {
+			value = (beg==null?"":beg) + (end==null?"":end) + (add==null?"":add);
 		}
 		return value;
 	}

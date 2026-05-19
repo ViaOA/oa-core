@@ -17,6 +17,31 @@ package com.viaoa.compare;
 
 import com.viaoa.converter.OAConv;
 
+/*qqqqqqqqqqqq
+CODEX
+
+#4 — OAGreaterThanZero.equals(...) / OALessThanZero.equals(...)
+
+  File/class/method:
+  src/main/java/com/viaoa/compare/OAGreaterThanZero.java, equals
+  src/main/java/com/viaoa/compare/OALessThanZero.java, equals
+
+  Concrete bug: both special numeric predicates convert to Number and compare using doubleValue().
+
+  Runtime scenario: a very small non-zero BigDecimal, such as new BigDecimal("1e-400"), can underflow to 0.0.
+  OAGreaterThanZero.instance.equals(value) then returns false even though the value is greater than zero.
+
+  Why this violates OA/OG comparison semantics: precision loss before comparison causes false negatives for numeric
+  predicates. These tokens can affect filters, query conditions, and object matching.
+
+  Minimal fix direction: compare BigDecimal/BigInteger using exact compareTo(BigDecimal.ZERO) / signum() before
+  falling back to double for floating types.
+
+  Suggested CODEX comment location: above the num.doubleValue() comparisons in both classes.
+
+
+*/
+
 /**
  * Singleton marker object used by OA's comparison and filtering framework to
  * represent the predicate "numeric value greater than zero". When compared

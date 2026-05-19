@@ -20,6 +20,20 @@ import java.util.ArrayList;
 import com.viaoa.datetime.OADate;
 import com.viaoa.datetime.OADateTime;
 
+/*qqqqqqqqqqqqqqqqqqq
+CODEX
+
+7. src/main/java/com/viaoa/schedule/OASchedulerPlan.java:110 OASchedulerPlan(OADateTime dt)
+     Bug/risk: constructor says “starting at supplied date-time and extending one day forward,” but end is new
+     OADate(dt).addDays(1), i.e. next midnight, not dt + 1 day.
+     Production impact: a plan beginning at 2026-05-19 13:00 ends at 2026-05-20 00:00, cutting off 13 hours of the
+     expected one-day window.
+     Severity: Medium
+     Minimal hardening: either use dt.addDays(1) for a 24-hour window or clarify/enforce “until next local midnight.”
+
+
+*/
+
 /**
  * Represents a complete scheduling plan for a resource. The plan defines
  * multiple categories of date–time ranges such as open, preferred, blocked,

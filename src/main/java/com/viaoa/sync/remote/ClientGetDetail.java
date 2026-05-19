@@ -21,13 +21,7 @@ import java.util.logging.Logger;
 import com.viaoa.callback.OAObjectSerializerCallback;
 import com.viaoa.compare.OANotExist;
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectCacheService;
-import com.viaoa.graph.service.object.OAObjectInfoService;
-import com.viaoa.graph.service.object.OAObjectKeyService;
-import com.viaoa.graph.service.object.OAObjectPropertyService;
-import com.viaoa.graph.service.object.OAObjectReflectService;
 import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
@@ -37,6 +31,72 @@ import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
 import com.viaoa.serialize.OAObjectSerializer;
+
+
+/*qqqqqqqqqqqqqq
+CODEX
+
+1. src/main/java/com/viaoa/sync/remote/ClientGetDetail.java:622
+
+  Concrete bug:
+  shouldSerializeReference(...) decides whether an OAObject reference has already been sent by looking up hmGuid using
+  the owning object’s key:
+
+  OAObjectKey key = ... callObjectKeyGetKey(oaObj);
+  ...
+  UUID guid = key.getGuid();
+  Object objx = hmGuid.get(guid);
+
+  It should be checking the referenceValue object’s GUID.
+
+  Runtime scenario:
+  Server serializes a detail graph where oaObj was already fully sent to the client, but one of its reference
+  properties points to an OAObject the client does not have. Because hmGuid is checked with oaObj’s GUID, the callback
+  can return false and serialize only an OAObjectKey for the reference.
+
+  Why this violates OA/OG sync semantics:
+  The client can receive a reference key for an object it does not have, leaving an unresolved/missing reference after
+  a successful detail response.
+
+  Minimal fix direction:
+  For the non-Hub OAObject reference branch, derive the GUID from referenceValue, not oaObj.
+
+  Suggested CODEX comment location:
+  ClientGetDetail.createOAObjectSerializerCallback().shouldSerializeReference(...), around lines 718-723.
+
+  Suggested regression test:
+  testGetDetailSerializesReferenceObjectWhenOwnerWasPreviouslyFullySentButReferenceIsNewToClient()
+
+
+1. file/class/method
+     src/main/java/com/viaoa/sync/remote/ClientGetDetail.java:200
+     ClientGetDetail.getDetail(...)
+
+  concrete bug
+  When the server cache misses the masterObject, the method reloads it from datasource using masterObjectKey, but does
+  not preserve/reassign the requested GUID.
+
+  runtime scenario
+  Client lazy-loads a detail property for a master object. Server cache has GC’d the master, so
+  ds.getObject(masterClass, masterObjectKey) reloads it. If datasource hydration creates a new runtime GUID, the
+  detail response is built from an object whose GUID no longer matches the client’s requested master key.
+
+  why this violates OA/OG sync semantics
+  Detail loading is keyed by client/server object identity. If the server reload path changes GUID identity,
+  serialized detail data, sibling data, and future sync filtering can refer to a different runtime object identity
+  than the client requested.
+
+  minimal fix direction
+  After datasource reload, preserve the masterObjectKey GUID on the loaded object, or use a cache/datasource path that
+  guarantees GUID preservation.
+
+  suggested CODEX comment location
+  ClientGetDetail.getDetail(...), immediately after masterObject = ds.getObject(masterClass, masterObjectKey).
+
+
+
+
+*/
 
 /**
  * Server-side helper used during {@code RemoteClient.getDetail(...)} operations.

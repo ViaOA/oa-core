@@ -24,7 +24,6 @@ import java.util.logging.Logger;
 import com.viaoa.cascade.OACascade;
 import com.viaoa.concurrent.OAExecutorService;
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.*;
 import com.viaoa.metadata.OALinkInfo;
@@ -35,6 +34,190 @@ import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
 import com.viaoa.select.OASelect;
+
+/*qqqqqqqqqqqqq
+CODEX
+
+1. file/class/method
+     src/main/java/com/viaoa/load/OALoader.java — worker Runnable.run() blocks inside _load(...), lines where if
+     (bStop) return; occurs before try/finally
+  2. concrete bug
+     A worker can return before decrementing aiThreadsUsed and before calling onThreadDone(false).
+  3. runtime scenario
+     Main thread submits a worker after incrementing aiThreadsUsed. Before the worker starts, caller invokes stop().
+     The worker enters run(), sees bStop, returns immediately, and skips the finally block that decrements
+     aiThreadsUsed.
+  4. why this violates OA/OG load semantics
+     The loader can permanently believe a worker is active. waitUntilDone() can spin forever, executor cleanup can be
+     skipped, and later load attempts can inherit stale loader state.
+  5. minimal fix direction
+     Move the if (bStop) check inside the try block, or wrap the entire worker body in try/finally so every submitted
+     worker always decrements and calls onThreadDone(false).
+  6. suggested CODEX comment location
+     Above both worker Runnable.run() implementations in OALoader._load(...).
+
+1. file/class/method
+     src/main/java/com/viaoa/load/OALoader.java — load(Hub<F> hubRoot)
+  2. concrete bug
+     hubFrom is set to null before asynchronous worker threads are guaranteed to have started or finished.
+  3. runtime scenario
+     load(hubRoot) submits worker tasks, then the main loop completes and executes this.hubFrom = null before finally.
+     A worker that starts afterward constructs new OASiblingHelper<F>(OALoader.this.hubFrom) with hubFrom == null.
+  4. why this violates OA/OG load semantics
+     Sibling-helper context is part of load traversal correctness. Clearing the root hub while workers still need it
+     can cause missing sibling context, NPEs, or incorrect lazy-load behavior during background traversal.
+  5. minimal fix direction
+     Remove the early this.hubFrom = null from load(Hub). Let onThreadDone(...) clear it only after aiThreadsUsed ==
+     0.
+  6. suggested CODEX comment location
+     At load(Hub<F> hubRoot), around the current this.hubFrom = null.
+
+
+1. file/class/method
+     src/main/java/com/viaoa/load/OALoader.java — async worker exception handling in _load(...)
+  2. concrete bug
+     Worker exceptions are logged and swallowed, while the public load operation can still appear complete.
+  3. runtime scenario
+     A worker calls linkInfos[pos].getValue(obj) and datasource/lazy-load traversal throws. The catch logs the
+     exception, decrements the worker count, and completion continues. The caller sees waitUntilDone() return with no
+     failure signal.
+  4. why this violates OA/OG load semantics
+     Partial progress is acceptable only when caller-visible failure signals incompleteness. This hides an incomplete
+     load and can leave warmed-cache assumptions, reference state, or reporting/query preparation wrong.
+  5. minimal fix direction
+     Track first worker failure in an AtomicReference<Throwable> and expose/throw it from waitUntilDone() or a result/
+     status API. At minimum, set a failed flag that callers can inspect.
+  6. suggested CODEX comment location
+     Inside both worker catch (Exception e) blocks in OALoader._load(...).
+
+1. file/class/method
+     src/main/java/com/viaoa/load/OALoader.java — load(OASelect<F> sel)
+  2. concrete bug
+     The consumed OASelect is not closed in finally, especially when stop() or an exception exits before exhaustion.
+  3. runtime scenario
+     load(sel) begins pulling datasource results. Caller calls stop() or _load(...) throws before sel.hasMore()
+     naturally reaches false. The method removes the sibling helper and calls onThreadDone(true), but does not close
+     sel.
+  4. why this violates OA/OG load semantics
+     Datasource iterators/selects must not remain open after load cancellation or failure. This can leak datasource
+     resources and leave query/select state active after the load is no longer progressing.
+  5. minimal fix direction
+     In finally, close or cancel the select if OALoader owns consumption of that select, or explicitly document caller
+     ownership and add a CODEX invariant. Given current method consumes the select, closing in finally is the safer
+     contract.
+  6. suggested CODEX comment location
+     In load(OASelect<F> sel), inside the finally block before onThreadDone(true).
+
+
+1. file/class/method
+     src/main/java/com/viaoa/load/OALoader.java — setup(Class c)
+  2. concrete bug
+     Parsed path state is cached forever after the first setup, even if the same OALoader instance is reused with a
+     different root class.
+  3. runtime scenario
+     Caller creates one OALoader instance and calls load(employeeHub), then later calls load(companyHub) with the same
+     property path string but a different root class. setup(...) does not rebuild propertyPath, linkInfos,
+     recursiveLinkInfos, methods, or liRecursiveRoot because propertyPath != null.
+  4. why this violates OA/OG load semantics
+     Path traversal metadata is class-specific. Reusing stale metadata can traverse the wrong links, skip expected
+     links, or use the wrong recursive-link metadata.
+  5. minimal fix direction
+     Track the setup root class. If a later setup(c) uses a different class, rebuild the path metadata or fail
+     visibly.
+  6. suggested CODEX comment location
+     At the if (propertyPath == null) block inside setup(Class c).
+
+
+1. file/class/method
+     src/main/java/com/viaoa/load/OALoader.java — _load(Object obj, int pos) recursive-root traversal
+  2. concrete bug
+     Root recursive traversal has no cascade/depth protection.
+  3. runtime scenario
+     For a recursive model such as Employee.employees / Employee.parentEmployee, setup(...) sets liRecursiveRoot. At
+     pos == 0, _load(...) does:
+
+  Object objx = liRecursiveRoot.getValue(obj);
+  _load(objx, pos);
+
+  If the hierarchy contains a cycle, or a child path can reach an ancestor again, traversal loops indefinitely because
+  the cascade guard only runs for pos > 0.
+
+  4. why this violates OA/OG load semantics
+     Loader traversal must not hang on object graph cycles. OA recursive relationships are first-class graph
+     structures, and a loader must not assume perfect acyclic data.
+  5. minimal fix direction
+     Apply cascade tracking to root recursive traversal as well, or add a dedicated recursive-root cascade/depth guard
+     before following liRecursiveRoot.
+  6. suggested CODEX comment location
+     Inside _load(...), above the if (pos == 0 && liRecursiveRoot != null) block.
+
+
+1. file/class/method
+     src/main/java/com/viaoa/load/OALoader.java — _load(Object obj, int pos) locked-link handling
+  2. concrete bug
+     An unloaded but locked link is silently skipped and not counted as not-loaded.
+  3. runtime scenario
+     With threaded loading enabled, linkInfos[pos].isLoaded(obj) returns false and linkInfos[pos].isLocked(obj)
+     returns true because another thread/session is loading or holding the property. Current code does not increment
+     aiNotLoadedCnt, does not wait/retry, and does not traverse after the link.
+  4. why this violates OA/OG load semantics
+     The loader can report completion while part of the requested path was not loaded or traversed. This is silent
+     false-success load behavior.
+  5. minimal fix direction
+     Treat locked/unloaded as incomplete: count it, retry after unlock, wait with a bounded policy, or expose
+     incomplete status to caller.
+  6. suggested CODEX comment location
+     At both bLoaded/bLocked branches for recursiveLinkInfos[pos - 1] and linkInfos[pos].
+
+1. file/class/method
+     src/main/java/com/viaoa/load/OALoader.java — abMainThreadRunning initialization and null-input load(...) paths
+  2. concrete bug
+     abMainThreadRunning starts as true, and null-input load calls return without clearing it. waitUntilDone() can
+     therefore block forever even when no load ever started.
+  3. runtime scenario
+     Caller uses the normal lifecycle pattern:
+
+  OALoader loader = new OALoader(5, "employees");
+  loader.load((Hub) null);
+  loader.waitUntilDone();
+
+  load(null) returns immediately. executorService == null, but abMainThreadRunning is still true, so waitUntilDone()
+  loops forever.
+
+  4. why this violates OA/OG load semantics
+     A no-op load must not leave the loader in a “running” state. This creates a hidden blocked-thread condition from
+     valid defensive/null-tolerant API usage.
+  5. minimal fix direction
+     Initialize abMainThreadRunning to false, and ensure null-input load methods leave it false. Set it true only
+     after validating input and immediately before work actually starts.
+  6. suggested CODEX comment location
+     At the abMainThreadRunning field declaration and at the early returns in the three public load(...) overloads.
+
+
+1. file/class/method
+     src/main/java/com/viaoa/load/OALoader.java — public load(...) methods before/around setup(...)
+  2. concrete bug
+     If setup(...) throws, abMainThreadRunning remains true and waitUntilDone() can block forever after a caller-
+     visible setup failure.
+  3. runtime scenario
+     Caller supplies a property path that fails validation:
+
+  loader.load(hub);
+
+  load(...) sets abMainThreadRunning true, then setup(...) throws before the method reaches the try/finally that calls
+  onThreadDone(true). Caller catches the exception and calls waitUntilDone() during cleanup; it never returns.
+
+  4. why this violates OA/OG load semantics
+     Caller-visible setup failure is valid incomplete-operation signaling, but the loader’s lifecycle state must still
+     remain retryable and wait-safe after failure.
+  5. minimal fix direction
+     Move setup(...) inside a try/finally that clears main-running state on failure, or set abMainThreadRunning true
+     only after setup succeeds and the load try/finally is established.
+  6. suggested CODEX comment location
+     In all three public load(...) methods, around the abMainThreadRunning.set(true) / setup(...) sequence.
+
+
+*/
 
 /**
  * Multi-threaded loader used to prefetch or traverse a property path

@@ -23,6 +23,27 @@ import com.viaoa.datetime.OADate;
 import com.viaoa.datetime.OADateTime;
 import com.viaoa.datetime.OATime;
 
+/*qqqqqqqqqqqqqqqqqq
+CODEX
+
+#5 — OAConverterZonedDateTime.convertToString(...)
+
+  Concrete bug: formatting discards the original ZoneId/offset.
+
+  Runtime scenario: a ZonedDateTime in America/New_York is converted through Date.from(fromValue.toInstant()) into
+  OADateTime, then formatted using the OADateTime timezone/default behavior instead of the source zone.
+
+  Why this violates converter semantics: ZonedDateTime includes zone semantics. Formatting it through an instant-only
+  conversion can silently output a different local date/time on systems with different default timezones.
+
+  Minimal fix direction: format the source ZonedDateTime directly, or preserve its zone when constructing the OA date/
+  time representation.
+
+
+
+*/
+
+
 /**
  * Converter for transforming values into {@link ZonedDateTime} and formatting
  * them using OA {@link OADateTime} rules.

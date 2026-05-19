@@ -57,6 +57,61 @@ v4.0
   Keyword uppercasing uses default locale. Same Turkish-locale issue as the text classes. Use Locale.ROOT.
 
 
+1. file/class/method
+     src/main/java/com/viaoa/query/OAQueryTokenManager.java / OAQueryTokenManager.getNext()
+
+  concrete bug
+  The tokenizer does not support the documented <> not-equal operator. OAQueryTokenType.NOTEQUAL documents <> and !=,
+  but getNext() only converts ! followed by = into NOTEQUAL. For <, the operator switch only recognizes <=; if the
+  next character is >, it returns < as LT and leaves > as the next token.
+
+  runtime scenario
+  A normal SQL/OA-style query uses:
+
+  status <> 'Closed'
+
+  Tokenization produces < and > operator tokens instead of a single NOTEQUAL. The parser then either rejects the query
+  or downstream code receives structurally wrong tokens.
+
+  why this violates OA/OG query semantics
+  <> is a normal not-equal form and is explicitly described by the token contract. Rejecting or mis-tokenizing it
+  creates query behavior drift between OA query syntax, SQL-like expectations, and datasource/filter consumers.
+
+  minimal fix direction
+  In the < operator branch, recognize > and assign OAQueryTokenType.NOTEQUAL, just as != does. Add a regression test
+  that verifies a <> b tokenizes identically in semantics to a != b.
+
+  suggested CODEX comment location
+  OAQueryTokenManager.getNext(), inside the case '<': branch around lines 288-293.
+
+  2. file/class/method
+     src/main/java/com/viaoa/query/OAQueryTokenManager.java / OAQueryTokenManager.getNext()
+
+  concrete bug
+  Unterminated PASS[...]THRU blocks are accepted at EOF as valid PASSTHRU tokens.
+
+  runtime scenario
+  A query intended to use passthrough syntax is missing the closing marker:
+
+  PASS[lower(name) = 'smith'
+
+  Once PASS[ is recognized, the scanner remains in PASSTHRU mode until EOF. Because there is no check that ]THRU was
+  actually found, the partial passthrough body is returned as a valid token.
+
+  why this violates OA/OG query semantics
+  Passthrough text is intentionally allowed to bypass normal parsing. Accepting an unterminated passthrough block
+  silently turns malformed query text into executable query content, which can produce broader/narrower results than
+  intended instead of failing visibly.
+
+  minimal fix direction
+  Track whether the PASSTHRU terminator was found. If EOF is reached while token.type == PASSTHRU, throw a syntax
+  exception.
+
+  suggested CODEX comment location
+  OAQueryTokenManager.getNext(), after the scan loop and before assigning token.value.
+
+
+
  
  */
 

@@ -15,6 +15,24 @@
  */
 package com.viaoa.converter;
 
+/*qqqqqqqqqqqqqqqqqq
+CODEX
+
+#3 — OAConverterEnum.convert(...)
+
+  Concrete bug: any Enum instance is returned without checking that it belongs to the target enum class.
+
+  Runtime scenario: converting OtherEnum.X to TargetEnum.class returns OtherEnum.X, even though the caller requested
+  TargetEnum.
+
+  Why this violates converter semantics: converter output must match the requested target type. This can corrupt OA
+  property values or fail later with a ClassCastException.
+
+  Minimal fix direction: only return fromValue when thisClass.isInstance(fromValue) or fromValue.getClass() ==
+  thisClass; otherwise convert by name/ordinal or return null.
+
+*/
+
 
 /**
  * Converter for transforming values into {@link Enum} instances and formatting
