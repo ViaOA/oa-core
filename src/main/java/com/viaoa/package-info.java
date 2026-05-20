@@ -141,339 +141,277 @@ package com.viaoa;
 
 /* CODEX Invariants
 
+VIAOA-ROOT-001 — Platform Runtime Authority
+Contract statement:
+The root com.viaoa package defines OA as a metadata-driven executable Object Graph runtime platform; child packages
+own subsystem-specific mechanics, but their public behavior must remain consistent with the root platform contract.
+Rationale:
+The root package is the top-level semantic boundary for OA 4.0/OAGraph and should describe platform-wide authority
+without duplicating object, hub, graph, datasource, sync, or other subsystem invariants.
+Source scope:
+com.viaoa package-info.java.
+Related CODEX findings:
+Existing root CODEX block is placeholder-style and duplicates many child-package invariants.
+Suggested unit tests:
+Verify root/package-level documentation and child package invariant sections do not contradict root platform
+authority.
+Spec target section:
+Root platform authority and package hierarchy.
 
+VIAOA-ROOT-002 — Executable Blueprint Alignment
+Contract statement:
+Generated model blueprints, annotations, metadata, OAObjects, Hubs, paths, queries, datasources, serialization,
+sync, and replication must be interpreted as one coherent executable runtime model.
+Rationale:
+OA treats model structure as executable semantic input, not passive documentation or disconnected helper metadata.
+Source scope:
+com.viaoa package-info.java and child package contracts as context.
+Related CODEX findings:
+Existing root block mentions model-driven and executable behavior but does not state the cross-package alignment
+contract precisely.
+Suggested unit tests:
+Verify a representative generated model has consistent metadata, path/query behavior, datasource identity,
+serialization identity, and graph ownership assumptions.
+Spec target section:
+Blueprint-to-runtime semantic correctness.
 
+VIAOA-ROOT-003 — Object Graph Runtime Abstraction
+Contract statement:
+The Object Graph is the platform-level abstraction for semantic runtime behavior; object lifecycle, hub membership,
+metadata resolution, persistence, serialization, sync, replication, callbacks, triggers, and observation must be
+coordinated through graph-compatible runtime contracts.
+Rationale:
+OA runtime behavior is meaningful only when subsystem operations preserve graph semantics across package boundaries.
+Source scope:
+com.viaoa package-info.java.
+Related CODEX findings:
+Existing root block lists many graph-related subsystem details but lacks a single root-level graph abstraction
+contract.
+Suggested unit tests:
+Verify a graph-level lifecycle scenario keeps object, hub, cache, datasource, event, and serialization views
+semantically aligned.
+Spec target section:
+Object Graph platform semantics.
 
+VIAOA-ROOT-004 — Runtime Authority Boundaries
+Contract statement:
+Each OA subsystem has a defined authority boundary, and root-level behavior must not treat local object state, cache
+state, datasource state, remote delivery, sync application, replication replay, or transaction completion as
+interchangeable forms of success.
+Rationale:
+OA operations often cross in-memory, persistence, remote, and distributed boundaries; root semantics must preserve
+the distinction between transport, storage, and semantic Object Graph success.
+Source scope:
+com.viaoa package-info.java.
+Related CODEX findings:
+Existing root notes mention save/delete/remote success but mix subsystem details with root-level concepts.
+Suggested unit tests:
+Verify failure scenarios distinguish local mutation success, datasource success, remote invocation success, sync
+success, replication success, and final semantic graph success.
+Spec target section:
+Runtime authority and success-boundary semantics.
 
+VIAOA-ROOT-005 — Deterministic Platform Behavior
+Contract statement:
+For the same runtime metadata, graph state, inputs, runtime role, and execution context, OA platform behavior must
+be deterministic in object identity, metadata interpretation, lifecycle ordering, path/query interpretation,
+serialization boundaries, and distributed message semantics where ordering is externally observable.
+Rationale:
+Determinism is required for executable blueprints, reproducible tests, distributed runtime correctness, and AI-
+readable semantic contracts.
+Source scope:
+com.viaoa package-info.java.
+Related CODEX findings:
+Existing root block identifies determinism broadly but scatters it across child-package checklists.
+Suggested unit tests:
+Verify repeatable outcomes for representative metadata resolution, object graph mutation, serialization, and
+distributed operation scenarios.
+Spec target section:
+Deterministic platform runtime behavior.
 
-Below is a fuller invariant list I would use as the hardening checklist for OA core.
+VIAOA-ROOT-006 — Identity And Cache Coherence
+Contract statement:
+Across OA runtime subsystems, class/key identity, GUID identity, cache authority, serialization identity, datasource
+identity, sync identity, and replication identity must resolve to compatible semantic object identity within the
+relevant graph/runtime scope.
+Rationale:
+OA depends on one coherent identity model even though identity is exposed through multiple packages and runtime
+boundaries.
+Source scope:
+com.viaoa package-info.java.
+Related CODEX findings:
+Existing root block duplicates detailed cache/object identity rules that belong to child packages.
+Suggested unit tests:
+Verify a representative object maintains coherent identity through cache lookup, datasource load/save, serialization
+round trip, and distributed propagation.
+Spec target section:
+Platform identity/cache authority.
 
-  Graph Runtime
+VIAOA-ROOT-007 — Lifecycle Stage Ordering
+Contract statement:
+Platform-visible lifecycle stages must occur in a consistent semantic order: metadata interpretation before runtime
+use, graph/runtime ownership before graph-scoped mutation, mutation before after-observation, durable success before
+durable-success reporting, and cleanup after lifecycle completion or failure.
+Rationale:
+Cross-package lifecycle ordering prevents observers, callbacks, persistence layers, and distributed runtimes from
+seeing impossible or prematurely committed state.
+Source scope:
+com.viaoa package-info.java.
+Related CODEX findings:
+Existing root block contains many child-specific lifecycle rules but not a root-level ordering contract.
+Suggested unit tests:
+Verify create/load/save/delete/serialize/sync/replicate scenarios expose lifecycle state only at the appropriate
+semantic stage.
+Spec target section:
+Lifecycle coordination semantics.
 
-  1. OAGraph initialization is atomic.
-  2. No caller can observe a partially initialized graph.
-  3. Failed graph initialization leaves the graph retryable or permanently failed, but never falsely initialized.
-  4. Every graph service is initialized exactly once per graph instance.
-  5. Services that depend on each other have a deterministic initialization order.
-  6. A graph service cannot be used before its required dependencies exist.
-  7. Global/static graph state cannot accidentally mix objects from different graph/runtime instances.
-  8. Shutdown/close, if supported, releases services, listeners, executors, queues, and caches deterministically.
-  9. Runtime context is restored after temporary context changes, even on exception.
-  10. Thread-local graph/runtime state is never leaked across unrelated work.
+VIAOA-ROOT-008 — Observable And Callable Graph Semantics
+Contract statement:
+OA platform operations that publish events, callbacks, triggers, remote calls, bindings, projections, or diagnostics
+must expose graph state that is internally consistent for the lifecycle stage being observed or invoked.
+Rationale:
+OA is an observable/callable graph runtime; observers and callers must not receive false semantic signals about
+graph state.
+Source scope:
+com.viaoa package-info.java.
+Related CODEX findings:
+Existing root block lists events/listeners/triggers separately but does not define the platform-wide observable
+graph contract.
+Suggested unit tests:
+Verify observers, callbacks, triggers, and remote-facing calls see consistent state during representative object and
+Hub lifecycle operations.
+Spec target section:
+Observable/callable graph semantics.
 
-  OAObject Identity
+VIAOA-ROOT-009 — False-Success Prevention
+Contract statement:
+No root-level OA operation or cross-package orchestration path may report semantic success when required runtime
+metadata, graph ownership, identity reconciliation, persistence, communication, serialization, sync, replication, or
+cleanup work failed or was not attempted.
+Rationale:
+False success is more dangerous than visible failure in a metadata-driven distributed runtime because it corrupts
+caller assumptions and downstream graph behavior.
+Source scope:
+com.viaoa package-info.java.
+Related CODEX findings:
+Existing root block contains many failure examples but not a unified root false-success principle.
+Suggested unit tests:
+Verify representative cross-package failures are reported or exposed instead of returning successful semantic
+completion.
+Spec target section:
+Failure semantics and false-success prevention.
 
-  1. Every live OAObject has exactly one logical identity for its class/key.
-  2. Two different live objects for the same class/key cannot both be canonical cached objects.
-  3. Object key mutation updates all indexes atomically.
-  4. Failed key mutation leaves the old key/index state intact.
-  5. Temporary/new-object keys cannot collide with persisted-object keys.
-  6. An object’s identity is stable while it is inside hash/index/cache structures.
-  7. Equality/cache lookup/serialization identity all agree on the same key model.
-  8. Object identity is not dependent on mutable non-key properties.
-  9. A deserialized object resolves to the canonical cached instance when required.
-  10. Object identity transitions are observable in a consistent order.
+VIAOA-ROOT-010 — Partial-Progress Visibility
+Contract statement:
+When a platform-level operation partially completes before failure, OA must preserve enough observable state,
+exception context, lifecycle state, diagnostics, or recovery boundary information for callers and runtime services
+to distinguish full success, full failure, and partial progress.
+Rationale:
+OA operations can span graphs, caches, datasources, transactions, remote endpoints, sync, and replication; partial
+progress must not be hidden as ordinary completion.
+Source scope:
+com.viaoa package-info.java.
+Related CODEX findings:
+Existing root block discusses many failed operations but does not define partial-progress visibility as a root
+invariant.
+Suggested unit tests:
+Verify failed multi-stage load/save/delete/serialize/sync/replication scenarios expose the stage and semantic
+boundary of failure.
+Spec target section:
+Partial-progress visibility.
 
-  Object Cache
+VIAOA-ROOT-011 — Runtime Context Restoration
+Contract statement:
+ThreadLocal and runtime-scoped context changes used for graph ownership, server/client role, sync suppression,
+remote execution, transaction participation, loading state, event suppression, or diagnostic context must be
+restored after the scoped operation completes, including exceptional completion.
+Rationale:
+OA uses runtime context across many subsystem boundaries; leaked context can cause cross-request, cross-thread, or
+cross-graph semantic corruption.
+Source scope:
+com.viaoa package-info.java.
+Related CODEX findings:
+Existing root block includes ThreadLocal and runtime-context notes but mixes them with runtime-package
+implementation details.
+Suggested unit tests:
+Verify representative scoped runtime-context operations restore prior context after normal return and thrown
+exceptions.
+Spec target section:
+ThreadLocal/runtime-context restoration.
 
-  1. Cache add is atomic: object is either fully indexed or not cached.
-  2. Cache remove is atomic: object is removed from every index.
-  3. Cache update never leaves stale old-key entries.
-  4. Cache lookup by object key and by alternate/business key return the same canonical object.
-  5. Cache listeners are notified only after cache state is internally consistent.
-  6. Cache listener failure does not corrupt cache indexes.
-  7. Weak-reference cache structures are periodically cleaned or cannot grow unbounded.
-  8. Cache listeners/triggers have deterministic unregister paths.
-  9. Cache visit cannot throw halfway and leave internal traversal state corrupted.
-  10. Cache operations are thread-safe against concurrent add/remove/update/lookup.
+VIAOA-ROOT-012 — Distributed Runtime Boundary Correctness
+Contract statement:
+Remote, communication, sync, and replication behavior must preserve the distinction between local runtime mutation,
+transport delivery, remote invocation completion, synchronized graph application, replicated replay, and eventual
+semantic convergence.
+Rationale:
+OA distributed runtime correctness depends on clear boundaries between immediate connected sync, remote callable
+behavior, and eventual/offline replication.
+Source scope:
+com.viaoa package-info.java.
+Related CODEX findings:
+Existing root block mentions remote/sync/replication behavior but duplicates child-package ordering and retry
+details.
+Suggested unit tests:
+Verify representative distributed scenarios expose correct success/failure boundaries and do not conflate transport
+success with semantic graph success.
+Spec target section:
+Distributed runtime correctness.
 
-  Object Lifecycle Flags
+VIAOA-ROOT-013 — Metadata-Driven Runtime Validity
+Contract statement:
+A Java class, annotation, model definition, path, query, template, or datasource mapping is not semantically valid
+merely because it exists syntactically; OA runtime behavior requires metadata interpretation that is complete,
+consistent, and sufficient for the requested platform operation.
+Rationale:
+OA’s executable blueprint model depends on metadata validity, not just Java reflection or string parsing success.
+Source scope:
+com.viaoa package-info.java.
+Related CODEX findings:
+Existing root block emphasizes model-driven behavior but does not distinguish syntactic existence from runtime-
+semantic validity.
+Suggested unit tests:
+Verify invalid or incomplete metadata prevents semantic runtime success in representative graph, path/query,
+persistence, and serialization operations.
+Spec target section:
+Metadata-driven runtime behavior.
 
-  1. If isNew == false, the object has either been saved or intentionally represents durable datasource state.
-  2. If isChanged == false, no unsaved local changes are pending.
-  3. If isDeleted == false, the object is valid for normal cache/hub use.
-  4. A failed save cannot clear changed.
-  5. A failed insert cannot clear new.
-  6. A failed delete cannot mark the object deleted unless partial-delete semantics are explicit.
-  7. A failed restore from deleted cannot mark the object not-deleted.
-  8. Lifecycle flag changes are ordered before/after events consistently.
-  9. Lifecycle events reflect committed in-memory state, not intended future state.
-  10. Lifecycle state cannot advance past datasource durability unless explicitly documented.
+VIAOA-ROOT-014 — Cross-Package Contract Consistency
+Contract statement:
+Root and child package invariants must form a non-contradictory hierarchy: root invariants define platform-wide
+semantics, parent packages define orchestration contracts, and leaf packages define detailed subsystem behavior.
+Rationale:
+The root package must keep OA’s architecture AI-readable and test-ready without duplicating or contradicting
+subsystem-specific contracts.
+Source scope:
+com.viaoa package-info.java and child package invariant sections as context.
+Related CODEX findings:
+Existing root CODEX block duplicates many detailed child-package invariants and includes test-plan/commentary text.
+Suggested unit tests:
+Verify package invariant inventory reports no duplicate root/child responsibility conflicts and all packages use the
+standardized invariant structure.
+Spec target section:
+AI-readable architecture readiness.
 
-  Property Changes
-
-  1. Before-change events fire before the value changes.
-  2. After-change events fire after the value changes.
-  3. If validation fails, the property value and all derived state remain unchanged.
-  4. Old/new values in events match actual object state transition.
-  5. Calculated/dependent properties fire after their dependencies are consistent.
-  6. Recursive property changes cannot cause infinite trigger recursion.
-  7. Property changes caused by remote sync are distinguishable where needed.
-  8. Property changes during loading do not incorrectly mark objects dirty unless intended.
-  9. Property change events are not lost because of listener mutation during dispatch.
-  10. Listener exceptions cannot leave the object half-updated.
-
-  Hub Membership
-
-  1. A Hub contains only objects compatible with its object class.
-  2. An object appears at most once in a Hub unless duplicate membership is explicitly supported.
-  3. Hub.size, indexed access, iteration, and contains agree.
-  4. Add/remove events reflect completed membership changes.
-  5. Failed add/remove leaves Hub membership unchanged.
-  6. Object-to-Hub backreferences agree with Hub membership.
-  7. Removing an object from a Hub removes the matching object-to-Hub reference.
-  8. Clearing a Hub removes all object-to-Hub references.
-  9. Hub iteration is safe against expected event-driven mutations or fails predictably.
-  10. Hub active object always refers to an object in the Hub, or is null/pos -1.
-
-  Hub Active Object
-
-  1. Active object and active position agree.
-  2. Active position is never outside the Hub bounds except the explicit null position.
-  3. Active-object change events fire after AO state is internally consistent.
-  4. Shared active-object state is either shared by identity or fully independent.
-  5. Link-to-Hub active-object calculations cannot produce stale AO values.
-  6. Changing AO updates dependent detail Hubs exactly once.
-  7. AO updates cannot recurse indefinitely through shared/detail/link Hubs.
-  8. Failed AO update leaves previous AO state intact.
-  9. AO state is thread-safe relative to Hub membership changes.
-  10. AO sharing honors the caller’s explicit share/non-share setting.
-
-  Hub Sharing
-
-  1. Shared Hub graphs are acyclic.
-  2. A Hub cannot share with itself.
-  3. A Hub cannot share data with an incompatible object class.
-  4. Shared Hubs point to one canonical main shared Hub.
-  5. getMainSharedHub always terminates.
-  6. Shared child lists do not contain stale strong references.
-  7. Weak shared-Hub references are cleaned without corrupting traversal.
-  8. Changing a Hub’s shared master detaches it from the old master exactly once.
-  9. All Hubs sharing data see the same membership ordering.
-  10. All shared Hubs update listener caches when sharing topology changes.
-
-  Detail Hubs / Master-Detail
-
-  1. A detail Hub’s master object and master Hub agree.
-  2. A detail Hub contains exactly the objects reachable through its master link.
-  3. Changing master AO refreshes detail Hub contents consistently.
-  4. Unloaded detail links have clear lazy-load semantics.
-  5. Failed detail load does not clear valid existing detail contents unless explicitly intended.
-  6. Detail Hub link metadata is validated before listener/controller installation.
-  7. Recursive detail relationships cannot loop forever.
-  8. Removing from a detail Hub updates the reverse/master link consistently.
-  9. Adding to a detail Hub updates the reverse/master link consistently.
-  10. Detail Hub lifecycle does not leak listeners after the owning Hub/controller is abandoned.
-
-  Hub Controllers
-
-  1. Any controller that installs listeners has close().
-  2. close() is idempotent.
-  3. close() removes every listener, trigger, dependent property registration, and background task it created.
-  4. Controller finalizers are not required for correctness.
-  5. APIs that create live controllers either return them or bind their lifetime to an owning object.
-  6. Controller construction is atomic: failed construction unregisters partial listeners.
-  7. Controller state cannot be updated after close.
-  8. Source Hub replacement detaches from old source before attaching to new source.
-  9. Controller-created result Hubs remain correct while the controller is live.
-  10. Repeated creation of controllers does not create unbounded listener growth.
-
-  Hub Filtering / Sorting / Merging / Flattening
-
-  1. Filtered Hubs reflect source Hub membership after every source add/remove/change.
-  2. Sort order is deterministic and stable for equal keys where required.
-  3. Comparator/property failures do not corrupt Hub ordering.
-  4. Merged Hubs do not duplicate objects unless explicitly allowed.
-  5. Flattened Hubs terminate on recursive graphs.
-  6. Source listener removal happens when filter/merger/flattened controller closes.
-  7. Dependent-property filters unregister dependent listeners/triggers.
-  8. Background rebuilds cannot leave permanent “loading” flags.
-  9. Rebuild cancellation leaves the previous valid result or a clearly empty result, not partial state.
-  10. Result Hub events are ordered consistently with source changes.
-
-  Save Semantics
-
-  1. If save() returns normally, all required datasource operations succeeded.
-  2. If datasource save fails after retries, the caller receives an exception.
-  3. Save retry does not duplicate inserts or relationship updates.
-  4. Save clears changed only after durable success.
-  5. Save clears new only after durable insert success.
-  6. Save cascades references in a deterministic order.
-  7. Failed cascade save reports which object failed or preserves enough context.
-  8. Save does not fire after-save events unless save actually succeeded.
-  9. Save does not send remote/sync messages for changes that failed durability.
-  10. Concurrent save of the same object cannot interleave into inconsistent state.
-
-  Delete Semantics
-
-  1. If delete() returns normally, datasource delete and in-memory delete agree.
-  2. Failed datasource delete does not remove the object from live Hubs.
-  3. Failed delete does not mark object deleted unless explicitly partial.
-  4. Delete cascades are deterministic and cycle-safe.
-  5. Cascade delete either completes consistently or exposes partial failure.
-  6. Many-to-many cleanup happens only after the main delete is safe, or is rollback-safe.
-  7. Delete fires after-delete events only after the object is actually deleted.
-  8. Delete removes object from cache exactly once.
-  9. Delete removes object from all Hubs consistently.
-  10. Delete notifications to clients occur only after server-side state is consistent.
-
-  Lazy Loading / Select
-
-  1. A link marked loaded has actually completed loading successfully.
-  2. Failed lazy load does not mark the link loaded.
-  3. Concurrent lazy load for the same link coalesces or resolves consistently.
-  4. Select cancellation releases datasource resources.
-  5. Select fetch state cannot deadlock or spin forever.
-  6. loadAllData completion flag means all data was loaded successfully.
-  7. Background loading counters always decrement.
-  8. Stop/cancel cannot leave loaders permanently running.
-  9. Loader waitUntilDone() always terminates after completion/cancel.
-  10. Lazy loading does not create duplicate cached objects.
-
-  Triggers
-
-  1. A trigger is either fully registered or not registered.
-  2. Failed trigger registration rolls back counters and dependent triggers.
-  3. Removing a trigger removes all dependent triggers.
-  4. Trigger counters equal the actual registered trigger count.
-  5. Background trigger execution preserves event ordering where required.
-  6. Trigger queues are bounded or have backpressure/monitoring.
-  7. Trigger listener exceptions do not kill trigger infrastructure.
-  8. Recursive triggers have a maximum depth or cycle guard.
-  9. Server-side-only trigger context is restored after execution.
-  10. Trigger close/removal is idempotent and thread-safe.
-
-  Events / Listeners
-
-  1. Listener lists can be modified during dispatch without losing current event correctness.
-  2. Listener dispatch order is deterministic where behavior depends on order.
-  3. Listener exceptions are either isolated or explicitly fail the operation.
-  4. Before-event listeners can veto only before state changes.
-  5. After-event listeners cannot observe partial internal state.
-  6. Weak listener structures do not leak stale entries unbounded.
-  7. Strong listener structures have explicit removal paths.
-  8. Event source, object, old value, new value, and Hub position are accurate.
-  9. Remote/sync-generated events do not echo indefinitely.
-  10. Event suppression is scoped and restored after exception.
-
-  Thread Safety
-
-  1. Every shared mutable structure has a clear synchronization owner.
-  2. Check-then-act operations on shared state are atomic.
-  3. Every counter increment has a guaranteed decrement.
-  4. Every wait has a corresponding notify, timeout, or cancellation path.
-  5. No lock is held while calling arbitrary user code unless explicitly required.
-  6. Lock ordering is consistent across object/cache/Hub services.
-  7. Background workers cannot outlive their owning service silently.
-  8. Shutdown waits for or cancels background work deterministically.
-  9. Volatile/atomic fields are used consistently with compound invariants.
-  10. Concurrent close/use either succeeds safely or fails predictably.
-
-  Serialization
-
-  1. Serialized identity matches cache identity.
-  2. Deserialization cannot create duplicate canonical objects unless explicitly detached.
-  3. Lazy/unloaded references serialize according to a defined policy.
-  4. Circular object graphs serialize without infinite recursion.
-  5. Partial serialization failure does not mutate source objects.
-  6. Remote serialization preserves object key, new/changed/deleted state only when intended.
-  7. JSON and Java serialization agree on identity/reference semantics where required.
-  8. Deserialized Hubs preserve ordering.
-  9. Deserialized Hub AO state is valid relative to membership.
-  10. Serialization does not accidentally trigger lazy loads unless explicitly requested.
-
-  Remote / Sync / Replication Facing
-
-  1. Local state changes are published remotely only after local invariants hold.
-  2. Remote-applied changes do not echo back endlessly.
-  3. Request/response correlation uses stable object/session identity.
-  4. Message ordering preserves causality for object property and Hub membership changes.
-  5. Reconnect never reuses stale session state incorrectly.
-  6. Duplicate remote messages are idempotent where retries are possible.
-  7. Remote delete/save conflicts resolve deterministically.
-  8. Sync messages cannot refer to objects not yet known without a defined resolution path.
-  9. Replication preserves object identity and relationship ordering.
-  10. Failed remote apply leaves local state unchanged or explicitly marked conflicted.
-
-  Resource Lifecycle
-
-  1. Every executor has an owner and close path.
-  2. Every queue has a bound, drain policy, or owner close path.
-  3. Every listener registration has a matching unregister.
-  4. Every cache listener has a matching unregister.
-  5. Every trigger has a matching remove.
-  6. Every datasource select/cursor closes on success, failure, and cancel.
-  7. Every temporary Hub/controller can be garbage-collected after use.
-  8. Finalizers are cleanup fallback only, never primary correctness.
-  9. Abandoned dead/disconnected sessions do not matter, but live instances must recover or fail closed.
-  10. Repeated API use does not cause unbounded live memory growth.
-
-  Testing-Oriented Meta-Invariants
-
-  1. Every public lifecycle method has tests for success, failure, and exception during listener callback.
-  2. Every async component has tests for stop/cancel before start, during run, and after completion.
-  3. Every cache/key mutation has tests for collision and rollback.
-  4. Every controller has tests proving close() removes listeners.
-  5. Every save/delete path has tests where datasource throws.
-  6. Every Hub sharing/detail path has tests for cycles or recursive object models.
-  7. Every trigger path has tests for dependent calculated properties.
-  8. Every remote-facing state transition has ordering tests.
-  9. Every weak-reference cleanup path has a stress/leak test.
-  10. Every “should never happen” state has an assertion, exception, or recovery path.
-
-  qqqqqqqqqqqqq more from code reviews
-  
-  E. Top Runtime Invariants
-
-  - OARuntime is the only public runtime service entry point.
-  - Graph lookup returns the most specific registered package graph, otherwise default graph.
-  - sendSyncMessages defaults true and is only changed through OAThreadLocalService.
-  - startServerOnly/endServerOnly are balanced and restore previous sendSyncMessages.
-  - Remote threads start every request from clean thread-local state.
-  - Remote request info has one canonical source.
-  - Thread-local scoped counters never go negative.
-  - Global fast-path counters match real per-thread state.
-  - Hub event stack is push/pop balanced.
-  - Locks held by a thread-local are released or explicitly detected before thread reuse.
-  - Runtime core has no UI/Jackson/JDBC/Web dependencies.
-
- F. Test Plan Outline
-
-  - OARuntimeGraphTest: default graph, package graph, subpackage graph, helper cache invalidation.
-  - OADataSourceServiceTest: registration order, getLast precedence, disabled datasource skip, setPosition.
-  - OAThreadLocalSendSyncTest: default true, explicit false/true, nested server-only restore, underflow
-    guard.
-  - OAThreadLocalCounterTest: loading/refreshing/hub-merger/tree/undo counters balanced and never negative.
-  - OAThreadLocalLifecycleTest: clear(), context/admin/process/replication source cleanup behavior.
-  - OARemoteThreadResetTest: reused remote thread starts clean across requests.
-  - OARemoteRequestInfoTest: remote thread and thread-local request info stay consistent.
-  - OAThreadContextPropagationTest: OAThread restores context and cleans up on exceptions.
-  - OAThreadLocalLockTest: reentrant lock, competing lock, release-all, deadlock release behavior.
-  - OAThreadLocalHubEventTest: max event depth, add/remove balance, calc-property dedupe reset.
-  - RuntimeBoundaryTest: no forbidden imports in runtime packages.
-
- G. Looks Sound
-
-  - OARuntime as static entry point over runtime-owned services is aligned with OA 4.0 direction.
-  - Graph ownership belongs in runtime and currently avoids moved-module dependencies.
-  - Datasource service depends only on datasource contracts, not JDBC/REST implementations.
-  - Serialization state uses OAObjectSerializer, which is the right abstraction boundary.
-  - Remote-thread service centralizes remote-thread questions instead of scattering instanceof
-    OARemoteThread.
-  - sendSyncMessages is now centralized in OAThreadLocalService; the main remaining work is proving
-    balanced scopes and reset behavior.
-
-
-
-
+VIAOA-ROOT-015 — Digital Twin Runtime Semantics
+Contract statement:
+OA platform behavior must support runtime graph state as a digital twin of executable enterprise blueprints: object
+identity, relationships, lifecycle state, metadata, persistence state, observable state, and distributed state must
+remain semantically aligned within documented runtime boundaries.
+Rationale:
+The root package frames OA as a live semantic runtime engine, not a collection of independent utilities.
+Source scope:
+com.viaoa package-info.java.
+Related CODEX findings:
+Existing root documentation describes live distributed object graphs but the CODEX block does not state the digital-
+twin platform contract.
+Suggested unit tests:
+Verify an end-to-end representative scenario keeps blueprint metadata, object graph state, datasource state,
+serialization state, and distributed visibility aligned.
+Spec target section:
+Digital twin runtime semantics.
 
 */
-
-
-
-
-
-
 
 
 

@@ -41,7 +41,7 @@ Suggested unit tests: testGraphVerbRejectsForeignClassByContract(), testGraphVer
 testGraphVerbRejectsForeignHubByContract()
 Spec target section: OG Runtime / Cross-Graph Isolation
 
-GRAPH-API-001 — OAGraph Public Surface Is The Supported Runtime API
+GRAPH-APIX-001 — OAGraph Public Surface Is The Supported Runtime API
 Contract statement: Application-facing graph operations must be exposed through OAGraph; implementation and internal
 service surfaces are not application contracts.
 Rationale: The public graph API must remain stable while internal orchestration and service implementation details
