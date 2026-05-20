@@ -15,6 +15,7 @@
  */
 package com.viaoa.config;
 
+
 import java.util.*;
 
 import com.viaoa.converter.OAConv;
@@ -23,6 +24,205 @@ import com.viaoa.io.OAFile;
 import com.viaoa.lang.OAString;
 
 import java.io.*;
+
+
+/*qqqqqqqqqqqqqqqqqqqqqqq
+CODEX
+
+1. src/main/java/com/viaoa/config/OAProperties.java / load(String fileName)
+
+  Concrete bug: loading a missing file silently succeeds and leaves the properties empty/stale.
+
+  Runtime scenario: production code calls new OAProperties("server.properties") or props.load("datasource.properties")
+  with a misspelled, missing, or deployment-wrong path. Line 149 checks if (!file.exists()) return;, so the load
+  operation completes without any caller-visible failure.
+
+  Why this violates OA/OG config semantics: configuration loading must resolve the intended source. A missing config
+  file can silently fall through to defaults or existing in-memory values, causing wrong datasource, runtime mode,
+  sync/remote/replication, or path settings while appearing successfully configured.
+
+  Minimal fix direction: define the contract explicitly. Either add a strict load method that throws on missing file
+  and use it for required config, or make load(String) report/record missing-source state. At minimum, do not let
+  required config loads silently no-op.
+
+  Suggested CODEX comment location: line 149, before if (!file.exists()) return;.
+
+  Suggested regression test: testLoadMissingRequiredConfigFailsVisibly.
+
+  2. src/main/java/com/viaoa/config/OAProperties.java / load(String fileName) and load(InputStream in)
+
+  Concrete bug: reload overlays new properties without clearing existing properties, so removed config keys remain
+  active.
+
+  Runtime scenario:
+
+  1. props.load("app.properties") loads sync.enabled=true.
+  2. The file is changed to remove sync.enabled.
+  3. props.load("app.properties") is called again to reload configuration.
+  4. super.load(in) adds/replaces keys but does not remove keys absent from the new file.
+  5. props.getBoolean("sync.enabled") still returns true.
+
+  Why this violates OA/OG config semantics: reload must not leave stale values unless overlay/merge behavior is
+  explicitly contracted. Stale config can keep old datasource, sync, remote, or runtime settings active after reload.
+
+  Minimal fix direction: define separate loadOverlay vs reload behavior. For ordinary full-file reload, clear both
+  super properties and alKeys before loading, preferably only committing after successful parse if atomic reload is
+  required.
+
+  Suggested CODEX comment location: line 169, before super.load(in), or line 144 load(String).
+
+  Suggested regression test: testReloadRemovesKeysMissingFromNewFile.
+
+  3. src/main/java/com/viaoa/config/OAProperties.java / put(Object key, Object obj)
+
+  Concrete bug: case-insensitive null removal removes the property from Properties but leaves the old key in alKeys.
+
+  Runtime scenario:
+
+  1. props.put("ServerPort", "1099") stores key and adds "ServerPort" to alKeys.
+  2. props.put("serverport", null) enters the case-insensitive match path.
+  3. Line 422 returns super.remove(s) directly.
+  4. alKeys.remove(s) is never called.
+  5. keys() still enumerates "ServerPort" even though the property has been removed.
+
+  Why this violates OA/OG config semantics: key enumeration and property state drift apart. Save, reporting, ordered
+  config inspection, and reload tooling can see stale keys that no longer have values, producing misleading config ou
+  tput or downstream failures depending on how Properties.save/store consumes keys().
+
+  Minimal fix direction: replace return super.remove(s) with return remove(s) or explicitly remove s from alKeys
+  before removing from super.
+
+  Suggested CODEX comment location: line 422.
+
+  Suggested regression test: testCaseInsensitiveNullPutRemovesKeyFromOrderedKeys.
+
+  4. src/main/java/com/viaoa/config/OAProperties.java / load(InputStream in) and save(String fileName, String title)
+
+  Concrete bug: resource streams are not closed on failure.
+
+  Runtime scenario: super.load(in) throws due to malformed/truncated config, or super.save(os, title) throws during
+  write. In load(InputStream), in.close() is only reached after successful super.load at line 169. In save, os.close()
+  is only reached after successful super.save at line 233. Failure paths wrap and throw, but leave the stream open.
+
+  Why this violates OA/OG config semantics: config file/resource streams must be closed on success and failure. In
+  production reload/save loops, leaked file handles can block updates, retain resources, or cause later config
+  operations to fail.
+
+  Minimal fix direction: use try-with-resources for FileInputStream/FileOutputStream. For load(InputStream), either
+  document that ownership transfers and always close in finally, or add a non-closing variant if caller owns the
+  stream.
+
+  Suggested CODEX comment location: lines 167-170 and lines 228-234.
+
+  Suggested regression test: testLoadClosesInputStreamWhenParseFails, testSaveClosesOutputStreamWhenStoreFails.
+
+  5. src/main/java/com/viaoa/config/OAProperties.java / load(String fileName) and save(String fileName, String title)
+
+  Concrete bug: fileName is committed before the load/save succeeds, so a failed operation can corrupt the associated
+  config source.
+
+  Runtime scenario:
+
+  1. props is associated with good.properties.
+  2. Code calls props.load("bad.properties").
+  3. Line 146 calls setFileName(fileName) before opening/parsing.
+  4. If the file is missing, unreadable, or invalid, the object remains associated with bad.properties.
+  5. A later props.save() or props.load() uses the failed path.
+
+  The same pattern exists in save(String, String) at line 225 before directory creation/open/write succeeds.
+
+  Why this violates OA/OG config semantics: partial setup should not commit source identity before the operation
+  succeeds unless explicitly documented. After failed load/save, retry behavior can target the wrong file and
+  overwrite or read the wrong config.
+
+  Minimal fix direction: commit this.fileName only after successful load/save, or preserve the old value and restore
+  it on failure. If missing-file no-op remains allowed, document whether it intentionally changes the associated file.
+
+  Suggested CODEX comment location: line 146 and line 225.
+
+  Suggested regression test: testFailedLoadDoesNotChangeAssociatedFileName,
+  testFailedSaveDoesNotChangeAssociatedFileName.
+
+  6. src/main/java/com/viaoa/config/OAProperties.java / getProperty, keys, put, remove
+
+  Concrete bug: case-insensitive lookup enumerates a live ArrayList-backed key list while other synchronized methods
+  can mutate it after the enumeration is returned.
+
+  Runtime scenario: one thread calls getProperty("X"). It calls keys() and receives an enumeration over alKeys at
+  lines 375-390. The lock is released when keys() returns. Another thread calls put, remove, or clear, mutating
+  alKeys. The first thread then continues hasMoreElements() / nextElement() against the changed list, which can skip
+  keys, see stale keys, or throw IndexOutOfBoundsException.
+
+  Why this violates OA/OG config semantics: shared config state must be thread-safe or safely published. Runtime
+  config reads racing with reload/update must not return nondeterministic values or fail from internal key-list
+  mutation.
+
+  Minimal fix direction: make keys() return a snapshot enumeration, or synchronize the full case-insensitive lookup
+  while iterating. A LinkedHashMap/case-normalized map would also avoid dual-state drift.
+
+  Suggested CODEX comment location: line 375 keys() and line 255 getProperty enumeration path.
+
+  Suggested regression test: testConcurrentCaseInsensitiveLookupDuringMutationDoesNotThrowOrSkipCommittedKey.
+
+
+ 1. src/main/java/com/viaoa/config/OAProperties.java / getBoolean(String name, boolean bDefault)
+
+  Concrete bug: invalid boolean values ignore the supplied default and silently return false.
+
+  Runtime scenario: production config has sync.enabled=maybe or remote.enabled=enabled, and caller uses
+  getBoolean("sync.enabled", true) expecting the default when the configured value is absent or unusable. The method
+  returns the default only when the property is missing at line 733. If conversion fails, line 735 returns false.
+
+  Why this violates OA/OG config semantics: invalid config conversion must fail visibly or follow the documented
+  default contract. Returning false can silently disable runtime features such as sync, replication, remote behavior,
+  or datasource options even when the caller supplied true as the intended fallback.
+
+  Minimal fix direction: for the defaulted overload, return bDefault when conversion returns null, or add a strict
+  variant that throws on invalid values and document the current behavior as “invalid means false” if truly intended.
+
+  Suggested CODEX comment location: line 735.
+
+  Suggested regression test: testGetBooleanDefaultUsedWhenConfiguredValueInvalid.
+
+  2. src/main/java/com/viaoa/config/OAProperties.java / getInt(String name, int iDefault)
+
+  Concrete bug: invalid integer values ignore the supplied default and silently return -1.
+
+  Runtime scenario: production config has server.port=abc and caller uses getInt("server.port", 1099). The property
+  exists, conversion fails, and line 660 returns -1 instead of the caller’s default. That can then be interpreted as a
+  real port/count/timeout setting by downstream runtime code.
+
+  Why this violates OA/OG config semantics: typed config conversion must preserve semantic value and fail visibly or
+  default according to the method contract. Returning sentinel -1 from the defaulted overload is a misleading fallback
+  that can produce wrong runtime mode, connection, timeout, or datasource settings.
+
+  Minimal fix direction: for getInt(name, default), return iDefault when conversion fails, or provide a strict
+  conversion API that throws on invalid numeric config.
+
+  Suggested CODEX comment location: line 660.
+
+  Suggested regression test: testGetIntDefaultUsedWhenConfiguredValueInvalid.
+
+  3. src/main/java/com/viaoa/config/OAProperties.java / getString(String name, String strDefault)
+
+  Concrete bug: name == null ignores the supplied default and returns null.
+
+  Runtime scenario: config key composition fails upstream and passes null into getString(null, "defaultValue"). The
+  defaulted overload returns null at line 693 instead of the supplied default. That can flow into path, datasource
+  URL, mode, or logging config code as “no value” even though a default was supplied.
+
+  Why this violates OA/OG config semantics: defaulted getters should apply their default consistently for absent/
+  unresolvable keys. Returning null from a defaulted getter is a silent semantic mismatch.
+
+  Minimal fix direction: return strDefault when name == null, or explicitly document that null keys bypass defaults.
+  Align with the intended behavior of other defaulted accessors.
+
+  Suggested CODEX comment location: line 693.
+
+  Suggested regression test: testGetStringDefaultUsedForNullName.
+
+
+*/
 
 /*
     URL url = new URL("https://github.com/properties.values");

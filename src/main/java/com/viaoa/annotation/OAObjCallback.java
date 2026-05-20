@@ -23,6 +23,22 @@ import java.lang.annotation.Target;
 
 import com.viaoa.callback.OAObjectCallback;
 
+/*qqqqqqqqqqqqqqqqqqq
+CODEX
+
+1. src/main/java/com/viaoa/annotation/OAObjCallback.java:109 supportedTypes
+     Bug/risk: supportedTypes() is declared as runtime metadata but appears unused by the annotation processing path.
+     Production/runtime impact: a model can declare callback type restrictions, but OAObjectAnnotationService copies
+     enabled/visible/context metadata and never consumes supportedTypes. Runtime callback dispatch can therefore
+     behave broader than the annotation contract implies, causing wrong enabled/visible behavior or callbacks being
+     invoked for unsupported checks.
+     Severity: Medium
+     Minimal hardening: load supportedTypes() into the relevant metadata object or remove/explicitly document it as
+     non-runtime metadata. Add validation that flags non-empty supportedTypes when no consumer exists.
+
+
+*/
+
 /**
  * Declares a method or class-level callback used by {@link OAObjectCallback}
  * to determine enabled/visible behavior for UI and workflow logic.

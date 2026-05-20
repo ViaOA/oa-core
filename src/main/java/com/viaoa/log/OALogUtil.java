@@ -24,6 +24,36 @@ import java.util.logging.Logger;
 
 import com.viaoa.lang.OAString;
 
+/*qqqqqqqqqqqqqqqqqqqqqqq
+CODEX
+
+1. src/main/java/com/viaoa/log/OALogUtil.java:71 consoleOnly(Level) can silently leave logging disabled or routed to
+     stale handlers.
+
+  - Concrete bug: levelRoot is used as a global “already done” cache, but disable() and consoleOnly(Level,String) do
+    not reset/update it.
+  - Runtime scenario: call consoleOnly(Level.FINE), then disable(), then consoleOnly(Level.FINE) again. The second
+    setup returns early because levelRoot == FINE, leaving handlers disabled.
+  - Why it violates OA logging semantics: critical diagnostics can be silently lost after runtime/test
+    reconfiguration.
+  - Minimal fix direction: clear levelRoot in disable(), update/invalidate it in consoleOnly(Level,String), or remove
+    the early-return cache unless it verifies actual handler state.
+  - Suggested CODEX comment location: near levelRoot and consoleOnly(Level).
+
+  2. src/main/java/com/viaoa/log/OALogUtil.java:111 removed handlers are not closed.
+
+  - Concrete bug: consoleOnly(Level,String) removes existing root and named logger handlers without calling close().
+  - Runtime scenario: an existing FileHandler is installed, consoleOnly is called during reconfiguration, and the file
+    handler is removed but its file descriptor remains open.
+  - Why it violates OA logging semantics: log files/resources can leak and buffered records might not be flushed/
+    closed before replacement.
+  - Minimal fix direction: flush/close handlers after removal, or explicitly document ownership transfer if callers
+    must close them.
+  - Suggested CODEX comment location: loops at lines 111-115 and 122-126.
+
+
+*/
+
 /**
  * Utility methods for configuring Java's built-in {@link java.util.logging}
  * system and for generating thread-dump diagnostics. The logging helpers

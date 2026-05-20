@@ -21,6 +21,20 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/*qqqqqqqqqqqq
+CODEX
+
+ 8. src/main/java/com/viaoa/annotation/OAFkey.java:31 annotation target
+     Bug/risk: @OAFkey is targetable directly on methods, but runtime processing only consumes it as nested metadata
+     inside @OAOne.fkeys().
+     Production/runtime impact: a directly annotated method can appear valid to Java and tooling but be ignored by OA
+     metadata loading, causing silent missing FK metadata.
+     Severity: Low
+     Minimal hardening: change target to nested-only @Target({}) if direct use is not supported, or add direct-method
+     processing if it is intended.
+
+*/
+
 /**
  * Declares the foreign-key column(s) that implement a link for an
  * {@link OAOne} or {@link OAMany} relationship.

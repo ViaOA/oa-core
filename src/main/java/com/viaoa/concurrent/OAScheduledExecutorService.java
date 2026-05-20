@@ -27,6 +27,51 @@ import java.util.logging.Logger;
 import com.viaoa.datetime.OADateTime;
 import com.viaoa.datetime.OATime;
 
+/*qqqqqqqqqqqqq
+CODEX
+
+4. OAScheduledExecutorService — no shutdown/close lifecycle
+     Severity: High
+     Bug/risk: the wrapper creates a ScheduledExecutorService but exposes no close, shutdown, or cancellation
+     lifecycle. Periodic tasks can continue for the lifetime of the JVM unless callers retain and cancel every
+     ScheduledFuture.
+     Production impact: recurring scheduled tasks can retain application objects, listeners, graph/runtime state, or
+     closures after the owning subsystem is stopped. Because threads are daemon, this may not block JVM exit, but it
+     can leak work and state during long-running server processes.
+     Minimal hardening: add an idempotent close()/shutdown() method, reject new schedules after close, optionally
+     cancel queued recurring tasks, and expose lifecycle state.
+  5. OAScheduledExecutorService.scheduleEvery — recurring tasks silently stop after an exception
+     Severity: High
+     Bug/risk: scheduleAtFixedRate and scheduleWithFixedDelay suppress future executions if a task throws. The wrapper
+     does not wrap runnables to log/contain exceptions or preserve recurring scheduling.
+     Production impact: one uncaught task exception can permanently stop background runtime work with no package-level
+     diagnostic. This is dangerous for sync/replication polling, cache cleanup, scheduled maintenance, or trigger-like
+     background work.
+     Minimal hardening: wrap recurring Runnables in a safe runner that logs/records exceptions and continues, unless
+     the task explicitly requests cancellation.
+  6. OAScheduledExecutorService.scheduleEvery(Runnable, OATime) — daily scheduling uses fixed 24-hour period
+     Severity: Medium
+     Bug/risk: daily schedule computes an initial delay to a wall-clock OATime, then repeats every 24 * 60 * 60
+     seconds. Across DST transitions or timezone offset changes, it no longer runs at the intended local wall-clock
+     time.
+     Production impact: daily jobs can run one hour early/late after DST changes. That matters for production batch
+     jobs, sync windows, report generation, and time-sensitive maintenance.
+     Minimal hardening: after each run, recompute the next delay from current local date/time and target OATime, or
+     document that this is fixed-duration scheduling rather than wall-clock daily scheduling.
+
+6. OAScheduledExecutorService.schedule* — submission counter increments before schedule success
+     Severity: Low
+     Bug/risk: all schedule methods increment aiTotalSubmitted before calling the underlying scheduler. If scheduling
+     throws due to invalid period, shutdown, rejected execution, or null task, the counter records work that was never
+     accepted.
+     Production impact: low direct correctness impact, but diagnostics/monitoring can lie during failure
+     investigation.
+     Minimal hardening: increment only after the ScheduledFuture is successfully returned, or track attempted vs
+     accepted separately.
+
+
+*/
+
 /**
  * Scheduled executor service backed by a single daemon thread for executing
  * tasks at specific OA temporal values. <p>

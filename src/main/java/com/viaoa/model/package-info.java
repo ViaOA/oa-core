@@ -16,7 +16,7 @@
 /**
  * <p>
  */
-package com.viaoa.model.oa;
+package com.viaoa.model;
 
 /* CODEX Invariants
 

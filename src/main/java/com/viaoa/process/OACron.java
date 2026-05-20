@@ -25,6 +25,46 @@ import com.viaoa.hub.HubEvent;
 import com.viaoa.lang.OAArray;
 import com.viaoa.lang.OAString;
 
+/*qqqqqqqqqqqqqqqq
+CODEX
+
+5. OACron / findNext and private search methods
+     Severity: Medium
+     Bug/risk: findNext(OADateTime) stores the input in mutable instance field dtFrom, and all private search methods
+     read that field. Concurrent calls on the same OACron can interleave and compute a result using another caller’s
+     start time.
+     Production impact: A cron used by both scheduled processing and manual/status calls can return wrong next
+     execution times, causing missed or duplicate scheduling decisions.
+     Area: src/main/java/com/viaoa/process/OACron.java:475
+     Minimal hardening: Make the search state local by passing dtFrom through helper methods, or synchronize findNext.
+
+2. OACron / getInts silently broadens invalid cron fields into wildcard schedules
+     Severity: High
+     Bug/risk: getInts treats any field containing * as wildcard without validating the rest of the field. It also
+     treats reversed ranges such as 10-5 as an empty parsed array without setting bValid = false; empty array means
+     “all values.”
+     Runtime scenario: A cron field like 10-5 for minutes becomes every minute. A typo like 1,* or *x becomes wildcard
+     instead of invalid.
+     Production impact: Misconfigured jobs can run far more often than intended, silently. For production background
+     workflows, that can create duplicate processing, load spikes, or repeated side effects.
+     Area: src/main/java/com/viaoa/process/OACron.java:725, src/main/java/com/viaoa/process/OACron.java:746
+     Minimal hardening: Only accept * when the trimmed field equals "*". Mark reversed ranges invalid unless
+     explicitly supported. If parsing produces no values for a non-wildcard field, mark invalid.
+  3. OACron / enabled and last-run state are cross-thread mutable without visibility guarantees
+     Severity: Medium
+     Bug/risk: bEnabled and dtLast are written/read across scheduler, worker, and caller threads but are not volatile
+     or synchronized. OACronProcessor.runThread() reads cron.getEnabled() while application code can call
+     setEnabled(false) concurrently. Worker threads call setLast, while monitoring code can read getLast.
+     Production impact: Disabling a cron may not be observed promptly by the scheduler thread, and last-run monitoring
+     can see stale state. That can produce an unexpected extra execution or misleading runtime status.
+     Area: src/main/java/com/viaoa/process/OACron.java:196, src/main/java/com/viaoa/process/OACron.java:432, src/main/
+     java/com/viaoa/process/OACron.java:789
+     Minimal hardening: Make bEnabled and dtLast volatile, or synchronize cron state access. If richer lifecycle is
+     added, use explicit job state.
+
+
+*/
+
 
 /**
  * Used to define and find the next time a Cron-like entry should be ran.

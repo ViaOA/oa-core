@@ -20,6 +20,24 @@ import com.viaoa.annotation.OAOne;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
 
+/*qqqqqqqqqqqqqqq
+CODEX
+
+ 5. src/main/java/com/viaoa/log/OALogRecord.java:61
+
+  - Concrete bug: object is transient and setObject only stores it in the transient field.
+  - Runtime scenario: an OALogRecord is used as described by its class comment for transaction-log or replication-
+    queue style records, then serialized, queued, or otherwise transferred. The affected object reference is lost
+    after serialization/deserialization.
+  - Why it violates OA logging/observability semantics: a save/delete log record can survive without the object it
+    claims to describe, making replay/audit/diagnostics incomplete while still appearing structurally valid.
+  - Minimal fix direction: either make OALogRecord explicitly non-serializable/non-transferable for object references,
+    or persist/serialize a stable object identity/reference according to OA object identity semantics.
+  - Suggested CODEX comment location: field declaration and setObject/getObject.
+
+*/
+
+
 /**
  * Lightweight internal log record representing a single persistence command
  * executed against an {@link OAObject}.

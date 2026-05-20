@@ -29,6 +29,44 @@ import java.util.logging.Logger;
 
 import com.viaoa.lang.OAString;
 
+/*qqqqqqqqqqqqqqq
+OACODEX
+
+7. OAExecutorService.submitAndWait — timeout does not cancel or classify unfinished task
+     Severity: Medium
+     Bug/risk: submitAndWait calls Future.get(timeout) and propagates timeout, but leaves the task queued/running. The
+     method name implies bounded wait, but the task may later complete and mutate OA state after the caller has
+     handled timeout as failure.
+     Production impact: callers can observe timeout and retry/abort while the original task still applies changes
+     later, creating duplicate work or out-of-order state changes.
+     Minimal hardening: either cancel on timeout by contract, or rename/document as “wait only” and provide a
+     submitAndWaitCancelOnTimeout variant for stateful runtime work.
+  8. OAExecutorService.getExecutorService / OAScheduledExecutorService.getScheduledExecutorService — lazy
+     initialization is not synchronized/volatile
+     Severity: Low/Medium
+     Bug/risk: executor fields are mutable and not volatile; lazy creation is unsynchronized. Most constructors
+     initialize immediately, but unsafe publication or concurrent access can still create visibility issues or
+     duplicate executor instances if an object is shared during construction or reset/evolution later.
+     Production impact: low probability in current usage, but foundational concurrency wrappers should not rely on
+     external safe publication for lifecycle fields.
+     Minimal hardening: make executor fields volatile and synchronize or use double-checked locking/constructor-only
+     final initialization.
+
+4. OAExecutorService.close / submit — submissions after close increment metrics before rejection
+     Severity: Low
+     Bug/risk: close() calls executorService.shutdown() but leaves executorService non-null. Later submit() passes the
+     null check, increments aiTotalSubmitted, then ThreadPoolExecutor.submit() rejects with
+     RejectedExecutionException.
+     Production impact: failure is visible, but submitted-task metrics become inaccurate and lifecycle state is
+     ambiguous: the wrapper says “has been shutdown” only when executorService == null, which never happens in
+     close().
+     Minimal hardening: add explicit closed state, reject before incrementing metrics, and optionally set executor
+     reference to a terminal closed marker.
+
+
+*/
+
+
 /**
  * Wrapper around {@link java.util.concurrent.ThreadPoolExecutor} that creates a
  * named, daemon-thread executor for background processing within OA-based

@@ -19,6 +19,29 @@ import java.io.*;
 import java.util.*;
 import java.util.zip.*;
 
+/*qqqqqqqqqqqqqqqqqqqqqqq
+CODEX
+
+3. src/main/java/com/viaoa/io/OAFindFile.java / findZip(File file)
+
+  Concrete bug: ZipInputStream / FileInputStream are never closed.
+
+  Runtime scenario: OA tooling searches a large project or classpath tree with many .jar, .war, .ear, or .zip files.
+  findZip opens a FileInputStream at line 139 and wraps it in ZipInputStream at line 140, then returns without closing
+  either stream. Repeated archive scans can leak file handles and leave jars locked.
+
+  Why this violates OA/OG I/O semantics: streams opened by OA must be closed on success and failure unless ownership
+  is transferred. File-handle leaks in tooling/model scanning can break reloads, generated artifact cleanup, Windows
+  jar replacement, or long-running model analysis.
+
+  Minimal fix direction: use try-with-resources around ZipInputStream or at least close zin in finally, which will
+  close the underlying FileInputStream.
+
+  Suggested CODEX comment location: lines 139-140.
+
+
+*/
+
 
 /**
  * Utility for recursively searching a directory tree for files with a specific

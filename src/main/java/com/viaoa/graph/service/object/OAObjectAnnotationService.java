@@ -69,6 +69,118 @@ CODEX
   OAObjectAnnotationService.java:1066, where the listener and trigger are created with clazz.
 
 
+2. src/main/java/com/viaoa/graph/service/object/OAObjectAnnotationService.java:140 _update
+     Bug/risk: class-level @OAObjCallback processing is guarded by the same hs.contains("OAClass") block as @OAClass.
+     Execution path: subclass has @OAClass, superclass has class-level @OAObjCallback, subclass does not. update()
+     processes subclass first, adds "OAClass", then skips the superclass block entirely, including superclass
+     @OAObjCallback.
+     Production/runtime impact: inherited class-level enabled/visible/context callback metadata can silently disappear
+     for subclasses even though the annotation service explicitly walks superclasses.
+     Severity: Medium
+     Minimal hardening: track OAClass and class-level OAObjCallback independently, e.g. separate hs keys.
+  3. src/main/java/com/viaoa/graph/service/object/OAObjectAnnotationService.java:210 _update
+     Bug/risk: duplicate @OAId(pos=...) only logs a warning and then overwrites the existing ID property at that
+     position.
+     Production/runtime impact: reflection method order is not a stable semantic ordering guarantee. With duplicate ID
+     positions, object identity metadata can become nondeterministic, which can corrupt object-key, cache, datasource,
+     serialization, sync, and replication behavior.
+     Severity: High
+     Minimal hardening: fail fast for duplicate ID positions or preserve the first and mark metadata invalid rather
+     than overwriting.
+  4. src/main/java/com/viaoa/graph/service/object/OAObjectAnnotationService.java:558 _update / src/main/java/com/
+     viaoa/graph/service/object/OAObjectAnnotationService.java:1132 updateLinkFkeys
+     Bug/risk: invalid @OAFkey(fromProperty=..., toProperty=...) values are accepted into metadata even when
+     fromProperty or toProperty does not resolve.
+     Execution path: _update creates OAFkeyInfo with fromPropertyInfo == null; updateLinkFkeys later sets
+     toPropertyInfo from li.getToObjectInfo().getPropertyInfo(...) without validation.
+     Production/runtime impact: later object/link/fkey update code can operate on incomplete FK metadata. This can
+     surface as missed FK propagation, NPEs, or wrong object/link hydration depending on the path.
+     Severity: High
+     Minimal hardening: validate both sides during metadata finalization; fail metadata build or mark link invalid if
+     either property cannot resolve.
+  5. src/main/java/com/viaoa/graph/service/object/OAObjectAnnotationService.java:603 _update
+     Bug/risk: any non-static method returning Hub creates an OALinkInfo before checking whether @OAMany exists.
+     Production/runtime impact: helper/accessor methods that return Hub but are not model links can become runtime
+     relationship metadata. That can affect graph traversal, serialization, Hub wiring, and path/query behavior.
+     Severity: Medium
+     Minimal hardening: require @OAMany for runtime link creation, or explicitly validate/whitelist legacy unannotated
+     Hub methods.
+
+
+1. OAObjectAnnotationService._update — missing @OAId(pos) slots are logged but still committed
+     Severity: High
+     Execution path: a class defines @OAId(pos=1) without any @OAId(pos=0). The loader builds ss = new String[2], logs
+     "missing pos" for slot 0, then still calls faObjectInfo.setPropertyIds(oi, ss).
+     Why it matters: identity metadata can contain null ID-property entries, which can later corrupt key construction,
+     cache/index lookup, datasource identity, and sync identity routing.
+     Minimal hardening: treat missing ID positions as invalid metadata and fail-fast, or do not commit the ID array
+     until it is contiguous and non-null.
+     Suggested CODEX comment location: around OAObjectAnnotationService._update, the for (String sx : ss) missing-pos
+     block.
+  2. OAObjectAnnotationService._update / OAId.guid() — guid=true is ignored
+     Severity: Medium
+     Execution path: model declares @OAId(guid=true). Loader only copies autoAssign() and marks
+     OAObjectInfo.guidIsStored when the property type is UUID and the property name is literally guid. It never reads
+     oaid.guid().
+     Why it matters: annotation contract says the primary-key value should be generated/treated as GUID/UUID, but
+     runtime metadata does not honor that flag. This can silently produce wrong key/autonumber/cache behavior for
+     valid annotated models.
+     Minimal hardening: either wire OAId.guid() into OAPropertyInfo/OAObjectInfo semantics, or remove/document it as
+     unsupported and have verifier reject non-default use.
+     Suggested CODEX comment location: OAId.guid() and OAObjectAnnotationService._update where OAId oaid is processed.
+  3. OAObjectAnnotationService._update / OAOne.isTransient() — transient ONE links are not copied into OALinkInfo
+     Severity: High
+     Execution path: a getter has @OAOne(isTransient=true). Loader stores the raw annotation via
+     li.setOAOne(annotation) but never calls li.setTransient(annotation.isTransient()). OAObjectSaveService._save
+     later checks li.getTransient() to skip transient links, so the transient annotation is ignored.
+     Why it matters: transient links can participate in save/reference behavior even though the annotation contract
+     says they should not be stored. This can cause unexpected cascade/persistence behavior.
+     Minimal hardening: set li.setTransient(annotation.isTransient()) during ONE-link metadata load and add verifier
+     coverage.
+     Suggested CODEX comment location: ONE-link load block around li.setCascadeSave, li.setCascadeDelete,
+     li.setAutoCreateNew.
+  4. OAObjectAnnotationService._update / model callback signature validation — assignability check accepts overly
+     broad parameter types that runtime will not call
+     Severity: Low/Medium
+     Execution path: a static method named addressesModelCallback(Object model) or similar is annotated or discovered.
+     Loader uses cs[0].isAssignableFrom(OAObjectModel.class), so Object.class passes validation. Later
+     OAObjectCallbackService.onObjectCallbackModel only invokes if cs[0].equals(OAObjectModel.class), so the accepted
+     callback silently does not run.
+     Why it matters: metadata validation says the callback is acceptable, but runtime dispatch skips it, producing
+     missed model callbacks without a clear failure.
+     Minimal hardening: make loader validation match runtime dispatch: require cs[0].equals(OAObjectModel.class)
+     unless broader signatures are intentionally supported, then update dispatch too.
+     Suggested CODEX comment location: OAObjectAnnotationService._update, ModelCallback branch.
+
+3. OAClass / OAObjectAnnotationService._update — several class-level runtime fields are declared but not consumed
+     Severity: Low/Medium
+     Execution path: model uses @OAClass(shortName=..., description=..., displayProperty=..., sortProperty=...,
+     viewProperties=..., estimatedTotal=...). Source search shows these fields are declared but not loaded into
+     OAObjectInfo and have no core consumers, unlike pluralName, lowerName, displayName, datasource/cache flags, soft-
+     delete/version fields, etc.
+     Why it matters: the annotation contract says these fields define runtime/UI metadata. In normal generated models,
+     developers can believe these values drive object display/sort/view behavior, but core metadata loses them
+     silently.
+     Minimal hardening: either add explicit OAObjectInfo fields/loading for supported values, or document/verify them
+     as generator-only/non-runtime hints.
+     Suggested CODEX comment location: OAClass field declarations and OAObjectAnnotationService._update class-level
+     @OAClass load block.
+
+
+ 3. OAObjectAnnotationService._update / OACalculatedProperty — invalid calculated-property method signatures are
+     accepted into metadata
+     Severity: Low/Medium
+     Execution path: a method annotated @OACalculatedProperty has parameters other than the supported static Hub form,
+     or is otherwise not invokable as a normal calculated getter. The loader creates/updates OACalcInfo, sets
+     classType, stores the method, and does not reject the signature. Later path/reflect code expects either a zero-
+     arg getter or a static Hub-parameter calc method.
+     Why it matters: metadata can advertise a calculated property that runtime cannot reliably invoke, producing path
+     lookup failures or late reflection exceptions instead of a clean model-validation failure.
+     Minimal hardening: validate calculated-property signatures during annotation load: zero-arg instance getter, or
+     static one-arg Hub method only. Mirror the same rule in OAAnnotationVerifier.
+     Suggested CODEX comment location: OAObjectAnnotationService._update, calcProperties loop before creating
+     OACalcInfo.
+
 */
 
 public abstract class OAObjectAnnotationService {

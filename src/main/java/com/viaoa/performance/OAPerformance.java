@@ -17,6 +17,10 @@ package com.viaoa.performance;
 
 import java.util.logging.Logger;
 
+/*qqqqqqqqqqqqqqqqqqqqqqq
+CODEX
+
+*/
 
 /**
  * Defines configuration flags for runtime performance diagnostics within the OA framework.

@@ -15,6 +15,28 @@
  */
 package com.viaoa.classloader;
 
+/*qqqqqqqqqqqqqqqqqqqqqqq
+CODEX
+
+4. src/main/java/com/viaoa/classloader/OAClassUtil.java / getPackageName(Class c)
+
+  Concrete bug: classes in the default package return their class name as the package name.
+
+  Runtime scenario: OAClassUtil.getPackageName(DefaultPackageClass.class) gets c.getName() as "DefaultPackageClass".
+  Since lastIndexOf('.') is -1, the method returns the unchanged string. That is not a package name.
+
+  Why this violates OA/OG classloader semantics: package names are used for graph/package routing, metadata grouping,
+  codegen/tooling reports, and resource resolution. Returning a class name as a package name can route analysis/
+  tooling to a bogus package root instead of representing “no package”.
+
+  Minimal fix direction: if there is no dot, return "" or null according to the package contract. c.getPackage() is
+  also a safer source when available.
+
+  Suggested CODEX comment location: line 66 before the lastIndexOf('.') handling.
+
+
+*/
+
 /**
  * Utility methods for extracting the simple class name and package name from
  * a {@link Class} instance. These helpers provide null-safe access to commonly

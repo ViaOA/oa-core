@@ -15,6 +15,33 @@
  */
 package com.viaoa.process;
 
+
+/*qqqqqqqqqqqqq
+CODEX
+
+1. OAProcess / isTimedout, isBlockTimedout
+     Severity: High
+     Bug/risk: Both timeout checks are inverted. isTimedout() returns true while createdTime + maxTime is still in the
+     future, and false after the timeout has actually elapsed. isBlockTimedout() has the same issue.
+     Production impact: Long-running or blocked processes can be treated as timed out immediately, while genuinely
+     expired processes may appear healthy. This breaks cancellation/monitoring decisions.
+     Area: src/main/java/com/viaoa/process/OAProcess.java:516, src/main/java/com/viaoa/process/OAProcess.java:527
+     Minimal hardening: Change both comparisons to (createdTime + limit) < now, preferably with overflow-safe now -
+     createdTime > limit.
+
+9. OAProcess / mutable lifecycle fields
+     Severity: Low/Medium
+     Bug/risk: Several process-control fields intended for cross-thread observation are not volatile or synchronized:
+     pause, bAllowCancel, bBlock, maxBlockTime, maxTime, name, description, status, and steps. Cancellation fields are
+     partly volatile, but pause/block/status are not.
+     Production impact: Background process control or monitoring threads can see stale pause/block/status values,
+     making cancellation or UI/runtime state unreliable under load.
+     Area: src/main/java/com/viaoa/process/OAProcess.java:31
+     Minimal hardening: Make cross-thread state volatile or synchronize process state mutations/reads. Longer term,
+     replace independent booleans with an explicit lifecycle/state object.
+
+*/
+
 /**
  * Tracks the lifecycle of a long-running or asynchronous process and provides
  * state for cancellation, completion, progress steps, timing constraints, and

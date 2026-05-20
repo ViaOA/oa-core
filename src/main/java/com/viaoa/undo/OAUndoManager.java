@@ -16,7 +16,6 @@
 package com.viaoa.undo;
 
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -30,6 +29,164 @@ import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
+
+/*qqqqqqqqqqqqq
+CODEX
+
+2. OAUndoManager / redo() is not wrapped with undo-capture suppression
+     Severity: High
+     Concrete bug: OAUndoManager.undo() temporarily sets bIgnoreAll = true, but redo() is not overridden. Redo
+     therefore runs with normal undo capture enabled. Any OAObject/Hub/UI listener that records undoable edits during
+     redo can push new edits while redo is applying an existing edit.
+     Runtime scenario: User redoes a property or Hub operation; property-change or UI-controller listeners create
+     undoable edits for the redo’s own mutations. The redo stack/undo stack can gain extra records or reorder expected
+     history.
+     Why this violates OA/OG undo semantics: Undo/redo application must not recursively record itself as new user work
+     unless explicitly contracted.
+     Minimal fix direction: Override redo() symmetrically with undo(), using try/finally to suppress undo capture
+     during redo application.
+     Suggested CODEX comment location: src/main/java/com/viaoa/undo/OAUndoManager.java:515
+
+
+4. OAUndoManager / compound edit state is static global, not thread-owned
+     Severity: High
+     Concrete bug: compoundEdit is a single static field shared by all threads. startCompoundEdit, endCompoundEdit,
+     addEdit, and add(UndoableEdit[]) all operate on the same global compound edit. A compound edit started on one
+     thread can collect edits from another thread.
+     Runtime scenario: UI thread starts a compound edit for a user action while another thread records an undoable
+     property change. The second thread’s edit is added into the first thread’s compound edit because compoundEdit !=
+     null.
+     Why this violates OA/OG undo semantics: Compound undo boundaries must preserve the user/runtime operation
+     boundary. Cross-thread contamination corrupts undo ordering and grouping.
+     Minimal fix direction: Make compound edit state thread-owned or operation-owned, or explicitly restrict undo
+     manager use to one UI thread and enforce that with assertions.
+     Suggested CODEX comment location: src/main/java/com/viaoa/undo/OAUndoManager.java:121, src/main/java/com/viaoa/
+     undo/OAUndoManager.java:386
+  5. OAUndoManager / thread ignore counter uses unsynchronized HashMap<Thread,Integer>
+     Severity: Medium/High
+     Concrete bug: hmThreadCounter is a static HashMap accessed from setIgnore() and getIgnore() without
+     synchronization. The undo package is used from event/runtime paths that can be multi-threaded. Concurrent reads/
+     writes can corrupt the map or return stale results. It also holds strong references to Thread objects when ignore
+     is imbalanced.
+     Runtime scenario: Background event processing and UI actions both call ignore tracking. A race in HashMap can
+     lose a counter update, fail to suppress undo capture, or keep suppression active longer than intended.
+     Why this violates OA/OG undo semantics: Thread-local suppression must be reliable and isolated per thread. A
+     shared unsynchronized map is not safe process infrastructure.
+     Minimal fix direction: Replace with ThreadLocal<Integer> or a synchronized/concurrent map with guaranteed
+     cleanup. Prefer try/finally helper APIs for balanced ignore scopes.
+     Suggested CODEX comment location: src/main/java/com/viaoa/undo/OAUndoManager.java:90, src/main/java/com/viaoa/
+     undo/OAUndoManager.java:413
+  6. OAUndoManager / endCompoundEdit() can leave compound capture open when ignore is active
+     Severity: Medium
+     Concrete bug: endCompoundEdit() returns immediately if getIgnore() is true, leaving compoundEdit non-null. If
+     ignore was enabled during cleanup/finalization of an operation, the compound edit remains open and later
+     unrelated edits can be captured into it.
+     Runtime scenario: Code starts a compound edit, enters an ignore scope for internal updates, then calls
+     endCompoundEdit() while ignore is still active in a finally/cleanup path. The method silently returns without
+     closing the compound.
+     Why this violates OA/OG undo semantics: Compound edit lifecycle must close deterministically. Silent failure to
+     close corrupts later undo grouping and ordering.
+     Minimal fix direction: Split “ignore adding new edits” from “allow lifecycle cleanup.” endCompoundEdit() should
+     be able to close the active compound or should fail visibly if called under invalid state.
+     Suggested CODEX comment location: src/main/java/com/viaoa/undo/OAUndoManager.java:280
+  7. OAUndoManager / property-change capture lifecycle is not protected by try/finally API
+     Severity: Medium
+     Concrete bug: startCompoundEditForPropertyChanges() sets thread-local undo capture through
+     OAThreadLocalService.startUndoable, and endCompoundEditForPropertyChanges() must be called separately. There is
+     no scoped helper that guarantees cleanup when the wrapped operation throws.
+     Runtime scenario: A controller starts property-change capture and the user operation throws before
+     endCompoundEditForPropertyChanges() runs. The thread remains in create-undoable mode, and later unrelated
+     property changes are captured into the stale/incorrect compound state.
+     Why this violates OA/OG undo semantics: ThreadLocal/context state set during undo capture must be restored with
+     try/finally. Leaked capture state corrupts undo history.
+     Minimal fix direction: Provide a scoped API such as runUndoable(presentationName, Runnable/Callable) that always
+     ends capture in finally, or document/enforce try/finally at call sites.
+     Suggested CODEX comment location: src/main/java/com/viaoa/undo/OAUndoManager.java:210, src/main/java/com/viaoa/
+     undo/OAUndoManager.java:223
+
+9. OAUndoManager / singleton creation and global flags are unsynchronized
+     Severity: Medium
+     Concrete bug: createUndoManager() lazily initializes static undoManager without synchronization/volatile. Static
+     fields bIgnoreAll, bVerbose, compoundEdit, and lastEdit are also unsynchronized globals.
+     Runtime scenario: Multiple startup/runtime threads call createUndoManager() or mutate undo globals concurrently.
+     A thread can see stale/null manager state, create a second manager, or add edits to a manager instance that is no
+     longer the static singleton.
+     Why this violates OA/OG undo semantics: Undo stack ownership must be stable. Split/lost undo history is
+     correctness-impacting for UI and runtime controllers.
+     Minimal fix direction: Synchronize singleton creation and global lifecycle access, or initialize eagerly. Make
+     global flags volatile or guard them under the manager lock.
+     Suggested CODEX comment location: src/main/java/com/viaoa/undo/OAUndoManager.java:149
+
+
+1. OAUndoManager / undo() clobbers pre-existing global ignore state
+     Severity: Medium/High
+     Concrete bug: undo() unconditionally sets bIgnoreAll = true, then unconditionally resets it to false in finally.
+     If application/runtime code already had OAUndoManager.setIgnoreAll(true) active before calling undo, the undo
+     call re-enables undo capture globally afterward.
+     Runtime scenario: A bulk/load/replay/UI initialization path disables undo capture with setIgnoreAll(true),
+     invokes undo or triggers code that calls undo, and expects global suppression to remain active. After undo()
+     returns, suppression is silently disabled.
+     Why this violates OA/OG undo semantics: Undo context suppression is runtime state and must be restored to the
+     previous value, not forced to a default. This can cause unrelated subsequent changes to be captured into undo
+     history.
+     Minimal fix direction: Save boolean old = bIgnoreAll; set true for the undo scope; restore bIgnoreAll = old in
+     finally. Apply the same rule when adding redo suppression.
+     Suggested CODEX comment location: src/main/java/com/viaoa/undo/OAUndoManager.java:515
+
+6. OAUndoManager / nested compound edit starts silently commit the existing compound
+     Severity: Medium
+     Concrete bug: startCompoundEdit(...) detects an existing compoundEdit, logs a warning, and calls
+     endCompoundEdit() before starting the new one. This commits the existing group instead of preserving nesting or
+     rejecting invalid nesting.
+     Runtime scenario: A controller starts a compound edit and calls lower-level code that also starts a compound
+     edit. The outer group is prematurely ended and added to the manager, while subsequent edits land in the inner
+     group. User-level undo boundaries are split incorrectly.
+     Why this violates OA/OG undo semantics: Compound undo grouping must preserve operation boundaries. Nested starts
+     should either stack, join, or fail visibly; silently committing the outer group corrupts ordering/grouping.
+     Minimal fix direction: Add depth-aware compound state, or reject nested startCompoundEdit with a visible
+     exception/diagnostic instead of auto-ending the existing edit.
+     Suggested CODEX comment location: src/main/java/com/viaoa/undo/OAUndoManager.java:327
+
+3. OAUndoManager / cancelCompoundEdit() drops the compound without calling die() on contained edits
+     Severity: Medium
+     Concrete bug: cancelCompoundEdit() simply sets compoundEdit = null. It does not call compoundEdit.die() before
+     discarding the group. Any contained edits are not told they are no longer needed.
+     Runtime scenario: A controller starts a compound edit, collects many property/Hub edits, then cancels the
+     operation. The compound reference is dropped, but contained edits do not get lifecycle cleanup. With
+     OAUndoableEdit.die() currently empty this is partially masked, but once edit cleanup is implemented, cancel still
+     skips it.
+     Why this violates OA/OG undo semantics: Canceling an undo group should be a terminal lifecycle transition for all
+     contained edits. Otherwise resources/references owned by the group are not released deterministically.
+     Minimal fix direction: CompoundEdit ce = compoundEdit; compoundEdit = null; ce.die(); or equivalent cleanup
+     before dropping the reference.
+     Suggested CODEX comment location: src/main/java/com/viaoa/undo/OAUndoManager.java:430
+  4. OAUndoManager / add(UndoableEdit) silently drops edits before manager creation
+     Severity: Low/Medium
+     Concrete bug: Static add(UndoableEdit) returns when undoManager == null. That means undo records created before
+     createUndoManager() are silently discarded.
+     Runtime scenario: A controller enables undoable property capture or creates explicit edits during UI/model
+     startup before the global manager has been initialized. The mutation succeeds, but the undo record is lost with
+     no visible signal.
+     Why this violates OA/OG undo semantics: Successful capture of an undoable user/runtime action should either place
+     the edit in the owning undo stack or fail visibly. Silent loss makes UI/controller undo state incorrect.
+     Minimal fix direction: Either auto-create the manager in add, or make “no manager means undo disabled” explicit
+     and observable through diagnostics. For production hardening, log once or expose a strict mode that throws.
+     Suggested CODEX comment location: src/main/java/com/viaoa/undo/OAUndoManager.java:442
+  5. OAUndoManager / add(UndoableEdit[]) ignores CompoundEdit.addEdit failure
+     Severity: Low/Medium
+     Concrete bug: When wrapping an array into a CompoundEdit, each ce.addEdit(anEdits[i]) return value is ignored.
+     CompoundEdit.addEdit can reject edits depending on edit state. The method still calls ce.end() and adds the
+     compound to the manager.
+     Runtime scenario: A caller passes an already-ended/dead/custom edit that rejects addition. The resulting compound
+     can be added with missing child edits, and undo appears available for an incomplete group.
+     Why this violates OA/OG undo semantics: Compound undo records must contain the complete intended operation set or
+     fail visibly. Partial group construction should not silently appear successful.
+     Minimal fix direction: Check each addEdit result; if any required edit is rejected, call ce.die() and fail/log
+     rather than adding an incomplete compound.
+     Suggested CODEX comment location: src/main/java/com/viaoa/undo/OAUndoManager.java:467
+
+
+*/
 
 /**
  * OA-specific extension of {@link javax.swing.undo.UndoManager} providing

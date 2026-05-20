@@ -20,6 +20,72 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+/*qqqqqqqqqqqqqqqqq
+CODEX
+
+1. OAPool.get / OAPool.loadMinimum — failed create() leaks pool capacity
+     Severity: High
+     Bug/risk: get() reserves a Pool slot under lock, marks it used, increments currentUsed, then calls create()
+     outside the synchronized block. If create() throws or returns null, the reserved slot remains in alResource as
+     used=true with resource=null, and currentUsed is never decremented. loadMinimum() has a related path where null-
+     resource slots remain in the pool if create() fails.
+     Production impact: a transient resource creation failure can permanently reduce or exhaust pool capacity. With
+     max > 0, future callers can block forever even though no real resource exists. This is especially risky for
+     OARemoteMultiplexerClient virtual socket pooling.
+     Minimal hardening: wrap create() in try/catch; on failure, reacquire the lock, remove the reserved slot,
+     decrement currentUsed if needed, notify waiters, then rethrow. Reject null resources or treat them as creation
+     failure.
+  2. OAPool.get — interrupted wait is swallowed and interrupt status is lost
+     Severity: Medium
+     Bug/risk: while waiting for a resource, alResource.wait() catches Exception and ignores it. InterruptedException
+     is swallowed and the interrupt flag is cleared. The loop then continues waiting or returns a resource.
+     Production impact: shutdown/cancel paths using thread interruption can fail to stop blocked pool callers. Under
+     runtime shutdown or remote disconnect, this can leave blocked worker threads alive longer than intended.
+     Minimal hardening: catch InterruptedException separately, restore interrupt status, and either throw a runtime
+     exception or return according to an explicit pool cancellation contract.
+  3. OAPool.remove / OAPool.release — removed(resource) exceptions can escape after state mutation
+     Severity: Medium
+     Bug/risk: pool state is already mutated before removed(resource) runs outside the lock. If removed throws, the
+     resource has been removed from the pool and waiters may already have been notified or not notified depending on
+     path. In OARemoteMultiplexerClient, removed(VirtualSocket) wraps close failure in RuntimeException.
+     Production impact: cleanup failure can surface to callers after the pool has already dropped ownership, leaving
+     the caller uncertain whether the resource is still usable or closed. For sockets, this can produce stale/half-
+     closed resources outside the pool’s tracking.
+     Minimal hardening: define removal cleanup semantics explicitly. Prefer logging/aggregating cleanup failure after
+     state mutation, or return a status while guaranteeing the pool no longer owns the resource.
+
+
+1. OAPool.release — shrinking release does not notify waiters
+     Severity: High
+     Bug/risk: when release(resource) decides bRelease=true, it removes the pool entry and exits without notifyAll().
+     Waiters in get() may be blocked because the pool was at max; after removal, capacity is available, but no wakeup
+     is sent.
+     Production impact: a thread can remain blocked even though the pool now has room to create a replacement
+     resource. This is a real stall risk for bounded pools such as remote virtual socket pools.
+     Minimal hardening: notify waiters after any release that changes availability or capacity, including the shrink/
+     remove path.
+  2. OAPool.setMaximum / setMinimum / setHighMarkTimeLimit — dynamic pool configuration is unsynchronized
+     Severity: Medium
+     Bug/risk: min, max, and msHighMarkValidTimeLimit are plain fields. They are written without synchronization/
+     volatile and read inside synchronized pool logic. setMaximum() also does not notify blocked waiters if the max is
+     increased.
+     Production impact: runtime code can change the maximum socket/resource pool size, but waiting threads might not
+     see the new value promptly, and even if the value is visible they may remain parked until another release/add
+     notification.
+     Minimal hardening: guard configuration writes with the same alResource lock or make fields volatile; notify
+     waiters when increasing max.
+  3. OAPool.add — externally added resources can exceed maximum capacity
+     Severity: Low/Medium
+     Bug/risk: add(TYPE obj) unconditionally appends a resource and notifies waiters. It does not check max,
+     duplicates, or whether the resource is already managed.
+     Production impact: if used by runtime code to seed or replace resources, the pool can exceed its intended maximum
+     and can contain duplicate entries for the same resource. Duplicate entries can later cause double-release/double-
+     remove ambiguity.
+     Minimal hardening: enforce max unless explicitly documented as an override path, and reject/ignore resources
+     already present.
+
+ */
+
 /**
  * Generic thread-safe object pool that maintains a configurable minimum and
  * maximum number of pooled instances. The pool grows on demand, blocks callers

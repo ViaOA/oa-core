@@ -23,6 +23,46 @@ import java.util.logging.Logger;
 import com.viaoa.hub.*;
 import com.viaoa.lang.OAString;
 
+/*qqqqqqqqqqqqq
+CODEX
+
+3. OAChangeRefresher / runThread
+     Severity: High
+     Bug/risk: lastChange is advanced before process() runs. If process() throws, the exception is logged, but the
+     failed change is considered consumed. No retry occurs unless another refresh arrives.
+     Production impact: A transient failure can silently drop required refresh work and leave cache/filter/hub-derived
+     state stale. This violates process retry semantics because the failed work is not visible as pending.
+     Area: src/main/java/com/viaoa/process/OAChangeRefresher.java:372
+     Minimal hardening: Capture targetChange = aiChange.get(), run process(), then assign lastChange = targetChange
+     only after success. On failure, leave lastChange unchanged or record an explicit failed state.
+
+7. OAChangeProcessor / OAChangeRefresher listener lifecycle
+     Severity: Medium
+     Bug/risk: Both classes rely on finalize() for listener removal. But registered hub listeners hold references back
+     to the anonymous listener/outer processor, so the processor/refresher can remain reachable from the hub and never
+     finalize. OAChangeRefresher.stop() stops the thread but does not deregister listeners. OAChangeProcessor has no
+     close/stop path and its executor is not closed.
+     Production impact: Stale processors can keep receiving events, retain hubs/objects, leak background executors,
+     and execute obsolete work.
+     Areas: src/main/java/com/viaoa/process/OAChangeProcessor.java:214, src/main/java/com/viaoa/process/
+     OAChangeRefresher.java:267
+     Minimal hardening: Add explicit close()/removeListeners() lifecycle methods, call executor close where
+     applicable, and make finalize() non-authoritative.
+
+8. OAChangeRefresher / start and stop lifecycle
+     Severity: Medium
+     Bug/risk: start() always creates a new daemon thread and increments aiStartStop; stop() only increments the
+     counter and notifies. It does not clear thread, join, or enforce terminal state. Repeated start/stop calls can
+     leave stale thread references and ambiguous running state.
+     Production impact: Runtime code cannot reliably know whether the refresher is active or stopped. Restart races
+     can skip pending refreshes or leave old thread state visible through getThread().
+     Area: src/main/java/com/viaoa/process/OAChangeRefresher.java:303
+     Minimal hardening: Add explicit lifecycle state, guard duplicate starts, clear thread in the worker finally, and
+     optionally join or expose a stopped signal.
+
+
+*/
+
 /**
  * Event-driven refresher that listens to one or more {@link com.viaoa.hub.Hub}
  * instances and triggers periodic processing when changes occur. <p>

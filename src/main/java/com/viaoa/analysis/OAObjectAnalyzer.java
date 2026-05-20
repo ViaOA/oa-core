@@ -18,13 +18,65 @@ package com.viaoa.analysis;
 import java.util.HashSet;
 
 import com.viaoa.callback.OACallback;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectCacheService;
-import com.viaoa.graph.service.object.OAObjectHubService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
+
+/*qqqqqqqqqqqqqqqqqqqqqq
+CODEX
+
+1. src/main/java/com/viaoa/analysis/OAObjectAnalyzer.java / OAObjectAnalyzer.load
+
+  Concrete bug: load() only enumerates classes from the default graph, so it silently omits cached objects that live
+  only in non-default/package graphs.
+
+  Runtime scenario: OA has a default graph plus a package-specific graph registered through OARuntime.createGraph(...)
+  or package routing. Objects are cached in the package graph, but their classes are not present in the default graph
+  cache. load() does:
+
+  - line 62: OARuntime.graph() to get only the default graph
+  - line 64: ogx.objectsInternal().callObjectCacheGetClasses()
+  - line 65: resolves each class back to its routed graph
+
+  Classes that exist only in non-default graph caches are never visited, and the analysis completes without saying it
+  was partial.
+
+  Why this violates OA/OG analysis semantics: the class documentation says it scans all cached OAObject instances. In
+  OG/OA 4.0, graph ownership and package routing are semantic boundaries. A diagnostic analysis that silently skips
+  non-default graph caches can produce false-negative architecture/cache reports and misleading tooling guidance.
+
+  Minimal fix direction: either make OAObjectAnalyzer graph-scoped and document/require the target OAGraph, or
+  enumerate all registered runtime graphs and scan each graph’s object cache directly. Do not claim global
+  completeness unless all relevant graphs were visited.
+
+  Suggested CODEX comment location: immediately before line 62, where OARuntime.graph() fixes the scan to the default
+  graph.
+
+  Suggested regression test: OAObjectAnalyzerScansNonDefaultPackageGraphCache.
+
+  2. src/main/java/com/viaoa/analysis/OAObjectAnalyzer.java / OAObjectAnalyzer.hsHub and load
+
+  Concrete bug: analysis result state is retained across runs because hsHub is an instance field and load() never
+  clears it.
+
+  Runtime scenario: create one OAObjectAnalyzer, call load(), mutate/remove Hub memberships or clear parts of the
+  cache, then call load() again. hsHub still contains Hubs discovered during the previous run. Since the field holds
+  strong references, it can also retain old Hub graphs longer than intended during repeated diagnostic analysis.
+
+  Why this violates OA/OG analysis semantics: analysis state should describe the current scan. Reusing stale Hub state
+  causes false positives if the field is inspected/debugged or later exposed, and it creates a diagnostic-time
+  retention leak. Analysis temporary state should be isolated per run.
+
+  Minimal fix direction: clear hsHub at the start of load(), or make it a local variable returned/reported by the
+  scan. If cross-run accumulation is intentional, rename/document it explicitly.
+
+  Suggested CODEX comment location: line 48 field declaration or at the start of load() before line 62.
+
+  Suggested regression test: OAObjectAnalyzerLoadDoesNotRetainHubResultsAcrossRuns.
+
+
+*/
 
 /**
  * Diagnostic utility that traverses all cached {@link OAObject}s and

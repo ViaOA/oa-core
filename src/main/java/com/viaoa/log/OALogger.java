@@ -22,6 +22,38 @@ import java.util.logging.Logger;
 
 import com.viaoa.text.IndentFormatter;
 
+/*qqqqqqqqqqqqqqqqqqqqqqq
+CODEX
+
+3. src/main/java/com/viaoa/log/OALogger.java:142, src/main/java/com/viaoa/log/OALogger.java:171, src/main/java/com/
+     viaoa/log/OALogUtil.java:82
+
+  - Concrete bug: repeated setup adds duplicate ConsoleHandlers.
+  - Runtime scenario: tests or runtime bootstrap call setupConsoleLogger, createIndentConsoleLogger, or
+    consolePerformance more than once. Each call adds another handler to the same logger, causing each log record to
+    print multiple times.
+  - Why it violates OA logging semantics: diagnostic output becomes duplicated and misleading, especially for sync/
+    remote/queue failure analysis.
+  - Minimal fix direction: remove/close prior OA-installed console handlers or make setup idempotent per logger/
+    formatter/level.
+  - Suggested CODEX comment location: before each log.addHandler(ch).
+
+  4. src/main/java/com/viaoa/log/OALogUtil.java:107
+
+  - Concrete bug: consoleOnly(Level,String) has setup-before-commit behavior that can disable existing logging before
+    validating replacement inputs.
+  - Runtime scenario: consoleOnly(null, "com.viaoa") or consoleOnly(level, null) first removes/disables current
+    handlers, then throws from Handler.setLevel(null) or Logger.getLogger(null).
+  - Why it violates OA logging semantics: a failed logging reconfiguration can leave the JVM with logging disabled and
+    no caller-visible recovery state beyond the thrown exception.
+  - Minimal fix direction: validate level and name before mutating global logger state; construct replacement handler
+    before removing old handlers.
+  - Suggested CODEX comment location: start of consoleOnly(Level,String).
+
+
+
+*/
+
 /*
  * Sets up Logging environment for complete application.  Root package level has Log Handlers
  * for console and log file.

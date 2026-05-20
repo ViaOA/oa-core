@@ -17,6 +17,13 @@ package com.viaoa.classloader;
 
 import com.viaoa.reflect.OAReflect;
 
+/*qqqqqqqqqqqqqqqqqqqqqqq
+CODEX
+
+
+
+*/
+
 /**
  * Specialized reflection utility that extends {@link OAReflect}.
  * <p>

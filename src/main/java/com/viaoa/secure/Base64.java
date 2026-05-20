@@ -15,6 +15,66 @@
  */
 package com.viaoa.secure;
 
+
+/*qqqqqqqqqqqqqqqqqqqqqqq
+CODEX
+
+1. src/main/java/com/viaoa/secure/Base64.java:134 decode(char[])
+
+  - Concrete bug: decoder claims to tolerate non-Base64 characters, but output length is calculated from the raw input
+    length before invalid characters are skipped.
+  - Runtime/security scenario: a normal Base64 config value is line-wrapped, copied with whitespace, or stored with a
+    trailing newline. The decode loop skips whitespace, writes fewer bytes than the precomputed out.length, then
+    throws Error("miscalculated data length!").
+  - Why this violates OA/OG security semantics: Base64 is used for configured DB passwords and encrypted values. A
+    formatting-only config change can fail as a VM-level Error instead of a normal caller-visible decode/config
+    failure, and the documented behavior is false.
+  - Minimal fix direction: compute decoded length from valid Base64 characters after ignoring whitespace/invalid
+    characters, or reject invalid characters before allocation with a checked/declared failure path. Do not throw
+    Error for normal decode failure.
+  - Suggested CODEX comment location: Base64.decode(char[]) before length calculation at lines 135-142.
+
+  2. src/main/java/com/viaoa/secure/Base64.java:113 decode(String) and src/main/java/com/viaoa/secure/Base64.java:53
+     encode(String)
+
+  - Concrete bug: String encode/decode uses the platform default charset in both directions.
+  - Runtime/security scenario: Base64.encode("pässword") is run on a machine with one default charset, persisted as a
+    DB password/config value, then Base64.decode(...) is run on another runtime with a different default charset. The
+    decoded password text can drift.
+  - Why this violates OA/OG security semantics: encoded credentials/config values must round-trip deterministically
+    across machines, deployments, serialization, and tooling.
+  - Minimal fix direction: define explicit UTF-8 string overloads or mark current methods as legacy/default-charset
+    only; use StandardCharsets.UTF_8 for new persisted/config values.
+  - Suggested CODEX comment location: Base64.encode(String) and Base64.decode(String).
+
+  3. src/main/java/com/viaoa/secure/Base64.java:148 decode(char[])
+
+  - Concrete bug: Base64 decode indexes codes[data[ix] & 0xFF], silently discarding the high byte of every Java char.
+  - Runtime/security scenario: a copied/configured encoded value contains a non-ASCII character whose low byte maps to
+    a valid Base64 character. Instead of being rejected or skipped as invalid, it can decode as a different valid byte
+    sequence.
+  - Why this violates OA/OG security semantics: secure/config decode must not silently accept a different value than
+    the stored text represents. That can produce wrong credentials or wrong encrypted payload bytes without a clear
+    failure.
+  - Minimal fix direction: reject or skip any char > 255 explicitly before table lookup; for strict decode, fail
+    visibly on non-Base64 characters outside documented whitespace tolerance.
+  - Suggested CODEX comment location: Base64.decode(char[]) at the codes[data[ix] & 0xFF] lookup.
+
+  4. src/main/java/com/viaoa/secure/Base64.java:161 decode(char[])
+
+  - Concrete bug: malformed or unsupported Base64 input throws java.lang.Error, not an exception.
+  - Runtime/security scenario: an OA-controlled config/resource value for db.passwordBase64 is incomplete, incorrectly
+    padded, or copied incorrectly. The decode path can throw Error, bypassing normal application exception handling
+    and potentially terminating setup/test/runtime flows abruptly.
+  - Why this violates OA/OG security semantics: failed decode/authorization-adjacent setup must be visible and
+    recoverable through normal failure channels. It should not masquerade as an unrecoverable JVM error.
+  - Minimal fix direction: throw IllegalArgumentException or a package-specific checked/unchecked decode exception
+    with context; callers can then fail config setup visibly.
+  - Suggested CODEX comment location: Base64.decode(char[]) at the final length check.
+
+*/
+
+
 /**
  * Provides Base64 encoding and decoding utilities for raw bytes and Strings.
  * <p>

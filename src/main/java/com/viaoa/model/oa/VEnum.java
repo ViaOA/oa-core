@@ -21,6 +21,27 @@ import com.viaoa.annotation.OAClass;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.object.OAObject;
 
+
+/*qqqqqqqqqqqqqqqqqqq
+CODEX
+
+ 1. src/main/java/com/viaoa/model/oa/VEnum.java:48 and src/main/java/com/viaoa/model/oa/VNameValue.java:46 setName
+
+  - Concrete bug: fireBeforePropertyChange(P_Name, ...) passes the current value field as the old value instead of the
+    current name.
+  - Runtime/tooling scenario: a Hub listener, trigger, validation callback, sync/change tracker, or UI binding listens
+    to beforePropertyChange for Name. It receives oldValue as an int for VEnum, or the previous Value string for
+    VNameValue, instead of the previous name.
+  - Why this violates OA/OABuilder/OG model semantics: value-wrapper model objects still participate in OAObject event
+    semantics. BEFORE property events must describe the property being changed, or validation/event consumers can make
+    decisions using wrong metadata state.
+  - Minimal fix direction: in both setters, pass this.name as the old value to fireBeforePropertyChange(P_Name,
+    oldName, newValue), matching the after-event old value.
+  - Suggested CODEX comment location: VEnum.setName before line 49 and VNameValue.setName before line 47.
+
+
+*/
+
 @OAClass(
     shortName = "en",
     displayName = "Enum",

@@ -22,6 +22,32 @@ import java.util.logging.Logger;
 import com.viaoa.concurrent.OAExecutorService;
 import com.viaoa.hub.*;
 
+
+/*qqqqqqqqqqqqq
+CODEX
+
+2. OAChangeProcessor / addListener(Hub, String)
+     Severity: High
+     Bug/risk: For a simple non-dotted property path, the listener is constructed but never registered with the hub.
+     The dotted-path branch calls hub.addHubListener(...); the simple-property branch does not.
+     Production impact: Normal addListener(hub, "property") usage silently misses all matching property changes. That
+     can skip refreshes, derived-state updates, sync-related work, or background processing.
+     Area: src/main/java/com/viaoa/process/OAChangeProcessor.java:183
+     Minimal hardening: Mirror OAChangeRefresher: call hub.addHubListener(hl, propertyPath) in the simple-property
+     branch before tracking MyListener.
+
+6. OAChangeProcessor / async dispatch
+     Severity: Medium
+     Bug/risk: In threaded mode, process(evt) runs inside a submitted Runnable with no local try/catch. With
+     ExecutorService.submit, exceptions are captured in the Future, but the Future is discarded.
+     Production impact: Failed change processing can disappear without log/observable failure, leaving derived state
+     stale while the processor continues as if successful.
+     Area: src/main/java/com/viaoa/process/OAChangeProcessor.java:94
+     Minimal hardening: Wrap process(evt) in try/catch and log/report failures, or use an executor wrapper that
+     records uncaught task failures.
+
+*/
+
 /**
  * Listens to one or more {@link com.viaoa.hub.Hub} instances and their
  * property-path change events, and invokes a processing callback whenever

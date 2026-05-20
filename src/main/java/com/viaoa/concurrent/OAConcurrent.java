@@ -20,6 +20,36 @@ import java.util.concurrent.CyclicBarrier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+/*qqqqqqqqqqqqqq
+CODEX
+
+9. OAConcurrent.run — worker failures are logged but not propagated to caller
+     Severity: Low
+     Bug/risk: each worker catches Exception, logs it, decrements the latch, and run() returns normally. The caller
+     cannot detect that one or more tasks failed unless it monitors logs.
+     Production impact: acceptable for a test helper, but if used in runtime validation/load/stress helpers, it can
+     create false success.
+     Minimal hardening: collect thrown exceptions in a thread-safe list and throw an aggregate exception after
+     countDownLatch.await().
+  10. OAConcurrent.run — interruption while awaiting completion is not cleanup-aware
+     Severity: Low
+     Bug/risk: if the caller thread is interrupted during countDownLatch.await(), run() throws but worker threads
+     continue running. There is no cancellation/interrupt of spawned workers.
+     Production impact: caller may abandon a concurrent batch while non-daemon workers keep running and mutating
+     shared state.
+     Minimal hardening: on interrupt, interrupt spawned threads or document that OAConcurrent has no cancellation
+     semantics.
+
+5. OAConcurrent.run — shared instance is not safe for concurrent or reentrant run() calls
+     Severity: Low
+     Bug/risk: countDownLatch and barrier are instance fields overwritten on each run(). If two threads call run() on
+     the same OAConcurrent instance, worker threads from the first run can see the second run’s barrier/latch fields.
+     Production impact: can cause broken barriers, hangs, or false completion if reused concurrently. Probably low
+     risk if treated as one-shot test utility, but the class does not enforce that.
+     Minimal hardening: make run() synchronized, or move latch/barrier to final local variables captured by workers.
+
+*/
+
 /**
  * Utility for executing a group of {@link Runnable} tasks concurrently with a
  * synchronized starting point. <p>

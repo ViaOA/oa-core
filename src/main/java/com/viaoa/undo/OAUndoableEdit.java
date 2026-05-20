@@ -25,6 +25,167 @@ import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 
+/*qqqqqqqqqqqqq
+CODEX
+
+
+1. OAUndoableEdit / undo() and redo() flip edit state before restoration succeeds
+     Severity: High
+     Concrete bug: undo() sets bCanUndo = false before executing the Hub/object restore operation. redo() sets
+     bCanUndo = true before reapplying the operation. If hub.remove, hub.insert, hub.move, hub.setAO, or
+     OAObject.setProperty throws, the edit state has already advanced even though restoration failed.
+     Runtime scenario: Undoing a property change throws from validation/listener/link logic, or undoing a Hub remove
+     fails because the object/index is no longer valid. Caller receives an exception, but the edit now reports it
+     cannot be undone and can be redone.
+     Why this violates OA/OG undo semantics: Caller-visible failure can signal incomplete operation, but retry must
+     remain correct. This turns a failed undo/redo into corrupted undo-stack state.
+     Minimal fix direction: Execute the operation first, then flip bCanUndo only after success. For partial compound
+     operations, consider explicit failed/incomplete state.
+     Suggested CODEX comment location: src/main/java/com/viaoa/undo/OAUndoableEdit.java:527, src/main/java/com/viaoa/
+     undo/OAUndoableEdit.java:564
+
+3. OAUndoableEdit / MOVE records only positions, not object identity
+     Severity: Medium/High
+     Concrete bug: createUndoableMove stores prevPos and newPos but does not store the moved object. Undo/redo calls
+     hub.move(newPos, prevPos) and hub.move(prevPos, newPos) without verifying that the same object is still at the
+     source position.
+     Runtime scenario: A Hub is modified outside the undo stack, refreshed, filtered, sorted, or otherwise reordered
+     between the original move and undo. Undo then moves whatever object currently sits at newPos, not necessarily the
+     object that was moved originally.
+     Why this violates OA/OG undo semantics: Undo records must preserve Hub membership/order and object identity.
+     Position-only move records can restore the wrong object order.
+     Minimal fix direction: Store the moved object identity in the move edit and, during undo/redo, locate/verify that
+     object before moving it. If the object is missing or positions are stale, fail visibly.
+     Suggested CODEX comment location: src/main/java/com/viaoa/undo/OAUndoableEdit.java:369, src/main/java/com/viaoa/
+     undo/OAUndoableEdit.java:538
+
+ 8. OAUndoableEdit / public undo() and redo() do not enforce canUndo/canRedo
+     Severity: Medium
+     Concrete bug: undo() and redo() do not check canUndo() / canRedo() and do not throw CannotUndoException /
+     CannotRedoException for invalid sequencing. Direct callers can invoke undo twice or redo when redo is disabled.
+     Runtime scenario: A custom controller or compound/custom edit calls the edit directly instead of through
+     UndoManager. A double redo() for an insert can attempt to insert again; a double undo() can remove or move the
+     wrong state.
+     Why this violates OA/OG undo semantics: Duplicate undo/redo application must not silently mutate object/Hub
+     state.
+     Minimal fix direction: At the top of undo(), throw CannotUndoException if !canUndo(). At the top of redo(), throw
+     CannotRedoException if !canRedo().
+     Suggested CODEX comment location: src/main/java/com/viaoa/undo/OAUndoableEdit.java:527, src/main/java/com/viaoa/
+     undo/OAUndoableEdit.java:564
+
+10. OAUndoableEdit / replaceEdit checks the wrong edit’s allow-replace flag
+     Severity: Medium
+     Concrete bug: replaceEdit(UndoableEdit anEdit) returns true when the existing edit (anEdit) has bAllowReplace,
+     not when the new edit (this) has bAllowReplace. In Swing undo semantics, newEdit.replaceEdit(oldEdit) asks
+     whether the new edit wants to replace the old one.
+     Runtime scenario: A property editor creates a new replacement-capable edit to coalesce repeated typing, but the
+     previous edit did not have allowReplace set. The new edit cannot replace it. Conversely, a non-replacement new
+     edit can replace an old replacement-enabled edit.
+     Why this violates OA/OG undo semantics: Coalescing must preserve intended undo record identity and ordering.
+     Incorrect replacement logic can lose the wrong record or fail to coalesce intended changes.
+     Minimal fix direction: Use this.bAllowReplace && this.equals(anEdit) or clearly document the reversed policy and
+     adjust callers.
+     Suggested CODEX comment location: src/main/java/com/viaoa/undo/OAUndoableEdit.java:661
+
+2. OAUndoableEdit / Hub boolean restore results are ignored, causing false-success undo/redo
+     Severity: High
+     Concrete bug: hub.remove(...), hub.insert(...), and hub.add(...) can return false when the requested operation
+     did not apply. OAUndoableEdit.undo() and redo() ignore those return values and complete normally.
+     Runtime scenario: Undoing an ADD calls hub.remove(object) but the object is already absent, filtered out, or
+     otherwise not removable; remove returns false. The edit still appears undone. Redoing an INSERT calls
+     hub.insert(object, newPos) and can return false; the edit still appears redone.
+     Why this violates OA/OG undo semantics: Undo/redo must not silently appear successful when restoration failed. A
+     false return is a concrete incomplete-operation signal and should not be discarded.
+     Minimal fix direction: Check boolean results for add/insert/remove operations and throw CannotUndoException /
+     CannotRedoException or record failed/incomplete state when the operation returns false.
+     Suggested CODEX comment location: src/main/java/com/viaoa/undo/OAUndoableEdit.java:592, src/main/java/com/viaoa/
+     undo/OAUndoableEdit.java:629
+  3. OAUndoableEdit / property value records store mutable values by reference
+     Severity: Medium/High
+     Concrete bug: createUndoablePropertyChange stores prevValue and newValue object references directly. For mutable
+     OA value types or mutable property values, later mutation of the value object changes the undo record itself.
+     Runtime scenario: An OAObject has a mutable date/time/value object property. The old value is captured as
+     prevValue; later that same value instance is mutated before undo. Undo restores the mutated value, not the value
+     that existed at capture time.
+     Why this violates OA/OG undo semantics: Undo records must preserve the intended committed property value. For
+     value properties, reference capture can become stale/wrong output.
+     Minimal fix direction: Snapshot known mutable value types at capture time, or define a metadata/value-copy
+     strategy for undoable property values. For OAObject references, identity capture remains correct; for value
+     objects, copy semantics should be explicit.
+     Suggested CODEX comment location: src/main/java/com/viaoa/undo/OAUndoableEdit.java:479
+  4. OAUndoableEdit / active-object undo can set AO to an object no longer in the Hub
+     Severity: Medium
+     Concrete bug: CHANGEAO records only previous/new active object references. Undo/redo calls hub.setAO(prevValue/
+     newValue). Hub active-object service can set the active object reference directly, and same-class objects are not
+     resolved through a membership check before assignment.
+     Runtime scenario: User changes AO from object A to object B, then object A is removed from the Hub before undo.
+     Undo sets AO back to A even though A is no longer a Hub member.
+     Why this violates OA/OG undo semantics: Active-object state must remain consistent with Hub membership/detail
+     semantics. Undo should either restore required membership as part of a compound operation or fail visibly when
+     the target AO is no longer valid.
+     Minimal fix direction: Before setting AO, verify the target is null or currently belongs to the Hub. If not,
+     throw a visible undo/redo failure or define a contract to reinsert/resolve it.
+     Suggested CODEX comment location: src/main/java/com/viaoa/undo/OAUndoableEdit.java:346, src/main/java/com/viaoa/
+     undo/OAUndoableEdit.java:609
+  5. OAUndoableEdit / convenience property-change factory assumes wasChanged=true, causing changed-flag restoration
+     drift
+     Severity: Medium
+     Concrete bug: The 5-argument createUndoablePropertyChange(...) delegates with wasChanged=true. If callers use
+     this convenience method for a clean object, undo restores the previous property value but does not restore
+     changed=false.
+     Runtime scenario: A UI/controller creates a property-change undo edit manually using the convenience factory for
+     an object that was clean before the change. Undo sets the old value but leaves the object marked changed.
+     Why this violates OA/OG undo semantics: Undo of a property change should restore both the value and lifecycle/
+     change-tracking state when the original state is known. The convenience API silently encodes the wrong default
+     for clean-object edits.
+     Minimal fix direction: Deprecate the convenience method, compute wasChanged from the OAObject at factory time
+     when possible, or require callers to use the explicit overload.
+     Suggested CODEX comment location: src/main/java/com/viaoa/undo/OAUndoableEdit.java:460
+
+7. OAUndoableEdit / HOLDER edits are significant no-op undo records by default
+     Severity: Low/Medium
+     Concrete bug: HOLDER performs no undo/redo action, but isSignificant() always returns true. A holder created
+     through createUndoable(...) can become a visible undo stack item that changes undo/redo state without restoring
+     anything.
+     Runtime scenario: Application code uses a holder as a placeholder or grouping marker and adds it directly to the
+     manager. The user sees an undoable action; undo toggles stack state but applies no OA state change.
+     Why this violates OA/OG undo semantics: Visible undo records should correspond to real restorable state or
+     explicitly documented custom behavior. No-op significant edits create false-success undo actions.
+     Minimal fix direction: Make HOLDER insignificant by default unless subclass/custom logic overrides undo/redo, or
+     require a custom edit type for visible no-op markers.
+     Suggested CODEX comment location: src/main/java/com/viaoa/undo/OAUndoableEdit.java:506, src/main/java/com/viaoa/
+     undo/OAUndoableEdit.java:690
+
+1. OAUndoableEdit / equals ignores Hub identity for Hub-scoped edits
+     Severity: Medium
+     Concrete bug: equals compares only type, object, and propertyName; it does not compare hub. For Hub operations,
+     the same object can appear in multiple Hubs, and MOVE edits have object == null, making all MOVE edits of the
+     same type/property compare equal. This is separate from the already-noted wrong replaceEdit allow flag.
+     Runtime scenario: External/controller code enables replacement with setAllowReplace(true) for Hub edits. An ADD/
+     REMOVE/INSERT for object X in Hub A can be considered equal to an edit for object X in Hub B. A MOVE edit can be
+     considered equal to any other MOVE edit because object/property are null. Swing coalescing can replace the wrong
+     undo record.
+     Why this violates OA/OG undo semantics: Undo coalescing must preserve the affected Hub and object scope. Cross-
+     Hub replacement can lose the only record capable of restoring the intended Hub state.
+     Minimal fix direction: Include hub identity in equality for Hub-scoped edit types. For MOVE, also include moved
+     object identity once that is captured, or at least include hub plus positions until object capture is added.
+     Suggested CODEX comment location: src/main/java/com/viaoa/undo/OAUndoableEdit.java:843
+  2. OAUndoableEdit / die() does not release strong references to objects, Hubs, and property values
+     Severity: Medium
+     Concrete bug: die() is empty. Swing UndoManager calls die() when edits are discarded, trimmed, or no longer
+     needed. This edit retains strong references to hub, object, prevValue, newValue, and presentation metadata.
+     Runtime scenario: A long-running generated UI performs many edits against large object graphs or blob/value
+     properties. When the undo limit trims old edits, die() does not clear references, so discarded edits can continue
+     retaining Hubs/objects/value graphs until the edit object itself is GC’d through manager internals.
+     Why this violates OA/OG undo semantics: Undo history retention must be bounded and predictable. Discarded undo
+     records should not retain object graph state longer than necessary.
+     Minimal fix direction: In die(), clear strong references after calling any superclass/default behavior
+     expectations: hub = null; object = null; prevValue = null; newValue = null; propertyName = null; presentationName
+     = null;. Only do this once the edit is dead and cannot be used again.
+     Suggested CODEX comment location: src/main/java/com/viaoa/undo/OAUndoableEdit.java:781
+
+
+*/
 
 /**
  * Implementation of {@link javax.swing.undo.UndoableEdit} that captures a

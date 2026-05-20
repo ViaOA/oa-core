@@ -70,3 +70,391 @@
  */
 package com.viaoa.annotation;
 
+/* CODEX Invariants
+
+1. Package Summary
+
+  com.viaoa.annotation defines OA’s declarative model language. In OA 4.0 terms, these annotations are the source
+  contract for object identity, properties, links, calculated values, callbacks, triggers, datasource hints,
+  serialization/POJO/codegen behavior, and OABuilder integration.
+
+  The package itself mostly defines annotation types. The runtime meaning is enforced primarily by:
+
+  - com.viaoa.graph.service.object.OAObjectAnnotationService
+  - com.viaoa.annotation.OAAnnotationVerifier
+  - com.viaoa.metadata.OAObjectInfo
+  - com.viaoa.metadata.OAPropertyInfo
+  - com.viaoa.metadata.OALinkInfo
+  - com.viaoa.metadata.OACalcInfo
+  - com.viaoa.metadata.OAMethodInfo
+  - com.viaoa.trigger.OATriggerMethodListener
+  - com.viaoa.path.OAPath
+  - POJO/codegen consumers such as metadata POJO loader paths
+
+  The key design point: annotations are not decorative. They are executable metadata, but some fields are currently
+  runtime-owned while others remain codegen/OABuilder-owned or migration candidates for OG.
+
+  2. Core Concepts
+
+  - Annotation metadata: Declarative metadata attached to OAObject classes and methods.
+  - Runtime retention: An annotation must use @Retention(RetentionPolicy.RUNTIME) if OG/runtime reflection depends on
+    it.
+  - Target scope: @Target defines where an annotation is legal, such as class-level @OAClass or method-level
+    @OAProperty.
+  - Property annotation: @OAProperty, optionally paired with @OAId and @OAColumn, defines scalar property semantics.
+  - Link annotation: @OAOne, @OAMany, @OAFkey, and @OALinkTable define object graph relationships.
+  - Calculated property annotation: @OACalculatedProperty defines derived property metadata and dependency paths.
+  - Datasource annotation: @OATable, @OAColumn, @OAIndex, @OAIndexColumn, @OALinkTable define persistence/schema
+    hints.
+  - Validation annotation: fields such as required, verify, validCharacters, invalidCharacters, and validation-method
+    flags define validation intent.
+  - Visibility/display annotation: display names, tooltips, callbacks, visible/enabled property paths, and UI/codegen
+    hints.
+  - Codegen/OABuilder metadata: metadata that informs generated OAObject/model/UI code even when not yet consumed
+    directly by OG runtime.
+  - Reflection discovery: runtime scans classes/methods and converts annotations into OAObjectInfo metadata.
+  - Metadata conflict/precedence: class inheritance and override rules determine which annotation wins when
+    superclass/subclass metadata overlaps.
+
+  3. Invariants
+
+  A. Annotation Definition Invariants
+
+  1. ANN-DEF-001: Runtime annotations must have runtime retention
+     Invariant: Any annotation consumed by OG/runtime reflection must be declared with
+     @Retention(RetentionPolicy.RUNTIME).
+     Why it matters: Without runtime retention, metadata silently disappears from OG.
+     Locations: OAClass, OAProperty, OAId, OAOne, OAMany, OACalculatedProperty, OAObjCallback, OATriggerMethod,
+     OAColumn, OATable, OALinkTable.
+     Confidence: High.
+     Gaps: none observed for current annotation declarations.
+  2. ANN-DEF-002: Annotation fields must have explicit ownership
+     Invariant: Every annotation field must be classified as runtime-enforced, runtime-stored-for-consumers, codegen/
+     OABuilder-owned, or migration candidate.
+     Why it matters: Prevents false assumptions where codegen metadata is mistaken for OG runtime behavior.
+     Locations: all annotation classes; OAObjectAnnotationService._update; OAAnnotationVerifier.
+     Confidence: Medium.
+     Gaps: some fields, such as OAClass.displayProperty, viewProperties, estimatedTotal, and several validation/
+     display fields, are not obviously runtime-loaded.
+
+  B. Retention / Target Invariants
+
+  3. ANN-TARGET-001: Target scope must match the consuming path
+     Invariant: An annotation’s @Target must match how runtime/codegen actually discovers it.
+     Why it matters: If an annotation is legal on an element that no consumer scans, users can create silent no-op
+     metadata.
+     Locations: OAFkey, OALinkTable, OAColumn, OAId; OAObjectAnnotationService._update.
+     Confidence: Medium.
+     Gaps: OAFkey is method-targetable but runtime consumes it through @OAOne.fkeys().
+  4. ANN-TARGET-002: Class-level metadata must only be type-targeted
+     Invariant: Class metadata such as @OAClass, @OATable, and @OAClassFilter must be applied only where class-level
+     loaders expect it.
+     Why it matters: Prevents metadata being legal but undiscoverable.
+     Locations: OAClass, OATable, OAClassFilter, OAPath.
+     Confidence: High.
+     Gaps: OAClassFilter runtime use appears limited/unclear.
+
+  C. Runtime Discovery / Reflection Invariants
+
+  5. ANN-REFLECT-001: Runtime loader and verifier must use the same discovery model
+     Invariant: OAObjectAnnotationService and OAAnnotationVerifier must traverse class hierarchy, methods, overrides,
+     and case rules consistently.
+     Why it matters: Verifier success/failure must predict runtime metadata.
+     Locations: OAObjectAnnotationService.update/_update, OAAnnotationVerifier.verify.
+     Confidence: Medium.
+     Gaps: verifier currently has known mismatch risks around superclass methods.
+  6. ANN-REFLECT-002: Reflection order must not determine metadata truth
+     Invariant: Duplicate or conflicting annotations must be resolved deterministically or rejected.
+     Why it matters: Java reflection method order is not a safe source of identity/link precedence.
+     Locations: OAObjectAnnotationService._update, especially @OAId(pos) loading and link/property scanning.
+     Confidence: Medium.
+     Gaps: duplicate ID positions are a known risk area.
+
+  D. Metadata Consistency Invariants
+
+  7. ANN-META-001: Identity metadata must be complete, unique, and contiguous
+     Invariant: @OAId(pos) declarations must map to a non-null, non-duplicated ID property array.
+     Why it matters: Identity drives cache, datasource, sync, serialization, and object equality.
+     Locations: OAId, OAObjectAnnotationService._update, OAObjectInfo.setPropertyIds, OAAnnotationVerifier.verify.
+     Confidence: Medium.
+     Gaps: duplicate/missing positions require stronger validation.
+  8. ANN-META-002: Runtime metadata must not silently accept unresolved references
+     Invariant: @OAOne.fkeys, reverse links, default paths, equal paths, and select paths must resolve to valid
+     properties/links before being used as runtime truth.
+     Why it matters: Invalid metadata corrupts object graph behavior.
+     Locations: OAOne, OAFkey, OAObjectAnnotationService.updateLinkFkeys, OALinkInfo, OAFkeyInfo.
+     Confidence: Medium.
+     Gaps: invalid FK metadata can survive initial load.
+
+  E. Inheritance / Override Invariants
+
+  9. ANN-INHERIT-001: Subclass metadata override precedence must be explicit
+     Invariant: When superclass and subclass declare the same metadata, the winning annotation must be deterministic
+     and documented.
+     Why it matters: ObjectInfo for subclasses must not lose inherited runtime semantics accidentally.
+     Locations: OAObjectAnnotationService.update/_update, OAClass, OAProperty, OAOne, OAMany, OAObjCallback, OATrigge
+     rMethod.
+     Confidence: Medium.
+     Gaps: inherited class-level callback and trigger behavior has known ambiguity.
+  10. ANN-INHERIT-002: Inherited triggers/callbacks must register against the correct runtime class
+     Invariant: Inherited trigger/callback metadata must fire for the concrete OAObjectInfo class intended by the
+     graph.
+     Why it matters: Wrong root class causes missed trigger/callback execution.
+     Locations: OAObjectAnnotationService._update2, OATriggerMethod, OATriggerMethodListener, OAObjCallback.
+     Confidence: Medium.
+     Gaps: inherited trigger registration has known CODEX notes.
+
+  F. Property / Link Semantics Invariants
+
+  11. ANN-PROP-001: @OAProperty must produce exactly one scalar property definition
+     Invariant: A scalar getter annotated @OAProperty must map to one OAPropertyInfo with consistent name, type,
+     required, formatting, primitive-null, encrypted/blob/status flags, and POJO flags.
+     Why it matters: Property metadata feeds persistence, serialization, validation, comparison, and UI.
+     Locations: OAProperty, OAColumn, OAObjectAnnotationService._update, OAPropertyInfo.
+     Confidence: High.
+     Gaps: some validation/display/codegen fields have unclear runtime ownership.
+  12. ANN-LINK-001: @OAOne and @OAMany must map to correct cardinality
+     Invariant: @OAOne must return an OAObject subtype; @OAMany must return a Hub with resolvable target class.
+     Why it matters: Wrong cardinality breaks Hub/object graph wiring.
+     Locations: OAOne, OAMany, OAObjectAnnotationService._update, OALinkInfo, OAAnnotationVerifier.verify.
+     Confidence: Medium.
+     Gaps: Hub target inference can be unresolved unless toClass is supplied.
+  13. ANN-LINK-002: Link behavior flags must be copied into runtime link metadata
+     Invariant: Cascade, owner, reverseName, calculated, cache size, sequence, sort, match, transient, and auto-create
+     semantics must be stored in OALinkInfo when runtime depends on them.
+     Why it matters: Save/delete/link/hub behavior depends on OALinkInfo, not raw annotation lookup in most paths.
+     Locations: OAOne, OAMany, OAObjectAnnotationService._update, OALinkInfo, OAObjectSaveService.
+     Confidence: Medium.
+     Gaps: some fields are known migration/fix areas, such as transient ONE semantics.
+
+  G. Calculated Property Invariants
+
+  14. ANN-CALC-001: Calculated properties must have valid invocation shape
+     Invariant: A calculated property must be invokable as either a normal no-arg getter or a supported static Hub-
+     based calculation.
+     Why it matters: Invalid calculated metadata causes late reflection failures or wrong path behavior.
+     Locations: OACalculatedProperty, OAObjectAnnotationService._update, OACalcInfo, OAPath.
+     Confidence: Medium.
+     Gaps: signature validation should be explicit.
+  15. ANN-CALC-002: Dependency paths must be preserved exactly enough for invalidation
+     Invariant: OACalculatedProperty.properties() must be loaded into OACalcInfo and interpreted consistently by
+     trigger/path/event code.
+     Why it matters: Missing dependencies create stale calculated values.
+     Locations: OACalculatedProperty, OACalcInfo, OAObjectAnnotationService._update, trigger/event services.
+     Confidence: High.
+     Gaps: verifier null/dependency comparison behavior has known fragility.
+
+  H. Datasource / Persistence Invariants
+
+  16. ANN-DS-001: Persistence annotations must not imply runtime enforcement unless loaded or delegated
+     Invariant: @OATable, @OAIndex, @OAIndexColumn, @OAColumn, and @OALinkTable must be either consumed by runtime/
+     datasource code or documented as codegen/external-datasource metadata.
+     Why it matters: Persistence metadata has production impact; silent no-op schema hints are dangerous.
+     Locations: datasource annotations, OAPropertyInfo.getOAColumn, OAAnnotationVerifier.
+     Confidence: Medium.
+     Gaps: table/index/link-table runtime ownership is unclear in oa-core.
+  17. ANN-DS-002: Column metadata must not conflict with property metadata silently
+     Invariant: @OAColumn.maxLength/name/sqlType and @OAProperty.columnName/columnLength/maxLength must have
+     deterministic precedence.
+     Why it matters: Datasource and UI/schema generation must agree.
+     Locations: OAColumn, OAProperty, OAObjectAnnotationService._update, OAPropertyInfo.
+     Confidence: Medium.
+     Gaps: precedence is partially implemented for max length, less clear for full schema semantics.
+
+  I. Serialization / API / Codegen Invariants
+
+  18. ANN-CODEGEN-001: Codegen-owned fields must remain stable and explicit
+     Invariant: Fields used by OABuilder/codegen must be documented as codegen-owned until OG runtime consumes them.
+     Why it matters: Prevents runtime audits from treating intentional codegen metadata as dead code, and prevents
+     developers from expecting unsupported runtime behavior.
+     Locations: OAClass, OAProperty, OAOne, OAMany, OAMethod, OAClassFilter, package-info.java.
+     Confidence: Medium.
+     Gaps: ownership buckets are not yet explicit in code.
+  19. ANN-POJO-001: POJO metadata annotations must match POJO loader behavior
+     Invariant: noPojo, pojoSingleton, pojoKeyPos, and link POJO metadata must produce deterministic POJO metadata.
+     Why it matters: Serialization/API/import matching depends on stable POJO keys and links.
+     Locations: OAClass.noPojo/pojoSingleton, OAProperty.noPojo/pojoKeyPos, OAOne.pojoNames, OAObjectPojoLoader.
+     Confidence: Medium.
+     Gaps: older pojoNames replacement status should be clarified.
+
+  J. Validation / Display / UI Metadata Invariants
+
+  20. ANN-UI-001: Display metadata must not be silently misrepresented as runtime behavior
+     Invariant: display names, tooltips, help, view properties, display properties, and sort properties must be
+     categorized as runtime-loaded, UI/codegen-owned, or migration-pending.
+     Why it matters: UI generation and runtime metadata should not diverge silently.
+     Locations: OAClass, OAProperty, OAOne, OAMany, OACalculatedProperty, OAMethod, callback services.
+     Confidence: Medium.
+     Gaps: several display/UI fields are not visibly loaded into core metadata.
+  21. ANN-VALID-001: Validation annotation fields must have a defined enforcement owner
+     Invariant: required, verify, validCharacters, invalidCharacters, hasValidationMethod, and type-specific flags
+     must have clear runtime or codegen enforcement.
+     Why it matters: Validation silently skipped is production data corruption risk.
+     Locations: OAProperty, OAOne, OACalculatedProperty, OAPropertyInfo, validation consumers if present.
+     Confidence: Low/Medium.
+     Gaps: several validation fields appear stored only as raw annotation or codegen intent.
+
+  K. Compatibility / Evolution Invariants
+
+  22. ANN-COMPAT-001: Annotation evolution must preserve generated-code compatibility
+     Invariant: Adding, removing, or changing defaults of annotation fields must not silently change generated model/
+     runtime behavior.
+     Why it matters: OA applications depend on generated model code remaining stable across versions.
+     Locations: all annotation declarations; OABuilder/codegen; OAObjectAnnotationService.
+     Confidence: Medium.
+     Gaps: no explicit version/evolution validation observed.
+  23. ANN-COMPAT-002: Deprecated/replaced metadata must remain visibly handled
+     Invariant: Replaced fields such as older column/link/POJO metadata must be either mapped, warned, or documented.
+     Why it matters: Avoids silent behavior changes for existing applications.
+     Locations: OAProperty.columnName/columnLength, OAOne.pojoNames, datasource annotations.
+     Confidence: Medium.
+     Gaps: replacement semantics are not always enforced by verifier.
+
+  L. Integration Invariants
+
+  24. ANN-INTEGRATION-001: Annotation metadata must align with OAObjectInfo consumers
+     Invariant: Any annotation field used by object, hub, datasource, sync, serialization, trigger, path, or POJO code
+     must be represented in the metadata structure that those consumers read.
+     Why it matters: Runtime consumers generally read OAObjectInfo, OAPropertyInfo, OALinkInfo, and OACalcInfo, not
+     raw annotations.
+     Locations: OAObjectAnnotationService, metadata classes, object/hub/path/trigger/POJO consumers.
+     Confidence: Medium.
+     Gaps: some annotation fields are stored raw only or not stored.
+  25. ANN-INTEGRATION-002: Verifier must be trustworthy for production metadata validation
+     Invariant: OAAnnotationVerifier must not return success when runtime-critical metadata differs.
+     Why it matters: Verifier is a production hardening tool; false positives are worse than missing checks if teams
+     trust it.
+     Locations: OAAnnotationVerifier.verify, OAAnnotationVerifier.compare.
+     Confidence: Low/Medium.
+     Gaps: known asymmetric comparisons and incomplete datasource coverage.
+
+  4. Failure Modes
+
+  - Annotation not visible at runtime due to wrong retention.
+  - Annotation legal on an element no runtime/codegen consumer scans.
+  - Duplicate @OAId(pos) or missing ID position corrupts identity metadata.
+  - Inherited annotation lost or applied to wrong OAObjectInfo.
+  - Subclass override precedence depends on reflection traversal order.
+  - @OAOne/@OAMany cardinality mismatch creates bad link metadata.
+  - Reverse-link mismatch passes verifier but breaks Hub synchronization.
+  - Invalid @OAFkey survives into runtime and corrupts FK propagation.
+  - Calculated property dependency missing causes stale calculated value.
+  - Invalid calculated method signature fails late during path/reflect access.
+  - Datasource table/index/link-table annotations are assumed active but not consumed.
+  - Validation annotations are generated but not enforced by runtime.
+  - Display/UI metadata diverges between codegen and OG runtime.
+  - POJO key/import metadata does not match object identity/import behavior.
+  - Runtime verifier returns success for materially wrong metadata.
+  - OABuilder model and runtime metadata drift over time.
+
+  5. Test Recommendations
+
+  - testAllRuntimeAnnotationsHaveRuntimeRetention
+  - testAnnotationTargetsMatchRuntimeDiscovery
+  - testDuplicateIdPositionFailsValidation
+  - testMissingIdPositionFailsValidation
+  - testInheritedPropertyMetadataLoadedDeterministically
+  - testSubclassAnnotationOverridesSuperclassMetadata
+  - testOAOneReverseNameMismatchFailsVerifier
+  - testOAManyReverseNameMismatchFailsVerifier
+  - testOAOneTransientAnnotationSetsLinkInfoTransient
+  - testInvalidFkeyFromPropertyFailsMetadataValidation
+  - testInvalidFkeyToPropertyFailsMetadataValidation
+  - testCalculatedPropertyZeroArgSignatureAccepted
+  - testCalculatedPropertyInvalidSignatureRejected
+  - testCalculatedPropertyHubStaticSignatureAccepted
+  - testCalcDependentPropertiesPreserved
+  - testOAColumnMetadataLoadedIntoPropertyInfo
+  - testOATableIndexMetadataClassifiedOrValidated
+  - testOALinkTableMetadataClassifiedOrLoaded
+  - testOAClassCodegenOnlyFieldsDoNotPretendRuntimeEnforced
+  - testOAClassFilterMetadataClassification
+  - testPojoKeyPosMatchesPojoLoaderOutput
+  - testVerifierMatchesRuntimeAnnotationLoaderForSuperclassMetadata
+  - testVerifierDetectsRuntimeCriticalMetadataDrift
+
+  6. Hardening Recommendations
+
+  - Add an explicit metadata ownership table for every annotation field:
+      - runtime-enforced
+      - runtime-stored
+      - codegen/OABuilder-owned
+      - migration candidate
+      - deprecated/replaced
+  - Add a post-load metadata validation phase for identity, FK, reverse links, calculated method signatures, and
+    invalid link cardinality.
+  - Make OAAnnotationVerifier use the same superclass traversal and conflict rules as OAObjectAnnotationService.
+  - Make verifier comparisons symmetric for nullable fields and booleans.
+  - Fail fast on runtime-critical metadata conflicts in production/hardening mode.
+  - Add diagnostics for non-default annotation fields that are codegen-only or not consumed by OG runtime.
+  - Document inheritance/override precedence explicitly.
+  - Clarify datasource annotation ownership between oa-core, datasource modules, JDBC modules, and codegen.
+  - Add compatibility notes for replaced fields such as older column/link/POJO metadata.
+  - Consider package-level invariant sections in package-info.java that separate OG runtime contract from codegen
+    contract.
+
+  7. Open Questions
+
+  - Which OAClass fields are intended to move into OG runtime for 4.0 versus remain OABuilder/codegen-only?
+  - Should @OATable, @OAIndex, and @OALinkTable be owned by oa-core metadata, JDBC datasource modules, or codegen
+    only?
+  - Should @OAProperty.verify, validCharacters, invalidCharacters, and hasValidationMethod be enforced by OG,
+    validation services, UI/codegen, or all three?
+  - Should @OAClassFilter be a runtime-discovered filter contract or a codegen/UI hint?
+  - What is the intended long-term status of replaced fields such as OAProperty.columnName/columnLength and
+    OAOne.pojoNames?
+  - Should invalid annotation metadata always fail-fast, or should OA support warning-only mode for legacy generated
+    models?
+  - What is the exact override precedence when superclass and subclass both define class-level callbacks, triggers,
+    properties, or links?
+  - Should annotation verifier be production-grade validation, developer-only diagnostics, or both?
+
+
+
+
+
+qqqqqqqqqqq other
+
+ A. Architectural Assessment
+
+  The annotation model is conceptually sound: annotations are runtime-retained, mostly method/type-targeted, and map
+  cleanly into OAObjectInfo, OAPropertyInfo, OALinkInfo, OACalcInfo, and OAMethodInfo.
+
+  The biggest risk is not the annotation declarations themselves; it is silent acceptance of invalid or ambiguous
+  metadata in the consumer path. OA 4.0 treats annotations as executable runtime metadata, so conflicts like duplicate
+  ID positions and unresolved FK mappings should be hard failures or explicit invalid metadata states.
+
+  Runtime/reflection assumptions are mostly coherent, but inheritance semantics are uneven: runtime walks
+  superclasses, verifier does not fully mirror that, and class-level callback inheritance has a guard bug.
+
+  B. Invariant Risk Areas
+
+  - Annotation processing must be deterministic independent of reflection method order.
+  - ID positions must be unique, contiguous where required, and fail-fast on conflicts.
+  - FK metadata must resolve both local and target properties before runtime use.
+  - Class-level metadata inheritance must be explicit and consistently applied.
+  - Callback annotation fields must either be consumed or documented as non-runtime hints.
+  - Verifier behavior must mirror runtime metadata loading behavior.
+
+  C. Top Production Risks
+
+  1. Duplicate @OAId(pos) overwriting identity metadata nondeterministically.
+  2. Invalid @OAFkey metadata surviving into object/link runtime behavior.
+  3. Unannotated Hub-returning helper methods becoming relationship metadata.
+  4. Lost inherited class-level callback metadata.
+  5. Annotation verifier false negatives due to different inheritance traversal than runtime.
+
+  D. Hardening Recommendations
+
+  - Add a metadata validation phase after annotation loading: duplicate ID positions, unresolved FK properties,
+    unresolved link target classes, invalid callback signatures, and unconsumed non-empty annotation fields.
+  - Treat identity and FK annotation errors as fail-fast for production mode.
+  - Separate inheritance rules by annotation type: class metadata, callback metadata, property/link metadata, trigger
+    metadata.
+  - Make OAAnnotationVerifier use the same traversal and resolution rules as OAObjectAnnotationService.
+  - Add unit tests for duplicate ID positions, inherited class-level @OAObjCallback, invalid @OAFkey, unannotated Hub-
+    returning methods, and supportedTypes() behavior.
+
+
+*/
+

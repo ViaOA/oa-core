@@ -23,6 +23,58 @@ import java.util.logging.Logger;
 import com.viaoa.concurrent.OAExecutorService;
 import com.viaoa.datetime.OADateTime;
 
+/*qqqqqqqqqqqqq
+CODEX
+
+4. OACronProcessor / callProcess
+Severity: High
+Bug/risk: cron.setLast(new OADateTime()) is called before cron.process(...). If the cron job throws, dtLast
+falsely claims the job ran successfully. Because execution is submitted through ExecutorService.submit, the
+exception is also stored in the returned Future and is not logged or observed here.
+Production impact: Cron jobs can fail silently while reporting a successful last-run time. Operators and retry
+logic can skip required recovery.
+Area: src/main/java/com/viaoa/process/OACronProcessor.java:175
+Minimal hardening: Run process inside try/catch, log/report failures, and set last only after successful
+completion, or add separate lastAttempt/lastSuccess fields.
+
+
+1. OACronProcessor / runThread invalid cron schedules can execute as “now”
+     Severity: High
+     Bug/risk: OACron.findNext(...) returns null when the cron is invalid, but OACronProcessor.runThread() immediately
+     wraps it with new OADateTime(cron.findNext(dtCompare)). OADateTime(OADateTime null) initializes to the current
+     time. After clearSecondAndMilliSecond(), this can compare equal to dtNow, causing an invalid cron to run.
+     Production impact: A misconfigured cron that isValid() == false can silently execute instead of being skipped/
+     rejected. That is false-success scheduling behavior.
+     Area: src/main/java/com/viaoa/process/OACronProcessor.java:253, src/main/java/com/viaoa/process/OACron.java:490
+     Minimal hardening: In add() reject/log invalid crons, and in runThread() explicitly skip !cron.isValid() or
+     findNext(...) == null.
+
+4. OACronProcessor / same cron can overlap itself across schedule ticks
+     Severity: Medium
+     Bug/risk: The processor prevents duplicate firing within the same minute using alLast, but it does not track
+     whether a previous cron.process(false) call is still running. A cron scheduled every minute whose process takes
+     longer than a minute can be submitted again concurrently.
+     Production impact: Long-running jobs can overlap, causing duplicate side effects, out-of-order processing, or
+     shared-state corruption inside the cron job.
+     Area: src/main/java/com/viaoa/process/OACronProcessor.java:246, src/main/java/com/viaoa/process/
+     OACronProcessor.java:206
+     Minimal hardening: Add per-cron running state or make overlap policy explicit. If overlap is allowed, document
+     it; if not, skip or queue the next run while the prior run is active.
+  5. OACronProcessor / isRunning can lie during stop and after worker exit
+     Severity: Low/Medium
+     Bug/risk: isRunning() returns thread != null. stop() sets thread = null immediately while the worker thread can
+     still be running until it wakes/exits. Conversely, when the worker exits by counter mismatch or exception-loop
+     exit, it never clears thread itself.
+     Production impact: Lifecycle monitoring can observe stopped while code is still executing, or running after the
+     worker has actually ended. This makes shutdown/restart coordination unreliable.
+     Area: src/main/java/com/viaoa/process/OACronProcessor.java:141, src/main/java/com/viaoa/process/
+     OACronProcessor.java:174
+     Minimal hardening: Track explicit lifecycle state and clear thread in a worker finally only if it still refers to
+     the current worker. Consider join/await-stop support.
+
+
+*/
+
 /**
  * Manages and executes {@link com.viaoa.process.OACron} jobs. A background
  * daemon thread periodically evaluates all registered cron schedules and, when

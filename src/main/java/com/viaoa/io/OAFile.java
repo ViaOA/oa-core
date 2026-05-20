@@ -30,6 +30,157 @@ import java.util.List;
 
 import com.viaoa.lang.OAString;
 
+/*qqqqqqqqqqqqqqqqqqqqqqq
+CODEX
+
+ 3. src/main/java/com/viaoa/io/OAFile.java / copyTo(String) and copyTo(OAFile)
+
+  Concrete bug: copy failures are swallowed and reduced to false, losing the failure cause and making partial-copy
+  state indistinguishable.
+
+  Runtime scenario: destination exists, is deleted at line 315, then FileOutputStream or write fails due to disk full
+  or permissions. copyTo(...) catches the exception at lines 86 or 104 and returns false. The caller cannot tell
+  whether the destination was untouched, deleted, partially written, or otherwise corrupted.
+
+  Why this violates OA/OG I/O semantics: partial progress is allowed only when observable failure signals
+  incompleteness. A bare false hides the concrete I/O failure and makes retry/recovery decisions unsafe for persisted/
+  runtime files.
+
+  Minimal fix direction: either let the exception propagate, return a structured result with cause/partial-write
+  state, or avoid deleting/replacing destination until a complete temp-file copy succeeds.
+
+  Suggested CODEX comment location: lines 83-88 and 98-107.
+
+  4. src/main/java/com/viaoa/io/OAFile.java / renameTo(String fileName)
+
+  Concrete bug: rename failure is silently ignored.
+
+  Runtime scenario: OAFile.renameTo("new/path") creates directories, calls f1.renameTo(f2) at line 271, and ignores
+  the returned boolean. Cross-filesystem moves, permission failures, existing destination conflicts, or locked files
+  can fail while the method returns normally.
+
+  Why this violates OA/OG I/O semantics: rename/replace operations are often used as commit points. A failed rename
+  must not silently appear successful.
+
+  Minimal fix direction: return boolean or throw when File.renameTo returns false. If this is intended best-effort
+  behavior, rename the method/contract accordingly.
+
+  Suggested CODEX comment location: line 271.
+
+  5. src/main/java/com/viaoa/io/OAFile.java / delTree(File f)
+
+  Concrete bug: recursive delete ignores failed deletes.
+
+  Runtime scenario: delTree recursively visits children, then calls f.delete() at line 625 and ignores the result. If
+  a child or directory cannot be deleted due to permissions, locks, or concurrent access, the method still returns
+  normally.
+
+  Why this violates OA/OG I/O semantics: cleanup/delete operations must not report success when files remain. This can
+  leave stale generated files, temp files, replication/log artifacts, or test/runtime directories behind.
+
+  Minimal fix direction: check delete() return and throw IOException when deletion fails and the file still exists.
+
+
+1. src/main/java/com/viaoa/io/OAFile.java / readTextFile(Class c, String fname, int estimatedSize)
+
+  Concrete bug: text resource reading converts raw bytes directly to Java chars.
+
+  Runtime scenario: OA reads a classpath text resource containing UTF-8 content, for example generated templates,
+  config snippets, YAML, reports, or model/tooling text with non-ASCII characters. The method reads each byte at line
+  496 and appends (char) x at line 500. Multi-byte UTF-8 sequences are converted into separate wrong chars, corrupting
+  the returned text while the method returns success.
+
+  Why this violates OA/OG I/O semantics: text I/O must preserve persisted/resource text semantics. Silent text
+  corruption can affect templates, generated code/resources, config/tooling files, reports, or serialized textual
+  data.
+
+  Minimal fix direction: use InputStreamReader with an explicit charset, preferably UTF-8 unless there is an existing
+  OA-wide charset contract. Avoid byte-to-char casts for text.
+
+  Suggested CODEX comment location: line 493-500.
+  
+2. src/main/java/com/viaoa/io/OAFile.java / text read/write helpers
+
+  Concrete bug: text helpers use the platform default charset implicitly.
+
+  Runtime scenario: one OA runtime writes a text file using writeTextFile(...), which uses data.getBytes(); another
+  runtime or OS reads it with FileReader / InputStreamReader default charset. Non-ASCII config, generated model text,
+  reports, templates, or resource text can round-trip differently across Windows/Linux/JDK/container locale settings.
+
+  Affected locations include:
+
+  - readResourceTextFile(...) line 451: new InputStreamReader(is)
+  - readTextFile(File,...) line 469: new FileReader(file)
+  - readTextFile(String,...) line 542: new FileReader(fname)
+  - readTextFile(String,List) line 571: new FileReader(fname)
+  - writeTextFile(...): data.getBytes()
+
+  Why this violates OA/OG I/O semantics: encoding must be explicit where persisted, generated, logged, compared, or
+  configuration text depends on exact content. Platform-default encoding creates hidden runtime/tooling drift.
+
+  Minimal fix direction: add charset-aware overloads and make default OA text helpers use a documented charset, likely
+  StandardCharsets.UTF_8.
+
+  Suggested CODEX comment location: OAFile.java near the first text reader at line 451 and write helpers where
+  getBytes() is used.
+
+
+1. src/main/java/com/viaoa/io/OAFile.java / copy(File file, File fileTo)
+
+  Concrete bug: destination replacement is not atomic and the existing destination is deleted before the new copy
+  succeeds.
+
+  Runtime scenario: OA copies a generated/config/runtime file over an existing file. copy deletes the destination at
+  lines 405-406, opens a new destination stream at line 410, and writes directly to the final path. If the read/write
+  fails mid-copy, the previous valid destination is already gone and the replacement can be partial. The exception is
+  visible, but the method leaves corrupted destination state.
+
+  Why this violates OA/OG I/O semantics: failed I/O may be caller-visible, but retry/recovery must not start from
+  silently corrupted committed state. For runtime/config/generated/replication-adjacent files, replacing a valid file
+  should not destroy the old committed content until the new bytes are complete.
+
+  Minimal fix direction: copy to a temp file in the same directory, flush/close it, then replace/rename into place. If
+  atomic replace is not guaranteed, report failure without deleting the previous committed file.
+
+  Suggested CODEX comment location: around lines 405-410.
+
+2. src/main/java/com/viaoa/io/OAFile.java / writeTextFile(String, String) and writeTextFile(File, String)
+
+  Concrete bug: text writes truncate/write the final file directly, so failure can leave partial committed content.
+
+  Runtime scenario: OA writes a config/template/generated/runtime text file using writeTextFile. FileOutputStream at
+  lines 644 or 668 truncates/creates the final file, then line 647 or 671 writes bytes. If write/close fails due to
+  disk full, permissions, or interrupted filesystem state, the target file can be partially written or empty.
+
+  Why this violates OA/OG I/O semantics: writes must not be treated as committed until required bytes are written and
+  the stream is closed/flushed under the method contract. A caller-visible exception is not enough if the final
+  committed file has already been corrupted.
+
+  Minimal fix direction: write to a temp file, close it, then replace the target. For stronger contracts, flush and
+  optionally force the file descriptor before replace when durability matters.
+
+  Suggested CODEX comment location: around lines 644-650 and 668-674.
+
+  3. src/main/java/com/viaoa/io/OAFindFile.java / findAll(File rootFile, String findFileName)
+
+  Concrete bug: search state is not cleared on exception, causing stale mutable state after failed search.
+
+  Runtime scenario: findAll sets instance fields at lines 99-100, then calls findFile(rootFile) at line 101. If
+  traversal throws IOException before line 104, this.list and this.findFileName remain populated. Reusing the same
+  OAFindFile instance after a failed search exposes stale state to later calls or subclass overrides, and the object
+  retains all matches found before failure.
+
+  Why this violates OA/OG I/O semantics: temporary search state must be isolated per run and cleaned up on success and
+  failure. A failed file search should not leave stale result state retained in a reusable helper.
+
+  Minimal fix direction: wrap the traversal in try/finally and clear list and findFileName in the finally block, after
+  copying out results on success.
+
+  Suggested CODEX comment location: lines 99-104.
+
+*/
+
+
 /**
  * Extension of {@link java.io.File} that adds common utility methods used
  * throughout OA for path normalization, directory creation, copying, and basic

@@ -19,6 +19,74 @@ import java.io.*;
 import java.util.logging.Logger;
 import java.util.zip.*;
 
+/*qqqqqqqqqqqqqqqqqqqqqqq
+CODEX
+
+1. src/main/java/com/viaoa/io/OACompressWrapper.java / writeObject and readObject
+
+  Concrete bug: compressed object data has no explicit length boundary, so InflaterInputStream can over-read bytes
+  belonging to the enclosing ObjectInputStream.
+
+  Runtime scenario: OA remote/multiplexer wraps large args/responses in OACompressWrapper. writeObject writes a
+  boolean, then writes compressed object bytes directly onto the parent ObjectOutputStream at lines 86-91. readObject
+  then creates InflaterInputStream directly over the parent stream at lines 112-115. Since no compressed byte length
+  is written, the inflater can buffer/read beyond the end of the compressed payload and consume bytes belonging to the
+  next field/object in the enclosing serialization stream.
+
+  Why this violates OA/OG I/O semantics: remote/sync serialization boundaries must be exact. A compressed wrapper must
+  not corrupt the parent object stream or make subsequent remote args/responses unreadable.
+
+  Minimal fix direction: compress into a ByteArrayOutputStream, finish/flush the inner ObjectOutputStream/deflater,
+  then write the compressed byte length and byte array to the parent stream. On read, read exactly that byte array and
+  inflate from ByteArrayInputStream.
+
+  Suggested CODEX comment location: OACompressWrapper.writeObject around line 87 and readObject around line 113.
+
+  2. src/main/java/com/viaoa/io/OAFile.java / copy, copyResourceToFile, readResourceTextFile, readTextFile,
+     writeTextFile
+
+  Concrete bug: streams/readers/writers opened by OA are not closed on exception paths.
+
+  Runtime scenario: a file copy, resource copy, text read, or text write throws during read/write. The methods only
+  close streams after successful completion, for example:
+
+  - copy(File, File) lines 318-332
+  - copyResourceToFile lines 357-381
+  - readResourceTextFile lines 398-415
+  - readTextFile lines 469-479 / 496-509 / 525-533
+  - writeTextFile lines 553-559 / 577-583
+
+  If an exception occurs before the close call, file handles remain open.
+
+  Why this violates OA/OG I/O semantics: OA-opened streams must be closed on success and failure unless ownership is
+  transferred. Leaks can block config/log/tlog/model file updates and destabilize repeated runtime/tooling operations.
+
+  Minimal fix direction: use try-with-resources for every stream/reader/writer opened in these helpers.
+
+  Suggested CODEX comment location: first affected block in OAFile.copy(File, File) around line 318, with note that
+  the same pattern exists in resource/text helpers.
+
+
+ 4. src/main/java/com/viaoa/io/OACompressWrapper.java / writeObject and readObject
+
+  Concrete bug: Deflater and Inflater native resources are not explicitly released.
+
+  Runtime scenario: OA remote/multiplexer compresses many arguments/responses using OACompressWrapper. writeObject
+  creates a Deflater at line 86 and does not close the DeflaterOutputStream or call d.end(). readObject creates an
+  Inflater at line 112 and does not close the inflater stream or call inflater.end(). Under high remote/sync traffic,
+  native compression resources can accumulate until GC finalization/cleaning happens.
+
+  Why this violates OA/OG I/O semantics: compression/decompression resources are part of I/O lifecycle. OA remote/sync
+  infrastructure should not rely on delayed GC for native resource release under production load.
+
+  Minimal fix direction: use byte-array bounded compression/decompression and close local wrapper streams safely, or
+  call Deflater.end() / Inflater.end() in finally without closing the parent object stream.
+
+  Suggested CODEX comment location: line 86 and line 112.
+
+
+*/
+
 /**
  * Wrapper used to compress an object during Java serialization. The wrapper
  * intercepts the normal serialization process using the private

@@ -32,6 +32,73 @@ import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.text.OATextCode;
 
+/*qqqqqqqqqqqqq
+CODEX
+
+6. src/main/java/com/viaoa/annotation/OAAnnotationVerifier.java:118 verify
+     Bug/risk: verifier uses only clazz.getDeclaredMethods() while runtime annotation processing walks superclasses.
+     Production/runtime impact: valid inherited annotations can be reported as missing/mismatched by verification.
+     This creates false negatives in model validation and can hide real drift if teams stop trusting verifier output.
+     Severity: Low
+     Minimal hardening: make verifier mirror OAObjectAnnotationService.update() hierarchy traversal.
+  7. src/main/java/com/viaoa/annotation/OAAnnotationVerifier.java:616 compare(OACalcInfo, OACalcInfo)
+     Bug/risk: after handling the case where one dependent-property array is null, the method continues and
+     dereferences p1.length / p2.length.
+     Production/runtime impact: metadata comparison can throw NPE instead of reporting a clean mismatch.
+     Severity: Low
+     Minimal hardening: return immediately after the null-array comparison block.
+
+1. OAAnnotationVerifier.verify / compare(OALinkInfo, OALinkInfo) — reverse-name mismatches can falsely pass
+     Severity: Medium
+     Execution path: annotation has @OAOne(reverseName="orders") or @OAMany(reverseName="customer"), but metadata has
+     li.getReverseName() == null. The verifier condition checks s != annotation.reverseName() && (s != null && !
+     s.equalsIgnoreCase(...)); when s is null, the mismatch is skipped. compare(OALinkInfo, OALinkInfo) similarly
+     treats a null first reverse name as “not needed” and does not compare the second value.
+     Why it matters: reverse-link metadata controls bidirectional Hub/object wiring. A verifier false positive can let
+     broken relationship metadata ship.
+     Minimal hardening: compare reverse names symmetrically: both null is OK, one null is mismatch, otherwise case-
+     insensitive compare.
+     Suggested CODEX comment location: OAAnnotationVerifier.verify, ONE/MANY reverse-name checks;
+     OAAnnotationVerifier.compare(OALinkInfo, OALinkInfo).
+  2. OAAnnotationVerifier.verify / compare(OALinkInfo, OALinkInfo) — autoCreateNew=true mismatches can falsely pass
+     Severity: Medium
+     Execution path: annotation declares @OAOne(autoCreateNew=true), but metadata has li.getAutoCreateNew() == false.
+     The verifier only checks mismatch when li.getAutoCreateNew() is true, so false-vs-true passes.
+     compare(OALinkInfo, OALinkInfo) has the same asymmetry.
+     Why it matters: autoCreateNew changes runtime object/link creation semantics. A verifier false positive can hide
+     a real metadata drift that changes graph behavior.
+     Minimal hardening: compare li.getAutoCreateNew() != annotation.autoCreateNew() directly.
+     Suggested CODEX comment location: OAAnnotationVerifier.verify, ONE-link autoCreateNew check;
+     OAAnnotationVerifier.compare(OALinkInfo, OALinkInfo).
+
+5. OAAnnotationVerifier.verify — ID verification can throw instead of reporting invalid metadata when ID metadata is
+     absent
+     Severity: Low
+     Execution path: verify(oi) obtains String[] ids = oi.getIdProperties() and immediately creates new
+     boolean[ids.length]. If a metadata object lacks ID properties, verifier throws NullPointerException instead of
+     returning false with a diagnostic.
+     Why it matters: verifier is supposed to validate metadata consistency. A thrown NPE makes model validation
+     brittle and can hide the actual metadata error.
+     Minimal hardening: treat null/empty ID arrays as explicit validation failure unless the class is intentionally
+     ID-less by contract.
+     Suggested CODEX comment location: OAAnnotationVerifier.verify, start of “Verify IDs”.
+
+ 1. OAAnnotationVerifier.verify — datasource/table/index annotation coverage is claimed but not implemented
+     Severity: Medium
+     Execution path: a model has @OATable(indexes=...), @OAIndex, @OAIndexColumn, or @OAColumn(sqlType=..., name=...,
+     isFullTextIndex=...) drift from the physical/schema expectation. OAAnnotationVerifier documentation says it
+     compares table, columns, SQL types, foreign keys, and indexes, but the implementation only checks a limited
+     property subset and max length via datasource.
+     Why it matters: this verifier can return success while datasource-critical annotation metadata is wrong. That
+     creates false confidence for schema/model validation before production deployment.
+     Minimal hardening: either implement explicit checks for @OATable, @OAIndex, @OAIndexColumn, and full @OAColumn
+     metadata, or narrow the verifier contract so it does not imply datasource-schema validation.
+     Suggested CODEX comment location: OAAnnotationVerifier.verify, class/property verification sections and verifier
+     class header.
+
+
+*/
+
 /**
  * Validates that OA model annotations match the runtime metadata generated
  * by {@link OAObjectInfo} and, optionally, the physical JDBC database schema.

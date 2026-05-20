@@ -21,6 +21,23 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/*qqqqqqqqqqq
+CODEX
+
+5. OAClass.isPreSelect() — annotation value is not loaded into OAObjectInfo
+     Severity: Low
+     Execution path: class declares @OAClass(isPreSelect=true). OAObjectInfo has setPreSelect/getPreSelect, and
+     runtime references getPreSelect() in object event diagnostics, but OAObjectAnnotationService never calls
+     oi.setPreSelect(oaclass.isPreSelect()).
+     Why it matters: annotated preselect metadata is silently lost. Current observed impact is limited, but any
+     runtime path relying on OAObjectInfo.getPreSelect() will see false for annotated classes.
+     Minimal hardening: copy oaclass.isPreSelect() into OAObjectInfo during class annotation processing, or remove/
+     document as unsupported.
+     Suggested CODEX comment location: OAObjectAnnotationService._update, class-level @OAClass load block.
+
+
+*/
+
 /**
  * Class-level metadata describing an {@link OAObject} type and its
  * runtime/persistence/UI behavior within the OA Framework.

@@ -25,6 +25,58 @@ import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
 import com.viaoa.template.OATemplate;
 
+/*qqqqqqqqqqqqqqqq
+CODEX
+
+
+1. OAFunction.length(OAObject obj, String pp) — missing null checks
+     Severity: Medium
+     Bug/risk: unlike the other OAFunction methods, length(OAObject, String) does not check obj == null or empty/null
+     pp before calling obj.getProperty(pp).
+     Runtime scenario: template/report/UI expression calls OAFunction.length(null, "name") or OAFunction.length(obj,
+     null). Other helpers return 0 or null for null roots; this one can throw.
+     Production impact: inconsistent null behavior can break template/report evaluation and turn a missing value into
+     a runtime exception.
+     Minimal hardening: mirror other methods: return 0 when obj == null or OAString.isEmpty(pp).
+  2. OAFunction.max/min overloads — invalid/null input returns Integer 0 instead of “no value”
+     Severity: Medium
+     Bug/risk: max(OAObject, String), max(Hub, String), min(OAObject, String), and min(Hub, String) return 0 when the
+     root or property path is null/empty. But when traversal succeeds and no comparable value is found, the deeper
+     overloads return null.
+     Runtime scenario: report expression expects max date/name/amount. If the hub is null, the result is integer 0,
+     not null and not the value type.
+     Production impact: callers can get a misleading non-null result of the wrong type, causing wrong output, bad
+     comparison behavior, or formatting errors.
+     Minimal hardening: return null for max/min no-value cases consistently.
+  3. OAFunction.sum — conversion failures are silently ignored
+     Severity: Medium
+     Bug/risk: sum(OAObject, ppToObject, pp) and sum(Hub, ppToObject, pp) catch all exceptions from
+     OAConv.toDouble(val) and ignore them.
+     Runtime scenario: one object has a non-convertible value, overflow value, malformed string, or converter failure.
+     The function silently omits it and returns a partial sum.
+     Production impact: reports, UI expressions, templates, or dynamic calculations can show incorrect totals without
+     any visible failure.
+     Minimal hardening: either fail visibly on conversion failure, expose a strict/lenient mode, or at least log/
+     diagnose skipped values. For production expressions, silent partial sums are risky.
+  4. OAFunction.max/min — comparison failures are silently ignored
+     Severity: Medium
+     Bug/risk: max/min catch all exceptions from OACompare.compare(object[0], val) and ignore them.
+     Runtime scenario: mixed value types, invalid conversion, compare package failure, or non-comparable values are
+     encountered. The failed value is skipped and the previous max/min is returned.
+     Production impact: a max/min expression can return a stale or wrong value while appearing successful.
+     Minimal hardening: fail visibly or define documented lenient behavior with diagnostics for skipped values.
+  5. OAFunction.sum — numeric aggregation uses double, causing precision loss
+     Severity: Medium
+     Bug/risk: all sums convert values through OAConv.toDouble and accumulate in OADouble.
+     Runtime scenario: BigDecimal currency, large Long IDs/counts, or high-precision decimal values are summed for
+     reports or dynamic UI values. Values beyond double precision silently lose cents/digits.
+     Production impact: incorrect financial/reporting totals or mismatched datasource/template output.
+     Minimal hardening: add BigDecimal-backed sum variants or use OA math/converter precision contracts for numeric
+     aggregation. If double-only is intentional, document it explicitly.
+
+
+*/
+
 /**
  * Utility functions that evaluate values across an OAObject graph using
  * property-path traversal. These functions use {@link com.viaoa.find.OAFinder}

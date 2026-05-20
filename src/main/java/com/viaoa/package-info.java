@@ -141,6 +141,11 @@ package com.viaoa;
 
 /* CODEX Invariants
 
+
+
+
+
+
 Below is a fuller invariant list I would use as the hardening checklist for OA core.
 
   Graph Runtime
