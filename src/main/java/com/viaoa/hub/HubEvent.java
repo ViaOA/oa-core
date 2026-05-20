@@ -25,6 +25,19 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
 
+/*qqqqqqqqqqqqqq
+CODEX
+
+OA listeners ??
+   short curcuit policy
+      only for "before" events
+      others need to catch exception and call all listeners
+
+
+ */
+
+
+
 /**
  * qqqqqqqqqqqqqqqqqqqqqqqqqqqq dropped "extends PropertyChangeEvent"
  * 

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 /**
  * Undo and redo support for OA applications.
  * <p>
@@ -68,334 +69,434 @@ package com.viaoa.undo;
 
 /* CODEX Invariants
 
-Undo Invariants
+UNDO-STACK-001 — Undo Stack Integrity
+Contract statement:
+The undo/redo stack must preserve the committed sequence of undoable actions without silently losing, duplicating,
+reordering, or corrupting entries.
+Rationale:
+UI, controller, and runtime undo depends on stack history matching the user-visible committed mutation history.
+Source scope:
+OAUndoManager.createUndoManager(), getUndoManager(), add(...), addEdit(...), undo(), redo behavior inherited from
+UndoManager, compound edit handling.
+Related CODEX findings:
+singleton/global fields unsynchronized; add(UndoableEdit) silently drops edits before manager creation; static
+global compound state can contaminate stack history.
+Suggested unit tests:
+undoStackPreservesCommittedOrder(), undoAddBeforeManagerCreationIsVisibleOrRejected(),
+undoStackDoesNotDuplicateRedoAppliedEdit().
+Spec target section:
+Undo Runtime / Stack Integrity Semantics.
 
-  ID: UNDO-STACK-001
-  Contract statement: The undo/redo stack must preserve a committed sequence of undoable actions without silently
-  losing, duplicating, reordering, or corrupting entries.
-  Rationale: UI/controller/runtime undo depends on stack history matching the user-visible committed mutation history.
-  Source locations: OAUndoManager.createUndoManager, OAUndoManager.add, OAUndoManager.addEdit, OAUndoManager.undo,
-  future OA-native undo manager.
-  Related CODEX findings: singleton/global fields unsynchronized; add(UndoableEdit) silently drops edits before
-  manager creation; static global compound state can contaminate stack history.
-  Suggested unit tests: testUndoStackPreservesCommittedOrder, testAddBeforeManagerCreationIsVisibleOrRejected,
-  testUndoStackDoesNotDuplicateRedoAppliedEdit.
-  Spec target section: Undo Runtime / Stack Integrity
+UNDO-ORDER-001 — Undo and Redo Ordering
+Contract statement:
+Undo must apply committed actions in reverse order, and redo must reapply undone actions in original committed
+order.
+Rationale:
+Reversing graph mutations out of order can break properties, links, Hub membership, active object state, derived
+values, and runtime event expectations.
+Source scope:
+OAUndoManager.undo(); OAUndoableEdit.undo(); OAUndoableEdit.redo(); compound edit handling.
+Related CODEX findings:
+compound boundaries can be split by nested starts; cross-thread compound contamination can mix action order.
+Suggested unit tests:
+undoAppliesCompoundChildrenInReverseOrder(), redoAppliesCompoundChildrenInOriginalOrder(),
+nestedCompoundPolicyPreservesCommittedOrder().
+Spec target section:
+Undo Runtime / Ordering Semantics.
 
-  ID: UNDO-ORDER-001
-  Contract statement: Undo must apply actions in reverse committed order, and redo must reapply undone actions in the
-  original committed order.
-  Rationale: Reversing an object graph mutation sequence out of order can break links, Hub membership, active object
-  state, and derived/runtime state.
-  Source locations: OAUndoManager.undo, OAUndoableEdit.undo, OAUndoableEdit.redo, compound edit handling.
-  Related CODEX findings: compound boundaries can be split by nested starts; cross-thread compound contamination can
-  mix action order.
-  Suggested unit tests: testUndoAppliesCompoundChildrenInReverseOrder, testRedoAppliesCompoundChildrenInOriginalOrder,
-  testNestedCompoundDoesNotSplitOuterOrder.
-  Spec target section: Undo Runtime / Ordering Semantics
+UNDO-RECORD-001 — Undo Record Lifecycle
+Contract statement:
+Undo records must have a deterministic lifecycle: created, active/on-stack, undoing, undone, redoing, redone,
+failed/incomplete, dead/discarded.
+Rationale:
+Undo stacks can retain large OA object graphs; record lifecycle controls validity, retry behavior, and memory
+retention.
+Source scope:
+OAUndoableEdit creation factories, canUndo(), undo(), canRedo(), redo(), die(), isSignificant(); OAUndoManager
+cancel/discard/stack trimming behavior.
+Related CODEX findings:
+die() does not release strong references; cancelCompoundEdit() drops compound without calling die(); public undo/
+redo sequencing concerns.
+Suggested unit tests:
+discardedUndoRecordCannotBeApplied(), undoDieReleasesStrongReferences(), cancelCompoundDiesChildEdits().
+Spec target section:
+Undo Runtime / Record Lifecycle Semantics.
 
-  ID: UNDO-PROP-001
-  Contract statement: Property undo records must capture the old value and new value at the correct lifecycle moment:
-  after old value is known, before the previous value is overwritten, and after the committed new value is known.
-  Rationale: Restoring the wrong property value corrupts OAObject state and can affect datasource saves, filters,
-  templates, sync, and replication.
-  Source locations: OAUndoableEdit.createUndoablePropertyChange; OAObjectEventService undoable property capture path;
-  future property-change capture service.
-  Related CODEX findings: mutable value records are stored by reference; convenience property-change factory assumes
-  wasChanged=true.
-  Suggested unit tests: testPropertyUndoRestoresCapturedOldValue, testPropertyRedoRestoresCapturedNewValue,
-  testMutableValuePropertyUndoUsesSnapshotWhenRequired.
-  Spec target section: Undo Runtime / Property Restoration
+UNDO-PROP-001 — Property Change Capture Timing
+Contract statement:
+Property undo records must capture old value, new value, property name, object identity, and changed-state context
+at the correct lifecycle point for the committed property mutation.
+Rationale:
+Restoring the wrong property value corrupts OAObject state and can affect datasource saves, filters, templates,
+sync, replication, and calculated runtime behavior.
+Source scope:
+OAUndoableEdit.createUndoablePropertyChange(...), prevValue/newValue fields, OAObject property-change capture paths,
+OAObject.setProperty(...).
+Related CODEX findings:
+mutable value records are stored by reference; convenience property-change factory assumes wasChanged=true.
+Suggested unit tests:
+undoPropertyRestoresCapturedOldValue(), redoPropertyRestoresCapturedNewValue(),
+undoPropertyChangedFlagRestoredByContract().
+Spec target section:
+Undo Runtime / Property Restoration Semantics.
 
-  ID: UNDO-PROP-002
-  Contract statement: Property undo must restore value semantics without changing object identity incorrectly.
-  OAObject reference properties preserve identity; value properties preserve value snapshots according to their
-  metadata/value contract.
-  Rationale: OA distinguishes object identity from value equality. Undo must not replace canonical OAObjects
-  incorrectly or restore stale mutated value objects.
-  Source locations: OAUndoableEdit.prevValue/newValue; OAObject.setProperty; metadata property/link information.
-  Related CODEX findings: mutable values captured by reference can drift before undo.
-  Suggested unit tests: testReferencePropertyUndoPreservesOAObjectIdentity,
-  testValuePropertyUndoRestoresIndependentSnapshot, testDateTimePropertyUndoDoesNotDriftAfterOriginalValueMutation.
-  Spec target section: Undo Runtime / Value and Identity Semantics
+UNDO-PROP-002 — Value Snapshot Versus Object Identity
+Contract statement:
+Undo records must distinguish OAObject reference identity from value-property snapshot semantics; reference
+properties preserve canonical object identity, while value properties preserve the required value snapshot.
+Rationale:
+OA distinguishes object identity from value equality; undo must not replace canonical OAObjects incorrectly or
+restore stale mutated value objects.
+Source scope:
+OAUndoableEdit.prevValue/newValue, createUndoablePropertyChange(...), OAObject.setProperty(...), metadata property/
+link semantics.
+Related CODEX findings:
+mutable values captured by reference can drift before undo.
+Suggested unit tests:
+undoReferencePropertyPreservesOAObjectIdentity(), undoValuePropertyRestoresIndependentSnapshot(),
+undoDateTimePropertyDoesNotDriftAfterOriginalValueMutation().
+Spec target section:
+Undo Runtime / Value and Identity Semantics.
 
-  ID: UNDO-HUB-001
-  Contract statement: Hub undo records must preserve the affected Hub, object identity, membership state, and intended
-  position/order at the time of the committed change.
-  Rationale: Hub membership/order is core OA graph state. Position-only or hub-agnostic records can restore the wrong
-  object or wrong Hub.
-  Source locations: OAUndoableEdit.createUndoableAdd, createUndoableRemove, createUndoableInsert, createUndoableMove,
-  undo, redo.
-  Related CODEX findings: MOVE records only positions, not object identity; equals ignores Hub identity for Hub-scoped
-  edits.
-  Suggested unit tests: testUndoAddRemovesSameObjectFromSameHub, testUndoRemoveReinsertsSameObjectAtOriginalPosition,
-  testUndoMoveRestoresMovedObjectNotCurrentPositionOccupant, testHubEditEqualityIncludesHubIdentity.
-  Spec target section: Undo Runtime / Hub Membership Semantics
+UNDO-HUB-001 — Hub Membership Restoration
+Contract statement:
+Hub undo records must preserve affected Hub identity, object identity, membership state, and intended position/order
+at the time of committed mutation.
+Rationale:
+Hub membership and ordering are core OA graph state; position-only or hub-agnostic records can restore the wrong
+object or wrong Hub.
+Source scope:
+OAUndoableEdit.createUndoableAdd(...), createUndoableRemove(...), createUndoableInsert(...),
+createUndoableMove(...), undo(), redo(), equals(), hashCode().
+Related CODEX findings:
+MOVE records only positions, not object identity; equals ignores Hub identity for Hub-scoped edits.
+Suggested unit tests:
+undoAddRemovesSameObjectFromSameHub(), undoRemoveReinsertsSameObjectAtOriginalPosition(),
+undoMoveRestoresMovedObjectNotCurrentPositionOccupant(), hubEditEqualityIncludesHubIdentity().
+Spec target section:
+Undo Runtime / Hub Membership Semantics.
 
-  ID: UNDO-HUB-002
-  Contract statement: Hub undo/redo must treat failed Hub operations as failed undo/redo, not as success. Boolean
-  failure, invalid positions, missing objects, and rejected inserts/removes must be visible.
-  Rationale: Hub APIs can return false/no-op when restoration does not apply. Ignoring that produces false-success
-  undo records.
-  Source locations: OAUndoableEdit.undo, OAUndoableEdit.redo; Hub.add, Hub.insert, Hub.remove, Hub.move.
-  Related CODEX findings: Hub boolean restore results are ignored; undo/redo state flips before restoration succeeds.
-  Suggested unit tests: testUndoAddFailsWhenRemoveReturnsFalse, testRedoInsertFailsWhenInsertReturnsFalse,
-  testFailedHubUndoLeavesEditRetryable.
-  Spec target section: Undo Runtime / Hub Failure Semantics
+UNDO-HUB-002 — Hub Restore Failure Visibility
+Contract statement:
+Hub undo/redo must treat failed add, insert, remove, move, invalid position, missing object, or rejected operation
+as failed undo/redo, not as success.
+Rationale:
+Ignoring Hub operation failure produces false-success undo records and leaves graph state different from UI/
+controller state.
+Source scope:
+OAUndoableEdit.undo(), redo(); Hub.add(...), insert(...), remove(...), move(...).
+Related CODEX findings:
+Hub boolean restore results are ignored; undo/redo state flips before restoration succeeds.
+Suggested unit tests:
+undoAddFailsWhenRemoveReturnsFalse(), redoInsertFailsWhenInsertReturnsFalse(), failedHubUndoLeavesEditRetryable().
+Spec target section:
+Undo Runtime / Hub Failure Semantics.
 
-  ID: UNDO-AO-001
-  Contract statement: Active-object undo/redo must restore the intended active object only if that object is still
-  valid for the Hub, or must fail visibly when the target cannot be restored.
-  Rationale: Active object drives UI state, detail Hubs, link behavior, and controller state. AO pointing outside Hub
-  membership can corrupt detail state.
-  Source locations: OAUndoableEdit.createUndoableChangeAO, OAUndoableEdit.undo, OAUndoableEdit.redo, Hub.setAO,
-  HubAOService.
-  Related CODEX findings: active-object undo can set AO to an object no longer in the Hub.
-  Suggested unit tests: testUndoAOChangeRestoresPreviousMember, testUndoAOChangeFailsWhenPreviousObjectNoLongerInHub,
-  testRedoAOChangeDoesNotSetNonMemberAO.
-  Spec target section: Undo Runtime / Active Object Semantics
+UNDO-AO-001 — Active Object Restoration
+Contract statement:
+Active-object undo/redo must restore the intended active object only when that object is valid for the Hub, or must
+fail visibly when the target cannot be restored.
+Rationale:
+Active object drives UI state, detail Hubs, link behavior, and controller state; pointing AO outside valid Hub
+membership corrupts dependent runtime state.
+Source scope:
+OAUndoableEdit.createUndoableChangeAO(...), undo(), redo(); Hub.setAO(...), Hub active-object services.
+Related CODEX findings:
+active-object undo can set AO to an object no longer in the Hub.
+Suggested unit tests:
+undoAOChangeRestoresPreviousMember(), undoAOChangeFailsWhenPreviousObjectNoLongerInHub(),
+redoAOChangeDoesNotSetNonMemberAO().
+Spec target section:
+Undo Runtime / Active Object Semantics.
 
-  ID: UNDO-GROUP-001
-  Contract statement: Compound/grouped undo boundaries must represent one committed logical operation and must not
-  silently include unrelated actions or split a user operation.
-  Rationale: Generated applications depend on predictable user-level undo behavior for multi-step changes.
-  Source locations: OAUndoManager.startCompoundEdit, endCompoundEdit, cancelCompoundEdit, addEdit,
-  add(UndoableEdit[]); future grouped edit implementation.
-  Related CODEX findings: compound edit state is static global; nested compound starts silently commit existing
-  compound; endCompoundEdit can leave compound open when ignore is active.
-  Suggested unit tests: testCompoundEditContainsOnlyActionsInScope, testNestedCompoundPolicyIsDeterministic,
-  testCompoundEndClosesEvenDuringCleanup.
-  Spec target section: Undo Runtime / Compound Edit Semantics
+UNDO-GROUP-001 — Compound Edit Boundaries
+Contract statement:
+Compound/grouped undo boundaries must represent one committed logical operation and must not silently include
+unrelated actions or split a user/runtime operation.
+Rationale:
+Generated applications depend on predictable user-level undo behavior for multi-step changes.
+Source scope:
+OAUndoManager.startCompoundEdit(...), endCompoundEdit(), cancelCompoundEdit(), addEdit(...), add(UndoableEdit[]),
+compoundEdit state.
+Related CODEX findings:
+compound edit state is static global; nested compound starts silently commit existing compound; endCompoundEdit can
+leave compound open when ignore is active.
+Suggested unit tests:
+compoundEditContainsOnlyActionsInScope(), nestedCompoundPolicyIsDeterministic(),
+compoundEndClosesEvenDuringCleanup().
+Spec target section:
+Undo Runtime / Compound Edit Semantics.
 
-  ID: UNDO-GROUP-002
-  Contract statement: Compound/grouped undo must be atomic or visibly incomplete on failure. If one child action
-  fails, caller/observer must know the group did not fully restore state, and retry/recovery state must be valid.
-  Rationale: Partial grouped restoration can leave object graphs in mixed before/after state. That is acceptable only
-  when visible and recoverable.
-  Source locations: compound edit handling in OAUndoManager; OAUndoableEdit.undo/redo; future OA-native group action.
-  Related CODEX findings: state flips before restore success; add(UndoableEdit[]) can create incomplete compound
-  groups if child additions fail.
-  Suggested unit tests: testCompoundUndoFailureIsVisible, testCompoundRedoFailureDoesNotMarkGroupComplete,
-  testCompoundPartialFailurePreservesRecoveryState.
-  Spec target section: Undo Runtime / Group Failure Semantics
+UNDO-GROUP-002 — Compound Restore Atomicity
+Contract statement:
+Compound/grouped undo and redo must be atomic or visibly incomplete; if any child action fails, caller/observer must
+know the group did not fully restore state.
+Rationale:
+Partial grouped restoration can leave object graphs in mixed before/after state, which is acceptable only when
+visible and recoverable.
+Source scope:
+OAUndoManager compound edit handling; OAUndoableEdit.undo()/redo(); add(UndoableEdit[]).
+Related CODEX findings:
+state flips before restore success; add(UndoableEdit[]) can create incomplete compound groups if child additions
+fail.
+Suggested unit tests:
+compoundUndoFailureIsVisible(), compoundRedoFailureDoesNotMarkGroupComplete(),
+compoundPartialFailurePreservesRecoveryState().
+Spec target section:
+Undo Runtime / Group Failure Semantics.
 
-  ID: UNDO-IDENTITY-001
-  Contract statement: Undo records must preserve OA identity boundaries: object identity, Hub identity, object key
-  identity, and value identity must not be conflated.
-  Rationale: OA/OG correctness depends on stable identity routing through cache, Hub membership, link relationships,
-  and datasource persistence.
-  Source locations: OAUndoableEdit.object, hub, prevValue/newValue, equality/coalescing logic; future undo record
-  model.
-  Related CODEX findings: Hub identity omitted from equality; MOVE lacks object identity; mutable values captured by
-  reference.
-  Suggested unit tests: testUndoRecordDistinguishesSameObjectInDifferentHubs,
-  testUndoRecordDistinguishesReferenceObjectFromValueSnapshot, testMoveUndoRecordStoresMovedObjectIdentity.
-  Spec target section: Undo Runtime / Identity Semantics
+UNDO-IDENTITY-001 — Undo Identity Boundaries
+Contract statement:
+Undo records must preserve OA identity boundaries: object identity, Hub identity, object key identity, reference
+identity, and value identity must not be conflated.
+Rationale:
+OA/OG correctness depends on stable identity routing through cache, Hub membership, link relationships, datasource
+persistence, sync, and replication.
+Source scope:
+OAUndoableEdit.object, hub, prevValue, newValue, equals(...), hashCode(...), replaceEdit(...), move records.
+Related CODEX findings:
+Hub identity omitted from equality; MOVE lacks object identity; mutable values captured by reference.
+Suggested unit tests:
+undoRecordDistinguishesSameObjectInDifferentHubs(), undoRecordDistinguishesReferenceObjectFromValueSnapshot(),
+moveUndoRecordStoresMovedObjectIdentity().
+Spec target section:
+Undo Runtime / Identity Semantics.
 
-  ID: UNDO-CACHE-001
-  Contract statement: Undo/redo must not corrupt cache identity, object keys, link consistency, or Hub/detail
-  relationships. Restoration must use normal OA graph APIs or a documented authoritative path.
-  Rationale: Undo is still a runtime mutation. It must obey object/cache/link invariants just like user edits, sync
-  replay, or datasource load.
-  Source locations: OAUndoableEdit.undo/redo; OAObject.setProperty; Hub.add/remove/insert/move/setAO; OAGraph object/
-  hub services.
-  Related CODEX findings: false-success Hub restore and AO restore can leave Hub/detail state inconsistent.
-  Suggested unit tests: testUndoReferencePropertyMaintainsReverseLink, testUndoHubRemoveMaintainsDetailRelationship,
-  testUndoDoesNotCreateDuplicateCachedObject.
-  Spec target section: Undo Runtime / Cache and Link Consistency
+UNDO-LINK-001 — Link, Cache, and Graph Consistency
+Contract statement:
+Undo/redo must not corrupt cache identity, object keys, reverse links, Hub/detail relationships, metadata
+cardinality, or graph ownership; restoration must use normal OA graph APIs or a documented authoritative path.
+Rationale:
+Undo is still runtime mutation and must obey the same object/cache/link invariants as user edits, sync replay,
+datasource load, and graph services.
+Source scope:
+OAUndoableEdit.undo(), redo(); OAObject.setProperty(...); Hub add/remove/insert/move/setAO; graph/object/hub service
+boundaries.
+Related CODEX findings:
+false-success Hub restore and AO restore can leave Hub/detail state inconsistent.
+Suggested unit tests:
+undoReferencePropertyMaintainsReverseLink(), undoHubRemoveMaintainsDetailRelationship(),
+undoDoesNotCreateDuplicateCachedObject().
+Spec target section:
+Undo Runtime / Cache and Link Consistency Semantics.
 
-  ID: UNDO-EVENT-001
-  Contract statement: Event suppression or replay during undo/redo must be explicit. Undo/redo must not accidentally
-  record itself as new undoable work, and must not suppress required OA runtime notifications unless contracted.
-  Rationale: Undo changes may need UI refresh, Hub/detail updates, triggers, and sync decisions, but recursive undo
-  capture corrupts history.
-  Source locations: OAUndoManager.undo; missing redo suppression path; OAUndoManager.bIgnoreAll; OAObjectEventService
-  undoable capture path.
-  Related CODEX findings: redo is not wrapped with undo-capture suppression; undo clobbers pre-existing global ignore
-  state.
-  Suggested unit tests: testUndoDoesNotCreateNewUndoRecord, testRedoDoesNotCreateNewUndoRecord,
-  testUndoStillFiresRequiredPropertyEvents, testUndoRestoresPreviousIgnoreAllState.
-  Spec target section: Undo Runtime / Event and Capture Semantics
+UNDO-EVENT-001 — Event and Capture Semantics
+Contract statement:
+Event suppression, event publication, and undo-capture suppression during undo/redo must be explicit; undo/redo must
+not accidentally record itself as new undoable work or suppress required OA runtime notifications unless contracted.
+Rationale:
+Undo changes may need UI refresh, Hub/detail updates, triggers, and sync decisions, but recursive undo capture
+corrupts history.
+Source scope:
+OAUndoManager.undo(), redo behavior, setIgnore(...), ignore(...), setIgnoreAll(...), OAUndoableEdit.undo()/redo(),
+OAObject property-change capture paths.
+Related CODEX findings:
+redo is not wrapped with undo-capture suppression; undo clobbers pre-existing global ignore state.
+Suggested unit tests:
+undoDoesNotCreateNewUndoRecord(), redoDoesNotCreateNewUndoRecord(), undoStillFiresRequiredPropertyEvents(),
+undoRestoresPreviousIgnoreAllState().
+Spec target section:
+Undo Runtime / Event Publication and Capture Semantics.
 
-  ID: UNDO-FAIL-001
-  Contract statement: Undo/redo failure must be caller-visible or otherwise observable, and must never silently appear
-  successful.
-  Rationale: Silent failed undo leaves UI/controller state believing old state was restored when object/Hub graph
-  state differs.
-  Source locations: OAUndoableEdit.undo, redo; OAUndoManager.undo/redo; future OA-native action apply methods.
-  Related CODEX findings: Hub operation false returns ignored; no-op HOLDER significant by default; public undo/redo
-  do not enforce sequencing.
-  Suggested unit tests: testUndoFailureThrowsOrRecordsFailure, testRedoFailureThrowsOrRecordsFailure,
-  testNoOpVisibleUndoRecordRejectedUnlessExplicit.
-  Spec target section: Undo Runtime / Failure Visibility
+UNDO-FAIL-001 — Undo/Redo Failure Visibility
+Contract statement:
+Undo/redo failure must be caller-visible or otherwise observable and must never silently appear successful.
+Rationale:
+Silent failed undo leaves UI/controller state believing old graph state was restored when object/Hub state differs.
+Source scope:
+OAUndoableEdit.undo(), redo(); OAUndoManager.undo(); OAUndoManager add/edit APIs.
+Related CODEX findings:
+Hub operation false returns ignored; no-op HOLDER significant by default; public undo/redo do not enforce
+sequencing.
+Suggested unit tests:
+undoFailureThrowsOrRecordsFailure(), redoFailureThrowsOrRecordsFailure(),
+noOpVisibleUndoRecordRejectedUnlessExplicit().
+Spec target section:
+Undo Runtime / Failure and False-Success Prevention.
 
-  ID: UNDO-RETRY-001
-  Contract statement: Retry after failed undo/redo must not reuse corrupted stack/action state. Action state must
-  advance only after successful restoration or enter an explicit failed/incomplete state.
-  Rationale: Caller-visible exception is acceptable incomplete-operation signaling only if retry remains meaningful.
-  Source locations: OAUndoableEdit.bCanUndo; undo, redo; future edit state enum.
-  Related CODEX findings: undo/redo flips state before restoration succeeds.
-  Suggested unit tests: testFailedUndoCanBeRetried, testFailedRedoCanBeRetried,
-  testFailedUndoDoesNotExposeCanRedoUntilUndoSucceeded.
-  Spec target section: Undo Runtime / Retry Semantics
+UNDO-RETRY-001 — Retry After Failed Restore
+Contract statement:
+Retry after failed undo/redo must not reuse corrupted stack or action state; action state must advance only after
+successful restoration or enter an explicit failed/incomplete state.
+Rationale:
+Visible failure is useful only if retry/recovery state remains meaningful.
+Source scope:
+OAUndoableEdit.bCanUndo, canUndo(), canRedo(), undo(), redo(); OAUndoManager stack behavior.
+Related CODEX findings:
+undo/redo flips state before restoration succeeds.
+Suggested unit tests:
+failedUndoCanBeRetried(), failedRedoCanBeRetried(), failedUndoDoesNotExposeCanRedoUntilUndoSucceeded().
+Spec target section:
+Undo Runtime / Retry Semantics.
 
-  ID: UNDO-TL-001
-  Contract statement: ThreadLocal/context state set during undo capture or undo/redo application must be restored with
-  try/finally.
-  Rationale: Undo capture often runs on UI or worker threads that can later process unrelated OA work. Leaked context
-  corrupts future undo capture, sync suppression, graph routing, or transaction state.
-  Source locations: OAUndoManager.setIgnore, ignore, startCompoundEditForPropertyChanges, endCompoundEditForPropertyC
-  hanges; OAThreadLocalService.startUndoable/endUndoable.
-  Related CODEX findings: property-change capture lifecycle lacks scoped try/finally API; ignore counter map can leak
-  thread state.
-  Suggested unit tests: testUndoCaptureThreadLocalRestoredAfterException, testIgnoreScopeRestoredAfterException,
-  testUndoDoesNotLeakThreadLocalState.
-  Spec target section: Undo Runtime / ThreadLocal Cleanup
+UNDO-SEQUENCE-001 — Undo/Redo Sequencing Enforcement
+Contract statement:
+Public undo and redo entry points must enforce canUndo/canRedo sequencing and must reject invalid lifecycle
+transitions visibly.
+Rationale:
+Applying redo before a successful undo or undoing a dead/invalid record can corrupt action state and Object Graph
+state.
+Source scope:
+OAUndoableEdit.canUndo(), undo(), canRedo(), redo(); OAUndoManager undo/redo pathways.
+Related CODEX findings:
+OAUndoableEdit public undo() and redo() do not enforce canUndo/canRedo.
+Suggested unit tests:
+undoRejectsWhenCanUndoFalse(), redoRejectsWhenCanRedoFalse(), deadEditCannotBeUndoneOrRedone().
+Spec target section:
+Undo Runtime / Lifecycle Sequencing Semantics.
 
-  ID: UNDO-CONCURRENT-001
-  Contract statement: Concurrent undo/redo, edit capture, compound grouping, and stack mutation must either be
-  serialized by contract or protected from corrupting stack/object graph state.
-  Rationale: OA runtime has UI, background, remote, sync, and event threads. Undo scope must be explicitly owned.
-  Source locations: OAUndoManager static fields; hmThreadCounter; compoundEdit; undoManager; addEdit; future manager
-  ownership model.
-  Related CODEX findings: static global compound edit state; unsynchronized ignore map; unsynchronized singleton/
-  global flags.
-  Suggested unit tests: testConcurrentAddAndUndoIsSerializedOrRejected,
-  testConcurrentCompoundEditsDoNotCrossContaminate, testConcurrentIgnoreScopesAreThreadIsolated.
-  Spec target section: Undo Runtime / Concurrency Semantics
+UNDO-TL-001 — ThreadLocal and Runtime Context Restoration
+Contract statement:
+ThreadLocal, ignore counters, undo-capture state, sync suppression, graph routing, transaction context, and runtime
+context set during undo capture or undo/redo application must be restored with try/finally.
+Rationale:
+Undo capture often runs on UI, worker, event, remote, or sync threads that later process unrelated OA work.
+Source scope:
+OAUndoManager.setIgnore(...), ignore(...), getIgnore(), startCompoundEditForPropertyChanges(...),
+endCompoundEditForPropertyChanges(), setIgnoreAll(...), OAThreadLocal undoable integration.
+Related CODEX findings:
+property-change capture lifecycle lacks scoped try/finally API; ignore counter map can leak thread state; undo
+clobbers global ignore state.
+Suggested unit tests:
+undoCaptureThreadLocalRestoredAfterException(), ignoreScopeRestoredAfterException(),
+undoDoesNotLeakThreadLocalState().
+Spec target section:
+Undo Runtime / ThreadLocal Cleanup Semantics.
 
-  ID: UNDO-LIFECYCLE-001
-  Contract statement: Undo records have a lifecycle: created, active/on-stack, undoing, undone, redoing, redone,
-  failed, dead/discarded. Dead records must release references and must not be applied again.
-  Rationale: Undo stacks can retain large OA object graphs. Lifecycle controls memory, retry, and validity.
-  Source locations: OAUndoableEdit.die; OAUndoManager.cancelCompoundEdit; stack trimming/discard behavior inherited
-  from current manager; future OA-native stack.
-  Related CODEX findings: die() does not release strong references; cancelCompoundEdit() drops compound without
-  calling die().
-  Suggested unit tests: testDiscardedUndoRecordCannotBeApplied, testDieReleasesStrongReferences,
-  testCancelCompoundDiesChildEdits.
-  Spec target section: Undo Runtime / Record Lifecycle
+UNDO-CONCURRENT-001 — Undo Scope Concurrency
+Contract statement:
+Concurrent undo/redo, edit capture, compound grouping, ignore scopes, and stack mutation must either be serialized
+by contract or protected from corrupting stack and graph state.
+Rationale:
+OA runtime can involve UI, background, remote, sync, trigger, callback, and event threads; undo ownership must be
+explicit.
+Source scope:
+OAUndoManager static fields, hmThreadCounter, compoundEdit, undoManager, addEdit(...), start/end/cancel compound
+APIs, global flags.
+Related CODEX findings:
+static global compound edit state; unsynchronized ignore map; unsynchronized singleton/global flags.
+Suggested unit tests:
+concurrentAddAndUndoIsSerializedOrRejected(), concurrentCompoundEditsDoNotCrossContaminate(),
+concurrentIgnoreScopesAreThreadIsolated().
+Spec target section:
+Undo Runtime / Concurrency Semantics.
 
-  ID: UNDO-COALESCE-001
-  Contract statement: Coalescing/replacement of undo records must only occur when the new record fully supersedes the
-  old record for the same object, property, Hub, and operation scope.
-  Rationale: Incorrect coalescing loses history or replaces the wrong restorable action.
-  Source locations: OAUndoableEdit.replaceEdit, equals, hashCode; future coalescing policy.
-  Related CODEX findings: replaceEdit checks wrong edit’s allow flag; equality ignores Hub identity.
-  Suggested unit tests: testPropertyEditCoalescesOnlySameObjectAndProperty, testHubEditCoalescesOnlySameHubAndObject,
-  testMoveEditDoesNotCoalesceDifferentMoves.
-  Spec target section: Undo Runtime / Coalescing Semantics
+UNDO-COALESCE-001 — Edit Coalescing Semantics
+Contract statement:
+Coalescing or replacement of undo records may occur only when the new record fully supersedes the old record for the
+same object, property, Hub, operation type, and scope.
+Rationale:
+Incorrect coalescing loses history or replaces the wrong restorable action.
+Source scope:
+OAUndoableEdit.replaceEdit(...), addEdit(...), equals(...), hashCode(...), bAllowReplace.
+Related CODEX findings:
+replaceEdit checks the wrong edit’s allow flag; equality ignores Hub identity.
+Suggested unit tests:
+propertyEditCoalescesOnlySameObjectAndProperty(), hubEditCoalescesOnlySameHubAndObject(),
+moveEditDoesNotCoalesceDifferentMoves().
+Spec target section:
+Undo Runtime / Coalescing Semantics.
 
-  ID: UNDO-INTEGRATION-001
-  Contract statement: Undo behavior must remain compatible with object, Hub, cache, metadata, sync, replication,
-  queue, and runtime contracts. Undo/redo must use sanctioned mutation paths or explicitly document any bypass.
-  Rationale: Undo is not isolated UI behavior in OA 4.0; it can affect generated app state, graph state, persistence,
-  sync, and replication.
-  Source locations: OAUndoableEdit.undo/redo; OAObjectEventService capture; OAThreadLocalService capture; OAGraph obj
-  ect/hub services.
-  Related CODEX findings: redo can recursively capture edits; Hub/AO false-success can corrupt downstream detail/
-  runtime state.
-  Suggested unit tests: testUndoPropertyChangeTriggersExpectedRuntimeNotifications,
-  testUndoHubChangeMaintainsSyncSuppressionPolicy, testUndoDuringReplayDoesNotCreateUserUndoRecord.
-  Spec target section: Undo Runtime / Cross-Package Compatibility
+UNDO-SIGNIFICANCE-001 — Significant Edit Semantics
+Contract statement:
+Undo records exposed to users as significant must perform a meaningful reversible operation or explicitly represent
+a documented marker action.
+Rationale:
+Visible no-op undo records create false-success UI behavior and confuse command history.
+Source scope:
+OAUndoableEdit.createUndoable(...), isSignificant(), HOLDER edit type, presentation name APIs.
+Related CODEX findings:
+HOLDER edits are significant no-op undo records by default.
+Suggested unit tests:
+holderEditIsInsignificantUnlessCustomBehaviorDefined(), significantEditPerformsReversibleOperation(),
+visibleNoOpUndoRecordRejectedUnlessExplicit().
+Spec target section:
+Undo Runtime / Significant Edit Semantics.
 
-  Suggested Package-Level Spec Summary
+UNDO-PRESENT-001 — Presentation Name Stability
+Contract statement:
+Undo/redo presentation names must describe the committed action represented by the record or group and must not
+drift across replacement, grouping, undo, or redo.
+Rationale:
+UI and tooling depend on presentation names to explain reversible graph operations to users.
+Source scope:
+OAUndoableEdit.getPresentationName(), setPresentationName(...), getUndoPresentationName(),
+getRedoPresentationName(), setName(...), getName(); OAUndoManager compound presentation names.
+Related CODEX findings:
+none observed.
+Suggested unit tests:
+undoPresentationNameMatchesCommittedAction(), redoPresentationNameMatchesCommittedAction(),
+compoundPresentationNameRepresentsGroupedOperation().
+Spec target section:
+Undo Runtime / User-Visible Command Semantics.
 
-  com.viaoa.undo is responsible for OA-native undo/redo semantics for generated and runtime applications. It captures
-  restorable actions for OAObject property changes, Hub membership/order changes, active-object changes, and grouped
-  user/runtime operations.
+UNDO-LIFETIME-001 — Reference Release on Discard
+Contract statement:
+Dead, discarded, trimmed, or cancelled undo records must release strong references to OAObjects, Hubs, property
+values, and presentation data when no longer applicable.
+Rationale:
+Undo stacks can retain large Object Graphs; discarded records must not leak runtime graph state.
+Source scope:
+OAUndoableEdit.die(); OAUndoManager.cancelCompoundEdit(); UndoManager trim/discard behavior.
+Related CODEX findings:
+die() does not release strong references; cancelCompoundEdit() drops compound without calling die().
+Suggested unit tests:
+dieReleasesObjectHubAndValueReferences(), cancelCompoundDiesChildEdits(), trimmedUndoRecordsReleaseReferences().
+Spec target section:
+Undo Runtime / Reference Lifecycle Semantics.
 
-  It must guarantee:
+UNDO-PARTIAL-001 — Partial Restore Visibility
+Contract statement:
+If undo/redo applies some but not all intended graph restoration, partial progress must be observable and the
+record/stack must not report complete success.
+Rationale:
+Partial restore can leave object graphs in mixed states affecting UI, events, triggers, datasource, sync, and
+replication.
+Source scope:
+OAUndoableEdit.undo()/redo(); OAUndoManager compound edits; Hub/property/AO restore operations.
+Related CODEX findings:
+Hub operation false returns ignored; group partial failure concerns; state flips before restore success.
+Suggested unit tests:
+partialUndoFailureIsObservable(), partialRedoFailureDoesNotMarkComplete(),
+partialCompoundRestorePreservesRecoveryState().
+Spec target section:
+Undo Runtime / Partial Progress Semantics.
 
-  - Undo/redo restores the intended committed OA object and Hub state.
-  - Undo records capture old/new property values, object identity, Hub identity, order, membership, and active-object
-    state at the correct lifecycle moment.
-  - Stack ordering is deterministic: undo reverses committed order, redo reapplies original order.
-  - Compound/grouped edits preserve operation boundaries and do not mix unrelated work.
-  - Failures are visible and do not advance action/stack state as if successful.
-  - Retry after failed undo/redo remains possible or enters an explicit unretryable failed state.
-  - Undo/redo event behavior is explicit: recursive undo capture is suppressed, while required OA runtime
-    notifications are preserved according to contract.
-  - ThreadLocal/context state is restored with try/finally.
-  - Concurrent access is serialized, scoped, or visibly rejected.
-  - Discarded/dead undo records release object graph references.
-  - Undo behavior remains compatible with OAObject, Hub, cache, metadata, sync, replication, queue, datasource, and
-    runtime invariants.
+UNDO-TRANSACTION-001 — Transaction and Persistence Boundary
+Contract statement:
+Undo/redo completion only means the in-memory reversible mutation was applied according to undo contract; it must
+not imply datasource commit, transaction commit, save success, delete success, sync delivery, or replication
+convergence.
+Rationale:
+Undo is a runtime mutation boundary, not the authority for persistence or distributed success.
+Source scope:
+OAUndoableEdit.undo()/redo(); OAUndoManager; boundaries with transaction, datasource, object, hub, sync,
+replication, and graph packages.
+Related CODEX findings:
+none observed directly; false-success Hub/AO restore can affect downstream runtime state.
+Suggested unit tests:
+undoSuccessDoesNotImplyDatasourceCommit(), undoSuccessDoesNotImplySyncDelivery(),
+undoPropertyRestoreInsideTransactionUsesTransactionContract().
+Spec target section:
+Undo Runtime / Transaction and Runtime Boundary Semantics.
 
-  It must never silently:
-
-  - Drop undo records that should be captured.
-  - Add duplicate undo records from undo/redo application itself.
-  - Mark undo/redo successful when a property or Hub restore failed.
-  - Restore the wrong object, wrong Hub, wrong property value, or wrong active object.
-  - Leave compound edits open after cleanup.
-  - Cross-contaminate compound edits across threads or operations.
-  - Leak ThreadLocal undo capture or ignore state.
-  - Retain discarded object graphs indefinitely.
-  - Corrupt cache identity, reverse links, Hub/detail relationships, or sync/replication event semantics.
-
-  Likely unit-test categories:
-
-  - Stack push/undo/redo ordering.
-  - Property old/new value capture and restoration.
-  - Mutable value snapshot behavior.
-  - Hub add/remove/insert/move restoration.
-  - Active-object restoration and invalid target handling.
-  - Compound/grouped edit ordering, nesting, cancellation, and failure.
-  - Undo/redo recursive capture suppression.
-  - ThreadLocal cleanup and scoped ignore behavior.
-  - Retry after failed undo/redo.
-  - Dead/discarded edit cleanup.
-  - Cross-package integration with object events, Hub detail links, sync/replay suppression, and cache identity.
-
-  Likely stress/failure-test categories:
-
-  - Concurrent edit capture from UI/background threads.
-  - Undo/redo while Hub membership changes externally.
-  - Compound undo failure after several child edits applied.
-  - Repeated property edits with coalescing.
-  - Large object graph undo history trimming.
-  - Undo/redo during sync/replay/load contexts.
-  - Exception-throwing listeners during property or Hub restoration.
-
-
-qqqqqqqqqqqqqq other
-
-Architectural Assessment
-
-  The package is conceptually useful and compact: one manager, one edit type, Swing-compatible contracts. The main
-  production gap is that it still assumes mostly single-threaded UI-style usage, while OA 4.0 runtime semantics
-  include Hub/object events, sync/replication, background work, and ThreadLocal capture. For 4.0, the undo package
-  needs explicit ownership and state contracts more than more features.
-
-  Invariant Risk Areas
-
-  - Undo/redo application state is implicit in bCanUndo.
-  - Compound edit scope is global instead of thread/operation scoped.
-  - Ignore state is implemented as a static map instead of actual thread-local scoped state.
-  - Undo capture cleanup relies on callers balancing start/end manually.
-  - Hub move undo records position but not object identity.
-  - Failure during undo/redo corrupts retry state.
-
-  Top Production Risks
-
-  1. Failed undo/redo corrupts edit state and prevents correct retry.
-  2. Redo recursively records new undo edits.
-  3. Cross-thread compound edit contamination.
-  4. Unsynchronized ignore map/global state corrupts suppression behavior.
-  5. Move undo restores the wrong Hub object after intervening changes.
-
-  Hardening Recommendations
-
-  - Flip bCanUndo only after successful undo/redo.
-  - Override redo() in OAUndoManager with the same suppression discipline as undo().
-  - Replace hmThreadCounter with ThreadLocal<Integer> and add scoped ignore helpers.
-  - Make compound edit scope thread-owned or explicitly single-thread enforced.
-  - Store object identity for move edits and verify before moving.
-  - Add a scoped property-change capture API that guarantees cleanup in finally.
-  - Add sequencing checks inside OAUndoableEdit.undo/redo.
-
-
+UNDO-INTEGRATION-001 — Cross-Package Runtime Compatibility
+Contract statement:
+Undo behavior must remain compatible with object, Hub, cache, metadata, event, trigger, callback, transaction,
+datasource, sync, replication, queue, remote, and graph contracts.
+Rationale:
+Undo is not isolated UI behavior in OA 4.0; it mutates live Object Graph state and can affect persistence,
+distributed runtime behavior, events, and generated applications.
+Source scope:
+OAUndoableEdit.undo()/redo(); OAUndoManager capture/group/ignore APIs; OAObject property-change capture; Hub
+mutation APIs; runtime service boundaries.
+Related CODEX findings:
+redo can recursively capture edits; Hub/AO false-success can corrupt downstream detail/runtime state.
+Suggested unit tests:
+undoPropertyChangeTriggersExpectedRuntimeNotifications(), undoHubChangeMaintainsSyncSuppressionPolicy(),
+undoDuringReplayDoesNotCreateUserUndoRecord().
+Spec target section:
+Undo Runtime / Cross-Package Compatibility Semantics.
 
 */
 

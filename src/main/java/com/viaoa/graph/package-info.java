@@ -15,888 +15,312 @@
  */
 package com.viaoa.graph;
 
+
 /* CODEX Invariants
 
-
-1. OG Runtime / Graph Ownership Contracts
-
-  GRAPH-OWNERSHIP-001 — Every OAObject Belongs To A Runtime Graph Context
-
-  Contract statement:
-  Every OAObject operation that needs metadata, identity, datasource, sync, or Hub behavior must resolve through the
-  owning OAGraph.
-
-  Rationale:
-  OA identity, lifecycle, save/delete, Hub membership, and sync behavior are graph-scoped. Bypassing graph ownership
-  risks cross-runtime identity drift.
-
-  Source locations:
-  OAGraph, OAGraphImpl, OARuntime.graph(...), OAObjectService, HubService
-
-  Known related CODEX findings:
-  Prior graph routing and ownership findings mapped to this invariant.
-
-  Suggested unit tests:
-  testObjectOperationUsesOwningGraph()
-  testCrossGraphObjectDoesNotUseWrongGraphServices()
-
-  Spec target section:
-  OG Runtime / Graph Ownership Semantics
-
-  GRAPH-OWNERSHIP-002 — OAGraph Is Public Facade, OAGraphInternal Is Internal Runtime Surface
-
-  Contract statement:
-  Application code should use OAGraph; internal object/hub/runtime services may use OAGraphInternal.
-
-  Rationale:
-  Keeps public OG verbs stable while preserving internal service hooks.
-
-  Source locations:
-  OAGraph, OAGraphInternal, OAGraphImpl, com.viaoa.graph.api.internal.*
-
-  Known related CODEX findings:
-  Internal API leakage risks noted during facade review.
-
-  Suggested unit tests:
-  testPublicGraphApiDoesNotExposeInternalServices()
-  testInternalServicesUseInternalGraphSurfaceOnly()
-
-  Spec target section:
-  OG Runtime / Public-Internal API Boundary
-
-  2. Graph Routing / Default Graph Contracts
-
-  GRAPH-ROUTE-001 — Class/Object/Package Routing Must Be Deterministic
-
-  Contract statement:
-  OARuntime.graph(class), OARuntime.graph(object), and OARuntime.graph(packageName) must consistently resolve the
-  same intended graph for a model package.
-
-  Rationale:
-  Datasource routing, metadata lookup, sync package routing, and cache identity depend on stable graph resolution.
-
-  Source locations:
-  OARuntime, OAGraphImpl, OAGraphInternal
-
-  Known related CODEX findings:
-  Runtime graph creation/default graph findings covered earlier.
-
-  Suggested unit tests:
-  testGraphLookupByClassMatchesPackageGraph()
-  testGraphLookupByObjectUsesObjectClassGraph()
-  testDefaultGraphIsStableAcrossCalls()
-
-  Spec target section:
-  OG Runtime / Graph Routing
-
-  GRAPH-ROUTE-002 — Default Graph Must Be Explicitly Stable
-
-  Contract statement:
-  The default graph must be created once per runtime context and reused until explicit runtime reset.
-
-  Rationale:
-  Accidental default graph churn breaks cache, datasource, metadata, and sync ownership.
-
-  Source locations:
-  OARuntime.graph(), OARuntime.graph(String), OAGraphImpl
-
-  Known related CODEX findings:
-  Runtime lifecycle/reset risks noted in runtime review.
-
-  Suggested unit tests:
-  testDefaultGraphCreatedOnce()
-  testRuntimeResetCreatesFreshDefaultGraphWhenIntended()
-
-  Spec target section:
-  OG Runtime / Default Graph Lifecycle
-
-  3. Service Ownership / Parent-Child Contracts
-
-  GRAPH-SERVICE-001 — Parent Services Own Child Service Orchestration
-
-  Contract statement:
-  OAObjectService, HubService, OASyncService, OAReplicationService, and OATriggerService coordinate child services;
-  graph facade should call parent services, not deep child services directly.
-
-  Rationale:
-  Preserves clear orchestration points and prevents sideways coupling.
-
-  Source locations:
-  com.viaoa.graph.service.*
-  graph.service.object.*
-  graph.service.hub.*
-
-  Known related CODEX findings:
-  Parent/child service boundary risks noted in package review.
-
-  Suggested unit tests:
-  testGraphFacadeDelegatesThroughParentServices()
-  testChildServiceDoesNotBypassParentForCrossServiceOperation()
-
-  Spec target section:
-  OG Runtime / Service Ownership
-
-  GRAPH-SERVICE-002 — Child Services Must Not Invent Runtime Authority
-
-  Contract statement:
-  Child services may execute their responsibility, but graph/runtime authority remains with parent services and
-  OAGraphImpl.
-
-  Rationale:
-  Avoids fragmented lifecycle, sync, and datasource behavior.
-
-  Source locations:
-  OAObjectParentService, HubParentService, OAObjectService, HubService
-
-  Known related CODEX findings:
-  Sideways service coupling risks noted.
-
-  Suggested unit tests:
-  testChildServiceUsesParentHookForCrossServiceState()
-  testServiceInitializationOrderIsDeterministic()
-
-  Spec target section:
-  OG Runtime / Service Layering
-
-  4. Object Identity / Key / Lifecycle Contracts
-
-  OBJ-IDENTITY-001 — One Graph Identity Per Persistent Key
-
-  Contract statement:
-  Within one graph, the same class/key pair must resolve to one authoritative OAObject instance.
-
-  Rationale:
-  Hub membership, links, serialization, sync, and replication all require identity stability.
-
-  Source locations:
-  OAObjectCacheService, OAObjectKeyService, OAObjectGuidService, OAObjectDSService
-
-  Known related CODEX findings:
-  Identity/cache drift findings from graph adversarial scans.
-
-  Suggested unit tests:
-  testSameKeyReturnsSameObjectIdentity()
-  testDatasourceLoadMergesWithExistingCachedObject()
-
-  Spec target section:
-  OG Runtime / Object Identity
-
-  OBJ-KEY-001 — Object Key Changes Must Preserve Cache Index Consistency
-
-  Contract statement:
-  When an object key changes, all graph cache indexes must be updated consistently or the change must be rejected.
-
-  Rationale:
-  A stale key index can make the same object unreachable or duplicated.
-
-  Source locations:
-  OAObjectKeyService, OAObjectCacheService, OAObjectPropertyService
-
-  Known related CODEX findings:
-  Key/cache drift risks noted in adversarial graph scans.
-
-  Suggested unit tests:
-  testKeyChangeUpdatesObjectCacheIndex()
-  testRejectedKeyChangeLeavesCacheIndexUnchanged()
-
-  Spec target section:
-  OG Runtime / Key Semantics
-
-  OBJ-LIFECYCLE-001 — New/Changed/Deleted Flags Must Reflect Completed Semantic State
-
-  Contract statement:
-  Lifecycle flags must not claim successful persistence, deletion, or load completion unless the authoritative
-  operation completed.
-
-  Rationale:
-  False lifecycle state breaks retry, save/delete, replication, and UI state.
-
-  Source locations:
-  OAObjectLifecycleService, OAObjectDSService, OAObjectDeleteService, OAObjectSaveService
-
-  Known related CODEX findings:
-  Multiple lifecycle false-success bugs found and fixed/commented.
-
-  Suggested unit tests:
-  testFailedSaveDoesNotClearChangedFlagAsSuccess()
-  testFailedDeleteDoesNotMarkDeletedAsCompleted()
-  testSuccessfulInsertClearsNewFlagOnlyAfterDatasourceSuccess()
-
-  Spec target section:
-  OG Runtime / Object Lifecycle
-
-  5. Object Save/Delete Contracts
-
-  OBJ-SAVE-001 — Save Delegates To Authoritative Datasource Path
-
-  Contract statement:
-  Object save must route through the graph/object datasource service and selected datasource for the object class.
-
-  Rationale:
-  Save behavior must be consistent across SingleUser, Server, and Client modes.
-
-  Source locations:
-  OAObjectDSService, OAObjectSaveService, OADataSource
-
-  Known related CODEX findings:
-  Datasource routing and save/delete issues mapped here.
-
-  Suggested unit tests:
-  testObjectSaveUsesClassDatasource()
-  testClientObjectSaveDelegatesThroughClientDatasource()
-  testSingleUserObjectSaveUsesLocalDatasource()
-
-  Spec target section:
-  OG Runtime / Save Semantics
-
-  OBJ-DELETE-001 — Delete Must Coordinate Object, Hub, Datasource, And Sync State
-
-  Contract statement:
-  Deleting an object must coordinate object lifecycle, Hub membership, datasource delete, cache removal, and sync/
-  replication hooks according to graph role.
-
-  Rationale:
-  Partial delete coordination can leave stale Hub members, ghost cache entries, or replication divergence.
-
-  Source locations:
-  OAObjectDeleteService, HubDeleteService, OAObjectCacheService, OASyncService
-
-  Known related CODEX findings:
-  Delete lifecycle and Hub deleteAll issues found during graph scans.
-
-  Suggested unit tests:
-  testDeleteRemovesObjectFromOwningHubs()
-  testDeleteRemovesObjectFromCacheAfterAuthoritativeCompletion()
-  testDeleteSendsSyncOnlyWhenAuthoritativeDeleteCompletes()
-
-  Spec target section:
-  OG Runtime / Delete Semantics
-
-  6. Hub Membership Contracts
-
-  HUB-MEMBERSHIP-001 — Hub Membership Must Match Link/Ownership Semantics
-
-  Contract statement:
-  Adding/removing an object from a Hub must update the corresponding link/master/detail state when the Hub is link-
-  bound.
-
-  Rationale:
-  Hubs are semantic graph collections, not plain lists.
-
-  Source locations:
-  HubAddRemoveService, HubLinkService, HubDetailService, HubDataService
-
-  Known related CODEX findings:
-  Hub membership corruption risks found/fixed in graph and hub scans.
-
-  Suggested unit tests:
-  testHubAddUpdatesReverseLinkWhenApplicable()
-  testHubRemoveClearsLinkWhenApplicable()
-  testDetailHubMembershipMatchesMasterLink()
-
-  Spec target section:
-  OG Runtime / Hub Membership
-
-  HUB-MEMBERSHIP-002 — Hub Change Tracking Must Match Actual Membership Mutations
-
-  Contract statement:
-  Hub added/removed tracking must reflect completed membership changes and must not record false adds/removes.
-
-  Rationale:
-  SaveAll, deleteAll, sync, and UI state depend on accurate change lists.
-
-  Source locations:
-  HubDataService, HubAddRemoveService, HubSaveService, HubDeleteService
-
-  Known related CODEX findings:
-  Hub added/removed list correctness issues noted during scans.
-
-  Suggested unit tests:
-  testHubAddedListTracksSuccessfulAddOnly()
-  testHubRemovedListTracksSuccessfulRemoveOnly()
-  testFailedAddDoesNotRecordAddedObject()
-
-  Spec target section:
-  OG Runtime / Hub Change Tracking
-
-  7. Hub Active Object / Detail / Link Contracts
-
-  HUB-AO-001 — Active Object Changes Must Be Ordered And Observable
-
-  Contract statement:
-  Changing a Hub active object must update AO state before after-events, and listeners must observe the new
-  authoritative AO.
-
-  Rationale:
-  Generated UI, detail Hubs, and property binding depend on AO correctness.
-
-  Source locations:
-  HubAOService, HubEventService, HubDetailService
-
-  Known related CODEX findings:
-  Event ordering risks noted in Hub scans.
-
-  Suggested unit tests:
-  testActiveObjectAfterEventSeesNewAO()
-  testActiveObjectChangeUpdatesDetailHubBeforeEvent()
-
-  Spec target section:
-  OG Runtime / Active Object Semantics
-
-  HUB-DETAIL-001 — Detail Hub Must Reflect Master Object And Link Path
-
-  Contract statement:
-  A detail Hub must load and expose objects that belong to its current master object and link path only.
-
-  Rationale:
-  Master/detail is core OA UI and model wiring behavior.
-
-  Source locations:
-  HubDetailService, HubLinkService, HubSelectService, OAObjectReflectService
-
-  Known related CODEX findings:
-  Lazy-load/detail scope bugs mapped here.
-
-  Suggested unit tests:
-  testDetailHubLoadsOnlyCurrentMasterChildren()
-  testDetailHubRefreshesWhenMasterAOChanges()
-  testDetailHubDoesNotExposePreviousMasterChildren()
-
-  Spec target section:
-  OG Runtime / Detail Hub Semantics
-
-  8. Reference / Lazy Load Contracts
-
-  REF-LAZY-001 — Lazy Reference Must Not Be Marked Loaded On Failed Load
-
-  Contract statement:
-  A reference or Hub must not be marked loaded/empty if the load failed or authoritative source was unavailable.
-
-  Rationale:
-  False loaded-empty state prevents retry and causes silent missing data.
-
-  Source locations:
-  OAObjectPropertyService, OAObjectReflectService, HubSelectService, HubDataService
-
-  Known related CODEX findings:
-  Lazy-load loaded/empty corruption bugs found in graph scans.
-
-  Suggested unit tests:
-  testFailedReferenceLoadDoesNotMarkLoaded()
-  testFailedDetailHubLoadRemainsRetryable()
-  testEmptyLoadedStateOnlyAfterSuccessfulAuthoritativeLoad()
-
-  Spec target section:
-  OG Runtime / Lazy Load Semantics
-
-  REF-LAZY-002 — Unresolved Key References Must Remain Distinguishable From Null
-
-  Contract statement:
-  An unresolved object key/reference must not be collapsed into a real null reference unless the authoritative
-  source confirms absence.
-
-  Rationale:
-  Sync, replication, and lazy loading need to distinguish “not loaded yet” from “does not exist.”
-
-  Source locations:
-  OAObjectKeyService, OAObjectPropertyService, OAObjectReflectService, OAObjectDSService
-
-  Known related CODEX findings:
-  Unresolved reference handling risks noted.
-
-  Suggested unit tests:
-  testUnresolvedReferenceKeyDoesNotBecomeNullOnCacheMiss()
-  testMissingDatasourceObjectCanBeRetriedLater()
-
-  Spec target section:
-  OG Runtime / Reference Resolution
-
-  9. Event Publication Contracts
-
-  EVENT-ORDER-001 — After Events Fire Only After Authoritative State Transition
-
-  Contract statement:
-  After-events must not fire for operations that did not complete their authoritative state transition.
-
-  Rationale:
-  Listeners, UI, sync, triggers, and replication treat after-events as completed semantic facts.
-
-  Source locations:
-  HubEventService, OAObjectEventService, OATriggerService
-
-  Known related CODEX findings:
-  After-event on incomplete operation issues found/fixed.
-
-  Suggested unit tests:
-  testAfterAddNotFiredWhenAddFails()
-  testAfterRemoveNotFiredWhenRemoveFails()
-  testAfterDeleteNotFiredWhenDeleteFailsBeforeCompletion()
-
-  Spec target section:
-  OG Runtime / Event Ordering
-
-  EVENT-ORDER-002 — Event Ordering Must Match Object/Hub Mutation Order
-
-  Contract statement:
-  Listeners must observe object and Hub state in the same semantic order the operation completed.
-
-  Rationale:
-  Generated UI and business rules rely on deterministic event-driven behavior.
-
-  Source locations:
-  HubEventService, HubAddRemoveService, OAObjectPropertyService
-
-  Known related CODEX findings:
-  Event ordering and missing/duplicate event risks noted.
-
-  Suggested unit tests:
-  testHubAddEventSeesObjectInHub()
-  testHubRemoveEventSeesObjectRemoved()
-  testPropertyChangeEventOrderIsDeterministic()
-
-  Spec target section:
-  OG Runtime / Event Ordering
-
-  10. ThreadLocal / Context Contracts
-
-  GRAPH-TL-001 — ThreadLocal Flags Must Be Restored By The Setter
-
-  Contract statement:
-  Any graph/runtime service that sets OAThreadLocal state must restore it in finally.
-
-  Rationale:
-  Flag leaks can suppress sync, events, loading, or verification across unrelated operations.
-
-  Source locations:
-  OAThreadLocalService, OAObjectDSService, HubSelectService, sync/remote thread services
-
-  Known related CODEX findings:
-  Thread-local restoration issues found in graph/runtime scans.
-
-  Suggested unit tests:
-  testSendSyncMessagesRestoredAfterException()
-  testLoadingFlagRestoredAfterFailedLoad()
-  testDeletingFlagRestoredAfterFailedDelete()
-
-  Spec target section:
-  OG Runtime / ThreadLocal Semantics
-
-  GRAPH-CONTEXT-001 — OAContext Must Be Explicitly Scoped
-
-  Contract statement:
-  Context/user-access overrides must be scoped to the current operation/thread and restored after use.
-
-  Rationale:
-  Context leakage can apply one user’s access rules or graph assumptions to another request.
-
-  Source locations:
-  graph.context.OAContext, OAUserAccess, runtime thread/context services
-
-  Known related CODEX findings:
-  Context propagation risks noted in context/sibling review.
-
-  Suggested unit tests:
-  testContextOverrideRestoredAfterOperation()
-  testUserAccessDoesNotLeakAcrossThreads()
-
-  Spec target section:
-  OG Runtime / Context Semantics
-
-  11. Sync Role / CS Authority Contracts
-
-  SYNC-ROLE-001 — isServer Means Actual Sync Server Only
-
-  Contract statement:
-  isServer() means actual sync server. Code requiring local/non-client behavior must use !isClient() or server-or-
-  single-user semantics.
-
-  Rationale:
-  SingleUser must not lose local datasource/cache/load behavior after role semantics changed.
-
-  Source locations:
-  OASyncService, graph service sync checks, hub/object services
-
-  Known related CODEX findings:
-  OASync role-semantics pass found and fixed/commented old server==not-client assumptions.
-
-  Suggested unit tests:
-  testSingleUserDoesNotSkipLocalDatasourceLoad()
-  testServerOnlySyncPublishDoesNotRunInSingleUser()
-  testClientOnlyRoutingDoesNotRunInSingleUser()
-
-  Spec target section:
-  OG Runtime / Sync Role Semantics
-
-  SYNC-CS-001 — Client/Server Authoritative Calls Must Not Produce Silent Local Divergence
-
-  Contract statement:
-  Client-side operations that require server authority must either receive/perform authoritative completion or leave
-  caller-visible incomplete state.
-
-  Rationale:
-  Silent local/server divergence breaks sync and replication correctness.
-
-  Source locations:
-  OASyncService, HubAddRemoveService, OAObjectDSService, OADataSourceClient
-
-  Known related CODEX findings:
-  CS delegation and false-success paths found during graph scans.
-
-  Suggested unit tests:
-  testClientHubAddFailsVisibleWhenServerRejects()
-  testClientDeleteDoesNotMarkCompleteWhenServerFails()
-  testCSAuthoritativeCallDoesNotEmitLocalSuccessOnFailure()
-
-  Spec target section:
-  OG Runtime / Client-Server Authority
-
-  12. Replication Hook Contracts
-
-  SYNC-REPL-001 — Replication Hooks Observe Completed Semantic Changes
-
-  Contract statement:
-  Replication hooks must be invoked only for completed graph semantic changes, or must explicitly mark incomplete/
-  retryable operations.
-
-  Rationale:
-  Replication divergence is worse than local failure because another runtime may accept false state.
-
-  Source locations:
-  OAReplicationService, OASyncService, object/hub save/delete/add/remove services
-
-  Known related CODEX findings:
-  Replication/sync divergence risks noted in graph scans.
-
-  Suggested unit tests:
-  testReplicationMessageAfterCompletedObjectChangeOnly()
-  testFailedDeleteDoesNotEmitReplicationDelete()
-  testHubMutationReplicationPreservesOrder()
-
-  Spec target section:
-  OG Runtime / Replication Semantics
-
-  SYNC-REPL-002 — Replication Must Preserve Graph Identity And Ordering
-
-  Contract statement:
-  Replicated operations must preserve object identity, object keys, Hub membership order, and dependency ordering.
-
-  Rationale:
-  Replication target must reconstruct the same semantic Object Graph.
-
-  Source locations:
-  OAReplicationService, OASyncService, object cache/key services, Hub services
-
-  Known related CODEX findings:
-  Ordering and identity risks noted.
-
-  Suggested unit tests:
-  testReplicationCreatesSameObjectIdentityByKey()
-  testReplicationHubAddOrderMatchesSource()
-  testReplicationReferenceResolutionHandlesOutOfOrderObjectArrival()
-
-  Spec target section:
-  OG Runtime / Replication Ordering
-
-  13. Failure / Partial-Progress / Retry Contracts
-
-  GRAPH-FAILURE-001 — OG Operations Are Not Automatically Atomic
-
-  Contract statement:
-  Multi-step OG operations may make partial progress unless explicitly documented as atomic. Caller-visible
-  exceptions signal incomplete operation.
-
-  Rationale:
-  OA supports runtime graph operations outside transactions. Correctness requires clear partial-progress semantics,
-  not implicit rollback assumptions.
-
-  Source locations:
-  Graph/object/hub services broadly, OATransaction
-
-  Known related CODEX findings:
-  Clarified during adversarial graph review.
-
-  Suggested unit tests:
-  testExceptionFromMultiStepOperationIsVisibleToCaller()
-  testPartialProgressOperationCanBeReconciledOrRetried()
-
-  Spec target section:
-  OG Runtime / Partial Progress Semantics
-
-  GRAPH-FAILURE-002 — Partial Progress Must Not Become False Success
-
-  Contract statement:
-  Even when partial progress is allowed, graph services must not fire completion events, emit sync/replication
-  messages, or mark lifecycle completed for an operation that failed.
-
-  Rationale:
-  False success causes silent corruption and unretryable state.
-
-  Source locations:
-  OAObjectSaveService, OAObjectDeleteService, HubAddRemoveService, HubDeleteService, OASyncService
-
-  Known related CODEX findings:
-  Core adversarial graph bugs mapped here.
-
-  Suggested unit tests:
-  testFailedOperationDoesNotFireAfterEvent()
-  testFailedOperationDoesNotEmitSyncMessage()
-  testFailedOperationDoesNotClearRetryState()
-
-  Spec target section:
-  OG Runtime / Failure Semantics
-
-  GRAPH-FAILURE-003 — Retry Must Remain Possible After Visible Failure
-
-  Contract statement:
-  If an operation fails visibly, graph state must not be mutated into an unretryable state unless the failure is
-  documented as terminal.
-
-  Rationale:
-  Applications need to refresh, retry, reconcile, or use transactions after failure.
-
-  Source locations:
-  Object lifecycle, Hub membership, lazy-load, datasource, sync services
-
-  Known related CODEX findings:
-  Retry/state-corruption issues found in graph scans.
-
-  Suggested unit tests:
-  testFailedLazyLoadCanRetry()
-  testFailedSaveCanRetry()
-  testFailedHubLoadCanRetry()
-
-  Spec target section:
-  OG Runtime / Retry Semantics
-
-  14. Instrumentation / Event-Storm Detection Contracts
-
-  EVENT-STORM-001 — Event Storm Detection Must Not Change Runtime Semantics
-
-  Contract statement:
-  Instrumentation/throttling/event-storm detection may warn or suppress diagnostic noise, but must not alter graph
-  semantic state or event correctness.
-
-  Rationale:
-  Diagnostics must not become part of business behavior.
-
-  Source locations:
-  Event services, trigger services, throttling hooks
-
-  Known related CODEX findings:
-  none observed.
-
-  Suggested unit tests:
-  testEventStormInstrumentationDoesNotSuppressRequiredEvent()
-  testThrottleWarningDoesNotChangeHubState()
-
-  Spec target section:
-  OG Runtime / Instrumentation Semantics
-
-  EVENT-STORM-002 — Recursive Event Protection Must Restore State
-
-  Contract statement:
-  Any recursion/depth guard used during event publication or graph traversal must restore its prior state after the
-  operation.
-
-  Rationale:
-  Leaked recursion guards can suppress later valid events or traversal.
-
-  Source locations:
-  HubEventService, OAObjectEventService, OATriggerService, thread-local services
-
-  Known related CODEX findings:
-  Thread-local/flag restoration risks mapped here.
-
-  Suggested unit tests:
-  testRecursiveEventGuardRestoredAfterException()
-  testSecondIndependentEventNotSuppressedAfterFailedFirstEvent()
-
-  Spec target section:
-  OG Runtime / Event Instrumentation
-
-  15. Test Coverage Matrix
-
-  Graph ownership/routing:
-
-  - testObjectOperationUsesOwningGraph
-  - testCrossGraphObjectDoesNotUseWrongGraphServices
-  - testGraphLookupByClassMatchesPackageGraph
-  - testDefaultGraphCreatedOnce
-
-  Service boundaries:
-
-  - testGraphFacadeDelegatesThroughParentServices
-  - testChildServiceUsesParentHookForCrossServiceState
-  - testServiceInitializationOrderIsDeterministic
-
-  Object identity/lifecycle:
-
-  - testSameKeyReturnsSameObjectIdentity
-  - testDatasourceLoadMergesWithExistingCachedObject
-  - testKeyChangeUpdatesObjectCacheIndex
-  - testFailedSaveDoesNotClearChangedFlagAsSuccess
-  - testFailedDeleteDoesNotMarkDeletedAsCompleted
-
-  Save/delete:
-
-  - testObjectSaveUsesClassDatasource
-  - testSingleUserObjectSaveUsesLocalDatasource
-  - testDeleteRemovesObjectFromOwningHubs
-  - testDeleteSendsSyncOnlyWhenAuthoritativeDeleteCompletes
-
-  Hub membership/detail/AO:
-
-  - testHubAddUpdatesReverseLinkWhenApplicable
-  - testHubRemoveClearsLinkWhenApplicable
-  - testHubAddedListTracksSuccessfulAddOnly
-  - testActiveObjectAfterEventSeesNewAO
-  - testDetailHubLoadsOnlyCurrentMasterChildren
-
-  Reference/lazy load:
-
-  - testFailedReferenceLoadDoesNotMarkLoaded
-  - testFailedDetailHubLoadRemainsRetryable
-  - testUnresolvedReferenceKeyDoesNotBecomeNullOnCacheMiss
-
-  Events:
-
-  - testAfterAddNotFiredWhenAddFails
-  - testHubAddEventSeesObjectInHub
-  - testPropertyChangeEventOrderIsDeterministic
-
-  Thread/context:
-
-  - testSendSyncMessagesRestoredAfterException
-  - testLoadingFlagRestoredAfterFailedLoad
-  - testContextOverrideRestoredAfterOperation
-  - testUserAccessDoesNotLeakAcrossThreads
-
-  Sync/replication:
-
-  - testSingleUserDoesNotSkipLocalDatasourceLoad
-  - testClientHubAddFailsVisibleWhenServerRejects
-  - testReplicationMessageAfterCompletedObjectChangeOnly
-  - testReplicationHubAddOrderMatchesSource
-
-  Failure/retry:
-
-  - testExceptionFromMultiStepOperationIsVisibleToCaller
-  - testFailedOperationDoesNotFireAfterEvent
-  - testFailedOperationDoesNotEmitSyncMessage
-  - testFailedLazyLoadCanRetry
-  - testFailedSaveCanRetry
-
-  Instrumentation:
-
-  - testEventStormInstrumentationDoesNotSuppressRequiredEvent
-  - testRecursiveEventGuardRestoredAfterException
+GRAPH-OWNERSHIP-001 — OAGraph Is The Runtime Ownership Boundary
+Contract statement: Every OAObject, Hub, runtime service, metadata binding, datasource route, sync/replication path,
+trigger registration, and serialization boundary that belongs to a graph must resolve through that graph’s
+authority.
+Rationale: OA/OG runtime correctness depends on graph-scoped identity, lifecycle, Hub membership, cache, metadata,
+datasource, sync, replication, and event semantics.
+Source scope: OAGraph, OAGraphImpl, OAGraphInternal, direct graph facade methods, parent service access points.
+Related CODEX findings: Graph ownership/routing findings; foreign class/object/Hub operation findings.
+Suggested unit tests: testObjectOperationUsesOwningGraph(), testHubOperationUsesOwningGraph(),
+testForeignGraphStateDoesNotUseWrongGraphAuthority()
+Spec target section: OG Runtime / Graph Ownership
+
+GRAPH-OWNERSHIP-002 — Cross-Graph Authority Leaks Are Forbidden
+Contract statement: A graph must not silently operate on classes, objects, Hubs, services, metadata, datasource
+state, sync state, or trigger state owned by another graph.
+Rationale: Cross-graph leaks corrupt object identity, cache indexes, Hub links, datasource routing, sync messages,
+and metadata assumptions.
+Source scope: OAGraphImpl graph verbs, graph routing methods, object/Hub/service delegation boundaries.
+Related CODEX findings: OAGraphImpl foreign class/object/Hub verb findings.
+Suggested unit tests: testGraphVerbRejectsForeignClassByContract(), testGraphVerbRejectsForeignObjectByContract(),
+testGraphVerbRejectsForeignHubByContract()
+Spec target section: OG Runtime / Cross-Graph Isolation
+
+GRAPH-API-001 — OAGraph Public Surface Is The Supported Runtime API
+Contract statement: Application-facing graph operations must be exposed through OAGraph; implementation and internal
+service surfaces are not application contracts.
+Rationale: The public graph API must remain stable while internal orchestration and service implementation details
+can evolve.
+Source scope: OAGraph, OAGraphImpl, OAGraphInternal, graph.api., graph.api.internal..
+Related CODEX findings: OAGraph trigger public surface completeness; OAGraphInternal internal API boundary findings.
+Suggested unit tests: testPublicGraphApiExposesIntendedRuntimeVerbs(),
+testPublicTriggerOperationsReachableThroughOAGraph(), testApplicationCodeDoesNotDependOnInternalGraphApis()
+Spec target section: OG Runtime / Public API Boundary
+
+GRAPH-INTERNAL-001 — Internal Graph APIs Are Runtime-Only
+Contract statement: OAGraphInternal and com.viaoa.graph.api.internal APIs may be used by graph/runtime services but
+must not define public application semantics.
+Rationale: Internal APIs can expose staging, service, or lifecycle hooks that are unsafe as external contracts.
+Source scope: OAGraphInternal, graph.api.internal.*, OAGraphImpl internal delegation.
+Related CODEX findings: OAGraphInternal internal ops are not app contract; internal API import-boundary findings.
+Suggested unit tests: testAppFacingPackagesDoNotImportGraphApiInternal(), testInternalGraphApisRemainRuntimeScoped()
+Spec target section: OG Runtime / Internal API Boundary
+
+GRAPH-LIFECYCLE-001 — Graph Initialization Publishes Ready State Only After Required Runtime Setup
+Contract statement: A graph may report initialized or ready only after required package scanning, metadata binding,
+parent services, child service dependencies, runtime role state, and graph routing state are complete.
+Rationale: Partially initialized graph state can route object, Hub, datasource, sync, trigger, or serialization work
+into incomplete runtime services.
+Source scope: OAGraphImpl initialization, OARuntime graph creation/registration, parent service initialization.
+Related CODEX findings: OAGraphImpl partial initialization after package scan failure;
+GRAPH_INITIALIZED_MEANS_ALL_SERVICES_READY.
+Suggested unit tests: testGraphInitFailureDoesNotReportInitialized(),
+testInitializedGraphHasRequiredParentServicesReady(), testGraphInitFailureDoesNotPublishPartialGraphAsReady()
+Spec target section: OG Runtime / Graph Lifecycle
+
+GRAPH-LIFECYCLE-002 — Graph Shutdown And Reset Have Explicit Runtime Semantics
+Contract statement: Graph shutdown/reset must define what happens to services, triggers, live views, sync/
+replication state, caches, contexts, and pending work, and must not leave stale authoritative runtime state.
+Rationale: Graph lifecycle boundaries must be safe for long-running servers, tests, tooling, and generated
+applications.
+Source scope: OAGraphImpl lifecycle/reset/shutdown behavior, service lifecycle boundaries, trigger/live-view/sync
+integration.
+Related CODEX findings: Trigger executor lifecycle; live view controller lifecycle; default graph reset findings.
+Suggested unit tests: testGraphResetClearsOrPreservesStateByContract(),
+testGraphShutdownDoesNotLeaveStaleTriggerWork(), testGraphResetCreatesFreshDefaultGraphWhenIntended()
+Spec target section: OG Runtime / Graph Shutdown And Reset
+
+GRAPH-ROUTE-001 — Graph Routing Is Deterministic
+Contract statement: Graph lookup by package, class, object, Hub, and default runtime context must consistently
+resolve the intended graph for the same runtime state.
+Rationale: Metadata lookup, datasource routing, cache identity, sync package routing, and trigger registration
+require stable graph resolution.
+Source scope: OAGraphImpl routing methods, OARuntime graph lookup, direct graph facade routing.
+Related CODEX findings: Class/object/package routing and default graph stability findings.
+Suggested unit tests: testGraphLookupByClassMatchesPackageGraph(), testGraphLookupByObjectUsesObjectClassGraph(),
+testGraphLookupByHubUsesOwningGraph()
+Spec target section: OG Runtime / Graph Routing
+
+GRAPH-ROUTE-002 — Default Graph Lifecycle Is Explicit
+Contract statement: The default graph must be created, reused, reset, and replaced only according to explicit
+runtime lifecycle rules.
+Rationale: Accidental default graph churn splits metadata, cache, datasource, sync, context, and service ownership.
+Source scope: OAGraphImpl default graph integration, OARuntime graph/default graph behavior.
+Related CODEX findings: Default graph creation/reset findings.
+Suggested unit tests: testDefaultGraphCreatedOncePerRuntimeContext(), testDefaultGraphStableAcrossCalls(),
+testRuntimeResetCreatesFreshDefaultGraphOnlyWhenIntended()
+Spec target section: OG Runtime / Default Graph Semantics
+
+GRAPH-METADATA-001 — Metadata Binding Is Graph-Scoped And Complete Before Runtime Use
+Contract statement: Package/class metadata must be registered, resolved, and bound to the owning graph before graph
+operations depend on it for object, Hub, datasource, serialization, path, sync, or trigger behavior.
+Rationale: Metadata is the semantic map between Java classes and runtime object graph behavior.
+Source scope: OAGraphImpl package/class registration, metadata service boundaries, object/Hub service delegation.
+Related CODEX findings: Annotation metadata and package scan initialization findings.
+Suggested unit tests: testGraphClassRegistrationCreatesMetadataBeforeObjectUse(),
+testMetadataLookupUsesOwningGraphPackage(), testFailedMetadataScanDoesNotPublishReadyGraph()
+Spec target section: OG Runtime / Metadata Binding
+
+GRAPH-IDENTITY-001 — Identity And Cache Authority Are Graph-Scoped
+Contract statement: Object identity, key resolution, GUID identity, id-only references, cache membership, and
+authoritative object instances must be scoped to one graph.
+Rationale: Object identity is not global across independent graph runtimes; cache and serialization correctness
+depend on graph authority.
+Source scope: OAGraphImpl identity/cache delegation, object service boundary, serialization boundary.
+Related CODEX findings: Cache identity drift, duplicate authoritative object, and graph ownership findings.
+Suggested unit tests: testSameClassKeyInSameGraphResolvesSameObject(),
+testSameClassKeyAcrossDifferentGraphsDoesNotShareAuthority(), testDeserializationUsesOwningGraphIdentity()
+Spec target section: OG Runtime / Identity And Cache Authority
+
+GRAPH-HUB-001 — Hub Runtime Authority Is Graph-Scoped
+Contract statement: Hub membership, active object, master/detail state, link state, sorting, selection, and event
+publication must be coordinated through the owning graph’s Hub runtime services.
+Rationale: Hubs are semantic graph collections and must not be treated as graph-neutral lists.
+Source scope: OAGraph Hub facade methods, HubService delegation, direct graph-to-Hub service boundaries.
+Related CODEX findings: Child Hub service invariants for membership, AO, detail, sort, select, and failure
+semantics.
+Suggested unit tests: testGraphHubAddRoutesThroughOwningHubService(),
+testGraphHubOperationDoesNotUseForeignHubService(), testGraphHubEventOrderingUsesOwningGraph()
+Spec target section: OG Runtime / Hub Authority Boundary
+
+GRAPH-OBJECT-001 — Object Runtime Authority Is Graph-Scoped
+Contract statement: Object lifecycle, property mutation, load/save/delete, identity, callbacks, locks,
+serialization, and traversal must be coordinated through the owning graph’s object runtime services.
+Rationale: Object runtime behavior is the foundation for graph consistency, persistence, sync, replication, and
+generated application semantics.
+Source scope: OAGraph object facade methods, OAObjectService delegation, direct graph-to-object service boundaries.
+Related CODEX findings: Child object service invariants for lifecycle, identity, save/delete, metadata,
+serialization, and failure semantics.
+Suggested unit tests: testGraphObjectSaveRoutesThroughOwningObjectService(),
+testGraphObjectDeleteUsesOwningGraphAuthority(), testGraphObjectMutationDoesNotBypassObjectService()
+Spec target section: OG Runtime / Object Authority Boundary
+
+GRAPH-SERVICE-001 — Parent Services Own Cross-Service Orchestration
+Contract statement: Graph-level operations that require object, Hub, datasource, cache, sync, replication, trigger,
+serialization, event, or context coordination must route through parent service boundaries.
+Rationale: Parent services define orchestration and prevent child service details from becoming graph-level
+authority.
+Source scope: OAGraphImpl, OAObjectService, HubService, OASyncService, OAReplicationService, OATriggerService.
+Related CODEX findings: Parent service ownership, child service boundary, and orchestration findings.
+Suggested unit tests: testGraphFacadeDelegatesThroughParentServices(),
+testCrossServiceOperationRoutesThroughParentCoordinator(), testChildServicesDoNotBecomeGraphPublicSurface()
+Spec target section: OG Runtime / Service Orchestration Boundary
+
+GRAPH-ROLE-001 — Graph Runtime Role Semantics Are Explicit
+Contract statement: Single-user, server, client, replication, and unconfigured graph roles must be distinct and
+consistently interpreted at graph boundaries.
+Rationale: Role ambiguity causes graph operations to use the wrong local, remote, datasource, sync, or replication
+path.
+Source scope: OAGraphImpl, OASyncService boundary, OAReplicationService boundary, object/Hub parent service
+coordination.
+Related CODEX findings: isServer vs !isClient findings; sync client/server operation guard findings; child sync hook
+role guard findings.
+Suggested unit tests: testSingleUserServerClientRolesAreDistinctAtGraphBoundary(),
+testGraphServerOnlyOperationRequiresServerRole(), testGraphClientOnlyOperationRequiresClientRole()
+Spec target section: OG Runtime / Runtime Role Semantics
+
+GRAPH-DATASOURCE-001 — Datasource Resolution Is Graph-Scoped
+Contract statement: Datasource lookup, load, save, refresh, delete, and select operations initiated through a graph
+must resolve to the datasource authority configured for that graph and model class.
+Rationale: Persisted state must match graph ownership, metadata, runtime role, cache identity, and sync semantics.
+Source scope: OAGraphImpl datasource delegation, object and Hub service boundaries, metadata package/class routing.
+Related CODEX findings: Save/load/delete datasource routing and graph role findings from child services.
+Suggested unit tests: testGraphDatasourceLookupUsesOwningGraphClassRoute(),
+testSingleUserGraphUsesLocalDatasource(), testClientGraphDatasourceOperationUsesClientAuthorityByContract()
+Spec target section: OG Runtime / Datasource Authority
+
+GRAPH-CONTEXT-001 — Graph Context And User Access Are Explicitly Scoped
+Contract statement: Graph context, user access, context Hub, and runtime access overrides must be scoped to the
+intended graph/thread/context object and restored or cleared according to contract.
+Rationale: Context leakage can apply one user’s access rules, Hub scope, or graph assumptions to another operation.
+Source scope: graph.context.OAContext, OAUserAccess, OAGraphImpl context integration, runtime context boundaries.
+Related CODEX findings: OAContext.removeContext(null) semantics; weak access lifetime; OAUserAccess package/path/
+configure-before-publish findings.
+Suggested unit tests: testContextOverrideRestoredAfterGraphOperation(), testUserAccessDoesNotLeakAcrossContexts(),
+testGraphContextLookupUsesExpectedContextScope()
+Spec target section: OG Runtime / Context And Access Semantics
+
+GRAPH-TL-001 — Runtime ThreadLocal State Must Be Restored At Graph Boundaries
+Contract statement: Any graph operation that sets ThreadLocal or runtime context state for loading, saving,
+deleting, sync, remote, trigger, serialization, traversal, context, or event suppression must restore prior state in
+finally.
+Rationale: Runtime flag leaks can suppress or misroute later graph operations.
+Source scope: OAGraphImpl graph boundary methods, parent service delegation, context/sync/trigger/object/Hub
+integration.
+Related CODEX findings: ThreadLocal restoration, async trigger context, remote-thread suppression, and sync flag
+findings.
+Suggested unit tests: testGraphOperationRestoresThreadLocalAfterException(),
+testAsyncGraphWorkRestoresRuntimeContext(), testSyncSuppressionDoesNotLeakAcrossGraphOperations()
+Spec target section: OG Runtime / Runtime Context Restoration
+
+GRAPH-SYNC-001 — Sync And Replication Are Graph-Level Authority Boundaries
+Contract statement: Sync and replication operations must use the owning graph’s role, services, object identity, Hub
+ordering, and runtime context; they must not attach to foreign graph state.
+Rationale: Sync/replication divergence can corrupt distributed object graph state.
+Source scope: OAGraphImpl sync/replication facade methods, OASyncService, OAReplicationService, object/Hub service
+boundaries.
+Related CODEX findings: Replication uses owning sync service; sync role transition and client/server guard findings.
+Suggested unit tests: testReplicationUsesOwningGraphSyncService(), testSyncOperationDoesNotUseForeignGraphState(),
+testGraphSyncRoleTransitionLeavesOneValidRole()
+Spec target section: OG Runtime / Sync Replication Boundary
+
+GRAPH-SERIAL-001 — Serialization Preserves Graph Identity Boundaries
+Contract statement: Serialization and deserialization initiated through graph runtime must preserve graph identity,
+object keys, Hub membership/order, reference/load state, and role-specific remote semantics.
+Rationale: Serialized graph state crosses persistence, remote, sync, tooling, and cache boundaries.
+Source scope: OAGraphImpl serialization boundaries, object/Hub serialization service boundaries.
+Related CODEX findings: Object and Hub serialization identity/load-state findings.
+Suggested unit tests: testDeserializationUsesOwningGraphIdentity(),
+testSerializedHubPreservesGraphMembershipSemantics(), testRemoteSerializationPreservesGraphRoleSemantics()
+Spec target section: OG Runtime / Serialization Boundary
+
+GRAPH-TRIGGER-001 — Trigger Operations Are Graph-Scoped
+Contract statement: Trigger registration, removal, and execution exposed through graph APIs must target the intended
+graph and preserve graph runtime context.
+Rationale: Triggers observe and mutate graph-scoped object/class/property behavior.
+Source scope: OAGraph trigger facade methods, OATriggerService boundary, TriggerOps integration.
+Related CODEX findings: Trigger public surface completeness; trigger target graph explicit; async trigger context/
+failure findings.
+Suggested unit tests: testAllGraphTriggerOperationsUseOwningGraph(),
+testTriggerRegisteredThroughWrongGraphRejectedOrRoutedByContract(), testAsyncTriggerPreservesGraphRuntimeContext()
+Spec target section: OG Runtime / Trigger Boundary
+
+GRAPH-LIVEVIEW-001 — Live View And Convenience Controllers Have Explicit Ownership
+Contract statement: Graph convenience APIs that create live views, combined Hubs, controllers, or managed runtime
+views must define whether the graph or caller owns their lifecycle.
+Rationale: Live views can retain listeners, Hubs, graph references, and object state beyond intended use.
+Source scope: OAGraph/OAGraphImpl convenience/live view APIs and Hub composition boundaries.
+Related CODEX findings: OAGraphImpl live view controller lifecycle and convenience live view ownership findings.
+Suggested unit tests: testGraphLiveViewOwnershipIsDocumentedByBehavior(), testCallerOwnedLiveViewCanBeClosed(),
+testGraphResetCleansGraphOwnedLiveViews()
+Spec target section: OG Runtime / Live View Lifecycle
+
+GRAPH-EVENT-001 — Graph-Level Events Represent Completed Runtime State
+Contract statement: Graph-level orchestration must ensure events, triggers, sync messages, replication hooks, and
+observable service state represent completed runtime transitions unless explicitly documented as before/participant
+stages.
+Rationale: Cross-service observers depend on graph-level event order and completion semantics.
+Source scope: OAGraphImpl orchestration boundaries, parent service delegation, object/Hub/sync/trigger integration.
+Related CODEX findings: Child package after-event, failed mutation, trigger, and sync false-success findings.
+Suggested unit tests: testGraphAfterEventPublishedOnlyAfterCompletedMutation(),
+testGraphSyncMessageAfterCompletedStateOnly(), testGraphTriggerObservesCompletedMutationByContract()
+Spec target section: OG Runtime / Graph Event Semantics
+
+GRAPH-FAILURE-001 — Graph Boundary Failures Are Visible
+Contract statement: Failures in graph-level routing, initialization, service orchestration, datasource, sync,
+replication, trigger, serialization, object, or Hub operations must be caller-visible or observable unless a
+documented fallback/no-op applies.
+Rationale: Silent graph-level failure produces corrupt object graph state that downstream services treat as
+authoritative.
+Source scope: OAGraphImpl facade methods, parent service boundaries, direct graph lifecycle operations.
+Related CODEX findings: Partial initialization, partial sync startup, async trigger hidden failure, false-success
+child service findings.
+Suggested unit tests: testGraphInitFailureIsVisible(), testGraphOperationFailurePropagatesFromParentService(),
+testDocumentedGraphNoopIsDistinguishableFromFailure()
+Spec target section: OG Runtime / Failure Visibility
+
+GRAPH-FAILURE-002 — Partial Progress Must Not Become Graph-Level False Success
+Contract statement: If a graph-level operation partially completes and then fails, the graph must not publish ready/
+running/completed state, events, sync/replication success, cache authority, or trigger success unless required
+stages completed.
+Rationale: Graph-level false success is the highest-risk silent corruption path.
+Source scope: OAGraphImpl lifecycle/facade methods, parent service orchestration, sync/replication/trigger
+integration.
+Related CODEX findings: OAGraphImpl partial initialization; OASync partial startup; OATrigger async false-success;
+child package partial mutation findings.
+Suggested unit tests: testPartialGraphInitDoesNotReportReady(), testPartialSyncStartupDoesNotReportRunning(),
+testPartialGraphMutationDoesNotPublishCompletedState()
+Spec target section: OG Runtime / Partial Progress Semantics
+
+GRAPH-RETRY-001 — Failed Graph Operations Leave Retryable Or Explicitly Terminal State
+Contract statement: After visible graph-level failure, runtime state must remain retryable, refreshable, or
+explicitly terminal according to contract.
+Rationale: Applications, tests, tooling, and servers need safe recovery after failed initialization, sync startup,
+datasource work, trigger execution, or graph mutations.
+Source scope: OAGraphImpl, parent service lifecycle, sync/replication/trigger boundaries.
+Related CODEX findings: Partial initialization/retry, sync startup retry, trigger executor lifecycle findings.
+Suggested unit tests: testFailedGraphInitializationCanRetryOrFailsTerminallyByContract(),
+testFailedSyncStartupCanRetryAfterCleanup(), testFailedTriggerSetupDoesNotPoisonGraph()
+Spec target section: OG Runtime / Retry Semantics
+
+GRAPH-CONCURRENT-001 — Shared Graph Runtime State Must Be Safely Published
+Contract statement: Graph lifecycle state, routing maps, parent services, role state, context state, executors, live
+views, and graph-owned caches must be thread-safe, safely published, or explicitly confined.
+Rationale: Graph runtime is used by UI, datasource, remote, sync, trigger, background, and tooling flows.
+Source scope: OAGraphImpl, graph context, parent service fields, sync/trigger lifecycle state.
+Related CODEX findings: Concurrent service initialization, sync role transition, context publish, and trigger
+executor findings.
+Suggested unit tests: testConcurrentGraphLookupReturnsSameGraph(), testConcurrentGraphInitHasSingleOutcome(),
+testConcurrentRoleTransitionLeavesValidGraphState()
+Spec target section: OG Runtime / Concurrency Semantics
+
+GRAPH-DETERMINISM-001 — Same Graph State Produces Same Runtime Behavior
+Contract statement: For the same graph state, metadata, role, datasource result, context, object/Hub inputs, and
+callback outcomes, graph APIs must produce deterministic routing, lifecycle state, events, sync/replication hooks,
+and service side effects.
+Rationale: Deterministic graph behavior is required for debugging, generated application semantics, sync/replication
+correctness, and unit/stress testing.
+Source scope: OAGraph, OAGraphImpl, OAGraphInternal boundaries, parent service delegation.
+Related CODEX findings: Package-wide routing, initialization, role, context, service orchestration, and failure
+findings.
+Suggested unit tests: testSameGraphInputsProduceSameRouting(),
+testSameMutationScenarioProducesSameGraphSideEffects(), testSameFailureScenarioProducesSameVisibleGraphState()
+Spec target section: OG Runtime / Deterministic Graph Semantics
 
 */
 
-
-/*qqqqqqqqqqqqqqqqqqq other
-CODEX
-
-
- F. Top Graph Invariants
-
-  - OAGraph verbs operate on objects/classes/Hubs owned by that graph, or explicitly reroute by runtime graph
-    lookup.
-  - OAGraphInternal is not application API.
-  - Graph initialization is atomic.
-  - Sync role transitions are atomic and contract-consistent.
-  - Null-context server authority is deliberate and tested.
-  - Context removal clears Hub and user-access state.
-  - Trigger registration target and async lifecycle are explicit.
-
-  G. Test Plan Outline
-
-  - Graph lifecycle: successful init, failed init, package scan failure, repeated init.
-  - Multi-graph ownership: create/get/save/delete/select/trigger with matching and foreign model classes.
-  - Sync lifecycle: unconfigured/start, server/client create races, start/stop/restart, role predicates.
-  - Context/user access: null context, server/client authority, remove context, Hub-rooted access rules.
-  - Trigger behavior: explicit target graph, async context propagation, executor lifecycle/overload.
-  - Replication: public contract decision, invalid start, role setup.
-
-  H. Looks Sound
-  The package split itself looks structurally sound. I found no direct JSON/XML/YAML/Jackson/JDBC/REST/UI
-  contamination in com.viaoa.graph. The graph package mostly depends on legitimate OA kernel pieces: runtime,
-  metadata, object, hub, sync/replication/remoting, serialization contracts, traversal, query/find/filter/select.
-  The remaining risk is not module purity; it is tightening graph ownership, lifecycle, sync semantics, and context/
-  trigger invariants.
-
-
-
-
-
-G. Top Context/Sibling Invariants
-
-  CTX-REMOVE-NULL-CLEARS-ALL
-  CTX-ACCESS-LIFETIME-DETERMINISTIC
-  UA-PACKAGE-SCOPE-CONSISTENT
-  UA-EMPTY-PATH-NO-THROW
-  UA-REVERSE-PATH-BOUNDS
-  UA-CONFIGURE-BEFORE-PUBLISH
-  SIB-SAME-THREAD-ENFORCED
-
-  H. Test Plan Outline
-
-  Add focused tests for null-context registration/removal, weak-vs-strong context lifetime contract, package-scoped
-  enabled/visible behavior, empty/scalar access paths, reverse traversal bounds, configure-before-publish access
-  rules, and cross-thread sibling-helper use.
-
-
-
-
-
-
-
-
-
- C. Consolidated Graph-Level Invariants
-
-  GRAPH-OWNERSHIP-ROUTING-IS-EXPLICIT
-  GRAPH-LIFECYCLE-IS-ATOMIC-AND-BOUNDED
-  GRAPH-INTERNAL-APIS-ARE-NOT-APPLICATION-SURFACE
-  GRAPH-SYNC-ROLE-GUARDS-ARE-CENTRALIZED
-  GRAPH-ASYNC-WORK-PRESERVES-RUNTIME-CONTEXT
-  GRAPH-OBJECT-HUB-MUTATIONS-STAY-BALANCED
-  GRAPH-SERIALIZATION-PRESERVES-AUTHORITATIVE-IDENTITY
-  GRAPH-TRIGGER-TARGET-AND-EXECUTOR-LIFECYCLE-ARE-EXPLICIT
-
-  D. Consolidated Object-Service Invariants
-
-  OBJ-GUID-STABLE-AFTER-INIT
-  OBJ-KEY-COMPARISON-DETERMINISTIC
-  OBJ-CACHE-HAS-ONE-AUTHORITATIVE-INSTANCE
-  OBJ-SAVE-FAILURE-PRESERVES-STATE
-  OBJ-DELETE-CLEANS-CACHE-KEYS-HUB-REFS
-  OBJ-SER-READ-RESOLVE-USES-CACHE-AUTHORITY
-  OBJ-SYNC-HOOKS-REQUIRE-VALID-ROLE
-  OBJ-PRIMITIVE-NULL-MASKS-INITIALIZED
-
-  E. Consolidated Hub-Service Invariants
-
-  HUB-MEMBERSHIP-AND-OBJECT-REFS-BALANCED
-  HUB-AO-DETAIL-ORDER-DETERMINISTIC
-  HUB-DETAIL-MASTER-LINKS-CONSISTENT
-  HUB-SHARE-LINK-SCOPE-EXPLICIT
-  HUB-EVENTS-FIRE-AFTER-SUCCESSFUL-MUTATION
-  HUB-SELECT-STATE-RESTORED-ON-FAILURE
-  HUB-DELETEALL-FAILURE-DOES-NOT-CORRUPT-GRAPH
-  HUB-SER-SIDE-EFFECTS-BOUNDED
-
-  F. Context/Sibling Invariants
-
-  CTX-REMOVE-NULL-CLEARS-ALL
-  CTX-ACCESS-LIFETIME-DETERMINISTIC
-  UA-PACKAGE-SCOPE-CONSISTENT
-  UA-EMPTY-PATH-NO-THROW
-  UA-REVERSE-PATH-BOUNDS
-  UA-CONFIGURE-BEFORE-PUBLISH
-  SIB-SAME-THREAD-ENFORCED
-
-
-
-
-*/

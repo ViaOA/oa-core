@@ -74,239 +74,466 @@ package com.viaoa.query;
 
 /* CODEX Invariants
 
-ID: QUERY-SEMANTIC-001
-  Contract statement: Query criteria must preserve the semantic intent expressed by OA property paths, metadata,
-  parameters, and operators.
-  Rationale: OA queries drive datasource selects, in-memory filters, Hub contents, and object matching. A parsed query
-  must mean the same thing throughout OA.
-  Source locations: OAQuery, OAQueryTokenizer, OAQueryTokenManager, OAQueryToken, OAQueryTokenType, consumers such as
-  OAQueryFilter and select/datasource layers.
-  Related CODEX findings: OR/AND precedence drift in OAQueryFilter; malformed/trailing tokens accepted by filter
-  consumer.
-  Suggested unit tests: testQueryCriteriaMeaningIsPreservedAcrossParserAndFilter,
-  testEquivalentDatasourceAndMemoryQuerySemantics
-  Spec target section: Query Runtime / Criteria Semantics
+QUERY-SEMANTIC-001 — Query Text Is An Executable Semantic Contract
+Contract statement:
+An OA query expression must preserve the semantic intent expressed by property paths, metadata, operators, literals,
+parameters, grouping, and runtime context from tokenization through filter/select/datasource interpretation.
+Rationale:
+OA queries are semantic selection contracts over generated blueprint metadata and live object graphs. They drive
+datasource selects, in-memory filtering, Hub contents, object matching, projections, and runtime views.
+Source scope:
+OAQuery, OAQueryTokenizer, OAQueryTokenManager, OAQueryToken, OAQueryTokenType, consumers in filter/select/
+datasource/path/metadata layers.
+Related CODEX findings:
+OR/AND precedence drift in filter consumer; malformed/trailing tokens accepted by consumer paths.
+Suggested unit tests:
+testQueryCriteriaMeaningIsPreservedAcrossParserAndFilter, testEquivalentDatasourceAndMemoryQuerySemantics,
+testQueryTextRepresentsSameSelectionAcrossConsumers.
+Spec target section:
+Query Runtime / Criteria Semantics
 
-  ID: QUERY-TOKEN-001
-  Contract statement: Tokenization must classify every supported query operator, literal, keyword, separator, and
-  placeholder into the correct token type.
-  Rationale: All downstream query behavior depends on token identity. A wrong token type changes filter/query meaning
-  before metadata or datasource code sees it.
-  Source locations: OAQueryTokenManager.getNext(), OAQueryTokenType, OAQueryToken.isOperator()
-  Related CODEX findings: NOTLIKE not included in isOperator(); IS NOT NULL tokenization fragile; <> not-equal not
-  recognized.
-  Suggested unit tests: testTokenizesAllComparisonOperators, testTokenizesLikeAndNotLikeOperators,
-  testTokenizesIsNullAndIsNotNull
-  Spec target section: Query Runtime / Tokenization
+QUERY-TOKEN-001 — Deterministic Tokenization
+Contract statement:
+For the same query text and tokenizer state, tokenization must produce the same ordered token stream with the same
+token types, subtypes, and literal values.
+Rationale:
+Every downstream query operation depends on token identity and order. A wrong token changes query meaning before
+metadata, filter, or datasource code can validate it.
+Source scope:
+OAQueryTokenManager.setQuery, OAQueryTokenManager.getNext, OAQueryToken, OAQueryTokenType,
+OAQueryTokenizer.convertToTokens.
+Related CODEX findings:
+NOTLIKE not included in isOperator; <> not-equal not recognized; IS NOT NULL tokenization fragile.
+Suggested unit tests:
+testTokenizesAllComparisonOperators, testTokenizesLikeAndNotLikeOperators, testTokenizesNotEqualAliases,
+testRepeatedTokenizationProducesSameTokenStream.
+Spec target section:
+Query Runtime / Tokenization
 
-  ID: QUERY-PARSE-001
-  Contract statement: Parsing must consume the complete query expression or fail visibly.
-  Rationale: Accepting only a leading valid fragment silently broadens or narrows results.
-  Source locations: OAQueryTokenizer.convertToTokens(...), OAQueryTokenizer.evaluate(), OAQueryFilter.parseBlock() as
-  a consumer.
-  Related CODEX findings: trailing valid/invalid tokens can be ignored by OAQueryFilter.
-  Suggested unit tests: testParserRejectsTrailingTokens, testFilterParserRejectsLeadingExpressionWithGarbageTail
-  Spec target section: Query Runtime / Parse Completeness
+QUERY-TOKEN-002 — Operator Identity Semantics
+Contract statement:
+All supported comparison, logical, null, membership, LIKE/NOT LIKE, and alias operators must be classified
+consistently as operators or structural tokens according to OAQueryTokenType.
+Rationale:
+Parser stages consume operators by token classification. Missing operator identity can turn a valid query into
+malformed structure or silently change expression shape.
+Source scope:
+OAQueryToken.isOperator, OAQueryTokenType, OAQueryTokenManager.getNext, OAQueryTokenizer evaluate methods.
+Related CODEX findings:
+NOTLIKE is not treated as an operator by isOperator; <> is documented but not tokenized as NOTEQUAL.
+Suggested unit tests:
+testNotLikeIsOperator, testNotEqualBangEqualAndAngleBracketHaveSameSemantics,
+testIsNullAndIsNotNullTokenizeAsNullPredicates.
+Spec target section:
+Query Runtime / Operator Semantics
 
-  ID: QUERY-PARSE-002
-  Contract statement: Malformed quoted, escaped, or passthrough query blocks must fail visibly rather than becoming
-  valid partial tokens.
-  Rationale: Strings and passthrough blocks can materially change query results. Unterminated input must not become a
-  different predicate.
-  Source locations: OAQueryTokenManager.getNext()
-  Related CODEX findings: unterminated quoted strings accepted; unterminated PASS[...]THRU accepted.
-  Suggested unit tests: testRejectsUnterminatedSingleQuotedString, testRejectsUnterminatedDoubleQuotedString,
-  testRejectsUnterminatedPassthruBlock
-  Spec target section: Query Runtime / Literal Parsing
+QUERY-PARSE-001 — Complete Expression Consumption
+Contract statement:
+Parsing must consume the complete query expression or fail visibly. A leading valid expression followed by trailing
+tokens, dangling operators, or unparsed subexpressions must not be accepted as a successful query.
+Rationale:
+Partial parse success silently broadens or narrows selected objects and datasource rows.
+Source scope:
+OAQueryTokenizer.convertToTokens, OAQueryTokenizer.evaluate, evaluateA/evaluateB/evaluateC/evaluateD/evaluateE/
+evaluateF, OAQuery.parse.
+Related CODEX findings:
+Trailing valid/invalid tokens can be ignored by filter consumer; OAQueryTokenizer now checks EOF after top-level
+evaluation.
+Suggested unit tests:
+testParserRejectsTrailingTokens, testParserRejectsDanglingOperator,
+testParserRejectsLeadingExpressionWithGarbageTail, testParserConsumesWholeExpression.
+Spec target section:
+Query Runtime / Parse Completeness
 
-  ID: QUERY-PATH-001
-  Contract statement: Query property/path references must resolve according to OA metadata and OAPath semantics.
-  Rationale: Wrong path resolution returns wrong objects, wrong Hub contents, and wrong datasource rows.
-  Source locations: query tokens consumed by OAQueryFilter, OAPath, datasource/select query conversion layers.
-  Related CODEX findings: none observed in com.viaoa.query itself.
-  Suggested unit tests: testQueryPathResolvesMetadataProperty, testQueryPathRejectsUnknownProperty,
-  testQueryPathMatchesOAPathTraversal
-  Spec target section: Query Runtime / Path Resolution
+QUERY-PARSE-002 — Structural Expression Validity
+Contract statement:
+Logical and comparison grammar must reject structurally invalid expressions such as chained comparisons, missing
+operands, malformed IN lists, mismatched parentheses, or operators in illegal positions.
+Rationale:
+Permissive structural parsing can create token streams that downstream consumers interpret differently or
+incorrectly.
+Source scope:
+OAQueryTokenizer.evaluateA/evaluateB/evaluateB2/evaluateC/evaluateC2/evaluateD/evaluateE/evaluateF.
+Related CODEX findings:
+OAQueryTokenizer CODEX comment notes operator parsing recurses into evaluateA and can accept odd invalid structures.
+Suggested unit tests:
+testRejectsChainedComparison, testRejectsComparisonMissingRightOperand, testRejectsMalformedInList,
+testRejectsMismatchedParentheses.
+Spec target section:
+Query Runtime / Expression Grammar
 
-  ID: QUERY-METADATA-001
-  Contract statement: Query interpretation must honor OA metadata for property type, ID/key behavior, link
-  cardinality, and datasource mapping.
-  Rationale: Metadata is the runtime truth for how criteria map to objects and persistence.
-  Source locations: OAQueryToken, OAQueryTokenizer, consumers in filter/select/datasource packages.
-  Related CODEX findings: none observed in com.viaoa.query itself.
-  Suggested unit tests: testQueryUsesMetadataPropertyTypeForComparison, testQueryUsesIdMetadataForObjectKeyCriteria,
-  testQueryRejectsMetadataMismatch
-  Spec target section: Query Runtime / Metadata Alignment
+QUERY-LITERAL-001 — Literal Preservation
+Contract statement:
+String, numeric, boolean, null, identifier, and passthrough literals must preserve their intended characters and
+semantic value without adding, removing, truncating, or reinterpreting content.
+Rationale:
+Literals represent user data, codes, names, IDs, keys, flags, dates, and datasource expressions. Literal corruption
+produces wrong matches.
+Source scope:
+OAQueryTokenManager.getNext, OAQueryTokenizer.evaluateD/evaluateE, OAQueryToken.value.
+Related CODEX findings:
+Unterminated quoted strings accepted; quote-handling paths need coverage.
+Suggested unit tests:
+testSingleQuotedStringLiteral, testDoubleQuotedStringLiteral, testEmbeddedQuoteLiteral, testEscapedStringLiteral,
+testNumericLiteralTokenValuePreserved.
+Spec target section:
+Query Runtime / Literal Semantics
 
-  ID: QUERY-PARAM-001
-  Contract statement: Positional parameters must bind in query order, exactly once each, preserving value identity and
-  intended type.
-  Rationale: Wrong parameter order or reuse changes query meaning and can return incorrect rows or objects.
-  Source locations: OAQueryTokenType.QUESTION, OAQueryTokenManager.getNext(), consumer binding in OAQueryFilter and
-  datasource/select layers.
-  Related CODEX findings: missing ? args can become literal "?" in OAQueryFilter.
-  Suggested unit tests: testQuestionParametersBindInOrder, testMissingParameterFailsVisibly,
-  testExtraParameterFailsOrIsExplicitlyContracted
-  Spec target section: Query Runtime / Parameter Binding
+QUERY-LITERAL-002 — Unterminated Literal Failure
+Contract statement:
+Unterminated quoted strings, escaped strings, or passthrough blocks must fail visibly and must not become valid
+partial tokens.
+Rationale:
+Unterminated literals change query meaning and can transform malformed text into executable selection criteria.
+Source scope:
+OAQueryTokenManager.getNext, passthrough scanning, quoted string scanning.
+Related CODEX findings:
+Unterminated quoted strings accepted at EOF; unterminated PASS[...]THRU blocks accepted at EOF.
+Suggested unit tests:
+testRejectsUnterminatedSingleQuotedString, testRejectsUnterminatedDoubleQuotedString,
+testRejectsUnterminatedPassthruBlock.
+Spec target section:
+Query Runtime / Literal Failure Semantics
 
-  ID: QUERY-PARAM-002
-  Contract statement: Collection/list parameters used for IN (?) must preserve membership semantics and must not
-  silently expand to the wrong comparison shape.
-  Rationale: OA uses IN (?) for object keys, sibling/reference loading, and bulk selects. Wrong expansion causes
-  missing or duplicate results.
-  Source locations: OAQueryTokenizer.evaluateB2(), OAQueryTokenType.IN, consumers in OAQueryFilter and datasource/
-  select layers.
-  Related CODEX findings: parser has special handling comments for composite IN shapes.
-  Suggested unit tests: testInListParameterPreservesValues, testCompositeInObjectKeyParameterPreservesColumnOrder,
-  testEmptyInListReturnsFalseOrDocumentedEmptyResult
-  Spec target section: Query Runtime / IN Parameter Semantics
+QUERY-LOGIC-001 — Logical Operator Semantics
+Contract statement:
+AND, OR, NOT, and parentheses must have deterministic precedence and grouping semantics that match the OA query
+contract and downstream filter/datasource interpretation.
+Rationale:
+Logical precedence determines result set membership. Drift between in-memory and datasource behavior creates
+mismatched Hub/query results.
+Source scope:
+OAQueryTokenizer evaluate methods, OAQueryTokenType logical tokens, consumers in OAQueryFilter/select/datasource
+layers.
+Related CODEX findings:
+Existing package invariant references OR/AND precedence drift in OAQueryFilter.
+Suggested unit tests:
+testAndOrPrecedenceMatchesSpec, testParenthesesOverridePrecedence, testNotOperatorAppliesToIntendedExpression,
+testLogicalSemanticsMatchFilterAndDatasource.
+Spec target section:
+Query Runtime / Logical Semantics
 
-  ID: QUERY-NULL-001
-  Contract statement: Null comparisons must have explicit, consistent semantics across tokenization, in-memory
-  filtering, and datasource conversion.
-  Rationale: null criteria are core for object state, optional references, and datasource values. Inconsistent null
-  semantics cause memory-vs-database result drift.
-  Source locations: OAQueryTokenType.NULL, OAQueryTokenManager.getNext(), OAQueryTokenType.EQUAL,
-  OAQueryTokenType.NOTEQUAL
-  Related CODEX findings: IS NOT NULL handling fragile/broken.
-  Suggested unit tests: testEqualsNullSemantics, testNotEqualsNullSemantics,
-  testIsNullAndIsNotNullSemanticsMatchDatasourceAndFilter
-  Spec target section: Query Runtime / Null Semantics
+QUERY-PATH-001 — Metadata-Driven Property Path Semantics
+Contract statement:
+Property and path references in query expressions must resolve according to OAPath and OA metadata semantics,
+including OAObjectInfo, OAPropertyInfo, OALinkInfo, calculated properties, link cardinality, and object key
+metadata.
+Rationale:
+Queries select over generated blueprint metadata and object graphs. Wrong path resolution returns wrong objects,
+Hubs, or datasource rows.
+Source scope:
+Query tokens consumed by path/filter/select/datasource layers, OAQueryToken values representing identifiers, OAPath
+integration.
+Related CODEX findings:
+none in com.viaoa.query itself; boundary risk noted in package invariants.
+Suggested unit tests:
+testQueryPathResolvesMetadataProperty, testQueryPathRejectsUnknownProperty, testQueryPathMatchesOAPathTraversal,
+testQueryPathUsesObjectKeyMetadata.
+Spec target section:
+Query Runtime / Path and Metadata Semantics
 
-  ID: QUERY-COMPARE-001
-  Contract statement: Query comparison operators must map to OA comparison semantics consistently for equality,
-  inequality, greater/less, like/not-like, and membership.
-  Rationale: OA query results must agree with Hub filters, datasource filtering, and object matching.
-  Source locations: OAQueryTokenType, OAQueryToken.isOperator(), OAQueryTokenizer.evaluateB(), consumers in
-  OAQueryFilter.
-  Related CODEX findings: NOTLIKE not treated as operator; <> not-equal not recognized.
-  Suggested unit tests: testAllComparisonOperatorsProduceExpectedTokenAndFilter,
-  testNotLikeSemanticsMatchLikeNegation, testNotEqualOperatorAliasesMatch
-  Spec target section: Query Runtime / Comparison Semantics
+QUERY-METADATA-001 — Metadata Type Alignment
+Contract statement:
+Query interpretation must honor metadata-defined property types, object references, key/ID semantics, link
+cardinality, calculated values, and datasource mapping before applying comparison or conversion behavior.
+Rationale:
+Metadata is the runtime truth for how query text maps to objects and persistence. Type drift causes wrong
+comparisons and wrong datasource criteria.
+Source scope:
+OAQueryToken, OAQueryTokenizer output, consumers in filter/select/datasource/path/metadata packages.
+Related CODEX findings:
+none in com.viaoa.query itself.
+Suggested unit tests:
+testQueryUsesMetadataPropertyTypeForComparison, testQueryUsesIdMetadataForObjectKeyCriteria,
+testQueryRejectsMetadataMismatch, testCalculatedPropertyQueryUsesMetadataType.
+Spec target section:
+Query Runtime / Metadata Alignment
 
-  ID: QUERY-CONVERT-001
-  Contract statement: Conversion before comparison must preserve semantic value and target-property intent.
-  Rationale: Query strings often compare dates, numbers, booleans, enums, and object keys. Conversion drift can
-  silently include or exclude wrong objects.
-  Source locations: query tokens and values from OAQueryTokenManager; consumers in converter/filter/datasource layers.
-  Related CODEX findings: boolean literals can differ between JDBC conversion and OAQueryFilter.
-  Suggested unit tests: testBooleanLiteralQueryMatchesDatasourceAndFilter, testNumericLiteralPreservesPrecision,
-  testDateLiteralPreservesDateSemantics
-  Spec target section: Query Runtime / Conversion Semantics
+QUERY-PARAM-001 — Positional Parameter Binding
+Contract statement:
+Positional parameters must bind in query order, exactly once per placeholder, preserving value identity, nullness,
+type, and comparison intent.
+Rationale:
+Wrong parameter order, missing parameters, reused values, or ignored values change query meaning and can return
+incorrect rows or objects.
+Source scope:
+OAQueryTokenType.QUESTION, OAQueryTokenManager.getNext, OAQueryTokenizer output, consumer binding in OAQueryFilter/
+select/datasource layers.
+Related CODEX findings:
+Missing ? args can become literal "?" in OAQueryFilter.
+Suggested unit tests:
+testQuestionParametersBindInOrder, testMissingParameterFailsVisibly,
+testExtraParameterFailsOrIsExplicitlyContracted, testNullParameterPreservesNullSemantics.
+Spec target section:
+Query Runtime / Parameter Binding
 
-  ID: QUERY-STRING-001
-  Contract statement: String literal parsing must preserve intended characters, including embedded quotes and escape
-  forms, without adding or removing semantic characters.
-  Rationale: Query values often represent user data, codes, names, and IDs. Literal corruption causes wrong matches.
-  Source locations: OAQueryTokenManager.getNext(), OAQueryTokenizer.evaluateD(), OAQueryTokenizer.evaluateE()
-  Related CODEX findings: unterminated strings accepted; quote-handling paths need coverage.
-  Suggested unit tests: testSingleQuotedStringLiteral, testDoubleQuotedStringLiteral, testEmbeddedSingleQuoteLiteral,
-  testEscapedStringLiteral
-  Spec target section: Query Runtime / String Literal Semantics
+QUERY-PARAM-002 — IN Parameter And Collection Semantics
+Contract statement:
+Collection/list/Hub/array parameters used for IN predicates must preserve membership semantics, element order where
+required, object key mapping, and composite key column ordering. Empty membership sets must have explicit false/
+empty-result semantics.
+Rationale:
+OA uses IN predicates for object keys, sibling/reference loading, bulk selects, and object-cache filtering. Wrong
+expansion causes missing, duplicate, or overly broad results.
+Source scope:
+OAQueryTokenizer.evaluateB2, OAQueryTokenType.IN, tokens consumed by OAQueryFilter/select/datasource layers.
+Related CODEX findings:
+Parser has special handling comments for composite IN shapes; empty IN semantics noted in filter package.
+Suggested unit tests:
+testInListParameterPreservesValues, testCompositeInObjectKeyParameterPreservesColumnOrder,
+testEmptyInListReturnsFalseOrDocumentedEmptyResult, testInHubParameterUsesObjectIdentitySemantics.
+Spec target section:
+Query Runtime / IN Parameter Semantics
 
-  ID: QUERY-ORDER-001
-  Contract statement: Ordering and grouping behavior must be deterministic wherever OA depends on sorted or grouped
-  query results.
-  Rationale: Hub loading, UI display, datasource selection, and repeatable tests depend on stable ordering.
-  Source locations: com.viaoa.query parser if order/group syntax is introduced; select/datasource layers currently own
-  most order behavior.
-  Related CODEX findings: none observed in com.viaoa.query itself.
-  Suggested unit tests: testQueryOrderByProducesDeterministicOrder, testQueryGroupSemanticsAreExplicitOrRejected
-  Spec target section: Query Runtime / Ordering and Grouping
+QUERY-NULL-001 — Null Predicate Semantics
+Contract statement:
+Null comparisons must have explicit and consistent semantics across tokenization, in-memory filtering, datasource
+conversion, and object-cache evaluation. IS NULL, IS NOT NULL, = null, and != null must map to documented OA
+behavior.
+Rationale:
+Null criteria are core to optional references, object state, datasource values, and UI filters. Inconsistent null
+semantics cause memory-vs-database result drift.
+Source scope:
+OAQueryTokenType.NULL, OAQueryTokenManager.getNext, OAQueryTokenType.EQUAL/NOTEQUAL, consumers in filter/select/dat
+asource layers.
+Related CODEX findings:
+IS NOT NULL handling appears fragile/broken because IS is tokenized as EQUAL while later cleanup expected VARIABLE
+"IS".
+Suggested unit tests:
+testEqualsNullSemantics, testNotEqualsNullSemantics, testIsNullSemanticsMatchDatasourceAndFilter,
+testIsNotNullSemanticsMatchDatasourceAndFilter.
+Spec target section:
+Query Runtime / Null Semantics
 
-  ID: QUERY-STATE-001
-  Contract statement: Query tokenizer/parser instances must not leak token, position, vector, or query text state
-  across conversions.
-  Rationale: Query objects can be reused, and stale parse state can create wrong tokens or partial results.
-  Source locations: OAQueryTokenizer.convertToTokens(...), OAQueryTokenManager.setQuery(...), OAQueryTokenManager.pos,
-  OAQueryTokenizer.vec, OAQueryTokenizer.token
-  Related CODEX findings: none observed.
-  Suggested unit tests: testTokenizerReuseDoesNotLeakPriorQueryState,
-  testTokenManagerResetClearsPriorPositionAndBuffer
-  Spec target section: Query Runtime / Parser State Isolation
+QUERY-COMPARE-001 — Comparison Operator Semantics
+Contract statement:
+Equality, inequality, greater/less, greater-or-equal, less-or-equal, LIKE, NOT LIKE, and membership operators must
+map to OACompare-compatible semantics for supported value types.
+Rationale:
+Query results must agree with Hub filters, datasource filtering, object matching, and in-memory selection.
+Source scope:
+OAQueryTokenType, OAQueryToken.isOperator, OAQueryTokenizer.evaluateB/evaluateB2, consumers in OAQueryFilter/select
+/datasource.
+Related CODEX findings:
+NOTLIKE not treated as operator; <> not-equal not recognized.
+Suggested unit tests:
+testAllComparisonOperatorsProduceExpectedTokens, testNotLikeSemanticsMatchLikeNegation,
+testNotEqualOperatorAliasesMatch, testComparisonSemanticsMatchOACompare.
+Spec target section:
+Query Runtime / Comparison Semantics
 
-  ID: QUERY-STATE-002
-  Contract statement: Query result/criteria objects must not reuse stale criteria, parameter values, paths, or
-  compiled filter state across retry or reparse.
-  Rationale: OA select/filter retry behavior must represent the current query, not a previous one.
-  Source locations: OAQuery.parse(...), OAQueryTokenizer.convertToTokens(...), consumer query/filter/select classes.
-  Related CODEX findings: none observed in com.viaoa.query itself.
-  Suggested unit tests: testReparseWithDifferentParametersUsesNewValues, testFailedParseDoesNotPoisonNextParse
-  Spec target section: Query Runtime / Query Reuse
+QUERY-CONVERT-001 — Literal Conversion Semantics
+Contract statement:
+Conversion of query literals and parameters before comparison must preserve target-property intent and semantic
+value for strings, numbers, booleans, dates/times, enums, object references, keys, and nulls.
+Rationale:
+Conversion drift silently includes or excludes wrong objects and can make datasource-backed and in-memory query
+behavior diverge.
+Source scope:
+OAQueryToken literal values, OAQueryTokenizer output, converter/filter/datasource consumers.
+Related CODEX findings:
+Boolean literals can differ between JDBC conversion and OAQueryFilter.
+Suggested unit tests:
+testBooleanLiteralQueryMatchesDatasourceAndFilter, testNumericLiteralPreservesPrecision,
+testDateLiteralPreservesDateSemantics, testEnumLiteralUsesTargetEnumMetadata.
+Spec target section:
+Query Runtime / Conversion Semantics
 
-  ID: QUERY-ITERATOR-001
-  Contract statement: Query iteration resources must be owned and closed by select/datasource layers on success,
-  failure, and cancellation.
-  Rationale: Query parsing feeds datasource execution; runtime correctness depends on result iterators not leaking
-  resources.
-  Source locations: com.viaoa.query produces criteria; resource ownership is in select/datasource packages.
-  Related CODEX findings: none observed in com.viaoa.query itself.
-  Suggested unit tests: testQueryIteratorClosesOnExhaustion, testQueryIteratorClosesOnException,
-  testCancelledQueryReleasesResources
-  Spec target section: Query Runtime / Iterator Resource Semantics
+QUERY-PASSTHRU-001 — Passthrough Boundary Semantics
+Contract statement:
+Passthrough query blocks must have explicit start/end boundaries and must remain opaque to normal query parsing only
+after those boundaries are validly recognized.
+Rationale:
+Passthrough text intentionally bypasses OA query parsing. Unterminated or partially recognized passthrough text must
+not become executable content silently.
+Source scope:
+OAQueryTokenManager.getNext, OAQueryTokenType.PASSTHRU handling, passthrough token consumers.
+Related CODEX findings:
+Unterminated PASS[...]THRU blocks accepted at EOF.
+Suggested unit tests:
+testPassthroughTokenPreservesBody, testRejectsUnterminatedPassthruBlock,
+testPassthroughDoesNotConsumeFollowingExpression.
+Spec target section:
+Query Runtime / Passthrough Semantics
 
-  ID: QUERY-FAIL-001
-  Contract statement: Query failures must fail visibly and must not silently degrade into broader, narrower, empty, or
-  misleading results.
-  Rationale: Silent wrong query results are production data correctness bugs.
-  Source locations: OAQueryTokenizer.evaluate(), OAQueryTokenManager.getNext(), OAQuery.parse(...)
-  Related CODEX findings: unterminated literals accepted; trailing tokens ignored by consumer; missing params can
-  become literal "?".
-  Suggested unit tests: testMalformedQueryThrows, testMissingRequiredOperandThrows,
-  testInvalidTokenDoesNotReturnPartialCriteria
-  Spec target section: Query Runtime / Failure Semantics
+QUERY-STATE-001 — Parser State Isolation
+Contract statement:
+Tokenizer and token manager instances must not leak query text, position, current token, prior token, token vector,
+or partial parse state across conversions.
+Rationale:
+Parser reuse must represent the current query only. Stale state causes partial results or tokens from prior queries.
+Source scope:
+OAQueryTokenizer.convertToTokens, OAQueryTokenizer.vec/token/lastToken, OAQueryTokenManager.setQuery,
+OAQueryTokenManager.pos/query.
+Related CODEX findings:
+none observed.
+Suggested unit tests:
+testTokenizerReuseDoesNotLeakPriorQueryState, testTokenManagerResetClearsPriorPositionAndBuffer,
+testFailedParseDoesNotPoisonNextParse.
+Spec target section:
+Query Runtime / Parser State Isolation
 
-  ID: QUERY-FAIL-002
-  Contract statement: Partial query setup is allowed only when the caller receives a visible exception and no compiled
-  query/filter is exposed as successful.
-  Rationale: A partially compiled query that appears valid can corrupt Hub/select/filter state.
-  Source locations: OAQueryTokenizer.convertToTokens(...), OAQuery.parse(...), consumer constructors.
-  Related CODEX findings: consumer can accept partial parse output in some cases.
-  Suggested unit tests: testFailedTokenizationDoesNotReturnTokenVector, testFailedFilterParseDoesNotExposeUsableFilter
-  Spec target section: Query Runtime / Partial Setup
+QUERY-REUSE-001 — Parsed Query Reuse And Immutability
+Contract statement:
+A parsed token stream or query criteria representation must be safe to interpret repeatedly as the same query, and
+reparsing a new query must not reuse stale criteria, parameter values, paths, or compiled filter state.
+Rationale:
+OA select/filter retry behavior must represent the current query, not a previous one or partial setup.
+Source scope:
+OAQuery.parse, OAQueryTokenizer.convertToTokens, token vectors, consumer query/filter/select classes.
+Related CODEX findings:
+none in com.viaoa.query itself; partial parse exposure noted at consumer boundary.
+Suggested unit tests:
+testReparseWithDifferentParametersUsesNewValues, testParsedTokenStreamStableAcrossRepeatedConsumers,
+testFailedParseDoesNotExposeReusablePartialCriteria.
+Spec target section:
+Query Runtime / Query Reuse
 
-  ID: QUERY-DS-001
-  Contract statement: Datasource, select, filter, finder, metadata/path, and Hub loading consumers must interpret the
-  same query token stream consistently.
-  Rationale: OA must avoid memory-vs-database drift for the same query text.
-  Source locations: OAQueryTokenizer, OAQueryTokenManager, OAQueryTokenType, consumers in OAQueryFilter, select,
-  datasource, path, metadata.
-  Related CODEX findings: boolean literal handling drift; OR/AND precedence drift; null handling drift.
-  Suggested unit tests: testSameQueryReturnsSameObjectsFromDatasourceAndObjectCache,
-  testSameQueryMatchesHubFilterAndSelectResults
-  Spec target section: Query Runtime / Cross-Package Compatibility
+QUERY-THREAD-001 — Query Definition Sharing Semantics
+Contract statement:
+Query parser/tokenizer instances are not shared mutable runtime state unless explicitly synchronized; parsed query
+definitions intended for reuse must be immutable or safely confined by consumers.
+Rationale:
+Queries may be used by Hubs, filters, selects, datasource operations, projections, and background runtime services.
+Shared mutable parse state can corrupt selection behavior.
+Source scope:
+OAQueryTokenizer mutable fields, OAQueryTokenManager mutable fields, OAQueryToken mutable public fields, token
+vectors.
+Related CODEX findings:
+none observed.
+Suggested unit tests:
+testIndependentTokenizerInstancesDoNotInterfere, testConcurrentParsingUsesSeparateInstances,
+testParsedQueryReuseRequiresImmutableOrDocumentedOwnership.
+Spec target section:
+Query Runtime / Thread Safety Semantics
 
-  ID: QUERY-IDENTITY-001
-  Contract statement: Query results must preserve OA object identity: the same datasource identity/key must map to the
-  authoritative cached OAObject instance where applicable.
-  Rationale: Duplicate objects for the same identity corrupt graph/cache/Hub semantics.
-  Source locations: com.viaoa.query criteria generation; select/datasource/cache consumers.
-  Related CODEX findings: none observed in com.viaoa.query itself.
-  Suggested unit tests: testQueryResultUsesCachedObjectIdentity, testQueryDoesNotDuplicateObjectForSameKey
-  Spec target section: Query Runtime / Identity Semantics
+QUERY-FAIL-001 — Invalid Query Failure Visibility
+Contract statement:
+Malformed syntax, invalid operators, unterminated literals, missing operands, unknown token forms, missing
+parameters, invalid paths, or unsupported structures must fail visibly or return a documented failure; they must not
+silently degrade into broader, narrower, empty, or misleading results.
+Rationale:
+Silent wrong query results are production data correctness bugs and can corrupt Hub contents, object-cache views,
+datasource results, projections, and digital twin runtime behavior.
+Source scope:
+OAQueryTokenizer.evaluate, OAQueryTokenManager.getNext, OAQuery.parse, consumer construction boundaries.
+Related CODEX findings:
+Unterminated literals accepted; trailing tokens ignored by consumer; missing params can become literal "?"; NOTLIKE/
+operator issues.
+Suggested unit tests:
+testMalformedQueryThrows, testMissingRequiredOperandThrows, testInvalidTokenDoesNotReturnPartialCriteria,
+testMissingRequiredParameterFails.
+Spec target section:
+Query Runtime / Failure Semantics
 
-  Suggested package-level spec summary
+QUERY-STATE-002 — No Partial Query Commit
+Contract statement:
+Partial query setup is allowed only when the caller receives visible failure and no token stream, filter, select
+criteria, or compiled query object is exposed as successful.
+Rationale:
+A partially compiled query that appears valid can corrupt Hub/select/filter state and can be retried with stale
+criteria.
+Source scope:
+OAQueryTokenizer.convertToTokens, OAQuery.parse, consumer query/filter/select constructors.
+Related CODEX findings:
+Consumer can accept partial parse output in some cases.
+Suggested unit tests:
+testFailedTokenizationDoesNotReturnTokenVector, testFailedParseDoesNotExposeUsableQuery,
+testFailedFilterParseDoesNotExposeUsableFilter.
+Spec target section:
+Query Runtime / Partial Progress Semantics
 
-  - com.viaoa.query owns OA’s lightweight query lexical and parse contracts.
-  - It translates query text into stable token streams that select, datasource, filter, finder, metadata/path, and Hub
-    code can interpret consistently.
-  - It must preserve semantic intent for property paths, operators, literals, nulls, parameters, and IN expressions.
-  - It must reject malformed or incomplete query text visibly.
-  - It must never silently accept partial expressions, unterminated literals, unknown operator forms, or stale parser
-    state as successful queries.
-  - Parameter binding must preserve order, identity, type, and collection semantics.
-  - Null, boolean, numeric, date/time, and string comparison behavior must remain consistent with com.viaoa.compare
-    and com.viaoa.converter.
-  - Datasource-backed query behavior and in-memory filter behavior must not drift for the same OA query.
-  - Query parsing should remain resource-neutral; iterator/resource ownership belongs to select/datasource execution
-    layers.
-  - Future unit tests should cover tokenization, parse completeness, parameter binding, null semantics, operator
-    aliases, memory-vs-datasource consistency, and parser reuse after failure.
+QUERY-DS-001 — Datasource And In-Memory Consistency
+Contract statement:
+Datasource-backed query execution, object-cache evaluation, Hub filtering, and in-memory query filters must
+interpret the same query token stream according to the same OA semantic contract unless an execution layer
+explicitly documents a narrower capability.
+Rationale:
+OA must avoid memory-vs-database drift for the same query expression.
+Source scope:
+OAQueryTokenizer, OAQueryTokenManager, OAQueryTokenType, OAQueryToken, consumers in OAQueryFilter, select,
+datasource, path, metadata.
+Related CODEX findings:
+Boolean literal handling drift; OR/AND precedence drift; null handling drift.
+Suggested unit tests:
+testSameQueryReturnsSameObjectsFromDatasourceAndObjectCache, testSameQueryMatchesHubFilterAndSelectResults,
+testDatasourceAndMemoryNullSemanticsMatch.
+Spec target section:
+Query Runtime / Cross-Package Compatibility
 
+QUERY-IDENTITY-001 — Query Result Identity Contract
+Contract statement:
+Query criteria that resolve OAObjects must preserve OA identity semantics: the same datasource identity/key must map
+to the authoritative cached OAObject instance where applicable.
+Rationale:
+Duplicate OAObjects for the same identity corrupt object graph, cache, Hub, sync, and serialization semantics.
+Source scope:
+com.viaoa.query criteria generation and token semantics; select/datasource/cache consumers.
+Related CODEX findings:
+none in com.viaoa.query itself.
+Suggested unit tests:
+testQueryResultUsesCachedObjectIdentity, testQueryDoesNotDuplicateObjectForSameKey,
+testObjectReferenceCriteriaUsesOAKeySemantics.
+Spec target section:
+Query Runtime / Identity Semantics
 
+QUERY-ORDER-001 — Ordering And Grouping Boundaries
+Contract statement:
+Ordering, grouping, or function syntax must be either parsed with deterministic semantics or rejected/left to a
+documented execution layer; unsupported order/group forms must not be silently interpreted as ordinary predicates.
+Rationale:
+Hub loading, UI display, projections, datasource selection, and repeatable tests depend on stable ordering behavior
+when query syntax claims to support it.
+Source scope:
+OAQueryTokenizer, OAQueryTokenType function/group/order-related tokens, datasource/select consumers.
+Related CODEX findings:
+none in com.viaoa.query itself.
+Suggested unit tests:
+testUnsupportedOrderByIsRejectedOrDelegatedByContract, testQueryFunctionTokensRemainStructurallyValid,
+testQueryGroupSemanticsAreExplicitOrRejected.
+Spec target section:
+Query Runtime / Ordering and Grouping
+
+QUERY-AUTHORITY-001 — Query Package Is Lexical And Parse Authority
+Contract statement:
+com.viaoa.query is the package authority for OA query tokenization and parse-level expression structure. Other
+packages may translate or execute query tokens, but they must preserve token meaning unless their contract
+explicitly narrows supported query syntax.
+Rationale:
+Queries are AI-readable and runtime-readable semantic contracts over executable blueprints. Central parse authority
+prevents semantic drift across filters, datasource, Hubs, selects, projections, and graph services.
+Source scope:
+OAQuery, OAQueryTokenizer, OAQueryTokenManager, OAQueryToken, OAQueryTokenType, integration with filter/select/
+datasource/path/metadata/runtime packages.
+Related CODEX findings:
+Operator classification, null semantics, passthrough, literal parsing, and parser completeness findings all
+illustrate boundary authority.
+Suggested unit tests:
+testQueryTokenStreamMeaningPreservedByFilterConsumer, testQueryTokenStreamMeaningPreservedByDatasourceConsumer,
+testUnsupportedConsumerFeatureFailsInsteadOfChangingTokenMeaning.
+Spec target section:
+Query Runtime / Cross-Package Authority
+
+QUERY-DETERMINISM-001 — Same Inputs Produce Same Query Meaning
+Contract statement:
+For the same query text, parameters, root metadata, conversion rules, parser state, and execution context, OA query
+parsing and interpretation must produce the same token stream, same semantic criteria, or the same visible failure.
+Rationale:
+Deterministic query behavior is required for generated runtime code, digital twin views, Hubs, object graphs,
+datasource selections, projections, tests, and AI-readable runtime contracts.
+Source scope:
+All public behavior in OAQuery, OAQueryTokenizer, OAQueryTokenManager, OAQueryToken, OAQueryTokenType, and direct
+consumers.
+Related CODEX findings:
+Default-locale keyword uppercasing, malformed literal acceptance, and partial parse behavior can threaten
+deterministic query meaning.
+Suggested unit tests:
+testSameQueryParsesToSameTokensRepeatedly, testKeywordTokenizationStableUnderTurkishLocale,
+testSameInvalidQueryFailsConsistently, testSameQuerySameParametersProducesSameCriteria.
+Spec target section:
+Query Runtime / Determinism
 
 */
-
 
 
 

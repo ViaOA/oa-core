@@ -21,224 +21,435 @@ package com.viaoa.datetime;
 
 /* CODEX Invariants
 
-Date/Time Invariants
+DT-TYPE-001 — Temporal Semantic Type Boundaries
+Contract statement:
+OA date/time values must preserve their declared semantic type: OADate represents a calendar date, OATime represents
+a clock time, OADateTime represents a date-time value, and instant/timestamp paths preserve point-in-time meaning
+unless a method explicitly converts across semantic boundaries.
+Rationale:
+OA properties, datasource values, query criteria, serialization, UI bindings, scheduling, and Hub sorting depend on
+knowing whether a value means a day, a time-of-day, a local date-time, or an instant.
+Source scope:
+OADate, OATime, OADateTime constructors, getLocalDate, getLocalTime, getLocalDateTime, getInstant, getZonedDateTime,
+convertTo, clearTime, clearDate.
+Related CODEX findings:
+Date/time construction drift; LocalDate/LocalDateTime timezone drift; ZonedDateTime zone loss in related conversion
+paths.
+Suggested unit tests:
+testOADatePreservesDateOnlySemantics, testOATimePreservesTimeOnlySemantics,
+testOADateTimePreservesDateTimeSemantics, testInstantPathPreservesPointInTime.
+Spec target section:
+Datetime Runtime / Semantic Type Boundaries
 
-  ID: DT-TYPE-001
-  Contract statement: OA date/time values must preserve their declared semantic type: OADate is date-only, OATime is
-  time-only, OADateTime is wall-clock datetime, and instant/timestamp conversions preserve point-in-time meaning.
-  Rationale: OA properties, query values, serializers, and UI bindings rely on knowing whether a value means a
-  calendar day, clock time, or instant.
-  Source locations: OADate, OATime, OADateTime, constructors, convert(...), getDate(), getInstant(),
-  getLocalDateTime().
-  Related CODEX findings: Date/time/timezone construction drift; ZonedDateTime zone discarded; LocalDateTime uses JVM
-  default timezone.
-  Suggested unit tests: testOADatePreservesDateOnlySemantics, testOATimePreservesTimeOnlySemantics,
-  testOADateTimePreservesDateTimeSemantics.
-  Spec target section: Datetime Runtime / Semantic Type Boundaries.
+DT-DATE-001 — Date-Only Calendar Day Semantics
+Contract statement:
+OADate operations must ignore time-of-day and preserve the intended calendar day across construction, formatting,
+comparison, serialization, and conversion.
+Rationale:
+Business dates must not shift due to time-of-day residue, timezone conversion, serialization, or host JVM defaults.
+Source scope:
+OADate constructors, OADate.getLocalDate, OADate.toString, OADate.valueOf/dateValue, OADateTime.clearTime, OADateTi
+me.compareTo, serialization methods.
+Related CODEX findings:
+OADate(Date), OADate(long), OADate(Calendar), OADate(OADateTime), OADate(LocalDate), and clearTime can be sensitive
+to timezone handling.
+Suggested unit tests:
+testOADateSameDayAcrossDefaultTimezones, testOADateSerializationPreservesCalendarDay, testOADateCompareIgnoresTime,
+testOADateLocalDateRoundTripPreservesDay.
+Spec target section:
+Datetime Runtime / Date-Only Semantics
 
-  ID: DT-DATE-001
-  Contract statement: OADate comparisons, formatting, serialization, and cache usage must ignore time-of-day and
-  preserve the intended calendar day across JVM default timezones.
-  Rationale: Business dates must not shift when servers, clients, or replication nodes run in different zones.
-  Source locations: OADate, OADateTime.clearTime(), OADateTime.compareTo(...), OADateTime.writeObject/readObject.
-  Related CODEX findings: OADate(Date), OADate(long), clearTime, OADate(Calendar), OADate(OADateTime),
-  OADate(LocalDate) timezone drift.
-  Suggested unit tests: testOADateSameDayAcrossJvmDefaultTimezones, testOADateSerializationPreservesCalendarDay,
-  testOADateCompareIgnoresTime.
-  Spec target section: Datetime Runtime / Date-Only Semantics.
+DT-TIME-001 — Time-Only Clock Semantics
+Contract statement:
+OATime operations must preserve clock-time fields independently of calendar date unless an API explicitly converts
+through an instant or date-time boundary.
+Rationale:
+Time-of-day values are used for schedules, UI input, reports, rules, and datasource fields; they must not
+accidentally depend on an epoch date or local timezone side effects.
+Source scope:
+OATime constructors, OATime.getLocalTime, OATime.toString, OATime.valueOf/timeValue, OADateTime.clearDate, OADateTi
+me.compareTo.
+Related CODEX findings:
+OATime(Date), OATime(Time), OATime(long), and clearDate can depend on JVM default timezone behavior.
+Suggested unit tests:
+testOATimeSameClockTimeAcrossDefaultTimezones, testOATimeSerializationPreservesClockFields,
+testOATimeCompareIgnoresDate, testOATimeLocalTimeRoundTripPreservesMillis.
+Spec target section:
+Datetime Runtime / Time-Only Semantics
 
-  ID: DT-TIME-001
-  Contract statement: OATime must represent clock time independent of calendar date unless a method explicitly
-  converts through a datetime/instant boundary.
-  Rationale: Time-of-day fields are used for schedules, UI input, templates, and rules; they must not depend on
-  January 1 epoch date behavior or local timezone side effects.
-  Source locations: OATime, OADateTime.clearDate(), OATime.getLocalTime(), OADateTime.compareTo(...).
-  Related CODEX findings: OATime(Date), OATime(Time), OATime(long), clearDate depend on JVM default timezone.
-  Suggested unit tests: testOATimeSameClockTimeAcrossJvmDefaultTimezones, testOATimeSerializationPreservesClockFields,
-  testOATimeCompareIgnoresDate.
-  Spec target section: Datetime Runtime / Time-Only Semantics.
+DT-INSTANT-001 — Instant And Epoch Millisecond Preservation
+Contract statement:
+Instant-bearing constructors, accessors, conversion, and timestamp operations must preserve the exact epoch-
+millisecond point in time unless the method explicitly documents wall-clock reinterpretation.
+Rationale:
+Sync, replication, audit timestamps, datasource timestamps, cache comparisons, and logs require stable point-in-time
+behavior.
+Source scope:
+OADateTime(Date), OADateTime(long), OADateTime(Timestamp), OADateTime(Instant), OADateTime(ZonedDateTime), getTime,
+getInstant, getDate, getCalendar, convertToUTC, convertTo.
+Related CODEX findings:
+getInstant/getZonedDateTime/getLocalDateTime reconstruction concerns; DST overlap offset selection.
+Suggested unit tests:
+testInstantRoundTripPreservesEpochMillis, testTimestampRoundTripPreservesMillis,
+testDateConstructorPreservesEpochMillis, testConvertToUTCDoesNotChangeInstant.
+Spec target section:
+Datetime Runtime / Instant Semantics
 
-  ID: DT-INSTANT-001
-  Contract statement: Instant/timestamp conversions must preserve the exact epoch-millisecond point in time unless the
-  API explicitly says it is changing wall-clock fields.
-  Rationale: Sync, replication, audit timestamps, datasource values, and cache comparisons require stable instants.
-  Source locations: OADateTime(Instant), OADateTime(Date), OADateTime(Timestamp), getInstant(), getZonedDateTime(),
-  convertTo(...).
-  Related CODEX findings: getInstant() reconstructs from local fields; ZonedDateTime zone discarded.
-  Suggested unit tests: testInstantRoundTripPreservesEpochMillis, testTimestampRoundTripPreservesMillis,
-  testConvertToDoesNotCorruptInstantWhenContractIsInstantConversion.
-  Spec target section: Datetime Runtime / Instant Semantics.
+DT-TZ-001 — Explicit Timezone Authority
+Contract statement:
+Timezone-sensitive operations must use the instance timezone or OA default timezone explicitly; they must not
+accidentally depend on the JVM default timezone except where the method contract says so.
+Rationale:
+Distributed OA applications can run on servers, clients, and replication nodes with different host settings.
+Temporal interpretation must remain intentional and repeatable.
+Source scope:
+OADateTime.defaultTimeZone, setDefaultTimeZone, getDefaultTimeZone, setTimeZone, getTimeZone, setTimeZoneUTC,
+_getCal, toStringMain, constructors from local and instant-bearing types.
+Related CODEX findings:
+LocalDateTime constructor uses JVM default timezone; date/time constructors and clear operations can use default
+timezone unexpectedly.
+Suggested unit tests:
+testDefaultTimeZoneControlsFieldAccess, testParsingWithoutZoneUsesOADefaultTimeZone,
+testConstructorUsesDocumentedTimezoneSource, testInstanceTimezoneControlsFormatting.
+Spec target section:
+Datetime Runtime / Timezone Semantics
 
-  ID: DT-TZ-001
-  Contract statement: Timezone-sensitive operations must use the instance timezone or OA default timezone explicitly,
-  not accidentally depend on JVM default timezone.
-  Rationale: Distributed OA applications cannot allow date/time interpretation to change by deployment host.
-  Source locations: OADateTime.defaultTimeZone, _getCal(), setDefaultTimeZone(...), getTimeZone(), toStringMain(...),
-  constructors.
-  Related CODEX findings: pooled formatter timezone retention; LocalDateTime uses system default; date/time
-  constructors use JVM default.
-  Suggested unit tests: testDefaultTimeZoneControlsFieldAccess, testParsingWithoutZoneUsesOADefaultTimeZone,
-  testConstructorDoesNotUseJvmDefaultWhenOADefaultDiffers.
-  Spec target section: Datetime Runtime / Timezone Semantics.
+DT-TZ-002 — Zone Identity And Offset Preservation
+Contract statement:
+Zone-bearing values must preserve their zone identity and offset where the target type can represent them; zone loss
+is allowed only when converting to a zone-less target and must be documented.
+Rationale:
+Zoned date-time values encode more than epoch millis. Losing zone identity can change wall-clock display and
+serialized values across nodes.
+Source scope:
+OADateTime(ZonedDateTime), getZonedDateTime, setTimeZone, convertTo, OATimeZone, OATimeZone.TZ.
+Related CODEX findings:
+ZonedDateTime zone discarded in related converter formatting; getInstant/getZonedDateTime reconstruction concerns.
+Suggested unit tests:
+testZonedDateTimeConstructorPreservesZoneWhenRepresentable, testGetZonedDateTimeUsesInstanceTimezone,
+testConvertToPreservesInstantAndChangesZone, testZoneLossOnlyOccursForZoneLessTargets.
+Spec target section:
+Datetime Runtime / Zone Semantics
 
-  ID: DT-DST-001
-  Contract statement: DST gaps and overlaps must have deterministic behavior for construction, arithmetic, comparison,
-  serialization, and conversion.
-  Rationale: Scheduling, reports, and replicated timestamps must not silently shift or choose different offsets across
-  nodes.
-  Source locations: OADateTime.setTimeZone(...), addDays/addHours, _getCal(), getInstant(), convertTo(...).
-  Related CODEX findings: getInstant() can pick wrong offset during fall-back overlap; timezone reconstruction issues.
-  Suggested unit tests: testDstGapConstructionIsDeterministic, testDstOverlapInstantRoundTrip,
-  testAddHoursAcrossDstTransition.
-  Spec target section: Datetime Runtime / DST Semantics.
+DT-DST-001 — DST Gap And Overlap Determinism
+Contract statement:
+Construction, parsing, arithmetic, comparison, serialization, and conversion across daylight-saving gaps and
+overlaps must choose deterministic results under the active timezone contract.
+Rationale:
+Schedules, replicated timestamps, reports, and datasource values must not drift or choose different offsets across
+JVMs or runtime nodes.
+Source scope:
+OADateTime constructors, setCalendar, valueOfMain, addHours/addDays/addMonths/addYears, getInstant, convertTo,
+setTimeZone.
+Related CODEX findings:
+getInstant can pick the wrong offset during fallback overlap; timezone reconstruction concerns.
+Suggested unit tests:
+testDstGapConstructionIsDeterministic, testDstOverlapInstantRoundTrip, testAddHoursAcrossDstTransition,
+testDateOnlyAcrossDstDoesNotShiftDay.
+Spec target section:
+Datetime Runtime / DST Semantics
 
-  ID: DT-ARITH-001
-  Contract statement: Date/time arithmetic must return a new value of the same semantic type and must define
-  deterministic month-end, leap-year, zero-amount, and boundary behavior.
-  Rationale: Schedulers, searches, reports, and date-range caches depend on predictable arithmetic.
-  Source locations: addDays/addWeeks/addMonths/addYears/addHours/addMinutes/addSeconds/addMilliSeconds, betweenYears/
-  betweenMonths/betweenDays.
-  Related CODEX findings: addDays(0) returns this; year/month elapsed calculations ignore lower fields; field rollover
-  concerns.
-  Suggested unit tests: testAddZeroReturnsIndependentInstance, testAddMonthAtMonthEnd, testAddYearFromLeapDay,
-  testBetweenMonthsUsesDocumentedSemantics.
-  Spec target section: Datetime Runtime / Arithmetic Semantics.
+DT-FIELD-001 — Field Mutation Validity
+Contract statement:
+Field constructors and setters must either commit a valid temporal value for the requested semantic type or fail
+visibly; invalid field combinations must not silently roll over to a different date/time unless explicitly
+documented.
+Rationale:
+Silent rollover turns invalid normal-use input into a plausible but wrong business date, schedule time, query value,
+or persisted timestamp.
+Source scope:
+OADateTime field constructors, setCalendar(int,...), setDate, setTime, setYear, setMonth, setDay, setHour,
+set12Hour, set24Hour, setAM_PM, setMinute, setSecond, setMilliSecond, OADate/OATime field constructors.
+Related CODEX findings:
+Invalid field rollover concerns; set12Hour can lose AM/PM state.
+Suggested unit tests:
+testInvalidDateFieldsFailOrDocumentRollover, testInvalidTimeFieldsFailOrDocumentRollover,
+testSet12HourPreservesCurrentAmPm, testFieldSetterDoesNotCommitPartialInvalidState.
+Spec target section:
+Datetime Runtime / Field Mutation Semantics
 
-  ID: DT-FORMAT-001
-  Contract statement: Formatting must use the intended semantic type, format string, timezone, and locale
-  consistently.
-  Rationale: Datasource strings, JSON/XML values, reports, templates, and UI display must not vary
-  nondeterministically.
-  Source locations: toString(...), toStringMain(...), OADate.toString(...), OATime.toString(...), global/instance
-  format setters.
-  Related CODEX findings: RFC literal Z formatting issue; formatter timezone state.
-  Suggested unit tests: testDateFormatRoundTrip, testTimeFormatRoundTrip, testDateTimeFormatUsesInstanceTimeZone,
-  testRfcZuluFormatMeansUtc.
-  Spec target section: Datetime Runtime / Formatting Semantics.
+DT-ARITH-001 — Arithmetic Type And Boundary Semantics
+Contract statement:
+Date/time arithmetic must return a value of the same semantic type and define deterministic behavior for zero
+amounts, month-end, leap-year, DST transitions, and millisecond boundaries.
+Rationale:
+Schedulers, date range searches, reports, cache keys, and recurring business rules depend on predictable arithmetic.
+Source scope:
+addDays/subtractDays, addWeeks/subtractWeeks, addMonths/subtractMonths, addYears/subtractYears, addHours/
+subtractHours, addMinutes/subtractMinutes, addSeconds/subtractSeconds, addMilliSeconds/subtractMilliSeconds.
+Related CODEX findings:
+addDays(0) can return this; field rollover concerns.
+Suggested unit tests:
+testAddZeroReturnsIndependentSameTypeValue, testAddMonthAtMonthEndIsDeterministic,
+testAddYearFromLeapDayIsDeterministic, testAddMillisecondsPreservesPrecision.
+Spec target section:
+Datetime Runtime / Arithmetic Semantics
 
-  ID: DT-PARSE-001
-  Contract statement: Parsing failure must not silently produce current/default or normalized wrong values unless that
-  fallback is explicitly documented for that API.
-  Rationale: Silent wrong parse values corrupt OA properties, query filters, datasource criteria, and replicated
-  state.
-  Source locations: valueOfMain(...), OADate.valueOf(...), OATime.valueOf(...), OADateTime.valueOf(...), string
-  constructors.
-  Related CODEX findings: lenient parse normalization; partial input consumption; OATime(String) NPE after parse
-  failure.
-  Suggested unit tests: testInvalidDateDoesNotNormalize, testInvalidTimeDoesNotNormalize,
-  testParseRequiresFullInputConsumption, testStringConstructorFailsIntentionallyOnBadInput.
-  Spec target section: Datetime Runtime / Parsing Semantics.
+DT-BETWEEN-001 — Elapsed Unit Semantics
+Contract statement:
+betweenYears, betweenMonths, betweenDays, betweenHours, betweenMinutes, betweenSeconds, and betweenMilliSeconds must
+use a documented unit boundary rule and produce deterministic signed results.
+Rationale:
+Date range filters, scheduling, aging logic, reports, and cache gap calculations rely on a clear distinction between
+calendar-field differences and fully elapsed units.
+Source scope:
+OADateTime.betweenYears, betweenMonths, betweenDays, betweenHours, betweenMinutes, betweenSeconds, betweenMilliSeco
+nds, OADate.between/betweenOrEqual/betweenNotEqual.
+Related CODEX findings:
+Year/month elapsed calculations can ignore lower fields.
+Suggested unit tests:
+testBetweenYearsUsesDocumentedBoundaryRule, testBetweenMonthsUsesDocumentedBoundaryRule,
+testBetweenDaysIsSignedAndDeterministic, testBetweenMillisecondsPreservesExactDelta.
+Spec target section:
+Datetime Runtime / Difference Semantics
 
-  ID: DT-LOCALE-001
-  Contract statement: Locale-dependent parsing and formatting must be explicit, deterministic, and consistently
-  reflected in global parse/output formats.
-  Rationale: OA apps may run across users, servers, and clients with different locales; date interpretation must
-  remain intentional.
-  Source locations: setLocale(...), getFormat(...), vecDateTimeParseFormat, vecDateParseFormat, global output formats.
-  Related CODEX findings: none observed beyond parser/formatter state issues.
-  Suggested unit tests: testSetLocaleChangesDateParseOrder, testLocaleSpecificFormatIsDeterministic,
-  testLocaleChangeDoesNotLeaveStaleParseState.
-  Spec target section: Datetime Runtime / Locale Semantics.
+DT-FORMAT-001 — Deterministic Formatting
+Contract statement:
+Formatting must use the intended semantic type, format string, instance/global format, timezone, and locale
+consistently, and must not leak formatter state between calls.
+Rationale:
+UI display, templates, reports, JSON/XML strings, datasource strings, logs, and serialization depend on stable
+output.
+Source scope:
+OADateTime.toString, toString(String), toStringMain, OADate.toString, OATime.toString, setGlobalOutputFormat/
+getGlobalOutputFormat, setFormat/getFormat, getFormatter.
+Related CODEX findings:
+RFC literal Z formatting issue; pooled SimpleDateFormat timezone retention.
+Suggested unit tests:
+testDateFormatRoundTrip, testTimeFormatRoundTrip, testDateTimeFormatUsesInstanceTimezone,
+testRfcZuluFormatUsesUtcSemantics, testFormatterTimezoneDoesNotLeakBetweenCalls.
+Spec target section:
+Datetime Runtime / Formatting Semantics
 
-  ID: DT-SQL-001
-  Contract statement: SQL Date, Time, and Timestamp conversions must preserve their SQL semantic boundaries: date-
-  only, time-only, or timestamp/instant.
-  Rationale: Datasource persistence and query criteria must not mix date-only and timestamp semantics.
-  Source locations: OADate(Time), OATime(java.sql.Time), OADateTime(java.sql.Time), OADateTime(Timestamp), JdbcFormat
-  constants.
-  Related CODEX findings: time-only/date-only construction depends on JVM default timezone.
-  Suggested unit tests: testSqlDatePreservesDateOnly, testSqlTimePreservesTimeOnly,
-  testSqlTimestampPreservesInstantMillis.
-  Spec target section: Datetime Runtime / SQL Conversion Semantics.
+DT-PARSE-001 — Strict And Complete Parsing
+Contract statement:
+Parsing must consume the intended input under the selected format, reject invalid normal-use values, and avoid
+lenient normalization unless a method explicitly documents fallback behavior.
+Rationale:
+Silent parse normalization corrupts OA properties, datasource criteria, query filters, schedules, and replicated
+state while appearing successful.
+Source scope:
+OADateTime.valueOfMain, valueOf overloads, OADate.valueOf/dateValue/valueOf2, OATime.valueOf/timeValue, string cons
+tructors, fixDate.
+Related CODEX findings:
+Lenient parse normalization; partial input consumption; OATime(String) NPE after parse failure.
+Suggested unit tests:
+testInvalidDateDoesNotNormalize, testInvalidTimeDoesNotNormalize, testParseRequiresFullInputConsumption,
+testStringConstructorFailsPredictablyOnBadInput.
+Spec target section:
+Datetime Runtime / Parsing Semantics
 
-  ID: DT-COMPARE-001
-  Contract statement: Comparison and equality must compare the intended semantic value and must not treat non-
-  comparable values as ordered. Equal values must have compatible hash codes.
-  Rationale: Hub sorting/filtering, datasource criteria, cache keys, object matching, and query behavior depend on
-  stable comparison contracts.
-  Source locations: compareTo(...), equals(...), hashCode(), before/after/between, OADate.between(...).
-  Related CODEX findings: OADate/OATime equals vs hashCode mismatch; non-convertible compareTo sentinel can make
-  after() true.
-  Suggested unit tests: testOADateEqualsHashCodeContract, testOATimeEqualsHashCodeContract,
-  testAfterNonComparableIsNotTrue, testCompareCrossSemanticTypes.
-  Spec target section: Datetime Runtime / Comparison Semantics.
+DT-ROUNDTRIP-001 — Parse/Format Round Trip Stability
+Contract statement:
+Where OA depends on textual persistence or display/edit cycles, formatting output must parse back to the same
+semantic value under the same type, format, timezone, and locale, subject only to documented precision or semantic-
+type loss.
+Rationale:
+Datasource string fields, UI forms, templates, reports, serialization, and generated tooling often require stable
+round trips.
+Source scope:
+OADate.toString/valueOf, OATime.toString/valueOf, OADateTime.toString/valueOf, global parse/output format registrie
+s.
+Related CODEX findings:
+Formatter timezone state; parse leniency; temporal dimension drift.
+Suggested unit tests:
+testOADateFormatParseRoundTrip, testOATimeFormatParseRoundTrip, testOADateTimeFormatParseRoundTrip,
+testRoundTripHonorsLocaleAndTimezone.
+Spec target section:
+Datetime Runtime / Round-Trip Semantics
 
-  ID: DT-MUTABLE-001
-  Contract statement: Public APIs must not leak shared mutable Date, Calendar, formatter, timezone, or pooled state
-  that can mutate an OA value behind its back.
-  Rationale: OA values are used throughout object state, filters, hubs, and serialization; aliasing can cause hidden
-  state drift.
-  Source locations: getDate(), getCalendar(), _getCal/_releaseCal, OADateRangeCache.DateRange, constructors from
-  mutable types.
-  Related CODEX findings: addDays(0) returns same mutable instance; date-range cache can treat empty range as loaded.
-  Suggested unit tests: testGetDateReturnsDefensiveCopy, testGetCalendarReturnsDefensiveCopy,
-  testArithmeticDoesNotAliasOriginal, testDateRangeCacheRequiresLoadedCoverage.
-  Spec target section: Datetime Runtime / Mutable State Isolation.
+DT-LOCALE-001 — Locale-Sensitive Format Authority
+Contract statement:
+Locale-dependent parsing and formatting must be explicit, deterministic, and reflected consistently in global parse
+and output formats.
+Rationale:
+OA applications can run across users, servers, and clients with different locale defaults. Date interpretation must
+remain intentional.
+Source scope:
+OADateTime.setLocale, OADate.setLocale, OADateTime.getFormat(int, Locale), OADateTime.getFormat(int), global parse
+format vectors, global output formats.
+Related CODEX findings:
+Parser/formatter state concerns.
+Suggested unit tests:
+testSetLocaleChangesDateParseOrderByContract, testLocaleSpecificFormatIsDeterministic,
+testLocaleChangeDoesNotLeaveStaleParseState, testGlobalParseFormatsRemainConsistentAfterLocaleChange.
+Spec target section:
+Datetime Runtime / Locale Semantics
 
-  ID: DT-THREAD-001
-  Contract statement: Shared parser/formatter/calendar state must be synchronized, immutable, thread-local, or
-  otherwise confined.
-  Rationale: Date/time conversion is used in server-side formatting, parsing, reports, templates, serialization, and
-  sync paths under concurrency.
-  Source locations: simpleDateFormats, getFormatter(), toStringMain(...), valueOfMain(...), poolGregorianCalendar.
-  Related CODEX findings: pooled SimpleDateFormat retains mutable timezone state.
-  Suggested unit tests: testConcurrentFormattingIsDeterministic, testConcurrentParsingDoesNotShareTimezoneState,
-  testCalendarPoolDoesNotLeakFieldsBetweenUses.
-  Spec target section: Datetime Runtime / Thread Safety.
+DT-SQL-001 — SQL Temporal Boundary Semantics
+Contract statement:
+SQL Date, Time, and Timestamp interop must preserve their SQL semantic boundaries: date-only, time-only, or
+timestamp/instant.
+Rationale:
+Datasource persistence and query criteria must not mix date-only, time-only, and timestamp semantics.
+Source scope:
+OADate(java.sql.Time), OATime(java.sql.Time), OADateTime(java.sql.Time), OADateTime(java.sql.Timestamp), JdbcFormat
+constants, getDate/getTime behavior.
+Related CODEX findings:
+Time-only/date-only construction can depend on JVM default timezone.
+Suggested unit tests:
+testSqlDatePreservesDateOnly, testSqlTimePreservesTimeOnly, testSqlTimestampPreservesEpochMillis,
+testJdbcFormatsRoundTripWithinSemanticType.
+Spec target section:
+Datetime Runtime / SQL Conversion Semantics
 
-  ID: DT-FAIL-001
-  Contract statement: Date/time APIs must fail visibly for invalid normal-use values unless the method explicitly
-  documents a fallback such as “single space means current date/time.”
-  Rationale: Silent fallback values are false success and can corrupt persisted properties, filters, schedules, and
-  replication timestamps.
-  Source locations: setCalendar(String), valueOfMain(...), string constructors, OATimeZone.getTimeZone(...), field
-  setters.
-  Related CODEX findings: invalid parse normalization; invalid field rollover; null/invalid OATime(String) failure
-  path.
-  Suggested unit tests: testInvalidFieldConstructorFailsOrDocumentsRollover,
-  testBadTimezoneDoesNotSilentlyUseWrongZone, testNullStringConstructorBehaviorIsDocumented.
-  Spec target section: Datetime Runtime / Failure Semantics.
+DT-COMPARE-001 — Comparison Ordering Semantics
+Contract statement:
+Comparison, before/after, and between methods must compare the intended semantic value and must not treat non-
+convertible values as ordered.
+Rationale:
+Hub sorting/filtering, query logic, datasource criteria, cache keys, scheduling, and object matching require stable
+temporal ordering.
+Source scope:
+OADateTime.compareTo, compare, before/isBefore, after/isAfter, OADate.between variants, OATime.compare.
+Related CODEX findings:
+Non-convertible compareTo sentinel can make after() true.
+Suggested unit tests:
+testAfterNonComparableIsNotTrue, testBeforeNonComparableIsNotTrue, testCompareCrossSemanticTypesUsesDocumentedRule,
+testBetweenRejectsNonComparableBoundary.
+Spec target section:
+Datetime Runtime / Comparison Semantics
 
-  ID: DT-CONV-001
-  Contract statement: OA datetime helpers must remain consistent with com.viaoa.converter and com.viaoa.compare:
-  conversions must preserve semantic type, and comparisons must use the same semantic rules.
-  Rationale: The same date/time value can flow through property conversion, datasource conversion, filters, queries,
-  templates, and Hub sorting.
-  Source locations: OADateTime.convert(...), valueOf(...), compareTo(...), OAConv datetime converters, OACompare.
-  Related CODEX findings: string conversion and comparison paths can inherit parser and non-comparable sentinel
-  behavior.
-  Suggested unit tests: testOAConvDateMatchesOADateValueOf, testOACompareDateMatchesOADateCompareTo,
-  testConverterCompareRoundTripPreservesSemanticType.
-  Spec target section: Cross-Package Contracts / Converter and Compare Alignment.
+DT-EQUALS-001 — Equality And HashCode Compatibility
+Contract statement:
+equals and hashCode must be compatible for each temporal semantic type, and equality must reflect the same semantic
+value used by comparison where applicable.
+Rationale:
+OA date/time values can be used in Hubs, maps, sets, cache keys, filters, and matching logic. Equality/hash drift
+causes missing or duplicate entries.
+Source scope:
+OADateTime.equals, OADateTime.hashCode, inherited OADate/OATime equality behavior, compareTo.
+Related CODEX findings:
+OADate/OATime equals vs hashCode mismatch.
+Suggested unit tests:
+testOADateEqualsHashCodeContract, testOATimeEqualsHashCodeContract, testOADateTimeEqualsHashCodeContract,
+testCompareZeroImpliesEqualsWhereContracted.
+Spec target section:
+Datetime Runtime / Equality Semantics
 
-  Suggested Package-Level Spec Summary
+DT-MUTABLE-001 — Mutable State Isolation
+Contract statement:
+Public APIs must not expose mutable Date, Calendar, formatter, timezone, or pooled state that can mutate an OA
+temporal value behind its back or affect later operations.
+Rationale:
+Hidden aliasing can corrupt object property values, filters, Hub state, serialization output, and date-range caches.
+Source scope:
+OADateTime.getDate, getCalendar, getTimeZone, _getCal/_releaseCal, constructors from Date/Calendar/TimeZone,
+arithmetic methods.
+Related CODEX findings:
+addDays(0) can return the same mutable instance; pooled formatter/calendar state concerns.
+Suggested unit tests:
+testGetDateReturnsDefensiveCopy, testGetCalendarReturnsDefensiveCopy,
+testGetTimeZoneMutationDoesNotCorruptInstanceIfContractRequiresIsolation, testArithmeticDoesNotAliasOriginal.
+Spec target section:
+Datetime Runtime / Mutable State Isolation
 
-  com.viaoa.datetime owns OA’s core date/time semantic layer: date-only, time-only, datetime, timezone-aware display,
-  and instant/timestamp interop.
+DT-THREAD-001 — Shared Temporal State Thread Safety
+Contract statement:
+Shared parser, formatter, calendar, locale, timezone, and global format state must be immutable, synchronized,
+thread-confined, safely published, or reset before reuse.
+Rationale:
+Date/time formatting and parsing are used by UI, datasource, serialization, sync, remote, reports, and background
+threads under concurrency.
+Source scope:
+OADateTime.simpleDateFormats, getFormatter, valueOfMain, toStringMain, poolGregorianCalendar, global format vectors,
+defaultTimeZone, static locale/output format state.
+Related CODEX findings:
+Pooled SimpleDateFormat retains mutable timezone state.
+Suggested unit tests:
+testConcurrentFormattingIsDeterministic, testConcurrentParsingDoesNotShareTimezoneState,
+testCalendarPoolDoesNotLeakFieldsBetweenUses, testGlobalFormatUpdatesAreSafelyObserved.
+Spec target section:
+Datetime Runtime / Thread Safety
 
-  It must guarantee deterministic behavior across JVM default timezone, OA default timezone, locale, serialization,
-  datasource persistence, comparison, and formatting.
+DT-FAIL-001 — Failure And Fallback Visibility
+Contract statement:
+Invalid normal-use date/time input must fail visibly or return null according to the method contract; fallback to
+current/default/normalized values is allowed only when explicitly documented and tested.
+Rationale:
+Silent fallback values are false success and can corrupt persisted properties, filters, schedules, UI data, and
+replication timestamps.
+Source scope:
+OADateTime.setCalendar(String), valueOfMain, string constructors, OADate.valueOf/valueOf2, OATime.valueOf/timeValue,
+OATimeZone.getTimeZone, field setters.
+Related CODEX findings:
+Invalid parse normalization; invalid field rollover; null/invalid OATime(String) failure path.
+Suggested unit tests:
+testInvalidParseReturnsNullOrThrowsByContract, testBadTimezoneDoesNotSilentlyUseWrongZone,
+testNullStringConstructorBehaviorIsDocumented, testFallbackToCurrentDateRequiresDocumentedInput.
+Spec target section:
+Datetime Runtime / Failure Semantics
 
-  It must never silently normalize invalid normal-use input into a different date/time unless that behavior is
-  explicitly documented and tested.
+DT-TZONE-001 — Timezone Lookup Determinism
+Contract statement:
+OATimeZone lookup by ID, display name, short name, UTC offset, or TimeZone instance must resolve deterministically
+to the intended OA timezone entry or fail as null/visible failure.
+Rationale:
+Timezone lookup feeds parsing, formatting, scheduling, user context, and distributed runtime behavior. Wrong or
+ambiguous resolution causes temporal drift.
+Source scope:
+OATimeZone.getTimeZone, getTimeZoneById, getOATimeZone(String), getOATimeZone(TimeZone), getUtcTimeZone,
+getShortNames, getOATimeZones.
+Related CODEX findings:
+Bad timezone fallback concerns.
+Suggested unit tests:
+testTimeZoneByIdResolvesExpectedZone, testUnknownTimeZoneDoesNotResolveToWrongZone,
+testUtcOffsetLookupIsDeterministic, testShortNamesAreStableAndSorted.
+Spec target section:
+Datetime Runtime / Timezone Lookup Semantics
 
-  OADate must preserve calendar-day meaning. OATime must preserve clock-time meaning. OADateTime and instant/timestamp
-  paths must preserve point-in-time meaning.
+DT-RANGE-001 — Date Range Cache Coverage Semantics
+Contract statement:
+A date-range cache entry must represent loaded coverage only when its backing data state satisfies the cache
+contract; missing-gap detection and item retrieval must not disagree about whether a range is loaded.
+Rationale:
+OA tooling and runtime loaders can use date ranges to avoid redundant loading. False coverage causes silent missing
+results.
+Source scope:
+com.viaoa.datetime.cache.OADateRangeCache, DateRange, add, findMissingGaps, getCacheItems, clearCache, getDate.
+Related CODEX findings:
+OADateRangeCache.add(DateRange) can add a range with null list that findMissingGaps treats as covered while
+getCacheItems returns no data.
+Suggested unit tests:
+testDateRangeWithLoadedItemsCoversGap, testDateRangeWithoutItemsDoesNotSilentlyMarkLoadedCoverage,
+testGetCacheItemsFiltersByDateInclusively, testClearCacheRestoresMissingGaps.
+Spec target section:
+Datetime Runtime / Date Range Cache Semantics
 
-  Parsing/formatting must be round-trip safe where OA depends on persisted, serialized, query, template, or UI values.
+DT-CONV-001 — Converter And Compare Alignment
+Contract statement:
+OA datetime helpers must remain consistent with com.viaoa.converter and com.viaoa.compare: conversions must preserve
+temporal semantic type, and comparisons must use the same semantic value rules.
+Rationale:
+The same temporal value can flow through property conversion, datasource conversion, filters, queries, templates,
+serialization, and Hub sorting.
+Source scope:
+OADateTime.convert, valueOf, compareTo, OADate/OATime valueOf helpers, OAConv datetime converters, OACompare
+temporal comparison paths.
+Related CODEX findings:
+String conversion and comparison paths can inherit parser and non-comparable sentinel behavior.
+Suggested unit tests:
+testOAConvDateMatchesOADateValueOf, testOAConvTimeMatchesOATimeValueOf, testOACompareDateMatchesOADateCompareTo,
+testConverterCompareRoundTripPreservesSemanticType.
+Spec target section:
+Cross-Package Contracts / Converter and Compare Alignment
 
-  Timezone and DST behavior must be explicit at every boundary where wall-clock fields and epoch millis interact.
-
-  Comparison/equality/hash behavior must match OA semantic type expectations and must remain safe for Hubs, filters,
-  caches, and datasource criteria.
-
-  Mutable Date, Calendar, formatter, timezone, and pooled state must not leak or create nondeterministic results.
-
-  Likely unit-test categories: semantic type preservation, timezone drift, DST gaps/overlaps, parse/format round
-  trips, SQL conversion, arithmetic boundaries, comparison/hash contracts, concurrent formatter/parser use, and
-  failure/fallback behavior.
+DT-DETERMINISM-001 — Same Temporal Inputs Produce Same Results
+Contract statement:
+For the same input value, semantic type, format, timezone, locale, and global configuration state, date/time APIs
+must produce the same observable result or same visible failure.
+Rationale:
+OA runtime behavior must be repeatable for query parameters, datasource values, reports, cache keys, serialized
+values, scheduling, and sync/replication.
+Source scope:
+All public/protected behavior in OADate, OATime, OADateTime, OATimeZone, and OADateRangeCache where applicable.
+Related CODEX findings:
+Timezone drift, locale/formatter state, parse normalization, DST reconstruction, and mutable pooled state all
+threaten deterministic behavior.
+Suggested unit tests:
+testRepeatedFormattingIsStable, testRepeatedParsingIsStable, testSameTimezoneAndLocaleProduceSameResult,
+testFailureResultIsRepeatable.
+Spec target section:
+Datetime Runtime / Determinism
 
 */
-
-
-

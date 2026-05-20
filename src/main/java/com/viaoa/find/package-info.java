@@ -21,390 +21,481 @@ package com.viaoa.find;
 
 /* CODEX Invariants
 
-1. Finder Runtime Contracts
+FIND-RUNTIME-001 — Deterministic Find Results
+Contract statement:
+For the same root graph state, property path, filters, max result count, lazy-load mode, recursive settings, and
+metadata state, finder APIs must return the same matching objects or values in the same traversal order.
+Rationale:
+Finder results drive object graph traversal, Hub filtering, query fallback, templates, validation, and runtime
+tooling. Nondeterministic traversal creates missed objects, false matches, and unstable runtime behavior.
+Source scope:
+OAFinder.find, OAFinder._find, OAFinder.findFirst/findNext/findLast, OAHierFinder.findFirst/findFirstValue.
+Related CODEX findings:
+OAFinder setup failure can leave partial embedded filter state and affect retry determinism.
+Suggested unit tests:
+testFinderReturnsDeterministicResultsForSameGraph, testFinderReturnsResultsInSameTraversalOrder,
+testHierFinderReturnsSameFirstMatchForSameHierarchy.
+Spec target section:
+Finder Runtime / Deterministic Traversal Semantics
 
-  FIND-RUNTIME-001 — Finder Results Are Deterministic
-  Contract statement: For the same root graph state, path, filters, max count, lazy-load mode, and recursive settings,
-  OAFinder and OAHierFinder must return the same results in the same traversal order.
-  Rationale: Finder is used by cache/search/select/template/query-style behavior; nondeterminism causes false matches,
-  missed objects, and unstable application logic.
-  Source locations: OAFinder.find(...), OAFinder._find(...), OAFinder.performFind(...), OAHierFinder.findFirst(...).
-  Known related CODEX findings: setup failure can leave partial embedded filter state and affect retry determinism.
-  Suggested unit tests: testFinderReturnsDeterministicResultsForSameGraph,
-  testHierFinderReturnsSameFirstMatchForSameHierarchy.
-  Spec target section: Finder Runtime / Deterministic Traversal Semantics.
+FIND-STATE-001 — Per-Search Execution State Isolation
+Contract statement:
+Per-search state such as found results, traversal stack, stop flag, root Hub position, cascade state, temporary
+helper filters, and sibling helper state must be initialized and cleaned up for each search and must not leak into
+later searches on the same finder.
+Rationale:
+OAFinder is reusable. Stale traversal state can silently truncate results, skip branches, duplicate matches, or
+report incorrect stack diagnostics.
+Source scope:
+OAFinder.find overloads, OAFinder._find, OAFinder.findFirst/findNext/findLast,
+OAFinder.findLargest/findSmallest/findDuplicates, OAFinder.getRootHubPos,
+OAFinder.getStackObjects/getStackPropertyNames.
+Related CODEX findings:
+Prior retry-state cleanup issues were noted; setup rollback remains CODEX-noted.
+Suggested unit tests:
+testFinderStateClearedAfterSuccessfulSearch, testFinderStateClearedAfterTraversalException,
+testFinderRetryAfterFilterExceptionDoesNotReuseCascadeState, testFindLargestRestoresFinderState.
+Spec target section:
+Finder Runtime / Execution State Semantics
 
-  FIND-RUNTIME-002 — Finder Instance Execution State Is Per Search
-  Contract statement: Per-search state such as alFound, traversal stack, cascades, bStop, rootHubPos, and temporary
-  helper state must not leak into later searches on the same finder.
-  Rationale: OAFinder is reusable; stale state creates false negatives, truncated results, or wrong stack diagnostics.
-  Source locations: OAFinder.find(F), OAFinder.find(List,F), OAFinder.find(Hub,F), OAFinder._find(Hub,F).
-  Known related CODEX findings: prior retry-state cleanup issues for object/list/Hub roots; fixed except setup
-  rollback is CODEX-noted.
-  Suggested unit tests: testFinderStateClearedAfterSuccessfulSearch, testFinderStateClearedAfterTraversalException,
-  testHubFinderRetryAfterFilterExceptionDoesNotReuseCascadeState.
-  Spec target section: Finder Runtime / Execution State Semantics.
+FIND-SETUP-001 — Transactional Finder Setup
+Contract statement:
+A finder must not be considered initialized unless path parsing, link/method resolution, recursive metadata,
+cascades, and embedded path-filter construction all complete successfully; failed setup must roll back all partially
+installed state.
+Rationale:
+Partial setup can make retry behavior silently wrong by leaving duplicated filters, incomplete link metadata, stale
+cascades, or mismatched property path state.
+Source scope:
+OAFinder.setup, OAFinder._setup, OAFinder.createHubFilter, OAPath filter metadata integration.
+Related CODEX findings:
+OAFinder CODEX comment: setup(Class) can leave partially installed embedded filters/state when embedded filter
+creation throws.
+Suggested unit tests:
+testFinderSetupFailureDoesNotMarkInitialized, testFinderSetupFailureRollsBackEmbeddedFiltersAndState,
+testFinderRetryAfterSetupFailureDoesNotReturnWrongResults.
+Spec target section:
+Finder Runtime / Setup and Retry Semantics
 
-  FIND-RUNTIME-003 — maxFound Is Temporary When Used By Convenience Methods
-  Contract statement: Methods such as findFirst, findNext, and canFindFirst may temporarily set maxFound, but must
-  restore the caller’s configured value even when traversal throws.
-  Rationale: A failed convenience lookup must not silently truncate later searches.
-  Source locations: OAFinder.canFindFirst, OAFinder.findFirst(F), OAFinder.findFirst(Hub), OAFinder.findNext(Hub,F).
-  Known related CODEX findings: prior missing finally restoration; fixed.
-  Suggested unit tests: testFindFirstRestoresMaxFoundAfterException, testCanFindFirstRestoresMaxFoundAfterException.
-  Spec target section: Finder Runtime / Result Limit Semantics.
+FIND-LIMIT-001 — Temporary Result Limits Are Restored
+Contract statement:
+Convenience methods that temporarily adjust maxFound or traversal limits must restore the caller’s configured values
+on success, no match, stop, and exception.
+Rationale:
+A failed or short-circuit convenience lookup must not silently truncate later finder searches.
+Source scope:
+OAFinder.setMaxFound/getMaxFound, OAFinder.findFirst, OAFinder.findNext, OAFinder.findLast, OAFinder.canFindFirst.
+Related CODEX findings:
+Prior maxFound restoration issue was noted as fixed.
+Suggested unit tests:
+testFindFirstRestoresMaxFoundAfterSuccess, testFindFirstRestoresMaxFoundAfterException,
+testCanFindFirstRestoresMaxFoundAfterException, testFindNextDoesNotPermanentlyChangeMaxFound.
+Spec target section:
+Finder Runtime / Result Limit Semantics
 
-  FIND-RUNTIME-004 — Setup Must Fully Succeed Before Finder Is Considered Initialized
-  Contract statement: A finder must not appear initialized unless path parsing, link/method resolution, recursive
-  metadata, cascades, and embedded filter construction all complete successfully.
-  Rationale: Partial setup can make a retry return silently wrong results.
-  Source locations: OAFinder.setup(Class), OAFinder._setup(Class).
-  Known related CODEX findings: setup can leave partially installed embedded filters/state when embedded filter
-  creation throws; CODEX-commented/deferred.
-  Suggested unit tests: testFinderSetupFailureDoesNotMarkInitialized,
-  testFinderSetupFailureRollsBackEmbeddedFiltersAndState.
-  Spec target section: Finder Runtime / Setup and Retry Semantics.
+FIND-ROOT-001 — Root Overload Semantics
+Contract statement:
+Object-root, Hub-root, and List-root searches must use only the supplied root input for that search and must not
+inherit stale root mode, recursive defaults, sibling helpers, or setup assumptions from prior searches.
+Rationale:
+Finder overloads are independent entry points. Prior calls must not change object graph scope or traversal behavior
+for later calls.
+Source scope:
+OAFinder.setRoot, OAFinder.find(), OAFinder.find(F), OAFinder.find(Hub,F), OAFinder.find(List,F),
+OAFinder._find(Hub,F).
+Related CODEX findings:
+Prior recursive-root default leak from Hub-root search was noted as fixed.
+Suggested unit tests:
+testObjectRootFindDoesNotReusePriorHubRootMode, testHubRootFindDoesNotReusePriorObjectRoot,
+testListRootFindDoesNotReusePriorHubRecursiveDefault.
+Spec target section:
+Finder Runtime / Root Traversal Semantics
 
-  2. Object / Hub Traversal Contracts
+FIND-HUB-001 — Hub Traversal Order And Position
+Contract statement:
+Hub-root searches must traverse Hub elements in Hub order, start after objectLastUsed when supplied, update
+rootHubPos consistently, and stop immediately when stop is requested.
+Rationale:
+Finder powers next-match, paging, UI navigation, and Hub-based scans. It must not skip, reorder, or continue after
+caller-requested stop.
+Source scope:
+OAFinder.find(Hub,F), OAFinder._find(Hub,F), OAFinder.findNext, OAFinder.getRootHubPos, OAFinder.stop/getStop.
+Related CODEX findings:
+none.
+Suggested unit tests:
+testHubFindTraversesInHubOrder, testHubFindStartsAfterLastUsedObject, testHubFindStopsWhenOnFoundCallsStop,
+testRootHubPosTracksMatchedPosition.
+Spec target section:
+Finder Runtime / Hub Traversal Semantics
 
-  FIND-TRAVERSE-001 — Object Root Traversal Starts From The Supplied Root
-  Contract statement: find(F objectRoot) must traverse only from the supplied object root and must not inherit stale
-  root mode from prior Hub/list searches.
-  Rationale: Finder overloads must be independently correct; prior calls must not change root semantics.
-  Source locations: OAFinder.find(F), OAFinder.find(), OAFinder.setRoot(F).
-  Known related CODEX findings: prior recursive-root default leak from Hub-root search; fixed.
-  Suggested unit tests: testObjectRootFindDoesNotReusePriorHubRecursiveRootDefault.
-  Spec target section: Finder Runtime / Object Root Traversal.
+FIND-LIST-001 — List Root Null And Order Semantics
+Contract statement:
+List-root searches must preserve list order, tolerate null entries, choose setup metadata from the first non-null
+root, and return empty results for null, empty, or all-null lists.
+Rationale:
+List-root traversal should be stable for normal OA list inputs and must not fail because optional entries are
+absent.
+Source scope:
+OAFinder.find(List,F), OAFinder.find(List).
+Related CODEX findings:
+Prior leading-null setup NPE was noted as fixed.
+Suggested unit tests:
+testListFindPreservesListOrder, testListFindSkipsLeadingNullRoots, testListFindAllNullReturnsEmpty,
+testListFindEmptyReturnsEmpty.
+Spec target section:
+Finder Runtime / List Root Traversal Semantics
 
-  FIND-TRAVERSE-002 — Hub Root Traversal Uses Hub Order And Stop Semantics
-  Contract statement: find(Hub,F) must traverse Hub elements in Hub order, starting after objectLastUsed when
-  supplied, and must stop immediately when bStop is set.
-  Rationale: Finder powers paging/next-match behavior and must not skip or reorder Hub entries.
-  Source locations: OAFinder.find(Hub,F), OAFinder._find(Hub,F), OAFinder.getRootHubPos.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testHubFindTraversesInHubOrder, testHubFindStartsAfterLastUsedObject,
-  testHubFindStopsWhenOnFoundCallsStop.
-  Spec target section: Finder Runtime / Hub Traversal.
+FIND-NULL-001 — Null Root And Null Reference Semantics
+Contract statement:
+Null roots and null intermediate traversal values must have explicit non-throwing semantics: null object-root search
+returns null or no match as contracted, null Hub/List roots return empty results, and null references stop only that
+traversal branch.
+Rationale:
+Optional OA references and absent roots are normal. Finder must treat them as absent paths without accidental NPEs
+or broad matches.
+Source scope:
+OAFinder.find(F), OAFinder.find(Hub,F), OAFinder.find(List,F), OAFinder._find(Object,int),
+OAHierFinder.findFirstValue.
+Related CODEX findings:
+Null Hub sibling helper NPE was noted as fixed.
+Suggested unit tests:
+testFindNullObjectRootReturnsNull, testFindNullHubReturnsEmpty, testFinderNullIntermediateReferenceStopsBranch,
+testHierFinderNullParentReturnsNoMatch.
+Spec target section:
+Finder Runtime / Null Traversal Semantics
 
-  FIND-TRAVERSE-003 — List Root Traversal Ignores Null Roots Without Failing
-  Contract statement: find(List,F) must tolerate null entries, choose setup metadata from the first non-null root, and
-  return empty results for null/empty/all-null lists.
-  Rationale: List-based root searches should be stable for normal OA list inputs.
-  Source locations: OAFinder.find(List,F).
-  Known related CODEX findings: prior leading-null setup NPE; fixed.
-  Suggested unit tests: testListFindSkipsLeadingNullRoots, testListFindAllNullReturnsEmpty,
-  testListFindEmptyReturnsEmpty.
-  Spec target section: Finder Runtime / List Root Traversal.
+FIND-PATH-001 — OAPath Resolution Contract
+Contract statement:
+Finder property paths must resolve through OA metadata and must end at an OAObject or Hub traversal target for
+object-finder results; invalid path segments or scalar terminal paths must fail visibly unless a scalar-value finder
+contract explicitly applies.
+Rationale:
+OAFinder returns object targets. Treating scalar terminal properties as object traversal success causes invalid
+casts or silent wrong results.
+Source scope:
+OAFinder.setup/_setup, OAFinder.getPropertyPath, OAPath link/method metadata, OAFinder._find(Object,int).
+Related CODEX findings:
+none.
+Suggested unit tests:
+testFinderRejectsScalarTerminalPath, testFinderAcceptsObjectTerminalPath, testFinderRejectsInvalidPropertyPath,
+testFinderUsesMetadataForPathResolution.
+Spec target section:
+Finder Runtime / Path Resolution Semantics
 
-  FIND-TRAVERSE-004 — Null Hub And Null Object Roots Have Explicit Semantics
-  Contract statement: Null object root returns null for object-root search; null Hub root returns an empty result list
-  for Hub-root search and must not install sibling helpers.
-  Rationale: Callers need stable null-root behavior without accidental NPEs.
-  Source locations: OAFinder.find(F), OAFinder.find(Hub,F), OAFinder._find(Hub,F).
-  Known related CODEX findings: null Hub sibling helper NPE; fixed.
-  Suggested unit tests: testFindNullObjectRootReturnsNull, testFindNullHubReturnsEmptyWithLazyMode.
-  Spec target section: Finder Runtime / Null Root Semantics.
+FIND-PATH-002 — Path Segment Advancement
+Contract statement:
+Non-recursive traversal must consume exactly one path segment per link step; Hub values at a segment must iterate
+their elements without incorrectly skipping or repeating path segments.
+Rationale:
+Wrong path-position movement produces missed branches, duplicated traversal, or evaluation of filters against the
+wrong object.
+Source scope:
+OAFinder._find(Object,int), OAPath methods/linkInfos.
+Related CODEX findings:
+none.
+Suggested unit tests:
+testFinderTraversesNestedObjectPath, testFinderTraversesHubSegmentWithoutSkippingNextPathSegment,
+testFinderDoesNotRepeatResolvedSegment.
+Spec target section:
+Finder Runtime / Property Path Traversal Semantics
 
-  3. Path / Property Traversal Contracts
+FIND-RECURSIVE-001 — Recursive Root Control
+Contract statement:
+Explicit setAllowRecursiveRoot settings must be honored for the search and must not be recomputed from Hub/detail
+metadata; implicit recursive-root defaults must be scoped to the current root type and restored afterward.
+Rationale:
+Callers must be able to control recursive-root traversal deterministically, and recursive detail Hub convenience
+behavior must not contaminate later searches.
+Source scope:
+OAFinder.setAllowRecursiveRoot/getAllowRecursiveRoot, OAFinder.find(Hub,F), OAFinder.find(List,F), OAFinder.find(F).
+Related CODEX findings:
+Prior Hub-root recursive default leak into object-root search was noted as fixed.
+Suggested unit tests:
+testExplicitRecursiveRootFalseIsHonoredForRecursiveDetailHub, testExplicitRecursiveRootTrueIsHonoredForObjectRoot,
+testRecursiveDetailHubDefaultRestoredAfterHubFind.
+Spec target section:
+Finder Runtime / Recursive Root Semantics
 
-  FIND-PATH-001 — Finder Path Must Resolve To OAObject Or Hub Target
-  Contract statement: OAFinder property paths must end at an OAObject or Hub traversal target, not a scalar property.
-  Invalid terminal scalar paths must fail visibly.
-  Rationale: OAFinder<F,T> returns OAObject targets; scalar path success would produce invalid casts or silent wrong
-  results.
-  Source locations: OAFinder._setup(Class), OAPath.getLinkInfos, OAPath.getMethods.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testFinderRejectsScalarTerminalPath, testFinderAcceptsObjectTerminalPath.
-  Spec target section: Finder Runtime / Path Resolution.
+FIND-RECURSIVE-002 — Recursive Link Position Semantics
+Contract statement:
+Recursive traversal may remain at the same path position only when moving through a recursive relationship; normal
+path traversal must advance position normally.
+Rationale:
+Recursive traversal must search parent/sibling hierarchies or recursive detail links without corrupting path segment
+evaluation.
+Source scope:
+OAFinder._find(Object,int), OAHierFinder.findFirstValue, recursiveLinkInfos handling.
+Related CODEX findings:
+OAHierFinder recursive counter is scoped to recursive hierarchy links rather than general model-cycle detection.
+Suggested unit tests:
+testFinderRecursiveRootKeepsSamePathPosition, testRecursiveTraversalDoesNotConsumeNormalPathSegment,
+testHierFinderRecursiveParentKeepsSamePathPosition.
+Spec target section:
+Finder Runtime / Recursive Position Semantics
 
-  FIND-PATH-002 — Traversal Advances Exactly One Segment Per Link Step
-  Contract statement: For non-recursive link traversal, each linkInfos[pos] access must recurse to pos + 1, while Hub
-  values at a step must iterate their elements without advancing the segment again.
-  Rationale: Wrong position movement creates skipped path segments or repeated segment evaluation.
-  Source locations: OAFinder._find(Object,int).
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testFinderTraversesNestedObjectPath,
-  testFinderTraversesHubSegmentWithoutSkippingNextPathSegment.
-  Spec target section: Finder Runtime / Property Path Traversal.
+FIND-CYCLE-001 — Cycle And Depth Termination
+Contract statement:
+Finder traversal must terminate on normal cyclic OA object graphs using cascade/visited/depth protections, and depth
+caps must prevent runaway recursion without adding false results.
+Rationale:
+OA graphs commonly contain bidirectional links and recursive relationships. Finder must not hang, overflow the
+stack, or silently duplicate cyclic results.
+Source scope:
+OAFinder._find(Object,int), OAFinder.find(Object,int), OACascade integration, OAHierFinder recursive traversal.
+Related CODEX findings:
+Recursive-root traversal can bypass normal cascade protection; parent-loop behavior clarified for OAHierFinder.
+Suggested unit tests:
+testFinderBidirectionalLinksDoNotLoop, testFinderRecursiveRootCycleDoesNotLoopForever, testFinderStopsAtDepthCap,
+testDepthCapDoesNotAddFalseResult.
+Spec target section:
+Finder Runtime / Cycle Protection
 
-  FIND-PATH-003 — Stack Diagnostics Reflect Actual Traversal Path
-  Contract statement: When enabled, stack objects and property names must describe the active traversal path seen by
-  onFound and overridden hooks.
-  Rationale: Stack data is used by custom finder implementations and diagnostics.
-  Source locations: OAFinder.setEnabledStack, OAFinder.push, OAFinder.pop, OAFinder.getStackObjects,
-  OAFinder.getStackPropertyNames.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testFinderStackObjectsDuringOnFound, testFinderStackPropertyNamesMatchTraversal.
-  Spec target section: Finder Runtime / Traversal Stack Semantics.
+FIND-IDENTITY-001 — Object Identity And Duplicate Result Semantics
+Contract statement:
+Finder traversal must preserve OA object identity and must not duplicate the same authoritative object in results
+unless the API explicitly returns duplicates by value.
+Rationale:
+Finder results feed Hubs, object graph traversal, filters, and utility searches. Duplicate identity results can
+cause duplicate UI rows, repeated processing, and incorrect graph semantics.
+Source scope:
+OAFinder.alFound/result accumulation, OAFinder.findDuplicates, OAFinder.DuplicateFilter, Hub/List/object traversal.
+Related CODEX findings:
+none.
+Suggested unit tests:
+testFinderDoesNotReturnSameObjectTwiceFromCyclicGraph, testFindDuplicatesUsesPropertyValueContract,
+testFindDuplicatesIgnoresNullValues, testFindDuplicatesIncludesFirstAndLaterDuplicateNonNullValues.
+Spec target section:
+Finder Runtime / Identity and Duplicate Semantics
 
-  4. Hierarchical Finder Contracts
+FIND-FILTER-001 — Terminal Filter Evaluation
+Contract statement:
+Finder filters must be evaluated against candidate target objects only after path traversal reaches the terminal
+object position, unless a path-embedded filter explicitly constrains an intermediate segment.
+Rationale:
+Applying filters too early, too late, or to the wrong object creates false positives and false negatives.
+Source scope:
+OAFinder._find(Object,int), OAFinder.addFilter/setFilter/getFilter/clearFilters, OAFinder.isUsed, embedded path fil
+ter setup.
+Related CODEX findings:
+none.
+Suggested unit tests:
+testFinderFilterAppliesToTerminalObject, testFinderFilterDoesNotRejectIntermediateObject,
+testEmbeddedPathFilterRestrictsIntermediateTraversal.
+Spec target section:
+Finder Runtime / Filter Evaluation Semantics
 
-  FIND-HIER-001 — Hierarchical Finder Returns The First Matching Value
-  Contract statement: OAHierFinder.findFirst must return the first property value encountered by its hierarchy
-  traversal that satisfies the supplied filter.
-  Rationale: OAHierFinder is used for inherited/defaulted values across object hierarchies.
-  Source locations: OAHierFinder.findFirst, OAHierFinder.findFirstValue.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testHierFinderReturnsStartingObjectValueFirst, testHierFinderReturnsNearestParentValue.
-  Spec target section: Finder Runtime / Hierarchical First-Match Semantics.
+FIND-FILTER-002 — Filter Composition Stability
+Contract statement:
+Programmatic filter composition through addFilter, addOrFilter, and addAndFilter must be predictable, and helper
+searches must restore any temporary filter chain or pending composition state afterward.
+Rationale:
+Finder callers build complex filters incrementally. Helper methods must act as query operations, not permanent
+configuration mutations.
+Source scope:
+OAFinder.addFilter, addOrFilter, addAndFilter, clearFilters, findLargest, findSmallest, findDuplicates.
+Related CODEX findings:
+Temporary helper methods previously consumed pending OR/AND state; helper filter chain contamination was noted as
+fixed.
+Suggested unit tests:
+testAddOrFilterComposesNextFilterWithOr, testAddAndFilterComposesNextFilterWithAnd,
+testFindLargestDoesNotConsumePendingOrFilterState, testFindDuplicatesRestoresOriginalFilterAndCompositionFlags.
+Spec target section:
+Finder Runtime / Filter Composition Semantics
 
-  FIND-HIER-002 — Include-From-Object Controls Starting Object Evaluation
-  Contract statement: When bIncludeFromObject is false, the starting object must not be evaluated for the target
-  property except where recursive-check-only semantics explicitly allow/deny traversal.
-  Rationale: Hierarchical defaults often need “inherit from parent only” behavior.
-  Source locations: OAHierFinder(String,String,boolean), OAHierFinder.findFirstValue.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testHierFinderExcludeFromObjectSkipsStartingValue,
-  testHierFinderIncludeFromObjectUsesStartingValue.
-  Spec target section: Finder Runtime / Hierarchical Include Semantics.
+FIND-FILTER-003 — Embedded Path Filter Setup
+Contract statement:
+Filters embedded in property paths must be created during successful setup and applied as semantic traversal
+constraints; embedded filter creation failure must fail the setup visibly and leave no partial filter state.
+Rationale:
+Path-level filter directives are part of finder semantics. Partial installation causes silently wrong traversal on
+retry.
+Source scope:
+OAFinder._setup, OAFinder.createHubFilter, OAPath.getFilterNames, OAPath.getFilterConstructors.
+Related CODEX findings:
+OAFinder CODEX comment: setup failure can leave partially installed embedded filters/state.
+Suggested unit tests:
+testEmbeddedPathFilterRestrictsFinderResults, testEmbeddedPathFilterCreationFailureDoesNotReturnResults,
+testEmbeddedPathFilterCreationFailureRollsBackFilterChain.
+Spec target section:
+Finder Runtime / Embedded Filter Semantics
 
-  FIND-HIER-003 — Hierarchical Path Segments Must Follow Metadata Links
-  Contract statement: OAHierFinder must traverse each hierarchy segment using OAPath link metadata and evaluate parent
-  recursion according to reverse-link metadata.
-  Rationale: Hierarchical traversal must follow OA metadata truth rather than string-only assumptions.
-  Source locations: OAHierFinder.findFirst, OAHierFinder.findFirstValue, OAPath.getLinkInfos.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testHierFinderTraversesPathLinkSegments,
-  testHierFinderUsesReverseLinkToLimitRecursiveParentSearch.
-  Spec target section: Finder Runtime / Hierarchical Path Semantics.
+FIND-LOADED-001 — Loaded-Only Traversal Semantics
+Contract statement:
+When useOnlyLoadedData is true, finder traversal must not trigger lazy loading; unloaded required links must call
+onDataNotFound and stop that branch.
+Rationale:
+Callers use loaded-only mode for in-memory scans, non-invasive diagnostics, and predictable no-I/O traversal.
+Source scope:
+OAFinder.setUseOnlyLoadedData/getUseOnlyLoadedData, OAFinder._find(Object,int), OAFinder.onDataNotFound.
+Related CODEX findings:
+none.
+Suggested unit tests:
+testUseOnlyLoadedDataDoesNotLoadUnloadedLink, testUseOnlyLoadedDataCallsOnDataNotFound,
+testUseOnlyLoadedDataStopsOnlyUnloadedBranch.
+Spec target section:
+Finder Runtime / Loaded-State Semantics
 
-  5. Recursive Link Traversal Contracts
+FIND-LAZY-001 — Lazy Hub Scan Helper Lifecycle
+Contract statement:
+Lazy Hub scan optimizations such as sibling helpers may be installed only for the duration of the relevant Hub
+search and must be removed in finally-style cleanup on success, stop, and exception.
+Rationale:
+Thread-local lazy-load helpers must not leak into unrelated graph operations or alter later runtime behavior.
+Source scope:
+OAFinder.find(Hub,F), OASiblingHelper integration, OAThreadLocalService.addSiblingHelper/removeSiblingHelper, useOn
+lyLoadedData checks.
+Related CODEX findings:
+Null Hub no longer creates sibling helper; cleanup expectations noted.
+Suggested unit tests:
+testHubFindRegistersSiblingHelperInLazyMode, testFinderRemovesSiblingHelperAfterTraversalException,
+testNullHubFindDoesNotRegisterSiblingHelper, testUseOnlyLoadedDataDoesNotInstallSiblingHelper.
+Spec target section:
+Finder Runtime / Lazy Load Optimization and ThreadLocal Cleanup
 
-  FIND-RECURSIVE-001 — Explicit Recursive Root Setting Overrides Defaults
-  Contract statement: If caller invokes setAllowRecursiveRoot, that value must be honored and must not be recomputed
-  from Hub/detail metadata.
-  Rationale: Callers must be able to control recursive-root traversal deterministically.
-  Source locations: OAFinder.setAllowRecursiveRoot, OAFinder.find(List,F), OAFinder.find(Hub,F).
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testExplicitRecursiveRootFalseIsHonoredForRecursiveDetailHub,
-  testExplicitRecursiveRootTrueIsHonoredForObjectRoot.
-  Spec target section: Finder Runtime / Recursive Root Semantics.
+FIND-HIER-001 — Hierarchical First-Match Semantics
+Contract statement:
+OAHierFinder.findFirst must return the first property value encountered by its hierarchy traversal that satisfies
+the supplied filter, following the configured include-from-object rule.
+Rationale:
+Hierarchical finder supports inherited/defaulted values across object hierarchies. Nearest applicable value
+semantics must be deterministic.
+Source scope:
+OAHierFinder constructors, findFirst, findFirstValue, findFirstNotEmpty, findFirstEmpty, findFirstNotNull,
+findFirstTrue.
+Related CODEX findings:
+none.
+Suggested unit tests:
+testHierFinderReturnsStartingObjectValueFirstWhenIncluded, testHierFinderReturnsNearestParentValue,
+testHierFinderExcludeFromObjectSkipsStartingValue, testHierFinderFilterControlsAcceptedValue.
+Spec target section:
+Finder Runtime / Hierarchical First-Match Semantics
 
-  FIND-RECURSIVE-002 — Implicit Recursive Root Defaults Are Root-Type Scoped
-  Contract statement: When recursive-root behavior is not explicitly set, object/list roots default to non-recursive
-  root traversal, while recursive detail Hub roots may enable recursive root traversal for that search only.
-  Rationale: Defaults must support recursive detail Hubs without contaminating later searches.
-  Source locations: OAFinder.find(List,F), OAFinder.find(Hub,F), OAFinder.find(F).
-  Known related CODEX findings: prior Hub-root default leaked into object-root search; fixed.
-  Suggested unit tests: testRecursiveDetailHubEnablesRecursiveRootForThatSearch,
-  testRecursiveRootDefaultRestoredAfterHubFind.
-  Spec target section: Finder Runtime / Recursive Default Semantics.
+FIND-HIER-002 — Hierarchical Metadata Traversal
+Contract statement:
+OAHierFinder must traverse hierarchy path segments using OA metadata links and must apply recursive parent traversal
+according to reverse-link metadata and configured recursion bounds.
+Rationale:
+Hierarchical traversal must follow OA metadata truth rather than string-only assumptions, and recursion bounds must
+prevent runaway parent traversal.
+Source scope:
+OAHierFinder.findFirst, OAHierFinder.findFirstValue, OAPath link metadata, recursive counter behavior.
+Related CODEX findings:
+OAHierFinder recursive counter applies to recursive hierarchy links, not as a general cycle detector.
+Suggested unit tests:
+testHierFinderTraversesPathLinkSegments, testHierFinderUsesReverseLinkToLimitRecursiveParentSearch,
+testHierFinderRecursiveCounterStopsDeepRecursiveParentSearch.
+Spec target section:
+Finder Runtime / Hierarchical Path Semantics
 
-  FIND-RECURSIVE-003 — Recursive Link Traversal Must Preserve Path Position Intentionally
-  Contract statement: Recursive parent/root traversal may recurse at the same path position only when it is
-  semantically moving through a recursive relationship, not consuming a normal path segment.
-  Rationale: Recursive traversal must search parent/sibling hierarchies without corrupting path segment evaluation.
-  Source locations: OAFinder._find(Object,int), OAHierFinder.findFirstValue.
-  Known related CODEX findings: recursive counter in OAHierFinder is scoped to recursive hierarchy links, not general
-  hierarchy-loop detection.
-  Suggested unit tests: testFinderRecursiveRootKeepsSamePathPosition,
-  testHierFinderRecursiveParentKeepsSamePathPosition.
-  Spec target section: Finder Runtime / Recursive Position Semantics.
+FIND-NULL-002 — FindFirst Null Ambiguity
+Contract statement:
+findFirst may return null for both “no match” and “matched null value”; callers that need existence semantics must
+use canFindFirst or a filter that disambiguates null matches.
+Rationale:
+Null-valued matches are valid in some finder usages. The API contract must avoid accidental interpretation of null
+as only “not found.”
+Source scope:
+OAFinder.findFirst, OAFinder.canFindFirst, OAHierFinder.findFirst variants.
+Related CODEX findings:
+none.
+Suggested unit tests:
+testCanFindFirstDetectsNullMatchWhenFindFirstWouldReturnNull, testFindFirstReturnsNullForNoMatch,
+testNullValueMatchRequiresExplicitDisambiguation.
+Spec target section:
+Finder Runtime / Null Match Semantics
 
-  6. Filter Integration Contracts
+FIND-STACK-001 — Traversal Stack Diagnostics
+Contract statement:
+When stack tracking is enabled, stack objects and property names must reflect the actual active traversal path
+visible to onFound and overridden hook methods, and must be cleaned up after traversal.
+Rationale:
+Custom finder implementations and diagnostics rely on accurate traversal stack context.
+Source scope:
+OAFinder.setEnabledStack, OAFinder.push/pop, OAFinder.getStackObjects, OAFinder.getStackPropertyNames, OAFinder.onF
+ound.
+Related CODEX findings:
+none.
+Suggested unit tests:
+testFinderStackObjectsDuringOnFound, testFinderStackPropertyNamesMatchTraversal,
+testFinderStackClearedAfterException.
+Spec target section:
+Finder Runtime / Traversal Stack Semantics
 
-  FIND-FILTER-001 — Terminal Object Filters Gate Inclusion Only At Target Position
-  Contract statement: Finder filters must be applied to candidate target objects after path traversal reaches the
-  terminal object position.
-  Rationale: Applying filters too early or too late creates false positives/negatives.
-  Source locations: OAFinder._find(Object,int), OAFinder.addFilter, OAFinder.isUsed.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testFinderFilterAppliesToTerminalObject, testFinderFilterDoesNotRejectIntermediateObject.
-  Spec target section: Finder Runtime / Filter Evaluation.
+FIND-FAIL-001 — Failure Visibility And Partial Traversal
+Contract statement:
+Invalid paths, setup failures, filter construction failures, traversal exceptions, and unsupported finder structures
+must fail visibly or return a documented no-result value; they must not silently return partial results as complete
+success.
+Rationale:
+Silent false-success finder behavior corrupts Hub contents, query fallback, object graph traversal, validation, and
+runtime tooling.
+Source scope:
+OAFinder.setup/_setup, OAFinder.find overloads, OAFinder._find, OAHierFinder.findFirstValue, filter setup and evalu
+ation paths.
+Related CODEX findings:
+OAFinder setup rollback issue can make retry silently wrong after partial setup failure.
+Suggested unit tests:
+testInvalidFinderPathThrowsVisibleException, testFailingFilterDoesNotReturnSilentEmptyResult,
+testFinderSetupFailureDoesNotExposePartialResults, testTraversalExceptionDoesNotReportCompleteSuccess.
+Spec target section:
+Finder Runtime / Failure Semantics
 
-  FIND-FILTER-002 — Programmatic Filter Composition Is Stable
-  Contract statement: addFilter, addOrFilter, and addAndFilter must compose filters predictably, and temporary helper
-  searches must not consume pending composition state.
-  Rationale: Finder callers can build complex filters incrementally; helper methods must not mutate builder state.
-  Source locations: OAFinder.addFilter, OAFinder.addOrFilter, OAFinder.addAndFilter, OAFinder.findLargest,
-  OAFinder.findSmallest, OAFinder.findDuplicates.
-  Known related CODEX findings: temporary helper methods consumed pending OR/AND state; fixed.
-  Suggested unit tests: testAddOrFilterComposesNextFilterWithOr, testFindLargestDoesNotConsumePendingOrFilterState.
-  Spec target section: Finder Runtime / Filter Composition.
+FIND-RETRY-001 — Retry Correctness After Failure
+Contract statement:
+After setup, traversal, filter, or hook failure, a later retry on the same finder must either execute with fresh
+coherent state or fail consistently; it must not reuse stale partial traversal/setup state.
+Rationale:
+OA runtime operations may retry after incomplete work. Retrying with corrupted finder state creates missed objects,
+duplicate filters, or false matches.
+Source scope:
+OAFinder.find overloads, OAFinder.setup, OAFinder._setup, OAFinder._find, helper methods that mutate temporary
+state.
+Related CODEX findings:
+Traversal state cleanup was noted as fixed; setup rollback remains CODEX-commented/deferred.
+Suggested unit tests:
+testFinderRetryAfterTraversalFailureIsFresh, testFinderRetryAfterSetupFailureDoesNotReturnWrongResults,
+testFinderRetryAfterEmbeddedFilterFailureDoesNotDuplicateFilters.
+Spec target section:
+Finder Runtime / Retry Semantics
 
-  FIND-FILTER-003 — Embedded PropertyPath Filters Are Part Of Finder Setup
-  Contract statement: Filters embedded in a property path must be created once during successful setup and applied as
-  part of the finder’s filter chain.
-  Rationale: Path-level filter directives are semantic traversal constraints.
-  Source locations: OAFinder._setup(Class), OAFinder.createHubFilter, OAPath.getFilterNames,
-  OAPath.getFilterConstructors.
-  Known related CODEX findings: setup failure can partially install embedded filters; CODEX-commented/deferred.
-  Suggested unit tests: testEmbeddedPathFilterRestrictsFinderResults,
-  testEmbeddedPathFilterCreationFailureDoesNotReturnResults.
-  Spec target section: Finder Runtime / Embedded Filter Semantics.
+FIND-CONCURRENT-001 — Finder Reuse And Concurrency Assumptions
+Contract statement:
+A finder instance must either be used by one search at a time or clearly document caller synchronization
+requirements; shared mutable search state must not be assumed safe for concurrent searches on the same finder.
+Rationale:
+Finder instances carry mutable setup, result, stack, filter, and traversal state. Concurrent reuse can corrupt
+results and traversal cleanup.
+Source scope:
+OAFinder mutable fields and all find/helper methods, OAHierFinder traversal state.
+Related CODEX findings:
+Per-search mutable state and setup rollback concerns imply single-search ownership requirements.
+Suggested unit tests:
+testSequentialFinderReuseIsStable, testConcurrentSameFinderUseRequiresDocumentedSynchronization,
+testIndependentFinderInstancesCanRunConcurrently.
+Spec target section:
+Finder Runtime / Concurrency Semantics
 
-  FIND-FILTER-004 — Helper Filters Must Be Temporary
-  Contract statement: findLargest, findSmallest, and findDuplicates may add internal filters during execution, but
-  must restore the caller’s original filter chain and composition flags afterward.
-  Rationale: Helper calls should not change later finder behavior.
-  Source locations: OAFinder.findLargest, OAFinder.findSmallest, OAFinder.findDuplicates.
-  Known related CODEX findings: prior helper filter chain contamination and pending composition-state mutation; fixed.
-  Suggested unit tests: testFindSmallestRestoresOriginalFilterAfterException,
-  testFindDuplicatesRestoresOriginalFilterAndCompositionFlags.
-  Spec target section: Finder Runtime / Temporary Helper Filter Semantics.
-
-  7. Null / Empty / Unresolved Reference Contracts
-
-  FIND-NULL-001 — Null Traversal Values Stop That Branch
-  Contract statement: If a link/property traversal produces null, that traversal branch must stop without adding a
-  result or throwing for normal null reference cases.
-  Rationale: Optional OA references are normal; finder must treat them as absent paths.
-  Source locations: OAFinder.find(Object,int), OAFinder._find(Object,int), OAHierFinder.findFirstValue.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testFinderNullIntermediateReferenceStopsBranch, testHierFinderNullParentReturnsNoMatch.
-  Spec target section: Finder Runtime / Null Reference Semantics.
-
-  FIND-NULL-002 — Null Result Ambiguity Is Explicit For FindFirst
-  Contract statement: findFirst may return null both for “no match” and “matched null value”; callers needing
-  existence must use canFindFirst or filter semantics that disambiguate.
-  Rationale: Prevents accidental misinterpretation of null-valued matches.
-  Source locations: OAFinder.findFirst(F), OAFinder.canFindFirst.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testCanFindFirstDetectsNullMatchWhenFindFirstWouldReturnNull.
-  Spec target section: Finder Runtime / Null Match Semantics.
-
-  FIND-NULL-003 — Duplicate Finder Excludes Null Values By Contract
-  Contract statement: findDuplicates must not treat null property values as duplicate values.
-  Rationale: Null usually means “missing value,” not a duplicate business value.
-  Source locations: OAFinder.DuplicateFilter.isUsed, OAFinder.findDuplicates.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testFindDuplicatesIgnoresNullValues,
-  testFindDuplicatesIncludesFirstAndLaterDuplicateNonNullValues.
-  Spec target section: Finder Runtime / Duplicate Value Semantics.
-
-  FIND-UNRESOLVED-001 — Use-Only-Loaded Mode Must Not Materialize Unloaded Data
-  Contract statement: When useOnlyLoadedData is true, finder traversal must not trigger lazy loading; unloaded
-  required links must call onDataNotFound and stop that branch.
-  Rationale: Callers use this mode for in-memory-only scans and predictable non-loading behavior.
-  Source locations: OAFinder.setUseOnlyLoadedData, OAFinder._find(Object,int), OAFinder.onDataNotFound.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testUseOnlyLoadedDataDoesNotLoadUnloadedLink, testUseOnlyLoadedDataCallsOnDataNotFound.
-  Spec target section: Finder Runtime / Loaded-State Semantics.
-
-  8. Cycle / Depth Protection Contracts
-
-  FIND-CYCLE-001 — Finder Must Not Loop Forever On Object Graph Cycles
-  Contract statement: Traversal must use cascade/depth protection so normal cyclic object graphs do not cause infinite
-  recursion.
-  Rationale: OA object graphs commonly contain bidirectional links and recursive relationships.
-  Source locations: OAFinder.find(Object,int), OAFinder._find(Object,int), OACascade.
-  Known related CODEX findings: recursive-root traversal can bypass normal cascade protection; reported/noted.
-  Suggested unit tests: testFinderBidirectionalLinksDoNotLoop, testFinderRecursiveRootCycleDoesNotLoopForever.
-  Spec target section: Finder Runtime / Cycle Protection.
-
-  FIND-CYCLE-002 — Depth Cap Protects Against Runaway Traversal
-  Contract statement: Finder recursion must stop when traversal depth exceeds the internal safety cap.
-  Rationale: Prevents stack overflow from malformed or unexpectedly deep path traversal.
-  Source locations: OAFinder.find(Object,int).
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testFinderStopsAtDepthCap, testFinderDepthCapDoesNotAddFalseResult.
-  Spec target section: Finder Runtime / Depth Protection.
-
-  FIND-CYCLE-003 — Hierarchical Recursive Counter Applies To Recursive Hierarchy Links
-  Contract statement: OAHierFinder’s recursive counter bounds traversal through recursive hierarchy links; it is not a
-  general model-cycle detector unless explicitly extended.
-  Rationale: This matches current intended semantics and prevents overclaiming cycle protection.
-  Source locations: OAHierFinder.findFirstValue.
-  Known related CODEX findings: parent-loop finding clarified as out of scope for that counter.
-  Suggested unit tests: testHierFinderRecursiveHierarchyCounterStopsDeepRecursiveParentSearch.
-  Spec target section: Finder Runtime / Hierarchy Recursion Semantics.
-
-  9. Lazy Load Interaction Contracts
-
-  FIND-LAZY-001 — Lazy Mode May Install Sibling Helper For Hub Roots
-  Contract statement: When searching a non-null Hub root with lazy loading enabled, finder may install a temporary
-  OASiblingHelper for the duration of that search.
-  Rationale: Sibling helper optimizes related lazy loads during Hub scans.
-  Source locations: OAFinder.find(Hub,F), OASiblingHelper.
-  Known related CODEX findings: null Hub no longer creates sibling helper; fixed.
-  Suggested unit tests: testHubFindRegistersSiblingHelperInLazyMode, testNullHubFindDoesNotRegisterSiblingHelper.
-  Spec target section: Finder Runtime / Lazy Load Optimization.
-
-  FIND-LAZY-002 — Sibling Helper Must Always Be Removed
-  Contract statement: Any sibling helper installed by finder must be removed in finally, even when traversal throws.
-  Rationale: Thread-local sibling helpers must not leak into unrelated graph operations.
-  Source locations: OAFinder.find(Hub,F), OAThreadLocalService.addSiblingHelper,
-  OAThreadLocalService.removeSiblingHelper.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testFinderRemovesSiblingHelperAfterTraversalException.
-  Spec target section: Finder Runtime / ThreadLocal Lazy Helper Cleanup.
-
-  FIND-LAZY-003 — Use-Only-Loaded Mode Disables Sibling Helper
-  Contract statement: When useOnlyLoadedData is true, finder must not install sibling helpers or trigger prefetch
-  behavior.
-  Rationale: In-memory-only traversal must be strict and side-effect constrained.
-  Source locations: OAFinder.find(Hub,F), OAFinder.getUseOnlyLoadedData.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testUseOnlyLoadedDataDoesNotInstallSiblingHelper.
-  Spec target section: Finder Runtime / Loaded-Only Traversal.
-
-  10. Failure / Silent Wrong-Result Contracts
-
-  FIND-FAIL-001 — Visible Exceptions Are Valid, Silent Wrong Results Are Not
-  Contract statement: Invalid paths, failed embedded filter construction, and failing property/filter evaluation may
-  throw visible exceptions; they must not be converted into successful empty or partial results unless explicitly
-  documented.
-  Rationale: Silent false negatives are worse than visible incomplete-operation signaling.
-  Source locations: OAFinder._setup, OAFinder._find, OAHierFinder.findFirstValue.
-  Known related CODEX findings: setup failure rollback deferred because retry can be silently wrong.
-  Suggested unit tests: testInvalidFinderPathThrowsVisibleException, testFailingFilterDoesNotReturnSilentEmptyResult.
-  Spec target section: Finder Runtime / Failure Semantics.
-
-  FIND-FAIL-002 — Finder Retry After Failure Must Be Correct Or Fail Consistently
-  Contract statement: After a caller-visible failure, retrying the same finder must either behave as a fresh search or
-  fail consistently; it must not reuse stale partial traversal/setup state to return wrong results.
-  Rationale: OA operations may retry after incomplete operations.
-  Source locations: OAFinder.find(F), OAFinder.find(Hub,F), OAFinder.find(List,F), OAFinder.setup.
-  Known related CODEX findings: traversal state cleanup fixed; setup rollback still CODEX-commented/deferred.
-  Suggested unit tests: testFinderRetryAfterTraversalFailureIsFresh,
-  testFinderRetryAfterSetupFailureDoesNotReturnWrongResults.
-  Spec target section: Finder Runtime / Retry Semantics.
-
-  FIND-FAIL-003 — Convenience Helper Methods Must Not Have Persistent Side Effects
-  Contract statement: Helper methods that temporarily alter finder state must restore all caller-visible state,
-  including filters, composition flags, max count, recursive-root defaults, sibling helpers, stack, and cascades.
-  Rationale: Helper calls should be query operations, not configuration mutations.
-  Source locations: OAFinder.findFirst, OAFinder.canFindFirst, OAFinder.findLargest, OAFinder.findSmallest,
-  OAFinder.findDuplicates, OAFinder.find(Hub,F).
-  Known related CODEX findings: maxFound restoration fixed; helper filter/composition restoration fixed; recursive-
-  root default restoration fixed.
-  Suggested unit tests: testFindFirstRestoresMaxFound, testFindLargestRestoresFinderState,
-  testHubFindRestoresRecursiveRootDefault.
-  Spec target section: Finder Runtime / Helper Side-Effect Semantics.
-
-  11. Test Coverage Matrix
-
-  FIND-RUNTIME-001: testFinderReturnsDeterministicResultsForSameGraph,
-  testHierFinderReturnsSameFirstMatchForSameHierarchy
-  FIND-RUNTIME-002: testFinderStateClearedAfterSuccessfulSearch, testFinderStateClearedAfterTraversalException,
-  testHubFinderRetryAfterFilterExceptionDoesNotReuseCascadeState
-  FIND-RUNTIME-003: testFindFirstRestoresMaxFoundAfterException, testCanFindFirstRestoresMaxFoundAfterException
-  FIND-RUNTIME-004: testFinderSetupFailureDoesNotMarkInitialized,
-  testFinderSetupFailureRollsBackEmbeddedFiltersAndState
-  FIND-TRAVERSE-001: testObjectRootFindDoesNotReusePriorHubRecursiveRootDefault
-  FIND-TRAVERSE-002: testHubFindTraversesInHubOrder, testHubFindStartsAfterLastUsedObject,
-  testHubFindStopsWhenOnFoundCallsStop
-  FIND-TRAVERSE-003: testListFindSkipsLeadingNullRoots, testListFindAllNullReturnsEmpty
-  FIND-TRAVERSE-004: testFindNullObjectRootReturnsNull, testFindNullHubReturnsEmptyWithLazyMode
-  FIND-PATH-001: testFinderRejectsScalarTerminalPath, testFinderAcceptsObjectTerminalPath
-  FIND-PATH-002: testFinderTraversesNestedObjectPath, testFinderTraversesHubSegmentWithoutSkippingNextPathSegment
-  FIND-HIER-001: testHierFinderReturnsStartingObjectValueFirst, testHierFinderReturnsNearestParentValue
-  FIND-HIER-002: testHierFinderExcludeFromObjectSkipsStartingValue
-  FIND-RECURSIVE-001: testExplicitRecursiveRootFalseIsHonoredForRecursiveDetailHub
-  FIND-RECURSIVE-002: testRecursiveRootDefaultRestoredAfterHubFind
-  FIND-CYCLE-001: testFinderBidirectionalLinksDoNotLoop, testFinderRecursiveRootCycleDoesNotLoopForever
-  FIND-LAZY-001: testHubFindRegistersSiblingHelperInLazyMode
-  FIND-LAZY-002: testFinderRemovesSiblingHelperAfterTraversalException
-  FIND-FAIL-001: testInvalidFinderPathThrowsVisibleException, testFailingFilterDoesNotReturnSilentEmptyResult
-  FIND-FAIL-002: testFinderRetryAfterTraversalFailureIsFresh,
-  testFinderRetryAfterSetupFailureDoesNotReturnWrongResults
-  FIND-FAIL-003: testFindLargestRestoresFinderState, testHubFindRestoresRecursiveRootDefault
-
+FIND-INTEGRATION-001 — Cross-Package Finder Compatibility
+Contract statement:
+Finder behavior must remain compatible with OAPath metadata, OAFilter semantics, Hub ordering and active/detail
+behavior, OAObject identity/cache semantics, load-state/lazy-load rules, cascade cycle protection, and graph/runtime
+context boundaries.
+Rationale:
+Finder is a shared graph traversal layer. Boundary drift causes incorrect Hubs, query fallback, object graph
+traversal, lazy loading, and runtime tooling output.
+Source scope:
+OAFinder, OAHierFinder, OAPath integration, OAFilter integration, Hub traversal, OACascade, OASiblingHelper,
+OAThreadLocalService.
+Related CODEX findings:
+Setup rollback, recursive-root state, sibling helper cleanup, loaded-only traversal, and filter composition findings
+all illustrate cross-package boundary assumptions.
+Suggested unit tests:
+testFinderAndOAPathAgreeOnTraversalTargets, testFinderAndOAFilterAgreeOnTerminalPredicateSemantics,
+testFinderPreservesHubOrderAndObjectIdentity, testLoadedOnlyFinderRespectsLoadContracts.
+Spec target section:
+Finder Runtime / Cross-Package Contracts
 
 */
-
-
-
 
 
 

@@ -21,224 +21,448 @@ package com.viaoa.converter;
 
 /* CODEX Invariants
 
-Converter Invariants
+CONV-DISPATCH-001 — Target-Driven Converter Dispatch
+Contract statement:
+Conversion must be selected by the requested target type, not by incidental source type behavior, except when the
+source value is already assignable to the requested target and no format-specific conversion is required.
+Rationale:
+OA uses conversion for property assignment, datasource hydration, query parameters, serialization, display
+formatting, and tooling. The requested target type is the semantic contract; dispatch drift can produce values that
+look valid but belong to the wrong runtime type or semantic domain.
+Source scope:
+OAConverter.addConverter, OAConverter.getConverter, OAConverter.convert, OAConv facade methods, all
+OAConverterInterface implementations.
+Related CODEX findings:
+OAConverterEnum.convert can return an enum instance from the wrong enum class.
+Suggested unit tests:
+converterDispatchUsesRequestedTargetType, assignableValueBypassesConversionOnlyWithoutFormat,
+enumConverterRejectsDifferentEnumClass, oaConvDelegatesToOAConverterSemantics.
+Spec target section:
+Converter Runtime / Dispatch Semantics
 
-  ID: CONV-TYPE-001
-  Contract statement: conversion result type must be assignable to the requested target type, including primitive-
-  wrapper targets.
-  Rationale: OA uses converters for property assignment, datasource hydration, comparison, and serialization;
-  returning the wrong type can corrupt object state or fail later.
-  Source locations: OAConverter.convert, OAConverter.getConverter, all OAConverterInterface.convert implementations.
-  Related CODEX findings: enum converter returning an enum from the wrong enum class.
-  Suggested unit tests: convertReturnsRequestedTargetType, convertPrimitiveTargetUsesWrapper,
-  enumConverterRejectsDifferentEnumType
-  Spec target section: Converter Runtime / Type Dispatch
+CONV-TYPE-001 — Result Type Compatibility
+Contract statement:
+A successful conversion result must be null or assignable to the requested target type, including primitive-wrapper
+targets handled through helper methods.
+Rationale:
+Returning an incompatible object corrupts OAObject property state, datasource values, query criteria, or
+serialization output and can fail later far from the conversion boundary.
+Source scope:
+OAConverter.convert, OAConverterInterface.convert, OAConverterEnum.convert, OAConverterClass.convert, numeric/
+boolean/temporal converter implementations.
+Related CODEX findings:
+OAConverterEnum.convert can return OtherEnum when TargetEnum was requested.
+Suggested unit tests:
+convertReturnsAssignableTargetType, primitiveHelperUsesDocumentedWrapperConversion,
+enumConverterReturnsOnlyTargetEnumConstants, classConverterReturnsClassOrNull.
+Spec target section:
+Converter Runtime / Type Semantics
 
-  ID: CONV-TYPE-002
-  Contract statement: converter lookup must prefer the explicit target converter and only fall back to assignable
-  source values when no conversion is needed.
-  Rationale: source-type-driven fallback can bypass target-specific semantics and produce misleading values.
-  Source locations: OAConverter.getConverter, OAConverter.convert, OAConverterString.convert.
-  Related CODEX findings: none.
-  Suggested unit tests: converterLookupUsesTargetClass, assignableValueBypassesOnlyWhenNoFormat,
-  stringConverterDelegatesToSourceConverterForFormatting
-  Spec target section: Converter Runtime / Dispatch Semantics
+CONV-NULL-001 — Null Input Semantics
+Contract statement:
+Null input handling must be explicit by conversion family: nullable object targets may return null, display/string
+formatting paths return a non-null display string, and primitive helper methods return documented defaults or throw
+only for invalid non-null input.
+Rationale:
+OA distinguishes absent values, empty display text, primitive defaults, and failed conversion. Mixing those meanings
+corrupts property state, UI output, query values, and datasource writes.
+Source scope:
+OAConverter.convert, OAConverter.toString, OAConverter.toInt/toLong/toDouble/toBoolean/toChar, OAConverterString, O
+AConverterBoolean, OAConverterNumber, temporal converters.
+Related CODEX findings:
+VEnum direct convertToString(null) differs from central display normalization.
+Suggested unit tests:
+nullToStringReturnsEmptyString, nullToNullableTemporalReturnsNull, nullToPrimitiveHelperReturnsDocumentedDefault,
+invalidNonNullPrimitiveHelperDoesNotUseNullDefault.
+Spec target section:
+Converter Runtime / Null and Default Semantics
 
-  ID: CONV-NULL-001
-  Contract statement: null input behavior must be explicit per target type: object-like targets may return null,
-  display-string conversion returns "", and primitive helper methods return documented primitive defaults or throw on
-  invalid non-null input.
-  Rationale: OA distinguishes “missing value,” “empty display text,” and primitive default values during reflection/
-  property assignment.
-  Source locations: OAConverter.convert, OAConverter.toString, OAConverter.toInt, OAConverter.toBoolean,
-  OAConverterNumber.convert, OAConverterBoolean.convert, temporal converters.
-  Related CODEX findings: none.
-  Suggested unit tests: nullToStringReturnsBlank, nullToObjectDateReturnsNull, nullToPrimitiveHelperReturnsDefault,
-  invalidNonNullPrimitiveHelperThrows
-  Spec target section: Converter Runtime / Null Semantics
+CONV-EMPTY-001 — Empty And Blank String Semantics
+Contract statement:
+Empty and blank strings must be handled consistently for each target family: recognized as null-equivalent only
+where the target contract says so, trimmed before parsing where whitespace is accepted, and never treated as a
+successful unrelated value.
+Rationale:
+OA receives string values from UI fields, templates, datasource drivers, config, and imports. Whitespace handling
+must not cause silent value loss or inconsistent conversion between related types.
+Source scope:
+OAConverterString.convert, OAConverterBoolean.convert, OAConverterNumber.convert, OAConverterDate, OAConverterTime,
+OAConverterTimestamp, OAConverterLocalDate/LocalTime/LocalDateTime, OAConverterZonedDateTime.
+Related CODEX findings:
+OAConverterTime.convert and OAConverterTimestamp.convert trim strings for the empty check but parse the original
+untrimmed value.
+Suggested unit tests:
+blankStringToNullableTargetReturnsNullByContract, paddedTimeStringParsesTrimmedValue,
+paddedTimestampStringParsesTrimmedValue, emptyStringDoesNotBecomeMisleadingNumericOrTemporalValue.
+Spec target section:
+Converter Runtime / Empty String Semantics
 
-  ID: CONV-FAIL-001
-  Contract statement: failed conversion must return null or throw a caller-visible exception; it must not produce a
-  plausible but wrong success value.
-  Rationale: silent false success can corrupt OAObject properties, query values, datasource values, and serialized
-  state.
-  Source locations: all convert methods; OAConverter.toXxx helper methods.
-  Related CODEX findings: signed numeric zero boolean conversion, BigDecimal precision loss, Calendar formatting blank
-  output.
-  Suggested unit tests: invalidStringConversionReturnsNull, helperThrowsForInvalidNonNullInput,
-  failedTemporalParseDoesNotUseDefaultDate
-  Spec target section: Converter Runtime / Failure Semantics
+CONV-FAIL-001 — Failed Conversion Visibility
+Contract statement:
+A conversion that cannot preserve the requested semantic value must return null or throw through a documented helper
+path; it must not silently produce a plausible but wrong success value.
+Rationale:
+Silent false-success can corrupt OAObject properties, query comparisons, datasource values, reports, sync payloads,
+and serialized state while appearing valid to callers.
+Source scope:
+All OAConverterInterface.convert implementations, OAConverter.toXxx helper methods, OAConverterString delegation,
+temporal and numeric converters.
+Related CODEX findings:
+Signed numeric zero boolean conversion, BigDecimal precision loss, Calendar formatting blank output, Date formatting
+losing time, ZonedDateTime formatting losing zone.
+Suggested unit tests:
+invalidStringConversionReturnsNull, helperThrowsForInvalidNonNullInput, failedTemporalParseDoesNotUseCurrentDate,
+failedCalendarFormatDoesNotReturnBlankForValidCalendar.
+Spec target section:
+Converter Runtime / Failure Semantics
 
-  ID: CONV-NUMERIC-001
-  Contract statement: numeric conversion must preserve source numeric meaning until the requested target type requires
-  a narrowing boundary.
-  Rationale: OA numeric values can represent money, quantities, IDs, sort keys, and datasource columns.
-  Source locations: OAConverterNumber.convert, OAConverterBigDecimal.convert, OAConverter.toBigDecimal.
-  Related CODEX findings: BigDecimal string parsing through generic Number can lose precision.
-  Suggested unit tests: bigDecimalStringPreservesPrecision, bigIntegerToBigDecimalPreservesValue,
-  decimalStringToDoubleUsesExpectedPrecisionBoundary
-  Spec target section: Converter Runtime / Numeric Precision
+CONV-DEFAULT-001 — Defaults Are Intentional
+Contract statement:
+Default values used by conversion helpers must be target-type intentional and documented; defaults must not hide
+invalid non-null input or partial conversion failure.
+Rationale:
+OA primitive-null support and reflection assignment require clear separation between null, blank, zero, false, and
+failed conversion.
+Source scope:
+OAConverter.toInt/toLong/toShort/toByte/toFloat/toDouble/toBoolean/toChar, OAConverterNumber.convert, OAConverterBo
+olean.convert, OAConverterString.convert.
+Related CODEX findings:
+none.
+Suggested unit tests:
+nullNumericHelperReturnsZeroByContract, nullBooleanHelperReturnsFalseByContract,
+invalidNumericStringDoesNotReturnZeroSilently, invalidBooleanStringDoesNotReturnFalseUnlessContracted.
+Spec target section:
+Converter Runtime / Default Value Semantics
 
-  ID: CONV-NUMERIC-002
-  Contract statement: numeric shorthand, grouping, currency, and format parsing must either produce the intended
-  numeric value or fail; partial numeric interpretation is not success.
-  Rationale: UI/report/import inputs often use formatted numbers; wrong parsing silently changes business values.
-  Source locations: OAConverterNumber.convert, OAConverterNumber.cleanNumber, OAConverterNumber.getFormatter.
-  Related CODEX findings: decimal k/M suffix multiplier wrong.
-  Suggested unit tests: numberCleanParsesIntegerKiloSuffix, numberCleanParsesDecimalKiloSuffix,
-  numberRejectsPartialParse
-  Spec target section: Converter Runtime / Numeric Parsing
+CONV-NUMERIC-001 — Numeric Value Preservation
+Contract statement:
+Numeric conversion must preserve the source numeric meaning until the requested target type, formatter, or
+documented rounding rule requires narrowing.
+Rationale:
+OA numeric values can represent money, quantities, IDs, ordering keys, counters, and datasource columns. Accidental
+precision loss is data corruption.
+Source scope:
+OAConverterNumber.convert, OAConverterBigDecimal.convert, OAConverter.toBigDecimal/toBD,
+OAConverter.toDouble/toFloat/toLong/toInt, OAConverterNumber.convertToString.
+Related CODEX findings:
+OAConverterBigDecimal.convert can lose precision by parsing through a generic Number/Double path.
+Suggested unit tests:
+bigDecimalStringPreservesExactDecimalValue, bigIntegerToBigDecimalPreservesValue,
+decimalStringToDoubleNarrowsOnlyAtDoubleBoundary, formattedBigDecimalRoundTripsWithinContract.
+Spec target section:
+Converter Runtime / Numeric Precision
 
-  ID: CONV-NUMERIC-003
-  Contract statement: rounding and truncation must be explicit, formatter-driven, or target-type-driven.
-  Rationale: OA must distinguish intentional narrowing from accidental precision loss.
-  Source locations: OAConverterNumber.convert, OAConverterNumber.convertToString,
-  OAConverter.toBigDecimal(double,int).
-  Related CODEX findings: none.
-  Suggested unit tests: doubleToScaledBigDecimalUsesHalfUp, integerTargetNarrowsAtTargetBoundary,
-  numberFormatterUsesHalfUpRounding
-  Spec target section: Converter Runtime / Rounding Semantics
+CONV-NUMERIC-002 — Numeric Parsing Completeness
+Contract statement:
+Formatted numeric parsing, including grouping separators, currency symbols, and shorthand suffixes, must either
+consume the intended numeric representation completely or fail; partial interpretation is not success.
+Rationale:
+Partial numeric parsing silently changes business values from UI, report, import, or datasource strings.
+Source scope:
+OAConverterNumber.convert, OAConverterNumber.cleanNumber, OAConverterNumber.getFormatter,
+OAConverterBigDecimal.convert.
+Related CODEX findings:
+Existing package invariant references decimal k/M suffix multiplier behavior.
+Suggested unit tests:
+numberParsesGroupingAndCurrencyByContract, numberParsesIntegerKiloSuffix, numberParsesDecimalKiloSuffix,
+numberRejectsPartialParse.
+Spec target section:
+Converter Runtime / Numeric Parsing
 
-  ID: CONV-STRING-001
-  Contract statement: conversion to String must be deterministic and non-null for display/runtime formatting paths.
-  Rationale: OA templates, reports, UI bindings, logs, and serialization expect stable textual values.
-  Source locations: OAConverter.toString, OAConverterString.convert, every convertToString.
-  Related CODEX findings: VEnum.convertToString(null) returns null but central toString normalizes it; Blob default
-  charset mismatch.
-  Suggested unit tests: toStringNeverReturnsNull, byteArrayStringUsesUtf8, blobStringUsesDocumentedCharset
-  Spec target section: Converter Runtime / String Semantics
+CONV-ROUND-001 — Rounding And Truncation Boundaries
+Contract statement:
+Rounding, truncation, scale changes, and integer narrowing must occur only at explicit formatter rules, explicit
+helper parameters, or documented target-type boundaries.
+Rationale:
+OA must distinguish intentional display rounding or target narrowing from accidental loss of precision during
+intermediate conversion.
+Source scope:
+OAConverterNumber.convert, OAConverterNumber.convertToString, OAConverter.toBigDecimal(double,int),
+OAConverter.round.
+Related CODEX findings:
+none.
+Suggested unit tests:
+doubleToScaledBigDecimalUsesRequestedRounding, integerTargetNarrowsAtTargetBoundary,
+numberFormatterAppliesExpectedRounding, roundUsesRequestedDecimalPlaces.
+Spec target section:
+Converter Runtime / Rounding Semantics
 
-  ID: CONV-FORMAT-001
-  Contract statement: when a format is supplied, formatting and parsing must interpret that format consistently for
-  the target semantic type.
-  Rationale: OA relies on formats for UI input/output, templates, reports, and datasource string values.
-  Source locations: OAConverterNumber, OAConverterBoolean, OAConverterString, date/time converters.
-  Related CODEX findings: boolean one-field custom format NPE; trimmed string parsed untrimmed in SQL time/timestamp
-  converters.
-  Suggested unit tests: booleanCustomFormatRoundTrips, dateTimeFormattedStringParsesBack,
-  timeConverterParsesTrimmedString
-  Spec target section: Converter Runtime / Format Contracts
+CONV-STRING-001 — Deterministic String Conversion
+Contract statement:
+Conversion to String for display/runtime formatting must be deterministic and non-null, with explicit charset
+behavior for byte-oriented sources.
+Rationale:
+OA templates, reports, UI bindings, logs, serialization boundaries, and datasource text values depend on stable
+textual output across JVMs, servers, and clients.
+Source scope:
+OAConverter.toString, OAConverterString.convert, OAConverterString.convertToString, all converter convertToString
+methods, byte[]/Blob/Clob handling.
+Related CODEX findings:
+OAConverterString.convert decodes Blob bytes with the platform default charset while byte[] uses UTF-8.
+Suggested unit tests:
+toStringNeverReturnsNull, byteArrayStringUsesUtf8, blobStringUsesDocumentedCharset, clobStringPreservesContent.
+Spec target section:
+Converter Runtime / String Semantics
 
-  ID: CONV-DATE-001
-  Contract statement: date-only, time-only, date-time, and instant conversions must preserve their intended semantic
-  dimension.
-  Rationale: OA has distinct semantic types; mixing them incorrectly causes persisted values, comparisons, and UI
-  output to drift.
-  Source locations: OAConverterDate, OAConverterSqlDate, OAConverterTime, OAConverterTimestamp, OAConverterOADate,
-  OAConverterOADateTime, OAConverterOATime, Java time converters.
-  Related CODEX findings: java.util.Date.convertToString clears time through OADate; LocalDate/LocalTime missing
-  normal temporal source types.
-  Suggested unit tests: dateFormattingPreservesTimeWhenDateTimeFormatUsed, sqlDateDropsTimeByContract,
-  localDateAcceptsDateTimeSources, localTimeAcceptsDateTimeSources
-  Spec target section: Converter Runtime / Temporal Semantics
+CONV-FORMAT-001 — Format Parameter Semantics
+Contract statement:
+When a format is supplied, parsing and formatting must interpret that format consistently for the target semantic
+type; malformed or incomplete format tokens must fail predictably rather than causing incidental runtime exceptions.
+Rationale:
+Formats are part of OA’s UI, report, template, datasource, and serialization-facing contract. Inconsistent format
+handling produces silent wrong output or hidden runtime failures.
+Source scope:
+OAConverter.getFormat, OAConverter.toString overloads, OAConverterNumber, OAConverterBoolean, OAConverterString,
+OAConverterDate/OADate/OADateTime/OATime-related converters.
+Related CODEX findings:
+OAConverterBoolean.convert can throw NullPointerException for a one-field custom boolean format.
+Suggested unit tests:
+booleanCustomFormatRoundTrips, booleanOneFieldFormatReturnsNullForUnrecognizedValue,
+dateTimeFormattedStringParsesBack, stringFormatAppliesMaskDeterministically.
+Spec target section:
+Converter Runtime / Format Contracts
 
-  ID: CONV-DATE-002
-  Contract statement: timezone use must be explicit: instant-bearing values preserve instants; local/date-only values
-  use documented system/OA timezone rules only where required.
-  Rationale: OA sync, replication, datasource values, and distributed clients must avoid accidental timezone drift.
-  Source locations: OAConverterInstant, OAConverterZonedDateTime, OAConverterLocalDateTime, OAConverterLocalDate,
-  OAConverterTimestamp, OAConverterDate.
-  Related CODEX findings: ZonedDateTime.convertToString discards source zone.
-  Suggested unit tests: zonedDateTimeFormattingPreservesZoneContract, instantToLocalDateTimeUsesSystemZoneByContract,
-  localDateToDateUsesSystemZoneByContract
-  Spec target section: Converter Runtime / Timezone Semantics
+CONV-BOOL-001 — Boolean Vocabulary Semantics
+Contract statement:
+Boolean conversion must use a defined vocabulary for strings, numbers, characters, and custom true/false/null
+formats; unknown values must return null or a documented default, not accidental truth.
+Rationale:
+Boolean values control flags, filtering, permissions, UI enablement, and datasource state. False allow/deny style
+errors can result from wrong coercion.
+Source scope:
+OAConverterBoolean.convert, OAConverterBoolean.convertToString, OAConverter.toBoolean overloads.
+Related CODEX findings:
+Signed numeric zero strings can convert to true; one-field custom boolean format can throw NullPointerException.
+Suggested unit tests:
+booleanNumericZeroIsFalse, booleanSignedZeroIsFalse, booleanNonZeroNumericStringIsTrue,
+booleanUnknownCustomFormatReturnsNull, booleanCustomNullTokenFormats.
+Spec target section:
+Converter Runtime / Boolean Semantics
 
-  ID: CONV-BOOL-001
-  Contract statement: boolean conversion must use a defined vocabulary for strings, numbers, characters, and custom
-  true/false/null formats.
-  Rationale: booleans often control filtering, flags, permissions, and datasource values; unknown values must not
-  silently become accepted truth.
-  Source locations: OAConverterBoolean.convert, OAConverterBoolean.convertToString, OAConverter.toBoolean.
-  Related CODEX findings: signed numeric zero strings convert true; one-field custom format can throw NPE.
-  Suggested unit tests: booleanNumericZeroIsFalse, booleanSignedZeroIsFalse, booleanUnknownCustomFormatReturnsNull,
-  booleanCustomNullTokenFormats
-  Spec target section: Converter Runtime / Boolean Semantics
+CONV-TEMPORAL-001 — Temporal Semantic Dimension Preservation
+Contract statement:
+Date-only, time-only, date-time, instant, local, zoned, SQL temporal, and OA temporal conversions must preserve the
+semantic dimension of the requested target; loss of date, time, instant, or zone information is allowed only where
+the target type cannot represent it and the rule is documented.
+Rationale:
+OA uses temporal values in datasource persistence, query criteria, UI display, sorting, sync/replication, and
+serialization. Accidental temporal dimension loss changes business meaning.
+Source scope:
+OAConverterDate, OAConverterCalendar, OAConverterSqlDate, OAConverterTime, OAConverterTimestamp, OAConverterOADate,
+OAConverterOADateTime, OAConverterOATime, OAConverterInstant, OAConverterLocalDate, OAConverterLocalDateTime,
+OAConverterLocalTime, OAConverterZonedDateTime.
+Related CODEX findings:
+OAConverterDate.convertToString can clear time by formatting java.util.Date through OADate;
+OAConverterLocalTime.convert misses normal time-bearing source types.
+Suggested unit tests:
+javaUtilDateFormattingPreservesTimeForDateTimeFormat, sqlDateDropsTimeByContract,
+localTimeAcceptsOADateTimeAndLocalDateTimeSources, temporalTargetDocumentsDimensionLoss.
+Spec target section:
+Converter Runtime / Temporal Semantics
 
-  ID: CONV-ENUM-001
-  Contract statement: enum conversion must be deterministic by target enum type, canonical name, or ordinal; unknown
-  values return null rather than a wrong enum.
-  Rationale: enum values commonly encode domain state and workflow state. Wrong constants corrupt object behavior.
-  Source locations: OAConverterEnum.convert, OAConverterEnum.convertToString, OAConverterVEnum.
-  Related CODEX findings: enum converter accepts any enum instance.
-  Suggested unit tests: enumNameMatchesIgnoringCase, enumOrdinalMatchesTargetEnumOnly, enumRejectsDifferentEnumClass,
-  enumUnknownStringReturnsNull
-  Spec target section: Converter Runtime / Enum Semantics
+CONV-TEMPORAL-002 — Timezone And Zone Identity Semantics
+Contract statement:
+Instant-bearing and zone-bearing conversions must preserve instants and zone identity where the target type can
+represent them; use of system-default timezone must be explicit for local or zone-less sources.
+Rationale:
+Distributed OA runtimes, sync, replication, datasource conversion, and UI formatting must avoid accidental timezone
+drift between servers, clients, and test environments.
+Source scope:
+OAConverterInstant, OAConverterZonedDateTime, OAConverterZoneId, OAConverterTimeZone, OAConverterLocalDateTime,
+OAConverterLocalDate, OAConverterDate, OAConverterTimestamp, OADateTime-based conversions.
+Related CODEX findings:
+OAConverterZonedDateTime.convertToString can discard the source ZoneId/offset.
+Suggested unit tests:
+zonedDateTimeFormattingPreservesZoneContract, instantToLocalDateTimeUsesSystemZoneByContract,
+zoneIdConverterRejectsUnknownZone, timeZoneConverterRoundTripsKnownZone.
+Spec target section:
+Converter Runtime / Timezone Semantics
 
-  ID: CONV-CLASS-001
-  Contract statement: class conversion must resolve the exact requested class name through supported class loaders or
-  fail as null/visible failure.
-  Rationale: class values can drive metadata, reflection, code generation, and runtime routing.
-  Source locations: OAConverterClass.convert, OAConverterClass.convertToString.
-  Related CODEX findings: none.
-  Suggested unit tests: classConverterRoundTripsName, classConverterUsesContextClassLoaderFallback,
-  classConverterReturnsNullForUnknownClass
-  Spec target section: Converter Runtime / Class Semantics
+CONV-TEMPORAL-003 — Temporal Binary Numeric Input Semantics
+Contract statement:
+Numeric and byte-array temporal inputs must be interpreted consistently as epoch milliseconds where that is the
+package contract, and unsupported byte encodings must fail predictably rather than throwing incidental low-level
+exceptions.
+Rationale:
+OA datasource, serialization, and replication paths may pass compact numeric representations. Related temporal
+converters must not diverge unexpectedly for normal OA values.
+Source scope:
+OAConverterDate, OAConverterTime, OAConverterTimestamp, OAConverterLocalDateTime, OAConverterLocalTime,
+OAConverterZonedDateTime, OAConverterInstant.
+Related CODEX findings:
+OAConverterLocalDateTime.convert requires exactly 8 bytes via ByteBuffer.getLong while related converters accept
+variable-length numeric byte arrays.
+Suggested unit tests:
+temporalByteArrayEpochMillisParsesConsistently, localDateTimeShortByteArrayFailsPredictably,
+temporalNumberEpochMillisUsesDocumentedZone, invalidTemporalBytesDoNotThrowBufferUnderflow.
+Spec target section:
+Converter Runtime / Temporal Binary Input Semantics
 
-  ID: CONV-THREAD-001
-  Contract statement: shared parser/formatter instances must be synchronized, pooled with exclusive ownership,
-  immutable, or method-local.
-  Rationale: converters are global utilities and can be used concurrently by UI, sync, datasource, serialization, and
-  background threads.
-  Source locations: OAConverterNumber.FormatPool, OAConverterNumber.getFormatter, OAConverterNumber.releaseFormatter,
-  OA date/time formatter use.
-  Related CODEX findings: none.
-  Suggested unit tests: numberFormatterConcurrentParseIsStable, numberFormatterConcurrentFormatIsStable,
-  dateTimeConcurrentFormatParseIsStable
-  Spec target section: Converter Runtime / Thread Safety
+CONV-ENUM-001 — Enum Target Semantics
+Contract statement:
+Enum conversion must be deterministic by requested enum class, canonical name, or ordinal; unknown values or enum
+values from another enum class must return null rather than a wrong enum instance.
+Rationale:
+Enums encode domain state, workflow state, and generated model metadata. Returning the wrong enum corrupts object
+behavior and can break later assignment or serialization.
+Source scope:
+OAConverterEnum.convert, OAConverterEnum.convertToString, OAConverterVEnum.convert,
+OAConverterVEnum.convertToString.
+Related CODEX findings:
+OAConverterEnum.convert can accept any Enum instance.
+Suggested unit tests:
+enumNameMatchesIgnoringCase, enumOrdinalMatchesTargetEnumOnly, enumRejectsDifferentEnumClass,
+enumUnknownStringReturnsNull, enumToStringUsesCanonicalName.
+Spec target section:
+Converter Runtime / Enum Semantics
 
-  ID: CONV-DISPATCH-001
-  Contract statement: direct converter calls and OAConverter/OAConv helper calls must preserve the same conversion
-  semantics except for documented primitive-helper defaults and exceptions.
-  Rationale: OA code uses both direct converters and convenience helpers; semantic drift creates package-dependent
-  behavior.
-  Source locations: OAConverter, OAConv, all OAConverterInterface implementations.
-  Related CODEX findings: VEnum.convertToString(null) direct result differs from central toString normalization.
-  Suggested unit tests: oaConvMatchesOAConverter, directConverterAndCentralToStringAgreeForNullDisplay,
-  primitiveHelperExceptionSemanticsAreDocumented
-  Spec target section: Converter Runtime / Helper Consistency
+CONV-CLASS-001 — Class Resolution Semantics
+Contract statement:
+Class conversion must resolve the intended class name through supported class-loading rules or fail as null/visible
+failure; it must not silently resolve to an unrelated class identity.
+Rationale:
+Class values drive OA metadata, reflection, code generation, runtime routing, and serialization compatibility. Class
+identity drift can corrupt metadata and object graph behavior.
+Source scope:
+OAConverterClass.convert, OAConverterClass.convertToString, OAConverter.convert(Class.class,...).
+Related CODEX findings:
+none.
+Suggested unit tests:
+classConverterRoundTripsClassName, classConverterReturnsNullForUnknownClass,
+classConverterUsesSupportedClassLoaderPath, classConverterDoesNotResolveWrongClass.
+Spec target section:
+Converter Runtime / Class Semantics
 
-  ID: CONV-ROUNDTRIP-001
-  Contract statement: where OA depends on persistence/display round-trip behavior, convertToString output must be
-  parseable back to the same semantic value under the same format.
-  Rationale: OA templates, reports, UI fields, serialization, and datasource string values depend on stable reversible
-  representations.
-  Source locations: numeric, boolean, enum, class, date/time converters.
-  Related CODEX findings: ZonedDateTime.convertToString loses zone; Date formatting through OADate loses time.
-  Suggested unit tests: numberRoundTripWithFormat, booleanRoundTripWithFormat, enumRoundTripByName,
-  dateTimeRoundTripWithFormat, zonedDateTimeRoundTripPreservesContract
-  Spec target section: Converter Runtime / Round-Trip Semantics
+CONV-SPECIAL-001 — Specialized Value Representation Semantics
+Contract statement:
+Specialized converters for Character, Calendar, TimeZone, ZoneId, VEnum, and similar domain-adjacent values must
+preserve their documented semantic representation and return null or an empty display string only according to the
+target/display contract.
+Rationale:
+These values often bridge runtime metadata, UI display, scheduling, and temporal configuration. Blank or fallback
+output for a populated value is silent wrong behavior.
+Source scope:
+OAConverterCharacter, OAConverterCalendar, OAConverterTimeZone, OAConverterZoneId, OAConverterVEnum,
+OAConverterString delegation paths.
+Related CODEX findings:
+OAConverterCalendar.convertToString can return blank for normal Calendar values; VEnum direct convertToString(null)
+differs from central display normalization.
+Suggested unit tests:
+calendarToStringFormatsPopulatedCalendar, characterConverterHandlesStringAndNumberInputs,
+timeZoneConverterFormatsKnownZone, vEnumToStringNullBehaviorMatchesContract.
+Spec target section:
+Converter Runtime / Specialized Type Semantics
 
-  ID: CONV-DEFAULT-001
-  Contract statement: default values used during conversion must be target-type intentional and documented, not
-  accidental fallback values.
-  Rationale: OA primitive-null abstraction and object property semantics require clear separation between null, blank,
-  zero, false, and failed conversion.
-  Source locations: OAConverterNumber.convert, OAConverterBoolean.convert, primitive helper methods in OAConverter.
-  Related CODEX findings: none.
-  Suggested unit tests: numberNullConvertsToZeroByContract, booleanNullConvertsToFalseByContract,
-  objectTemporalNullConvertsToNull, invalidInputDoesNotUseDefault
-  Spec target section: Converter Runtime / Default Value Semantics
+CONV-ROUNDTRIP-001 — Parse/Format Round Trip Stability
+Contract statement:
+Where OA relies on reversible text representation, convertToString output must parse back to the same semantic value
+under the same target type and format, subject only to documented precision, timezone, or target-type loss.
+Rationale:
+UI fields, templates, reports, datasource string columns, serialization text, and generated tooling often depend on
+stable round trips.
+Source scope:
+OAConverterNumber, OAConverterBigDecimal, OAConverterBoolean, OAConverterEnum, OAConverterClass, OAConverterDate/
+time converters, OAConverterZoneId, OAConverterTimeZone.
+Related CODEX findings:
+ZonedDateTime formatting can lose zone; java.util.Date formatting can lose time; BigDecimal string path can lose
+precision.
+Suggested unit tests:
+numberRoundTripWithFormat, bigDecimalRoundTripPreservesPrecision, booleanRoundTripWithFormat, enumRoundTripByName,
+dateTimeRoundTripWithFormat, zonedDateTimeRoundTripPreservesContract.
+Spec target section:
+Converter Runtime / Round-Trip Semantics
 
-  Suggested Package-Level Spec Summary
+CONV-HELPER-001 — Convenience API Consistency
+Contract statement:
+OAConv and OAConverter helper methods must preserve the same conversion semantics as the registered converter
+implementations, except for documented primitive-helper defaults and exception behavior.
+Rationale:
+OA code uses both direct converter classes and convenience facades. Divergent behavior creates package-dependent
+conversion results for the same value.
+Source scope:
+OAConv, OAConverter.convert, OAConverter.toString, OAConverter.toXxx helper methods, all registered converter
+implementations.
+Related CODEX findings:
+VEnum direct convertToString(null) differs from central toString normalization.
+Suggested unit tests:
+oaConvMatchesOAConverterForCoreTypes, directConverterAndCentralConverterAgreeForStringFormatting,
+primitiveHelperExceptionSemanticsAreDocumented, helperUsesRegisteredConverterForTarget.
+Spec target section:
+Converter Runtime / Facade Consistency
 
-  - com.viaoa.converter is OA’s central type-coercion layer for property assignment, datasource values, serialization,
-    comparisons, UI, reports, and templates.
-  - Conversions are target-type driven: the requested type defines the semantic contract.
-  - Failed conversion must be explicit: return null or throw through helper methods, never silently produce a
-    plausible wrong value.
-  - Null/default behavior is part of the contract and must differ intentionally between object targets, display
-    strings, and primitive helper methods.
-  - Numeric conversion must preserve precision until an explicit target-type narrowing or formatter rounding boundary.
-  - Temporal conversion must respect OA’s semantic split between date-only, time-only, date-time, instant, and zoned
-    values.
-  - Format strings are part of the conversion contract and should support stable parse/format behavior where OA relies
-    on round trips.
-  - Converter state must be safe for concurrent use because converters are global runtime utilities.
-  - OAConv is only a convenience facade; it must not diverge from OAConverter behavior.
-  - Converter unit tests should be contract tests, not only class-specific examples.
+CONV-REGISTRY-001 — Converter Registry Consistency
+Contract statement:
+Converter registration and lookup must publish a coherent converter mapping for each target type, including
+superclass lookup, without exposing partially registered or stale converter state.
+Rationale:
+Converters are global runtime infrastructure used across OA packages. Registry drift can make identical conversion
+requests behave differently across threads or runtime phases.
+Source scope:
+OAConverter.hmClassConverter, OAConverter.addConverter, OAConverter.getConverter, static converter initialization.
+Related CODEX findings:
+none.
+Suggested unit tests:
+registeredConverterIsImmediatelyVisible, subclassLookupFindsSuperclassConverter,
+replacedConverterIsUsedDeterministically, concurrentConverterLookupSeesCoherentMapping.
+Spec target section:
+Converter Runtime / Registry Semantics
 
+CONV-THREAD-001 — Shared Converter Thread Safety
+Contract statement:
+Shared parser, formatter, registry, and converter state must be immutable, safely published, synchronized, pooled
+with exclusive ownership, or method-local.
+Rationale:
+Converters are global utilities used by UI, datasource, serialization, sync, queue, schedule, remote, and background
+threads. Formatter or registry races can produce wrong values or intermittent failures.
+Source scope:
+OAConverter registry and global format fields, OAConverterNumber.FormatPool/getFormatter/releaseFormatter, DecimalF
+ormat use, date/time formatter use, static converter instances.
+Related CODEX findings:
+none.
+Suggested unit tests:
+numberFormatterConcurrentParseIsStable, numberFormatterConcurrentFormatIsStable,
+converterRegistryConcurrentLookupIsStable, temporalConcurrentFormatParseIsStable.
+Spec target section:
+Converter Runtime / Thread Safety
+
+CONV-DETERMINISM-001 — Same Inputs Produce Same Observable Result
+Contract statement:
+For the same target type, source value, format, registered converter state, locale/timezone assumptions, and helper
+path, conversion must produce the same observable result or the same visible failure.
+Rationale:
+OA comparison, query binding, datasource persistence, serialization, generated tooling, and UI display require
+deterministic conversion behavior for repeatable runtime correctness.
+Source scope:
+All classes in com.viaoa.converter, especially OAConverter, OAConv, OAConverterNumber, OAConverterBoolean,
+OAConverterString, and all temporal converters.
+Related CODEX findings:
+Platform-default Blob decoding and timezone-discarding ZonedDateTime formatting can make results environment-
+dependent.
+Suggested unit tests:
+sameInputSameOutputAcrossRepeatedCalls, blobTextUsesStableCharset, timezoneSensitiveConversionUsesDocumentedZone,
+converterFailureIsRepeatable.
+Spec target section:
+Converter Runtime / Determinism
+
+CONV-INTEGRATION-001 — Runtime Integration Boundaries
+Contract statement:
+Converter behavior must remain compatible with OAObject property assignment, Hub/UI display, query/select comparison
+values, datasource hydration/persistence, serialization, config, logging, sync/replication payloads, and generated
+model/tooling expectations.
+Rationale:
+The converter package is a shared semantic boundary. A conversion result that is locally plausible but incompatible
+with downstream OA packages can corrupt object state or runtime decisions.
+Source scope:
+OAConverter, OAConv, all OAConverterInterface implementations, package-level default format APIs.
+Related CODEX findings:
+Precision loss, temporal dimension loss, timezone loss, enum target mismatch, and charset drift all illustrate
+cross-package runtime risk.
+Suggested unit tests:
+converterValueCanAssignToOAObjectProperty, datasourceStringValueConvertsToExpectedPropertyType,
+queryParameterConversionPreservesComparisonIntent, serializationTextRoundTripPreservesSemanticValue.
+Spec target section:
+Converter Runtime / Cross-Package Contracts
 
 */
-
 
 

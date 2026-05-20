@@ -22,488 +22,349 @@ package com.viaoa.cache;
 
 /* CODEX Invariants
 
-1. Cache Identity Contracts
-
-  CACHE-IDENTITY-001 — One Cached Runtime Identity Per GUID
-  Contract statement: Within a graph/cache scope, a GUID must resolve to at most one live OAObject identity.
-  Rationale: GUID lookup is OA’s runtime identity anchor before or alongside persistent keys.
-  Source locations: OAObjectCache, cache add/get/remove paths, graph object cache service.
-  Known related CODEX findings: identity/cache drift issues were handled in graph/cache scans.
-  Suggested unit tests: testSameGuidReturnsSameCachedObject(), testDuplicateGuidDoesNotCreateSecondLiveIdentity()
-  Spec target section: Cache Runtime / GUID Identity
-
-  CACHE-IDENTITY-002 — Cache Add Must Enforce Object Uniqueness By Contract
-  Contract statement: Adding an object to cache must honor the configured add/duplicate policy and must not silently
-  create conflicting identities.
-  Rationale: Duplicate cached identities corrupt Hubs, references, serialization, sync, and datasource merging.
-  Source locations: OAObjectCache, object cache service add paths.
-  Known related CODEX findings: duplicate/add-mode behavior reviewed.
-  Suggested unit tests: testCacheAddRejectsDuplicateWhenNoDups(), testCacheAddIgnoreDupsReturnsExistingIdentity()
-  Spec target section: Cache Runtime / Object Uniqueness
-
-  CACHE-IDENTITY-003 — Cache Lookup Must Return Live Object Or Defined Miss
-  Contract statement: A cache lookup must return a live object reference or a defined miss; it must not return
-  cleared weak references or stale placeholders.
-  Rationale: Callers treat returned objects as authoritative graph identities.
-  Source locations: OAObjectCache, weak-ref lookup paths.
-  Known related CODEX findings: stale weak-ref issues were part of cache scan.
-  Suggested unit tests: testClearedWeakReferenceLookupReturnsMiss(), testLookupRemovesStaleReferenceWhenObserved()
-  Spec target section: Cache Runtime / Lookup Semantics
-
-  2. GUID Lookup Contracts
-
-  CACHE-GUID-001 — GUID Lookup Is Independent Of Business Key State
-  Contract statement: GUID lookup must work even when an object has no persistent key, a temporary key, or a changed
-  key.
-  Rationale: New/unsaved objects and deserialized objects require runtime identity before persistent identity is
-  stable.
-  Source locations: OAObjectCache, GUID map/index, object guid service.
-  Known related CODEX findings: GUID/business-key distinction reviewed.
-  Suggested unit tests: testGuidLookupWorksForNewObjectWithoutKey(), testGuidLookupSurvivesBusinessKeyChange()
-  Spec target section: Cache Runtime / GUID Lookup
-
-  CACHE-GUID-002 — GUID Removal Must Remove Only That Runtime Identity
-  Contract statement: Removing by GUID/object must remove the intended runtime identity without corrupting unrelated
-  business-key entries.
-  Rationale: Cache eviction/delete must not remove other objects that share stale or transitional key state.
-  Source locations: OAObjectCache, cache remove paths.
-  Known related CODEX findings: remove/index consistency reviewed.
-  Suggested unit tests: testRemoveByGuidRemovesOnlyMatchingObject(),
-  testRemoveOneObjectDoesNotRemoveDifferentKeyObject()
-  Spec target section: Cache Runtime / GUID Removal
-
-  3. Business-Key / Object-ID Index Contracts
-
-  CACHE-INDEX-001 — Business-Key Index Maps Class+Key To Live Identity
-  Contract statement: For persistent-key lookup, class plus object key must resolve to the live cached identity for
-  that persistent object or a defined miss.
-  Rationale: Datasource load, references, and sync object resolution depend on class/key lookup.
-  Source locations: OAObjectCache, object-id map/index, OAObjectKey.
-  Known related CODEX findings: object-id index bugs were scanned.
-  Suggested unit tests: testClassKeyLookupReturnsCachedObject(), testClassKeyLookupMissForUnknownKey()
-  Spec target section: Cache Runtime / Business-Key Lookup
-
-  CACHE-INDEX-002 — Key Index Must Update On Object Key Change
-  Contract statement: When an object’s business key changes, old key index entries must be removed and new key
-  entries installed atomically enough to avoid stale lookup.
-  Rationale: Stale key entries create duplicate identities or route updates to the wrong object.
-  Source locations: OAObjectCache, key-change update paths, graph key/cache services.
-  Known related CODEX findings: key-change/cache-index consistency reviewed.
-  Suggested unit tests: testKeyChangeRemovesOldIndexEntry(), testKeyChangeInstallsNewIndexEntry(),
-  testOldKeyDoesNotReturnObjectAfterChange()
-  Spec target section: Cache Runtime / Key Index Consistency
-
-  CACHE-INDEX-003 — Composite Keys Must Preserve Component Semantics
-  Contract statement: Composite object keys must index by the ordered component values exactly as defined by
-  metadata.
-  Rationale: Wrong composite-key behavior returns wrong object identity.
-  Source locations: OAObjectCache, OAObjectKey, object key service.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testCompositeKeyLookupUsesAllComponents(), testCompositeKeyComponentOrderMatters()
-  Spec target section: Cache Runtime / Composite Key Semantics
-
-  4. GUID vs Business-Key Semantics
-
-  CACHE-IDENTITY-004 — GUID Conflict And Key Conflict Resolution Must Be Defined
-  Contract statement: If GUID identity and business-key identity point to different live objects, cache add/merge
-  behavior must follow a defined conflict policy.
-  Rationale: Deserialization, datasource reload, and sync can encounter identity reconciliation cases.
-  Source locations: OAObjectCache, graph object cache service add/merge paths.
-  Known related CODEX findings: identity reconciliation risks covered in graph/cache scans.
-  Suggested unit tests: testGuidConflictUsesDefinedPolicy(), testBusinessKeyConflictUsesDefinedPolicy()
-  Spec target section: Cache Runtime / Identity Conflict Resolution
-
-  CACHE-IDENTITY-005 — Business Key Must Not Replace Runtime GUID Identity Silently
-  Contract statement: Resolving by business key must not silently mutate or replace an existing GUID identity unless
-  reconciliation rules explicitly allow it.
-  Rationale: Prevents hidden object substitution in Hubs/references.
-  Source locations: OAObjectCache, object cache service.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testBusinessKeyLookupDoesNotMutateGuidIdentityUnexpectedly(),
-  testIdentityMergeIsObservableByContract()
-  Spec target section: Cache Runtime / GUID-Key Interaction
-
-  5. Weak Reference / GC Cleanup Contracts
-
-  CACHE-GC-001 — Cleared Weak References Are Not Valid Cache Hits
-  Contract statement: A weak reference whose referent has been cleared must be treated as absent and cleaned from
-  indexes.
-  Rationale: Returning dead/stale entries breaks identity lookup and can cause false cache hits.
-  Source locations: OAObjectCache, weak-reference maps.
-  Known related CODEX findings: stale weak-ref behavior reviewed.
-  Suggested unit tests: testClearedWeakReferenceNotReturned(), testClearedWeakReferenceRemovedFromGuidIndex()
-  Spec target section: Cache Runtime / Weak Reference Semantics
-
-  CACHE-GC-002 — Weak Cleanup Must Remove All Index Entries For Same Object
-  Contract statement: When a cached object is GC-cleared, all GUID and business-key index entries for that object
-  must be eligible for cleanup.
-  Rationale: Partial cleanup leaves stale key hits or index leaks.
-  Source locations: OAObjectCache, cleanup/remove paths.
-  Known related CODEX findings: reference cleanup issues reviewed.
-  Suggested unit tests: testWeakCleanupRemovesGuidAndKeyEntries(), testWeakCleanupDoesNotRemoveLiveDifferentObject()
-  Spec target section: Cache Runtime / Weak Cleanup
-
-  6. Reference Queue Contracts
-
-  CACHE-REFQUEUE-001 — Reference Queue Cleanup Must Be Safe Under Mutation
-  Contract statement: Processing cleared references from the reference queue must not corrupt indexes while
-  concurrent cache add/remove/lookup occurs.
-  Rationale: Cache cleanup runs alongside normal graph runtime operations.
-  Source locations: OAObjectCache, reference queue cleanup logic.
-  Known related CODEX findings: reference queue cleanup and concurrency issues reviewed.
-  Suggested unit tests: testReferenceQueueCleanupDuringConcurrentAdd(),
-  testReferenceQueueCleanupDuringConcurrentLookup()
-  Spec target section: Cache Runtime / Reference Queue Cleanup
-
-  CACHE-REFQUEUE-002 — Reference Queue Cleanup Must Not Remove Newer Identity For Same Key
-  Contract statement: Cleanup of an old cleared weak reference must not remove a newer live object that now owns the
-  same GUID/key entry.
-  Rationale: Stale cleanup can delete valid cache entries after replacement/reload.
-  Source locations: OAObjectCache, weak reference cleanup compare/remove paths.
-  Known related CODEX findings: stale cleanup CAS/match-value risks reviewed.
-  Suggested unit tests: testOldClearedReferenceDoesNotRemoveNewLiveKeyEntry(),
-  testOldClearedReferenceDoesNotRemoveNewLiveGuidEntry()
-  Spec target section: Cache Runtime / Stale Reference Cleanup
-
-  7. Cache Mutation / Concurrency Contracts
-
-  CACHE-CONCURRENCY-001 — Cache Add/Remove/Lookup Must Be Thread-Safe
-  Contract statement: Concurrent cache mutations and lookups must not corrupt GUID or key indexes, return wrong
-  identity, or throw unexpected concurrent modification errors.
-  Rationale: OA graph runtime can be used by server threads, sync, replication, and UI operations concurrently.
-  Source locations: OAObjectCache, graph object cache service.
-  Known related CODEX findings: concurrency risks were part of cache review.
-  Suggested unit tests: testConcurrentAddLookupSameKeyStable(), testConcurrentRemoveLookupDoesNotCorruptIndex()
-  Spec target section: Cache Runtime / Concurrent Mutation
-
-  CACHE-CONCURRENCY-002 — Index Updates Must Be All-Or-Detectably-Incomplete
-  1. Cache Identity Contracts
-
-  CACHE-IDENTITY-001 — One Live Cached Identity Per Graph Object Identity
-  Contract statement: For a given graph identity, the cache must resolve to one live OAObject instance, not multiple
-  competing instances.
-  Rationale: OAObject references, Hubs, datasource loads, serialization, sync, and replication rely on identity
-  stability.
-  Source locations: OAObjectCache, OAObjectCacheListener, graph object cache service.
-  Known related CODEX findings: identity/cache drift issues were found in graph/cache scans.
-  Suggested unit tests: testSameGuidReturnsSameCachedObject(), testDuplicateAddUsesConfiguredDuplicatePolicy()
-  Spec target section: Cache Runtime / Identity Semantics
-
-  CACHE-IDENTITY-002 — Cache Lookup Must Never Return Cleared Weak References As Objects
-  Contract statement: Any cache lookup that encounters a cleared weak reference must treat it as absent and clean
-  stale index state when required.
-  Rationale: Stale weak refs create false cache hits and broken identity resolution.
-  Source locations: OAObjectCache, weak-reference lookup/cleanup paths.
-  Known related CODEX findings: stale weak-ref behavior was reviewed.
-  Suggested unit tests: testClearedWeakReferenceDoesNotReturnObject(), testLookupCleansStaleWeakReferenceIndex()
-  Spec target section: Cache Runtime / Stale Reference Semantics
-
-  2. GUID Lookup Contracts
-
-  CACHE-GUID-001 — GUID Lookup Is Runtime Identity Lookup
-  Contract statement: Lookup by GUID must resolve the live object instance associated with that GUID, or null if no
-  live object exists.
-  Rationale: GUID is OA runtime identity and is used before or independent of persistent object keys.
-  Source locations: OAObjectCache, object guid service, cache service.
-  Known related CODEX findings: none observed beyond identity drift findings.
-  Suggested unit tests: testGetByGuidReturnsLiveObject(), testGetByGuidReturnsNullAfterObjectCollectedAndCleaned()
-  Spec target section: Cache Runtime / GUID Lookup
-
-  CACHE-GUID-002 — GUID Index Must Update Atomically With Cache Add/Remove
-  Contract statement: Adding/removing an object from cache must update GUID index state consistently with the object
-  reference.
-  Rationale: GUID lookup must not point to removed or wrong objects.
-  Source locations: OAObjectCache.add/remove, graph cache service wrappers.
-  Known related CODEX findings: cache/index consistency issues reviewed.
-  Suggested unit tests: testAddObjectCreatesGuidIndexEntry(), testRemoveObjectRemovesGuidIndexEntry()
-  Spec target section: Cache Runtime / GUID Index Consistency
-
-  3. Business-Key / Object-ID Index Contracts
-
-  CACHE-INDEX-001 — Object-ID Lookup Must Resolve Current Key Index
-  Contract statement: Lookup by object ID/business key must use the current object key index and return the matching
-  live object or null.
-  Rationale: Datasource and link resolution depend on business-key lookup.
-  Source locations: OAObjectCache, key index methods, graph object key service.
-  Known related CODEX findings: object-key index drift issues reviewed.
-  Suggested unit tests: testGetByObjectIdReturnsMatchingObject(), testGetByCompositeObjectIdReturnsMatchingObject()
-  Spec target section: Cache Runtime / Business-Key Lookup
-
-  CACHE-INDEX-002 — Key Index Must Change When Object Key Changes
-  Contract statement: When an object key changes, the old key index must be removed and the new key index installed
-  consistently.
-  Rationale: Otherwise stale keys can find the wrong object or new keys cannot find the object.
-  Source locations: OAObjectCache, key change paths, object key service.
-  Known related CODEX findings: key-change/cache-index risks mapped here.
-  Suggested unit tests: testKeyChangeRemovesOldIndex(), testKeyChangeAddsNewIndex(),
-  testOldKeyDoesNotResolveAfterKeyChange()
-  Spec target section: Cache Runtime / Key Index Mutation
-
-  CACHE-INDEX-003 — Composite Keys Must Preserve Full Key Equality
-  Contract statement: Composite object IDs must compare all key parts according to OAObjectKey semantics.
-  Rationale: Partial or ordered-wrong comparison creates identity collisions.
-  Source locations: OAObjectCache, OAObjectKey, key index lookup.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testCompositeKeyRequiresAllParts(), testCompositeKeyOrderMattersByContract()
-  Spec target section: Cache Runtime / Composite Key Semantics
-
-  4. GUID vs Business-Key Semantics
-
-  CACHE-IDENTITY-003 — GUID And Business Key Are Distinct Indexes For Same Object
-  Contract statement: GUID and business-key indexes may both identify an object, but neither may silently overwrite
-  the other’s semantic role.
-  Rationale: New objects can have GUID before persistent keys; loaded objects can arrive by key.
-  Source locations: OAObjectCache, object guid/key services.
-  Known related CODEX findings: GUID/key distinction reviewed in graph/object invariants.
-  Suggested unit tests: testNewObjectGuidLookupWorksBeforeKeyAssigned(), testKeyAssignedObjectResolvesByGuidAndKey()
-  Spec target section: Cache Runtime / GUID-Key Relationship
-
-  CACHE-IDENTITY-004 — Conflicting GUID/Key Must Resolve By Defined OA Policy
-  Contract statement: If an object arrives with a GUID/key combination that conflicts with existing cache entries,
-  cache behavior must follow a defined conflict policy rather than silently corrupt identity.
-  Rationale: Deserialization, sync, and datasource loads can encounter conflicts.
-  Source locations: OAObjectCache.add, duplicate handling, graph cache service add modes.
-  Known related CODEX findings: duplicate/identity conflict risks reviewed.
-  Suggested unit tests: testDuplicateGuidDifferentKeyUsesDefinedPolicy(),
-  testDuplicateKeyDifferentGuidUsesDefinedPolicy()
-  Spec target section: Cache Runtime / Identity Conflict Policy
-
-  5. Weak Reference / GC Cleanup Contracts
-
-  CACHE-GC-001 — Cache Does Not Keep Objects Alive Unless Explicitly Retained Elsewhere
-  Contract statement: Core object cache entries must use weak references so normal cache membership alone does not
-  prevent garbage collection.
-  Rationale: OA graphs can be large; cache identity should not become an unbounded strong-retention store.
-  Source locations: OAObjectCache, weak-reference entry classes, reference cleanup paths.
-  Known related CODEX findings: weak-reference behavior reviewed.
-  Suggested unit tests: testCacheUsesWeakReferenceSemantics(), testUnreferencedCachedObjectCanBeCollected()
-  Spec target section: Cache Runtime / Weak Reference Semantics
-
-  CACHE-GC-002 — Cleared Weak References Must Be Removed From All Indexes
-  Contract statement: When a cached object is collected, GUID and key indexes must eventually remove the stale
-  entry.
-  Rationale: Prevents stale lookup false positives and index growth.
-  Source locations: OAObjectCache, reference cleanup methods.
-  Known related CODEX findings: reference-queue cleanup risks reviewed.
-  Suggested unit tests: testCollectedObjectRemovedFromGuidIndex(), testCollectedObjectRemovedFromKeyIndex()
-  Spec target section: Cache Runtime / GC Cleanup
-
-  6. Reference Queue Contracts
-
-  CACHE-REFQUEUE-001 — Reference Queue Cleanup Must Preserve Live Entries
-  Contract statement: Cleanup of collected weak references must remove only stale entries and must not remove live
-  objects sharing nearby indexes/classes.
-  Rationale: Cleanup is background/incremental; over-removal breaks identity lookup.
-  Source locations: OAObjectCache, reference queue cleanup logic.
-  Known related CODEX findings: reference queue cleanup issues reviewed.
-  Suggested unit tests: testReferenceQueueCleanupRemovesOnlyCollectedEntry(),
-  testReferenceQueueCleanupPreservesLiveEntrySameClass()
-  Spec target section: Cache Runtime / Reference Queue Cleanup
-
-  CACHE-REFQUEUE-002 — Lookup May Opportunistically Clean Stale Entries
-  Contract statement: Lookup paths may clean stale weak refs encountered during lookup as long as cleanup preserves
-  correctness.
-  Rationale: Avoids requiring separate cleanup timing for correctness.
-  Source locations: OAObjectCache lookup methods.
-  Known related CODEX findings: stale weak-ref lookup behavior reviewed.
-  Suggested unit tests: testLookupCleansClearedGuidReference(), testLookupCleansClearedKeyReference()
-  Spec target section: Cache Runtime / Opportunistic Cleanup
-
-  7. Cache Mutation / Concurrency Contracts
-
-  CACHE-CONCURRENCY-001 — Cache Add/Remove/Lookup Must Be Thread-Safe
-  Contract statement: Concurrent cache mutation and lookup must not corrupt indexes, throw unrelated runtime
-  exceptions, or return impossible identity combinations.
-  Rationale: OA runtime, sync, UI, and datasource loading can operate concurrently.
-  Source locations: OAObjectCache, graph object cache service.
-  Known related CODEX findings: concurrent cache mutation risks reviewed.
-  Suggested unit tests: testConcurrentAddLookupSameClassStable(), testConcurrentRemoveLookupDoesNotCorruptIndex()
-  Spec target section: Cache Runtime / Concurrency Semantics
-
-  CACHE-CONCURRENCY-002 — Duplicate Add Policy Must Be Atomic
-  Contract statement: Duplicate detection and add decision must occur as one atomic cache operation.
-  Rationale: Two concurrent loads of the same key must not create competing cached identities.
-  Source locations: OAObjectCache.add, graph cache service add modes.
-  Known related CODEX findings: duplicate add risks reviewed.
-  Suggested unit tests: testConcurrentDuplicateAddCreatesSingleIdentity(),
-  testConcurrentDuplicateAddPolicyDeterministic()
-  Spec target section: Cache Runtime / Duplicate Add Concurrency
-
-  8. Deleted / New Object Contracts
-
-  CACHE-LIFECYCLE-001 — New Objects Are Cacheable By Runtime Identity
-  Contract statement: New objects without persistent keys may still be cached and found by GUID/runtime identity.
-  Rationale: Unsaved objects participate in Hubs, links, UI, sync, and serialization.
-  Source locations: OAObjectCache, guid service, object cache service.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testNewObjectCachedByGuidBeforeKey(), testNewObjectWithoutKeyDoesNotCreateKeyIndex()
-  Spec target section: Cache Runtime / New Object Semantics
-
-  CACHE-LIFECYCLE-002 — Deleted Objects Must Not Remain Authoritative Cache Hits
-  Contract statement: After authoritative delete completion, cache lookup must not return the deleted object as a
-  live persistent object.
-  Rationale: Prevents ghost references and datasource/cache divergence.
-  Source locations: OAObjectCache, object delete/cache service.
-  Known related CODEX findings: delete/cache coordination issues reviewed.
-  Suggested unit tests: testDeletedObjectRemovedFromCacheIndexes(), testDeletedObjectNotReturnedByKeyLookup()
-  Spec target section: Cache Runtime / Deleted Object Semantics
-
-  9. Cache Listener / Trigger Contracts
-
-  CACHE-LISTENER-001 — Cache Add/Remove Listeners Observe Completed Cache Mutation
-  Contract statement: Cache listeners must observe cache state after the add/remove mutation they are notified about
-  has completed.
-  Rationale: Listener logic often creates Hubs, triggers UI, or sync behavior based on cache state.
-  Source locations: OAObjectCacheListener, cache service listener dispatch.
-  Known related CODEX findings: listener/event ordering issues reviewed in graph/cache scans.
-  Suggested unit tests: testAddListenerCanLookupAddedObject(), testRemoveListenerCannotLookupRemovedObjectByKey()
-  Spec target section: Cache Runtime / Listener Ordering
-
-  CACHE-LISTENER-002 — Listener Failure Must Not Produce False Cache Success
-  Contract statement: If cache listener failure is contractually allowed to abort an operation, cache mutation must
-  not appear completed; otherwise listener failure must be clearly non-authoritative.
-  Rationale: Prevents silent inconsistent side effects.
-  Source locations: cache listener dispatch, graph cache service.
-  Known related CODEX findings: false-success listener risks reviewed.
-  Suggested unit tests: testListenerExceptionPolicyDefinedForAdd(), testListenerExceptionDoesNotCorruptCacheIndex()
-  Spec target section: Cache Runtime / Listener Failure Semantics
-
-  CACHE-TRIGGER-001 — Cache Triggers Must Not Reenter Into Corrupt Mutation State
-  Contract statement: Cache trigger/listener callbacks must not observe or create partially updated index state that
-  violates identity invariants.
-  Rationale: Triggered side effects can recursively query or mutate cache.
-  Source locations: cache listener/trigger dispatch, graph trigger service.
-  Known related CODEX findings: reentrancy risks reviewed.
-  Suggested unit tests: testCacheAddTriggerCanQueryStableIndex(), testReentrantCacheMutationDoesNotCorruptIndex()
-  Spec target section: Cache Runtime / Trigger Reentrancy
-
-  10. Cache Filter / Hub Adder Contracts
-
-  CACHE-FILTER-001 — Cache Filters Must Restrict Results Without Changing Cache Identity
-  Contract statement: Filtering cache results must affect selection visibility only; it must not alter cached
-  identity/index state.
-  Rationale: Filters are views over cache, not cache mutation commands.
-  Source locations: cache find/select methods, OAFilter, object-cache datasource iterator.
-  Known related CODEX findings: object-cache iterator/filter behavior reviewed.
-  Suggested unit tests: testCacheFilterExcludesNonMatchingObject(), testCacheFilterDoesNotRemoveObjectFromCache()
-  Spec target section: Cache Runtime / Filter Semantics
-
-  CACHE-HUBADDER-001 — Cache Hub Adders Must Add Only Matching Live Objects
-  Contract statement: Cache-to-Hub adders/select-all Hub integration must add only live objects that match the Hub/
-  class/filter contract.
-  Rationale: Select-all Hubs and generated views rely on cache-driven membership.
-  Source locations: cache service select-all Hub support, Hub adders, object-cache datasource.
-  Known related CODEX findings: cache hub adder behavior reviewed.
-  Suggested unit tests: testCacheHubAdderAddsLiveMatchingObject(),
-  testCacheHubAdderSkipsCollectedOrWrongClassObject()
-  Spec target section: Cache Runtime / Hub Adder Semantics
-
-  11. Failure / Retry / Silent Corruption Contracts
-
-  CACHE-FAILURE-001 — Cache Mutation Failure Must Not Leave Split Index State
-  Contract statement: If cache add/remove/update fails visibly, indexes must not be left in a state where GUID
-  lookup and key lookup disagree for the same object.
-  Rationale: Split indexes corrupt object identity and retry behavior.
-  Source locations: OAObjectCache.add/remove, key update paths.
-  Known related CODEX findings: partial mutation/index consistency risks reviewed.
-  Suggested unit tests: testFailedAddDoesNotLeaveGuidOnlyIndex(), testFailedRemoveDoesNotLeaveKeyOnlyIndex()
-  Spec target section: Cache Runtime / Failure Consistency
-
-  CACHE-FAILURE-002 — Cache Must Prefer Visible Failure Over Silent Wrong Identity
-  Contract statement: When cache cannot safely resolve identity conflict or stale state, it must fail visibly or
-  return no object rather than return a wrong object.
-  Rationale: Wrong identity is more damaging than a miss because it corrupts graph semantics.
-  Source locations: OAObjectCache lookup/add conflict paths.
-  Known related CODEX findings: false-success/silent corruption risks reviewed.
-  Suggested unit tests: testIdentityConflictDoesNotReturnWrongObject(),
-  testStaleIndexReturnsNullInsteadOfWrongObject()
-  Spec target section: Cache Runtime / Silent Corruption Prevention
-
-  CACHE-RETRY-001 — Retry After Cache Miss/Cleanup Must Remain Correct
-  Contract statement: After a stale weak-ref cleanup or cache miss, later datasource load/add must be able to
-  install a correct fresh cache entry.
-  Rationale: GC cleanup and lazy loading must cooperate.
-  Source locations: OAObjectCache, datasource/object cache service.
-  Known related CODEX findings: stale weak-ref retry behavior reviewed.
-  Suggested unit tests: testLoadAfterStaleWeakRefCleanupInstallsFreshEntry(),
-  testRetryAfterCacheMissFindsLoadedObject()
-  Spec target section: Cache Runtime / Retry Semantics
-
-  12. Test Coverage Matrix
-
-  Identity/GUID:
-
-  - testSameGuidReturnsSameCachedObject
-  - testDuplicateAddUsesConfiguredDuplicatePolicy
-  - testGetByGuidReturnsLiveObject
-  - testAddObjectCreatesGuidIndexEntry
-  - testRemoveObjectRemovesGuidIndexEntry
-
-  Business key/index:
-
-  - testGetByObjectIdReturnsMatchingObject
-  - testGetByCompositeObjectIdReturnsMatchingObject
-  - testKeyChangeRemovesOldIndex
-  - testKeyChangeAddsNewIndex
-  - testOldKeyDoesNotResolveAfterKeyChange
-  - testCompositeKeyRequiresAllParts
-
-  GUID vs key conflict:
-
-  - testNewObjectGuidLookupWorksBeforeKeyAssigned
-  - testKeyAssignedObjectResolvesByGuidAndKey
-  - testDuplicateGuidDifferentKeyUsesDefinedPolicy
-  - testDuplicateKeyDifferentGuidUsesDefinedPolicy
-
-  Weak refs/GC/reference queue:
-
-  - testCacheUsesWeakReferenceSemantics
-  - testUnreferencedCachedObjectCanBeCollected
-  - testCollectedObjectRemovedFromGuidIndex
-  - testCollectedObjectRemovedFromKeyIndex
-  - testReferenceQueueCleanupRemovesOnlyCollectedEntry
-  - testLookupCleansClearedGuidReference
-
-  Concurrency:
-
-  - testConcurrentAddLookupSameClassStable
-  - testConcurrentRemoveLookupDoesNotCorruptIndex
-  - testConcurrentDuplicateAddCreatesSingleIdentity
-  - testConcurrentDuplicateAddPolicyDeterministic
-
-  Lifecycle:
-
-  - testNewObjectCachedByGuidBeforeKey
-  - testNewObjectWithoutKeyDoesNotCreateKeyIndex
-  - testDeletedObjectRemovedFromCacheIndexes
-  - testDeletedObjectNotReturnedByKeyLookup
-
-  Listeners/triggers:
-
-  - testAddListenerCanLookupAddedObject
-  - testRemoveListenerCannotLookupRemovedObjectByKey
-  - testListenerExceptionPolicyDefinedForAdd
-  - testListenerExceptionDoesNotCorruptCacheIndex
-  - testCacheAddTriggerCanQueryStableIndex
-  - testReentrantCacheMutationDoesNotCorruptIndex
-
-  Filters/Hub adders:
-
-  - testCacheFilterExcludesNonMatchingObject
-  - testCacheFilterDoesNotRemoveObjectFromCache
-  - testCacheHubAdderAddsLiveMatchingObject
-  - testCacheHubAdderSkipsCollectedOrWrongClassObject
-
-  Failure/retry:
-
-  - testFailedAddDoesNotLeaveGuidOnlyIndex
-  - testFailedRemoveDoesNotLeaveKeyOnlyIndex
-  - testIdentityConflictDoesNotReturnWrongObject
-  - testStaleIndexReturnsNullInsteadOfWrongObject
-  - testLoadAfterStaleWeakRefCleanupInstallsFreshEntry
-  - testRetryAfterCacheMissFindsLoadedObject
-
+CACHE-IDENTITY-001 — One Authoritative Cached Identity Per Graph/Class/Key
+Contract statement: Within one graph/cache scope, a class plus authoritative identity key must resolve to at most
+one live OAObject instance unless an explicit detached/non-authoritative state is documented.
+Rationale: OAObject references, Hubs, datasource loads, serialization, sync, and replication rely on identity
+stability.
+Source scope: OAObjectCache, OAObjectIndex, OAObjectIndexKey, OAObjectCacheListener, graph object cache service.
+Related CODEX findings: Identity/cache drift findings from graph/cache scans.
+Suggested unit tests: testSameGuidReturnsSameCachedObject(), testSameClassKeyReturnsSameCachedObject(),
+testDuplicateAddUsesConfiguredDuplicatePolicy()
+Spec target section: Cache Runtime / Identity Semantics
+
+CACHE-IDENTITY-002 — GUID Is Runtime Identity Lookup
+Contract statement: GUID lookup must resolve the live object instance associated with that GUID, or a defined miss
+if no live object exists.
+Rationale: GUID is OA runtime identity and is used before or independent of persistent object keys.
+Source scope: OAObjectCache.getObject(Class, UUID), OAObjectCache.updateObject, OAObjectCache.removeObject,
+OAObjectIndex GUID mappings.
+Related CODEX findings: GUID/business-key distinction reviewed in graph/cache/object scans.
+Suggested unit tests: testGetByGuidReturnsLiveObject(), testGuidLookupWorksForNewObjectWithoutKey(),
+testGetByGuidReturnsNullAfterObjectCollectedAndCleaned()
+Spec target section: Cache Runtime / GUID Lookup
+
+CACHE-IDENTITY-003 — GUID And Business-Key Indexes Remain Distinct But Consistent
+Contract statement: GUID and business-key indexes may both identify an object, but neither may silently overwrite
+the other’s semantic role; both must agree for the same authoritative object after key assignment.
+Rationale: New objects can have GUID before persistent keys; loaded objects can arrive by key and later reconcile to
+GUID identity.
+Source scope: OAObjectCache, OAObjectIndex, OAObjectIndexKey, OAObjectKey integration.
+Related CODEX findings: GUID/key distinction and identity reconciliation findings.
+Suggested unit tests: testNewObjectGuidLookupWorksBeforeKeyAssigned(), testKeyAssignedObjectResolvesByGuidAndKey(),
+testBusinessKeyLookupDoesNotMutateGuidIdentityUnexpectedly()
+Spec target section: Cache Runtime / GUID-Key Relationship
+
+CACHE-IDENTITY-004 — Identity Conflicts Follow Defined OA Policy
+Contract statement: If GUID identity and business-key identity point to different live objects, cache add/merge/
+lookup behavior must follow a defined conflict policy rather than silently returning or installing the wrong
+identity.
+Rationale: Datasource reload, deserialization, sync, and replication can encounter identity reconciliation
+conflicts.
+Source scope: OAObjectCache.updateObject, getObject, removeObject, OAObjectIndex add/update paths.
+Related CODEX findings: Identity conflict and duplicate authoritative instance risks from graph/cache scans.
+Suggested unit tests: testDuplicateGuidDifferentKeyUsesDefinedPolicy(),
+testDuplicateKeyDifferentGuidUsesDefinedPolicy(), testIdentityConflictDoesNotReturnWrongObject()
+Spec target section: Cache Runtime / Identity Conflict Policy
+
+CACHE-ADD-001 — Cache Add And Update Preserve Index Consistency
+Contract statement: Adding or updating an object in cache must consistently publish GUID and key index state, or
+fail visibly/return false without leaving split identity indexes.
+Rationale: Split GUID/key indexes corrupt object lookup, retry, serialization, and Hub/reference resolution.
+Source scope: OAObjectCache.updateObject overloads, OAObjectIndex.addToIndex, updateIndex, OAObjectIndexKey.
+Related CODEX findings: Partial cache mutation and index consistency risks.
+Suggested unit tests: testAddObjectCreatesGuidAndKeyIndexEntries(), testFailedAddDoesNotLeaveGuidOnlyIndex(),
+testFailedUpdateDoesNotLeaveKeyOnlyIndex()
+Spec target section: Cache Runtime / Cache Add Update Semantics
+
+CACHE-REMOVE-001 — Cache Remove Targets Only The Intended Identity
+Contract statement: Removing an object from cache must remove only the intended runtime identity and associated key/
+GUID entries without corrupting unrelated live objects.
+Rationale: Delete, eviction, weak cleanup, and reload must not remove newer or unrelated identities.
+Source scope: OAObjectCache.removeObject, clearCache, OAObjectIndex.removeFromIndex, weak-reference cleanup paths.
+Related CODEX findings: GUID removal/index consistency and stale cleanup findings.
+Suggested unit tests: testRemoveByGuidRemovesOnlyMatchingObject(), testRemoveObjectRemovesGuidAndKeyEntries(),
+testRemoveOneObjectDoesNotRemoveDifferentKeyObject()
+Spec target section: Cache Runtime / Cache Removal Semantics
+
+CACHE-LOOKUP-001 — Lookup Returns Live Object Or Defined Miss
+Contract statement: Cache lookup must return a live OAObject reference or a defined miss; it must not return cleared
+weak references, stale placeholders, or wrong-class objects.
+Rationale: Callers treat returned objects as authoritative graph identities.
+Source scope: OAObjectCache.getObject by GUID/key, getRandom, visit/find lookup paths, weak-reference access paths.
+Related CODEX findings: Stale weak-ref behavior reviewed.
+Suggested unit tests: testClearedWeakReferenceLookupReturnsMiss(), testLookupRemovesStaleReferenceWhenObserved(),
+testLookupNeverReturnsWrongClassObject()
+Spec target section: Cache Runtime / Lookup Semantics
+
+CACHE-LOOKUP-002 — Lookup Is Deterministic For The Same Cache State
+Contract statement: For the same cache state, class, GUID/key, and filter/finder inputs, lookup/visit/find behavior
+must produce deterministic object identity results.
+Rationale: Deterministic cache lookup is required by datasource refresh, link resolution, sync, serialization, and
+tests.
+Source scope: OAObjectCache.getObject overloads, visit, find, getRandom, OAObjectIndex.lookupGuid.
+Related CODEX findings: Cache lookup determinism and filter behavior reviewed.
+Suggested unit tests: testClassKeyLookupReturnsCachedObject(), testClassKeyLookupMissForUnknownKey(),
+testVisitFindsSameObjectsForSameCacheState()
+Spec target section: Cache Runtime / Deterministic Lookup
+
+CACHE-INDEX-001 — Business-Key Index Maps Class And Key To GUID
+Contract statement: The business-key index must map class plus full OAObjectKey/OAObjectIndexKey values to the GUID
+of the matching live object or a defined miss.
+Rationale: Datasource load, id-only references, lazy references, sync, and serialization resolve object identity
+through class/key lookup.
+Source scope: OAObjectIndex.addToIndex, lookupGuid, removeFromIndex, updateIndex; OAObjectIndexKey.
+Related CODEX findings: Object-id index drift risks reviewed.
+Suggested unit tests: testClassKeyLookupReturnsCachedGuid(), testClassKeyLookupMissForUnknownKey(),
+testGetObjectByObjectKeyReturnsMatchingObject()
+Spec target section: Cache Runtime / Business-Key Lookup
+
+CACHE-INDEX-002 — Key Index Updates On Object Key Change
+Contract statement: When an object key changes, old key index entries must be removed and new key entries installed
+consistently.
+Rationale: Stale key entries can return the wrong object or hide the current object from lookup.
+Source scope: OAObjectIndex.updateIndex, addToIndex, removeFromIndex; OAObjectCache.updateObject with key.
+Related CODEX findings: Key-change/cache-index consistency findings.
+Suggested unit tests: testKeyChangeRemovesOldIndexEntry(), testKeyChangeInstallsNewIndexEntry(),
+testOldKeyDoesNotResolveAfterKeyChange()
+Spec target section: Cache Runtime / Key Index Consistency
+
+CACHE-INDEX-003 — Composite Keys Preserve Full Component Semantics
+Contract statement: Composite object IDs must compare and hash using all ordered key components exactly as defined
+by OAObjectKey/OAObjectIndexKey semantics.
+Rationale: Partial or wrong-order comparison creates identity collisions or missed cache hits.
+Source scope: OAObjectIndexKey constructor, hasValidIds, getIds, equals, hashCode, toString; OAObjectIndex lookup/
+add.
+Related CODEX findings: none observed.
+Suggested unit tests: testCompositeKeyRequiresAllParts(), testCompositeKeyOrderMattersByContract(),
+testCompositeKeyHashEqualsMatchesEquals()
+Spec target section: Cache Runtime / Composite Key Semantics
+
+CACHE-INDEX-004 — Invalid Or Incomplete Keys Are Not Indexed As Authoritative
+Contract statement: Null, partial, or invalid object IDs must not create authoritative key index entries, though the
+object may still be cacheable by GUID/runtime identity.
+Rationale: Partial keys can collide and resolve the wrong object.
+Source scope: OAObjectIndexKey.hasValidIds, OAObjectIndex.addToIndex, OAObjectCache.updateObject.
+Related CODEX findings: New object without key and incomplete key behavior reviewed.
+Suggested unit tests: testNewObjectWithoutKeyDoesNotCreateKeyIndex(), testPartialCompositeKeyNotIndexed(),
+testGuidLookupStillWorksForObjectWithoutValidKey()
+Spec target section: Cache Runtime / Invalid Key Semantics
+
+CACHE-GC-001 — Core Cache Uses Weak Reference Semantics
+Contract statement: Core cache membership must not keep OAObjects alive unless they are retained elsewhere by
+explicit runtime state.
+Rationale: OA graphs can be large; cache identity must not become an unbounded strong-retention store.
+Source scope: OAObjectCache weak-reference entries, reference queue cleanup, getTotal/clear behavior.
+Related CODEX findings: Weak-reference lifecycle behavior reviewed.
+Suggested unit tests: testCacheUsesWeakReferenceSemantics(), testUnreferencedCachedObjectCanBeCollected(),
+testCollectedObjectEventuallyDisappearsFromCacheCount()
+Spec target section: Cache Runtime / Weak Reference Semantics
+
+CACHE-GC-002 — Cleared Weak References Are Not Valid Hits
+Contract statement: A weak reference whose referent has been cleared must be treated as absent and must be removed
+from lookup/index state when observed or cleaned.
+Rationale: Returning dead/stale entries creates false cache hits and broken identity resolution.
+Source scope: OAObjectCache lookup paths, checkReferenceQueue, OAObjectIndex cleanup/remove paths.
+Related CODEX findings: Cleared weak-ref lookup and stale reference behavior reviewed.
+Suggested unit tests: testClearedWeakReferenceNotReturned(), testLookupCleansStaleWeakReferenceIndex(),
+testClearedWeakReferenceRemovedFromGuidIndex()
+Spec target section: Cache Runtime / Stale Reference Semantics
+
+CACHE-GC-003 — Weak Cleanup Removes All Stale Entries For That Object
+Contract statement: When a cached object is GC-cleared, all GUID and business-key index entries for that cleared
+object must be eligible for cleanup.
+Rationale: Partial cleanup leaves stale key hits or index leaks.
+Source scope: OAObjectCache.checkReferenceQueue, clearCache, removeObject, OAObjectIndex remove/clear.
+Related CODEX findings: Reference cleanup and index leak risks reviewed.
+Suggested unit tests: testWeakCleanupRemovesGuidAndKeyEntries(), testCollectedObjectRemovedFromKeyIndex(),
+testCollectedObjectRemovedFromGuidIndex()
+Spec target section: Cache Runtime / Weak Cleanup
+
+CACHE-REFQUEUE-001 — Reference Queue Cleanup Preserves Newer Live Entries
+Contract statement: Cleanup of an old cleared weak reference must not remove a newer live object that now owns the
+same GUID/key entry.
+Rationale: Stale cleanup can delete valid cache entries after replacement, reload, or re-add.
+Source scope: OAObjectCache.checkReferenceQueue, removeObject, OAObjectIndex remove/update paths.
+Related CODEX findings: Stale cleanup compare/remove risks.
+Suggested unit tests: testOldClearedReferenceDoesNotRemoveNewLiveKeyEntry(),
+testOldClearedReferenceDoesNotRemoveNewLiveGuidEntry(), testReferenceQueueCleanupPreservesLiveEntrySameClass()
+Spec target section: Cache Runtime / Stale Reference Cleanup
+
+CACHE-CONCURRENT-001 — Cache Add Remove Lookup Are Thread-Safe
+Contract statement: Concurrent cache add, update, remove, cleanup, visit, and lookup must not corrupt GUID/key
+indexes, return impossible identity combinations, or throw unrelated concurrent modification errors.
+Rationale: OA runtime, server requests, sync, replication, UI, and datasource loading can operate concurrently.
+Source scope: OAObjectCache, OAObjectIndex, OAObjectIndexKey, listener/filter/trigger integrations.
+Related CODEX findings: Concurrent cache mutation and reference queue cleanup risks.
+Suggested unit tests: testConcurrentAddLookupSameKeyStable(), testConcurrentRemoveLookupDoesNotCorruptIndex(),
+testReferenceQueueCleanupDuringConcurrentAdd()
+Spec target section: Cache Runtime / Concurrency Semantics
+
+CACHE-CONCURRENT-002 — Duplicate Add Policy Is Atomic
+Contract statement: Duplicate detection and cache add/update decision must occur atomically enough that concurrent
+loads of the same identity cannot publish competing authoritative objects.
+Rationale: Concurrent datasource loads or deserialization must not split identity authority.
+Source scope: OAObjectCache.updateObject, OAObjectIndex add/update, duplicate policy behavior.
+Related CODEX findings: Duplicate add and identity conflict risks.
+Suggested unit tests: testConcurrentDuplicateAddCreatesSingleIdentity(),
+testConcurrentDuplicateAddPolicyDeterministic(), testConcurrentDuplicateGuidDoesNotCreateSecondLiveIdentity()
+Spec target section: Cache Runtime / Duplicate Add Concurrency
+
+CACHE-LIFECYCLE-001 — New Objects Are Cacheable By Runtime Identity
+Contract statement: New objects without persistent keys may be cached and found by GUID/runtime identity without
+creating invalid business-key index entries.
+Rationale: Unsaved objects participate in Hubs, links, UI, sync, serialization, and graph traversal before
+persistent keys exist.
+Source scope: OAObjectCache.updateObject, getObject by GUID, OAObjectIndex.addToIndex, OAObjectIndexKey.hasValidIds.
+Related CODEX findings: New object GUID/key distinction reviewed.
+Suggested unit tests: testNewObjectCachedByGuidBeforeKey(), testNewObjectWithoutKeyDoesNotCreateKeyIndex(),
+testGuidLookupSurvivesBusinessKeyAssignment()
+Spec target section: Cache Runtime / New Object Semantics
+
+CACHE-LIFECYCLE-002 — Deleted Objects Do Not Remain Authoritative Cache Hits
+Contract statement: After authoritative delete completion, cache lookup must not return the deleted object as a live
+persistent object.
+Rationale: Prevents ghost references, stale Hub membership, datasource/cache divergence, and sync conflicts.
+Source scope: OAObjectCache.removeObject, clearCache, graph object delete/cache service integration.
+Related CODEX findings: Delete/cache coordination findings from graph/object/hub scans.
+Suggested unit tests: testDeletedObjectRemovedFromCacheIndexes(), testDeletedObjectNotReturnedByKeyLookup(),
+testFailedDeleteDoesNotPrematurelyEvictObject()
+Spec target section: Cache Runtime / Deleted Object Semantics
+
+CACHE-LISTENER-001 — Cache Listeners Observe Completed Cache Mutations
+Contract statement: Cache add/remove/load/property listeners must observe cache state after the mutation they are
+notified about is complete.
+Rationale: Listener logic may create Hubs, update views, trigger sync, or perform graph/runtime side effects based
+on cache state.
+Source scope: OAObjectCacheListener, OACacheListenerUtil, OAObjectCacheHubAdder, OAObjectCacheFilter,
+OAObjectCacheTrigger.
+Related CODEX findings: Listener/event ordering risks reviewed.
+Suggested unit tests: testAddListenerCanLookupAddedObject(), testRemoveListenerCannotLookupRemovedObjectByKey(),
+testAfterLoadListenerSeesCachedObject()
+Spec target section: Cache Runtime / Listener Ordering
+
+CACHE-LISTENER-002 — Listener Failure Policy Is Explicit
+Contract statement: If cache listener failure is allowed to abort a mutation, the cache mutation must not appear
+completed; otherwise listener failure must be clearly non-authoritative and must not corrupt indexes.
+Rationale: Listener exceptions must not create silent split cache/listener side effects.
+Source scope: OACacheListenerUtil, OAObjectCacheListener dispatch, OAObjectCacheTrigger, OAObjectCacheFilter.
+Related CODEX findings: False-success listener risks reviewed.
+Suggested unit tests: testListenerExceptionPolicyDefinedForAdd(), testListenerExceptionDoesNotCorruptCacheIndex(),
+testListenerClosePreventsFutureCallbacks()
+Spec target section: Cache Runtime / Listener Failure Semantics
+
+CACHE-TRIGGER-001 — Cache Triggers Observe Stable Cache State
+Contract statement: Cache triggers and dependent-property listeners must not observe or create partially updated
+index state that violates identity invariants.
+Rationale: Triggered side effects can recursively query, filter, or mutate cache/Hubs.
+Source scope: OAObjectCacheTrigger, OAObjectCacheFilter, OACacheListenerUtil, dependent property trigger setup.
+Related CODEX findings: Trigger/reentrancy risks reviewed.
+Suggested unit tests: testCacheAddTriggerCanQueryStableIndex(), testReentrantCacheMutationDoesNotCorruptIndex(),
+testDependentPropertyTriggerRefreshUsesStableCacheState()
+Spec target section: Cache Runtime / Trigger Reentrancy
+
+CACHE-FILTER-001 — Cache Filters Restrict Results Without Mutating Cache Identity
+Contract statement: Filtering cache results must affect selection/view membership only; it must not alter cached
+identity, GUID indexes, key indexes, or authoritative cache membership.
+Rationale: Filters are views over cache, not cache mutation commands.
+Source scope: OAObjectCacheFilter, OAObjectCache.find, visit, OAObjectCacheHubAdder, OAFilter integration.
+Related CODEX findings: Cache filter/iterator behavior reviewed.
+Suggested unit tests: testCacheFilterExcludesNonMatchingObject(), testCacheFilterDoesNotRemoveObjectFromCache(),
+testAddingFilterRefreshesViewWithoutChangingCacheIdentity()
+Spec target section: Cache Runtime / Filter Semantics
+
+CACHE-HUBADDER-001 — Cache Hub Adders Add Only Matching Live Objects
+Contract statement: Cache-to-Hub adders and select-all Hub integrations must add only live objects matching the Hub/
+class/filter contract and must remove/ignore objects when they no longer qualify according to contract.
+Rationale: Select-all Hubs and generated views rely on cache-driven membership without corrupting Hub contents.
+Source scope: OAObjectCacheHubAdder, OAObjectCacheFilter, Hub integration, listener callbacks.
+Related CODEX findings: Cache Hub adder behavior reviewed.
+Suggested unit tests: testCacheHubAdderAddsLiveMatchingObject(),
+testCacheHubAdderSkipsCollectedOrWrongClassObject(), testCacheHubAdderCloseStopsMembershipUpdates()
+Spec target section: Cache Runtime / Hub Adder Semantics
+
+CACHE-VISIT-001 — Cache Iteration Visits Live Objects Deterministically
+Contract statement: Cache visit/find/random APIs must operate on live objects only, respect class/filter/finder
+contracts, and define behavior for concurrent mutation.
+Rationale: Cache iteration feeds traversal, tooling, filters, Hubs, and runtime analysis.
+Source scope: OAObjectCache.visit overloads, find, getRandom, OAObjectCacheFilter, OAObjectCacheHubAdder.
+Related CODEX findings: Cache iterator/filter behavior reviewed.
+Suggested unit tests: testVisitSkipsCollectedObjects(), testVisitClassRestrictsToAssignableObjects(),
+testFindUsesFinderWithoutChangingCacheState()
+Spec target section: Cache Runtime / Iteration Semantics
+
+CACHE-GRAPH-001 — Cache Authority Is Graph-Scoped
+Contract statement: Cache identity and indexes must belong to the owning graph/runtime scope and must not silently
+mix objects from another graph.
+Rationale: Cross-graph cache leakage corrupts object identity, metadata, datasource routing, sync, and
+serialization.
+Source scope: OAObjectCache, OAObjectIndex, graph object cache service integration.
+Related CODEX findings: Graph-scoped identity/cache authority findings.
+Suggested unit tests: testSameKeyInDifferentGraphsDoesNotShareCacheIdentity(),
+testCacheLookupUsesOwningGraphScope(), testForeignGraphObjectNotInstalledAsLocalAuthority()
+Spec target section: Cache Runtime / Graph Ownership
+
+CACHE-SERIAL-001 — Serialization Deserialization Resolves Through Cache Authority
+Contract statement: Deserialization and remote/materialized object resolution must use cache identity rules to
+return the authoritative cached instance when one exists.
+Rationale: Serialization boundaries must not create duplicate object graph identities.
+Source scope: OAObjectCache, OAObjectIndex, object serialization integration.
+Related CODEX findings: Serialization/deserialization identity findings from graph/object/serialize scans.
+Suggested unit tests: testDeserializeExistingKeyReturnsCachedIdentity(),
+testDeserializeExistingGuidReturnsCachedIdentity(), testDeserializeConflictUsesDefinedCachePolicy()
+Spec target section: Cache Runtime / Serialization Integration
+
+CACHE-DS-001 — Datasource Refresh And Load Coordinate With Cache Identity
+Contract statement: Datasource-loaded or refreshed objects must merge with or update the authoritative cached
+identity according to cache conflict and lifecycle rules.
+Rationale: Datasource refresh must not create duplicates, stale keys, or wrong live instances.
+Source scope: OAObjectCache.updateObject, getObject by key, OAObjectIndex update, datasource service integration.
+Related CODEX findings: Datasource load/cache merge and refresh coordination findings.
+Suggested unit tests: testDatasourceLoadMergesWithCachedObject(), testDatasourceRefreshUpdatesSameCachedIdentity(),
+testDatasourceLoadConflictUsesDefinedPolicy()
+Spec target section: Cache Runtime / Datasource Integration
+
+CACHE-SYNC-001 — Sync And Replication Preserve Cache Identity
+Contract statement: Sync and replication object resolution must use cache authority so remote changes apply to the
+correct live instance or fail visibly according to conflict policy.
+Rationale: Distributed OA runtimes depend on stable identity across sync/replay.
+Source scope: OAObjectCache, OAObjectIndex, graph sync/replication integration.
+Related CODEX findings: Sync/replication cache assumptions reviewed in graph/sync/replication scans.
+Suggested unit tests: testSyncUpdateAppliesToCachedIdentity(), testReplicationReplayUsesCacheKeyResolution(),
+testSyncConflictDoesNotReturnWrongObject()
+Spec target section: Cache Runtime / Sync Replication Integration
+
+CACHE-FAILURE-001 — Cache Mutation Failure Must Not Leave Split Index State
+Contract statement: If cache add, remove, update, key-change, cleanup, or listener-mediated mutation fails visibly,
+GUID and key indexes must not be left disagreeing for the same authoritative object.
+Rationale: Split indexes corrupt object identity and retry behavior.
+Source scope: OAObjectCache.updateObject/removeObject, OAObjectIndex.addToIndex/removeFromIndex/updateIndex, listen
+er/filter integrations.
+Related CODEX findings: Partial mutation/index consistency risks reviewed.
+Suggested unit tests: testFailedAddDoesNotLeaveGuidOnlyIndex(), testFailedRemoveDoesNotLeaveKeyOnlyIndex(),
+testFailedKeyUpdateDoesNotLeaveOldAndNewKeysBothAuthoritative()
+Spec target section: Cache Runtime / Failure Consistency
+
+CACHE-FAILURE-002 — Cache Must Prefer Miss Or Visible Failure Over Wrong Identity
+Contract statement: When cache cannot safely resolve identity conflict, stale state, invalid key, or cleanup race,
+it must return a defined miss or fail visibly rather than return a semantically wrong object.
+Rationale: Wrong identity is more damaging than a cache miss because it corrupts graph semantics.
+Source scope: OAObjectCache.getObject/find/getRandom, OAObjectIndex.lookupGuid, conflict paths.
+Related CODEX findings: Silent corruption and false-success risks reviewed.
+Suggested unit tests: testIdentityConflictDoesNotReturnWrongObject(),
+testStaleIndexReturnsNullInsteadOfWrongObject(), testInvalidKeyLookupReturnsDefinedMiss()
+Spec target section: Cache Runtime / Silent Corruption Prevention
+
+CACHE-DETERMINISM-001 — Same Cache State Produces Same Observable Behavior
+Contract statement: For the same graph scope, object state, GUID/key indexes, weak-reference state, filters, and
+concurrency-free inputs, cache APIs must produce deterministic lookup, visit, listener, and Hub-adder behavior.
+Rationale: Deterministic cache behavior is required for object identity, datasource loading, serialization, sync, UI
+views, and tests.
+Source scope: OAObjectCache, OAObjectIndex, OAObjectIndexKey, OAObjectCacheFilter, OAObjectCacheHubAdder,
+OAObjectCacheTrigger, OACacheListenerUtil.
+Related CODEX findings: Package-wide identity, weak-reference, index, listener, filter, and failure findings.
+Suggested unit tests: testSameCacheStateProducesSameGuidLookup(), testSameCacheStateProducesSameKeyLookup(),
+testSameCacheStateProducesSameFilteredHubMembership()
+Spec target section: Cache Runtime / Deterministic Cache Semantics
 
 */
-
-

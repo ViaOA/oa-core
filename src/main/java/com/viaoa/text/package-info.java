@@ -112,303 +112,536 @@ package com.viaoa.text;
 
 /* CODEX Invariants
 
+TEXT-DETERMINISM-001 — Deterministic Text Transformations
+Contract statement:
+For the same input text, options, locale assumptions, and OA runtime settings, text helpers must produce the same
+output or the same documented failure/fallback result.
+Rationale:
+OA text output feeds UI labels, reports, templates, logs, generated code, query/path support, serialization
+boundaries, and AI-readable runtime descriptions.
+Source scope:
+All com.viaoa.text helpers, especially OATextFormat, OATextGrammar, OATextCompare, OATextTokenizer, OATextEscape,
+OATextLineWrap, OATextUtil, IndentFormatter.
+Related CODEX findings:
+Package-wide findings involving wrong parsing, wrong escaping, wrong wrapping, wrong validation, corrupted
+conversion, and silent wrong output.
+Suggested unit tests:
+testSameInputProducesSameTextOutput, testRepresentativeHelpersAreDeterministic.
+Spec target section:
+Text Utilities / Deterministic Runtime Semantics
 
-1. Text Formatting Contracts
+TEXT-NULL-001 — Null Input Semantics
+Contract statement:
+Each text helper API family must define whether null input returns null, empty string, false, zero, a fallback
+value, or visible failure, and must apply that rule consistently.
+Rationale:
+Text helpers are used throughout nullable OA display, template, logging, query, serialization, and generated-code
+paths.
+Source scope:
+OATextSanitize, OATextEscape, OATextFormat, OATextCompare, OATextFilter, OATextTokenizer, OATextLineWrap,
+OATextUtil.
+Related CODEX findings:
+OATextEscape.escape null input; OATextFormat.unindent null input; null handling scan findings.
+Suggested unit tests:
+testNullInputBehaviorByApiFamily, testNullInputReturnsDefinedValueForEscapeHelpers,
+testNullInputReturnsDefinedValueForFormatHelpers.
+Spec target section:
+Text Utilities / Null Semantics
 
-  TEXT-FORMAT-001 — Format Helpers Must Produce Deterministic Text
-  Contract statement: Given the same input value, format string, locale-relevant assumptions, and OA settings, text
-  formatting helpers must produce the same output.
-  Rationale: OA text utilities feed generated UI labels, reports, logs, templates, and code generation.
-  Source locations: com.viaoa.text.* formatting classes/utilities.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testFormatSameInputSameOutput(), testFormatKnownDateNumberPatterns()
-  Spec target section: Text Utilities / Formatting Semantics
+TEXT-EMPTY-001 — Empty And Blank Text Semantics
+Contract statement:
+Empty strings and whitespace-only strings must have explicit, stable behavior for formatting, comparison,
+tokenization, filtering, generation, sanitization, wrapping, and normalization APIs.
+Rationale:
+OA distinguishes absent, empty, blank, and meaningful text in display, query, filter, metadata, and template
+behavior.
+Source scope:
+All com.viaoa.text helpers, especially OATextSanitize.isEmpty/notEmpty, OATextTokenizer, OATextFormat, OATextCompar
+e, OATextLineWrap.
+Related CODEX findings:
+Empty-string and blank-string edge cases were package scan targets.
+Suggested unit tests:
+testEmptyAndBlankBehaviorByApiFamily, testWhitespaceOnlyTokenizationByContract, testBlankComparisonSemantics.
+Spec target section:
+Text Utilities / Empty And Blank Semantics
 
-  TEXT-FORMAT-002 — Formatting Must Not Silently Return Misleading Output On Invalid Pattern
-  Contract statement: If a format pattern cannot be applied, the utility must either return a clearly defined
-  fallback or fail visibly; it must not silently produce unrelated output.
-  Rationale: Silent wrong output is worse than visible failure in generated UI/reports.
-  Source locations: formatter helpers, template/text generation utilities.
-  Known related CODEX findings: swallowed-exception wrong-output risks were part of the scan.
-  Suggested unit tests: testInvalidFormatPatternUsesDefinedFallback(),
-  testInvalidFormatPatternDoesNotReturnMisleadingValue()
-  Spec target section: Text Utilities / Formatting Failure Semantics
+TEXT-FAILURE-001 — No Silent Wrong Output
+Contract statement:
+When parsing, formatting, validating, tokenizing, escaping, filtering, wrapping, generating, or converting cannot
+satisfy its documented contract, the helper must fail visibly or return a documented fallback; it must not silently
+report success with unrelated or corrupted text.
+Rationale:
+Silent wrong text can break generated code, UI, reports, logs, templates, metadata paths, query text, and serialized
+values.
+Source scope:
+All com.viaoa.text helpers.
+Related CODEX findings:
+Package-wide CODEX comments involving false success, swallowed failure, malformed parsing, invalid escaping, wrong
+wrapping, wrong validation, and corrupted conversion.
+Suggested unit tests:
+testFailureDoesNotReturnPartialSuccessAcrossRepresentativeApis, testParserFailureUsesDefinedFallback,
+testFormatterFailureDoesNotReturnMisleadingText.
+Spec target section:
+Text Utilities / Failure Semantics
 
-  2. Display Name / Grammar Contracts
+TEXT-FORMAT-001 — Formatting Produces Stable Runtime Text
+Contract statement:
+Formatting helpers must produce stable text for the same input value, format string, mask, alignment option, locale
+assumptions, and OA settings.
+Rationale:
+Formatted text is used in UI display, reports, logs, templates, generated source, diagnostics, and metadata-facing
+output.
+Source scope:
+OATextFormat.fmt, OATextFormat.mask, OATextFormat.toNumberString, OATextFormat.convertToValidPhoneNumber,
+IndentFormatter.format.
+Related CODEX findings:
+OATextFormat formatting, masking, indentation, and UTF conversion findings are regression references.
+Suggested unit tests:
+testFormatSameInputSameOutput, testMaskSameInputSameOutput, testIndentFormatterProducesStableOutput.
+Spec target section:
+Text Utilities / Formatting Semantics
 
-  TEXT-GRAMMAR-001 — Display Name Generation Is Stable And Human-Oriented
-  Contract statement: Converting property/class/code names into display text must produce stable, readable labels
-  without losing meaningful word boundaries.
-  Rationale: OA model designer, generated UI, and reports depend on predictable labels.
-  Source locations: display-name/name-conversion helpers in com.viaoa.text.*.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testCamelCaseToDisplayName(), testAcronymDisplayNamePreservedByContract()
-  Spec target section: Text Utilities / Display Name Semantics
+TEXT-FORMAT-002 — Formatting Failure And Charset Boundaries
+Contract statement:
+Invalid or unsupported format, mask, charset, or conversion inputs must either fail visibly or use a documented
+fallback without corrupting supported Unicode text.
+Rationale:
+Wrong formatted text or corrupted characters can invalidate UI, report, template, logging, and generated-code
+output.
+Source scope:
+OATextFormat.fmt, OATextFormat.mask, OATextFormat.toUTF8, OATextFormat.toUtf8.
+Related CODEX findings:
+OATextFormat.toUTF8 Unicode corruption; swallowed-exception wrong-output risks.
+Suggested unit tests:
+testInvalidFormatPatternUsesDefinedFallback, testUtf8ConversionDoesNotCorruptUnicodeByContract.
+Spec target section:
+Text Utilities / Formatting Failure Semantics
 
-  TEXT-GRAMMAR-002 — Singular/Plural/Article Helpers Must Follow Defined OA Grammar Rules
-  Contract statement: Grammar helpers must consistently apply OA’s defined singular, plural, capitalization, and
-  article rules.
-  Rationale: Generated UI text and code generation use these helpers for names and messages.
-  Source locations: grammar/name conversion utilities.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testPluralizeRegularWord(), testPluralizeConfiguredIrregularWord(),
-  testArticleForVowelSoundByContract()
-  Spec target section: Text Utilities / Grammar Semantics
+TEXT-VALIDATE-001 — Validators Match Declared Semantic Types
+Contract statement:
+Text validators and published validation regexes must accept only values matching their declared semantic type,
+including integer, decimal, currency, date, time, datetime, phone, URL, and related formats.
+Rationale:
+OA UI, query, converter, datasource, and validation paths can make runtime decisions from these helpers.
+Source scope:
+OATextFormat.isInteger, isNumber, isDate, isTime, isDateTime; OARegex constants.
+Related CODEX findings:
+OATextFormat.isInteger accepts decimal strings.
+Suggested unit tests:
+testIsIntegerRejectsDecimalString, testRegexConstantsAcceptRejectKnownExamples.
+Spec target section:
+Text Utilities / Validation Semantics
 
-  TEXT-GRAMMAR-003 — Code/Text Name Conversion Must Preserve Legal Identifiers Where Required
-  Contract statement: Helpers that generate code identifiers from text must return valid identifiers or a defined
-  fallback.
-  Rationale: OA code generation cannot emit invalid Java/property names.
-  Source locations: code/text generation helper classes.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testTextToJavaIdentifierRemovesInvalidChars(),
-  testEmptyTextToIdentifierUsesDefinedFallback()
-  Spec target section: Text Utilities / Code Generation Names
+TEXT-GRAMMAR-001 — Display Names Are Stable And Human-Oriented
+Contract statement:
+Converting class names, property names, code-style identifiers, and labels into display text must produce stable,
+readable labels without losing intended word boundaries, acronym meaning, or capitalization meaning.
+Rationale:
+OA model tooling, generated UI, reports, metadata display, and code generation depend on predictable human-readable
+labels.
+Source scope:
+OATextGrammar.getDisplayName, createDisplayName, convertToDisplayName, getTitle, getShortName.
+Related CODEX findings:
+none observed.
+Suggested unit tests:
+testDisplayNameCamelCaseAndAcronyms, testDisplayNamePreservesWordBoundaries, testShortNameRespectsMaximumLength.
+Spec target section:
+Text Utilities / Display Name Semantics
 
-  3. Whitespace / Normalization Contracts
+TEXT-GRAMMAR-002 — OA Grammar Rules Are Stable
+Contract statement:
+Singular, plural, article, possessive, title, and short-name helpers must apply OA’s defined grammar rules
+consistently for supported words and documented fallbacks.
+Rationale:
+Generated UI text, labels, reports, messages, and model tooling rely on predictable grammar.
+Source scope:
+OATextGrammar.makeSingular, makePlural, getAorAn, makePossessive, getPossessive, getTitle, getShortName.
+Related CODEX findings:
+none observed.
+Suggested unit tests:
+testPluralizeRegularWord, testSingularizeRegularWord, testArticleForVowelSoundByContract, testPossessiveRules.
+Spec target section:
+Text Utilities / Grammar Semantics
 
-  TEXT-NORMALIZE-001 — Whitespace Normalization Must Be Predictable
-  Contract statement: Whitespace normalization helpers must define whether they trim, collapse, preserve line
-  breaks, or preserve internal spacing.
-  Rationale: Text utilities are used in generated UI, templates, search, and reports where whitespace changes are
-  observable.
-  Source locations: whitespace/trim/normalize helpers.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testNormalizeWhitespaceCollapsesRunsWhenConfigured(), testTrimPreservesInternalSpacing()
-  Spec target section: Text Utilities / Whitespace Semantics
+TEXT-CODE-001 — Code Names Are Metadata-Compatible
+Contract statement:
+Helpers that derive Java identifiers, JavaBean property names, or OA property paths must produce legal, metadata-
+compatible names or use a documented fallback.
+Rationale:
+OA metadata, reflection, property paths, generated source, query support, and runtime binding depend on valid
+identifiers and property names.
+Source scope:
+OATextCode.getPropertyName; OATextUtil.makeJavaIdentifier; OATextUtil.createPropertyPath.
+Related CODEX findings:
+OATextCode.getPropertyName JavaBean acronym handling; OATextUtil.makeJavaIdentifier leading-digit identifier;
+OATextUtil.createPropertyPath empty segment.
+Suggested unit tests:
+testJavaBeanAcronymPropertyNamePreserved, testMakeJavaIdentifierRejectsInvalidStart,
+testCreatePropertyPathSkipsEmptySegments.
+Spec target section:
+Text Utilities / Code And Metadata Name Semantics
 
-  TEXT-NORMALIZE-002 — Empty Result Must Be Distinguished From Null When Contract Requires
-  Contract statement: Normalization helpers must consistently distinguish null input from an empty normalized string
-  where the API contract says they differ.
-  Rationale: OA often treats null, empty, and blank differently for display/query/filter behavior.
-  Source locations: null/empty/string normalization helpers.
-  Known related CODEX findings: null/empty handling was a scan focus.
-  Suggested unit tests: testNormalizeNullReturnsConfiguredNullOrEmpty(), testNormalizeBlankStringByContract()
-  Spec target section: Text Utilities / Null Empty Normalization
+TEXT-NORMALIZE-001 — Whitespace And Line Structure Semantics
+Contract statement:
+Whitespace, indentation, trimming, unindenting, and line-normalization helpers must define whether they trim,
+collapse, preserve internal spacing, preserve line breaks, and preserve trailing empty lines.
+Rationale:
+Generated source, templates, reports, logs, serialized text, and display text can be corrupted by unintended
+whitespace changes.
+Source scope:
+OATextFormat.indent, unindent, unindentCode, trimEndingWhitespace, trimWhitespace; OATextFilter.trimSpaces.
+Related CODEX findings:
+OATextFormat.indent/unindent trailing empty line loss; OATextFormat.unindent null handling.
+Suggested unit tests:
+testIndentUnindentPreservesTrailingEmptyLines, testTrimWhitespacePreservesInternalSpacingByContract,
+testUnindentNullBehaviorByContract.
+Spec target section:
+Text Utilities / Whitespace And Line Semantics
 
-  4. Escaping / Unescaping Contracts
+TEXT-ESCAPE-001 — Escape Round Trips Preserve Supported Text
+Contract statement:
+For each context where round-trip behavior is promised, unescape(escape(text)) must preserve supported original text
+without adding, dropping, reordering, double-decoding, or reinterpreting characters.
+Rationale:
+HTML, XML, JSON, CSV, template, persistence, and generated-code text can be corrupted by non-reversible escaping.
+Source scope:
+OATextEscape HTML/XML/JSON/JavaScript/illegal-XML helpers; OATextTokenizer.csv and parseLine.
+Related CODEX findings:
+OATextEscape.convertFromHtml double-decode; OATextEscape.unescapeJson backslash sequence corruption;
+OATextTokenizer.csv/parseLine quote round-trip.
+Suggested unit tests:
+testJsonEscapeUnescapeRoundTripQuotesBackslashesNewlines, testHtmlEscapeDecodeDoesNotDoubleDecode,
+testCsvRoundTripQuotesCommasAndWhitespace.
+Spec target section:
+Text Utilities / Escaping Round-Trip Semantics
 
-  TEXT-ESCAPE-001 — Escape/Unescape Round Trip Must Preserve Text
-  Contract statement: For supported character sets and escape modes, unescape(escape(text)) must equal the original
-  text.
-  Rationale: Templates, generated code, HTML/XML/CSV-like text, and persistence helpers rely on reversible escaping.
-  Source locations: escaping/unescaping helpers in com.viaoa.text.*.
-  Known related CODEX findings: escaping/unescaping wrong-output risks were scanned.
-  Suggested unit tests: testEscapeUnescapeRoundTripAscii(),
-  testEscapeUnescapeRoundTripQuotesBackslashesAndNewlines()
-  Spec target section: Text Utilities / Escaping Semantics
+TEXT-ESCAPE-002 — Escaping Is Context-Specific
+Contract statement:
+HTML, XML, CDATA, JSON, JavaScript, CSV, regex, and attribute escaping rules must be applied only to their intended
+context and must produce syntactically valid output for that context.
+Rationale:
+Escaping that is valid for one output context can be invalid or corrupting in another.
+Source scope:
+OATextEscape.escapeJson, escapeJs, convertTextToHtml, convertToHtml, convertToXml, getHtmlAttributeMap;
+OATextTokenizer.csv.
+Related CODEX findings:
+OATextEscape.escapeJson apostrophe escape; OATextEscape.escapeJs backslash handling; OATextEscape.convertToXml CDATA
+terminator; OATextEscape.convertTextToHtml raw markup-like text; OATextEscape.getHtmlAttributeMap quoted values.
+Suggested unit tests:
+testEscapeJsonDoesNotEmitInvalidApostropheEscape, testEscapeJsPreservesBackslashLiteral,
+testCDataSplitsTerminatorSafely, testHtmlAttributeMapParsesQuotedValuesAndWhitespace.
+Spec target section:
+Text Utilities / Contextual Escaping Semantics
 
-  TEXT-ESCAPE-002 — Escaping Must Not Double-Escape Already Escaped Text Unless Requested
-  Contract statement: Escape helpers must define and honor whether input is raw text or may already contain escaped
-  sequences.
-  Rationale: Double escaping produces visible wrong output in templates, HTML, generated code, and UI.
-  Source locations: escaping helpers.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testEscapeRawTextEscapesReservedChars(), testEscapeAlreadyEscapedTextByContract()
-  Spec target section: Text Utilities / Escaping Idempotence
+TEXT-ESCAPE-003 — Invalid Escape Sequences Do Not Become Wrong Text
+Contract statement:
+Invalid, incomplete, marker-like, or unsupported escape sequences must remain literal or use a documented fallback;
+they must not silently become unrelated characters.
+Rationale:
+Literal user, model, path, serialized, and generated text must not be corrupted during unescaping or XML/JSON
+cleanup.
+Source scope:
+OATextEscape.unescapeJson, decodeIllegalXml, encodeIllegalXml, isLegalXml, convertToXml.
+Related CODEX findings:
+OATextEscape.decodeIllegalXml marker-looking literal text; OATextEscape.isLegalXml/convertToXml unpaired surrogate
+handling; OATextEscape.unescapeJson literal backslash sequence handling.
+Suggested unit tests:
+testDecodeIllegalXmlDoesNotDecodeLiteralMarkerByContract, testUnescapeJsonPreservesLiteralBackslashN,
+testUnpairedSurrogateRejectedOrEncodedByContract.
+Spec target section:
+Text Utilities / Invalid Escape Semantics
 
-  TEXT-ESCAPE-003 — Unescape Must Not Swallow Invalid Escape Into Wrong Text
-  Contract statement: Invalid or incomplete escape sequences must use a defined fallback or remain literal; they
-  must not silently become unrelated characters.
-  Rationale: Wrong text output is a correctness bug for generated content.
-  Source locations: unescaping helpers.
-  Known related CODEX findings: malformed parsing/wrong-output risks were scanned.
-  Suggested unit tests: testIncompleteEscapeRemainsLiteralByContract(), testInvalidEscapeDoesNotDropCharacters()
-  Spec target section: Text Utilities / Unescape Failure Semantics
+TEXT-SANITIZE-001 — Sanitizers And Filters Preserve Safe Text
+Contract statement:
+Sanitizers and filters must remove, encode, or retain only the targeted character/content classes while preserving
+safe text and documented ordering.
+Rationale:
+Over-filtering loses user data; under-filtering emits invalid, unsafe, or malformed text.
+Source scope:
+OATextSanitize; OATextFilter.strip, accept, removeCharacters, removeOtherCharacters, removeNonDigits,
+removeNonFileNameChars, convertToAscii, removeLeading, removeEndingChars.
+Related CODEX findings:
+Sanitization and filtering mistakes were scan targets.
+Suggested unit tests:
+testSanitizePreservesSafeTextAndRemovesOnlyTargetedChars, testFilterPreservesUntouchedTextOutsideRule,
+testRemoveNonDigitsPreservesAllowedDotByContract.
+Spec target section:
+Text Utilities / Sanitization And Filtering Semantics
 
-  5. Sanitization Contracts
+TEXT-SENSITIVE-001 — Sensitive Text Masking
+Contract statement:
+Sensitive-value masking must apply deterministically to intended field names using documented case-sensitivity rules
+and must not leak secrets through common capitalization variants.
+Rationale:
+Logs and diagnostics can expose credentials if masking misses ordinary field-name variations.
+Source scope:
+OATextTokenizer.maskPassword.
+Related CODEX findings:
+OATextTokenizer.maskPassword default case-sensitive behavior.
+Suggested unit tests:
+testMaskPasswordDefaultCaseInsensitive, testMaskPasswordHonorsExplicitCaseSensitiveMode,
+testMaskPasswordCustomWordsByContract.
+Spec target section:
+Text Utilities / Sensitive Text Masking
 
-  TEXT-SANITIZE-001 — Sanitization Removes Or Encodes Only The Targeted Unsafe Content
-  Contract statement: Sanitizers must remove/encode the content they are designed to handle while preserving safe
-  text.
-  Rationale: Over-sanitizing loses user data; under-sanitizing emits unsafe/generated-invalid text.
-  Source locations: sanitization helpers.
-  Known related CODEX findings: sanitization mistakes were scan targets.
-  Suggested unit tests: testSanitizePreservesSafeText(), testSanitizeRemovesTargetUnsafeCharacters()
-  Spec target section: Text Utilities / Sanitization Semantics
+TEXT-TOKENIZER-001 — Tokenizers Always Progress Or Terminate
+Contract statement:
+Tokenizer and parser helpers must consume input, advance position, or terminate on every loop iteration for empty,
+repeated, quoted, nested, malformed, or delimiter-heavy input.
+Rationale:
+Shared parser utilities must not hang in OA query, path, template, style, CSV, log, or generated text workflows.
+Source scope:
+OATextTokenizer.count, countMatches, dcount, field, fieldAt, parseLine, tokenize, getCssMap;
+OATextEscape.getHtmlAttributeMap.
+Related CODEX findings:
+Infinite-loop and tokenizer risks were scan targets.
+Suggested unit tests:
+testTokenizerTerminatesOnEmptyInput, testTokenizerTerminatesOnRepeatedDelimiter,
+testTokenizerTerminatesOnMalformedToken.
+Spec target section:
+Text Utilities / Tokenizer Progress
 
-  TEXT-SANITIZE-002 — Sanitization Must Be Context-Specific
-  Contract statement: HTML, XML, regex, Java string, SQL-like, filename, and display sanitization rules must not be
-  treated as interchangeable.
-  Rationale: Each output context has different reserved characters and escaping rules.
-  Source locations: context-specific escape/sanitize helpers.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testHtmlSanitizeDoesNotUseJavaStringEscapes(), testRegexEscapeEscapesRegexMetacharacters()
-  Spec target section: Text Utilities / Contextual Sanitization
+TEXT-TOKENIZER-002 — Delimiter And Field Semantics
+Contract statement:
+Delimiters, quotes, escaped delimiters, whitespace separators, field indexes, and field counts must follow
+documented rules for each tokenizer mode.
+Rationale:
+CSV, CSS, HTML attributes, PICK-style fields, and generic tokenization fail when delimiter semantics are ambiguous.
+Source scope:
+OATextTokenizer.count, countMatches, dcount, field, fieldAt, parseLine, tokenize, getCssMap;
+OATextEscape.getHtmlAttributeMap.
+Related CODEX findings:
+OATextTokenizer.countMatches count behavior; parseLine quoted whitespace; CSV doubled quotes; CSV leading quote;
+getCssMap whitespace/quoted values; tokenize/getHtmlAttributeMap tab/newline attribute delimiters.
+Suggested unit tests:
+testTokenizerFieldCountsAndIndexes, testParseLineAllowsWhitespaceAfterClosingQuote,
+testCssMapParsesDeclarationsWithSpacesAndQuotes, testHtmlAttributeMapParsesQuotedValuesAndWhitespace.
+Spec target section:
+Text Utilities / Tokenizer Delimiter Semantics
 
-  6. Tokenizer / Regex Contracts
+TEXT-REGEX-001 — Literal Text Versus Regex Text
+Contract statement:
+Helpers that treat caller input as literal text must escape regex metacharacters before regex use, while APIs that
+accept regex syntax must make that boundary explicit.
+Rationale:
+User, model, path, query, or display text must not accidentally become regex syntax.
+Source scope:
+OARegex constants; OATextUtil.convertToLikeSearch; regex-oriented helper paths.
+Related CODEX findings:
+Regex literal escaping risks were part of scan focus.
+Suggested unit tests:
+testRegexLiteralEscapingForMetacharacters, testRegexLiteralDotMatchesDotOnly,
+testLikeSearchEscapesRegexCharactersByContract.
+Spec target section:
+Text Utilities / Regex Literal Semantics
 
-  TEXT-TOKENIZER-001 — Tokenizer Must Always Advance Or Terminate
-  Contract statement: Tokenizer/parsing helpers must consume input, advance position, or terminate on every loop
-  iteration.
-  Rationale: Infinite loops are high-risk utility bugs.
-  Source locations: tokenizer/parser utilities in com.viaoa.text.*.
-  Known related CODEX findings: infinite-loop/tokenizer risks were part of the scan.
-  Suggested unit tests: testTokenizerTerminatesOnEmptyInput(), testTokenizerTerminatesOnRepeatedDelimiter(),
-  testTokenizerTerminatesOnMalformedToken()
-  Spec target section: Text Utilities / Tokenizer Progress
+TEXT-WRAP-001 — Wrapping Preserves Text And Width Contracts
+Contract statement:
+Wrapping and truncation must respect configured width, separator, break-character, minimum segment, and row-limit
+contracts without dropping, duplicating, reordering characters, emitting spurious rows, or splitting words when a
+valid break is available.
+Rationale:
+Reports, UI text, emails, logs, templates, and generated output depend on readable and complete wrapped text.
+Source scope:
+OATextLineWrap constructors, get/set/with configuration methods, wrap, wrapToString.
+Related CODEX findings:
+OATextLineWrap width-1 empty rows; setMaxRows zero/unlimited behavior; final-row truncation ignores tracked break.
+Suggested unit tests:
+testWrapPreservesCharactersAndUsesBreaks, testWrapWidthOneProducesNoEmptyRows,
+testWrapMaxRowsZeroMeansUnlimitedByContract, testWrapTruncationUsesWhitespaceBreakWhenAvailable.
+Spec target section:
+Text Utilities / Line Wrap Semantics
 
-  TEXT-TOKENIZER-002 — Delimiters Must Be Matched According To Documented Rules
-  Contract statement: Tokenizers must consistently define whether delimiters are literal, escaped, nested, quoted,
-  or regex-based.
-  Rationale: Templates and generated text fail when delimiter matching is ambiguous.
-  Source locations: tokenizer/template parsing helpers.
-  Known related CODEX findings: delimiter/index bugs were scan targets.
-  Suggested unit tests: testTokenizerParsesQuotedDelimiter(), testTokenizerHandlesEscapedDelimiter(),
-  testTokenizerHandlesMissingClosingDelimiterByContract()
-  Spec target section: Text Utilities / Tokenizer Delimiters
+TEXT-ALIGN-001 — Alignment And Padding Width Semantics
+Contract statement:
+Alignment, padding, truncation, and ellipsis helpers must produce documented target widths and consistent left,
+right, center, pad-start, and pad-end behavior.
+Rationale:
+Fixed-width UI, report, log, diagnostic, and generated text output depends on stable alignment.
+Source scope:
+OATextAlign.padStart, padEnd, alignLeft, alignRight, alignCenter, align, leftPad, rightEnd, left, right, center.
+Related CODEX findings:
+OATextAlign.leftPad width behavior; OATextAlign.padStart/padEnd surrogate width behavior; OATextAlign.right/center
+truncation exception.
+Suggested unit tests:
+testAlignPaddingProducesTargetWidth, testLeftPadUsesTargetWidth, testRightCenterTruncationDoesNotThrow,
+testPadStartUnicodeWidthByContract.
+Spec target section:
+Text Utilities / Alignment Semantics
 
-  TEXT-REGEX-001 — Regex Helpers Must Escape Literal Input Before Regex Use
-  Contract statement: Helpers that build regex from literal text must quote/escape regex metacharacters unless the
-  API explicitly accepts regex input.
-  Rationale: Treating user/model text as regex changes matching behavior and can produce wrong replacements.
-  Source locations: regex helper methods/classes.
-  Known related CODEX findings: regex helper risks were part of scan focus.
-  Suggested unit tests: testRegexLiteralDotMatchesDotOnly(), testRegexLiteralBracketEscaped()
-  Spec target section: Text Utilities / Regex Semantics
+TEXT-UNICODE-001 — Unicode And Character Unit Boundaries
+Contract statement:
+Text helpers that slice, pad, case-convert, validate, or measure text must define whether they operate on char
+units, code points, or display columns, and must not corrupt surrogate pairs where the contract promises Unicode-
+safe behavior.
+Rationale:
+OA runtime text can contain non-ASCII display, metadata, serialized, and user-entered values.
+Source scope:
+OATextAlign, OATextChars, OATextCompare, OATextUtil.getBegin/getEnd/getFirst/getLast, OATextLineWrap.
+Related CODEX findings:
+OATextAlign surrogate width behavior; OATextUtil.getBegin/getEnd surrogate split; OATextChars upper/lower locale be
+havior.
+Suggested unit tests:
+testSubstringHelpersUnicodeBoundaryByContract, testPadStartUnicodeWidthByContract,
+testLineWrapDoesNotSplitSurrogatePairByContract.
+Spec target section:
+Text Utilities / Unicode Semantics
 
-  7. Line Wrap / Alignment Contracts
+TEXT-LOCALE-001 — Locale-Stable Infrastructure Text
+Contract statement:
+Text helpers used for infrastructure identifiers, paths, queries, matching, validation, and generated metadata must
+use locale-stable casing/comparison rules unless an API explicitly documents locale-sensitive behavior.
+Rationale:
+Default JVM locale must not change OA identifiers, path/query tokens, property names, matching results, or generated
+text.
+Source scope:
+OATextChars.upper/lower; OATextCompare ignore-case methods; OATextCode; OATextGrammar where identifier-like text is
+transformed.
+Related CODEX findings:
+OATextChars.upper/lower Turkish default-locale behavior; OATextCompare ignore-case index drift after case conversio
+n.
+Suggested unit tests:
+testUpperLowerUseLocaleStableRules, testCompareCaseInsensitiveUsesLocaleRoot,
+testIdentifierGenerationUnaffectedByTurkishLocale.
+Spec target section:
+Text Utilities / Locale Semantics
 
-  TEXT-WRAP-001 — Line Wrapping Must Respect Width Without Losing Characters
-  Contract statement: Wrapping helpers must not drop, duplicate, or reorder characters while enforcing the
-  configured width as closely as the contract allows.
-  Rationale: Reports, generated UI text, emails, and logs depend on readable and complete wrapped text.
-  Source locations: line wrapping/alignment helpers.
-  Known related CODEX findings: substring/index bugs were scan targets.
-  Suggested unit tests: testWrapPreservesAllCharacters(), testWrapLongWordByContract(),
-  testWrapAtWhitespaceWhenPossible()
-  Spec target section: Text Utilities / Line Wrap Semantics
+TEXT-COMPARE-001 — Comparison And Matching Semantics
+Contract statement:
+Text comparison and matching helpers must explicitly define case-sensitive, case-insensitive, null, blank, trim,
+wildcard, and locale behavior.
+Rationale:
+OA search, filter, display matching, generated text decisions, and helper comparisons must be deterministic.
+Source scope:
+OATextCompare.isEqual, equals, isNotEqual, notEquals, isLike, compare, contains, startsWith, endsWith,
+appendIfMissing, prefixIfMissing.
+Related CODEX findings:
+OATextChars upper/lower default-locale casing; comparison semantics scan findings.
+Suggested unit tests:
+testCompareNullCaseBlankAndLikeSemantics, testCompareCaseInsensitiveUsesLocaleRoot,
+testAppendPrefixIfMissingCaseBehavior.
+Spec target section:
+Text Utilities / Comparison Semantics
 
-  TEXT-ALIGN-001 — Alignment/Padding Must Produce Defined Width For Normal Input
-  Contract statement: Left/right/center padding helpers must produce strings of the requested width unless the input
-  is longer and the contract says to preserve or truncate.
-  Rationale: Fixed-width text/report output requires deterministic alignment.
-  Source locations: padding/alignment helpers.
-  Known related CODEX findings: off-by-one/index issues were scan targets.
-  Suggested unit tests: testPadLeftProducesRequestedWidth(), testPadRightProducesRequestedWidth(),
-  testCenterPadHandlesOddPadding()
-  Spec target section: Text Utilities / Alignment Semantics
+TEXT-COMPARE-002 — Search Indexes Refer To Original Text
+Contract statement:
+Index-returning search helpers must return positions in the original input string and must not report missing text
+as found except where empty or wildcard semantics explicitly define success.
+Rationale:
+Callers use returned indexes for slicing, highlighting, replacement, and UI display.
+Source scope:
+OATextCompare.indexOf, lastIndexOf, contains; OATextEscape.hilite.
+Related CODEX findings:
+OATextCompare.indexOf/lastIndexOf ignore-case index drift after case conversion.
+Suggested unit tests:
+testIgnoreCaseIndexOfReturnsOriginalIndex, testIgnoreCaseLastIndexOfReturnsOriginalIndex,
+testContainsMissingTextReturnsFalse.
+Spec target section:
+Text Utilities / Search And Index Semantics
 
-  8. Text Comparison Contracts
+TEXT-CHAR-001 — Character Classification And Case Helpers
+Contract statement:
+Low-level character helpers must classify and transform characters according to their documented rules, including
+null/empty handling, digit detection, first-character transformations, and locale-stable casing.
+Rationale:
+Character helpers support identifiers, filters, comparisons, tokenization, validation, and UI input processing.
+Source scope:
+OATextChars.hasDigits, makeFirstCharLower, makeFirstUpperCharsLower, makeFirstCharUpper, upper, lower.
+Related CODEX findings:
+OATextChars.upper/lower Turkish default-locale behavior.
+Suggested unit tests:
+testTextCharsLocaleStableCaseAndDigitHelpers, testFirstCharHelpersHandleNullEmptyAndUnicodeByContract.
+Spec target section:
+Text Utilities / Character Semantics
 
-  TEXT-COMPARE-001 — Text Comparison Must Define Case And Null Semantics
-  Contract statement: Text comparison helpers must define whether comparison is case-sensitive, case-insensitive,
-  trimmed, null-safe, or locale-sensitive.
-  Rationale: Sorting/filter/search behavior depends on consistent comparison semantics.
-  Source locations: comparison/search helper methods.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testCompareNullByContract(), testCompareCaseInsensitiveByContract(),
-  testCompareTrimmedByContract()
-  Spec target section: Text Utilities / Comparison Semantics
+TEXT-GENERATE-001 — Generated Text Honors Bounds And Character Options
+Contract statement:
+Text generation helpers must honor requested length bounds and character-set options, or fail/use a documented
+fallback when the request is impossible.
+Rationale:
+Demo, fixture, generated, and UI placeholder text must not violate caller constraints or crash on ordinary unchecked
+bounds.
+Source scope:
+OATextGenerate.getDummyText, getRandomString, createDigits.
+Related CODEX findings:
+OATextGenerate.getRandomString impossible character-set behavior; OATextGenerate.getDummyText invalid bounds.
+Suggested unit tests:
+testRandomStringBoundsAndCharacterClasses, testRandomStringImpossibleCharacterSetByContract,
+testDummyTextBoundsAndWordBoundaryBehavior.
+Spec target section:
+Text Utilities / Text Generation Semantics
 
-  TEXT-COMPARE-002 — Search/Contains Helpers Must Not Treat Missing Text As Found
-  Contract statement: Search helpers must not return success for missing needles/patterns except where wildcard/
-  empty semantics explicitly define that behavior.
-  Rationale: False positives corrupt filtering, formatting, and template expansion.
-  Source locations: search/contains/match helpers.
-  Known related CODEX findings: false-success/wrong-output risks were scanned.
-  Suggested unit tests: testContainsMissingTextReturnsFalse(), testEmptyNeedleBehaviorByContract()
-  Spec target section: Text Utilities / Search Semantics
+TEXT-SOUNDEX-001 — Soundex Produces Stable Phonetic Keys
+Contract statement:
+Soundex generation must return deterministic four-character phonetic keys, handle null/empty input as documented,
+and ignore non-letter characters according to the Soundex rules used by OA.
+Rationale:
+Phonetic matching must not produce invalid keys or false matches for normal names.
+Source scope:
+OATextSoundex.soundex.
+Related CODEX findings:
+OATextSoundex.soundex leading non-letter behavior.
+Suggested unit tests:
+testSoundexKnownExamplesAndNonLetters, testSoundexNullEmptyReturnsZeros.
+Spec target section:
+Text Utilities / Phonetic Matching Semantics
 
-  9. Null / Empty Handling Contracts
+TEXT-UTILITY-001 — General Utilities Preserve Target Format Semantics
+Contract statement:
+General text utilities must preserve documented separator, property-path, hex, color, numeric, substring, repeated-
+character, append, prepend, and concat semantics without silent corruption.
+Rationale:
+These helpers feed OA property paths, generated text, IDs, diagnostics, byte/string round trips, color values, UI
+strings, and runtime configuration text.
+Source scope:
+OATextUtil.append, prepend, concat, colorToHex, parseInt, bytesToHex, hexToBytes, getBegin, getEnd, getFirst,
+getLast, createString, createPropertyPath.
+Related CODEX findings:
+OATextUtil.concat null separator; hexToBytes odd/invalid hex; colorToHex format mismatch; parseInt overflow;
+getBegin/getEnd surrogate split; createPropertyPath empty segment.
+Suggested unit tests:
+testConcatAppendPrependSeparatorSemantics, testHexRoundTripAndRejectsInvalidHex, testParseIntOverflowByContract,
+testColorToHexMatchesConverterContract, testSubstringHelpersUnicodeBoundaryByContract.
+Spec target section:
+Text Utilities / General Utility Semantics
 
-  TEXT-NULL-001 — Null Input Behavior Must Be Explicit Per API
-  Contract statement: Every text helper must consistently define whether null input returns null, empty string,
-  false, zero, or throws.
-  Rationale: OA uses text utilities broadly; inconsistent null behavior creates NPEs or wrong generated output.
-  Source locations: all com.viaoa.text.* helpers.
-  Known related CODEX findings: null handling was a primary scan focus.
-  Suggested unit tests: testNullInputReturnsDefinedValueForFormatHelpers(),
-  testNullInputReturnsDefinedValueForEscapeHelpers()
-  Spec target section: Text Utilities / Null Semantics
+TEXT-BOUNDARY-001 — Text Package Conversion Boundary
+Contract statement:
+Text helpers may support formatting and textual representation, but semantic type conversion authority must remain
+consistent with converter, datetime, compare, path, query, template, reflect, serialization, and runtime contracts.
+Rationale:
+Text utilities often sit at package boundaries; they must not reinterpret runtime values in ways that conflict with
+OA semantic packages.
+Source scope:
+OATextFormat, OATextCompare, OATextGrammar, OATextCode, OATextUtil, OATextEscape, OATextTokenizer; integration with
+com.viaoa.converter, datetime, path, query, template, reflect, serialize.
+Related CODEX findings:
+Format conversion, color hex, date/number validation, JavaBean property-name, and property-path findings illustrate
+boundary risks.
+Suggested unit tests:
+testTextFormattingMatchesConverterBoundary, testColorHexMatchesConverterContract,
+testPropertyNameMatchesJavaBeanContract, testPropertyPathCreationMatchesOAPathContract.
+Spec target section:
+Text Utilities / Cross-Package Boundaries
 
-  TEXT-EMPTY-001 — Empty And Blank Strings Must Follow Defined Semantics
-  Contract statement: Empty string and whitespace-only string behavior must be explicit and consistent for
-  formatting, comparison, tokenization, and normalization APIs.
-  Rationale: OA display, query, and template paths frequently distinguish blank from absent.
-  Source locations: null/empty/string helpers.
-  Known related CODEX findings: empty-string edge cases were scan targets.
-  Suggested unit tests: testEmptyStringByContract(), testBlankStringByContract(),
-  testWhitespaceOnlyTokenizationByContract()
-  Spec target section: Text Utilities / Empty String Semantics
-
-  TEXT-FAILURE-001 — Text Utilities Must Not Silently Produce Wrong Output
-  Contract statement: When a text utility cannot parse, format, tokenize, escape, or wrap according to contract, it
-  must return a defined fallback or fail visibly.
-  Rationale: Silent wrong text output can break generated code, UI, reports, and templates.
-  Source locations: parsers, tokenizers, formatters, escaping helpers.
-  Known related CODEX findings: swallowed exception / silent wrong-output risks were scan targets.
-  Suggested unit tests: testParserFailureUsesDefinedFallback(), testTokenizerFailureDoesNotReturnPartialSuccess(),
-  testFormatterFailureDoesNotReturnMisleadingText()
-  Spec target section: Text Utilities / Failure Semantics
-
-  10. Test Coverage Matrix
-
-  Formatting:
-
-  - testFormatSameInputSameOutput
-  - testFormatKnownDateNumberPatterns
-  - testInvalidFormatPatternUsesDefinedFallback
-  - testInvalidFormatPatternDoesNotReturnMisleadingValue
-
-  Display/grammar/code names:
-
-  - testCamelCaseToDisplayName
-  - testAcronymDisplayNamePreservedByContract
-  - testPluralizeRegularWord
-  - testPluralizeConfiguredIrregularWord
-  - testTextToJavaIdentifierRemovesInvalidChars
-  - testEmptyTextToIdentifierUsesDefinedFallback
-
-  Whitespace/null/empty:
-
-  - testNormalizeWhitespaceCollapsesRunsWhenConfigured
-  - testTrimPreservesInternalSpacing
-  - testNormalizeNullReturnsConfiguredNullOrEmpty
-  - testNormalizeBlankStringByContract
-  - testEmptyStringByContract
-  - testWhitespaceOnlyTokenizationByContract
-
-  Escaping/sanitization:
-
-  - testEscapeUnescapeRoundTripAscii
-  - testEscapeUnescapeRoundTripQuotesBackslashesAndNewlines
-  - testEscapeAlreadyEscapedTextByContract
-  - testIncompleteEscapeRemainsLiteralByContract
-  - testInvalidEscapeDoesNotDropCharacters
-  - testSanitizePreservesSafeText
-  - testSanitizeRemovesTargetUnsafeCharacters
-  - testRegexEscapeEscapesRegexMetacharacters
-
-  Tokenizer/regex:
-
-  - testTokenizerTerminatesOnEmptyInput
-  - testTokenizerTerminatesOnRepeatedDelimiter
-  - testTokenizerTerminatesOnMalformedToken
-  - testTokenizerParsesQuotedDelimiter
-  - testTokenizerHandlesEscapedDelimiter
-  - testTokenizerHandlesMissingClosingDelimiterByContract
-  - testRegexLiteralDotMatchesDotOnly
-
-  Wrap/alignment:
-
-  - testWrapPreservesAllCharacters
-  - testWrapLongWordByContract
-  - testWrapAtWhitespaceWhenPossible
-  - testPadLeftProducesRequestedWidth
-  - testPadRightProducesRequestedWidth
-  - testCenterPadHandlesOddPadding
-
-  Comparison/failure:
-
-  - testCompareNullByContract
-  - testCompareCaseInsensitiveByContract
-  - testContainsMissingTextReturnsFalse
-  - testEmptyNeedleBehaviorByContract
-  - testParserFailureUsesDefinedFallback
-  - testTokenizerFailureDoesNotReturnPartialSuccess
-  - testFormatterFailureDoesNotReturnMisleadingText
-
+TEXT-THREAD-001 — Stateless And Reusable Helper Semantics
+Contract statement:
+Static helper classes must not retain per-call mutable state, and reusable instances such as OATextLineWrap and
+IndentFormatter must keep configuration state separate from operation-local state.
+Rationale:
+Text helpers are widely reused by runtime, logging, template, tooling, and generated-code paths that may run
+concurrently.
+Source scope:
+OATextAlign, OATextChars, OATextCode, OATextCompare, OATextEscape, OATextFilter, OATextFormat, OATextGenerate,
+OATextGrammar, OATextSanitize, OATextSoundex, OATextTokenizer, OATextUtil, OATextLineWrap, IndentFormatter.
+Related CODEX findings:
+Stateful line-wrap configuration and formatter usage are relevant reuse boundaries; no direct ThreadLocal findings
+observed in this package.
+Suggested unit tests:
+testStaticHelpersHaveNoCrossCallState, testLineWrapSequentialCallsDoNotLeakRows,
+testIndependentLineWrapInstancesDoNotShareState.
+Spec target section:
+Text Utilities / Reuse And Threading Semantics
 
 */
 

@@ -37,382 +37,466 @@ package com.viaoa.concurrent;
 
 /* CODEX Invariants
 
-1. Package Summary
+CONC-RUNTIME-001 — OA Concurrent Runtime Primitives
+Contract statement:
+com.viaoa.concurrent defines lightweight OA concurrency primitives for task execution, scheduling, object pooling,
+throttling, and coordinated runnable start; these primitives provide execution boundaries for higher-level OA
+runtime services but do not themselves own OAObject, Hub, transaction, sync, replication, or graph semantics.
+Rationale:
+Higher-level OA systems rely on this package for background and concurrent execution. The package must make its
+concurrency guarantees explicit so callers do not infer ordering, lifecycle, context propagation, or semantic
+completion that the primitives do not provide.
+Source scope:
+OAExecutorService, OAScheduledExecutorService, OAPool, OAThrottle, OAConcurrent, package-info.java.
+Related CODEX findings:
+Existing package-info notes implicit lifecycle state, missing scheduler shutdown, pool capacity leaks, timeout
+ambiguity, and ThreadLocal propagation boundaries.
+Suggested unit tests:
+testExecutorSchedulerPoolThrottleContractsAreExplicit(), testConcurrentPrimitivesDoNotImplyGraphSemanticSuccess(),
+testRuntimeCallersMustOwnOAContextPropagation()
+Spec target section:
+Concurrent Runtime / Core Responsibility
 
-  com.viaoa.concurrent provides OA’s lightweight concurrency primitives:
+CONC-LIFECYCLE-001 — Executor Lifecycle State
+Contract statement:
+OAExecutorService must have deterministic active, closing, and closed behavior: once closed, new work must be
+rejected predictably before accepted-work state or metrics claim success.
+Rationale:
+Runtime services must not believe background work was accepted after shutdown or during partial closure.
+Source scope:
+OAExecutorService.submit(Runnable), submit(Callable), submitAndWait(...), close(), getExecutorService(),
+getQueueSize(), getThreadPoolSize(), getActiveThreads().
+Related CODEX findings:
+close() delegates to shutdown() without explicit wrapper terminal state; submit counters can increment before
+acceptance.
+Suggested unit tests:
+testOAExecutorSubmitAfterCloseRejectedBeforeCounterIncrement(),
+testOAExecutorConcurrentSubmitCloseHasDeterministicOutcome(), testOAExecutorCloseRejectsNewWork()
+Spec target section:
+Concurrent Runtime / Executor Lifecycle
 
-  - OAExecutorService: daemon-thread executor wrapper for background task execution.
-  - OAScheduledExecutorService: single-thread scheduled executor wrapper for delayed and periodic work.
-  - OAPool: synchronized bounded/unbounded object pool with high-water shrink behavior.
-  - OAThrottle: time-based suppression/throttling helper.
-  - OAConcurrent: helper for starting multiple runnables at the same barrier.
+CONC-LIFECYCLE-002 — Scheduler Lifecycle Ownership
+Contract statement:
+OAScheduledExecutorService must have explicit shutdown/close ownership semantics for delayed and recurring tasks,
+including whether pending and recurring tasks are cancelled, drained, rejected, or allowed to continue.
+Rationale:
+Scheduled tasks can retain runtime objects, keep daemon activity alive, or continue mutating state after the owner
+is stopped.
+Source scope:
+OAScheduledExecutorService.schedule(...), scheduleEvery(...), getScheduledExecutorService().
+Related CODEX findings:
+OAScheduledExecutorService has no shutdown/close lifecycle.
+Suggested unit tests:
+testOASchedulerCloseCancelsRecurringTasksByContract(), testOASchedulerRejectsSchedulingAfterClose(),
+testOASchedulerPendingTaskLifecycleIsExplicit()
+Spec target section:
+Concurrent Runtime / Scheduler Lifecycle
 
-  In OA 4.0 terms, this package is foundational support infrastructure. It does not itself own OAObject, Hub, sync,
-  replication, transaction, or trigger semantics, but higher-level packages may rely on it for background work,
-  polling, remoting socket reuse, logging suppression, preload/load traversal, and event processing.
+CONC-LIFECYCLE-003 — One-Shot Versus Reusable Helpers
+Contract statement:
+Helpers with mutable run coordination state must define whether instances are one-shot, reusable after completion,
+or safe for concurrent run calls, and must enforce that lifecycle.
+Rationale:
+Reusing mutable coordination state ambiguously can corrupt barriers, latches, completion status, and failure
+reporting.
+Source scope:
+OAConcurrent.run(), OAConcurrent constructor state, countDownLatch, barrier, runnable array.
+Related CODEX findings:
+OAConcurrent reuse/concurrent-run behavior is not synchronized or explicitly documented.
+Suggested unit tests:
+testOAConcurrentRunIsOneShotOrReusableByContract(), testOAConcurrentConcurrentRunRejectedOrSerialized(),
+testOAConcurrentSecondRunHasDefinedBehavior()
+Spec target section:
+Concurrent Runtime / Helper Lifecycle
 
-  2. Core Concepts
+CONC-TASK-001 — Accepted Work Execution or Visible Failure
+Contract statement:
+A submitted or scheduled task that returns a Future/ScheduledFuture must either be accepted by the underlying
+executor/scheduler or fail visibly to the caller; metrics and lifecycle state must not claim acceptance for rejected
+work.
+Rationale:
+OA background work must not be silently lost, especially when used by load, sync, replication, remote, trigger, or
+process services.
+Source scope:
+OAExecutorService.submit(...), submitAndWait(...), OAScheduledExecutorService.schedule(...), scheduleEvery(...).
+Related CODEX findings:
+OAExecutorService counters increment before acceptance; scheduler/executor closed-state ambiguity.
+Suggested unit tests:
+testAcceptedExecutorTaskRunsOrFutureReportsFailure(), testRejectedExecutorTaskDoesNotIncrementAcceptedCounter(),
+testScheduledTaskRejectionIsVisible()
+Spec target section:
+Concurrent Runtime / Task Submission Semantics
 
-  - Task: a Runnable or Callable submitted to OAExecutorService or OAScheduledExecutorService.
-  - Worker thread: daemon thread created by wrapper thread factories to execute tasks.
-  - Executor/queue: ThreadPoolExecutor or ScheduledExecutorService backing task execution.
-  - Lifecycle state: whether executor/scheduler/pool is active, closing, closed, or reusable.
-  - Start/shutdown/close: creation and termination of worker infrastructure.
-  - Cancellation: explicit stop/cancel of submitted or scheduled work.
-  - Locking: synchronized ownership around shared structures such as OAPool.alResource.
-  - Memory visibility: guarantee that state changes by one thread are visible to others.
-  - Ordering: execution order guarantees, if any, for queued/scheduled tasks.
-  - Callback/listener dispatch: execution of caller-supplied runnables/callables and pool callbacks.
-  - ThreadLocal/OAThreadLocal ownership: this package does not automatically propagate or clean OA thread context.
-  - Interruption/timeout handling: behavior when blocked waits, task waits, or scheduled work are interrupted or time
-    out.
+CONC-TASK-002 — Task Completion Boundary
+Contract statement:
+Task completion, Future completion, transport completion, and semantic OA runtime completion must remain distinct;
+this package only reports task execution completion unless an owning subsystem defines a stronger semantic boundary.
+Rationale:
+A Runnable can finish while graph mutation, sync delivery, replication capture, or callback semantics remain
+incomplete or failed.
+Source scope:
+OAExecutorService, OAScheduledExecutorService, OAConcurrent, higher-level runtime callers.
+Related CODEX findings:
+Existing package-info notes distinction between concurrent task execution and higher-level OA runtime semantics.
+Suggested unit tests:
+testFutureCompletionDoesNotImplyGraphSemanticCommit(), testRuntimeOwnerDefinesSemanticCompletionSeparately(),
+testTaskFailureDoesNotAppearAsOperationSuccess()
+Spec target section:
+Concurrent Runtime / Execution Boundary Semantics
 
-  3. Invariants
+CONC-TIMEOUT-001 — submitAndWait Timeout Semantics
+Contract statement:
+submitAndWait timeout behavior must explicitly define whether unfinished work is cancelled, left running, or
+returned to the caller as an incomplete task; timeout must not be reported as successful completion.
+Rationale:
+Continuing timed-out work can conflict with caller retry, cancellation, transaction boundaries, or shutdown logic.
+Source scope:
+OAExecutorService.submitAndWait(Runnable, int, TimeUnit), submitAndWait(Callable, int, TimeUnit).
+Related CODEX findings:
+submitAndWait timeout does not cancel or classify unfinished task.
+Suggested unit tests:
+testOAExecutorSubmitAndWaitTimeoutDoesNotReportCompletion(),
+testOAExecutorSubmitAndWaitTimeoutLeavesOrCancelsByContract(), testTimedOutTaskStateIsVisibleToCaller()
+Spec target section:
+Concurrent Runtime / Timeout Semantics
 
-  A. Thread-Safety Invariants
+CONC-ORDER-001 — Executor Ordering Limits
+Contract statement:
+OAExecutorService must expose only the ordering guarantees provided by its configured executor mode: cached/
+unbounded workers provide no global execution order, and fixed-size mode preserves queue order only up to concurrent
+worker execution.
+Rationale:
+Event, sync, replication, object, and Hub services must not rely on ordering unless they explicitly serialize work.
+Source scope:
+OAExecutorService constructors, getExecutorService(), ThreadPoolExecutor configuration, submit methods.
+Related CODEX findings:
+Existing package-info notes ordering limits should be explicit.
+Suggested unit tests:
+testCachedExecutorDoesNotPromiseTaskOrdering(), testFixedExecutorQueueOrderDoesNotImplySerialExecution(),
+testSerializedRuntimeWorkUsesSingleWorkerOrExternalOrdering()
+Spec target section:
+Concurrent Runtime / Ordering Semantics
 
-  1. CONC-THREAD-001: Shared mutable state must be guarded consistently
-     Invariant: mutable state shared across threads must be synchronized, volatile, atomic, or safely published.
-     Why it matters: stale executor/pool/scheduler state can create duplicate resources, rejected work, or false
-     lifecycle state.
-     Locations: OAExecutorService.executorService, OAScheduledExecutorService.scheduledExecutorService, OAPool.alReso
-     urce, OAThrottle.aiMsLast/aiCnt/msDelay.
-     Confidence: Medium.
-     Gaps: executor/scheduler lazy fields are not volatile/synchronized; OAThrottle.msDelay is mutable non-volatile.
-  2. CONC-THREAD-002: Pool accounting must match actual checked-out resources
-     Invariant: OAPool.currentUsed must equal the number of entries marked used=true that represent real checked-out
-     resources.
-     Why it matters: incorrect accounting can block callers or shrink/remove resources incorrectly.
-     Locations: OAPool.get, release, remove, loadMinimum.
-     Confidence: Medium.
-     Gaps: create-failure paths can leave reserved slots/accounting inconsistent.
+CONC-SCHEDULE-001 — Scheduled Execution Semantics
+Contract statement:
+OAScheduledExecutorService must define delayed, fixed-period, and time-of-day scheduling in terms of initial delay,
+period, clock basis, recurrence behavior, and drift when tasks run long.
+Rationale:
+Scheduled runtime behavior can affect polling, cleanup, sync, replication, and background maintenance. Time
+ambiguity creates missed or duplicate work.
+Source scope:
+OAScheduledExecutorService.schedule(Runnable, OADateTime), schedule(Runnable, int, TimeUnit), schedule(Callable,
+int, TimeUnit), scheduleEvery(Runnable, OATime), scheduleEvery(Runnable, int, int, TimeUnit).
+Related CODEX findings:
+Single-thread scheduler drift/starvation and daily time wall-clock/DST ambiguity are noted in package-info.
+Suggested unit tests:
+testOASchedulerDelayedTaskRunsAfterDelay(), testOASchedulerLongTaskDelaysFollowingTaskObservableByContract(),
+testOASchedulerDailyTimeRecomputesAcrossDstIfWallClockContract()
+Spec target section:
+Concurrent Runtime / Scheduling Semantics
 
-  B. Memory Visibility Invariants
+CONC-EXCEPTION-001 — Task Exception Visibility
+Contract statement:
+Exceptions thrown by submitted, scheduled, pooled, or coordinated callback tasks must be visible through Future
+failure, caller-visible exception, logged diagnostic, or owner-defined aggregation; exceptions must not silently
+kill required runtime work while reporting success.
+Rationale:
+Background task failures can stop recurring work, hide failed coordination, or leave runtime state partially
+updated.
+Source scope:
+OAExecutorService submit methods, OAScheduledExecutorService scheduleEvery(...), OAConcurrent.run(),
+OAPool.create(), OAPool.removed(...).
+Related CODEX findings:
+Recurring scheduled task exceptions can silently cancel future executions; OAConcurrent worker failures are logged
+but not propagated; pool cleanup callback failures can escape after state mutation.
+Suggested unit tests:
+testScheduledRecurringTaskExceptionIsVisibleByContract(), testOAConcurrentWorkerExceptionPropagatesOrAggregates(),
+testPoolRemovedFailureLeavesVisibleFailureState()
+Spec target section:
+Concurrent Runtime / Exception Semantics
 
-  3. CONC-VIS-001: Lifecycle state must be visible before accepting work
-     Invariant: submit/schedule calls must observe current active/closed state before recording or accepting work.
-     Why it matters: prevents false accepted metrics and tasks entering closed infrastructure.
-     Locations: OAExecutorService.submit, submitAndWait, close; OAScheduledExecutorService.schedule*.
-     Confidence: Low/Medium.
-     Gaps: no explicit closed state; close() leaves executor reference non-null.
-  4. CONC-VIS-002: Dynamic pool configuration must be visible to waiters
-     Invariant: changes to min/max/high-water configuration must be visible to pool users and must wake waiters when
-     capacity increases.
-     Why it matters: runtime pool-size tuning must not leave callers blocked on stale limits.
-     Locations: OAPool.setMinimum, setMaximum, setHighMarkTimeLimit, get.
-     Confidence: Low.
-     Gaps: config writes are unsynchronized and do not notify.
+CONC-INTERRUPT-001 — Interrupt Preservation
+Contract statement:
+Blocking waits and coordinated waits must either propagate InterruptedException or restore the interrupted status
+and fail visibly; interrupts must not be swallowed as normal completion.
+Rationale:
+Shutdown, cancellation, failover, and timeout logic depend on Java interruption semantics.
+Source scope:
+OAPool.get(), OAConcurrent.run(), executor/scheduler waits owned by callers.
+Related CODEX findings:
+OAPool.get swallows InterruptedException; OAConcurrent does not cancel spawned workers if caller wait is
+interrupted.
+Suggested unit tests:
+testOAPoolInterruptedGetRestoresInterrupt(), testOAConcurrentInterruptedRunFailsVisibly(),
+testInterruptedWaitDoesNotReturnNormalSuccess()
+Spec target section:
+Concurrent Runtime / Interruption Semantics
 
-  C. Locking / Deadlock Invariants
+CONC-CANCEL-001 — Cancellation Handle Semantics
+Contract statement:
+Returned Future and ScheduledFuture instances are the caller’s cancellation handles, and wrapper lifecycle behavior
+must not hide cancellation state or imply cancellation of work that continues running.
+Rationale:
+Runtime owners need a reliable way to cancel delayed, recurring, or submitted work during shutdown, retry, or
+failure.
+Source scope:
+OAExecutorService.submit(...), submitAndWait(...), OAScheduledExecutorService.schedule(...), scheduleEvery(...).
+Related CODEX findings:
+Scheduler lacks aggregate lifecycle cancellation; submitAndWait timeout does not define cancellation.
+Suggested unit tests:
+testSubmittedFutureCancellationPreventsOrReportsExecution(), testScheduledFutureCancellationStopsRecurringTask(),
+testSubmitAndWaitTimeoutCancellationPolicyIsExplicit()
+Spec target section:
+Concurrent Runtime / Cancellation Semantics
 
-  5. CONC-LOCK-001: Pool callbacks must not run while holding the pool lock
-     Invariant: create() and removed() callbacks must execute outside synchronized(alResource).
-     Why it matters: callbacks can block, close sockets, or call external code; running them under lock risks deadlock
-     and stalls.
-     Locations: OAPool.get, loadMinimum, release, remove.
-     Confidence: High.
-     Gaps: current structure mostly honors this; failure rollback still needs care.
-  6. CONC-LOCK-002: Waiters must be notified after availability or capacity changes
-     Invariant: any operation that makes a resource available or frees capacity must notify blocked waiters.
-     Why it matters: missed wakeups can create permanent stalls.
-     Locations: OAPool.release, remove, add, loadMinimum, setMaximum.
-     Confidence: Medium.
-     Gaps: shrink/remove path in release and setMaximum capacity increases need explicit wakeups.
+CONC-POOL-001 — Pool Ownership State
+Contract statement:
+Each OAPool resource must be in exactly one ownership state at a time: available in the pool, checked out to one
+caller, removed, or failed during creation; a resource must never be duplicated or both checked out and available.
+Rationale:
+Pooled resources often represent sockets or runtime handles. Duplicate ownership corrupts remote calls and shared
+state.
+Source scope:
+OAPool.get(), release(TYPE), remove(TYPE), add(TYPE), getAllItems(), getCurrentSize(), getCurrentUsed().
+Related CODEX findings:
+OAPool.add can duplicate resources; double release is silently ignored; create-failure paths can leave reserved
+slots/accounting inconsistent.
+Suggested unit tests:
+testOAPoolResourceHasSingleOwnerAtATime(), testOAPoolAddRejectsDuplicateResourceByContract(),
+testOAPoolDoubleReleaseHasDefinedOutcome()
+Spec target section:
+Concurrent Runtime / Pool Ownership
 
-  D. Lifecycle / Start / Stop Invariants
+CONC-POOL-002 — Pool Accounting Accuracy
+Contract statement:
+OAPool current size, current used count, available resources, waiters, and min/max capacity state must remain
+consistent with actual resource ownership after get, release, add, remove, create failure, shrink, and load-minimum
+operations.
+Rationale:
+Incorrect accounting can block callers permanently, exceed capacity, shrink live resources, or leak resources.
+Source scope:
+OAPool.getCurrentSize(), getCurrentUsed(), loadMinimum(), get(), release(TYPE), remove(TYPE), add(TYPE),
+setMinimum(int), setMaximum(int).
+Related CODEX findings:
+Failed create() leaks pool capacity; shrink/remove path can miss notification; setMaximum capacity increases do not
+notify waiters.
+Suggested unit tests:
+testOAPoolCreateFailureRollsBackReservedSlot(), testHighContentionPoolMaintainsCurrentUsedInvariant(),
+testOAPoolSetMaximumWakesWaitingGetter()
+Spec target section:
+Concurrent Runtime / Pool Accounting
 
-  7. CONC-LIFE-001: Executors must have explicit active/closed semantics
-     Invariant: once closed, an executor wrapper must reject new work predictably before updating accepted-work state.
-     Why it matters: avoids false success, false metrics, and ambiguous shutdown behavior.
-     Locations: OAExecutorService.close, submit, submitAndWait.
-     Confidence: Medium.
-     Gaps: close delegates to shutdown() only; wrapper lacks terminal state.
-  8. CONC-LIFE-002: Schedulers must expose shutdown ownership
-     Invariant: a scheduler that owns a ScheduledExecutorService must expose idempotent close/shutdown semantics.
-     Why it matters: recurring tasks can otherwise retain runtime objects indefinitely.
-     Locations: OAScheduledExecutorService.getScheduledExecutorService, scheduleEvery.
-     Confidence: Low.
-     Gaps: no close/shutdown method.
-  9. CONC-LIFE-003: Helper classes must state whether they are one-shot or reusable
-     Invariant: classes with mutable run-state such as OAConcurrent must define and enforce reuse/concurrent-run
-     behavior.
-     Why it matters: reusing the same helper concurrently can corrupt barrier/latch state.
-     Locations: OAConcurrent.run, fields countDownLatch, barrier.
-     Confidence: Low/Medium.
-     Gaps: not synchronized and not documented as one-shot.
+CONC-POOL-003 — Pool Callback Lock Boundary
+Contract statement:
+OAPool create() and removed(TYPE) callbacks must not execute while holding the pool state lock, and callback failure
+must leave resource ownership and pool accounting in a defined state.
+Rationale:
+Pool callbacks can block, close sockets, create external resources, or invoke runtime services. Running them under
+lock risks deadlock and stalls.
+Source scope:
+OAPool.create(), removed(TYPE), get(), loadMinimum(), release(TYPE), remove(TYPE), synchronized pool state.
+Related CODEX findings:
+Existing package-info notes current structure mostly honors no-callback-under-lock, but failure rollback needs care.
+Suggested unit tests:
+testOAPoolCreateRunsOutsidePoolLock(), testOAPoolRemovedRunsOutsidePoolLock(),
+testPoolCallbackFailureDoesNotCorruptPoolAccounting()
+Spec target section:
+Concurrent Runtime / Pool Callback Semantics
 
-  E. Task Submission / Execution Invariants
+CONC-POOL-004 — Pool Wait and Wake Semantics
+Contract statement:
+Any pool operation that makes a resource available, frees capacity, or changes capacity in a way that can satisfy a
+waiter must notify blocked waiters; waiters must not remain blocked on stale capacity or availability state.
+Rationale:
+Missed wakeups create production stalls in remote/socket and background resource pools.
+Source scope:
+OAPool.get(), release(TYPE), remove(TYPE), add(TYPE), loadMinimum(), setMaximum(int), setMinimum(int).
+Related CODEX findings:
+Release shrink/remove path and setMaximum capacity increases need explicit wakeups.
+Suggested unit tests:
+testOAPoolReleaseNotifiesWaiter(), testOAPoolReleaseShrinkNotifiesWaiter(), testOAPoolSetMaximumWakesWaitingGetter()
+Spec target section:
+Concurrent Runtime / Pool Wait Semantics
 
-  10. CONC-TASK-001: Accepted work must either execute or fail visibly
-     Invariant: if submit/schedule returns a Future, the task must be accepted by the underlying executor; if not
-     accepted, failure must be visible and metrics must not claim acceptance.
-     Why it matters: runtime services depend on background work not being silently lost.
-     Locations: OAExecutorService.submit*, OAScheduledExecutorService.schedule*.
-     Confidence: Medium.
-     Gaps: counters increment before acceptance.
-  11. CONC-TASK-002: submitAndWait timeout semantics must be explicit
-     Invariant: timeout must define whether unfinished work continues or is cancelled.
-     Why it matters: continuing timed-out work can conflict with caller retry/abort logic.
-     Locations: OAExecutorService.submitAndWait.
-     Confidence: Low.
-     Gaps: current method leaves task running after timeout.
+CONC-VISIBILITY-001 — Shared State Publication
+Contract statement:
+Mutable state shared across threads must be safely published through synchronization, volatile, atomic variables,
+immutable construction, or documented single-thread ownership.
+Rationale:
+Stale lifecycle, delay, pool, or executor state can produce duplicate resources, accepted work after close,
+incorrect throttling, or blocked waiters.
+Source scope:
+OAExecutorService.executorService, OAScheduledExecutorService.scheduledExecutorService, OAPool mutable fields,
+OAThrottle.msDelay, OAThrottle aiMsLast/aiCnt.
+Related CODEX findings:
+Executor/scheduler lazy fields are not explicitly synchronized/volatile; OAThrottle.msDelay is mutable non-volatile;
+dynamic pool config writes are unsynchronized.
+Suggested unit tests:
+testExecutorServiceLazyInitSafelyPublishesExecutor(), testSchedulerLazyInitSafelyPublishesExecutor(),
+testThrottleDelayUpdateVisibleToConcurrentCheck()
+Spec target section:
+Concurrent Runtime / Memory Visibility
 
-  F. Ordering / Determinism Invariants
+CONC-THROTTLE-001 — Throttle Single-Pass Interval
+Contract statement:
+OAThrottle.check() must allow at most one successful pass per configured delay interval under concurrent access,
+unless reset or configuration change explicitly defines otherwise.
+Rationale:
+Throttle is commonly used for event/log suppression or rate-limited runtime behavior; multiple concurrent passes
+violate suppression guarantees.
+Source scope:
+OAThrottle.check(), now(), aiMsLast, aiCnt.
+Related CODEX findings:
+Check-then-set race allows multiple concurrent callers through for the same interval.
+Suggested unit tests:
+testOAThrottleAllowsOnlyOneConcurrentPassPerInterval(), testOAThrottleConcurrentCheckDoesNotDoublePass(),
+testOAThrottleCheckCountMatchesSuccessfulPasses()
+Spec target section:
+Concurrent Runtime / Throttle Semantics
 
-  12. CONC-ORDER-001: Ordering guarantees must match executor mode
-     Invariant: cached/unbounded executor mode provides no ordering guarantee; fixed-size mode provides queue order
-     only up to concurrent worker execution.
-     Why it matters: event/sync/replication code must not rely on ordering unless explicitly serialized.
-     Locations: OAExecutorService.getExecutorService.
-     Confidence: High.
-     Gaps: package-level docs should make ordering limits explicit.
-  13. CONC-ORDER-002: Single-thread scheduler serializes execution but long tasks delay following tasks
-     Invariant: OAScheduledExecutorService task ordering is single-threaded; long-running tasks delay later tasks.
-     Why it matters: scheduled runtime work can drift under load.
-     Locations: OAScheduledExecutorService.getScheduledExecutorService.
-     Confidence: High.
-     Gaps: behavior is documented, but no diagnostics for drift/starvation.
+CONC-THROTTLE-002 — Throttle Delay Contract
+Contract statement:
+OAThrottle delay must be non-negative, visible to concurrent checkers, and evaluated without overflow-producing
+elapsed-time logic; invalid delay values must fail visibly or be normalized by explicit contract.
+Rationale:
+Negative, stale, or overflowed delay values can silently disable throttling or suppress work incorrectly.
+Source scope:
+OAThrottle.OAThrottle(long), setDelay(long), getDelay(), check(), now().
+Related CODEX findings:
+msDelay is mutable but not volatile/atomic; negative delays are accepted and make check pass; aiMsLast.get() +
+msDelay can overflow.
+Suggested unit tests:
+testOAThrottleRejectsOrNormalizesNegativeDelay(), testOAThrottleDelayUpdateVisibleAcrossThreads(),
+testOAThrottleLargeDelayDoesNotOverflowToImmediatePass()
+Spec target section:
+Concurrent Runtime / Throttle Delay Semantics
 
-  G. Cancellation / Interruption Invariants
+CONC-THROTTLE-003 — Throttle Reset and Counter Semantics
+Contract statement:
+OAThrottle reset, count, check count, and last-throttle timestamp semantics must be deterministic under the
+documented concurrency model and must not expose misleading values.
+Rationale:
+Throttle diagnostics and runtime suppression decisions depend on accurate counters and timestamps.
+Source scope:
+OAThrottle.reset(), getCheckCount(), getCount(), getLastThrottle(), check().
+Related CODEX findings:
+reset() is not atomic with respect to check(); getLastThrottle JavaDoc says total check count while implementation
+returns timestamp.
+Suggested unit tests:
+testOAThrottleResetHasDefinedConcurrentBehavior(), testOAThrottleGetLastThrottleReturnsTimestampByContract(),
+testOAThrottleCountersMatchSuccessfulChecks()
+Spec target section:
+Concurrent Runtime / Throttle Diagnostics
 
-  14. CONC-INT-001: Interrupted waits must preserve interruption semantics
-     Invariant: a blocking utility must either propagate interruption or restore the interrupted status and fail
-     visibly.
-     Why it matters: shutdown/cancel logic depends on interrupts.
-     Locations: OAPool.get, OAConcurrent.run.
-     Confidence: Low/Medium.
-     Gaps: OAPool.get swallows InterruptedException; OAConcurrent does not cancel spawned workers if caller wait is
-     interrupted.
-  15. CONC-CANCEL-001: Scheduled and submitted work must expose cancellation through returned futures
-     Invariant: returned Future/ScheduledFuture must be the caller’s cancellation handle; wrapper lifecycle must not
-     hide cancellation state.
-     Why it matters: runtime owners need a way to stop delayed/recurring work.
-     Locations: OAExecutorService.submit*, OAScheduledExecutorService.schedule*.
-     Confidence: Medium.
-     Gaps: scheduler lacks aggregate lifecycle cancellation.
+CONC-CLOCK-001 — Time Source Semantics
+Contract statement:
+Time-based concurrency behavior must define whether it uses wall-clock time or monotonic elapsed time, and must
+document effects of clock changes, DST, and scheduling drift.
+Rationale:
+Wall-clock changes can alter throttling and scheduling behavior; runtime callers must know whether the primitive is
+suitable for elapsed-time suppression or wall-clock scheduling.
+Source scope:
+OAThrottle.now(), OAThrottle.check(), OAScheduledExecutorService.schedule(Runnable, OADateTime),
+scheduleEvery(Runnable, OATime).
+Related CODEX findings:
+OAThrottle uses System.currentTimeMillis for elapsed control; scheduleEvery(OATime) daily wall-clock semantics are
+an open question.
+Suggested unit tests:
+testOAThrottleClockBackwardBehaviorIsDefined(), testOASchedulerTimeOfDayBehaviorIsDefinedAcrossClockBoundary(),
+testTimeBasedConcurrencyUsesDocumentedClockSource()
+Spec target section:
+Concurrent Runtime / Time Source Semantics
 
-  H. Exception-Handling Invariants
+CONC-TL-001 — No Implicit OAThreadLocal Propagation
+Contract statement:
+Tasks submitted to OAExecutorService or OAScheduledExecutorService do not automatically inherit, propagate, or clean
+OAThreadLocal, transaction, sync, replication, security, user, or graph context unless the caller wraps the task.
+Rationale:
+Assuming implicit context propagation can leak or lose transaction, sync, replay, security, or runtime graph state
+on pooled daemon threads.
+Source scope:
+OAExecutorService, OAScheduledExecutorService, higher-level callers in load, process, remote, sync, replication,
+trigger, transaction, and runtime packages.
+Related CODEX findings:
+Existing package-info notes this package does not implicitly propagate OAThreadLocal state.
+Suggested unit tests:
+testTaskDoesNotInheritOAThreadLocalUnlessWrapped(), testExecutorTaskStartsWithoutCallerRuntimeContextByDefault(),
+testSchedulerTaskStartsWithoutCallerRuntimeContextByDefault()
+Spec target section:
+Concurrent Runtime / ThreadLocal Context
 
-  16. CONC-EXC-001: Recurring scheduled task exceptions must not silently kill recurring runtime work unless
-     contracted
-     Invariant: recurring task failure must be logged/visible and either continue or intentionally cancel.
-     Why it matters: JDK scheduled executors suppress future executions after thrown exceptions.
-     Locations: OAScheduledExecutorService.scheduleEvery.
-     Confidence: Low.
-     Gaps: no wrapper catches/logs recurring task exceptions.
-  17. CONC-EXC-002: Pool cleanup callback failure must not leave ownership ambiguous
-     Invariant: if removed(resource) fails, pool ownership and resource state must still be defined.
-     Why it matters: failed socket/resource cleanup can leave stale external resources.
-     Locations: OAPool.remove, release, OARemoteMultiplexerClient pool removed.
-     Confidence: Medium.
-     Gaps: callbacks can throw after state mutation.
-  18. CONC-EXC-003: Concurrent helper task failures must be observable by caller when caller expects coordinated
-     success
-     Invariant: batch helpers should aggregate worker failures or document log-only behavior.
-     Why it matters: false success hides failed concurrent work.
-     Locations: OAConcurrent.run.
-     Confidence: Low/Medium.
-     Gaps: worker exceptions are logged only.
+CONC-TL-002 — Caller-Owned Context Cleanup
+Contract statement:
+Any task that installs OAThreadLocal, transaction, sync, replication, security, loading, or runtime context while
+running through these primitives must restore the previous value with try/finally.
+Rationale:
+Pooled worker threads can otherwise leak context into later unrelated tasks.
+Source scope:
+Task execution through OAExecutorService, OAScheduledExecutorService, OAConcurrent; higher-level OA task wrappers
+and callers.
+Related CODEX findings:
+Existing package-info notes enforcement is external to this package.
+Suggested unit tests:
+testCallerInstalledThreadLocalCleanedAfterExecutorTask(), testCallerInstalledThreadLocalCleanedAfterScheduledTask(),
+testTaskExceptionDoesNotLeakRuntimeContext()
+Spec target section:
+Concurrent Runtime / ThreadLocal Cleanup
 
-  I. ThreadLocal / OAThreadLocal Cleanup Invariants
+CONC-RESOURCE-001 — Owned Resource Cleanup
+Contract statement:
+Executors, schedulers, pool resources, background workers, and queued tasks owned by an OA runtime component must be
+drainable, cancellable, closed, or explicitly transferred at that owner’s shutdown boundary.
+Rationale:
+Long-running OA runtimes must not retain threads, queued work, sockets, callbacks, or graph references after
+shutdown.
+Source scope:
+OAExecutorService.close(), OAScheduledExecutorService scheduling methods, OAPool.remove/release/removed, OAConcurre
+nt worker threads.
+Related CODEX findings:
+Scheduler has no close/shutdown; executor close does not await/drain/cancel; pool removed callback failure can leave
+ownership ambiguous.
+Suggested unit tests:
+testOwnerShutdownClosesExecutorResources(), testSchedulerRecurringTasksDoNotLeakAfterOwnerShutdown(),
+testPoolRemoveClosesOrTransfersResourceByContract()
+Spec target section:
+Concurrent Runtime / Resource Cleanup
 
-  19. CONC-TL-001: This package does not implicitly propagate OAThreadLocal state
-     Invariant: tasks submitted to OAExecutorService or OAScheduledExecutorService run without automatic
-     OAThreadLocal/context propagation unless caller wraps them.
-     Why it matters: transaction, sync, replay, user context, and graph context must not leak or be assumed.
-     Locations: OAExecutorService docs, OAScheduledExecutorService docs, higher-level callers such as OALoader.
-     Confidence: High.
-     Gaps: package-info references OAThread, which could confuse the contract.
-  20. CONC-TL-002: Callers that install OAThreadLocal state inside tasks must clean it in finally
-     Invariant: any task that adds sibling helpers, transaction state, sync suppression, or runtime context must
-     restore it with try/finally.
-     Why it matters: pooled worker threads can otherwise leak context across tasks.
-     Locations: higher-level callers, e.g. OALoader worker runnables.
-     Confidence: Medium.
-     Gaps: enforcement is external to this package.
+CONC-DEADLOCK-001 — Lock and Callback Isolation
+Contract statement:
+This package must avoid invoking caller code while holding internal locks unless explicitly documented, and must
+preserve a clear lock ownership boundary for pool state and coordination state.
+Rationale:
+Caller code can block, reenter OA services, close resources, or submit new tasks; running it under internal locks
+risks deadlock, starvation, and lock amplification.
+Source scope:
+OAPool.get(), release(TYPE), remove(TYPE), loadMinimum(), OAConcurrent.run(), executor/scheduler task execution
+boundaries.
+Related CODEX findings:
+OAPool mostly aligns with no-callback-under-lock, but failure rollback still needs care.
+Suggested unit tests:
+testPoolCreateCallbackCanReenterWithoutDeadlock(), testPoolRemovedCallbackCanBlockWithoutHoldingPoolLock(),
+testInternalLocksReleasedWhenCallbackThrows()
+Spec target section:
+Concurrent Runtime / Locking Semantics
 
-  J. Resource Cleanup Invariants
-
-  21. CONC-RESOURCE-001: Pool resources must have exactly one owner at a time
-     Invariant: a pooled resource must be either available in the pool, checked out to one caller, or removed; never
-     duplicated or both checked out and available.
-     Why it matters: duplicate socket/resource use corrupts remote calls and shared state.
-     Locations: OAPool.get, release, remove, add.
-     Confidence: Medium.
-     Gaps: add can duplicate resources; double release is silently ignored.
-  22. CONC-RESOURCE-002: Scheduler/executor daemon threads must not retain unbounded runtime state after owner
-     shutdown
-     Invariant: background threads and queued tasks must be drainable or cancellable by the owning runtime component.
-     Why it matters: long-running OA servers need deterministic cleanup.
-     Locations: OAExecutorService.close, OAScheduledExecutorService.
-     Confidence: Low/Medium.
-     Gaps: scheduler has no owner cleanup; executor close does not await/drain/cancel.
-
-  K. Integration Invariants
-
-  23. CONC-INTEGRATION-001: Runtime packages must not rely on these wrappers for transaction/sync context propagation
-     Invariant: transaction, sync, replication, trigger, and remote code must explicitly capture/restore context when
-     dispatching tasks through these wrappers.
-     Why it matters: wrong context causes sync echo, transaction leaks, or graph routing errors.
-     Locations: OAExecutorService, OAScheduledExecutorService, users in load, process, remote, replication.
-     Confidence: Medium.
-     Gaps: no common task wrapper for OA context.
-  24. CONC-INTEGRATION-002: Remote/socket pooling must be robust to transient create/close failure
-     Invariant: concurrency primitives used by remoting must not corrupt pool capacity or leave blocked callers after
-     socket failures.
-     Why it matters: remote/sync/replication depend on socket pool availability.
-     Locations: OAPool, OARemoteMultiplexerClient.getVirtualSocketCtoSPool.
-     Confidence: Low/Medium.
-     Gaps: create-failure and notify paths need hardening.
-
-  4. Listener / Callback Semantics
-
-  The package does not define OA business listeners, but it executes caller-supplied callbacks:
-
-  - OAExecutorService: executes Runnable/Callable in worker threads.
-  - OAScheduledExecutorService: executes scheduled Runnable/Callable.
-  - OAPool: invokes create() and removed() callbacks.
-  - OAConcurrent: executes supplied runnables.
-
-  Alignment:
-
-  - OAPool mostly aligns with “no callbacks while locks are held” by running create() and removed() outside the
-    synchronized block.
-  - OAExecutorService and OAScheduledExecutorService delegate exception semantics to Future/JDK executor behavior.
-
-  Conflicts/gaps:
-
-  - Recurring scheduled callbacks can stop after one exception without package-level aggregation/reporting.
-  - OAConcurrent observer-style runnable failures are logged and not aggregated to the caller.
-  - OAPool.removed() exception handling is not aggregated and can escape after pool state mutation.
-  - No built-in BEFORE/DURING/AFTER distinction exists; higher-level packages must apply OA listener policy before
-    dispatching into these primitives.
-
-  5. Failure Modes
-
-  - Race condition from unsafely published executor/scheduler fields.
-  - Stale read of pool maximum/minimum after runtime tuning.
-  - Deadlock/stall from missed pool notification.
-  - Starvation from single-thread scheduler blocked by long-running task.
-  - Callback failure after pool state mutation leaving resource ownership ambiguous.
-  - Worker thread task failure hidden in Future or logged only.
-  - Recurring scheduled task silently stops after exception.
-  - Task executes after caller times out and retries.
-  - Task submitted after shutdown is rejected after metrics are incremented.
-  - Duplicate pooled resource through external add.
-  - Lost interrupt in OAPool.get.
-  - Caller interrupted while OAConcurrent workers keep running.
-  - ThreadLocal or transaction context leaks across pooled executor workers if caller fails cleanup.
-  - Sync/replay context leakage if task wrappers do not restore OAThreadLocal state.
-  - Runtime shutdown leaves scheduled recurring tasks alive.
-
-  6. Test Recommendations
-
-  - testOAPoolCreateFailureRollsBackReservedSlot
-  - testOAPoolReleaseShrinkNotifiesWaiter
-  - testOAPoolInterruptedGetRestoresInterrupt
-  - testOAPoolSetMaximumWakesWaitingGetter
-  - testOAPoolAddRejectsDuplicateResource
-  - testOAExecutorSubmitAfterCloseRejectedBeforeCounterIncrement
-  - testOAExecutorSubmitAndWaitTimeoutLeavesOrCancelsByContract
-  - testOAExecutorConcurrentSubmitCloseHasDeterministicOutcome
-  - testOASchedulerRecurringTaskExceptionLoggedAndContinuesOrCancelsByContract
-  - testOASchedulerCloseCancelsRecurringTasks
-  - testOASchedulerDailyTimeRecomputesAcrossDstIfWallClockContract
-  - testOAConcurrentWorkerExceptionPropagatesOrAggregates
-  - testOAConcurrentConcurrentRunRejectedOrSerialized
-  - testTaskDoesNotInheritOAThreadLocalUnlessWrapped
-  - testCallerInstalledThreadLocalCleanedAfterExecutorTask
-  - testLongRunningScheduledTaskDelaysNextTaskIsObservable
-  - testHighContentionPoolMaintainsCurrentUsedInvariant
-
-  7. Hardening Recommendations
-
-  - Add explicit lifecycle state to OAExecutorService and OAScheduledExecutorService: ACTIVE, SHUTTING_DOWN, CLOSED.
-  - Add close()/shutdown() to OAScheduledExecutorService.
-  - Track accepted vs attempted task submissions separately.
-  - Wrap recurring scheduled tasks in exception-isolating runners.
-  - Define submitAndWait timeout semantics and offer cancel-on-timeout option.
-  - Fix OAPool create-failure rollback and notify-on-capacity-change rules.
-  - Preserve interrupt status in blocking waits.
-  - Synchronize or make volatile dynamic pool configuration fields.
-  - Enforce or document OAPool.add capacity/duplicate behavior.
-  - Make OAConcurrent.run one-shot, synchronized, or local-state-only.
-  - Clarify package-info: no OAThread class exists here, and executor wrappers do not propagate OAThreadLocal.
-  - Add package-level diagnostics counters for rejected tasks, task exceptions, pool waits, create failures, and
-    scheduled task failures.
-  - Document lock ownership: alResource protects pool list, used flags, wait count, current used, and capacity
-    decisions.
-  - Add a standard OA task wrapper in a higher-level runtime package for OAThreadLocal capture/restore if desired.
-
-  8. Open Questions
-
-  - Should OAExecutorService.close() drain, await, cancel, or only reject new work?
-  - Should submitAndWait cancel unfinished work on timeout?
-  - Should OAScheduledExecutorService be owned here or folded into com.viaoa.schedule lifecycle semantics?
-  - Is scheduleEvery(OATime) intended to mean fixed 24-hour interval or local wall-clock daily execution?
-  - Should recurring scheduled task exceptions cancel by design, or should OA default to log-and-continue?
-  - Is OAPool.add intended as an override that can exceed max, or should it obey max?
-  - Should OAPool.get expose checked exceptions/interruption, or keep unchecked runtime semantics?
-  - Should this package provide OAThreadLocal-aware executor wrappers, or should all context propagation remain in
-    runtime services?
-  - Is OAConcurrent intended for tests only, or production batch coordination too?
-  - Should daemon-thread use be universal here, or should production runtime services be able to request non-daemon
-    ownership?
-
-
-
-
-qqqqqqqqqqqqqqqq other
-
-A. Architectural Assessment
-
-  The package is conceptually simple and useful: small wrappers over JDK concurrency primitives plus a reusable pool
-  and throttle. It is not yet production-infrastructure complete. The strongest class is the general shape of OAPool,
-  but its failure paths need hardening. The executor wrappers need explicit lifecycle and failure semantics if they
-  are used by runtime services.
-
-  Ownership boundaries are mostly clear, but lifecycle semantics are implicit. OAExecutorService.close() exists but
-  does not define drain/await/cancel behavior. OAScheduledExecutorService lacks lifecycle ownership entirely.
-
-  Synchronization responsibilities are mostly local, but failure cleanup and interrupt handling are weak.
-
-  B. Invariant Risk Areas
-
-  - Reserved pool slots must be released if resource creation fails.
-  - Blocking waits must preserve interruption semantics.
-  - Scheduled recurring work must not disappear silently after one exception.
-  - Scheduler/executor ownership must include shutdown and task cancellation rules.
-  - Timeout from a submitted task must define whether unfinished work continues.
-  - Background workers must not silently report success after task failure.
-  - OAThreadLocal propagation/cleanup is explicitly not handled; runtime callers must not assume it is.
-
-  C. Top Production Risks
-
-  1. Pool capacity leak after failed create() causing permanent blocked remote/socket callers.
-  2. Recurring scheduled runtime work stopping silently after an uncaught exception.
-  3. Scheduler tasks leaking because OAScheduledExecutorService has no close/shutdown lifecycle.
-  4. Timed executor work continuing after timeout and applying changes after caller retry/abort.
-  5. Interrupted pool waiters ignoring shutdown/cancellation.
-
-  D. Hardening Recommendations
-
-  - Add explicit lifecycle state to executor/scheduler wrappers: active, closing, closed.
-  - Add close() to OAScheduledExecutorService, cancel recurring tasks where owned, and reject scheduling after close.
-  - Wrap scheduled recurring tasks with exception logging/containment.
-  - Fix OAPool.get/loadMinimum to roll back reserved slots on create failure.
-  - Restore interrupt status and fail visibly on interrupted pool waits.
-  - Define timeout semantics for submitAndWait: cancel-on-timeout or wait-only.
-  - Add diagnostics counters: pool create failures, pool wait count, scheduled task failures, rejected submissions.
-  - Add comments/spec stating that OAThreadLocal context is not propagated by these wrappers unless explicitly wrapped
-    by the caller.
-
-
-Updated Top Risk Areas
-
-  - OAPool bounded-pool wakeup/capacity semantics are the most important remaining issue.
-  - Executor/scheduler lifecycle state is implicit and should be made explicit before these wrappers carry critical
-    sync/replication work.
-  - OAThreadLocal propagation is not part of this package, so callers must wrap tasks intentionally.
+CONC-INTEGRATION-001 — Cross-Package Concurrency Boundary
+Contract statement:
+Object, Hub, cache, event, callback, trigger, sync, replication, transaction, remote, graph, and runtime packages
+must not rely on these primitives for semantic ordering, transaction context, sync context, or graph authority
+unless those guarantees are explicitly provided by the caller or owner.
+Rationale:
+These classes are concurrency primitives. Higher-level packages own OA semantic correctness and must define
+serialization, context, ordering, and commit boundaries around concurrent execution.
+Source scope:
+com.viaoa.concurrent.*, callers across object, hub, cache, trigger, queue/process, remote, sync, replication,
+transaction, datasource, graph, and runtime packages.
+Related CODEX findings:
+Existing package-info notes runtime packages must not rely on wrappers for transaction/sync context propagation and
+that ordering guarantees are limited.
+Suggested unit tests:
+testRuntimePackageWrapsTaskWhenContextRequired(), testSyncReplicationWorkUsesExplicitOrderingBoundary(),
+testConcurrentGraphMutationRequiresOwnerDefinedSerialization()
+Spec target section:
+Concurrent Runtime / Cross-Package Integration
 
 */

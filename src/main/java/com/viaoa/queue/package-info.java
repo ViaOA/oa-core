@@ -21,323 +21,444 @@ package com.viaoa.queue;
 
 /* CODEX Invariants
 
-Queue Runtime Contracts
+QUEUE-ENQUEUE-001 — Enqueue Visibility
+Contract statement:
+A successful enqueue must make the queued item visible to every eligible consumer according to the queue’s delivery
+model and retention policy.
+Rationale:
+OA queues carry async runtime work, remote messages, sync/replication events, callbacks, and background tasks;
+returning success before work is reachable can silently drop runtime state changes.
+Source scope:
+OACircularQueue.addMessageToQueue(...), OACircularQueue.addMessage(...), OACircularQueue.getMessage(...),
+OACircularQueue.getMessages(...).
+Related CODEX findings:
+live resize can discard queued messages; interrupted producer throttle can still report enqueue success.
+Suggested unit tests:
+successfulEnqueueIsVisibleToRegisteredSession(), successfulEnqueueIsVisibleToRawPositionConsumer(),
+interruptedEnqueueDoesNotReportFalseSuccess().
+Spec target section:
+Queue Runtime / Enqueue Visibility Semantics.
 
-  ID: QUEUE-ENQUEUE-001
-  Contract statement: A successful enqueue must make the queued item visible to all eligible consumers according to
-  the queue’s delivery model.
-  Rationale: OA uses queueing for async remote delivery, replication capture, and ordered background work. Returning
-  success before the item is reachable can silently drop runtime work.
-  Source locations: OACircularQueue.addMessageToQueue(...), OACircularQueue._addMessage(...)
-  Related CODEX findings: live resize can discard queued messages; interrupt handling can return success after
-  cancellation intent.
-  Suggested unit tests: testSuccessfulEnqueueIsVisibleToRegisteredSession,
-  testSuccessfulEnqueueIsVisibleToRawPositionConsumer
-  Spec target section: Queue Runtime / Enqueue Visibility
+QUEUE-ORDER-001 — Logical Stream Ordering
+Contract statement:
+Queue head and consumer positions must form a monotonically increasing logical message stream independent of
+circular-array wraparound.
+Rationale:
+Remote calls, sync messages, replication changes, and event delivery are order-sensitive; physical storage
+wraparound must not alter logical delivery order.
+Source scope:
+OACircularQueue.getHeadPostion(), OACircularQueue.addMessageToQueue(...), OACircularQueue.getMessages(...),
+queueHeadPosition, queueLowPosition.
+Related CODEX findings:
+addMessageToQueue return value can be confused with physical array index; logical position overflow recovery can
+collapse ordering.
+Suggested unit tests:
+logicalHeadIncreasesAcrossWraparound(), physicalIndexIsNotUsedAsLogicalPosition(),
+logicalPositionOrderingSurvivesWraparound().
+Spec target section:
+Queue Runtime / Ordering Semantics.
 
-  ID: QUEUE-ENQUEUE-002
-  Contract statement: Queue capacity, backing storage, and logical head/session positions must remain mutually
-  consistent after any queue configuration change.
-  Rationale: A queue is both an array and a logical position stream. If those diverge, consumers can read null/wrong
-  work or skip work.
-  Source locations: OACircularQueue.setSize(int), OACircularQueue.queueHeadPosition, Session.queuePos
-  Related CODEX findings: live setSize can replace backing array without resetting/copying logical state.
-  Suggested unit tests: testResizeBeforeUseAllowed, testResizeAfterEnqueueFailsOrPreservesMessages
-  Spec target section: Queue Runtime / Configuration Consistency
+QUEUE-POSITION-001 — Logical Position Versus Physical Slot
+Contract statement:
+Queue APIs must clearly preserve the distinction between logical stream positions and physical circular-array
+indexes.
+Rationale:
+Callers that use a physical slot as a replay, ordering, or acknowledgment position will break after wraparound and
+can skip or duplicate queued work.
+Source scope:
+OACircularQueue.addMessageToQueue(...), OACircularQueue.getHeadPostion(), OACircularQueue.getMessagesAtPos(int).
+Related CODEX findings:
+addMessageToQueue returns a physical array index while documentation suggests a message position.
+Suggested unit tests:
+addMessageReturnValueContractAfterWraparound(), logicalPositionApiIsDistinctFromPhysicalSlotApi().
+Spec target section:
+Queue Runtime / Position Semantics.
 
-  ID: QUEUE-DEQUEUE-001
-  Contract statement: A dequeue/read operation must only advance consumer/session progress for messages actually made
-  available to that consumer.
-  Rationale: Session position is the queue’s delivery acknowledgment. Advancing it incorrectly causes silent loss.
-  Source locations: OACircularQueue.getMessages(int,long,int,long), OACircularQueue._getMessages(...)
-  Related CODEX findings: future posTail normalization can advance session.queuePos from caller-supplied position
-  instead of actual read position.
-  Suggested unit tests: testSessionPositionAdvancesOnlyByDeliveredMessages,
-  testFutureTailDoesNotAdvanceSessionPastHead
-  Spec target section: Queue Runtime / Dequeue Progress
+QUEUE-DEQUEUE-001 — Consumer Progress Acknowledgement
+Contract statement:
+A dequeue/read operation must advance registered consumer progress only for messages actually delivered to that
+consumer.
+Rationale:
+Consumer position is the queue’s delivery acknowledgement; advancing it incorrectly causes silent loss, while
+failing to advance can cause duplicate delivery.
+Source scope:
+OACircularQueue.getMessages(int, long, int, int), OACircularQueue.getMessages(long,...),
+OACircularQueue.getMessage(...), Session.queuePos.
+Related CODEX findings:
+future posTail normalization can advance session.queuePos from caller-supplied position instead of actual read
+position.
+Suggested unit tests:
+sessionPositionAdvancesOnlyByDeliveredMessages(), futureTailDoesNotAdvanceSessionPastHead(),
+timedOutReadDoesNotAdvanceSessionPosition().
+Spec target section:
+Queue Runtime / Dequeue Progress Semantics.
 
-  ID: QUEUE-DEQUEUE-002
-  Contract statement: Registered-session reads and raw positional reads must have distinct, explicit semantics; a
-  registered-session call must not silently degrade into untracked raw reading.
-  Rationale: OA remote/sync consumers rely on session state for overrun detection, cleanup, throttling, and delivery
-  guarantees.
-  Source locations: OACircularQueue.registerSession(int), OACircularQueue.getMessages(int,long,int,long),
-  OACircularQueue.unregisterSession(int)
-  Related CODEX findings: missing session id can be treated as untracked read.
-  Suggested unit tests: testMissingRegisteredSessionFailsVisibly,
-  testUnregisteredSessionCannotSilentlyConsumeTrackedQueue
-  Spec target section: Queue Runtime / Session Delivery
+QUEUE-SESSION-001 — Registered Session Delivery
+Contract statement:
+Registered-session reads must use tracked session semantics, and a missing or unregistered session id must fail
+visibly or return an explicit “not registered” result rather than silently degrading to raw positional reads.
+Rationale:
+OA remote, sync, and replication consumers rely on session state for ordering, overrun detection, throttling,
+cleanup, and delivery guarantees.
+Source scope:
+OACircularQueue.registerSession(int), OACircularQueue.unregisterSession(int), OACircularQueue.getMessages(int, long,
+int, int), OACircularQueue.keepAlive(int).
+Related CODEX findings:
+missing session id can be treated as an untracked read.
+Suggested unit tests:
+missingRegisteredSessionFailsVisibly(), unregisteredSessionCannotSilentlyConsumeTrackedQueue(),
+registerSessionInitializesTrackedPosition().
+Spec target section:
+Queue Runtime / Session Delivery Semantics.
 
-  Ordering / Delivery Contracts
+QUEUE-SESSION-002 — Session State Truthfulness
+Contract statement:
+Session state must accurately represent whether the session is active, current, inactive, overrun, or unregistered.
+Rationale:
+Producer throttling, cleanup, overrun handling, and consumer recovery all depend on truthful session flags and
+timestamps.
+Source scope:
+OACircularQueue.registerSession(int), OACircularQueue.unregisterSession(int), OACircularQueue.keepAlive(int),
+Session.queuePos, Session.bInactive, Session.bOverrun, Session.msLastRead.
+Related CODEX findings:
+new sessions can have stale last-read state; slow-session retry can proceed without explicit session state
+transition.
+Suggested unit tests:
+registeredSessionStartsActiveAndCurrent(), keepAliveUpdatesSessionLiveness(),
+slowSessionTransitionIsExplicitWhenProducerStopsWaiting().
+Spec target section:
+Queue Runtime / Session State Semantics.
 
-  ID: QUEUE-ORDER-001
-  Contract statement: Queue head positions must form a monotonically increasing logical stream, independent of
-  physical array wraparound.
-  Rationale: OA sync/replication and async remote delivery depend on deterministic sequence ordering across consumers.
-  Source locations: OACircularQueue.queueHeadPosition, OACircularQueue.addMessageToQueue(...),
-  OACircularQueue.getHeadPostion()
-  Related CODEX findings: return value is physical index, not logical queue position; long overflow recovery collapses
-  logical positions.
-  Suggested unit tests: testLogicalHeadIncreasesAcrossWraparound, testPhysicalIndexIsNotUsedAsLogicalPosition
-  Spec target section: Queue Runtime / Ordering Semantics
+QUEUE-DELIVERY-001 — Ordered Delivery Per Consumer
+Contract statement:
+Each consumer must receive retained messages in enqueue order unless an explicit overrun, reset, unregistration, or
+failure state is reported.
+Rationale:
+Out-of-order queue delivery can corrupt Object Graph state, remote invocation order, replication replay, and sync
+event sequencing.
+Source scope:
+OACircularQueue.addMessageToQueue(...), OACircularQueue.getMessages(...), OACircularQueue.getMessage(...),
+Session.queuePos.
+Related CODEX findings:
+consumer copy can race producer overwrite if overrun checks, availability calculations, and slot copying are not
+under a consistent boundary.
+Suggested unit tests:
+sessionReceivesMessagesInEnqueueOrder(), concurrentProducerCannotOverwriteBetweenCheckAndCopy(),
+rawPositionReadsPreserveOrder().
+Spec target section:
+Queue Runtime / Ordered Delivery Semantics.
 
-  ID: QUEUE-ORDER-002
-  Contract statement: Consumers must receive messages in enqueue order for their session, unless an overrun or
-  explicit reset is reported.
-  Rationale: Remote calls, sync messages, and replication events are order-sensitive. Out-of-order delivery can
-  corrupt object graph state.
-  Source locations: OACircularQueue._addMessage(...), OACircularQueue._getMessages(...), Session.queuePos
-  Related CODEX findings: consumer copy can race producer overwrite outside one critical section.
-  Suggested unit tests: testSessionReceivesMessagesInEnqueueOrder,
-  testConcurrentProducerCannotOverwriteBetweenCheckAndCopy
-  Spec target section: Queue Runtime / Ordered Delivery
+QUEUE-DELIVERY-002 — Lost Work Visibility
+Contract statement:
+Queued work must not be silently lost; if a consumer falls behind beyond retained capacity, the queue must report
+explicit overrun, reset, inactive-session, or documented discard behavior.
+Rationale:
+Silent message loss can create divergent distributed runtimes and stale graph state.
+Source scope:
+OACircularQueue.getMessages(...), OACircularQueue.getAmountAvailable(long), OACircularQueue.addMessageToQueue(...),
+Session.bOverrun, Session.bInactive.
+Related CODEX findings:
+inconsistent exact-full overrun checks; should-wait hook can be overridden by retry cap; new sessions can be marked
+inactive immediately.
+Suggested unit tests:
+slowSessionGetsOverrunSignalWhenMessagesLost(), exactlyFullQueueBoundaryIsConsistent(),
+newSessionIsProtectedUntilFirstRead().
+Spec target section:
+Queue Runtime / Lost-Work Prevention.
 
-  ID: QUEUE-DELIVERY-001
-  Contract statement: Queued work must not be silently lost; if a consumer falls behind beyond retention capacity,
-  overrun must be visible.
-  Rationale: Silent loss of sync/replication messages can create divergent runtimes.
-  Source locations: OACircularQueue._addMessage(...), OACircularQueue._getMessages(...),
-  OACircularQueue.getAmountAvailable(long)
-  Related CODEX findings: inconsistent exact-full overrun checks; should-wait hook overridden by retry cap; new
-  sessions can be marked inactive immediately.
-  Suggested unit tests: testSlowSessionGetsOverrunSignalWhenMessagesLost, testExactlyFullQueueRemainsReadable,
-  testNewSessionIsProtectedUntilFirstRead
-  Spec target section: Queue Runtime / Lost-Work Prevention
+QUEUE-DUP-001 — Duplicate Delivery Boundary
+Contract statement:
+Duplicate delivery must occur only under an explicitly contracted retry or replay mode, not because acknowledgement,
+session position, or queue state is stale.
+Rationale:
+Duplicate remote calls, callbacks, sync events, or replication messages can repeat side effects.
+Source scope:
+OACircularQueue.getMessages(...), OACircularQueue.getMessage(...), Session.queuePos, consumer retry boundaries.
+Related CODEX findings:
+session-position concerns illustrate duplicate/loss risk.
+Suggested unit tests:
+sessionDoesNotReceiveSameMessageTwiceAfterPositionAdvance(), retryPolicyDocumentsDuplicateDeliveryBehavior().
+Spec target section:
+Queue Runtime / Duplicate Delivery Semantics.
 
-  ID: QUEUE-DELIVERY-002
-  Contract statement: Duplicate delivery must only occur under an explicitly contracted retry/at-least-once mode, not
-  because queue progress or acknowledgment state is stale.
-  Rationale: Duplicate event or remote-call delivery can repeat side effects.
-  Source locations: OACircularQueue.getMessages(...), Session.queuePos, remote/replication queue consumers
-  Related CODEX findings: none observed beyond session-position concerns.
-  Suggested unit tests: testSessionDoesNotReceiveSameMessageTwiceAfterPositionAdvance,
-  testRetryPolicyDocumentsDuplicateDeliveryBehavior
-  Spec target section: Queue Runtime / Duplicate Prevention
+QUEUE-CAPACITY-001 — Capacity and Configuration Consistency
+Contract statement:
+Queue capacity, backing storage, logical head position, low retained position, and session positions must remain
+mutually consistent after construction or configuration changes.
+Rationale:
+The queue is both physical storage and a logical stream; if those diverge, consumers can read null, wrong, skipped,
+or duplicate work.
+Source scope:
+OACircularQueue constructors, OACircularQueue.setSize(int), OACircularQueue.getSize(), msgQueue, queueHeadPosition,
+queueLowPosition, Session.queuePos.
+Related CODEX findings:
+live setSize can replace backing array without preserving queued messages or logical state.
+Suggested unit tests:
+resizeBeforeUseIsAllowed(), resizeAfterEnqueueFailsOrPreservesMessages(),
+resizeDoesNotInvalidateSessionPositionsSilently().
+Spec target section:
+Queue Runtime / Capacity and Configuration Semantics.
 
-  Worker / Processing Contracts
+QUEUE-BACKPRESSURE-001 — Slow Consumer and Backpressure Semantics
+Contract statement:
+Bounded queues must define deterministic behavior when consumers lag: wait, throttle, mark overrun, mark inactive,
+reject enqueue, or fail visibly.
+Rationale:
+Slow-consumer behavior determines whether OA preserves ordered delivery or intentionally sacrifices a session;
+either outcome must be observable.
+Source scope:
+OACircularQueue.addMessageToQueue(...), OACircularQueue.shouldWaitOnSlowSession(...), throttleAmount, MS_Wait,
+Session.bInactive, Session.bOverrun.
+Related CODEX findings:
+should-wait hook can be overridden by retry cap; slow sessions can be marked inactive based on elapsed read time.
+Suggested unit tests:
+backpressureWaitsForProtectedSlowSession(), backpressureMarksOverrunOrInactiveByContract(),
+throttleDoesNotBreakOrdering().
+Spec target section:
+Queue Runtime / Backpressure Semantics.
 
-  ID: QUEUE-WORKER-001
-  Contract statement: Queue worker loops must keep processing future work after recoverable failures, or fail visibly
-  when the queue can no longer make progress.
-  Rationale: A stalled async queue can silently stop remote delivery, sync propagation, replication capture, or
-  background processing.
-  Source locations: OACircularQueue as queue primitive; consumers in OAReplicationBase, OARemoteMultiplexerServer
-  Related CODEX findings: none observed in queue package itself.
-  Suggested unit tests: testWorkerExceptionDoesNotCorruptQueueState, testFatalWorkerFailureIsObservable
-  Spec target section: Queue Runtime / Worker Lifecycle
+QUEUE-OVERRUN-001 — Consistent Overrun Boundaries
+Contract statement:
+Overrun detection must be consistent across producer-side session scanning, availability checks, single-message
+reads, and batch reads.
+Rationale:
+Queue APIs must not disagree about whether a retained message is still available; inconsistent boundaries cause
+false empty reads, lost work, or duplicate recovery.
+Source scope:
+OACircularQueue.getAmountAvailable(long), OACircularQueue.getMessage(...), OACircularQueue.getMessages(...),
+OACircularQueue.addMessageToQueue(...), queueLowPosition.
+Related CODEX findings:
+getAmountAvailable and _getMessages use different exact-boundary comparisons.
+Suggested unit tests:
+overrunBoundaryConsistentAcrossAvailabilityAndReads(), producerMarksSessionOverrunAtSameBoundaryAsConsumer(),
+amountAvailableMatchesReadableMessagesAtCapacityBoundary().
+Spec target section:
+Queue Runtime / Overrun Semantics.
 
-  ID: QUEUE-WORKER-002
-  Contract statement: Processing completion must not be acknowledged before the queued work has actually completed or
-  failed visibly.
-  Rationale: OA cannot treat a message as delivered if execution failed silently after dequeue.
-  Source locations: OACircularQueue.getMessages(...), consumer-managed session position updates
-  Related CODEX findings: none observed in queue primitive; depends on consumer code.
-  Suggested unit tests: testWorkerDoesNotAdvanceAckBeforeSuccessfulProcessingWhenContractRequiresAck,
-  testProcessingFailureIsLoggedOrPropagated
-  Spec target section: Queue Runtime / Processing Acknowledgment
+QUEUE-FAIL-001 — Failure and False-Success Prevention
+Contract statement:
+Queue states that affect delivery correctness must be caller-visible or observable and must not appear as successful
+empty reads, successful enqueues, or successful delivery.
+Rationale:
+False-success queue behavior hides production data loss, stalled runtime processing, and distributed graph
+divergence.
+Source scope:
+OACircularQueue.addMessageToQueue(...), OACircularQueue.getMessages(...), OACircularQueue.getMessage(...),
+OACircularQueue.getAmountAvailable(long), OACircularQueue.registerSession(int).
+Related CODEX findings:
+missing session can become untracked read; negative availability can hide invalid position; interrupted enqueue can
+continue as success.
+Suggested unit tests:
+overrunThrowsVisibleFailure(), invalidSessionDoesNotReturnFalseSuccess(),
+invalidTailDoesNotReturnMisleadingAvailability(), interruptedProducerDoesNotSilentlySucceed().
+Spec target section:
+Queue Runtime / Failure Visibility Semantics.
 
-  Shutdown / Drain / Retry Contracts
+QUEUE-RETRY-001 — Retry and Requeue Correctness
+Contract statement:
+Retry after failed read, timeout, interruption, or consumer processing failure must not corrupt session progress,
+duplicate completion accounting, or skip queued work.
+Rationale:
+Remote, sync, replication, callback, and process workers must recover from transient failures without breaking
+message sequence.
+Source scope:
+OACircularQueue.getMessages(...), OACircularQueue.getMessage(...), Session.queuePos, consumer retry boundaries.
+Related CODEX findings:
+future-tail normalization can advance session progress incorrectly.
+Suggested unit tests:
+retryAfterTimedOutReadKeepsSessionPosition(), retryAfterConsumerExceptionCanResumeFromLastDeliveredPosition(),
+retryDoesNotSkipQueuedMessages().
+Spec target section:
+Queue Runtime / Retry Semantics.
 
-  ID: QUEUE-SHUTDOWN-001
-  Contract statement: Shutdown, stop, and cancellation behavior must be explicit: queued work is either drained,
-  rejected, or discarded under a documented policy.
-  Rationale: OA production shutdown must not silently lose replication/sync/event work.
-  Source locations: OACircularQueue.addMessageToQueue(...); consumer shutdown in remote/replication callers
-  Related CODEX findings: interrupted producer sleep is swallowed and enqueue can still succeed.
-  Suggested unit tests: testInterruptedProducerRestoresInterruptStatus,
-  testShutdownPolicyRejectsOrDrainsQueuedWorkExplicitly
-  Spec target section: Queue Runtime / Shutdown Semantics
+QUEUE-SHUTDOWN-001 — Shutdown, Drain, and Cancellation Policy
+Contract statement:
+Shutdown, stop, cancellation, and drain behavior must be explicit: queued work is either drained, rejected, retained
+for retry, or discarded under a documented policy.
+Rationale:
+OA production shutdown must not silently lose remote, sync, replication, event, or background process work.
+Source scope:
+OACircularQueue.addMessageToQueue(...), OACircularQueue.getMessages(...), queue consumer boundaries in process,
+remote, sync, and replication packages.
+Related CODEX findings:
+producer throttle interruption can be swallowed and enqueue can still succeed.
+Suggested unit tests:
+shutdownPolicyRejectsOrDrainsQueuedWorkExplicitly(), drainPreservesEnqueueOrder(),
+interruptedProducerRestoresInterruptStatus().
+Spec target section:
+Queue Runtime / Shutdown and Drain Semantics.
 
-  ID: QUEUE-DRAIN-001
-  Contract statement: Drain behavior must preserve order and must define whether producers are still allowed during
-  drain.
-  Rationale: Draining mixed with active producers can create ambiguous completion state.
-  Source locations: queue consumers; no explicit drain API in OACircularQueue
-  Related CODEX findings: none observed.
-  Suggested unit tests: testDrainPreservesEnqueueOrder, testDrainRejectsOrIncludesConcurrentEnqueuesByContract
-  Spec target section: Queue Runtime / Drain Semantics
+QUEUE-LOCK-001 — Atomic Queue State Transitions
+Contract statement:
+State transitions that couple overrun checks, message storage, message visibility, availability calculation,
+consumer copying, and cleanup must be protected by a consistent synchronization boundary.
+Rationale:
+Volatile fields alone cannot make multi-field queue state atomic under concurrent producers and consumers.
+Source scope:
+OACircularQueue.addMessageToQueue(...), OACircularQueue.getMessages(...), OACircularQueue.getAmountAvailable(long),
+OACircularQueue.cleanupQueue(), LOCKQueue, msgQueue, queueHeadPosition, queueLowPosition.
+Related CODEX findings:
+overrun check, available calculation, and copying are not consistently protected by one LOCKQueue critical section.
+Suggested unit tests:
+concurrentOverwriteCannotPassOverrunCheckThenReadWrongSlot(), producerConsumerVisibilityUnderContention(),
+cleanupDoesNotRaceUnreadMessageCopy().
+Spec target section:
+Queue Runtime / Locking and Atomicity Semantics.
 
-  ID: QUEUE-RETRY-001
-  Contract statement: Retry after failed read or processing must not corrupt session progress, duplicate completion
-  accounting, or skip queued work.
-  Rationale: Remote and replication workers must recover from transient errors without breaking message sequence.
-  Source locations: OACircularQueue.getMessages(...), Session.queuePos, consumer retry loops
-  Related CODEX findings: future-tail normalization can advance session progress incorrectly.
-  Suggested unit tests: testRetryAfterTimedOutReadKeepsSessionPosition,
-  testRetryAfterConsumerExceptionCanResumeFromLastDeliveredPosition
-  Spec target section: Queue Runtime / Retry Semantics
+QUEUE-WAIT-001 — Wait/Notify Correctness
+Contract statement:
+Blocking queue reads and producer notifications must represent actual waiting consumers well enough to avoid missed
+wakeups, masked waiters, or indefinite stalls under normal OA usage.
+Rationale:
+Async runtime delivery cannot depend on later unrelated messages to wake consumers that should have been notified.
+Source scope:
+OACircularQueue.getMessages(...), OACircularQueue.addMessageToQueue(...), bWaitingToGet, LOCKQueue wait/notify
+behavior.
+Related CODEX findings:
+bWaitingToGet is a single boolean for multiple waiters.
+Suggested unit tests:
+multipleWaitingConsumersWakeOnEnqueue(), timedAndUntimedWaitersDoNotMaskEachOther(),
+enqueueNotifiesEligibleWaitingConsumers().
+Spec target section:
+Queue Runtime / Wait-Notify Semantics.
 
-  ID: QUEUE-FAIL-001
-  Contract statement: Queue failure states that affect delivery correctness must be caller-visible or logged through
-  OA diagnostics; they must not look like successful empty reads or successful enqueues.
-  Rationale: False success hides production data loss.
-  Source locations: OACircularQueue._getMessages(...), OACircularQueue.getAmountAvailable(...),
-  OACircularQueue.addMessageToQueue(...)
-  Related CODEX findings: missing session can become untracked read; negative availability can hide invalid position.
-  Suggested unit tests: testOverrunThrowsVisibleFailure, testInvalidSessionDoesNotReturnFalseSuccess,
-  testInvalidTailDoesNotReturnMisleadingAvailability
-  Spec target section: Queue Runtime / Failure Visibility
+QUEUE-HOOK-001 — Queue Hook Reentrancy Boundary
+Contract statement:
+Queue hooks invoked while queue state is locked must not block indefinitely, reenter the same queue, or depend on
+work requiring the same lock unless that behavior is explicitly contracted.
+Rationale:
+Hook reentrancy or blocking while holding the queue lock can stall all producers and consumers.
+Source scope:
+OACircularQueue.shouldWaitOnSlowSession(...), OACircularQueue.addMessageToQueue(...), LOCKQueue.
+Related CODEX findings:
+shouldWaitOnSlowSession() is invoked while holding LOCKQueue.
+Suggested unit tests:
+slowSessionHookCannotDeadlockQueue(), hookContractRejectsReentrantQueueCall(),
+slowSessionHookDoesNotBlockQueueProgress().
+Spec target section:
+Queue Runtime / Hook and Reentrancy Semantics.
 
-  Concurrency / Locking Contracts
+QUEUE-INTERRUPT-001 — Interrupt Semantics
+Contract statement:
+Queue methods that block using sleep or wait must preserve Java interrupt semantics unless explicitly documented as
+uninterruptible.
+Rationale:
+Runtime shutdown, cancellation, and process control depend on interrupt visibility.
+Source scope:
+OACircularQueue.addMessageToQueue(...), OACircularQueue.getMessages(...), OACircularQueue.getMessage(...).
+Related CODEX findings:
+producer throttle sleep catches InterruptedException as a generic Exception and continues.
+Suggested unit tests:
+producerInterruptRestoresInterruptStatus(), consumerWaitInterruptPropagatesOrIsContracted(),
+interruptedQueueOperationDoesNotReportFalseSuccess().
+Spec target section:
+Queue Runtime / Interrupt Semantics.
 
-  ID: QUEUE-LOCK-001
-  Contract statement: Queue state transitions that couple overrun checks, message visibility, and consumer copying
-  must be protected by a consistent synchronization boundary.
-  Rationale: Volatile fields alone do not make multi-field queue state atomic.
-  Source locations: OACircularQueue._addMessage(...), OACircularQueue._getMessages(...), LOCKQueue, msgQueue,
-  queueHeadPosition
-  Related CODEX findings: overrun check, available calculation, and copying are not under one LOCKQueue critical
-  section.
-  Suggested unit tests: testConcurrentOverwriteCannotPassOverrunCheckThenReadWrongSlot,
-  testProducerConsumerVisibilityUnderContention
-  Spec target section: Queue Runtime / Locking Semantics
+QUEUE-STATE-001 — Queue Status Accuracy
+Contract statement:
+Queue status APIs must report committed queue state and must not expose impossible values such as negative
+availability for valid caller state.
+Rationale:
+Flow control, monitoring, and runtime recovery use queue status to decide whether work is pending, lost, current, or
+overrun.
+Source scope:
+OACircularQueue.getAmountAvailable(long), OACircularQueue.getHeadPostion(), OACircularQueue.getSize(),
+OACircularQueue.getName()/setName(...).
+Related CODEX findings:
+negative availability when posTail is ahead of queueHeadPosition; exact-full overrun mismatch.
+Suggested unit tests:
+amountAvailableNeverNegativeForDefinedPositions(), amountAvailableMatchesReadableMessages(),
+queueHeadPositionReportsCommittedLogicalHead().
+Spec target section:
+Queue Runtime / Status Reporting Semantics.
 
-  ID: QUEUE-LOCK-002
-  Contract statement: Wait/notify state must represent actual waiting consumers well enough to avoid missed wakeups or
-  indefinite stalls under normal OA usage.
-  Rationale: Async delivery cannot rely on later unrelated messages to wake stuck consumers.
-  Source locations: OACircularQueue.bWaitingToGet, OACircularQueue._getMessages(...), OACircularQueue._addMessage(...)
-  Related CODEX findings: bWaitingToGet is a single boolean for multiple waiters.
-  Suggested unit tests: testMultipleWaitingConsumersWakeOnEnqueue, testTimedAndUntimedWaitersDoNotMaskEachOther
-  Spec target section: Queue Runtime / Wait-Notify Semantics
+QUEUE-CLEANUP-001 — Retention Cleanup Safety
+Contract statement:
+Cleanup must clear only messages that every active protected session has advanced past, or that are explicitly
+outside the retention contract.
+Rationale:
+Premature cleanup creates null reads or lost delivery; delayed cleanup is acceptable if it does not break
+correctness.
+Source scope:
+OACircularQueue.cleanupQueue(), OACircularQueue.addMessageToQueue(...), queueLowPosition, lastUsedPos,
+Session.queuePos.
+Related CODEX findings:
+session queue position update outside queue lock can interact incorrectly with cleanup.
+Suggested unit tests:
+cleanupDoesNotClearUnreadMessage(), cleanupClearsOnlyAfterAllSessionsAdvance(), cleanupRespectsProtectedSessions().
+Spec target section:
+Queue Runtime / Cleanup and Retention Semantics.
 
-  ID: QUEUE-LOCK-003
-  Contract statement: Queue callbacks/hooks invoked under the queue lock must not block, reenter the queue, or depend
-  on work that requires the same lock unless explicitly contracted.
-  Rationale: Hook reentrancy can stall all producers and consumers.
-  Source locations: OACircularQueue.shouldWaitOnSlowSession(...), OACircularQueue._addMessage(...)
-  Related CODEX findings: shouldWaitOnSlowSession() is invoked while holding LOCKQueue.
-  Suggested unit tests: testSlowSessionHookCannotDeadlockQueue, testHookContractRejectsReentrantQueueCall
-  Spec target section: Queue Runtime / Hook Locking
+QUEUE-CONTEXT-001 — Context-Neutral Queue Primitive
+Contract statement:
+The queue primitive must remain neutral to OA ThreadLocal and runtime context unless an API explicitly captures,
+propagates, or restores context.
+Rationale:
+Low-level queue storage must not accidentally bind message delivery to caller thread state; context-sensitive
+execution belongs to the consumer or higher-level runtime package.
+Source scope:
+OACircularQueue; integration boundaries with process, callback, remote, sync, replication, transaction, object, hub,
+and graph packages.
+Related CODEX findings:
+none observed in queue package.
+Suggested unit tests:
+queuePrimitiveDoesNotModifyOAThreadLocalState(), queuedWorkConsumerRestoresContextBetweenMessages().
+Spec target section:
+Queue Runtime / Runtime Context Semantics.
 
-  ID: QUEUE-INTERRUPT-001
-  Contract statement: Queue methods that block via sleep or wait must preserve Java interrupt semantics unless
-  explicitly documented as uninterruptible.
-  Rationale: Runtime shutdown and cancellation depend on interrupt visibility.
-  Source locations: OACircularQueue.addMessageToQueue(...), OACircularQueue._getMessages(...)
-  Related CODEX findings: producer throttle sleep catches InterruptedException as generic Exception and continues.
-  Suggested unit tests: testProducerInterruptRestoresInterruptStatus, testConsumerWaitInterruptPropagates
-  Spec target section: Queue Runtime / Interrupt Semantics
+QUEUE-CONCURRENT-001 — Concurrent Producer and Consumer Correctness
+Contract statement:
+Concurrent producers and consumers must observe deterministic queue correctness: no lost retained messages, no out-
+of-order delivery, no duplicate acknowledgement, and no corrupted session state outside explicit overrun/reset/
+failure contracts.
+Rationale:
+OA queues are runtime coordination infrastructure for distributed and asynchronous graph behavior.
+Source scope:
+OACircularQueue.addMessageToQueue(...), OACircularQueue.getMessages(...), OACircularQueue.registerSession(int),
+OACircularQueue.unregisterSession(int), OACircularQueue.keepAlive(int).
+Related CODEX findings:
+multi-field queue state atomicity concerns; wait/notify concerns; session state visibility concerns.
+Suggested unit tests:
+concurrentProducersPreserveLogicalOrder(), concurrentConsumersMaintainIndependentSessionPositions(),
+producerConsumerContentionDoesNotCorruptQueueState().
+Spec target section:
+Queue Runtime / Concurrency Semantics.
 
-  State / Status Contracts
+QUEUE-CROSS-001 — Cross-Package Sequencing Contract
+Contract statement:
+OA event, callback, process, remote, sync, replication, datasource, cache, object, Hub, and graph code may rely on
+queue delivery preserving committed enqueue order until explicit overrun, reset, shutdown, or failure is reported.
+Rationale:
+These packages use queue behavior as correctness infrastructure, not merely as an optimization.
+Source scope:
+OACircularQueue; integration boundaries with com.viaoa.process, callback, trigger, remote, sync, replication,
+transaction, object, hub, cache, graph, and datasource packages.
+Related CODEX findings:
+multiple CODEX findings around ordering, overrun, session state, and false success illustrate this contract.
+Suggested unit tests:
+replicationQueuePreservesSyncMessageOrder(), remoteAsyncQueueSignalsOverrunInsteadOfSilentLoss(),
+eventQueuePreservesCommittedEnqueueOrder().
+Spec target section:
+Queue Runtime / Cross-Package Runtime Sequencing.
 
-  ID: QUEUE-STATE-001
-  Contract statement: Queue size/count/status APIs must report committed queue state, not impossible transient values.
-  Rationale: Flow control and monitoring can make wrong decisions from negative or stale counts.
-  Source locations: OACircularQueue.getAmountAvailable(long), OACircularQueue.getHeadPostion(),
-  OACircularQueue.getSize()
-  Related CODEX findings: negative availability when posTail > queueHeadPosition; exact-full overrun mismatch.
-  Suggested unit tests: testAmountAvailableNeverNegative, testAmountAvailableMatchesReadableMessagesAtCapacityBoundary
-  Spec target section: Queue Runtime / Status Reporting
-
-  ID: QUEUE-STATE-002
-  Contract statement: Session state must accurately represent whether the session is active, inactive, overrun, or
-  current.
-  Rationale: Producer throttling, cleanup, and delivery safety all depend on session flags being truthful.
-  Source locations: Session.bInactive, Session.bOverrun, Session.msLastRead, Session.queuePos, registerSession(...),
-  keepAlive(...)
-  Related CODEX findings: new session has msLastRead == 0; slow-session retry can proceed without explicit session
-  state transition.
-  Suggested unit tests: testRegisterSessionInitializesActiveReadTimestamp,
-  testSlowSessionTransitionIsExplicitWhenProducerStopsWaiting
-  Spec target section: Queue Runtime / Session State
-
-  ID: QUEUE-STATE-003
-  Contract statement: Cleanup must only clear messages that every active protected session has advanced past.
-  Rationale: Premature cleanup creates null reads or lost delivery; delayed cleanup is acceptable but must not break
-  correctness.
-  Source locations: OACircularQueue.cleanupQueue(), lastUsedPos, queueLowPosition, Session.queuePos
-  Related CODEX findings: session queue position update is outside LOCKQueue; cleanup interacts with session progress.
-  Suggested unit tests: testCleanupDoesNotClearUnreadMessage, testCleanupClearsOnlyAfterAllSessionsAdvance
-  Spec target section: Queue Runtime / Cleanup Semantics
-
-  Backpressure / Overflow Contracts
-
-  ID: QUEUE-BACKPRESSURE-001
-  Contract statement: Bounded queues must define what happens when consumers lag: wait, throttle, mark overrun, mark
-  inactive, or fail visibly.
-  Rationale: Slow consumer behavior determines whether OA preserves delivery or sacrifices a session.
-  Source locations: OACircularQueue._addMessage(...), shouldWaitOnSlowSession(...), throttleAmount, MS_Wait
-  Related CODEX findings: should-wait hook can be overridden by retry cap; slow sessions can be marked inactive based
-  on elapsed read time.
-  Suggested unit tests: testBackpressureWaitsForProtectedSlowSession,
-  testBackpressureMarksOverrunOrInactiveByContract, testThrottleDoesNotBreakOrdering
-  Spec target section: Queue Runtime / Backpressure Semantics
-
-  ID: QUEUE-BACKPRESSURE-002
-  Contract statement: Overrun detection must be consistent across read, availability, and producer-side session
-  scanning.
-  Rationale: Different APIs must not disagree about whether a session can still read retained messages.
-  Source locations: OACircularQueue.getAmountAvailable(...), OACircularQueue._getMessages(...),
-  OACircularQueue._addMessage(...)
-  Related CODEX findings: getAmountAvailable uses <= while _getMessages uses <.
-  Suggested unit tests: testOverrunBoundaryConsistentAcrossGetMessagesAndAvailability,
-  testProducerMarksSessionOverrunAtSameBoundaryAsConsumer
-  Spec target section: Queue Runtime / Overrun Semantics
-
-  ThreadLocal / Context Contracts
-
-  ID: QUEUE-TL-001
-  Contract statement: Queue execution must not leak OAThreadLocal or runtime context state across queued work items or
-  worker iterations.
-  Rationale: OA event, sync, serialization, datasource, and remote behavior can change based on thread-local context.
-  Source locations: queue consumers in remote/replication layers; OACircularQueue does not set OAThreadLocal directly
-  Related CODEX findings: none observed in queue package.
-  Suggested unit tests: testQueuedWorkRestoresThreadLocalContext, testWorkerLoopDoesNotLeakContextBetweenMessages
-  Spec target section: Queue Runtime / ThreadLocal Context
-
-  ID: QUEUE-TL-002
-  Contract statement: Queue primitives should remain context-neutral unless explicitly designed to capture or
-  propagate OA runtime context.
-  Rationale: Low-level queue code should not accidentally bind work delivery to caller thread state.
-  Source locations: OACircularQueue
-  Related CODEX findings: none observed.
-  Suggested unit tests: testQueuePrimitiveDoesNotModifyOAThreadLocalState
-  Spec target section: Queue Runtime / Context Neutrality
-
-  Cross-Package Reliability Contracts
-
-  ID: QUEUE-CROSS-001
-  Contract statement: OA event, sync, replication, datasource, cache, and object lifecycle code may assume queue
-  delivery preserves committed enqueue order until explicit overrun/reset/failure.
-  Rationale: These systems use queues as correctness infrastructure, not just optimization.
-  Source locations: OACircularQueue; callers in OAReplicationBase, OARemoteMultiplexerServer
-  Related CODEX findings: multiple findings around ordering, overrun, and session state illustrate this invariant.
-  Suggested unit tests: testReplicationQueuePreservesSyncMessageOrder,
-  testRemoteAsyncQueueSignalsOverrunInsteadOfSilentLoss
-  Spec target section: Queue Runtime / Cross-Package Contract
-
-  ID: QUEUE-CROSS-002
-  Contract statement: Queue APIs that return positions must clearly distinguish logical stream position from physical
-  array index.
-  Rationale: Callers using physical index as replay/order position will break after wraparound.
-  Source locations: OACircularQueue.addMessageToQueue(...), OACircularQueue.getHeadPostion(),
-  OACircularQueue.getMessagesAtPos(int)
-  Related CODEX findings: addMessageToQueue returns physical array index while JavaDoc says position.
-  Suggested unit tests: testAddMessageReturnValueContractAfterWraparound,
-  testLogicalPositionApiSeparateFromPhysicalIndexApi
-  Spec target section: Queue Runtime / Position Semantics
-
-  Suggested package-level spec summary
-
-  - com.viaoa.queue provides OA’s low-level ordered queue primitive for async messaging, fan-out, and internal runtime
-    delivery.
-  - A successful enqueue must make work visible to all eligible consumers.
-  - Queue ordering is logical-position based and must not be confused with circular-array indexes.
-  - Registered sessions are protected consumers; their progress, inactivity, and overrun state must be truthful.
-  - Message loss is only acceptable when the queue reports explicit overrun, reset, inactive-session, or documented
-    discard behavior.
-  - Worker and consumer failures must be visible enough for OA remote/sync/replication code to recover or stop
-    intentionally.
-  - Blocking queue paths must preserve interrupt semantics unless explicitly documented as uninterruptible.
-  - Backpressure and slow-consumer behavior must be deterministic and testable.
-  - Queue cleanup must never clear messages still needed by active protected sessions.
-  - Queue code should remain context-neutral; any OAThreadLocal context used by workers must be restored by the worker
-    layer.
-  - Cross-package tests should cover replication order, remote async fan-out, slow-client overrun, reconnect/session
-    behavior, and high-contention producer/consumer races.
+QUEUE-BOUNDARY-001 — Queue Delivery Versus Semantic Operation Success
+Contract statement:
+Successful queue enqueue, visibility, or delivery only establishes queue-level success; it must not imply successful
+task execution, callback completion, remote invocation, sync application, replication replay, transaction commit, or
+Object Graph mutation.
+Rationale:
+Queue semantics are a runtime-buffer boundary; semantic success belongs to the consuming runtime package and must
+remain separately observable.
+Source scope:
+OACircularQueue public API; cross-package boundaries with process, callback, trigger, remote, sync, replication,
+transaction, object, hub, and graph packages.
+Related CODEX findings:
+none observed beyond queue false-success and acknowledgement concerns.
+Suggested unit tests:
+queueDeliveryDoesNotImplyTaskExecutionSuccess(), queueReadFailureDoesNotAdvanceSemanticCompletion(),
+queuedSyncMessageRequiresConsumerApplySuccess().
+Spec target section:
+Queue Runtime / Runtime Boundary Semantics.
 
 */
-
-
 

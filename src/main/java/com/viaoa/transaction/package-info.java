@@ -62,509 +62,430 @@ package com.viaoa.transaction;
 
 /* CODEX Invariants
 
-1. Package Summary
-
-  com.viaoa.transaction is a lightweight thread-local transaction coordination package. In OA 4.0 terms, it should
-  define the runtime boundary for grouped datasource/object/Hub work, participant enlistment, batch flushing, commit/
-  rollback sequencing, and cleanup of transaction-scoped state.
-
-  Current implementation is small:
-
-  - OATransaction: transaction context, thread-local binding, listener list, batch/write flags, key/value participant
-    storage.
-  - OATransactionListener: participant callback interface with commit, rollback, and executeOpenBatches.
-
-  The package currently behaves more like an advisory enlistment context than a strict transaction coordinator. The
-  invariants below describe what must be true for production-grade OA 4.0 semantics.
-
-  2. Core Concepts
-
-  - transaction: one runtime boundary for coordinated work on one thread.
-  - participant: datasource/subsystem/listener enlisted through OATransactionListener.
-  - transaction stage/state: explicit lifecycle phase such as ACTIVE, COMMITTING, COMMITTED, etc.
-  - active work: OAObject/Hub/datasource operations while transaction is current.
-  - commit phase: stage where participants finalize uncommitted work.
-  - rollback phase: stage where participants undo/discard active uncommitted work.
-  - completion phase: transition into successful or failed terminal outcome.
-  - terminal state: no further commit/rollback allowed.
-  - close/cleanup: release transaction references and clear thread-local regardless of outcome.
-  - rollback-only: active transaction marker that forbids commit.
-  - nested transaction behavior: either explicitly rejected or stack-based.
-  - thread ownership: transaction belongs to the thread that started it.
-  - listener/callback behavior: participant lifecycle callbacks, not casual app events.
-
-  3. Transaction Stage Invariants
-
-  A. ACTIVE
-
-  Allowed:
-
-  - enlist participants
-  - perform OAObject/Hub/datasource work
-  - store participant-scoped transaction data
-  - mark rollback-only
-  - execute rollback
-
-  Forbidden:
-
-  - commit after rollback-only
-  - replace another active transaction unless nested semantics are explicit
-  - complete from non-owner thread
-  - mutate immutable options if frozen at start
-
-  State may change:
-
-  - participants may move from not enlisted to enlisted
-  - transaction may move to COMMITTING or ROLLING_BACK
-
-  Current confidence: Low
-  Code: OATransaction.start, addTransactionListener, put/get/remove.
-
-  B. COMMITTING
-
-  Allowed:
-
-  - execute commit preparation/open batches
-  - commit eligible participants
-  - record per-participant commit success/failure
-  - enter COMMITTED or COMMIT_FAILED
-
-  Forbidden:
-
-  - new active work
-  - listener mutation unless explicitly allowed
-  - normal rollback of already-committed participants
-  - clearing thread-local before commit outcome is known
-
-  Participant state must be tracked:
-
-  - ENLISTED
-  - BATCH_EXECUTED or PREPARED
-  - COMMITTED
-  - COMMIT_FAILED
-
-  Current confidence: Low
-  Code: commit, executeOpenBatches.
-
-  C. COMMITTED
-
-  Rules:
-
-  - successful terminal transaction outcome
-  - no further commit/rollback
-  - participant commit callbacks must not repeat
-  - cleanup/close must release thread-local and transaction-scoped references
-
-  Current confidence: Low
-  Gap: no terminal state.
-
-  D. COMMIT_FAILED
-
-  Rules:
-
-  - diagnostic/recovery state, not normal rollback state
-  - participants already committed must not receive ordinary rollback
-  - participants not yet committed may need recovery/cleanup
-  - errors must preserve root cause and participant status
-
-  Current confidence: Low
-  Gap: no distinction between commit failure and active rollback.
-
-  E. ROLLING_BACK
-
-  Allowed:
-
-  - rollback participants that have uncommitted active work
-  - continue cleanup callbacks even after failures
-  - aggregate rollback failures
-
-  Forbidden:
-
-  - rollback already-committed participants as if active work still exists
-  - commit after rollback begins
-
-  Current confidence: Low
-  Code: rollback.
-
-  F. ROLLED_BACK
-
-  Rules:
-
-  - terminal rollback outcome
-  - no further commit/rollback
-  - cleanup/close must run
-  - transaction should not be reusable
-
-  Current confidence: Low
-
-  G. ROLLBACK_FAILED
-
-  Rules:
-
-  - terminal or recovery-needed failure state
-  - retain diagnostics and participant failure status
-  - cleanup still required where safe
-
-  Current confidence: Low
-
-  H. CLOSED
-
-  Rules:
-
-  - no lifecycle operations
-  - thread-local must not reference transaction
-  - transaction-scoped listener/map references should be cleared or intentionally retained for diagnostics
-  - closed transaction cannot be restarted
-
-  Current confidence: Low
-
-  4. General Invariants
-
-  A. Lifecycle / State Machine
-
-  TX-LIFE-001: Transaction lifecycle must be explicit and monotonic.
-  Why: prevents double commit, rollback after commit, and reuse.
-  Locations: OATransaction.start, commit, rollback.
-  Confidence: Low.
-  Gap: no state field.
-
-  TX-LIFE-002: Completion must be exactly once.
-  Why: participant side effects must not repeat.
-  Locations: commit, rollback.
-  Confidence: Low.
-  Gap: double calls allowed.
-
-  TX-LIFE-003: A transaction must be active before commit/rollback.
-  Why: prevents stale object completion.
-  Locations: isStarted, commit, rollback.
-  Confidence: Low.
-  Gap: commit/rollback do not call isStarted.
-
-  B. Participant Coordination
-
-  TX-PART-001: Each participant must have its own lifecycle state.
-  Why: prevents contradictory commit then rollback.
-  Locations: OATransactionListener, commit, rollback.
-  Confidence: Low.
-  Gap: no per-listener state.
-
-  TX-PART-002: Participant enlistment must be stable once commit/rollback begins.
-  Why: prevents missed or duplicate callbacks.
-  Locations: addTransactionListener, removeTransactionListener.
-  Confidence: Low.
-  Gap: mutable ArrayList.
-
-  TX-PART-003: Null participants must be rejected immediately.
-  Why: delayed NPE at boundary is avoidable.
-  Locations: addTransactionListener.
-  Confidence: Low.
-
-  C. Commit / Rollback Correctness
-
-  TX-COMMIT-001: Commit must execute required preparation/batch phase before final commit.
-  Why: prevents skipped batched writes.
-  Locations: commit, executeOpenBatches, OATransactionListener.executeOpenBatches.
-  Confidence: Low.
-  Gap: commit does not call executeOpenBatches.
-
-  TX-COMMIT-002: Commit failure must not be treated as ordinary active rollback.
-  Why: some participants may already be committed.
-  Locations: commit, rollback.
-  Confidence: Low.
-
-  TX-ROLLBACK-001: Rollback applies only to participants with rollback-eligible uncommitted work.
-  Why: prevents rollback after commit.
-  Locations: rollback.
-  Confidence: Low.
-
-  D. Rollback-Only
-
-  TX-RBONLY-001: Any participant/work failure during ACTIVE must be able to mark transaction rollback-only.
-  Why: prevents false-success commit after known failure.
-  Locations: absent.
-  Confidence: Low.
-
-  TX-RBONLY-002: commit() must fail or route to rollback when rollback-only is set.
-  Why: rollback-only must be enforceable.
-  Locations: absent.
-  Confidence: Low.
-
-  E. Nested Transactions
-
-  TX-NEST-001: Nested transaction behavior must be explicitly rejected or stack-managed.
-  Why: current start() overwrites thread-local.
-  Locations: start, OAThreadLocalService.setTransaction.
-  Confidence: Low.
-
-  TX-NEST-002: Inner completion must not clear parent transaction state.
-  Why: parent work must remain transactional.
-  Locations: commit, rollback.
-  Confidence: Low.
-
-  F. ThreadLocal / Thread Ownership
-
-  TX-TL-001: Only the owner thread may commit/rollback a transaction.
-  Why: OA transaction context is documented as single-threaded.
-  Locations: start, commit, rollback.
-  Confidence: Low.
-  Gap: owner thread not recorded.
-
-  TX-TL-002: A transaction may clear thread-local only if it is the active transaction.
-  Why: stale transactions must not clear newer ones.
-  Locations: commit, rollback.
-  Confidence: Low.
-
-  TX-TL-003: ThreadLocal transaction counter must reflect actual active bindings.
-  Why: getTransaction() short-circuits on global count.
-  Locations: OAThreadLocalService.setTransaction/getTransaction.
-  Confidence: Low.
-
-  G. Listener / Callback Exceptions
-
-  TX-CB-001: Participant/fail-fast callbacks may cancel before state commits.
-  Why: BEFORE semantics require visible cancellation.
-  Locations: no explicit BEFORE phase.
-  Confidence: Low.
-
-  TX-CB-002: Observer/cleanup callbacks must not prevent remaining observers from running.
-  Why: cleanup/finalization must be best-effort complete.
-  Locations: commit, rollback, executeOpenBatches.
-  Confidence: Low.
-  Gap: first exception stops loop.
-
-  TX-CB-003: Multiple listener failures must be aggregated.
-  Why: root cause plus cleanup failures must remain visible.
-  Locations: commit, rollback, executeOpenBatches.
-  Confidence: Low.
-
-  H. Ordering / Determinism
-
-  TX-ORDER-001: Commit participant order must be deterministic.
-  Why: datasource dependencies may rely on order.
-  Locations: ArrayList registration order.
-  Confidence: Medium.
-
-  TX-ORDER-002: Rollback order must be explicitly defined, likely reverse participant order if dependencies exist.
-  Why: cleanup usually unwinds dependencies.
-  Locations: rollback.
-  Confidence: Low.
-  Gap: same order as commit, no contract.
-
-  I. Error Handling / Aggregation
-
-  TX-ERR-001: Commit failure must leave transaction in COMMIT_FAILED, not silently closed as success.
-  Why: recovery semantics differ from rollback.
-  Locations: commit.
-  Confidence: Low.
-
-  TX-ERR-002: Rollback failure must leave transaction in ROLLBACK_FAILED with diagnostics.
-  Why: hidden rollback failure is production-critical.
-  Locations: rollback.
-  Confidence: Low.
-
-  J. Resource Cleanup
-
-  TX-CLEAN-001: Cleanup must run regardless of commit/rollback outcome.
-  Why: thread-local and participant resources must not leak.
-  Locations: commit, rollback.
-  Confidence: Medium for thread-local clear, Low for participant cleanup.
-
-  TX-CLEAN-002: Transaction-scoped map/listeners should be cleared or terminally retained by explicit diagnostic
-  policy.
-  Why: prevents memory leaks and stale reuse.
-  Locations: hm, al.
-  Confidence: Low.
-
-  K. Integration
-
-  TX-INT-001: Datasource transaction checks must see consistent active transaction state.
-  Why: OADataSource.isInTransaction, batching, write override depend on thread-local.
-  Locations: OADataSource.isAllowingBatch, isInTransaction, getIgnoreWrites.
-  Confidence: Low due counter drift.
-
-  TX-INT-002: Save/delete cascades that claim transaction cooperation must not rely on advisory-only semantics.
-  Why: partial save/delete consistency depends on actual participant coordination.
-  Locations: transaction package plus object/datasource integration.
-  Confidence: Low.
-
-  TX-INT-003: Sync/replication replay must not inherit stale transaction context from pooled/remote threads.
-  Why: replay boundaries must be deterministic.
-  Locations: OAThreadLocal.transaction, OATransaction.start/commit/rollback.
-  Confidence: Low.
-
-  5. Listener / Callback Semantics
-
-  Current package conflicts with the proposed OA-wide policy:
-
-  - BEFORE participants: not represented as a phase. executeOpenBatches appears preparation-like, but is public and
-    not integrated into commit.
-  - DURING observers: not represented. All listeners are treated as fail-fast participants.
-  - AFTER cleanup/finalization: not represented. commit/rollback loops stop on first exception, so cleanup observers
-    can be skipped.
-
-  Current behavior:
-
-  - commit: fail-fast loop, clears thread-local in finally.
-  - rollback: fail-fast loop, clears thread-local in finally.
-  - executeOpenBatches: fail-fast loop, no lifecycle guard.
-
-  Spec direction:
-
-  - beforeCommit / prepare participants may fail-fast.
-  - commit participant completion must track participant state.
-  - afterCommit / cleanup observers must continue after exceptions.
-  - rollback must be participant-state-aware.
-  - close cleanup must always execute and aggregate failures.
-
-  6. Failure Modes
-
-  - double commit: listeners receive duplicate commit.
-  - double rollback: listeners receive duplicate rollback.
-  - rollback after partial commit: committed participant receives rollback.
-  - participant contradictory signals: commit then rollback.
-  - commit succeeds but transaction reports rollback: possible under caller-managed catch/rollback without state.
-  - rollback-only ignored: no rollback-only state.
-  - stale ThreadLocal transaction: missing owner/state cleanup.
-  - nested transaction corrupts parent state: inner start overwrites parent.
-  - cleanup skipped after exception: first listener exception stops loop.
-  - listener exception prevents cleanup: no after/cleanup phase.
-  - datasource participant left open: later listeners skipped.
-  - sync/replication sees inconsistent boundary: stale or missing thread-local transaction.
-  - transaction reused after completion: no terminal guard.
-  - open batches execute outside transaction: public unguarded executeOpenBatches.
-
-  7. Test Recommendations
-
-  Lifecycle:
-
-  - testCommitRequiresActiveTransactionOwner
-  - testDoubleCommitRejected
-  - testRollbackAfterCommitRejected
-  - testCommitAfterRollbackRejected
-  - testTransactionCannotRestartAfterClosed
-
-  Commit failure:
-
-  - testCommitFailureAfterFirstParticipantCommittedCreatesCommitFailedState
-  - testRollbackAfterPartialCommitDoesNotRollbackCommittedParticipant
-  - testCommitFailurePreservesRootCauseAndParticipantStates
-
-  Rollback:
-
-  - testRollbackDuringActiveCallsOnlyRollbackEligibleParticipants
-  - testRollbackFailureAggregatesAllParticipantFailures
-  - testRollbackUsesDocumentedOrdering
-
-  Rollback-only:
-
-  - testRollbackOnlyPreventsCommit
-  - testParticipantCanMarkRollbackOnly
-  - testRollbackOnlyCommitRoutesToRollbackOrThrows
-
-  Nested:
-
-  - testNestedStartRejected
-  - testNestedStackRestoresParentAfterInnerCompletion if stack semantics chosen
-
-  ThreadLocal:
-
-  - testCommitDoesNotClearDifferentActiveTransaction
-  - testTransactionCounterTracksNullToNonNullTransitions
-  - testCrossThreadCommitRejected
-  - testThreadLocalClearedAfterCommitFailureClose
-
-  Listener semantics:
-
-  - testBeforeParticipantFailureCancelsCommit
-  - testAfterCleanupListenersContinueAfterException
-  - testDuringObserversAggregateFailures
-  - testListenerMutationDuringCompletionRejectedOrSnapshotSafe
-
-  Batches:
-
-  - testCommitExecutesOpenBatchesBeforeCommit
-  - testExecuteOpenBatchesCannotRunAfterRollback
-  - testExecuteOpenBatchesIdempotency
-
-  Cleanup:
-
-  - testCloseClearsListenersAndTransactionMap
-  - testCompletedTransactionCannotStoreNewParticipantState
-
-  8. Hardening Recommendations
-
-  - Add explicit TransactionStage enum.
-  - Add owner thread field.
-  - Add per-participant state object instead of raw listener list.
-  - Add rollbackOnly.
-  - Split phases: prepare/before, commit, afterCommit, rollback, afterRollback, close.
-  - Make executeOpenBatches internal to commit or guard it by stage.
-  - Add active-owner checks before commit/rollback/cleanup.
-  - Add terminal-state enforcement.
-  - Snapshot participant list or lock participant mutation during completion.
-  - Aggregate exceptions using suppressed exceptions.
-  - Clear ThreadLocal only in controlled close/cleanup.
-  - Make OAThreadLocalService.setTransaction transition-aware.
-  - Add diagnostics: transaction id, owner thread, start stack, stage, participant count, participant states.
-  - Add stale transaction detection for long-lived active transactions.
-
-  9. Open Questions
-
-  - Is OATransaction intended to be strict transaction coordinator or advisory enlistment context?
-  - Should nested transactions be rejected or stack-based?
-  - Should commit failure allow rollback, or enter terminal COMMIT_FAILED recovery state?
-  - Are datasource batch operations supposed to be automatically executed by commit()?
-  - Should rollback order be reverse enlistment order?
-  - Are listeners participants only, or are observer/cleanup callbacks also expected?
-  - Should completed transaction objects retain diagnostic state or clear all references?
-  - Should setAllowWritesIfDsIsReadonly be immutable after start?
-  - Should sync/replication replay suppress or participate in active transactions?
-  - Should OATransactionListener be expanded or replaced with stage-aware participant callbacks?
-
-
-qqqqqqq othere codex ...
-A. Architectural Assessment
-
-  The model is conceptually sound as a lightweight thread-local transaction coordinator, but the lifecycle is not
-  production-hard yet. Ownership is implicit, nesting is undefined, completion is not terminal, and listener semantics
-  are too coarse for infrastructure code. Boundaries are not deterministic enough for save/delete cascades, datasource
-  batching, sync/replay, or replication readiness.
-
-  B. Invariant Risk Areas
-
-  - A transaction must be active before commit/rollback.
-  - A transaction must complete exactly once.
-  - Only the active owner transaction may clear thread-local state.
-  - Nested transaction behavior must be explicit.
-  - Batch execution ordering must be part of commit or removed from the contract.
-  - Rollback-only state must prevent commit.
-  - All cleanup/finalization listeners must run even after earlier failures.
-  - Transaction-scoped state must not outlive terminal completion unless explicitly retained.
-
-  C. Top Production Risks
-
-  1. Outer transaction lost by nested start().
-  2. Active transaction hidden by ThreadLocal counter drift.
-  3. Batched writes skipped on commit.
-  4. Partial listener commit/rollback leaves datasources inconsistent.
-  5. Double completion duplicates side effects.
-  6. Cross-thread completion executes transaction participants in the wrong runtime context.
-
-  D. Hardening Recommendations
-
-  - Add State enum and owner-thread field.
-  - Add rollbackOnly.
-  - Add active-owner assertions in commit/rollback.
-  - Define nested behavior: reject or stack.
-  - Execute open batches in a documented commit phase.
-  - Snapshot listeners before iteration.
-  - Aggregate exceptions for cleanup/after phases.
-  - Clear listener/map state on terminal completion.
-  - Add diagnostics for stale completion, nested start, double completion, counter drift, and skipped batch execution.
+TX-LIFECYCLE-001 — Explicit Transaction Lifecycle
+Contract statement:
+A transaction must move through an explicit monotonic lifecycle: new/not-started, active, committing, committed,
+commit-failed, rolling-back, rolled-back, rollback-failed, and closed or equivalent documented states.
+Rationale:
+Transaction lifecycle state prevents double commit, double rollback, rollback after commit, commit after rollback,
+stale completion, and reuse after terminal completion.
+Source scope:
+OATransaction.start(), commit(), rollback(), isStarted().
+Related CODEX findings:
+OATransaction lifecycle has no ownership/completion state; double commit/rollback can re-run listeners.
+Suggested unit tests:
+testTransactionLifecycleIsMonotonic, testDoubleCommitRejected, testCommitAfterRollbackRejected,
+testRollbackAfterCommitRejected.
+Spec target section:
+Transaction Runtime / Lifecycle State
+
+TX-LIFECYCLE-002 — Active Before Completion
+Contract statement:
+commit(), rollback(), executeOpenBatches(), participant mutation, and transaction-scoped state mutation must require
+a valid transaction stage according to the package lifecycle contract.
+Rationale:
+Completing or mutating an inactive, stale, failed, or closed transaction creates false boundaries and corrupts
+participant coordination.
+Source scope:
+OATransaction.start(), commit(), rollback(), executeOpenBatches(), addTransactionListener(...),
+removeTransactionListener(...), put(...), get(...), remove(...), isStarted().
+Related CODEX findings:
+commit()/rollback() do not enforce active state; completed transaction state can be reused.
+Suggested unit tests:
+testCommitRequiresActiveTransaction, testRollbackRequiresActiveTransaction,
+testCompletedTransactionRejectsNewStateMutation.
+Spec target section:
+Transaction Runtime / Valid Stage Operations
+
+TX-OWNER-001 — Thread Ownership
+Contract statement:
+A transaction belongs to the thread that starts it, and only the owning active thread may commit, roll back, close,
+or clear its thread-local binding unless an explicit cross-thread transfer contract exists.
+Rationale:
+OA transactions are thread-local runtime boundaries; cross-thread completion can run participants in the wrong
+object, datasource, sync, or runtime context.
+Source scope:
+OATransaction.start(), isStarted(), commit(), rollback(); OAThreadLocalService transaction binding.
+Related CODEX findings:
+No owner thread is recorded; cross-thread or stale completion can clear the wrong transaction context.
+Suggested unit tests:
+testCrossThreadCommitRejected, testCrossThreadRollbackRejected, testOwnerThreadCanCompleteActiveTransaction.
+Spec target section:
+Transaction Runtime / Thread Ownership
+
+TX-TL-001 — ThreadLocal Binding Integrity
+Contract statement:
+Starting a transaction must bind it to the current thread according to the nested-transaction policy, and
+completion/cleanup must clear thread-local state only if this transaction is still the active bound transaction.
+Rationale:
+Stale transactions must not clear newer transactions, and nested or replacement transactions must not corrupt
+runtime visibility.
+Source scope:
+OATransaction.start(), commit(), rollback(), isStarted(); OAThreadLocalService.setTransaction/getTransaction.
+Related CODEX findings:
+start() overwrites active transaction; commit()/rollback() unconditionally clear thread-local; transaction counter
+can drift.
+Suggested unit tests:
+testStaleTransactionDoesNotClearActiveTransaction, testThreadLocalTransactionCounterTracksActualBinding,
+testThreadLocalClearedOnlyByActiveOwner.
+Spec target section:
+Transaction Runtime / ThreadLocal Semantics
+
+TX-NEST-001 — Nested Transaction Policy
+Contract statement:
+Nested transaction behavior must be explicit: either nested start is visibly rejected, or nested transactions are
+stack-managed and restore the parent transaction after inner completion.
+Rationale:
+Implicit overwrite semantics lose outer transaction boundaries and can make parent work non-transactional.
+Source scope:
+OATransaction.start(), commit(), rollback(); OAThreadLocalService transaction binding.
+Related CODEX findings:
+start() overwrites an existing transaction bound to the thread.
+Suggested unit tests:
+testNestedStartRejectedByContract, testNestedStackRestoresParentIfSupported,
+testInnerCompletionDoesNotClearParentIfNestedSupported.
+Spec target section:
+Transaction Runtime / Nesting Semantics
+
+TX-COMPLETE-001 — Completion Exactly Once
+Contract statement:
+A transaction may produce exactly one terminal outcome: committed, commit-failed, rolled-back, rollback-failed, or
+closed-after-failure; participant commit/rollback side effects must not run more than once for the same transaction.
+Rationale:
+Duplicate completion can duplicate datasource commits, rollbacks, batch execution, cache visibility transitions,
+event publication, and diagnostics.
+Source scope:
+OATransaction.commit(), rollback(), executeOpenBatches(); OATransactionListener.
+Related CODEX findings:
+Double commit/rollback can re-run listeners and decrement thread-local counters again.
+Suggested unit tests:
+testCommitRunsParticipantsOnce, testRollbackRunsParticipantsOnce,
+testDoubleCompletionDoesNotRepeatParticipantCallbacks.
+Spec target section:
+Transaction Runtime / Completion Semantics
+
+TX-PARTICIPANT-001 — Participant Enlistment Visibility
+Contract statement:
+A transaction participant/listener must become visible for commit, rollback, and batch callbacks only after
+registration is fully committed, and participant mutation during completion must follow a documented snapshot or
+rejection policy.
+Rationale:
+Participant lists define transaction side effects; mid-iteration mutation can skip, duplicate, or disorder critical
+callbacks.
+Source scope:
+OATransaction.addTransactionListener(...), removeTransactionListener(...), commit(), rollback(),
+executeOpenBatches(); OATransactionListener.
+Related CODEX findings:
+Mutable ArrayList has no synchronization or snapshot semantics; listener mutation during callbacks can cause
+nondeterministic behavior.
+Suggested unit tests:
+testParticipantRegistrationVisibleAfterAddReturns, testListenerMutationDuringCommitRejectedOrSnapshotSafe,
+testRemovePreventsFutureEligibleCallbacks.
+Spec target section:
+Transaction Runtime / Participant Enlistment
+
+TX-PARTICIPANT-002 — Participant State Awareness
+Contract statement:
+Each participant must receive only lifecycle callbacks valid for its current transaction-participation state,
+including batch/prepared, committed, commit-failed, rollback-eligible, rolled-back, and cleanup states.
+Rationale:
+A participant that has already committed must not later receive ordinary rollback as if its work were still
+uncommitted.
+Source scope:
+OATransactionListener.commit(...), rollback(...), executeOpenBatches(...); OATransaction.commit(), rollback(),
+executeOpenBatches().
+Related CODEX findings:
+No per-listener state exists; rollback after partial commit can send contradictory signals.
+Suggested unit tests:
+testCommittedParticipantDoesNotReceiveOrdinaryRollbackAfterPartialCommitFailure,
+testRollbackOnlyRollbackEligibleParticipants, testParticipantStateRecordedAcrossFailure.
+Spec target section:
+Transaction Runtime / Participant State
+
+TX-BATCH-001 — Batch Execution Before Commit
+Contract statement:
+If batch mode or open batches are part of the transaction contract, pending batches must execute before final
+participant commit, and failure during batch execution must prevent false-success commit.
+Rationale:
+Skipping batched writes while reporting commit success loses datasource work and breaks save/delete/cascade
+boundaries.
+Source scope:
+OATransaction.getUseBatch(), setUseBatch(...), executeOpenBatches(), commit();
+OATransactionListener.executeOpenBatches(...).
+Related CODEX findings:
+commit() does not call executeOpenBatches() even though listener documentation says pending batches execute prior to
+commit.
+Suggested unit tests:
+testCommitExecutesOpenBatchesBeforeCommit, testBatchFailurePreventsCommitSuccess,
+testExecuteOpenBatchesOrderingBeforeCommit.
+Spec target section:
+Transaction Runtime / Batch Commit Semantics
+
+TX-COMMIT-001 — Commit Boundary Correctness
+Contract statement:
+A successful commit means all commit-required participants have completed their required prepare/batch/finalize work
+according to the transaction’s stage policy, and object/cache/datasource visibility can be treated as committed.
+Rationale:
+OA object graph, datasource, cache, Hub, sync, and replication flows rely on commit as the point where grouped work
+becomes durable or observable by contract.
+Source scope:
+OATransaction.commit(), executeOpenBatches(); OATransactionListener.commit(...), executeOpenBatches(...).
+Related CODEX findings:
+Skipped batch execution and fail-fast listener loops can make commit appear successful while participant work is
+incomplete.
+Suggested unit tests:
+testCommitSuccessRequiresAllParticipantsCommitted, testCommitFailureDoesNotReportCommitted,
+testCommitVisibilityOccursAfterParticipantCompletion.
+Spec target section:
+Transaction Runtime / Commit Boundary
+
+TX-COMMIT-FAIL-001 — Commit Failure Is Distinct From Rollback
+Contract statement:
+A failure after commit processing begins must enter a commit-failed/recovery-visible state and must not be treated
+as a normal active rollback unless participant state proves rollback is still valid.
+Rationale:
+Once any participant has committed, ordinary rollback may be impossible or harmful; recovery needs diagnostics and
+participant-state awareness.
+Source scope:
+OATransaction.commit(), rollback(); OATransactionListener.commit(...), rollback(...).
+Related CODEX findings:
+Commit failure has no distinct state; caller-managed rollback after partial commit can send contradictory callbacks.
+Suggested unit tests:
+testCommitFailureAfterOneParticipantCommittedCreatesCommitFailedState,
+testRollbackAfterPartialCommitDoesNotRollbackCommittedParticipant, testCommitFailurePreservesRootCause.
+Spec target section:
+Transaction Runtime / Commit Failure Semantics
+
+TX-ROLLBACK-001 — Rollback Boundary Correctness
+Contract statement:
+Rollback must undo, discard, or mark incomplete only active uncommitted work that is rollback-eligible, and the
+transaction outcome must be visibly rolled-back or rollback-failed.
+Rationale:
+Rollback is the undo/discard boundary for active transaction work; it must not silently appear complete when
+participant rollback failed or was ineligible.
+Source scope:
+OATransaction.rollback(); OATransactionListener.rollback(...).
+Related CODEX findings:
+Rollback has no stage or participant eligibility tracking; listener exception can skip later rollback participants.
+Suggested unit tests:
+testRollbackDuringActiveCallsRollbackEligibleParticipants, testRollbackFailureCreatesRollbackFailedState,
+testRollbackDoesNotReportSuccessWhenParticipantFails.
+Spec target section:
+Transaction Runtime / Rollback Boundary
+
+TX-ROLLBACK-ONLY-001 — Rollback-Only Enforcement
+Contract statement:
+A transaction marked rollback-only must not commit successfully; commit must visibly fail or route through the
+documented rollback path.
+Rationale:
+Known failures during active work must not be hidden by a later successful commit.
+Source scope:
+OATransaction lifecycle contract; future rollback-only state; participant and datasource integration.
+Related CODEX findings:
+Existing invariant notes identify absent rollback-only semantics.
+Suggested unit tests:
+testRollbackOnlyPreventsCommit, testParticipantCanMarkRollbackOnly,
+testRollbackOnlyCommitFailsOrRollsBackByContract.
+Spec target section:
+Transaction Runtime / Rollback-Only Semantics
+
+TX-LISTENER-001 — Listener Ordering
+Contract statement:
+Participant callback ordering must be deterministic for registration, batch execution, commit, rollback, and cleanup
+phases, including whether rollback unwinds in registration order or reverse order.
+Rationale:
+Datasource, cascade, cache, event, and sync participants can have ordering dependencies.
+Source scope:
+OATransaction.addTransactionListener(...), removeTransactionListener(...), executeOpenBatches(), commit(),
+rollback().
+Related CODEX findings:
+ArrayList registration order exists implicitly, but rollback order and mutation semantics are not explicit.
+Suggested unit tests:
+testCommitUsesRegistrationOrder, testExecuteOpenBatchesUsesRegistrationOrder, testRollbackUsesDocumentedOrder.
+Spec target section:
+Transaction Runtime / Callback Ordering
+
+TX-LISTENER-002 — Listener Exception Semantics
+Contract statement:
+Participant/preparation callbacks may fail-fast before commit is finalized, while cleanup/finalization observer
+phases must continue through remaining participants and aggregate failures according to the OA-wide callback policy.
+Rationale:
+One listener failure must not leave other transaction participants permanently open, unrolled-back, or unreported.
+Source scope:
+OATransaction.commit(), rollback(), executeOpenBatches(); OATransactionListener.
+Related CODEX findings:
+First listener exception stops iteration; later listeners are not committed/rolled back/flushed and failures are not
+aggregated.
+Suggested unit tests:
+testPrepareFailureCancelsCommit, testRollbackAttemptsAllParticipantsAfterFailure,
+testCleanupFailuresAreAggregatedWithSuppressedExceptions.
+Spec target section:
+Transaction Runtime / Listener Exception Policy
+
+TX-ERROR-001 — Exception Propagation And Aggregation
+Contract statement:
+Commit, rollback, and batch failures must preserve the root cause and aggregate additional participant failures
+without hiding them or replacing them with misleading success.
+Rationale:
+Production recovery depends on knowing which participant failed, which participants completed, and whether cleanup
+also failed.
+Source scope:
+OATransaction.commit(), rollback(), executeOpenBatches(); OATransactionListener.
+Related CODEX findings:
+First exception wins and later failures are lost.
+Suggested unit tests:
+testCommitFailurePreservesRootCauseAndSuppressedFailures, testRollbackFailureAggregatesParticipantFailures,
+testExecuteOpenBatchesFailureReportsParticipant.
+Spec target section:
+Transaction Runtime / Error Reporting
+
+TX-CLEANUP-001 — Cleanup Always Runs
+Contract statement:
+Thread-local cleanup and transaction-owned cleanup must run after commit, rollback, commit failure, rollback
+failure, and cancellation according to a finally-style cleanup policy.
+Rationale:
+Stale transaction context on pooled/runtime threads can corrupt later datasource, object, sync, replication, and
+event behavior.
+Source scope:
+OATransaction.commit(), rollback(); OAThreadLocalService transaction binding; transaction listener/list/map
+ownership.
+Related CODEX findings:
+Thread-local is cleared in finally, but active-owner and terminal cleanup semantics are missing.
+Suggested unit tests:
+testThreadLocalClearedAfterCommitFailureWhenActiveOwner, testThreadLocalClearedAfterRollbackFailureWhenActiveOwner,
+testCleanupRunsAfterParticipantException.
+Spec target section:
+Transaction Runtime / Cleanup
+
+TX-RESOURCE-001 — Transaction-Scoped State Lifetime
+Contract statement:
+Transaction-scoped listener references and key/value state must be cleared on terminal completion or intentionally
+retained only under an explicit diagnostic policy; completed transactions must not expose stale participant state as
+reusable active state.
+Rationale:
+Transaction maps and listeners can retain datasource, object, Hub, cache, and graph references after completion.
+Source scope:
+OATransaction.addTransactionListener(...), removeTransactionListener(...), put(...), get(...), remove(...),
+commit(), rollback().
+Related CODEX findings:
+hm and listener list remain after commit/rollback.
+Suggested unit tests:
+testTransactionStateClearedAfterTerminalCompletion, testCompletedTransactionCannotReuseStoredParticipantState,
+testDiagnosticRetentionPolicyIsExplicit.
+Spec target section:
+Transaction Runtime / State Lifetime
+
+TX-OPTIONS-001 — Transaction Options Freeze By Stage
+Contract statement:
+Transaction options that affect participant behavior, including isolation level, batch mode, and read-only
+datasource write override, must have documented mutability and must not change after the stage where participants
+rely on them unless explicitly allowed.
+Rationale:
+Changing runtime transaction options after work begins can make datasource behavior inconsistent within one
+transaction boundary.
+Source scope:
+OATransaction(int), getTransactionIsolationLevel(), setUseBatch(...), getUseBatch(),
+setAllowWritesIfDsIsReadonly(...), getAllowWritesIfDsIsReadonly().
+Related CODEX findings:
+Existing package-info open question notes option mutability after start.
+Suggested unit tests:
+testTransactionOptionsStableAfterStartByContract, testUseBatchVisibleToParticipants,
+testAllowWritesOverrideVisibleToDatasourceChecks.
+Spec target section:
+Transaction Runtime / Transaction Options
+
+TX-CONCURRENT-001 — Transaction Instance Concurrency Boundary
+Contract statement:
+An OATransaction instance is a single-thread-owned coordination object; concurrent mutation or completion from
+multiple threads must be rejected or explicitly synchronized by contract.
+Rationale:
+Listener lists, transaction maps, lifecycle stage, and thread-local ownership are not safe if multiple threads
+mutate or complete the same transaction concurrently.
+Source scope:
+OATransaction.start(), commit(), rollback(), addTransactionListener(...), removeTransactionListener(...), put(...),
+get(...), remove(...), executeOpenBatches().
+Related CODEX findings:
+Listener list and transaction map are mutable without synchronization; owner thread is not recorded.
+Suggested unit tests:
+testConcurrentCompletionRejected, testConcurrentListenerMutationRejectedOrSnapshotSafe,
+testTransactionMapMutationFollowsOwnershipContract.
+Spec target section:
+Transaction Runtime / Concurrency
+
+TX-INTEGRATION-001 — Datasource Boundary Consistency
+Contract statement:
+Datasource transaction checks, batching, isolation level, and read-only write override must observe the same active
+transaction state for the duration of the transaction boundary.
+Rationale:
+OA datasource work must not see a transaction as active in one call and invisible in another because of thread-local
+counter drift or stale binding.
+Source scope:
+OATransaction.start(), isStarted(), getUseBatch(), getAllowWritesIfDsIsReadonly(), executeOpenBatches();
+OAThreadLocalService transaction binding; datasource integration.
+Related CODEX findings:
+ThreadLocal transaction counter can drift from real active state, making active transactions invisible to datasource
+checks.
+Suggested unit tests:
+testDatasourceSeesActiveTransactionAfterStart, testDatasourceNoLongerSeesTransactionAfterCompletion,
+testCounterDriftDoesNotHideActiveTransaction.
+Spec target section:
+Transaction Runtime / Datasource Integration
+
+TX-INTEGRATION-002 — Object Graph Mutation Boundary
+Contract statement:
+Object, Hub, cascade, save, delete, cache, and event behavior inside a transaction must observe a consistent
+transaction boundary and must not publish committed success before the transaction outcome is known.
+Rationale:
+OA transactions coordinate runtime graph mutations, not only database calls; cache visibility and event publication
+must align with commit/rollback semantics.
+Source scope:
+OATransaction lifecycle; OATransactionListener participant callbacks; integration with object, hub, cascade, cache,
+datasource, and event packages.
+Related CODEX findings:
+Existing package-info notes identify save/delete/cascade and event ordering as boundary risk areas.
+Suggested unit tests:
+testObjectSaveVisibilityAfterCommitBoundary, testDeleteRollbackDoesNotPublishCommittedSuccess,
+testCacheVisibilityFollowsTransactionOutcome.
+Spec target section:
+Transaction Runtime / Object Graph Boundary
+
+TX-INTEGRATION-003 — Sync Replication And Replay Context Boundary
+Contract statement:
+Sync, replication, remote, replay, and background runtime flows must not inherit stale transaction context, and any
+transaction participation during these flows must be explicit and stage-valid.
+Rationale:
+Replay and remote execution require deterministic boundaries; stale ThreadLocal transaction state can cause false
+batching, skipped writes, or wrong visibility.
+Source scope:
+OATransaction.start(), commit(), rollback(); OAThreadLocalService transaction binding; integration with sync,
+replication, remote, queue, and runtime packages.
+Related CODEX findings:
+Existing package-info notes identify stale transaction context for sync/replication replay as a risk.
+Suggested unit tests:
+testReplayThreadDoesNotInheritStaleTransaction, testRemoteCallTransactionContextIsExplicit,
+testBackgroundThreadTransactionCleanupAfterFailure.
+Spec target section:
+Transaction Runtime / Sync Replay Boundary
+
+TX-OBSERVABLE-001 — Transaction Outcome Visibility
+Contract statement:
+Callers and runtime observers must be able to distinguish committed, rolled-back, commit-failed, rollback-failed,
+rollback-only, closed, and incomplete transaction outcomes.
+Rationale:
+Silent false-success at a transaction boundary corrupts production recovery, diagnostics, cache state, event
+handling, and downstream sync/replication behavior.
+Source scope:
+OATransaction lifecycle; commit(), rollback(), executeOpenBatches(); OATransactionListener.
+Related CODEX findings:
+Commit, rollback, and batch failures can leave partial participant work while thread-local is cleared and the
+transaction appears inactive.
+Suggested unit tests:
+testCommitFailedOutcomeIsObservable, testRollbackFailedOutcomeIsObservable,
+testIncompleteTransactionDoesNotAppearSuccessful.
+Spec target section:
+Transaction Runtime / Outcome Visibility
 
 */
-
-
 
 
 

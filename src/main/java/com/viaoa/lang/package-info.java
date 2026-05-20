@@ -21,380 +21,457 @@ package com.viaoa.lang;
 
 /* CODEX Invariants
 
- 1. Lang Utility Runtime Contracts
+LANG-RUNTIME-001 — Foundational Runtime Helpers
+Contract statement:
+com.viaoa.lang defines OA-specific language/runtime support helpers used by higher-level OA packages for strings,
+arrays, mutable numeric carriers, tuple carriers, tri-state flags, and diagnostic object sizing.
+Rationale:
+These helpers are low-level runtime dependencies for object, Hub, graph, metadata, datasource, query, path,
+serialization, sync, replication, template, filter, and UI/tooling behavior.
+Source scope:
+OAString, OAStr, OAArray, OAInteger, OADouble, OAFlagEnum, Tuple, Tuple3, SizeOf, package-info.java.
+Related CODEX findings:
+Existing package-info notes deterministic helper behavior, silent wrong-result prevention, locale sensitivity, array
+mutation issues, and SizeOf diagnostic risks.
+Suggested unit tests:
+testLangHelpersAreDeterministicForSameInputs(), testLangHelpersDoNotHideWrongResultsAsSuccess(),
+testLangContractsRemainStableForRuntimeCallers()
+Spec target section:
+Lang Runtime / Core Responsibility
 
-  LANG-RUNTIME-001 — Lang Helpers Are Deterministic
-  Contract statement: For the same inputs and runtime configuration, com.viaoa.lang helpers must return deterministic
-  results without hidden state changes, except for explicitly mutable wrapper instances and documented static state.
-  Rationale: These utilities are low-level OA building blocks used across graph, hub, datasource, filters, templates,
-  and runtime code.
-  Source locations: OAString, OAStr, OAArray, OAInteger, OADouble, Tuple, Tuple3, OAFlagEnum, SizeOf.
-  Known related CODEX findings: locale-sensitive case folding noted through OAString/filter behavior; SizeOf shared-
-  reference accounting findings.
-  Suggested unit tests: testLangHelpersAreDeterministicForSameInputs,
-  testStringCaseHelpersAreLocaleStableWhenRequired.
-  Spec target section: Lang Utilities / Runtime Semantics.
+LANG-DETERMINISM-001 — Deterministic Helper Results
+Contract statement:
+For the same inputs and documented runtime configuration, lang helpers must return deterministic results without
+hidden state changes, except for explicitly mutable wrapper instances and documented global diagnostic state.
+Rationale:
+Higher-level OA runtime systems rely on these helpers inside metadata, path/query, formatting, filtering,
+reflection, serialization, and generated code paths.
+Source scope:
+OAString, OAStr, OAArray, OAInteger, OADouble, Tuple, Tuple3, OAFlagEnum, SizeOf.
+Related CODEX findings:
+Locale-sensitive case folding and SizeOf shared-reference accounting are noted in existing package-info.
+Suggested unit tests:
+testLangHelpersAreDeterministicForSameInputs(), testStringCaseHelpersAreLocaleStableWhenRequired(),
+testSizeOfSharedReferenceAccountingIsStable()
+Spec target section:
+Lang Runtime / Deterministic Behavior
 
-  LANG-RUNTIME-002 — Lang Helpers Must Not Hide Wrong Results As Success
-  Contract statement: A helper must either return the correct transformed/search/result value or fail visibly/return
-  the documented no-op value; it must not silently return an unchanged or partially wrong result for normal OA usage.
-  Rationale: Silent helper failures propagate into object graph, filtering, reflection, and serialization behavior.
-  Source locations: OAArray.removeValue, OAArray.reorderToMatch, OAString.format, SizeOf.sizeOf.
-  Known related CODEX findings: primitive removeValue returns unchanged array; reorderToMatch loses duplicate/null
-  elements; SizeOf over/under-count issues.
-  Suggested unit tests: testArrayRemoveValueActuallyRemovesPrimitiveValue, testReorderToMatchDoesNotLoseDuplicates,
-  testSizeOfSharedReferenceAccountingIsStable.
-  Spec target section: Lang Utilities / Silent Wrong-Result Prevention.
+LANG-FAIL-001 — Silent Wrong-Result Prevention
+Contract statement:
+A lang helper must either return the correct documented result, return the documented no-op/no-result value, or fail
+visibly; it must not silently return an unchanged, partial, or misleading value for normal OA usage.
+Rationale:
+Silent helper failures propagate into object graph, filtering, reflection, array listener lists, metadata lists, and
+serialization behavior.
+Source scope:
+OAArray.removeValue(...), OAArray.reorderToMatch(...), OAString.format(...), SizeOf.sizeOf(...), delegated text
+helpers.
+Related CODEX findings:
+Primitive removeValue can return unchanged arrays; reorderToMatch can lose duplicate/null elements; SizeOf over/
+under-count findings.
+Suggested unit tests:
+testArrayRemoveValueActuallyRemovesPrimitiveValue(), testReorderToMatchDoesNotLoseDuplicates(),
+testSizeOfSharedReferenceAccountingIsStable()
+Spec target section:
+Lang Runtime / Failure Semantics
 
-  2. String Helper Contracts
+LANG-NULL-001 — Null Input Contracts
+Contract statement:
+Lang helpers that accept null inputs must return documented safe values such as null, empty string, false, -1, zero,
+unchanged input, or visible failure according to the API contract.
+Rationale:
+OA generated and runtime code frequently passes optional values through low-level helpers.
+Source scope:
+OAString.toString(...), fmt(...), notNull(...), notEmpty(...), OAArray.contains(...), indexOf(...), removeAt(...),
+add(...), SizeOf.sizeOf(...).
+Related CODEX findings:
+OAString.toString(byte[]) null path; OAArray.add(T[],T...) null varargs path; OAArray.removeValue null search
+contract concern.
+Suggested unit tests:
+testOAStringNullConversionContracts(), testOAArrayNullSearchContracts(), testSizeOfNullReturnsZero()
+Spec target section:
+Lang Runtime / Null Handling
 
-  LANG-STRING-001 — OAString Is A Stable Facade Over Text Utilities
-  Contract statement: OAString and OAStr expose stable OA string helper APIs and must preserve the semantics of the
-  delegated com.viaoa.text implementations.
-  Rationale: Much legacy and generated OA code uses OAString as the central string utility entry point.
-  Source locations: OAString, OAStr, delegated OAText* classes.
-  Known related CODEX findings: none observed beyond delegated text package findings.
-  Suggested unit tests: testOAStringDelegatesTrimSpaces, testOAStrInheritsOAStringBehavior.
-  Spec target section: Lang Utilities / String Helper Semantics.
+LANG-EMPTY-001 — Empty Value Semantics
+Contract statement:
+Empty strings, empty arrays, empty collections, and blank-like values must have documented behavior distinct from
+null where the API exposes that distinction.
+Rationale:
+OA query, template, UI, metadata, listener, and generated-code paths frequently distinguish null, empty, and blank
+values.
+Source scope:
+OAString.isEmpty(...), isNotEmpty(...), notEmpty(...), notNull(...), field/count helpers, OAArray.contains(...),
+indexOf(...), removeAt(...), removeValue(...), hasNull(...).
+Related CODEX findings:
+Existing package-info notes empty array no-op/empty-result expectations.
+Suggested unit tests:
+testOAStringNullEmptyBlankSemantics(), testRemoveAtEmptyArrayReturnsSameArray(),
+testIndexOfEmptyArrayReturnsMinusOne(), testHasNullEmptyArrayReturnsFalse()
+Spec target section:
+Lang Runtime / Empty Value Semantics
 
-  LANG-STRING-002 — String Helpers Must Be Null-Aware Where Contracted
-  Contract statement: OA string conversion/sanitization helpers that advertise non-null behavior must return
-  documented fallback values for null inputs.
-  Rationale: OA template, UI, and formatting code frequently relies on null-safe string rendering.
-  Source locations: OAString.toString(Object), OAString.toString(String), OAString.toString(String,String),
-  OAString.fmt(String), OAString.notNull, OAString.notEmpty.
-  Known related CODEX findings: OAString.toString(byte[]) null byte-array path was reported.
-  Suggested unit tests: testToStringNullObjectReturnsEmpty, testToStringNullStringUsesFallback,
-  testToStringNullByteArrayUsesDocumentedBehavior.
-  Spec target section: Lang Utilities / Null-Safe String Conversion.
+LANG-STRING-001 — OAString Facade Stability
+Contract statement:
+OAString and OAStr are stable OA string helper facades and must preserve delegated com.viaoa.text semantics without
+adding divergent runtime behavior except where explicitly documented.
+Rationale:
+Legacy, generated, and runtime OA code use OAString/OAStr as central text utility entry points.
+Source scope:
+OAString, OAStr, delegated OAText* classes.
+Related CODEX findings:
+Existing package-info notes delegated text package findings apply to facade behavior.
+Suggested unit tests:
+testOAStringDelegatesTrimSpaces(), testOAStrInheritsOAStringBehavior(), testOAStringFmtMatchesOATextFormatFmt()
+Spec target section:
+Lang Runtime / String Facade Semantics
 
-  LANG-STRING-003 — Case Conversion Must Be Locale-Stable Where Used For Matching
-  Contract statement: Case conversion used to implement matching, lookup, filter, or compare semantics must use
-  locale-stable rules unless the API explicitly says it is locale-sensitive.
-  Rationale: OA server/client/filter behavior must not change under Turkish or other JVM default locales.
-  Source locations: OAString.upper/lower, OATextChars, filter usage via OAContainsFilter, OAIndexOfFilter, OAStartsWi
-  thFilter.
-  Known related CODEX findings: OAString CODEX note for locale-sensitive filter case folding.
-  Suggested unit tests: testCaseInsensitiveCompareIsStableUnderTurkishLocale,
-  testUpperLowerHelpersUseDocumentedLocaleSemantics.
-  Spec target section: Lang Utilities / Locale-Stable Text Semantics.
+LANG-STRING-002 — Locale-Stable Matching Text
+Contract statement:
+Case conversion and case-insensitive matching used for lookup, filtering, comparison, search, or generated runtime
+behavior must use locale-stable semantics unless an API explicitly declares locale-sensitive behavior.
+Rationale:
+OA server/client/filter behavior must not change under Turkish or other JVM default locales.
+Source scope:
+OAString.upper(...), lower(...), toUpperCase(...), toLowerCase(...), indexOf(... ignoreCase), contains(...
+ignoreCase), startsWith(... ignoreCase), endsWith(... ignoreCase), filter/search users.
+Related CODEX findings:
+OAString/filter behavior notes locale-sensitive case folding risk.
+Suggested unit tests:
+testCaseInsensitiveCompareIsStableUnderTurkishLocale(), testUpperLowerHelpersUseDocumentedLocaleSemantics(),
+testContainsIgnoreCaseLocaleStable()
+Spec target section:
+Lang Runtime / Locale-Stable Text Semantics
 
-  LANG-STRING-004 — Formatting Helpers Must Preserve Converter Null-Format Semantics
-  Contract statement: Numeric/date/boolean formatting helpers must delegate null or empty format handling consistently
-  to OA converter/text formatting semantics.
-  Rationale: Template and reflection formatting call these helpers with optional formats.
-  Source locations: OAString.format(long,String), OAString.format(int,String), OAString.format(double,String),
-  OAString.format(boolean,String), OAString.format(OADateTime,String), OAString.format(String,String).
-  Known related CODEX findings: format(int,null) and format(double,null) inconsistency reported.
-  Suggested unit tests: testFormatIntNullFormatUsesConverter, testFormatDoubleNullFormatUsesConverter,
-  testFormatLongNullFormatUsesConverter.
-  Spec target section: Lang Utilities / Formatting Semantics.
+LANG-STRING-003 — String Transformation Semantics
+Contract statement:
+String transformation helpers must preserve documented character, delimiter, escaping, sanitization, display-name,
+filename, XML/HTML/JSON, Java identifier, and path-building semantics without character loss unless explicitly
+contracted.
+Rationale:
+These helpers prepare runtime-visible text for metadata, UI, serialization, query/path/template support, and
+generated code.
+Source scope:
+OAString convert/remove/accept/strip/mask/display/plural/title/filename/xml/html/json/java-identifier/property-path
+helpers.
+Related CODEX findings:
+Existing package-info delegates many transformation concerns to text package contracts.
+Suggested unit tests:
+testXmlHtmlJsonEscapeRoundTripByContract(), testJavaIdentifierGenerationProducesLegalIdentifier(),
+testCreatePropertyPathUsesDeterministicSeparator()
+Spec target section:
+Lang Runtime / String Transformation Semantics
 
-  3. Array Helper Contracts
+LANG-STRING-004 — String Formatting Facade
+Contract statement:
+OAString formatting helpers must preserve OA converter/text formatting semantics for string, numeric, date/time,
+boolean, alignment, null-format, and empty-format cases.
+Rationale:
+Templates, display rendering, generated code, and reflection formatting depend on one stable formatting contract.
+Source scope:
+OAString.format(long,String), format(int,String), format(double,String), format(boolean,String),
+format(OADateTime,String), format(OADate), format(String,String), pickFormat(...), fmt(...).
+Related CODEX findings:
+format(int,null) and format(double,null) inconsistency reported in existing package-info.
+Suggested unit tests:
+testFormatIntNullFormatUsesConverter(), testFormatDoubleNullFormatUsesConverter(),
+testFormatAlignmentMarkersUseTextFormatter()
+Spec target section:
+Lang Runtime / Formatting Semantics
 
-  LANG-ARRAY-001 — Array Search Semantics Are Explicit
-  Contract statement: Search helpers must consistently define whether they use reference equality, equals, case-
-  sensitive string equality, or case-insensitive string equality.
-  Rationale: OA runtime uses arrays for listener lists, flags, locks, metadata lists, and generated helper state.
-  Source locations: OAArray.contains, OAArray.containsExact, OAArray.indexOf,
-  OAArray.indexOf(String[],String,boolean).
-  Known related CODEX findings: contains(String[],...,bCaseSensitive) and indexOf(String[],...,bCaseSensitive) ignore
-  bCaseSensitive.
-  Suggested unit tests: testContainsObjectUsesEquals, testContainsExactUsesReferenceOnly,
-  testStringIndexOfHonorsCaseSensitiveFlag.
-  Spec target section: Lang Utilities / Array Search Semantics.
+LANG-STRING-005 — Parsing Facade Semantics
+Contract statement:
+OAString parsing helpers must preserve delegated tokenizer, field, CSS, separator, quote, index, contains, and count
+semantics without false progress or silent character loss.
+Rationale:
+Parsing helpers are compatibility entry points for templates, configuration, UI, generated code, and low-level
+runtime text handling.
+Source scope:
+OAString.parseLine(...), getCssMap(...), getCSSMap(...), field(...), fieldAt(...), count(...), countMatches(...),
+dcount(...), indexOf(...), contains(...).
+Related CODEX findings:
+Text package tokenizer and parsing contracts apply through OAString facade.
+Suggested unit tests:
+testOAStringParseLineDelegatesTokenizerSemantics(), testOAStringGetCssMapDelegatesTokenizerSemantics(),
+testFieldAndCountSeparatorSemantics()
+Spec target section:
+Lang Runtime / Parsing Semantics
 
-  LANG-ARRAY-002 — Array Mutation Helpers Preserve Component Type
-  Contract statement: Add/remove/insert helpers must preserve the intended runtime component type, including explicit
-  Class c overloads.
-  Rationale: OA often casts returned arrays back to listener, metadata, Hub, trigger, lock, or callback array types.
-  Source locations: OAArray.add(Class,Object[],Object), OAArray.add(Class,Object[],Object...),
-  OAArray.removeAt(Class,Object[],int), OAArray.add(T[],T), OAArray.insert(T[],T,int).
-  Known related CODEX findings: explicit-class overloads can ignore c when using Arrays.copyOf; null-array typed add
-  can infer overly narrow subtype.
-  Suggested unit tests: testAddClassOverloadPreservesExplicitComponentType,
-  testRemoveAtClassOverloadPreservesExplicitComponentType, testTypedAddNullArraySubtypeBehaviorIsDocumented.
-  Spec target section: Lang Utilities / Array Type Semantics.
+LANG-ARRAY-001 — Array Search Semantics
+Contract statement:
+Array search helpers must explicitly define and honor whether they use reference equality, equals equality, case-
+sensitive string equality, or case-insensitive string equality.
+Rationale:
+OA uses arrays for listener lists, metadata lists, locks, callbacks, trigger lists, and runtime helper state.
+Source scope:
+OAArray.contains(...), containsExact(...), indexOf(...), indexOf(String[], String, boolean), related overloads.
+Related CODEX findings:
+contains(String[],...,bCaseSensitive) and indexOf(String[],...,bCaseSensitive) ignore bCaseSensitive.
+Suggested unit tests:
+testContainsObjectUsesEquals(), testContainsExactUsesReferenceOnly(), testStringIndexOfHonorsCaseSensitiveFlag()
+Spec target section:
+Lang Runtime / Array Search Semantics
 
-  LANG-ARRAY-003 — Array Remove Helpers Remove Exactly The First Matching Value
-  Contract statement: removeValue helpers must remove the first matching value and return the original array only when
-  no match exists.
-  Rationale: OA uses arrays as compact mutable lists; false no-op removal leaks listeners/locks/flags.
-  Source locations: OAArray.removeValue(Class,Object[],Object), OAArray.removeValue(int[],int),
-  OAArray.removeValue(double[],double).
-  Known related CODEX findings: primitive removeValue methods never assign pos; null object removal is a contract
-  concern.
-  Suggested unit tests: testRemoveValueIntRemovesFirstMatch, testRemoveValueDoubleRemovesFirstMatch,
-  testRemoveValueObjectRemovesFirstEqualsMatch.
-  Spec target section: Lang Utilities / Array Remove Semantics.
+LANG-ARRAY-002 — Array Component Type Preservation
+Contract statement:
+Array add, insert, remove, and copy helpers must preserve the intended runtime component type, especially when an
+explicit Class parameter is supplied.
+Rationale:
+OA callers often cast returned arrays back to listener, metadata, Hub, trigger, lock, callback, or generated helper
+array types.
+Source scope:
+OAArray.add(Class,Object[],Object), add(Class,Object[],Object...), add(T[],T), add(T[],T...), insert(...),
+removeAt(...), removeValue(...).
+Related CODEX findings:
+Explicit-class overloads can ignore the Class argument; null-array typed add can infer overly narrow subtype.
+Suggested unit tests:
+testAddClassOverloadPreservesExplicitComponentType(), testRemoveAtClassOverloadPreservesExplicitComponentType(),
+testTypedAddNullArraySubtypeBehaviorIsDocumented()
+Spec target section:
+Lang Runtime / Array Type Semantics
 
-  LANG-ARRAY-004 — Array Insert Bounds Are Defined
-  Contract statement: Insert helpers must define behavior for negative, in-range, and beyond-end positions; they must
-  not throw accidental index/copy exceptions for normal OA usage.
-  Rationale: Listener/lock reordering code can use insert operations to move entries.
-  Source locations: OAArray.insert(T[],T,int), OAArray.insert(Class,Object[],Object,int).
-  Known related CODEX findings: negative insert position can throw; beyond-end padding behavior is noted as uncertain.
-  Suggested unit tests: testInsertNegativePositionUsesDocumentedBehavior, testInsertAtZeroPrepends,
-  testInsertBeyondEndAppendsOrPadsAsDocumented.
-  Spec target section: Lang Utilities / Array Insert Semantics.
+LANG-ARRAY-003 — Array Mutation Semantics
+Contract statement:
+Array mutation helpers must remove, insert, append, or replace exactly the documented element(s), preserve remaining
+order unless reordering is requested, and return unchanged input only when no mutation is contracted.
+Rationale:
+False no-op mutation leaks listeners, locks, flags, or metadata entries and can corrupt runtime callback/event
+behavior.
+Source scope:
+OAArray.removeValue(...), removeAt(...), add(...), insert(...), add(String[],String), primitive array helpers.
+Related CODEX findings:
+Primitive removeValue methods never assign pos; null object removal is a contract concern; negative insert position
+can throw.
+Suggested unit tests:
+testRemoveValueIntRemovesFirstMatch(), testRemoveValueDoubleRemovesFirstMatch(),
+testRemoveValueObjectRemovesFirstEqualsMatch(), testInsertNegativePositionUsesDocumentedBehavior()
+Spec target section:
+Lang Runtime / Array Mutation Semantics
 
-  LANG-ARRAY-005 — Reorder Must Preserve Multiset Contents
-  Contract statement: reorderToMatch must not lose, duplicate, or null out elements when matching one array order to
-  another.
-  Rationale: Reordering helpers must preserve object membership while changing order.
-  Source locations: OAArray.reorderToMatch.
-  Known related CODEX findings: null elements throw; duplicate equal elements can map to same target slot and leave
-  null holes.
-  Suggested unit tests: testReorderToMatchPreservesDuplicates, testReorderToMatchHandlesNullsAsDocumented,
-  testReorderToMatchNoMatchLeavesOriginalUnchanged.
-  Spec target section: Lang Utilities / Array Reorder Semantics.
+LANG-ARRAY-004 — Array Reorder Preserves Contents
+Contract statement:
+reorderToMatch must preserve the multiset contents of the array being reordered, including duplicates and nulls
+according to documented null-matching semantics.
+Rationale:
+Reordering helpers must change order without losing, duplicating, or nulling out runtime elements.
+Source scope:
+OAArray.reorderToMatch(...).
+Related CODEX findings:
+reorderToMatch can throw on null elements and can map duplicate equal elements to the same target slot, leaving null
+holes.
+Suggested unit tests:
+testReorderToMatchPreservesDuplicates(), testReorderToMatchHandlesNullsAsDocumented(),
+testReorderToMatchNoMatchLeavesOriginalUnchanged()
+Spec target section:
+Lang Runtime / Array Reorder Semantics
 
-  4. Numeric Wrapper Contracts
+LANG-ARRAY-005 — Array Equality Semantics
+Contract statement:
+OAArray.isEqual must compare arrays by length and pairwise reference/equals semantics, with null elements matching
+only null elements at the same position.
+Rationale:
+Array equality is used for keys, parameters, metadata arrays, and runtime helper comparisons.
+Source scope:
+OAArray.isEqual(...).
+Related CODEX findings:
+None observed.
+Suggested unit tests:
+testIsEqualSameReferenceTrue(), testIsEqualSameElementsTrue(), testIsEqualDifferentLengthFalse(),
+testIsEqualNullElementPositionSemantics()
+Spec target section:
+Lang Runtime / Array Equality Semantics
 
-  LANG-NUMERIC-001 — Numeric Wrappers Provide Mutable By-Reference Values
-  Contract statement: OAInteger and OADouble hold mutable numeric values for by-reference accumulation and counters.
-  Rationale: OA anonymous callbacks and finders use wrappers to accumulate values from inner classes.
-  Source locations: OAInteger, OADouble, OAFunction.count, OAFunction.sum.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testOAIntegerAddSubtractMutatesValue, testOADoubleAddSubtractMutatesValue.
-  Spec target section: Lang Utilities / Numeric Wrapper Semantics.
+LANG-NUMERIC-001 — Mutable Numeric Carriers
+Contract statement:
+OAInteger and OADouble provide instance-local mutable numeric values for by-reference accumulation, counters, and
+callback state.
+Rationale:
+OA callbacks and inner classes use these wrappers to carry numeric state across invocation boundaries.
+Source scope:
+OAInteger constructors and get/set/add/subtract/isSet methods; OADouble constructors and get/set/add/subtract/isSet
+methods.
+Related CODEX findings:
+None observed.
+Suggested unit tests:
+testOAIntegerAddSubtractMutatesValue(), testOADoubleAddSubtractMutatesValue(),
+testOAIntegerInstancesAreIndependent()
+Spec target section:
+Lang Runtime / Numeric Wrapper Semantics
 
-  LANG-NUMERIC-002 — Constructor And Set Mark Value As Explicitly Set
-  Contract statement: Constructing a wrapper with a value or calling set must make isSet() return true.
-  Rationale: Callers use isSet to distinguish default zero from explicitly assigned zero.
-  Source locations: OAInteger(int), OAInteger.set, OAInteger.isSet, OADouble(double), OADouble.set, OADouble.isSet.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testOAIntegerConstructorMarksSet, testOADoubleSetMarksSet.
-  Spec target section: Lang Utilities / Numeric Set-State Semantics.
+LANG-NUMERIC-002 — Explicit Set-State
+Contract statement:
+Constructing a numeric wrapper with a value or calling set must mark the wrapper as explicitly set; arithmetic
+accumulation must either preserve current set-flag semantics or explicitly document that it changes set-state.
+Rationale:
+Callers use isSet() to distinguish default zero from explicitly assigned zero.
+Source scope:
+OAInteger(int), OAInteger.set(...), OAInteger.add/subtract(...), OAInteger.isSet(), OADouble(double), OADouble.set(
+...), OADouble.add/subtract(...), OADouble.isSet().
+Related CODEX findings:
+Existing package-info notes arithmetic currently does not mark set and this must be contractual.
+Suggested unit tests:
+testOAIntegerConstructorMarksSet(), testOADoubleSetMarksSet(), testOAIntegerAddDoesNotMarkSetUnlessDocumented(),
+testOADoubleAddDoesNotMarkSetUnlessDocumented()
+Spec target section:
+Lang Runtime / Numeric Set-State Semantics
 
-  LANG-NUMERIC-003 — Accumulation Does Not Imply Explicit Set Unless Documented
-  Contract statement: Arithmetic helpers must either preserve current set-flag semantics or explicitly document if
-  accumulation marks the wrapper as set.
-  Rationale: isSet is a semantic flag, separate from numeric value mutation.
-  Source locations: OAInteger.add/subtract, OADouble.add/subtract.
-  Known related CODEX findings: none observed; current JavaDoc says arithmetic does not change set flag for OAInteger,
-  and OADouble currently behaves the same.
-  Suggested unit tests: testOAIntegerAddDoesNotMarkSetUnlessDocumented, testOADoubleAddDoesNotMarkSetUnlessDocumented.
-  Spec target section: Lang Utilities / Numeric Wrapper Set-State Semantics.
+LANG-NUMERIC-003 — Binary Rendering Width
+Contract statement:
+OAInteger.getAsBinary(int) must return exactly 32 bits and OAInteger.getAsBinary(long) must return exactly 64 bits.
+Rationale:
+These helpers are intended for deterministic numeric bit debugging.
+Source scope:
+OAInteger.getAsBinary(int), OAInteger.getAsBinary(long).
+Related CODEX findings:
+Obsolete viewBytes no-op was reported and later treated as testing-only.
+Suggested unit tests:
+testGetAsBinaryIntReturns32Chars(), testGetAsBinaryLongReturns64Chars()
+Spec target section:
+Lang Runtime / Numeric Binary Semantics
 
-  LANG-NUMERIC-004 — Binary Rendering Uses Fixed Width
-  Contract statement: OAInteger.getAsBinary(int) must return exactly 32 bits and getAsBinary(long) exactly 64 bits.
-  Rationale: These helpers are intended for debugging numeric bit representation.
-  Source locations: OAInteger.getAsBinary(int), OAInteger.getAsBinary(long).
-  Known related CODEX findings: obsolete viewBytes no-op was reported and later commented as testing-only.
-  Suggested unit tests: testGetAsBinaryIntReturns32Chars, testGetAsBinaryLongReturns64Chars.
-  Spec target section: Lang Utilities / Numeric Binary Semantics.
+LANG-TUPLE-001 — Tuple Carrier Semantics
+Contract statement:
+Tuple and Tuple3 are immutable constructor-value carriers with final public fields and no value-key equality/hash
+semantics beyond object identity.
+Rationale:
+They are lightweight internal carriers, not general-purpose value-key objects.
+Source scope:
+Tuple, Tuple3.
+Related CODEX findings:
+None observed.
+Suggested unit tests:
+testTupleStoresConstructorValues(), testTuple3StoresConstructorValues(), testTupleUsesIdentityEquality()
+Spec target section:
+Lang Runtime / Tuple Carrier Semantics
 
-  5. Tuple / Value Object Contracts
+LANG-TUPLE-002 — Tuple Null Values
+Contract statement:
+Tuple and Tuple3 fields may hold null values without throwing during construction or field access.
+Rationale:
+OA uses tuples to carry optional paired or grouped runtime state.
+Source scope:
+Tuple(A,B), Tuple3(A,B,C).
+Related CODEX findings:
+None observed.
+Suggested unit tests:
+testTupleAllowsNullValues(), testTuple3AllowsNullValues()
+Spec target section:
+Lang Runtime / Tuple Null Semantics
 
-  LANG-TUPLE-001 — Tuple Objects Are Immutable Carriers
-  Contract statement: Tuple and Tuple3 store constructor values in final public fields and do not impose equality/hash
-  semantics beyond object identity.
-  Rationale: They are lightweight internal carriers, not value-key classes.
-  Source locations: Tuple, Tuple3.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testTupleStoresConstructorValues, testTuple3StoresConstructorValues,
-  testTupleUsesIdentityEquality.
-  Spec target section: Lang Utilities / Tuple Carrier Semantics.
+LANG-FLAG-001 — Tri-State Flag Enum
+Contract statement:
+OAFlagEnum must represent exactly false, true, and either/indeterminate states, and callers must not infer
+additional ordering or boolean conversion semantics unless explicitly added.
+Rationale:
+OA APIs sometimes need tri-state behavior without nullable booleans.
+Source scope:
+OAFlagEnum.False, OAFlagEnum.True, OAFlagEnum.Either.
+Related CODEX findings:
+None observed.
+Suggested unit tests:
+testOAFlagEnumHasExpectedValues(), testOAFlagEnumEitherRepresentsIndeterminateState(),
+testOAFlagEnumHasNoExtraValues()
+Spec target section:
+Lang Runtime / Flag Semantics
 
-  LANG-TUPLE-002 — Tuple Values May Be Null
-  Contract statement: Tuple fields may hold null values without throwing during construction or access.
-  Rationale: OA uses tuples to carry optional paired runtime state.
-  Source locations: Tuple(A,B), Tuple3(A,B,C).
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testTupleAllowsNullValues, testTuple3AllowsNullValues.
-  Spec target section: Lang Utilities / Tuple Null Semantics.
+LANG-SIZEOF-001 — Instrumentation Boundary
+Contract statement:
+SizeOf must report object sizing only when JVM Instrumentation is installed; without instrumentation, callers must
+receive the documented unavailable result rather than a fabricated size.
+Rationale:
+SizeOf is diagnostic and depends on JVM agent lifecycle, not normal object graph runtime semantics.
+Source scope:
+SizeOf.premain(...), SizeOf.sizeOf(...).
+Related CODEX findings:
+Existing package-info notes SizeOf without instrumentation returns unavailable and shared-reference accounting
+risks.
+Suggested unit tests:
+testSizeOfWithoutInstrumentationReturnsMinusOne(), testSizeOfNullReturnsZeroWhenInstrumentationAvailable(),
+testSizeOfUnavailableDoesNotReportFakeSize()
+Spec target section:
+Lang Runtime / SizeOf Instrumentation
 
-  6. Flag Enum Contracts
+LANG-SIZEOF-002 — Size Traversal Accounting
+Contract statement:
+SizeOf reference traversal must use deterministic exclusion, default-size, primitive, array, shared-reference, and
+cycle accounting semantics.
+Rationale:
+Diagnostic size values must not overcount or undercount shared/cyclic structures unpredictably.
+Source scope:
+SizeOf.sizeOf(Object, boolean), excludeClass(...), internal traversal/exclusion state.
+Related CODEX findings:
+SizeOf shared-reference over/under-count findings; static exclusion/default-size state noted.
+Suggested unit tests:
+testSizeOfSharedReferenceCountedByContract(), testSizeOfCycleDoesNotRecurseForever(),
+testSizeOfExcludedClassUsesDocumentedBehavior()
+Spec target section:
+Lang Runtime / SizeOf Traversal
 
-  LANG-FLAG-001 — OAFlagEnum Is A Three-State Flag
-  Contract statement: OAFlagEnum must represent exactly false, true, and either/indeterminate states.
-  Rationale: OA APIs may need to express tri-state behavior without nullable booleans.
-  Source locations: OAFlagEnum.False, OAFlagEnum.True, OAFlagEnum.Either.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testOAFlagEnumHasExpectedValues, testOAFlagEnumEitherRepresentsIndeterminateState.
-  Spec target section: Lang Utilities / Flag Semantics.
+LANG-STATE-001 — Static State Visibility
+Contract statement:
+Any static or shared mutable state in lang helpers must be documented as global diagnostic/configuration state,
+safely published, or explicitly not thread-safe.
+Rationale:
+Lang helpers are widely shared by runtime packages and generated code.
+Source scope:
+SizeOf instrumentation/exclusion state, OAString.NL, static helper methods, mutable numeric wrapper instance state.
+Related CODEX findings:
+Existing package-info notes SizeOf static instrumentation state and mutable wrapper instance-local state.
+Suggested unit tests:
+testSizeOfStaticExclusionStateIsGlobalByContract(), testMutableWrappersDoNotShareState(),
+testStaticHelpersDoNotMutateHiddenRuntimeState()
+Spec target section:
+Lang Runtime / Shared State Semantics
 
-  7. Null / Empty Handling Contracts
+LANG-CONCURRENT-001 — Thread-Safety Boundary
+Contract statement:
+Stateless/static helper methods must be safe for concurrent use under their documented state model, while mutable
+wrappers and diagnostic global state must be treated according to their explicit ownership contract.
+Rationale:
+Lang helpers are called from UI, background workers, sync, replication, query, path, serialization, and datasource
+code.
+Source scope:
+OAString, OAStr, OAArray, OAInteger, OADouble, Tuple, Tuple3, OAFlagEnum, SizeOf.
+Related CODEX findings:
+SizeOf global state and mutable wrapper state noted; no broad hidden ThreadLocal state observed.
+Suggested unit tests:
+testConcurrentOAStringCallsAreDeterministic(), testConcurrentOAArrayPureHelpersAreDeterministic(),
+testMutableWrapperConcurrentUseRequiresOwnerSynchronization()
+Spec target section:
+Lang Runtime / Concurrency
 
-  LANG-NULL-001 — Null Inputs Return Documented Safe Values
-  Contract statement: Lang helpers accepting null inputs must return documented safe values such as null, empty
-  string, false, -1, or unchanged input.
-  Rationale: OA low-level utilities are used heavily in generated and runtime code where nulls are normal.
-  Source locations: OAString.toString, OAString.fmt, OAArray.contains, OAArray.indexOf, OAArray.removeAt, OAArray.add,
-  SizeOf.sizeOf.
-  Known related CODEX findings: OAString.toString(byte[]) null path; OAArray.add(T[],T...) null varargs path;
-  OAArray.removeValue null search contract concern.
-  Suggested unit tests: testOAStringNullConversionContracts, testOAArrayNullSearchContracts,
-  testSizeOfNullReturnsZero.
-  Spec target section: Lang Utilities / Null Handling Semantics.
+LANG-COMPAT-001 — Legacy API Compatibility
+Contract statement:
+Legacy spelling aliases, facade methods, and compatibility entry points must preserve established OA semantics or
+explicitly redirect to the canonical helper contract.
+Rationale:
+Generated and legacy OA code depends on stable helper names such as OAStr, Hungarian/display helpers, Java
+identifier aliases, and formatting/parsing facades.
+Source scope:
+OAStr, OAString alias methods including fmt, trunc, mfcl, mfcu, makeJavaIndentifier, convertHungarian, HTML/XML case
+aliases, defaultString/notNull helpers.
+Related CODEX findings:
+Existing package-info treats OAString/OAStr as stable compatibility facades.
+Suggested unit tests:
+testOAStrCompatibilityFacadeMatchesOAString(), testLegacyAliasMatchesCanonicalMethod(),
+testMisspelledJavaIdentifierAliasPreservesContract()
+Spec target section:
+Lang Runtime / Compatibility Semantics
 
-  LANG-NULL-002 — Empty Array Inputs Are No-Op Or Empty Results
-  Contract statement: Array helpers must handle empty arrays without throwing and return documented unchanged/empty
-  results.
-  Rationale: Empty arrays are common for listener and metadata storage.
-  Source locations: OAArray.contains, OAArray.indexOf, OAArray.removeAt, OAArray.removeValue, OAArray.hasNull.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testRemoveAtEmptyArrayReturnsSameArray, testIndexOfEmptyArrayReturnsMinusOne,
-  testHasNullEmptyArrayReturnsFalse.
-  Spec target section: Lang Utilities / Empty Array Semantics.
-
-  8. Equality / Compare Contracts
-
-  LANG-EQUAL-001 — Object Array Equality Is Element-By-Element
-  Contract statement: OAArray.isEqual must compare arrays by length and pairwise reference/equals semantics, with null
-  elements matching only null elements at the same position.
-  Rationale: OA helper equality must be predictable for parameter lists, keys, and metadata arrays.
-  Source locations: OAArray.isEqual.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testIsEqualSameReferenceTrue, testIsEqualSameElementsTrue, testIsEqualDifferentLengthFalse,
-  testIsEqualNullElementPositionSemantics.
-  Spec target section: Lang Utilities / Array Equality Semantics.
-
-  LANG-EQUAL-002 — String Equality Delegates To Text Compare Semantics
-  Contract statement: OAString.equals, notEquals, isEqual, and related methods must match OATextCompare null/case
-  behavior.
-  Rationale: OA code uses OAString as the stable facade for string comparison.
-  Source locations: OAString.equals, OAString.notEquals, OAString.isEqual, OAString.isNotEqual.
-  Known related CODEX findings: locale-stability concern where case folding is used for matching.
-  Suggested unit tests: testOAStringEqualsNullSemantics, testOAStringEqualsIgnoreCaseSemantics,
-  testOAStringNotEqualsIsInverseForDocumentedCases.
-  Spec target section: Lang Utilities / String Equality Semantics.
-
-  9. Parsing / Formatting Contracts
-
-  LANG-FORMAT-001 — String Formatting Delegates To Text Format
-  Contract statement: OAString.format(String,String), pickFormat, and fmt must return OATextFormat formatting results
-  without adding divergent behavior.
-  Rationale: Templates and display formatting rely on one formatting contract.
-  Source locations: OAString.format(String,String), OAString.pickFormat, OAString.fmt.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testOAStringFmtMatchesOATextFormatFmt, testPickFormatMatchesFormat.
-  Spec target section: Lang Utilities / String Formatting Semantics.
-
-  LANG-FORMAT-002 — Numeric Formatting Selects Text Alignment Formats By R/L/C Markers
-  Contract statement: Numeric overloads may route to text formatting when format contains alignment markers R, L, or
-  C; otherwise they must use OA converter numeric formatting.
-  Rationale: OA templates use the same format strings for aligned text and numeric conversion.
-  Source locations: OAString.format(int,String), OAString.format(double,String), OAString.format(long,String).
-  Known related CODEX findings: null-format bug for int/double; fixed or previously reported depending on current
-  branch.
-  Suggested unit tests: testFormatIntAlignmentFormatUsesTextFormatter, testFormatDoubleNumericFormatUsesConverter,
-  testFormatIntNullFormatUsesConverter.
-  Spec target section: Lang Utilities / Numeric Formatting Semantics.
-
-  LANG-PARSE-001 — Parsing Facades Preserve Text Tokenizer Contracts
-  Contract statement: OAString.parseLine, CSS map parsing, index/contains helpers, and field helpers must preserve
-  delegated tokenizer/compare behavior.
-  Rationale: These methods are compatibility entry points for text parsing.
-  Source locations: OAString.parseLine, OAString.getCssMap, OAString.field, OAString.indexOf, OAString.contains.
-  Known related CODEX findings: none observed in lang facade; text package findings apply to delegate implementations.
-  Suggested unit tests: testOAStringParseLineDelegatesTokenizerSemantics,
-  testOAStringGetCssMapDelegatesTokenizerSemantics.
-  Spec target section: Lang Utilities / Parsing Facade Semantics.
-
-  10. Mutable / Static State Contracts
-
-  LANG-STATE-001 — Mutable Wrapper State Is Instance-Local
-  Contract statement: OAInteger and OADouble mutable values and set flags must be per instance and not shared.
-  Rationale: Wrappers are used inside callbacks and accumulators.
-  Source locations: OAInteger, OADouble.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testOAIntegerInstancesAreIndependent, testOADoubleInstancesAreIndependent.
-  Spec target section: Lang Utilities / Mutable Instance State.
-
-  LANG-STATE-002 — SizeOf Static Instrumentation State Is Global And Explicit
-  Contract statement: SizeOf uses JVM agent Instrumentation and global exclusion/default-size state; callers must get
-  -1 when instrumentation is not installed.
-  Rationale: SizeOf is diagnostic and depends on JVM agent lifecycle.
-  Source locations: SizeOf.premain, SizeOf.sizeOf, SizeOf.excludeClass.
-  Known related CODEX findings: SizeOf shared-reference over/under-count findings.
-  Suggested unit tests: testSizeOfWithoutInstrumentationReturnsMinusOne,
-  testSizeOfNullReturnsZeroWhenInstrumentationAvailable.
-  Spec target section: Lang Utilities / SizeOf Runtime State.
-
-  LANG-STATE-003 — Static Exclusion Lists Must Not Corrupt Size Accounting
-  Contract statement: Excluded classes must be consistently omitted from recursive size traversal without causing
-  negative or inconsistent totals.
-  Rationale: Exclusions are used to avoid shared singleton/cache overcounting.
-  Source locations: SizeOf.excludeClass, SizeOf._sizeOf.
-  Known related CODEX findings: SizeOf shared-reference pointer subtraction can undercount; object-array reference
-  slots can overcount.
-  Suggested unit tests: testSizeOfExcludedClassDoesNotAddReferencedObject, testSizeOfRepeatedExcludedReferencesStable.
-  Spec target section: Lang Utilities / SizeOf Exclusion Semantics.
-
-  11. Failure / Silent Wrong-Result Contracts
-
-  LANG-FAIL-001 — Array Helpers Must Not Return False Success
-  Contract statement: Mutation helpers must not return an apparently successful result that did not perform the
-  requested mutation, unless no-op behavior is explicitly documented for the input.
-  Rationale: False no-op array mutations can leak listeners, locks, flags, or metadata entries.
-  Source locations: OAArray.removeValue, OAArray.insert, OAArray.removeAt, OAArray.reorderToMatch.
-  Known related CODEX findings: primitive removeValue no-op; negative insert failure; reorder duplicate/null
-  corruption.
-  Suggested unit tests: testRemoveValueDoesNotReturnOriginalWhenMatchExists, testInsertNegativePositionDocumented,
-  testReorderToMatchPreservesContents.
-  Spec target section: Lang Utilities / Array Mutation Failure Semantics.
-
-  LANG-FAIL-002 — Formatting Failures Must Be Consistent Across Overloads
-  Contract statement: Equivalent formatting overloads must either all tolerate optional formats or all fail visibly
-  under the same documented contract.
-  Rationale: OA template/report code selects overloads based on runtime value type.
-  Source locations: OAString.format overloads.
-  Known related CODEX findings: int/double null-format inconsistency.
-  Suggested unit tests: testFormatNullFormatConsistencyAcrossPrimitiveOverloads.
-  Spec target section: Lang Utilities / Formatting Failure Semantics.
-
-  LANG-FAIL-003 — SizeOf Must Not Produce Silent Negative Or Directionally Wrong Totals For Normal Graphs
-  Contract statement: Recursive size accounting must handle shared references and object arrays consistently;
-  diagnostic estimates may be approximate but must not be structurally wrong for normal object graphs.
-  Rationale: Size diagnostics inform cache/runtime memory decisions.
-  Source locations: SizeOf._sizeOf.
-  Known related CODEX findings: shared references subtract defaultSize after contributing zero; object arrays do not
-  subtract reference slot size.
-  Suggested unit tests: testSizeOfSharedReferenceDoesNotUndercount,
-  testSizeOfObjectArrayReferenceAccountingConsistentWithFields.
-  Spec target section: Lang Utilities / SizeOf Failure Semantics.
-
-  12. Test Coverage Matrix
-
-  LANG-RUNTIME-001: testLangHelpersAreDeterministicForSameInputs, testStringCaseHelpersAreLocaleStableWhenRequired
-  LANG-RUNTIME-002: testArrayRemoveValueActuallyRemovesPrimitiveValue, testReorderToMatchDoesNotLoseDuplicates,
-  testSizeOfSharedReferenceAccountingIsStable
-  LANG-STRING-001: testOAStringDelegatesTrimSpaces, testOAStrInheritsOAStringBehavior
-  LANG-STRING-002: testToStringNullObjectReturnsEmpty, testToStringNullStringUsesFallback,
-  testToStringNullByteArrayUsesDocumentedBehavior
-  LANG-STRING-003: testCaseInsensitiveCompareIsStableUnderTurkishLocale,
-  testUpperLowerHelpersUseDocumentedLocaleSemantics
-  LANG-STRING-004: testFormatIntNullFormatUsesConverter, testFormatDoubleNullFormatUsesConverter
-  LANG-ARRAY-001: testContainsObjectUsesEquals, testContainsExactUsesReferenceOnly,
-  testStringIndexOfHonorsCaseSensitiveFlag
-  LANG-ARRAY-002: testAddClassOverloadPreservesExplicitComponentType,
-  testRemoveAtClassOverloadPreservesExplicitComponentType
-  LANG-ARRAY-003: testRemoveValueIntRemovesFirstMatch, testRemoveValueDoubleRemovesFirstMatch,
-  testRemoveValueObjectRemovesFirstEqualsMatch
-  LANG-ARRAY-004: testInsertNegativePositionUsesDocumentedBehavior, testInsertAtZeroPrepends,
-  testInsertBeyondEndAppendsOrPadsAsDocumented
-  LANG-ARRAY-005: testReorderToMatchPreservesDuplicates, testReorderToMatchHandlesNullsAsDocumented
-  LANG-NUMERIC-001: testOAIntegerAddSubtractMutatesValue, testOADoubleAddSubtractMutatesValue
-  LANG-NUMERIC-002: testOAIntegerConstructorMarksSet, testOADoubleSetMarksSet
-  LANG-NUMERIC-003: testOAIntegerAddDoesNotMarkSetUnlessDocumented, testOADoubleAddDoesNotMarkSetUnlessDocumented
-  LANG-NUMERIC-004: testGetAsBinaryIntReturns32Chars, testGetAsBinaryLongReturns64Chars
-  LANG-TUPLE-001: testTupleStoresConstructorValues, testTuple3StoresConstructorValues, testTupleUsesIdentityEquality
-  LANG-TUPLE-002: testTupleAllowsNullValues, testTuple3AllowsNullValues
-  LANG-FLAG-001: testOAFlagEnumHasExpectedValues, testOAFlagEnumEitherRepresentsIndeterminateState
-  LANG-NULL-001: testOAStringNullConversionContracts, testOAArrayNullSearchContracts, testSizeOfNullReturnsZero
-  LANG-EQUAL-001: testIsEqualSameReferenceTrue, testIsEqualSameElementsTrue, testIsEqualNullElementPositionSemantics
-  LANG-FORMAT-002: testFormatIntAlignmentFormatUsesTextFormatter, testFormatDoubleNumericFormatUsesConverter,
-  testFormatNullFormatConsistencyAcrossPrimitiveOverloads
-  LANG-STATE-001: testOAIntegerInstancesAreIndependent, testOADoubleInstancesAreIndependent
-  LANG-FAIL-003: testSizeOfSharedReferenceDoesNotUndercount,
-  testSizeOfObjectArrayReferenceAccountingConsistentWithFields
+LANG-INTEGRATION-001 — Cross-Package Lang Compatibility
+Contract statement:
+Lang helper behavior must remain compatible with reflect, converter, text, object, Hub, graph, metadata, query,
+path, datasource, serialization, sync, replication, template, filter, find, and trigger contracts.
+Rationale:
+The package provides foundational runtime behavior. A silent change in helper semantics can alter executable
+blueprint interpretation and live graph behavior across OA.
+Source scope:
+com.viaoa.lang.*, delegated text/converter/compare integrations, consumers across OA runtime packages.
+Related CODEX findings:
+Existing package-info maps lang risks to text, filter, SizeOf, array/listener, metadata, and runtime helper use.
+Suggested unit tests:
+testLangStringFacadeCompatibleWithTextContracts(), testLangArrayHelpersCompatibleWithListenerMetadataUse(),
+testLangHelpersDoNotBreakPathQueryTemplateContracts()
+Spec target section:
+Lang Runtime / Cross-Package Integration
 
 */
-
-
-
-
-
-

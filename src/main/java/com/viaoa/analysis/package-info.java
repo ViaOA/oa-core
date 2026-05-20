@@ -20,216 +20,350 @@ package com.viaoa.analysis;
 
 /* CODEX Invariants
 
-com.viaoa.analysis Invariants
+ANALYSIS-SCOPE-001 — Explicit Analysis Scope
+Contract statement:
+Analysis results must explicitly represent the analyzed scope: graph-scoped, package-scoped, class-scoped, object-
+scoped, cache-scoped, or runtime-wide.
+Rationale:
+OA analysis can drive codegen, invariant docs, architecture reports, diagnostics, unit-test planning, and AI-
+readable runtime interpretation; a partial scan that appears global creates false confidence.
+Source scope:
+OAObjectAnalyzer.load(); package-level com.viaoa.analysis; future analysis result/report APIs.
+Related CODEX findings:
+default-graph-only scan can omit non-default graph caches while appearing complete.
+Suggested unit tests:
+analysisReportsExplicitGraphScope(), analysisDoesNotClaimGlobalCompletenessForDefaultGraphOnlyScan(),
+analysisVisitsAllConfiguredGraphsWhenGlobalScanRequested().
+Spec target section:
+Analysis Runtime / Scope and Completeness Semantics.
 
-  ID: ANALYSIS-COMPLETE-001
-  Contract statement: Analysis results must explicitly represent the scope analyzed and must not imply package/
-  runtime-wide completeness unless all relevant graphs, caches, metadata, paths, and inspected objects in that scope
-  were visited successfully.
-  Rationale: OA analysis output can drive codegen, invariant docs, architecture reports, and test planning. A partial
-  scan that looks complete creates downstream false confidence.
-  Source locations: OAObjectAnalyzer.load; package-level com.viaoa.analysis.
-  Related CODEX findings: default-graph-only scan can omit non-default graph caches while appearing complete.
-  Suggested unit tests: testAnalyzerReportsExplicitGraphScope,
-  testAnalyzerDoesNotClaimGlobalCompletenessForDefaultGraphOnlyScan,
-  testAnalyzerVisitsAllConfiguredGraphsWhenGlobalScanRequested.
-  Spec target section: Analysis Runtime / Completeness Semantics.
+ANALYSIS-GRAPH-001 — Graph Ownership Semantics
+Contract statement:
+Object, Hub, cache, and metadata analysis must respect OARuntime graph ownership and package/class routing
+semantics.
+Rationale:
+Object Graph correctness depends on graph authority; mixing default and package-owned graph state can produce
+incorrect dependency, cache, Hub, or lifecycle reports.
+Source scope:
+OAObjectAnalyzer.load(); OARuntime.graph(); OARuntime.graph(Class<?>); OAGraphInternal.objectsInternal(); OAObject
+cache traversal.
+Related CODEX findings:
+default graph class enumeration skips classes cached only in package graphs.
+Suggested unit tests:
+analysisUsesOwningGraphForClassCache(), analysisDoesNotMixDefaultAndPackageGraphMemberships(),
+analysisScansPackageGraphObjects().
+Spec target section:
+Analysis Runtime / Graph Ownership Semantics.
 
-  ID: ANALYSIS-GRAPH-001
-  Contract statement: Object graph analysis must respect OARuntime graph ownership and package/class routing
-  semantics. Objects, Hubs, and metadata must be analyzed under the graph that owns them.
-  Rationale: OG correctness depends on graph ownership. An analyzer that mixes or skips graph ownership can report
-  incorrect object dependencies, Hub references, or lifecycle risks.
-  Source locations: OAObjectAnalyzer.load; OARuntime.graph(), OARuntime.graph(Class<?>);
-  OAGraphInternal.objectsInternal().
-  Related CODEX findings: default graph class enumeration skips classes cached only in package graphs.
-  Suggested unit tests: testAnalyzerUsesOwningGraphForClassCache,
-  testAnalyzerDoesNotMixDefaultAndPackageGraphMemberships, testAnalyzerScansPackageGraphObjects.
-  Spec target section: Analysis Runtime / Graph Ownership Semantics.
+ANALYSIS-METADATA-001 — Metadata as Runtime Truth
+Contract statement:
+Analysis that interprets OA classes, properties, links, ownership, cardinality, calculated values, persistence
+behavior, serialization behavior, or distributed behavior must use OA metadata services as runtime truth.
+Rationale:
+Metadata is the executable semantic bridge for OAObject, Hub, path, datasource, serialization, trigger, sync,
+replication, and graph behavior.
+Source scope:
+com.viaoa.analysis package; future metadata-aware analyzers; integration with metadata, annotation, reflect, object,
+hub, graph, path, query, datasource, serialization, sync, and replication packages.
+Related CODEX findings:
+none observed in current implementation.
+Suggested unit tests:
+analysisUsesOAObjectInfoForClassSemantics(), analysisUsesOALinkInfoForRelationshipCardinality(),
+analysisUsesCalcInfoForCalculatedDependencies().
+Spec target section:
+Analysis Runtime / Metadata Semantics.
 
-  ID: ANALYSIS-METADATA-001
-  Contract statement: Analysis that interprets OA classes, properties, links, ownership, calculated properties, or
-  persistence behavior must use OA metadata services as runtime truth.
-  Rationale: Metadata defines OAObject, Hub, path, datasource, serialization, trigger, sync, and replication behavior.
-  Analysis must not infer incompatible semantics from raw reflection alone.
-  Source locations: package-level com.viaoa.analysis; future analysis integrations with metadata services; affected
-  runtime consumers include com.viaoa.metadata, com.viaoa.graph.service.object.
-  Related CODEX findings: none observed in current implementation.
-  Suggested unit tests: testAnalysisUsesOAObjectInfoForPropertySemantics,
-  testAnalysisUsesOALinkInfoForRelationshipCardinality, testAnalysisUsesCalcInfoForCalculatedDependencies.
-  Spec target section: Analysis Runtime / Metadata Semantics.
+ANALYSIS-PATH-001 — Path and Dependency Discovery Semantics
+Contract statement:
+Path/property/dependency analysis must follow OAPath and metadata semantics, including property resolution, link
+traversal, Hub/detail traversal, calculated properties, null/unresolved references, and invalid-path behavior.
+Rationale:
+Analysis output can drive generated guidance and tests; wrong path interpretation creates false dependencies or
+misses real runtime dependencies.
+Source scope:
+com.viaoa.analysis package; future path/dependency analyzers; integration with path, metadata, object, hub, query,
+filter, find, and template packages.
+Related CODEX findings:
+none observed in current implementation.
+Suggested unit tests:
+analysisResolvesPathUsingOAPathSemantics(), analysisRejectsInvalidPathVisibly(),
+analysisHandlesCalculatedPropertyPathDependencies().
+Spec target section:
+Analysis Runtime / Path and Dependency Semantics.
 
-  ID: ANALYSIS-PATH-001
-  Contract statement: Path/property analysis must follow OAPath semantics, including metadata-backed property
-  resolution, link traversal, Hub/detail traversal, calculated properties, null/unresolved references, and invalid-
-  path behavior.
-  Rationale: Analysis output can drive generated guidance and tests. Wrong path resolution can create false
-  dependencies or miss real runtime paths.
-  Source locations: package-level com.viaoa.analysis; cross-package dependency on com.viaoa.path, com.viaoa.metadata,
-  com.viaoa.hub.
-  Related CODEX findings: none observed in current implementation.
-  Suggested unit tests: testAnalysisResolvesPathUsingOAPathSemantics, testAnalysisRejectsInvalidPathVisibly,
-  testAnalysisHandlesCalculatedPropertyPathDependencies.
-  Spec target section: Analysis Runtime / Path Semantics.
+ANALYSIS-TRAVERSE-001 — Object and Hub Traversal Semantics
+Contract statement:
+Object and Hub traversal during analysis must preserve OA identity, Hub membership, detail/master links, shared-Hub
+semantics, ownership, ordering where analyzed, and active-object semantics where reported.
+Rationale:
+Analysis is useful only when it describes the graph shape and relationships that OA runtime services actually
+observe.
+Source scope:
+OAObjectAnalyzer.load(); OAGraphInternal.objectsInternal().callObjectHubGetHubReferences; OAObject; Hub.
+Related CODEX findings:
+none observed beyond graph-scope completeness.
+Suggested unit tests:
+analysisCountsOnlyCurrentHubReferences(), analysisPreservesDetailHubRelationshipSemantics(),
+analysisReportsSharedHubMembershipsWithoutDuplicates().
+Spec target section:
+Analysis Runtime / Object and Hub Traversal Semantics.
 
-  ID: ANALYSIS-TRAVERSE-001
-  Contract statement: Object and Hub traversal must preserve OA relationship semantics: object identity, Hub
-  membership, detail/master links, ownership, ordering where relevant, and active-object semantics where analyzed.
-  Rationale: Analysis is useful only if it describes the actual OA graph shape that runtime services observe.
-  Source locations: OAObjectAnalyzer.load; OAGraphInternal.objectsInternal().callObjectHubGetHubReferences; Hub;
-  OAObject.
-  Related CODEX findings: none observed beyond graph-scope completeness.
-  Suggested unit tests: testAnalyzerCountsOnlyCurrentHubReferences,
-  testAnalyzerPreservesDetailHubRelationshipSemantics, testAnalyzerReportsSharedHubMembershipsWithoutDuplicates.
-  Spec target section: Analysis Runtime / Object and Hub Traversal.
+ANALYSIS-RECURSIVE-001 — Recursive Traversal Protection
+Contract statement:
+Recursive or cyclic graph analysis must use visited-state tracking that prevents infinite traversal without
+suppressing legitimate distinct reachable nodes.
+Rationale:
+OA graphs commonly contain reverse links, parent/child relationships, shared Hubs, and recursive models; production
+graph analysis must terminate safely.
+Source scope:
+com.viaoa.analysis package; future recursive analyzers; integration with graph, find, path, cascade, object, and hub
+traversal contracts.
+Related CODEX findings:
+none observed in current implementation.
+Suggested unit tests:
+analysisTerminatesOnCyclicObjectGraph(), analysisStillVisitsDistinctReachableObjectsInCycle(),
+analysisBoundsRecursiveDetailTraversal().
+Spec target section:
+Analysis Runtime / Recursive Traversal Semantics.
 
-  ID: ANALYSIS-RECURSIVE-001
-  Contract statement: Recursive or cyclic graph traversal must be bounded by visited-state tracking that prevents
-  infinite traversal without suppressing legitimate reachable nodes.
-  Rationale: OA object graphs commonly contain reverse links, parent/child relationships, and shared Hubs. Analysis
-  must be safe on production graphs.
-  Source locations: package-level com.viaoa.analysis; future traversal code; related contracts in com.viaoa.find,
-  com.viaoa.path, com.viaoa.graph.
-  Related CODEX findings: none observed in current implementation.
-  Suggested unit tests: testAnalysisTerminatesOnCyclicObjectGraph,
-  testAnalysisStillVisitsDistinctReachableObjectsInCycle, testAnalysisBoundsRecursiveDetailTraversal.
-  Spec target section: Analysis Runtime / Recursive Traversal Protection.
+ANALYSIS-CACHE-001 — Cache and Identity Analysis
+Contract statement:
+Cache analysis must distinguish live cache contents, stale weak-reference artifacts, unloaded references, duplicate
+identity candidates, graph-owned cache state, GUID identity, object-key identity, and business-key identity.
+Rationale:
+OA cache state is central to identity and graph correctness; analysis must not confuse stale or graph-local cache
+state with authoritative live object identity.
+Source scope:
+OAObjectAnalyzer.load(); OAObjectCacheService.getClasses/getTotal/callback behavior; OAObjectCache; graph/cache int
+egration boundaries.
+Related CODEX findings:
+graph-scope scan affects cache completeness.
+Suggested unit tests:
+analysisIgnoresClearedWeakCacheEntries(), analysisReportsGraphSpecificCacheTotals(),
+analysisDoesNotConflateGuidAndBusinessKeyIdentity().
+Spec target section:
+Analysis Runtime / Cache and Identity Semantics.
 
-  ID: ANALYSIS-RESULT-001
-  Contract statement: Analysis result state must be isolated per run unless explicit cumulative behavior is documented
-  and surfaced in the result model.
-  Rationale: Reusing stale result state creates false positives, false negatives, and misleading diagnostics across
-  repeated runs.
-  Source locations: OAObjectAnalyzer.hsHub; OAObjectAnalyzer.load.
-  Related CODEX findings: hsHub is an instance field and is not cleared by load().
-  Suggested unit tests: testAnalyzerClearsRunStateBeforeLoad, testRepeatedAnalysisDoesNotRetainRemovedHubReferences,
-  testConcurrentAnalyzerInstancesDoNotShareResults.
-  Spec target section: Analysis Runtime / Result State Isolation.
+ANALYSIS-RESULT-001 — Per-Run Result Isolation
+Contract statement:
+Analysis result state must be isolated per run unless explicit cumulative behavior is documented and surfaced in the
+result model.
+Rationale:
+Stale analysis state creates false positives, false negatives, and misleading diagnostics across repeated runs.
+Source scope:
+OAObjectAnalyzer.hsHub; OAObjectAnalyzer.load(); future analysis result containers.
+Related CODEX findings:
+hsHub is an instance field and is not cleared by load().
+Suggested unit tests:
+analysisClearsRunStateBeforeLoad(), repeatedAnalysisDoesNotRetainRemovedHubReferences(),
+concurrentAnalyzerInstancesDoNotShareResults().
+Spec target section:
+Analysis Runtime / Result State Isolation.
 
-  ID: ANALYSIS-STATE-001
-  Contract statement: Temporary analysis state must be cleaned up on success and failure, and must not retain strong
-  references to OAObjects, Hubs, graphs, metadata, or callbacks longer than the analysis contract requires.
-  Rationale: Analysis often runs on large live graphs. Retained diagnostic state can become a memory leak or keep
-  stale runtime objects alive.
-  Source locations: OAObjectAnalyzer.hsHub; OAObjectAnalyzer.load.
-  Related CODEX findings: retained hsHub can keep old Hub references across scans.
-  Suggested unit tests: testAnalyzerDoesNotRetainTemporaryHubStateAfterRun,
-  testAnalyzerCleanupRunsAfterCallbackException, testAnalyzerCanReleaseLargeGraphAfterAnalysis.
-  Spec target section: Analysis Runtime / Temporary State Cleanup.
+ANALYSIS-STATE-001 — Temporary State Cleanup
+Contract statement:
+Temporary analysis state must be cleaned up on success and failure and must not retain strong references to
+OAObjects, Hubs, graphs, metadata, callbacks, or caches longer than the analysis contract requires.
+Rationale:
+Analysis can run over large live graphs; retained diagnostic state can become a memory leak or keep stale runtime
+objects alive.
+Source scope:
+OAObjectAnalyzer.hsHub; OAObjectAnalyzer.load(); future analyzers and report builders.
+Related CODEX findings:
+retained hsHub can keep old Hub references across scans.
+Suggested unit tests:
+analysisDoesNotRetainTemporaryHubStateAfterRun(), analysisCleanupRunsAfterCallbackException(),
+analysisCanReleaseLargeGraphAfterRun().
+Spec target section:
+Analysis Runtime / Temporary State Cleanup Semantics.
 
-  ID: ANALYSIS-FAIL-001
-  Contract statement: Analysis failures must be caller-visible or explicitly recorded in the analysis result; failed
-  traversal, metadata lookup, path resolution, callback execution, or graph inspection must not silently produce a
-  complete-looking report.
-  Rationale: Silent false-success is especially damaging for tooling because generated specs/tests/code can encode
-  incorrect assumptions.
-  Source locations: OAObjectAnalyzer.load; package-level com.viaoa.analysis; future report/result APIs.
-  Related CODEX findings: default-graph-only behavior creates silent incompleteness; no structured result currently
-  records scan scope or failures.
-  Suggested unit tests: testAnalysisFailureIsReportedInResult, testCallbackExceptionDoesNotProduceCompleteReport,
-  testMissingMetadataIsReportedNotIgnored.
-  Spec target section: Analysis Runtime / Failure Visibility.
+ANALYSIS-FAIL-001 — Analysis Failure Visibility
+Contract statement:
+Analysis failures must be caller-visible or explicitly recorded in the analysis result; failed traversal, metadata
+lookup, path resolution, callback execution, graph inspection, or cache inspection must not silently produce a
+complete-looking report.
+Rationale:
+Silent false-success in analysis can encode wrong assumptions into generated specs, tests, code, diagnostics, and AI
+reasoning.
+Source scope:
+OAObjectAnalyzer.load(); com.viaoa.analysis package; future report/result APIs.
+Related CODEX findings:
+default-graph-only behavior creates silent incompleteness; no structured result currently records scan scope or
+failures.
+Suggested unit tests:
+analysisFailureIsReportedInResult(), callbackExceptionDoesNotProduceCompleteReport(),
+missingMetadataIsReportedNotIgnored().
+Spec target section:
+Analysis Runtime / Failure and False-Success Prevention.
 
-  ID: ANALYSIS-FALSE-001
-  Contract statement: Analysis must avoid false positives and false negatives where output drives code generation,
-  invariant extraction, validation guidance, or unit-test planning; uncertain conclusions must be marked as uncertain
-  instead of reported as facts.
-  Rationale: OA analysis is part of the tooling feedback loop. Wrong conclusions can produce bad generated code or bad
-  hardening priorities.
-  Source locations: package-level com.viaoa.analysis; future model/report APIs.
-  Related CODEX findings: none observed beyond stale/cross-run result risk.
-  Suggested unit tests: testAnalysisMarksIncompletePathAsUncertain, testAnalysisDoesNotReportRemovedHubAsCurrent,
-  testAnalysisDoesNotHideUnresolvedMetadata.
-  Spec target section: Analysis Runtime / Report Correctness.
+ANALYSIS-PARTIAL-001 — Partial Progress Visibility
+Contract statement:
+If analysis inspects only part of the requested scope, the result must mark partial progress and identify unvisited,
+failed, inaccessible, or unsupported portions.
+Rationale:
+Partial reports are useful only when downstream consumers know what was and was not inspected.
+Source scope:
+OAObjectAnalyzer.load(); future graph/cache/path/metadata analyzers; report/result APIs.
+Related CODEX findings:
+default graph scan can omit package graphs without marking partial scope.
+Suggested unit tests:
+analysisPartialGraphScanMarksIncomplete(), analysisUnsupportedInspectionIsReported(),
+analysisResultListsSkippedScopeElements().
+Spec target section:
+Analysis Runtime / Partial Progress Semantics.
 
-  ID: ANALYSIS-CONCURRENT-001
-  Contract statement: Concurrent analysis runs must not corrupt shared state, expose partially accumulated results as
-  complete, or race against mutable result containers without documented synchronization.
-  Rationale: Analysis may run in tooling, diagnostics, background monitoring, or tests while the runtime is active.
-  Shared mutable state must not create nondeterministic output.
-  Source locations: OAObjectAnalyzer.hsHub; OAObjectAnalyzer.load; runtime graph/cache traversal APIs.
-  Related CODEX findings: instance-level mutable HashSet<Hub> is not synchronized and is mutated during callback
-  traversal.
-  Suggested unit tests: testConcurrentLoadCallsDoNotCorruptAnalyzerState,
-  testAnalyzerResultSnapshotIsStableDuringConcurrentGraphMutation, testAnalyzerRejectsConcurrentReuseIfNotThreadSafe.
-  Spec target section: Analysis Runtime / Concurrency Semantics.
+ANALYSIS-UNCERTAIN-001 — Uncertainty and False Finding Control
+Contract statement:
+Analysis must distinguish confirmed inconsistency, missing data, inaccessible state, unsupported analysis, and
+uncertain inference; uncertain conclusions must not be reported as facts.
+Rationale:
+OA analysis feeds hardening, test generation, and semantic documentation, where false positives and false negatives
+can misdirect engineering work.
+Source scope:
+com.viaoa.analysis package; future model/report/result APIs.
+Related CODEX findings:
+stale/cross-run result risk can produce false positives or false negatives.
+Suggested unit tests:
+analysisMarksIncompletePathAsUncertain(), analysisDoesNotReportRemovedHubAsCurrent(),
+analysisDoesNotHideUnresolvedMetadata().
+Spec target section:
+Analysis Runtime / Report Correctness Semantics.
 
-  ID: ANALYSIS-CACHE-001
-  Contract statement: Cache analysis must distinguish current live cache contents, stale weak-reference artifacts,
-  unloaded references, and graph-owned cache state.
-  Rationale: OA cache state is central to identity and graph correctness. Analysis must not confuse stale weak
-  references or graph-local caches with live object identity.
-  Source locations: OAObjectAnalyzer.load; OAObjectCacheService.getClasses, getTotal, callback; OAObjectCache.
-  Related CODEX findings: none observed directly, but graph-scope scan affects cache completeness.
-  Suggested unit tests: testAnalysisIgnoresClearedWeakCacheEntries, testAnalysisReportsGraphSpecificCacheTotals,
-  testAnalysisDoesNotConflateGuidAndBusinessKeyIdentity.
-  Spec target section: Analysis Runtime / Cache and Identity Semantics.
+ANALYSIS-OBSERVE-001 — Read-Only Runtime Inspection
+Contract statement:
+Analysis must observe runtime state without mutating OAObjects, Hubs, graph ownership, cache identity, lifecycle
+flags, datasource state, sync state, or replication state unless a diagnostic side effect is explicitly documented.
+Rationale:
+Analysis should describe OA runtime truth, not change it; mutation during inspection can create production
+correctness drift.
+Source scope:
+OAObjectAnalyzer.load(); OARuntime; OAGraphInternal; OAObject; Hub; cache traversal APIs.
+Related CODEX findings:
+none observed for mutation; current code reads Hub references and cache contents.
+Suggested unit tests:
+analysisDoesNotMutateHubMembership(), analysisDoesNotTriggerLazyLoadUnlessConfigured(),
+analysisDoesNotChangeObjectLifecycleFlags().
+Spec target section:
+Analysis Runtime / Read-Only Inspection Semantics.
 
-  ID: ANALYSIS-TOOLING-001
-  Contract statement: Analysis APIs used by codegen/spec/test tooling must produce deterministic, structured results
-  instead of relying only on console output, and must include enough scope/failure metadata for downstream consumers
-  to validate completeness.
-  Rationale: OA 4.0 analysis output may feed generated guidance, specs, invariant docs, and tests. Tooling needs
-  stable machine-checkable results, not only ad hoc diagnostics.
-  Source locations: OAObjectAnalyzer.load currently prints to System.out; package-level com.viaoa.analysis.
-  Related CODEX findings: none observed as a correctness bug by itself, but console-only output amplifies silent-
-  incomplete analysis risk.
-  Suggested unit tests: testAnalyzerReturnsStructuredResultWithScope, testAnalyzerResultIncludesFailures,
-  testAnalyzerOutputIsDeterministicForStableGraph.
-  Spec target section: Analysis Runtime / Tooling Contract.
+ANALYSIS-CONSISTENCY-001 — Consistency Check Interpretation
+Contract statement:
+Consistency checks must define whether a finding means violated invariant, suspicious state, missing data,
+inaccessible state, unsupported check, or informational diagnostic.
+Rationale:
+Analysis findings are used for runtime verification and hardening; result meaning must be precise enough for tests
+and owner decisions.
+Source scope:
+com.viaoa.analysis package; future consistency-check/report APIs; integration with metadata, graph, object, hub,
+cache, datasource, serialization, sync, and replication packages.
+Related CODEX findings:
+none observed directly.
+Suggested unit tests:
+analysisFindingSeverityIsExplicit(), analysisMissingDataIsNotReportedAsViolation(),
+analysisUnsupportedCheckIsReportedSeparately().
+Spec target section:
+Analysis Runtime / Consistency Check Semantics.
 
-  ID: ANALYSIS-INTEGRATION-001
-  Contract statement: Analysis behavior must remain compatible with metadata, path, object, Hub, graph, runtime,
-  filter, find, select, datasource, and codegen contracts; it must not mutate runtime state except where explicitly
-  documented as diagnostic side effect.
-  Rationale: Analysis should observe OA runtime truth, not change it. Mutating live graph/cache/Hub state during
-  inspection can create production correctness drift.
-  Source locations: OAObjectAnalyzer.load; OARuntime; OAGraphInternal; OAObject; Hub.
-  Related CODEX findings: none observed for mutation; current code reads Hub references and cache contents.
-  Suggested unit tests: testAnalysisDoesNotMutateHubMembership, testAnalysisDoesNotTriggerLazyLoadUnlessConfigured,
-  testAnalysisDoesNotChangeObjectLifecycleFlags.
-  Spec target section: Analysis Runtime / Cross-Package Integration.
+ANALYSIS-OUTPUT-001 — Deterministic Diagnostic Output
+Contract statement:
+Analysis output must be deterministic for the same runtime state, metadata state, graph scope, and analysis options.
+Rationale:
+Diagnostics, generated docs, invariant extraction, unit-test planning, and AI/MCP semantic reasoning require stable
+output.
+Source scope:
+OAObjectAnalyzer.load() console output; future structured result/report APIs.
+Related CODEX findings:
+console-only output amplifies silent-incomplete analysis risk.
+Suggested unit tests:
+analysisOutputIsDeterministicForStableGraph(), analysisReportOrderingIsStable(),
+analysisStructuredResultIsStableAcrossRuns().
+Spec target section:
+Analysis Runtime / Diagnostic Output Semantics.
 
-  Suggested Package-Level Spec Summary
+ANALYSIS-TOOLING-001 — Structured Tooling Result Contract
+Contract statement:
+Analysis APIs used by codegen, specs, invariant extraction, unit-test generation, Javadocs, MCP/OAi reasoning, or
+runtime verification must provide structured results with scope, findings, failures, and completeness metadata.
+Rationale:
+Tooling needs machine-checkable results, not only ad hoc console diagnostics.
+Source scope:
+OAObjectAnalyzer.load() currently prints to System.out; com.viaoa.analysis package; future tooling APIs.
+Related CODEX findings:
+console-only output is not a correctness bug alone, but it worsens silent-incomplete analysis risk.
+Suggested unit tests:
+analysisReturnsStructuredResultWithScope(), analysisResultIncludesFailures(),
+analysisResultIncludesCompletenessMetadata().
+Spec target section:
+Analysis Runtime / Tooling and Verification Semantics.
 
-  - com.viaoa.analysis is responsible for read-only OA runtime/tooling analysis over metadata, object graphs, caches,
-    paths, Hubs, and dependency relationships.
-  - Analysis must define and report its scope: graph-scoped, package-scoped, class-scoped, object-scoped, or runtime-
-    wide.
-  - Analysis must never silently claim completeness when traversal, metadata resolution, graph lookup, cache
-    inspection, or callback execution failed.
-  - Analysis must use OA runtime metadata/path/graph semantics as truth, not incompatible raw reflection or ad hoc
-    traversal.
-  - Analysis state must be isolated per run; stale results must not leak into later analysis.
-  - Temporary analysis state must be cleaned up and must not retain strong references to large runtime graphs unless
-    explicitly documented.
-  - Recursive/cyclic traversal must be bounded while still preserving legitimate reachable dependency discovery.
-  - Analysis output that feeds codegen, specs, invariant extraction, or unit-test planning must be deterministic and
-    preferably structured.
-  - Concurrent analysis must either be safe by design or explicitly reject concurrent reuse.
-  - Analysis must observe runtime state without mutating OAObjects, Hubs, graph ownership, cache identity, lifecycle
-    flags, or sync/replication state.
+ANALYSIS-CONCURRENT-001 — Concurrent Analysis Safety
+Contract statement:
+Concurrent analysis runs must not corrupt shared state, race mutable result containers, or expose partially
+accumulated results as complete; analyzers must be thread-safe, externally synchronized, or explicitly single-use.
+Rationale:
+Analysis may run in diagnostics, background monitoring, tests, or tooling while the runtime is active.
+Source scope:
+OAObjectAnalyzer.hsHub; OAObjectAnalyzer.load(); runtime graph/cache traversal APIs; future shared analyzers.
+Related CODEX findings:
+instance-level mutable HashSet<Hub> is not synchronized and is mutated during callback traversal.
+Suggested unit tests:
+concurrentAnalysisLoadCallsDoNotCorruptAnalyzerState(), analyzerResultSnapshotStableDuringConcurrentGraphMutation(),
+analyzerRejectsConcurrentReuseIfNotThreadSafe().
+Spec target section:
+Analysis Runtime / Concurrency Semantics.
 
-  Likely unit-test categories:
+ANALYSIS-TL-001 — Runtime Context Restoration
+Contract statement:
+Any analysis code that sets ThreadLocal, graph context, security context, datasource context, sync/replication
+context, or runtime inspection mode must restore prior state with try/finally.
+Rationale:
+Analysis may run on shared worker or tooling threads; leaked context can affect later Object Graph operations.
+Source scope:
+com.viaoa.analysis package; future analyzers that use runtime context; integration boundaries with runtime, graph,
+datasource, security, sync, and replication packages.
+Related CODEX findings:
+none observed in current implementation.
+Suggested unit tests:
+analysisThreadLocalRestoredAfterSuccess(), analysisThreadLocalRestoredAfterFailure(),
+analysisInspectionContextDoesNotLeakToRuntimeOperations().
+Spec target section:
+Analysis Runtime / ThreadLocal Context Semantics.
 
-  - graph-scope and multi-graph completeness tests
-  - metadata/path interpretation tests
-  - Hub/reference traversal tests
-  - cycle/recursive traversal tests
-  - stale result isolation tests
-  - failure visibility tests
-  - concurrent analysis/reuse tests
-  - no-runtime-mutation tests
-  - structured result/tooling-output tests
+ANALYSIS-BOUNDARY-001 — Analysis Success Versus Object Graph Correctness
+Contract statement:
+Successful analysis means the requested inspection completed according to its scope and options; it must not imply
+that the Object Graph, metadata, datasource, serialization, sync, replication, or runtime state is semantically
+correct unless specific checks verified that correctness.
+Rationale:
+Analysis is an inspection boundary, not the authority for all runtime correctness.
+Source scope:
+OAObjectAnalyzer; com.viaoa.analysis package; cross-package boundaries with metadata, object, hub, graph,
+datasource, cache, serialization, sync, replication, validation, and runtime.
+Related CODEX findings:
+none observed beyond false-completeness findings.
+Suggested unit tests:
+analysisSuccessDoesNotImplyGraphIsValid(), analysisSuccessDoesNotImplyMetadataConsistency(),
+analysisSuccessDoesNotImplyDatasourceCorrectness().
+Spec target section:
+Analysis Runtime / Runtime Boundary Semantics.
 
-  Likely model/tooling validation categories:
-
-  - architecture report completeness validation
-  - generated spec/invariant consistency validation
-  - codegen dependency discovery validation
-  - false-positive/false-negative regression suites
-  - large-model diagnostic memory-retention checks
+ANALYSIS-INTEGRATION-001 — Cross-Package Semantic Compatibility
+Contract statement:
+Analysis behavior must remain compatible with metadata, annotation, reflect, path, query, object, Hub, graph,
+runtime, cache, find, filter, select, datasource, serialization, sync, replication, validation, and codegen
+contracts.
+Rationale:
+Analysis must inspect OA runtime truth using the same semantic authorities as the runtime, or its findings will not
+match actual Object Graph behavior.
+Source scope:
+OAObjectAnalyzer; com.viaoa.analysis package; cross-package analysis integrations.
+Related CODEX findings:
+graph-scope and stale-result findings illustrate cross-package completeness risk.
+Suggested unit tests:
+analysisUsesMetadataPathAndGraphContractsConsistently(), analysisCacheAndHubReportsMatchRuntimeState(),
+analysisCodegenDependencyDiscoveryMatchesRuntimeMetadata().
+Spec target section:
+Analysis Runtime / Cross-Package Integration Semantics.
 
 */
-
 

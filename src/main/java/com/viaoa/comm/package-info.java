@@ -81,423 +81,443 @@ package com.viaoa.comm;
 
 /* CODEX Invariants
 
-1. Communication Runtime Contracts
+COMM-RUNTIME-001 — Internal OA Communication Boundary
+Contract statement:
+com.viaoa.comm defines internal OA-controlled communication semantics for distributed runtime participants; it
+assumes OA-produced protocol messages and focuses on lifecycle, ordering, framing, delivery, and failure correctness
+rather than hostile public-protocol hardening.
+Rationale:
+OA communication supports remote execution, sync, replication, object graph coordination, and distributed runtime
+behavior where correctness depends on trusted protocol participants and explicit failure boundaries.
+Source scope:
+com.viaoa.comm package; com.viaoa.comm.discovery, http, io, multiplexer, ssl subpackages; remote/sync/replication
+consumers.
+Related CODEX findings:
+Existing package-info notes hostile/public protocol hardening is out of scope unless malformed state can occur
+during normal OA usage.
+Suggested unit tests:
+testValidOAMessageRoundTrip, testInternalProtocolAssumptionsDocumented, testInvalidInternalStateFailsConnection.
+Spec target section:
+Communication Runtime / Internal Transport Contract
 
-  COMM-RUNTIME-001 — Comm Is An Internal OA-Controlled Transport
-  Contract statement: com.viaoa.comm assumes valid OA-produced frames/messages and is not a hostile public protocol
-  surface.
-  Rationale: Correctness focus is OA internal ordering, framing, lifecycle, and cleanup, not arbitrary malformed
-  external input hardening.
-  Source locations: com.viaoa.comm.*, multiplexer, socket, stream, SSL classes.
-  Known related CODEX findings: hostile-input-only concerns were explicitly treated as out of scope.
-  Suggested unit tests: testValidOAFrameRoundTrip(),
-  testInternalTransportRejectsBrokenConnectionOnInvalidInternalFrame()
-  Spec target section: Communication Runtime / Internal Transport Contract
+COMM-LIFECYCLE-001 — Communication Session Lifecycle
+Contract statement:
+Each communication session or endpoint must move through deterministic lifecycle states: configured, connecting/
+starting, active, closing/disconnecting, closed, failed, or reconnected-as-new-session.
+Rationale:
+Distributed OA callers must not send, receive, sync, replicate, or perform remote work through stale or ambiguously
+closed communication state.
+Source scope:
+Top-level comm contract; multiplexer client/server lifecycle; discovery/http/io/ssl lifecycle; remote/sync/
+replication transport boundaries.
+Related CODEX findings:
+Existing package-info reconnect/disconnect and stale socket lifecycle risks.
+Suggested unit tests:
+testConnectionStateTransitionsAreMonotonic, testClosedConnectionDoesNotAcceptSend,
+testReconnectCreatesNewLifecycleState.
+Spec target section:
+Communication Runtime / Session Lifecycle
 
-  COMM-RUNTIME-002 — Transport Failure Must Be Visible Or Disconnecting
-  Contract statement: A failed read/write/frame operation must either throw/return a clear failure result or
-  transition the connection toward disconnect/cleanup.
-  Rationale: Silent comm failure causes remote/sync/replication divergence.
-  Source locations: socket connection classes, multiplexer read/write loops, stream wrappers.
-  Known related CODEX findings: silent false-success and blocked-thread issues found/fixed/commented during comm
-  scans.
-  Suggested unit tests: testWriteFailureTransitionsConnectionToDisconnecting(),
-  testReadFailureDoesNotReturnFalseSuccess()
-  Spec target section: Communication Runtime / Failure Visibility
+COMM-LIFECYCLE-002 — Disconnect Propagation
+Contract statement:
+A physical or logical disconnect must propagate to dependent streams, virtual channels, blocked readers/writers,
+remote call waiters, sync queues, replication queues, and runtime observers through a visible closed or failed
+state.
+Rationale:
+Higher layers need visible failure to retry, reconcile, or abort distributed graph work.
+Source scope:
+comm lifecycle contract; multiplexer virtual sockets; IO streams; remote invocation transport; sync/replication send
+queues.
+Related CODEX findings:
+Existing package-info notes shutdown and blocked-thread risks.
+Suggested unit tests:
+testPhysicalDisconnectClosesVirtualSockets, testDisconnectWakesRemoteCallWaiter,
+testDisconnectWakesSyncReplicationQueues.
+Spec target section:
+Communication Runtime / Disconnect Propagation
 
-  2. Multiplexer Frame / Virtual Socket Contracts
+COMM-FAIL-001 — Communication Failure Visibility
+Contract statement:
+A failed send, receive, frame parse, handshake, flush, close, timeout, EOF, or connection transition must be
+observable through exception, failure result, callback, diagnostic, or closed/failed state; it must not appear as
+successful delivery.
+Rationale:
+Silent communication failure causes remote call hangs, sync message loss, replication divergence, and stale
+distributed object graph state.
+Source scope:
+comm package-level contract; socket clients/servers; multiplexer; SSL; stream wrappers; remote/sync/replication
+integration.
+Related CODEX findings:
+Existing package-info false-success, discard, partial-frame, and blocked-thread findings.
+Suggested unit tests:
+testSendFailurePropagatesToCaller, testReceiveFailureClosesOrMarksConnectionFailed,
+testWriteFailureTransitionsConnectionToDisconnecting.
+Spec target section:
+Communication Runtime / Failure Visibility
 
-  COMM-MUX-001 — Frame Boundaries Are Authoritative
-  Contract statement: Each multiplexer frame must be read, written, skipped, and dispatched as one complete frame
-  boundary.
-  Rationale: Virtual sockets share one physical connection; losing boundaries corrupts every stream above it.
-  Source locations: multiplexer frame reader/writer classes, virtual socket input/output streams.
-  Known related CODEX findings: frame discard/skip correctness issues were found and fixed/noted.
-  Suggested unit tests: testMuxReadsExactlyOneFramePerDispatch(),
-  testMuxPreservesFrameBoundaryAcrossMultipleVirtualSockets()
-  Spec target section: Communication Runtime / Multiplexer Framing
+COMM-FAIL-002 — Partial Progress Is Visible
+Contract statement:
+Partial sends, partial reads, incomplete frames, incomplete object reads, failed skips, or interrupted message
+publication must either complete according to contract or fail visibly; they must not be reported as complete
+logical messages.
+Rationale:
+Remote invocation, serialization, sync, and replication cannot safely consume partial protocol messages as valid
+data.
+Source scope:
+comm stream contract; com.viaoa.comm.io; multiplexer frame read/write/discard paths; remote object streams.
+Related CODEX findings:
+Existing package-info partial-frame/read/write/skip findings.
+Suggested unit tests:
+testPartialObjectReadThrowsOrDisconnects, testPartialSendFailureVisibleToCaller,
+testMidFrameReadFailureClosesConnection.
+Spec target section:
+Communication Runtime / Partial Progress
 
-  COMM-MUX-002 — Discarded Frames Must Be Fully Consumed Or Fail Connection
-  Contract statement: If a frame is discarded, all remaining bytes in that frame must be consumed, or the physical
-  connection must be failed.
-  Rationale: Leaving frame bytes in the stream misaligns the next frame and corrupts transport.
-  Source locations: multiplexer discard/skip/read methods.
-  Known related CODEX findings: discard/skip partial-frame issues were found in comm scans.
-  Suggested unit tests: testDiscardFullyConsumesFrameBytes(), testFailedDiscardClosesConnection()
-  Spec target section: Communication Runtime / Frame Discard Semantics
+COMM-FRAME-001 — Frame Boundaries Are Authoritative
+Contract statement:
+Every framed communication message must be written, read, skipped, discarded, and dispatched as one complete frame
+boundary, or the connection must be failed when frame alignment cannot be preserved.
+Rationale:
+Losing frame boundaries corrupts every higher-level protocol sharing the connection.
+Source scope:
+multiplexer frame reader/writer classes; virtual socket streams; comm stream wrappers; SSL-framed transport
+integration.
+Related CODEX findings:
+Existing package-info frame discard/skip and partial-frame findings.
+Suggested unit tests:
+testMultiplexerPreservesSingleFrameBoundary, testBackToBackFramesReadSeparately,
+testFrameParseFailureDoesNotAllowNextFrameAsValid.
+Spec target section:
+Communication Runtime / Frame Integrity
 
-  COMM-MUX-003 — Virtual Socket IDs Route Frames To Exactly One Recipient
-  Contract statement: A frame for a virtual socket ID must be delivered to exactly that virtual socket or rejected/
-  cleaned up if the socket is closed.
-  Rationale: Cross-delivery breaks request/response pairing and stream isolation.
-  Source locations: multiplexer socket registry, virtual socket dispatch logic.
-  Known related CODEX findings: virtual socket routing risks reviewed.
-  Suggested unit tests: testFrameDeliveredToMatchingVirtualSocketOnly(),
-  testFrameForClosedVirtualSocketIsDiscardedSafely()
-  Spec target section: Communication Runtime / Virtual Socket Routing
+COMM-FRAME-002 — Discard And Skip Consume Exact Bytes
+Contract statement:
+Discard and skip operations must consume exactly the intended frame/message bytes, looping through short skips/reads
+as needed, or fail/close the connection when exact consumption cannot be guaranteed.
+Rationale:
+Java stream skip/read calls are not guaranteed to complete the requested amount in one call; assuming they do
+corrupts subsequent frames.
+Source scope:
+multiplexer discard/skip/read paths; stream wrappers; input stream discard helpers.
+Related CODEX findings:
+Existing package-info skip/read/discard findings.
+Suggested unit tests:
+testDiscardFrameConsumesEntirePayload, testSkipLoopHandlesShortSkip, testSkipZeroProgressFallsBackOrFails.
+Spec target section:
+Communication Runtime / Frame Discard Semantics
 
-  COMM-MUX-004 — Virtual Sockets Preserve Per-Socket FIFO Order
-  Contract statement: Frames for the same virtual socket must be delivered to that socket in send order.
-  Rationale: Remote calls, object streams, and sync messages assume stream order.
-  Source locations: multiplexer queue/dispatch logic, virtual socket input stream.
-  Known related CODEX findings: ordering risks reviewed during comm scan.
-  Suggested unit tests: testVirtualSocketFramesDeliveredInFifoOrder(),
-  testInterleavedVirtualSocketsPreservePerSocketOrder()
-  Spec target section: Communication Runtime / Virtual Socket Ordering
+COMM-ORDER-001 — Ordered Delivery Within A Channel
+Contract statement:
+Messages or bytes written on one logical communication channel must be observed by its peer in the same order unless
+the channel has failed or closed visibly.
+Rationale:
+Object streams, remote requests, sync events, and replication logs require per-channel FIFO ordering.
+Source scope:
+comm package-level ordering contract; multiplexer virtual sockets; stream wrappers; remote/sync/replication
+transports.
+Related CODEX findings:
+Existing package-info virtual socket and message ordering findings.
+Suggested unit tests:
+testVirtualSocketPreservesWriteOrder, testRemoteMessagesDeliveredInSendOrder,
+testReplicationMessagesDeliveredInSendOrder.
+Spec target section:
+Communication Runtime / Ordered Delivery
 
-  3. Input / Output Stream Contracts
+COMM-ORDER-002 — Cross-Channel Ordering Boundary
+Contract statement:
+Ordering across independent logical channels must be explicitly documented as either unordered, controller-
+scheduled, or globally ordered; higher layers must not infer global order unless comm explicitly provides it.
+Rationale:
+Multiplexed and asynchronous communication can preserve per-channel order while allowing inter-channel reordering.
+Source scope:
+comm parent contract; multiplexer subpackage; remote/sync/replication transport selection.
+Related CODEX findings:
+Existing package-info queue ordering and reconnect ordering findings.
+Suggested unit tests:
+testPerChannelOrderingDoesNotImplyGlobalOrdering, testInterleavedVirtualSocketsPreservePerSocketOrder.
+Spec target section:
+Communication Runtime / Ordering Boundary
 
-  COMM-STREAM-001 — Stream Read Must Not Cross Frame Boundaries Incorrectly
-  Contract statement: Virtual input streams must expose bytes in the correct sequence for their virtual socket and
-  must not leak bytes from another frame/socket.
-  Rationale: ObjectInputStream and remote call protocols depend on byte stream correctness.
-  Source locations: virtual socket input stream classes, frame queues.
-  Known related CODEX findings: stream read/frame boundary issues reviewed.
-  Suggested unit tests: testVirtualInputStreamReadsOnlyOwnSocketBytes(), testPartialReadsResumeWithinSameFrame()
-  Spec target section: Communication Runtime / Input Stream Semantics
+COMM-REQUEST-001 — Request Response Pairing
+Contract statement:
+Synchronous request/response communication must correlate each response to the initiating request and must not allow
+late, duplicate, failed, or unrelated responses to satisfy the wrong waiter.
+Rationale:
+Remote method calls and distributed runtime operations depend on exact request/response pairing under concurrency.
+Source scope:
+comm parent contract; remote multiplexer integration; request id and response wait queues in higher communication
+layers.
+Related CODEX findings:
+Existing package-info request/response matching risks.
+Suggested unit tests:
+testConcurrentRemoteCallsReceiveCorrectResponses, testLateResponseDoesNotSatisfyWrongRequest,
+testDisconnectWakesRemoteCallWaiter.
+Spec target section:
+Communication Runtime / Request Response Semantics
 
-  COMM-STREAM-002 — Stream Write Must Preserve Message Byte Order
-  Contract statement: Bytes written to a virtual output stream must be framed and sent in the same logical order.
-  Rationale: Object serialization and remote command streams are order-sensitive.
-  Source locations: virtual socket output stream classes, multiplexer writer.
-  Known related CODEX findings: write ordering issues reviewed.
-  Suggested unit tests: testVirtualOutputStreamPreservesByteOrder(), testMultipleWritesArriveInSameLogicalOrder()
-  Spec target section: Communication Runtime / Output Stream Semantics
+COMM-ASYNC-001 — Async Versus Sync Boundary
+Contract statement:
+The comm contract must distinguish synchronous request completion, asynchronous send acceptance, transport delivery,
+and higher-level semantic completion; success at one layer must not be reported as success at another layer.
+Rationale:
+A successful write does not mean a remote method committed, a sync event applied, or a replication message became
+durable.
+Source scope:
+comm parent contract; multiplexer; remote; sync; replication; transaction integration.
+Related CODEX findings:
+Existing package-info retry/reconnect and false-success findings.
+Suggested unit tests:
+testTransportWriteSuccessDoesNotImplyRemoteSemanticAck, testAsyncSendFailureObservable,
+testReplicationTransportSuccessDoesNotMeanApplyCommitted.
+Spec target section:
+Communication Runtime / Semantic Boundary
 
-  COMM-STREAM-003 — EOF And Close Must Be Distinguishable From Empty Read
-  Contract statement: Stream close/disconnect/EOF must be reported distinctly from temporary no-data conditions.
-  Rationale: Reader threads must know whether to wait, retry, or terminate.
-  Source locations: input stream read methods, virtual socket close handling.1. Communication Runtime Contracts
+COMM-MUX-001 — Multiplexer Channel Isolation
+Contract statement:
+When multiplexing is used, each logical virtual socket/channel must preserve its own identity, byte stream, close
+state, ordering, and failure state without cross-delivering data to another channel.
+Rationale:
+Many OA runtime services share one physical connection; cross-channel contamination breaks remote calls, sync,
+replication, and service isolation.
+Source scope:
+com.viaoa.comm.multiplexer; com.viaoa.comm.multiplexer.io; VirtualSocket; VirtualServerSocket; multiplexer
+controllers.
+Related CODEX findings:
+Existing package-info virtual socket routing and isolation risks.
+Suggested unit tests:
+testFrameDeliveredToMatchingVirtualSocketOnly, testFrameForClosedVirtualSocketIsDiscardedSafely,
+testTwoVirtualSocketsDoNotCrossDeliverBytes.
+Spec target section:
+Communication Runtime / Multiplexer Channel Isolation
 
-  COMM-RUNTIME-001 — Comm Is An Internal OA-Controlled Transport
-  Contract statement: com.viaoa.comm assumes valid OA-produced protocol messages and is not required to harden
-  against arbitrary hostile external protocol input unless that malformed state can occur during normal OA usage.
-  Rationale: This keeps the layer focused on fast internal remote/sync/replication transport correctness.
-  Source locations: com.viaoa.comm.*, multiplexer/socket/stream classes.
-  Known related CODEX findings: hostile/public protocol hardening findings were accepted as out of scope.
-  Suggested unit tests: testValidOAMessageRoundTrip(), testInternalProtocolAssumptionsDocumented()
-  Spec target section: Communication Runtime / Internal Transport Contract
+COMM-MUX-002 — Multiplexer Close Wakes Dependents
+Contract statement:
+Closing or failing a multiplexed physical connection must wake blocked virtual socket readers and writers with a
+clear closed/failure state.
+Rationale:
+Shutdown must not leave remote, sync, or replication worker threads blocked forever.
+Source scope:
+com.viaoa.comm.multiplexer and io subpackage; virtual socket wait/notify paths; multiplexer close/shutdown paths.
+Related CODEX findings:
+Existing package-info blocked reader/writer shutdown findings.
+Suggested unit tests:
+testMultiplexerCloseWakesBlockedVirtualReader, testMultiplexerCloseWakesBlockedVirtualWriter.
+Spec target section:
+Communication Runtime / Multiplexer Shutdown
 
-  COMM-RUNTIME-002 — Communication Failure Must Be Visible To Higher Layers
-  Contract statement: A failed send, receive, frame parse, or connection transition must not be reported as
-  successful to remote/sync/replication callers.
-  Rationale: Silent communication failure causes message loss and graph divergence.
-  Source locations: socket client/server classes, multiplexer classes, input/output stream wrappers.
-  Known related CODEX findings: false-success/discard/partial-frame issues reviewed during comm scans.
-  Suggested unit tests: testSendFailurePropagatesToCaller(), testReceiveFailureClosesOrMarksConnectionFailed()
-  Spec target section: Communication Runtime / Failure Semantics
+COMM-STREAM-001 — Stream Read Semantics
+Contract statement:
+Stream and object-read paths must either produce a complete logical byte sequence/object/frame for the active
+channel or fail visibly; EOF and close must be distinguishable from temporary no-data conditions.
+Rationale:
+ObjectInputStream, remote calls, and sync/replay deserialization require complete logical input.
+Source scope:
+com.viaoa.comm.io; multiplexer virtual input streams; remote object streams.
+Related CODEX findings:
+Existing package-info stream read, partial object read, EOF/close, and blocked read findings.
+Suggested unit tests:
+testCompleteObjectReadSucceeds, testPartialObjectReadThrowsOrDisconnects,
+testEOFAndCloseDistinguishableFromEmptyRead.
+Spec target section:
+Communication Runtime / Stream Read Semantics
 
-  2. Multiplexer Frame / Virtual Socket Contracts
+COMM-STREAM-002 — Stream Write Semantics
+Contract statement:
+A successful stream write or flush means bytes were accepted by the transport queue/stream according to the layer
+contract, or failure was reported; writes must preserve byte order for their channel.
+Rationale:
+Callers use successful write/flush as transport publication, and higher-level protocols depend on ordered bytes.
+Source scope:
+com.viaoa.comm.io; multiplexer virtual output streams; socket write loops; remote object streams.
+Related CODEX findings:
+Existing package-info write ordering and false-success send findings.
+Suggested unit tests:
+testWriteFailureVisibleToCaller, testFlushFailureMarksConnectionFailed, testVirtualOutputStreamPreservesByteOrder.
+Spec target section:
+Communication Runtime / Stream Write Semantics
 
-  COMM-MUX-001 — Frame Boundaries Are Preserved
-  Contract statement: Every logical message/frame sent through the multiplexer must be read as exactly one complete
-  frame by the receiver.
-  Rationale: Remote calls, sync events, and replication messages depend on unambiguous frame boundaries.
-  Source locations: multiplexer frame reader/writer classes, virtual socket streams.
-  Known related CODEX findings: frame discard/skip and partial-frame issues found/fixed/commented.
-  Suggested unit tests: testMultiplexerPreservesSingleFrameBoundary(), testBackToBackFramesReadSeparately()
-  Spec target section: Communication Runtime / Multiplexer Framing
+COMM-BLOCK-001 — Blocking Operations Wake Correctly
+Contract statement:
+Threads blocked on communication reads, writes, accepts, request waits, queue capacity, or response waits must wake
+when data/capacity arrives, close occurs, timeout expires, interruption is honored, or failure occurs.
+Rationale:
+Blocked communication threads can stall OA distributed runtime, sync, replication, and remote processing.
+Source scope:
+comm parent contract; multiplexer virtual sockets; server accept loops; remote call waiters; sync/replication
+queues.
+Related CODEX findings:
+Existing package-info blocked reader/writer and shutdown risks.
+Suggested unit tests:
+testBlockedReadWakesOnData, testBlockedReadWakesOnClose, testBlockedWriteWakesOnCapacity,
+testBlockedWriteWakesOnClose.
+Spec target section:
+Communication Runtime / Blocking And Wakeup
 
-  COMM-MUX-002 — Virtual Socket Streams Are Ordered Per Virtual Connection
-  Contract statement: Bytes/messages written to a virtual socket must be read in the same order on that virtual
-  socket.
-  Rationale: Request/response and object stream protocols require per-channel ordering.
-  Source locations: virtual socket input/output stream classes, multiplexer queue handling.
-  Known related CODEX findings: queue ordering risks reviewed.
-  Suggested unit tests: testVirtualSocketPreservesWriteOrder(),
-  testInterleavedVirtualSocketsPreservePerSocketOrder()
-  Spec target section: Communication Runtime / Virtual Socket Ordering
+COMM-THREAD-001 — Transport Thread Ownership
+Contract statement:
+Physical socket input and output streams must have clear owner threads or synchronized access paths, and concurrent
+logical send/receive operations must serialize through the transport contract.
+Rationale:
+Unsynchronized concurrent physical stream access breaks framing, ordering, and request/response pairing.
+Source scope:
+comm parent contract; multiplexer reader/writer controllers; stream wrappers; socket client/server implementations.
+Related CODEX findings:
+Existing package-info read/write ordering and thread ownership findings.
+Suggested unit tests:
+testSingleReaderOwnsPhysicalInputStream, testConcurrentVirtualWritesSerializeThroughMux, testConcurrentCloseIsSafe.
+Spec target section:
+Communication Runtime / Thread Ownership
 
-  COMM-MUX-003 — Discarded Frame Must Be Fully Consumed Or Connection Failed
-  Contract statement: If a frame is discarded, the comm layer must either consume the entire frame payload or fail/
-  close the connection.
-  Rationale: Partial discard corrupts the next frame boundary and breaks all subsequent messages.
-  Source locations: multiplexer frame reader/discard paths, input stream skip/read logic.
-  Known related CODEX findings: discard/skip correctness bugs were found and fixed/commented.
-  Suggested unit tests: testDiscardFrameConsumesEntirePayload(), testPartialDiscardFailureClosesConnection()
-  Spec target section: Communication Runtime / Frame Discard Semantics
+COMM-CONTEXT-001 — Runtime Context Propagation Boundary
+Contract statement:
+Any ThreadLocal or runtime context propagated for remote execution, sync, replication, or communication callbacks
+must be explicitly scoped and restored after send, receive, callback, failure, and disconnect handling.
+Rationale:
+Distributed communication must not leak transaction, sync, security, graph, or replay context across pooled/runtime
+threads.
+Source scope:
+comm parent contract; remote/sync/replication integration; runtime ThreadLocal interaction.
+Related CODEX findings:
+Existing package-info focuses on comm failure/order; ThreadLocal restoration remains a cross-package boundary.
+Suggested unit tests:
+testRemoteReceiveRestoresThreadLocalContext, testSyncSendFailureRestoresRuntimeContext,
+testCommCallbackDoesNotLeakTransactionContext.
+Spec target section:
+Communication Runtime / Runtime Context
 
-  COMM-MUX-004 — Multiplexer Close Must Wake Dependent Virtual Sockets
-  Contract statement: Closing the physical/multiplexer connection must wake blocked virtual socket readers/writers
-  with a clear closed/failure state.
-  Rationale: Shutdown must not leave blocked threads waiting forever.
-  Source locations: multiplexer close/shutdown paths, virtual socket wait/notify paths.
-  Known related CODEX findings: blocked-thread/shutdown risks reviewed.
-  Suggested unit tests: testMultiplexerCloseWakesBlockedVirtualReader(),
-  testMultiplexerCloseWakesBlockedVirtualWriter()
-  Spec target section: Communication Runtime / Multiplexer Shutdown
+COMM-SECURE-001 — SSL Preserves Communication Semantics
+Contract statement:
+SSL/TLS wrapping must preserve the same message boundaries, ordering, lifecycle, failure, and wakeup semantics as
+unencrypted communication, while handshake/setup failure must leave the connection visibly failed or closed.
+Rationale:
+Secure transport is a channel wrapper, not a semantic change to OA remote/sync/replication behavior.
+Source scope:
+com.viaoa.comm.ssl; SSL socket/stream classes; multiplexer stream integration.
+Related CODEX findings:
+Existing package-info SSL frame and handshake lifecycle notes.
+Suggested unit tests:
+testSslFrameRoundTripPreservesBoundary, testSslBackToBackFramesPreserveOrder,
+testSslHandshakeFailureMarksConnectionFailed, testSslHandshakeFailureWakesWaiters.
+Spec target section:
+Communication Runtime / SSL Boundary
 
-  3. Input / Output Stream Contracts
+COMM-RECONNECT-001 — Reconnect Starts New Ordering Epoch
+Contract statement:
+Reconnect after disconnect or failure must create a new communication lifecycle and ordering epoch; unsent, partial,
+or in-flight messages from the prior epoch must not be silently reordered, duplicated, or reported as delivered.
+Rationale:
+Sync and replication cannot tolerate hidden reorder or duplicate delivery across reconnect.
+Source scope:
+comm parent contract; reconnect/disconnect handling; send queues; multiplexer lifecycle; remote/sync/replication
+callers.
+Related CODEX findings:
+Existing package-info reconnect/disconnect ordering and retry risks.
+Suggested unit tests:
+testReconnectStartsNewOrderingEpoch, testDisconnectDuringSendDoesNotSilentlyReorderMessages,
+testCommFailureDoesNotSilentlyDuplicateMessage.
+Spec target section:
+Communication Runtime / Reconnect Semantics
 
-  COMM-STREAM-001 — Read Must Not Return Partial Logical Object As Success
-  Contract statement: Stream/object read paths must either produce a complete logical value/frame or fail visibly.
-  Rationale: Remote invocation and sync deserialize logical objects; partial reads cannot be accepted as valid data.
-  Source locations: OA object input/output stream wrappers, socket input stream classes.
-  Known related CODEX findings: partial-frame/read issues reviewed.
-  Suggested unit tests: testPartialObjectReadThrowsOrDisconnects(), testCompleteObjectReadSucceeds()
-  Spec target section: Communication Runtime / Stream Read Semantics
+COMM-RETRY-001 — Retry Is Owned Above Transport Unless Contracted
+Contract statement:
+The comm layer must not silently retry failed semantic messages in a way that can duplicate, reorder, or hide
+delivery failure; higher-level remote/sync/replication code owns semantic retry unless comm explicitly documents a
+transport-only retry.
+Rationale:
+Retries across distributed object graph operations require idempotency and ordering rules that transport alone
+cannot infer.
+Source scope:
+comm parent contract; reconnect/retry paths; remote/sync/replication integration.
+Related CODEX findings:
+Existing package-info retry/reconnect risks.
+Suggested unit tests:
+testCommFailureDoesNotSilentlyDuplicateMessage, testReconnectRetryPreservesOrderingEpoch,
+testTransportRetryDoesNotClaimSemanticSuccess.
+Spec target section:
+Communication Runtime / Retry Boundary
 
-  COMM-STREAM-002 — Write Completion Means Bytes Are Accepted By Transport Layer
-  Contract statement: A successful write/flush must mean the bytes were accepted by the underlying stream/queue or
-  failure was reported.
-  Rationale: Callers use successful write as message publication to the transport.
-  Source locations: output stream wrappers, multiplexer send queues, socket write loops.
-  Known related CODEX findings: false-success send risks reviewed.
-  Suggested unit tests: testWriteFailureVisibleToCaller(), testFlushFailureMarksConnectionFailed()
-  Spec target section: Communication Runtime / Stream Write Semantics
+COMM-RESOURCE-001 — Resource Cleanup
+Contract statement:
+Closing or failing communication must release owned sockets, server sockets, input/output streams, virtual sockets,
+queues, controllers, accept threads, reader/writer threads, SSL resources, and waiters according to ownership.
+Rationale:
+Long-running OA clients and servers must not leak transport resources across disconnects, reconnects, shutdown, or
+failure paths.
+Source scope:
+comm parent contract; comm.io, multiplexer, ssl, discovery/http resources.
+Related CODEX findings:
+Existing package-info resource cleanup risks.
+Suggested unit tests:
+testCloseClosesPhysicalSocket, testCloseReleasesVirtualSocketResources, testCloseReleasesOwnedThreadsAndQueues.
+Spec target section:
+Communication Runtime / Resource Cleanup
 
-  COMM-STREAM-003 — Skip Must Respect Requested Byte Count
-  Contract statement: Stream skip/discard logic must continue until the requested number of bytes is skipped/read or
-  the connection fails.
-  Rationale: Java InputStream.skip is not guaranteed to skip all bytes in one call; assuming it does corrupts
-  framing.
-  Source locations: frame discard and skip logic.
-  Known related CODEX findings: skip/read/discard issues found in comm scans.
-  Suggested unit tests: testSkipLoopHandlesShortSkip(), testSkipZeroProgressFallsBackOrFails()
-  Spec target section: Communication Runtime / Stream Skip Semantics
+COMM-RESOURCE-002 — Idempotent Shutdown
+Contract statement:
+close, disconnect, stop, shutdown, and cleanup operations must be idempotent and must not resurrect active
+communication state, duplicate close notifications, or hide cleanup failure.
+Rationale:
+Failure paths often cleanup from multiple layers and callbacks.
+Source scope:
+comm parent contract; multiplexer client/server close/stop; stream close methods; SSL close paths.
+Related CODEX findings:
+Existing package-info idempotent shutdown and cleanup path risks.
+Suggested unit tests:
+testCloseIsIdempotent, testConcurrentCloseIsSafe, testRepeatedShutdownDoesNotResurrectConnection.
+Spec target section:
+Communication Runtime / Idempotent Shutdown
 
-  4. Blocking / Wakeup / Threading Contracts
+COMM-METRICS-001 — Communication State And Metrics Are Observable
+Contract statement:
+Connection state, read/write counts, byte counts, created/live connection counts, and failure/close state must
+reflect communication controller state consistently enough for runtime diagnostics.
+Rationale:
+Production diagnostics need trustworthy observability for distributed runtime failures.
+Source scope:
+comm parent contract; multiplexer client/server metrics; transport controllers; logging integration.
+Related CODEX findings:
+Existing package-info diagnostics and false-success concerns.
+Suggested unit tests:
+testMetricsZeroBeforeStart, testMetricsIncreaseAfterTraffic, testLiveConnectionCountUpdatesOnDisconnect.
+Spec target section:
+Communication Runtime / Observability
 
-  COMM-BLOCK-001 — Blocking Reads Must Wake On Data, Close, Or Failure
-  Contract statement: Any thread blocked waiting for input must wake when data arrives, the virtual/physical
-  connection closes, or failure occurs.
-  Rationale: Remote/sync threads must not stall permanently.
-  Source locations: virtual input stream queues, multiplexer reader thread, wait/notify paths.
-  Known related CODEX findings: blocked reader issues reviewed.
-  Suggested unit tests: testBlockedReadWakesOnData(), testBlockedReadWakesOnClose(), testBlockedReadWakesOnFailure()
-  Spec target section: Communication Runtime / Blocking Read Semantics
+COMM-AUTHORITY-001 — Distributed Runtime Authority Boundary
+Contract statement:
+Communication transports may carry remote, sync, replication, and graph-runtime messages, but they must not decide
+object graph authority, transaction commit, replication merge, security authorization, or semantic success unless
+explicitly delegated by the owning package.
+Rationale:
+Transport success and distributed runtime semantic success are different contracts.
+Source scope:
+comm parent contract; remote, sync, replication, graph, transaction, secure integration.
+Related CODEX findings:
+Existing package-info retry and semantic delivery notes imply this boundary.
+Suggested unit tests:
+testTransportSuccessDoesNotCommitTransaction, testTransportSuccessDoesNotMeanReplicationApplied,
+testRemoteAuthorityDecisionOwnedOutsideComm.
+Spec target section:
+Communication Runtime / Runtime Authority Boundary
 
-  COMM-BLOCK-002 — Blocking Writes Must Wake On Capacity, Close, Or Failure
-  Contract statement: Any thread blocked waiting to write/enqueue must wake when capacity is available, the
-  connection closes, or failure occurs.
-  Rationale: Writer stalls can deadlock remote/sync/replication.
-  Source locations: output queues, socket writer threads, multiplexer send queues.
-  Known related CODEX findings: blocked writer/stall risks reviewed.
-  Suggested unit tests: testBlockedWriteWakesOnCapacity(), testBlockedWriteWakesOnClose()
-  Spec target section: Communication Runtime / Blocking Write Semantics
-
-  COMM-THREAD-001 — Reader/Writer Threads Must Have Single Ownership Of Physical Socket Streams
-  Contract statement: The physical socket input/output streams must be read/written by their designated comm threads
-  or synchronized ownership paths only.
-  Rationale: Concurrent unsynchronized physical reads/writes break frame ordering.
-  Source locations: socket client/server classes, multiplexer reader/writer loops.
-  Known related CODEX findings: read/write ordering risks reviewed.
-  Suggested unit tests: testSingleReaderOwnsPhysicalInputStream(), testConcurrentVirtualWritesSerializeThroughMux()
-  Spec target section: Communication Runtime / Thread Ownership
-
-  5. Connection Lifecycle Contracts
-
-  COMM-CONN-001 — Connection State Transitions Are Monotonic Per Lifecycle
-  Contract statement: A connection must move through open, active, closing, closed/failed states without reverting
-  to active after closed unless explicitly reconnected as a new lifecycle.
-  Rationale: Prevents stale socket reuse and false send/receive success.
-  Source locations: socket client/server lifecycle classes, multiplexer close/reconnect paths.
-  Known related CODEX findings: reconnect/disconnect risks reviewed.
-  Suggested unit tests: testClosedConnectionDoesNotAcceptSend(), testReconnectCreatesNewLifecycleState()
-  Spec target section: Communication Runtime / Connection Lifecycle
-
-  COMM-CONN-002 — Disconnect Must Be Observed By All Dependent Layers
-  Contract statement: Physical disconnect must propagate to virtual sockets, blocking streams, remote call waiters,
-  and sync/replication queues.
-  Rationale: Higher layers need visible failure to retry/reconcile.
-  Source locations: multiplexer, virtual sockets, remote invocation transport.
-  Known related CODEX findings: shutdown/blocked-thread issues reviewed.
-  Suggested unit tests: testPhysicalDisconnectClosesVirtualSockets(), testDisconnectWakesRemoteCallWaiter()
-  Spec target section: Communication Runtime / Disconnect Propagation
-
-  6. Shutdown / Resource Cleanup Contracts
-
-  COMM-RESOURCE-001 — Close Releases Socket And Stream Resources
-  Contract statement: Closing a comm connection must close underlying sockets, input/output streams, and owned
-  worker threads/queues.
-  Rationale: Resource leaks can stall long-running OA servers and clients.
-  Source locations: socket close paths, multiplexer shutdown paths, stream close methods.
-  Known related CODEX findings: resource cleanup issues reviewed.
-  Suggested unit tests: testCloseClosesPhysicalSocket(), testCloseReleasesVirtualSocketResources()
-  Spec target section: Communication Runtime / Resource Cleanup
-
-  COMM-RESOURCE-002 — Close Is Idempotent
-  Contract statement: Calling close/shutdown multiple times must not throw unexpected errors or resurrect connection
-  state.
-  Rationale: Error paths may call cleanup from multiple layers.
-  Source locations: close/shutdown methods across comm classes.
-  Known related CODEX findings: cleanup path risks reviewed.
-  Suggested unit tests: testCloseIsIdempotent(), testConcurrentCloseIsSafe()
-  Spec target section: Communication Runtime / Idempotent Shutdown
-
-  COMM-RESOURCE-003 — Failed Frame/Stream Processing Cleans Up Or Fails Connection
-  Contract statement: If frame processing fails mid-frame, the connection must be marked failed/closed unless
-  recovery can preserve exact frame alignment.
-  Rationale: Continuing after unknown stream position corrupts all later messages.
-  Source locations: multiplexer reader loop, frame parsing, object stream read paths.
-  Known related CODEX findings: partial-frame corruption findings reviewed.
-  Suggested unit tests: testMidFrameReadFailureClosesConnection(),
-  testFrameParseFailureDoesNotAllowNextFrameAsValid()
-  Spec target section: Communication Runtime / Failure Cleanup
-
-  7. SSL Contracts
-
-  COMM-SSL-001 — SSL Streams Must Preserve Same Framing Contract As Plain Streams
-  Contract statement: SSL input/output streams must expose the same complete-byte stream semantics required by the
-  multiplexer and object streams.
-  Rationale: Secure transport must not change OA frame/message semantics.
-  Source locations: SSL socket/stream classes, multiplexer stream integration.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testSslFrameRoundTripPreservesBoundary(), testSslBackToBackFramesPreserveOrder()
-  Spec target section: Communication Runtime / SSL Stream Semantics
-
-  COMM-SSL-002 — SSL Handshake Failure Must Fail Connection Clearly
-  Contract statement: SSL handshake/setup failure must not leave the connection appearing open or usable.
-  Rationale: Remote/sync callers must not publish messages into a failed secure channel.
-  Source locations: SSL socket creation/initialization paths.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testSslHandshakeFailureMarksConnectionFailed(), testSslHandshakeFailureWakesWaiters()
-  Spec target section: Communication Runtime / SSL Lifecycle
-
-  8. Remote / Sync / Replication Ordering Contracts
-
-  COMM-ORDER-001 — Remote/Sync/Replication Messages Preserve Send Order Per Channel
-  Contract statement: Messages sent on a logical comm channel must be delivered to remote/sync/replication consumers
-  in send order.
-  Rationale: Object graph replication and event replay require deterministic ordering.
-  Source locations: multiplexer queueing, remote transport, sync message sender.
-  Known related CODEX findings: ordering issues were a primary comm review focus.
-  Suggested unit tests: testRemoteMessagesDeliveredInSendOrder(), testReplicationMessagesDeliveredInSendOrder()
-  Spec target section: Communication Runtime / Message Ordering
-
-  COMM-ORDER-002 — Request/Response Matching Must Be One-To-One
-  Contract statement: A response must be delivered to the requester/call associated with its request and must not be
-  consumed by another caller.
-  Rationale: Remote method calls depend on exact request/response pairing.
-  Source locations: remote call transport, request id handling, response wait queues.
-  Known related CODEX findings: request/response matching risks reviewed.
-  Suggested unit tests: testConcurrentRemoteCallsReceiveCorrectResponses(),
-  testLateResponseDoesNotSatisfyWrongRequest()
-  Spec target section: Communication Runtime / Request Response Semantics
-
-  COMM-ORDER-003 — Disconnect Must Not Reorder Already Accepted Messages
-  Contract statement: Messages accepted for ordered delivery before disconnect must either be delivered in order or
-  the failure must be visible; they must not be silently reordered across reconnect.
-  Rationale: Sync/replication cannot tolerate hidden reorder across reconnect.
-  Source locations: reconnect/disconnect handling, send queues, multiplexer lifecycle.
-  Known related CODEX findings: reconnect/disconnect ordering risks reviewed.
-  Suggested unit tests: testDisconnectDuringSendDoesNotSilentlyReorderMessages(),
-  testReconnectStartsNewOrderingEpoch()
-  Spec target section: Communication Runtime / Reconnect Ordering
-
-  9. Failure / Retry / Disconnect Contracts
-
-  COMM-FAILURE-001 — Partial Send Failure Is Not Success
-  Contract statement: If a frame/message is only partially sent and cannot complete, the send operation must fail
-  visibly or close the connection.
-  Rationale: Partial message publication is indistinguishable from corruption to the receiver.
-  Source locations: socket output stream, multiplexer frame writer, send queue handling.
-  Known related CODEX findings: partial send/false-success risks reviewed.
-  Suggested unit tests: testPartialSendFailureVisibleToCaller(), testPartialSendFailureClosesConnection()
-  Spec target section: Communication Runtime / Send Failure
-
-  COMM-FAILURE-002 — Retry Occurs At A Defined Layer
-  Contract statement: The comm layer may reconnect/retry only according to its explicit contract; otherwise higher
-  remote/sync layers must observe failure and decide retry.
-  Rationale: Hidden retry can duplicate or reorder messages.
-  Source locations: reconnect logic, remote transport, sync/replication callers.
-  Known related CODEX findings: retry/reconnect risks reviewed.
-  Suggested unit tests: testCommFailureDoesNotSilentlyDuplicateMessage(), testReconnectRetryPreservesOrderingEpoch()
-  Spec target section: Communication Runtime / Retry Semantics
-
-  COMM-FAILURE-003 — Internal Contract Violations Fail Fast Enough To Protect Ordering
-  Contract statement: If a normal OA-controlled path violates expected frame/connection state, the comm layer must
-  fail the connection or operation rather than continue with unknown ordering.
-  Rationale: Protects remote/sync/replication from silent divergence.
-  Source locations: multiplexer frame parser, virtual socket dispatch, remote call transport.
-  Known related CODEX findings: internal malformed/public hostile cases classified out of scope unless normal OA
-  usage can produce them.
-  Suggested unit tests: testUnexpectedFrameStateClosesConnection(), testInvalidVirtualSocketStateFailsOperation()
-  Spec target section: Communication Runtime / Internal Contract Failure
-
-  10. Test Coverage Matrix
-
-  Runtime/internal transport:
-
-  - testValidOAMessageRoundTrip
-  - testInternalProtocolAssumptionsDocumented
-  - testSendFailurePropagatesToCaller
-  - testReceiveFailureClosesOrMarksConnectionFailed
-
-  Multiplexer/frame/virtual socket:
-
-  - testMultiplexerPreservesSingleFrameBoundary
-  - testBackToBackFramesReadSeparately
-  - testVirtualSocketPreservesWriteOrder
-  - testInterleavedVirtualSocketsPreservePerSocketOrder
-  - testDiscardFrameConsumesEntirePayload
-  - testPartialDiscardFailureClosesConnection
-  - testMultiplexerCloseWakesBlockedVirtualReader
-  - testMultiplexerCloseWakesBlockedVirtualWriter
-
-  Streams:
-
-  - testPartialObjectReadThrowsOrDisconnects
-  - testCompleteObjectReadSucceeds
-  - testWriteFailureVisibleToCaller
-  - testFlushFailureMarksConnectionFailed
-  - testSkipLoopHandlesShortSkip
-  - testSkipZeroProgressFallsBackOrFails
-
-  Blocking/threading:
-
-  - testBlockedReadWakesOnData
-  - testBlockedReadWakesOnClose
-  - testBlockedReadWakesOnFailure
-  - testBlockedWriteWakesOnCapacity
-  - testBlockedWriteWakesOnClose
-  - testSingleReaderOwnsPhysicalInputStream
-  - testConcurrentVirtualWritesSerializeThroughMux
-
-  Connection/shutdown:
-
-  - testClosedConnectionDoesNotAcceptSend
-  - testReconnectCreatesNewLifecycleState
-  - testPhysicalDisconnectClosesVirtualSockets
-  - testDisconnectWakesRemoteCallWaiter
-  - testCloseClosesPhysicalSocket
-  - testCloseReleasesVirtualSocketResources
-  - testCloseIsIdempotent
-  - testConcurrentCloseIsSafe
-  - testMidFrameReadFailureClosesConnection
-
-  SSL:
-
-  - testSslFrameRoundTripPreservesBoundary
-  - testSslBackToBackFramesPreserveOrder
-  - testSslHandshakeFailureMarksConnectionFailed
-  - testSslHandshakeFailureWakesWaiters
-
-  Remote/sync/replication ordering:
-
-  - testRemoteMessagesDeliveredInSendOrder
-  - testReplicationMessagesDeliveredInSendOrder
-  - testConcurrentRemoteCallsReceiveCorrectResponses
-  - testLateResponseDoesNotSatisfyWrongRequest
-  - testDisconnectDuringSendDoesNotSilentlyReorderMessages
-  - testReconnectStartsNewOrderingEpoch
-
-  Failure/retry:
-
-  - testPartialSendFailureVisibleToCaller
-  - testPartialSendFailureClosesConnection
-  - testCommFailureDoesNotSilentlyDuplicateMessage
-  - testReconnectRetryPreservesOrderingEpoch
-  - testUnexpectedFrameStateClosesConnection
-  - testInvalidVirtualSocketStateFailsOperation
-
+COMM-INTEGRATION-001 — Remote Sync Replication Compatibility
+Contract statement:
+Communication behavior must remain compatible with remote invocation, sync message ordering, replication replay/
+transport, serialization boundaries, transaction context, graph runtime ownership, and security/session context.
+Rationale:
+OA distributed graph correctness depends on communication preserving ordering, isolation, failure visibility, and
+context boundaries while higher layers enforce semantic contracts.
+Source scope:
+com.viaoa.comm package and subpackages; com.viaoa.remote; com.viaoa.sync; com.viaoa.replication; serialization;
+runtime/graph/transaction/security integration.
+Related CODEX findings:
+Existing package-info remote/sync/replication ordering, request/response, reconnect, and failure findings.
+Suggested unit tests:
+testRemotePayloadRoundTripsOverCommTransport, testSyncMessagesDeliveredInSendOrder,
+testReplicationTransportFailureDoesNotAppearCommitted, testRemoteCallContextRestoredAfterFailure.
+Spec target section:
+Communication Runtime / Cross-Package Integration
 
 */
-
-
-
-
-
 
 
 

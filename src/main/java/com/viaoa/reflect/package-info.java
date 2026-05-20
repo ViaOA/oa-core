@@ -22,325 +22,473 @@ package com.viaoa.reflect;
 
 /* CODEX Invariants
 
-1. Method Lookup Contracts
+REFLECT-LOOKUP-001 — Deterministic Member Lookup
+Contract statement:
+Given the same class, member name, argument types, strict/lenient mode, accessibility policy, and runtime classpath,
+OA reflection must resolve the same method, property accessor, or no-match result every time.
+Rationale:
+Reflection is a runtime authority for OA paths, metadata interpretation, generated blueprint execution,
+serialization, binding, query/path evaluation, filters, and graph traversal. Nondeterministic lookup invokes wrong
+runtime behavior.
+Source scope:
+OAReflect.getMethod overloads, OAReflect.getMethods overloads, executeMethod, getPropertyValue, setPropertyValue.
+Related CODEX findings:
+OAReflect.getMethod overload ambiguity and Class.getMethods order concerns.
+Suggested unit tests:
+testMethodLookupFindsExactPublicMethod, testMethodLookupIsDeterministicAcrossCalls,
+testOverloadResolutionIndependentOfMethodArrayOrder.
+Spec target section:
+Reflection Runtime / Member Lookup Semantics
 
-  REFLECT-METHOD-001 — Method Lookup Must Resolve The Intended Method Deterministically
-  Contract statement: Given a class, method name, and argument types, OA reflection must select the same intended
-  method every time.
-  Rationale: OA path traversal, property access, generated code, filters, and UI binding depend on stable method
-  resolution.
-  Source locations: reflection utilities in com.viaoa.reflect.*, method lookup helpers.
-  Known related CODEX findings: method lookup ambiguity was reviewed.
-  Suggested unit tests: testMethodLookupFindsExactPublicMethod(), testMethodLookupIsDeterministicAcrossCalls()
-  Spec target section: Reflection Utilities / Method Resolution Semantics
+REFLECT-NAME-001 — Member Name Matching Semantics
+Contract statement:
+Method and property name matching must follow a defined case-sensitivity and ambiguity rule. Reflection must not
+silently choose a wrong method or property when names differ only by case or are similarly named.
+Rationale:
+Generated models and blueprints can contain related property names. Reflection-order-dependent name matching
+corrupts path, binding, serializer, and metadata behavior.
+Source scope:
+OAReflect.getMethod, OAReflect.getMethods, property getter/setter resolution paths.
+Related CODEX findings:
+Case-insensitive ambiguity reviewed; wrong-member fallback risks noted.
+Suggested unit tests:
+testMethodLookupCaseSensitiveByContract, testAmbiguousCaseMethodLookupFailsOrUsesDefinedRule,
+testSimilarPropertyNameNotUsedAsFallback.
+Spec target section:
+Reflection Runtime / Name Resolution
 
-  REFLECT-METHOD-002 — Method Name Matching Must Have Defined Case Semantics
-  Contract statement: Method lookup must clearly define whether names are case-sensitive or case-insensitive and
-  must not silently choose the wrong method when names differ only by case.
-  Rationale: Reflection order can vary; ambiguous case matching can invoke wrong behavior.
-  Source locations: method lookup/name comparison helpers.
-  Known related CODEX findings: case-insensitive ambiguity reviewed.
-  Suggested unit tests: testMethodLookupCaseSensitiveByContract(),
-  testAmbiguousCaseMethodLookupFailsOrUsesDefinedRule()
-  Spec target section: Reflection Utilities / Method Name Semantics
+REFLECT-PROPERTY-001 — OA Property Accessor Rules
+Contract statement:
+Getter and setter discovery must follow OA property rules: getX, boolean isX where allowed, setter compatibility by
+logical property name and value type, and only documented fallback forms.
+Rationale:
+OAObject paths, generated UI, serialization, filters, queries, and graph metadata depend on consistent Java member-
+to-property interpretation.
+Source scope:
+OAReflect.getMethods, getPropertyValue, setPropertyValue, boolean getter/setter property derivation.
+Related CODEX findings:
+Boolean isX getters are not resolved for property paths; boolean setter name mismatch concerns.
+Suggested unit tests:
+testGetterDiscoveryFindsGetProperty, testBooleanIsGetterResolved, testBooleanGetGetterPrecedenceByContract,
+testIsActiveMapsToSetActive.
+Spec target section:
+Reflection Runtime / Property Accessor Semantics
 
-  REFLECT-METHOD-003 — Static And Instance Method Lookup Must Be Distinct
-  Contract statement: Reflection helpers must distinguish static method invocation from instance method invocation
-  and must not invoke a static method as an accidental fallback for an instance path.
-  Rationale: OA property/path semantics usually operate on instances; accidental static resolution causes wrong
-  values.
-  Source locations: invocation helpers, method lookup helpers.
-  Known related CODEX findings: static/instance handling reviewed.
-  Suggested unit tests: testInstanceLookupDoesNotReturnStaticMethodUnlessAllowed(),
-  testStaticLookupInvokesStaticMethodByContract()
-  Spec target section: Reflection Utilities / Static Instance Semantics
+REFLECT-PROPERTY-002 — Missing Property Failure Boundary
+Contract statement:
+If a requested getter, setter, or property path segment is missing, reflection must return the documented no-member
+result or throw through the strict API path. It must not substitute a similarly named property or unrelated method.
+Rationale:
+Silent wrong-property access corrupts UI, filters, serialization, generated code, and graph navigation.
+Source scope:
+OAReflect.getMethods, getPropertyValue, setPropertyValue, strict/lenient property lookup paths.
+Related CODEX findings:
+Empty path segments can be treated as toString; missing/wrong-property fallback risks reviewed.
+Suggested unit tests:
+testMissingGetterReturnsDefinedFailure, testStrictMissingPropertyThrows, testLenientMissingPropertyReturnsNull,
+testMalformedPathSegmentDoesNotResolveToToString.
+Spec target section:
+Reflection Runtime / Property Failure Semantics
 
-  2. Property Getter / Setter Contracts
+REFLECT-METHOD-001 — Exact Match Preference
+Contract statement:
+When overloaded methods exist, exact parameter type matches must be preferred over primitive-wrapper compatible,
+assignable, superclass/interface, or generic Object matches.
+Rationale:
+Specific overloads encode intended domain behavior. Invoking a broader overload changes executable blueprint
+semantics.
+Source scope:
+OAReflect.getMethod overloads, argument matching logic, isEqualEvenIfWrapper.
+Related CODEX findings:
+Argument matching and overload selection issues in getMethod(Class,String,int,Object[]).
+Suggested unit tests:
+testExactOverloadBeatsObjectOverload, testExactPrimitiveWrapperOverloadByContract,
+testExactInterfaceImplementationOverloadByContract.
+Spec target section:
+Reflection Runtime / Overload Resolution
 
-  REFLECT-PROPERTY-001 — Property Getter Discovery Follows OA Property Rules
-  Contract statement: A property getter must be discovered using OA getter rules: getX, boolean isX where allowed,
-  and any documented fallback forms.
-  Rationale: OAObject property paths, UI binding, serialization, and compare/filter utilities depend on getter
-  discovery.
-  Source locations: property getter lookup helpers, OA property reflection classes.
-  Known related CODEX findings: getter fallback behavior reviewed.
-  Suggested unit tests: testGetterDiscoveryFindsGetProperty(), testGetterDiscoveryUsesDocumentedFallbackOnly()
-  Spec target section: Reflection Utilities / Getter Discovery
+REFLECT-METHOD-002 — Ambiguous Overload Handling
+Contract statement:
+If multiple overloads are equally valid for the provided arguments, reflection must use a documented tie-breaker or
+fail visibly; it must not rely on Class.getMethods ordering.
+Rationale:
+JVM method order is not a semantic contract. Arbitrary overload choice can invoke wrong business logic or mutate
+wrong state.
+Source scope:
+OAReflect.getMethod overloads, null argument matching, assignable argument matching.
+Related CODEX findings:
+Null arguments resolve to first case-insensitive method returned by Class.getMethods.
+Suggested unit tests:
+testAmbiguousOverloadFailsOrUsesDefinedRule, testNullArgumentAmbiguousOverloadFailsOrUsesDefinedRule,
+testOverloadResolutionIndependentOfMethodArrayOrder.
+Spec target section:
+Reflection Runtime / Ambiguous Overloads
 
-  REFLECT-PROPERTY-002 — Property Setter Discovery Must Match Getter Property Type
-  Contract statement: A property setter must be selected based on the intended property name and compatible value
-  type.
-  Rationale: Wrong setter invocation can corrupt object state.
-  Source locations: setter lookup helpers, property set invocation helpers.
-  Known related CODEX findings: setter/type conversion issues reviewed.
-  Suggested unit tests: testSetterDiscoveryFindsMatchingSetter(), testSetterDiscoveryRejectsIncompatibleSetter()
-  Spec target section: Reflection Utilities / Setter Discovery
+REFLECT-ASSIGN-001 — Primitive Wrapper Compatibility
+Contract statement:
+Reflection assignability must treat primitive types and their wrapper classes as compatible where Java invocation
+would allow boxing/unboxing, and must reject null for primitive parameters.
+Rationale:
+Generated code and property setters commonly pass wrapper values for primitive properties. Null-to-primitive
+matching causes invocation failure or wrong overload selection.
+Source scope:
+OAReflect.getMethod overloads, OAReflect.isEqualEvenIfWrapper, OAReflect.setPropertyValue.
+Related CODEX findings:
+Argument matching requires exact runtime class equality; primitive/wrapper compatibility reviewed.
+Suggested unit tests:
+testIntegerMatchesIntParameter, testBooleanMatchesBooleanPrimitiveParameter,
+testNullArgumentDoesNotMatchIntParameter, testNullArgumentMatchesReferenceParameter.
+Spec target section:
+Reflection Runtime / Primitive Wrapper Assignability
 
-  REFLECT-PROPERTY-003 — Missing Getter/Setter Must Not Resolve To Wrong Property
-  Contract statement: If a requested property getter/setter is missing, reflection must fail or return the defined
-  no-member result; it must not choose a similarly named property.
-  Rationale: Silent wrong-property access corrupts UI, filters, serialization, and generated code.
-  Source locations: property lookup helpers.
-  Known related CODEX findings: false-success wrong-member risks reviewed.
-  Suggested unit tests: testMissingGetterReturnsDefinedFailure(), testSimilarPropertyNameNotUsedAsFallback()
-  Spec target section: Reflection Utilities / Property Failure Semantics
+REFLECT-ASSIGN-002 — Assignable Type Semantics
+Contract statement:
+Reflection method matching must support interface and superclass assignability where Java invocation supports it,
+without confusing assignability with conversion.
+Rationale:
+OA models and runtime services often expose methods through interfaces or base classes. Reflection should invoke
+compatible callable members without inventing type conversions.
+Source scope:
+OAReflect.getMethod overloads, isEqualEvenIfWrapper, type matching logic.
+Related CODEX findings:
+getMethod exact runtime class equality rejects interface/superclass-compatible arguments.
+Suggested unit tests:
+testStringMatchesCharSequenceParameter, testSubclassMatchesSuperclassParameter,
+testInterfaceArgumentMatchesInterfaceParameter.
+Spec target section:
+Reflection Runtime / Assignability Semantics
 
-  3. Primitive / Wrapper Assignability Contracts
+REFLECT-CONVERT-001 — Conversion Boundary Separation
+Contract statement:
+Reflection matching must not silently perform semantic type conversion unless the API explicitly calls OA converter
+logic. Conversion from strings or other external values must remain a documented boundary.
+Rationale:
+Reflection selects callable members; converters own semantic coercion. Blurring the boundary can choose lossy
+setters or hide invalid input.
+Source scope:
+OAReflect.convertParameterFromString, OAReflect.setPropertyValue(String), OAReflect.setPropertyValue(Object),
+OAConverter integration.
+Related CODEX findings:
+Numeric assignability treats Number subclasses as compatible; setter/type conversion risks reviewed.
+Suggested unit tests:
+testLongDoesNotSilentlyMatchIntWhenLossyByContract, testStringParameterConversionUsesOAConverter,
+testReflectionOnlyLookupDoesNotConvertStringToNumber.
+Spec target section:
+Reflection Runtime / Conversion Boundaries
 
-  REFLECT-ASSIGN-001 — Primitive And Wrapper Types Are Compatible By OA Rules
-  Contract statement: Reflection assignability must treat primitive types and their wrapper classes as compatible
-  where Java invocation would allow boxing/unboxing.
-  Rationale: Generated code and property setting frequently pass wrapper values for primitive setters.
-  Source locations: type assignability helpers, setter/method matching helpers.
-  Known related CODEX findings: primitive/wrapper compatibility reviewed.
-  Suggested unit tests: testIntegerMatchesIntParameter(), testBooleanMatchesBooleanPrimitiveParameter()
-  Spec target section: Reflection Utilities / Primitive Wrapper Assignability
+REFLECT-NUMERIC-001 — Numeric Matching Must Not Invent Lossy Compatibility
+Contract statement:
+Numeric wrappers and numeric primitives must be matched only when Java invocation or documented OA conversion
+supports the assignment; broad Number-family compatibility must not select a method that Method.invoke will reject
+or that loses precision silently.
+Rationale:
+Wrong numeric matching can corrupt model values or fail after lookup has reported success.
+Source scope:
+OAReflect.getMethod(Class,String,Class), OAReflect.isEqualEvenIfWrapper, setPropertyValue.
+Related CODEX findings:
+All Number subclasses are treated as parameter-compatible in isEqualEvenIfWrapper.
+Suggested unit tests:
+testLongDoesNotMatchIntegerParameterWithoutConversion, testBigDecimalDoesNotMatchDoubleParameterWithoutConversion,
+testDocumentedNumericConversionUsesConverterBoundary.
+Spec target section:
+Reflection Runtime / Numeric Assignability
 
-  REFLECT-ASSIGN-002 — Numeric Assignability Must Not Silently Lose Unsupported Precision
-  Contract statement: Numeric type conversion/matching must follow defined OA conversion rules and must not silently
-  select a lossy method/setter unless explicitly allowed.
-  Rationale: Wrong numeric coercion can corrupt model values.
-  Source locations: assignability helpers, conversion helpers.
-  Known related CODEX findings: numeric wrapper/type classification risks reviewed.
-  Suggested unit tests: testLongDoesNotSilentlyMatchIntWhenLossyByContract(), testBigDecimalConversionByContract()
-  Spec target section: Reflection Utilities / Numeric Assignability
+REFLECT-BOOLEAN-001 — Boolean Property Semantics
+Contract statement:
+Boolean properties must define whether isX, getX, or both are valid getters, which takes precedence, and which
+setter name represents the same logical property.
+Rationale:
+Boolean properties are common in generated models, path expressions, UI binding, filters, and serialization. Naming
+drift breaks live graph semantics.
+Source scope:
+OAReflect.getMethods, getter lookup, setter lookup, property name derivation for boolean methods.
+Related CODEX findings:
+Boolean isX getters are not resolved for property paths; boolean isX setter mismatch reviewed.
+Suggested unit tests:
+testBooleanIsGetterResolved, testBooleanGetGetterPrecedenceByContract, testIsActiveMapsToSetActive,
+testBooleanPropertyNamedIsActiveByContract.
+Spec target section:
+Reflection Runtime / Boolean Property Semantics
 
-  4. Overload Resolution Contracts
+REFLECT-HIERARCHY-001 — Class Hierarchy And Interface Lookup
+Contract statement:
+Method and property lookup must include inherited public members, interface-declared members, and subclass overrides
+according to Java/OA rules, preferring the actual runtime class implementation.
+Rationale:
+OA generated models and services use base classes, interfaces, and overrides. Runtime behavior must honor domain-
+specific subclass implementations.
+Source scope:
+OAReflect.getMethod, OAReflect.getMethods, executeMethod, getPropertyValue, setPropertyValue.
+Related CODEX findings:
+Hierarchy and interface lookup behavior reviewed.
+Suggested unit tests:
+testInheritedGetterResolved, testInheritedMethodResolved, testInterfaceGetterResolvedFromImplementation,
+testSubclassOverrideInvoked.
+Spec target section:
+Reflection Runtime / Hierarchy Semantics
 
-  REFLECT-OVERLOAD-001 — Exact Match Beats Assignable Match
-  Contract statement: When overloaded methods exist, exact parameter type matches must be preferred over broader
-  assignable matches.
-  Rationale: Prevents invoking a generic overload when a specific overload exists.
-  Source locations: overloaded method lookup helpers.
-  Known related CODEX findings: overloaded method selection order reviewed.
-  Suggested unit tests: testExactOverloadBeatsObjectOverload(), testExactPrimitiveWrapperOverloadByContract()
-  Spec target section: Reflection Utilities / Overload Resolution
+REFLECT-ACCESS-001 — Accessibility Policy
+Contract statement:
+Reflection helpers must define whether they use only public members or may access non-public members. Access policy
+must be applied consistently during lookup and invocation.
+Rationale:
+OA generated/domain models need predictable access rules. Accidental private access or accidental exclusion changes
+runtime semantics.
+Source scope:
+OAReflect.getMethod, getMethods, executeMethod, getPropertyValue, setPropertyValue.
+Related CODEX findings:
+Accessibility behavior reviewed.
+Suggested unit tests:
+testPrivateMethodNotInvokedByPublicOnlyContract, testAccessibleNonPublicMethodInvokedWhenAllowed,
+testAccessPolicyIsConsistentForLookupAndInvocation.
+Spec target section:
+Reflection Runtime / Accessibility
 
-  REFLECT-OVERLOAD-002 — Ambiguous Overloads Must Not Be Chosen Arbitrarily
-  Contract statement: If multiple overloads are equally valid, reflection must use a documented tie-breaker or fail
-  visibly.
-  Rationale: Class.getMethods() order is not a safe semantic rule.
-  Source locations: method lookup helpers.
-  Known related CODEX findings: reflection-order ambiguity reviewed.
-  Suggested unit tests: testAmbiguousOverloadFailsOrUsesDefinedRule(),
-  testOverloadResolutionIndependentOfMethodArrayOrder()
-  Spec target section: Reflection Utilities / Ambiguous Overloads
+REFLECT-STATIC-001 — Static And Instance Boundaries
+Contract statement:
+Static method lookup/invocation and instance method lookup/invocation must be distinct. Instance property/path
+access must not fall back to static methods unless explicitly allowed by the API contract.
+Rationale:
+OA property and graph traversal normally operate on object instances. Static fallback can return global or unrelated
+values.
+Source scope:
+OAReflect.getMethod, executeMethod, getPropertyValue, getMethods.
+Related CODEX findings:
+Static/instance handling reviewed.
+Suggested unit tests:
+testInstanceLookupDoesNotReturnStaticMethodUnlessAllowed, testStaticLookupInvokesStaticMethodByContract,
+testPathPropertyDoesNotUseStaticFallback.
+Spec target section:
+Reflection Runtime / Static Instance Semantics
 
-  5. Boolean Property Contracts
+REFLECT-INVOKE-001 — Invocation Completion Truth
+Contract statement:
+A reflected get, set, or method invocation must be reported as successful only after the intended callable completed
+successfully. Failed invocation must not be treated as successful property access or mutation.
+Rationale:
+Reflection can read or mutate OAObject state, fire events, compute calculated values, or drive serialization. False-
+success invocation corrupts runtime state.
+Source scope:
+OAReflect.executeMethod, getPropertyValue, getPropertyValueAsString, setPropertyValue.
+Related CODEX findings:
+Getter/setter exception swallowing and invocation completion risks reviewed.
+Suggested unit tests:
+testGetterExceptionDoesNotReturnStaleValue, testSetterExceptionDoesNotClaimSuccess,
+testExecuteMethodExceptionDoesNotReportSuccess.
+Spec target section:
+Reflection Runtime / Invocation Completion
 
-  REFLECT-BOOLEAN-001 — Boolean Getter Semantics Are Explicit
-  Contract statement: Boolean properties must define whether isX, getX, or both are valid, and which takes
-  precedence.
-  Rationale: OA paths and generated UI often bind boolean properties.
-  Source locations: getter discovery helpers.
-  Known related CODEX findings: boolean getter naming reviewed.
-  Suggested unit tests: testBooleanIsGetterResolved(), testBooleanGetGetterPrecedenceByContract()
-  Spec target section: Reflection Utilities / Boolean Properties
+REFLECT-INVOKE-002 — Invocation Failure Preserves Cause
+Contract statement:
+If reflected invocation fails, thrown or reported errors must preserve enough cause and member context for callers
+to diagnose the underlying failure.
+Rationale:
+Path, metadata, serializer, binding, and generated-code failures need traceable diagnostics. Losing cause hides
+runtime correctness issues.
+Source scope:
+OAReflect.executeMethod, getPropertyValue, getPropertyValueAsString, setPropertyValue.
+Related CODEX findings:
+Exception wrapping/context loss reviewed.
+Suggested unit tests:
+testInvocationExceptionPreservesCause, testSetterExceptionPreservesCause, testGetterExceptionIncludesMemberContext.
+Spec target section:
+Reflection Runtime / Invocation Failure
 
-  REFLECT-BOOLEAN-002 — Boolean Setter Matches Boolean Property Name
-  Contract statement: A boolean setter must match the logical property name, not accidentally include the is prefix
-  unless that is the actual property.
-  Rationale: isActive getter should normally map to setActive, not the wrong setter.
-  Source locations: setter discovery/property name derivation helpers.
-  Known related CODEX findings: boolean isX setter mismatch reviewed.
-  Suggested unit tests: testIsActiveMapsToSetActive(), testBooleanPropertyNamedIsActiveByContract()
-  Spec target section: Reflection Utilities / Boolean Setter Semantics
+REFLECT-PRIMITIVE-001 — Primitive Null Semantics
+Contract statement:
+OA primitive-null behavior must be applied before invoking primitive getters when the contract requires null-
+preserving reads, and null assignment to primitive OAObject properties must follow the documented setter/setNull/
+event semantics.
+Rationale:
+OA tracks primitive null separately from Java primitive defaults. Reflection must not trigger side effects or bypass
+lifecycle semantics unexpectedly.
+Source scope:
+OAReflect.getPropertyValue, OAReflect.setPropertyValue, OAObject primitive-null integration.
+Related CODEX findings:
+Primitive OAObject getter invoked before checking primitive-null flag; null assigned to primitive OAObject property
+calls setNull without invoking setter.
+Suggested unit tests:
+testPrimitiveNullGetterDoesNotInvokeGetterWhenContractRequiresNull,
+testPrimitiveNullAssignmentFollowsSetterOrSetNullContract, testPrimitiveNullPropertyNameDerivedOnlyForSetterMethods.
+Spec target section:
+Reflection Runtime / Primitive Null Semantics
 
-  6. Class Hierarchy / Interface Traversal Contracts
+REFLECT-PRIMITIVE-002 — Empty Primitive Defaults
+Contract statement:
+Empty primitive/default value synthesis must match Java primitive defaults and documented wrapper behavior;
+unsupported wrapper defaults must not be silently promised and then return null.
+Rationale:
+OAObject, remote, and dynamic invocation paths can synthesize primitive defaults on failure/no-response paths. Wrong
+defaults can report false runtime state.
+Source scope:
+OAReflect.getEmptyPrimitive.
+Related CODEX findings:
+Boolean primitive default is true; documentation says wrapper classes are supported but implementation handles only
+primitives.
+Suggested unit tests:
+testEmptyPrimitiveBooleanIsFalse, testEmptyPrimitiveNumericDefaultsMatchJava,
+testWrapperDefaultBehaviorMatchesDocumentedContract.
+Spec target section:
+Reflection Runtime / Primitive Default Semantics
 
-  REFLECT-HIERARCHY-001 — Lookup Includes Inherited Public Members
-  Contract statement: Method/property lookup must include inherited public methods and properties according to Java/
-  OA rules.
-  Rationale: OA models often use base classes and interfaces.
-  Source locations: method/property lookup helpers.
-  Known related CODEX findings: hierarchy traversal reviewed.
-  Suggested unit tests: testInheritedGetterResolved(), testInheritedMethodResolved()
-  Spec target section: Reflection Utilities / Hierarchy Lookup
+REFLECT-CACHE-001 — Reflection Metadata Cache Identity
+Contract statement:
+Cached reflection results must be keyed by the correct class, member name, argument signature, access policy, and
+lookup mode. Cached members from one class or signature must not be reused for incompatible classes or calls.
+Rationale:
+Reflection metadata is shared infrastructure. Wrong cache identity invokes wrong methods or reads/writes wrong
+properties.
+Source scope:
+Reflection caches if present, OAReflect method/property lookup results, cached Method[] path arrays consumed by
+path/binding/filter code.
+Related CODEX findings:
+Cached method array correctness and class-specific cache behavior reviewed.
+Suggested unit tests:
+testCachedGetterSpecificToClass, testCachedMethodSpecificToParameterTypes,
+testCachedPropertyPathDoesNotCrossClassBoundary.
+Spec target section:
+Reflection Runtime / Cache Identity
 
-  REFLECT-HIERARCHY-002 — Interface Methods Are Valid Lookup Targets
-  Contract statement: Interface-declared methods must be discoverable when the target class implements the
-  interface.
-  Rationale: OA contracts and generated model interfaces may define behavior via interfaces.
-  Source locations: method lookup helpers.
-  Known related CODEX findings: interface lookup behavior reviewed.
-  Suggested unit tests: testInterfaceGetterResolvedFromImplementation(),
-  testInterfaceMethodInvokedOnImplementation()
-  Spec target section: Reflection Utilities / Interface Lookup
+REFLECT-CACHE-002 — Cached Metadata Reuse Safety
+Contract statement:
+Discovered Method, Method[], property, and classpath metadata returned for reuse must be immutable by convention or
+safely copied/owned so caller mutation cannot corrupt later reflection behavior.
+Rationale:
+Paths, filters, serializers, bindings, and generated code can reuse reflection metadata across runtime operations
+and threads.
+Source scope:
+OAReflect.getMethods, getMethod, cached lookup results, class scanning results.
+Related CODEX findings:
+Cache/reuse behavior reviewed.
+Suggested unit tests:
+testCachedMethodReuseStableAcrossCalls, testCachedPropertyPathReuseThreadSafeByContract,
+testCallerMutationDoesNotCorruptCachedMethodArrayIfContractRequiresCopy.
+Spec target section:
+Reflection Runtime / Cache Reuse
 
-  REFLECT-HIERARCHY-003 — Subclass Overrides Must Be Preferred Over Superclass Methods
-  Contract statement: When a subclass overrides a method/property, reflection must invoke the subclass
-  implementation.
-  Rationale: Domain-specific overrides must be honored.
-  Source locations: method lookup/invocation helpers.
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testSubclassOverrideInvoked(), testSuperclassFallbackOnlyWhenNoOverride()
-  Spec target section: Reflection Utilities / Override Semantics
+REFLECT-THREAD-001 — Shared Reflection Thread Safety
+Contract statement:
+Reflection helper state and cached metadata must be immutable, safely published, synchronized, or method-local when
+shared across threads.
+Rationale:
+Reflection is used by graph runtime, Hubs, bindings, serializers, queries, filters, and background operations. Races
+in metadata lookup can invoke wrong methods or expose partial state.
+Source scope:
+OAReflect static helpers, reflection caches if present, cached Method[]/class scan results.
+Related CODEX findings:
+Cached/reuse thread-safety behavior reviewed.
+Suggested unit tests:
+testConcurrentMethodLookupIsStable, testConcurrentPropertyLookupDoesNotCorruptCache,
+testConcurrentCachedMethodReuseStable.
+Spec target section:
+Reflection Runtime / Thread Safety
 
-  7. Accessibility / Invocation Contracts
+REFLECT-CLASS-001 — Classpath And Class Discovery Semantics
+Contract statement:
+Class and OAObject class discovery must return deterministic, de-duplicated logical class names for the requested
+package scope, and classpath lookup failures must fail visibly or return documented fallback values.
+Rationale:
+Metadata building, code generation, model discovery, and runtime graph setup depend on stable class discovery.
+Source scope:
+OAReflect.getClasses, OAReflect.getOAObjectClasses, OAReflect.getClassPath.
+Related CODEX findings:
+getClassPath dereferences null resource; getOAObjectClasses can return duplicate class names from multiple classpath
+roots.
+Suggested unit tests:
+testGetClassPathHandlesMissingResourceByContract, testGetOAObjectClassesDeduplicatesLogicalClassNames,
+testGetClassesReturnsDeterministicPackageResults.
+Spec target section:
+Reflection Runtime / Class Discovery
 
-  REFLECT-ACCESS-001 — Accessibility Behavior Must Be Defined
-  Contract statement: Reflection helpers must define whether they use only public members or may access non-public
-  members.
-  Rationale: OA generated/domain models need predictable access rules.
-  Source locations: method/property lookup and invocation helpers.
-  Known related CODEX findings: accessibility behavior reviewed.
-  Suggested unit tests: testPrivateMethodNotInvokedByPublicOnlyContract(),
-  testAccessibleNonPublicMethodInvokedWhenAllowed()
-  Spec target section: Reflection Utilities / Accessibility
+REFLECT-MODE-001 — Strict And Lenient Lookup Modes
+Contract statement:
+Reflection APIs that support strict or lenient behavior must honor that mode consistently: strict lookup fails
+visibly, while lenient lookup returns only documented no-match values.
+Rationale:
+Callers choose strict validation or optional lookup depending on runtime context. Mode drift hides errors or raises
+unexpected failures.
+Source scope:
+OAReflect.getMethods(Class,String,boolean), getMethods(Class,String,Class,boolean), getMethod overloads where no-
+match behavior is defined.
+Related CODEX findings:
+Invalid path/property behavior and strict/lenient missing member behavior reviewed.
+Suggested unit tests:
+testStrictMissingMethodThrows, testLenientMissingMethodReturnsNull, testStrictMissingPropertyThrows,
+testLenientMissingPropertyReturnsNull.
+Spec target section:
+Reflection Runtime / Lookup Mode Semantics
 
-  REFLECT-INVOKE-001 — Invocation Exceptions Must Preserve Cause
-  Contract statement: If reflected invocation fails, the thrown error must preserve the underlying cause enough for
-  callers to diagnose failure.
-  Rationale: OA path/property failures must be traceable.
-  Source locations: invocation wrappers.
-  Known related CODEX findings: exception wrapping/context loss reviewed.
-  Suggested unit tests: testInvocationExceptionPreservesCause(), testSetterExceptionPreservesCause()
-  Spec target section: Reflection Utilities / Invocation Failure
+REFLECT-FAIL-001 — No Silent Wrong Invocation
+Contract statement:
+If the intended method, property, constructor, or class cannot be resolved unambiguously, OA reflection must fail
+visibly or return a defined no-match result rather than invoking a plausible but wrong member.
+Rationale:
+Wrong invocation can mutate object state, trigger events, read wrong data, publish wrong serializer output, or
+corrupt generated runtime behavior.
+Source scope:
+OAReflect.getMethod, getMethods, executeMethod, getPropertyValue, setPropertyValue, class discovery helpers.
+Related CODEX findings:
+False-success wrong-method behavior, empty path toString fallback, and similar setter name risks reviewed.
+Suggested unit tests:
+testAmbiguousMethodDoesNotInvokeWrongMethod, testSimilarSetterNameNotInvokedAsFallback,
+testMalformedPropertyPathDoesNotInvokeToString, testWrongMethodFailureModeByContract.
+Spec target section:
+Reflection Runtime / False-Success Prevention
 
-  8. Null Argument / Type Matching Contracts
+REFLECT-STATE-001 — No Partial Reflection Commit
+Contract statement:
+Failed lookup, conversion, invocation, classpath discovery, or property mutation must not leave caller-visible state
+partially committed as if reflection succeeded.
+Rationale:
+Reflection may mutate OAObjects, derived state, primitive-null flags, and event-facing properties. Partial-progress
+false success breaks lifecycle and graph consistency.
+Source scope:
+OAReflect.setPropertyValue, convertParameterFromString, executeMethod, getPropertyValue, getClassPath/
+getOAObjectClasses failure paths.
+Related CODEX findings:
+Primitive-null setter bypass and failed invocation completion concerns.
+Suggested unit tests:
+testSetterConversionFailureDoesNotMutateProperty, testFailedSetterInvocationDoesNotClaimSuccess,
+testFailedClassDiscoveryDoesNotReturnPartialSuccessAsComplete.
+Spec target section:
+Reflection Runtime / Partial Progress Semantics
 
-  REFLECT-NULL-001 — Null Arguments Match Only Reference-Type Parameters
-  Contract statement: A null argument may match non-primitive parameters but must not match primitive parameters.
-  Rationale: Invoking primitive parameter methods with null causes runtime failure or wrong overload selection.
-  Source locations: method lookup argument matching helpers.
-  Known related CODEX findings: null argument ambiguity reviewed.
-  Suggested unit tests: testNullArgumentMatchesStringParameter(), testNullArgumentDoesNotMatchIntParameter()
-  Spec target section: Reflection Utilities / Null Argument Matching
+REFLECT-INTEGRATION-001 — Metadata And Path Integration Contract
+Contract statement:
+Reflection behavior used by OAObjectInfo, OAPath, queries, filters, bindings, serializers, graph services, and
+generated blueprints must preserve the same property/method semantics those packages expose as runtime contracts.
+Rationale:
+Reflection is the executable bridge between Java model classes and OA graph metadata. Drift causes path/query/
+binding/serialization mismatch.
+Source scope:
+OAReflect.getMethods, getMethod, getPropertyValue, setPropertyValue, convertParameterFromString, integration with
+path/object/metadata/filter/query/serialize packages.
+Related CODEX findings:
+Boolean getter path failure, empty path segment behavior, primitive-null getter/setter behavior, and assignability
+issues all illustrate boundary risks.
+Suggested unit tests:
+testOAPathReflectionGetterResolutionMatchesOAReflect, testMetadataPropertyAccessorMatchesReflectionLookup,
+testSerializerAndPathUseSameGetterSemantics, testQueryPathReflectionMatchesMetadataProperty.
+Spec target section:
+Reflection Runtime / Cross-Package Metadata Contracts
 
-  REFLECT-NULL-002 — Null Argument Overload Resolution Must Be Deterministic
-  Contract statement: If null can match multiple reference overloads, reflection must use a documented rule or fail
-  visibly.
-  Rationale: Arbitrary overload selection can invoke wrong business logic.
-  Source locations: overload resolution helpers.
-  Known related CODEX findings: null overload ambiguity reviewed.
-  Suggested unit tests: testNullArgumentAmbiguousOverloadFailsOrUsesDefinedRule(),
-  testNullArgumentSpecificTypeHintSelectsExpectedOverload()
-  Spec target section: Reflection Utilities / Null Overload Resolution
-
-  9. Cache / Reuse Contracts
-
-  REFLECT-CACHE-001 — Cached Reflection Results Are Class-Specific
-  Contract statement: Cached methods/properties must be keyed by the correct class and lookup signature.
-  Rationale: Reusing cached methods across incompatible classes invokes wrong methods.
-  Source locations: reflection caches, method/property lookup caches.
-  Known related CODEX findings: cached method array correctness reviewed.
-  Suggested unit tests: testCachedGetterSpecificToClass(), testCachedMethodSpecificToParameterTypes()
-  Spec target section: Reflection Utilities / Reflection Cache
-
-  REFLECT-CACHE-002 — Cached Reflection Results Must Be Immutable Or Safe To Reuse
-  Contract statement: Cached method/property lookup results must not be mutated by callers in a way that changes
-  later behavior.
-  Rationale: Reflection helpers are shared infrastructure used by paths, filters, compare, serialization, and UI
-  binding.
-  Source locations: cache storage/accessors.
-  Known related CODEX findings: cache/reuse behavior reviewed.
-  Suggested unit tests: testCachedMethodReuseStableAcrossCalls(), testCachedPropertyPathReuseThreadSafeByContract()
-  Spec target section: Reflection Utilities / Cache Reuse
-
-  10. Error / Missing Member Contracts
-
-  REFLECT-ERROR-001 — Missing Method Behavior Must Match Strict/Lenient API Contract
-  Contract statement: Strict APIs must throw clearly for missing methods; lenient APIs must return a defined null/
-  false result.
-  Rationale: Different OA callers need strict model validation or permissive optional lookup.
-  Source locations: method lookup helpers with throw/no-throw options.
-  Known related CODEX findings: invalid path/property behavior reviewed.
-  Suggested unit tests: testStrictMissingMethodThrows(), testLenientMissingMethodReturnsNull()
-  Spec target section: Reflection Utilities / Missing Method Semantics
-
-  REFLECT-ERROR-002 — Missing Property Behavior Must Match Strict/Lenient API Contract
-  Contract statement: Missing property lookup must not silently resolve to another property; it must follow strict/
-  lenient behavior.
-  Rationale: Prevents silent wrong-path/wrong-property behavior.
-  Source locations: property lookup helpers.
-  Known related CODEX findings: wrong-property fallback risks reviewed.
-  Suggested unit tests: testStrictMissingPropertyThrows(), testLenientMissingPropertyReturnsNull()
-  Spec target section: Reflection Utilities / Missing Property Semantics
-
-  11. Failure / Silent Wrong-Method Contracts
-
-  REFLECT-FAILURE-001 — Reflection Must Prefer Visible Failure Over Wrong Invocation
-  Contract statement: If the intended member cannot be resolved unambiguously, reflection must fail or return a
-  defined no-match result rather than invoke a plausible but wrong member.
-  Rationale: Wrong invocation can mutate data, trigger events, or return wrong UI/filter values.
-  Source locations: method/property lookup, invocation helpers.
-  Known related CODEX findings: false-success wrong-method behavior reviewed.
-  Suggested unit tests: testAmbiguousMethodDoesNotInvokeWrongMethod(), testSimilarSetterNameNotInvokedAsFallback()
-  Spec target section: Reflection Utilities / Silent Wrong-Method Prevention
-
-  REFLECT-FAILURE-002 — Failed Invocation Must Not Be Treated As Successful Property Set/Get
-  Contract statement: If a reflected get/set invocation throws, callers must not treat the operation as completed
-  successfully.
-  Rationale: Property state, events, and generated logic depend on truthful completion.
-  Source locations: property invocation helpers, setter/getter wrappers.
-  Known related CODEX findings: exception swallowing risks reviewed.
-  Suggested unit tests: testGetterExceptionDoesNotReturnStaleValue(), testSetterExceptionDoesNotClaimSuccess()
-  Spec target section: Reflection Utilities / Invocation Completion Semantics
-
-  12. Test Coverage Matrix
-
-  Method lookup:
-
-  - testMethodLookupFindsExactPublicMethod
-  - testMethodLookupIsDeterministicAcrossCalls
-  - testMethodLookupCaseSensitiveByContract
-  - testAmbiguousCaseMethodLookupFailsOrUsesDefinedRule
-  - testInstanceLookupDoesNotReturnStaticMethodUnlessAllowed
-  - testStaticLookupInvokesStaticMethodByContract
-
-  Property getter/setter:
-
-  - testGetterDiscoveryFindsGetProperty
-  - testGetterDiscoveryUsesDocumentedFallbackOnly
-  - testSetterDiscoveryFindsMatchingSetter
-  - testSetterDiscoveryRejectsIncompatibleSetter
-  - testMissingGetterReturnsDefinedFailure
-  - testSimilarPropertyNameNotUsedAsFallback
-
-  Primitive/wrapper/numeric:
-
-  - testIntegerMatchesIntParameter
-  - testBooleanMatchesBooleanPrimitiveParameter
-  - testLongDoesNotSilentlyMatchIntWhenLossyByContract
-  - testBigDecimalConversionByContract
-
-  Overloads/null:
-
-  - testExactOverloadBeatsObjectOverload
-  - testExactPrimitiveWrapperOverloadByContract
-  - testAmbiguousOverloadFailsOrUsesDefinedRule
-  - testNullArgumentMatchesStringParameter
-  - testNullArgumentDoesNotMatchIntParameter
-  - testNullArgumentAmbiguousOverloadFailsOrUsesDefinedRule
-
-  Boolean:
-
-  - testBooleanIsGetterResolved
-  - testBooleanGetGetterPrecedenceByContract
-  - testIsActiveMapsToSetActive
-  - testBooleanPropertyNamedIsActiveByContract
-
-  Hierarchy/interface/access:
-
-  - testInheritedGetterResolved
-  - testInheritedMethodResolved
-  - testInterfaceGetterResolvedFromImplementation
-  - testInterfaceMethodInvokedOnImplementation
-  - testSubclassOverrideInvoked
-  - testPrivateMethodNotInvokedByPublicOnlyContract
-
-  Cache/error/failure:
-
-  - testCachedGetterSpecificToClass
-  - testCachedMethodSpecificToParameterTypes
-  - testCachedMethodReuseStableAcrossCalls
-  - testStrictMissingMethodThrows
-  - testLenientMissingMethodReturnsNull
-  - testStrictMissingPropertyThrows
-  - testAmbiguousMethodDoesNotInvokeWrongMethod
-  - testSetterExceptionDoesNotClaimSuccess
-
+REFLECT-DETERMINISM-001 — Same Inputs Produce Same Reflection Result
+Contract statement:
+For the same class, member request, arguments, metadata assumptions, access policy, strict/lenient mode, and runtime
+classpath, OA reflection must produce the same member, same value, same mutation, or same visible failure.
+Rationale:
+OA reflection is an AI-readable and runtime-readable semantic contract over executable blueprints. Determinism is
+required for digital twin runtime behavior, generated code, graph services, and tests.
+Source scope:
+All public behavior in OAReflect.
+Related CODEX findings:
+Method order ambiguity, classpath duplicate discovery, default-locale/case ambiguity, and broad numeric matching can
+threaten deterministic reflection behavior.
+Suggested unit tests:
+testSameMethodLookupSameResultRepeatedly, testSamePropertyLookupSameResultRepeatedly,
+testSameInvalidLookupFailsConsistently, testSameClassDiscoveryReturnsStableResults.
+Spec target section:
+Reflection Runtime / Determinism
 
 */
-
 

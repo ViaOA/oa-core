@@ -19,350 +19,454 @@
  */
 package com.viaoa.metadata;
 
-
 /* CODEX Invariants
 
-1. Metadata Runtime Contracts
+META-RUNTIME-001 — Executable Runtime Metadata
+Contract statement:
+com.viaoa.metadata defines the authoritative executable metadata model for OAObject classes, properties, links,
+calculated values, methods, callbacks, triggers, POJO mapping, datasource behavior, serialization, sync,
+replication, and graph runtime interpretation.
+Rationale:
+OA metadata is the semantic bridge between generated blueprints, annotations, Java class structure, and live Object
+Graph behavior. Runtime services must not infer conflicting semantics once metadata is initialized.
+Source scope:
+OAObjectInfo, OAPropertyInfo, OALinkInfo, OACalcInfo, OAMethodInfo, OAFkeyInfo, OAObjectModel, POJO metadata
+classes, metadata-consuming graph/object/hub/runtime services.
+Related CODEX findings:
+Existing package-info identifies metadata as runtime truth and notes optional metadata, inheritance/defaults, cache
+invalidation, trigger, and POJO semantics.
+Suggested unit tests:
+testMetadataIsAuthoritativeForPropertyLookup(), testRuntimeUsesMetadataLinkSemantics(),
+testAnnotationBlueprintBuildsEquivalentMetadata()
+Spec target section:
+Metadata Runtime / Core Responsibility
 
-  META-RUNTIME-001 — Metadata Is Runtime Truth
-  Contract statement: OAObjectInfo, OAPropertyInfo, OALinkInfo, OACalcInfo, and OAMethodInfo define authoritative
-  runtime semantics for OAObjects. Runtime services must not infer conflicting semantics from reflection, datasource
-  state, or object instances once metadata is initialized.
-  Rationale: Graph routing, Hub relationships, path traversal, serialization, datasource behavior, sync, and
-  replication all depend on metadata being the single semantic source.
-  Source locations: OAObjectInfo, OAPropertyInfo, OALinkInfo, OACalcInfo, OAMethodInfo, OAObjectInfoService,
-  OAObjectAnnotationService
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testMetadataIsAuthoritativeForPropertyLookup(), testRuntimeUsesMetadataLinkSemantics()
-  Spec target section: Metadata Runtime / Runtime Truth
+META-CLASS-001 — ObjectInfo Class Authority
+Contract statement:
+Every usable OAObjectInfo must identify exactly one owning OAObject class, and inherited/combined metadata must
+resolve to the intended concrete runtime class.
+Rationale:
+Graph lookup, datasource routing, cache authority, POJO generation, path parsing, triggers, serialization, sync, and
+replication depend on stable class identity.
+Source scope:
+OAObjectInfo.getForClass(), setForClass(...), metadata construction and combination services.
+Related CODEX findings:
+Existing package-info notes combined inherited metadata must still route to the concrete class.
+Suggested unit tests:
+testObjectInfoClassIdentitySetForRuntimeClass(), testCombinedObjectInfoUsesConcreteClass(),
+testObjectInfoClassIdentitySurvivesInheritanceMerge()
+Spec target section:
+Metadata Runtime / Class Identity
 
-  META-RUNTIME-002 — Optional Metadata Absence Is Safe
-  Contract statement: Optional metadata arrays, flags, paths, and annotation-derived values must behave as absent/
-  false/empty when unset; presence-check APIs must not throw.
-  Rationale: Optional metadata is common in generated models. Runtime callers must safely ask whether import-match,
-  context, view, POJO, or mapping metadata exists.
-  Source locations: OAObjectInfo.hasImportMatchProperties, getImportMatchPropertyNames, getViewDependentProperties,
-  getContextDependentProperties
-  Known related CODEX findings: fixed null import-match presence check.
-  Suggested unit tests: testUnsetOptionalMetadataPresenceChecksReturnFalse(),
-  testUnsetOptionalMetadataArraysAreSafeToQuery()
-  Spec target section: Metadata Runtime / Optional Metadata
+META-CONSTRUCT-001 — Deterministic Metadata Construction
+Contract statement:
+For the same generated class, annotations, inheritance chain, and runtime configuration, metadata construction must
+produce deterministic OAObjectInfo, OAPropertyInfo, OALinkInfo, OACalcInfo, and OAMethodInfo results independent of
+reflection ordering.
+Rationale:
+Metadata drives executable graph behavior. Nondeterministic construction changes identity, links, callbacks,
+triggers, and persistence behavior across JVM runs.
+Source scope:
+OAObjectInfo, OAPropertyInfo, OALinkInfo, OACalcInfo, OAMethodInfo, annotation/reflect metadata loading services.
+Related CODEX findings:
+Annotation package notes reflection order risks; metadata package notes cache-consistent supported mutation paths.
+Suggested unit tests:
+testMetadataConstructionDeterministicAcrossRepeatedLoads(),
+testReflectionOrderDoesNotChangePropertyOrLinkMetadata(), testInheritedMetadataMergeIsDeterministic()
+Spec target section:
+Metadata Runtime / Construction Semantics
 
-  2. OAObjectInfo Contracts
+META-LOOKUP-001 — Case-Insensitive Metadata Lookup
+Contract statement:
+Property, link, calculated property, and method lookup by name must follow OA’s case-insensitive metadata lookup
+rules and must be cache-consistent after supported metadata additions.
+Rationale:
+Path, query, filter, reflect, serialize, datasource, trigger, and UI code depend on stable name resolution.
+Source scope:
+OAObjectInfo.getPropertyInfo(...), addPropertyInfo(...), resetPropertyInfo(), getLinkInfo(...), addLinkInfo(...),
+getCalcInfo(...), addCalcInfo(...), getMethodInfo(...), addMethodInfo(...).
+Related CODEX findings:
+Existing package-info notes property lookup cache reset fixes and method lookup cache consistency expectations.
+Suggested unit tests:
+testPropertyLookupIsCaseInsensitive(), testLinkLookupIsCaseInsensitive(), testMethodInfoLookupIsCaseInsensitive(),
+testLookupCacheResetsAfterSupportedAdd()
+Spec target section:
+Metadata Runtime / Lookup Semantics
 
-  META-OBJECTINFO-001 — OAObjectInfo Identifies Exactly One OA Class
-  Contract statement: Every usable OAObjectInfo must be associated with its owning OAObject class through
-  getForClass() / setForClass(), and combined inherited metadata must still route to the concrete class.
-  Rationale: Graph lookup, datasource routing, cache ownership, POJO generation, path parsing, triggers, and sync role
-  behavior all depend on class identity.
-  Source locations: OAObjectInfo, OAObjectInfoService._getOAObjectInfo, createCombinedObjectInfo
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testCombinedObjectInfoUsesConcreteClass(),
-  testObjectInfoClassIdentitySurvivesInheritanceMerge()
-  Spec target section: Metadata Runtime / ObjectInfo Identity
+META-OPTIONAL-001 — Safe Optional Metadata
+Contract statement:
+Optional metadata arrays, flags, paths, callback fields, import-match state, POJO fields, view/context dependencies,
+and display/UI metadata must behave as absent, false, empty, or null when unset; presence-check APIs must not throw
+for normal absence.
+Rationale:
+Generated models commonly omit optional metadata. Runtime callers must safely query optional capabilities without
+startup or runtime failures.
+Source scope:
+OAObjectInfo.hasImportMatchProperties(), getImportMatchPropertyNames(), getImportMatchPropertyPaths(),
+getViewDependentProperties(), getContextDependentProperties(), OAPropertyInfo, OALinkInfo, OAMethodInfo optional
+fields.
+Related CODEX findings:
+Existing package-info notes fixed null import-match presence check.
+Suggested unit tests:
+testUnsetOptionalMetadataPresenceChecksReturnFalse(), testUnsetOptionalMetadataArraysAreSafeToQuery(),
+testMissingMetadataLookupReturnsNullNotException()
+Spec target section:
+Metadata Runtime / Optional Metadata
 
-  META-OBJECTINFO-002 — Display Metadata Defaults Must Not Be Suppressed By Empty Annotation Values
-  Contract statement: Empty annotation defaults must not override computed defaults. Display name defaults to simple
-  class name; plural name defaults to pluralized simple class name unless explicitly set.
-  Rationale: Empty display metadata silently breaks generated UI, POJO labels, diagnostics, and model-designer output.
-  Source locations: OAObjectInfo.getDisplayName, getPluralName, OAObjectAnnotationService,
-  OAObjectInfoService.createCombinedObjectInfo
-  Known related CODEX findings: fixed empty annotation display/plural behavior and plural fallback.
-  Suggested unit tests: testEmptyOAClassDisplayNameUsesDefault(), testPluralNameUsesSimpleClassNameFallback()
-  Spec target section: Metadata Runtime / Display Metadata
+META-DEFAULT-001 — Annotation Defaults Preserve OA Defaults
+Contract statement:
+Empty annotation defaults and missing generated metadata must not suppress computed OA defaults unless the empty
+value is explicitly meaningful.
+Rationale:
+Generated classes rely on default display names, plural names, lower names, and metadata fallbacks. Empty strings
+becoming runtime truth creates misleading UI, diagnostics, and tooling output.
+Source scope:
+OAObjectInfo.getDisplayName(), getPluralName(), getLowerName(), setDisplayName(...), setPluralName(...),
+setLowerName(...), annotation metadata loading.
+Related CODEX findings:
+Existing package-info notes fixed empty annotation display/plural behavior and plural fallback.
+Suggested unit tests:
+testEmptyOAClassDisplayNameUsesDefault(), testPluralNameUsesSimpleClassNameFallback(),
+testAnnotationEmptyStringDoesNotOverrideObjectInfoDefault()
+Spec target section:
+Metadata Runtime / Default Metadata
 
-  3. ID / Key Property Contracts
+META-ID-001 — Identity Metadata Consistency
+Contract statement:
+OAObjectInfo idProperties, keyProperties, OAPropertyInfo id/key/autoAssign flags, and object-key construction
+semantics must agree for each object type.
+Rationale:
+Identity metadata drives cache lookup, datasource matching, serialization identity, sync, replication, equality, and
+duplicate-object prevention.
+Source scope:
+OAObjectInfo.getIdProperties(), getKeyProperties(), isIdProperty(...), isKeyProperty(...), OAPropertyInfo.getId(),
+getKey(), getAutoAssign(), OAFkeyInfo.
+Related CODEX findings:
+Existing package-info notes ID/key metadata as a core object-key invariant.
+Suggested unit tests:
+testIdPropertiesMarkPropertyInfoAsId(), testKeyPropertiesMatchObjectKeyConstruction(),
+testAutoAssignIdMetadataMatchesGeneratedKeyContract()
+Spec target section:
+Metadata Runtime / Identity Metadata
 
-  META-ID-001 — ID Property Names Define Object Key Semantics
-  Contract statement: OAObjectInfo.idProperties and OAPropertyInfo.id/key flags must agree for identity, object-key c
-  onstruction, cache lookup, datasource matching, serialization identity, and replication identity.
-  Rationale: Any mismatch can create duplicate objects, stale cache entries, failed select matching, or replication
-  divergence.
-  Source locations: OAObjectInfo.getIdProperties, isIdProperty, getKeyProperties, OAPropertyInfo.getId, getKey,
-  OAObjectInfoService.initialize
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testIdPropertiesMarkPropertyInfoAsId(), testKeyPropertiesMatchObjectKeyConstruction()
-  Spec target section: Metadata Runtime / Identity Metadata
+META-PROPERTY-001 — Scalar Property Semantics
+Contract statement:
+OAPropertyInfo must accurately describe scalar property name, type, primitive/null tracking, identity/key flags,
+validation/display fields, formatting, datasource column fields, blob/encrypted/hash/timestamp flags, import/export,
+POJO, and sensitive-data semantics.
+Rationale:
+Scalar metadata feeds object property access, datasource writes, validation, serialization, formatting, path/query
+resolution, sync, and replication.
+Source scope:
+OAPropertyInfo getters/setters, OAObjectInfo property list/lookup, annotation-derived property metadata.
+Related CODEX findings:
+Existing package-info notes primitive null semantics and column metadata retention.
+Suggested unit tests:
+testPropertyInfoStoresNameTypeAndDisplayMetadata(), testPrimitiveNullTrackedForConfiguredPrimitiveProperty(),
+testBlobTimestampFormatAndColumnMetadataSurviveLookup()
+Spec target section:
+Metadata Runtime / Property Metadata
 
-  META-ID-002 — POJO Key Metadata Must Match OA Key Semantics
-  Contract statement: POJO key positions must represent OA primary keys, import-match keys, or declared unique-link
-  keys consistently and deterministically.
-  Rationale: Deserialization/import needs stable matching to existing OAObjects without creating duplicates.
-  Source locations: OAObjectPojoLoader.markAllPojoPropertyKeys, PojoDelegate.hasPkey, hasImportMatchKey,
-  hasLinkUniqueKey
-  Known related CODEX findings: accepted POJO-loader path noted by owner.
-  Suggested unit tests: testPojoPrimaryKeyMetadataMatchesObjectInfoKey(),
-  testPojoImportMatchKeyMetadataIsDeterministic()
-  Spec target section: Metadata Runtime / POJO Key Semantics
+META-LINK-001 — Link Cardinality and Target Semantics
+Contract statement:
+Each OALinkInfo must define stable link name, target class, cardinality, reverse name, ownership, cascade flags,
+Hub/detail behavior, relationship flags, calculated/transient status, and default/select/equal path metadata
+according to OA graph semantics.
+Rationale:
+Link metadata defines object graph shape. Wrong link metadata corrupts Hub/detail behavior, traversal, save/delete,
+serialization, sync, replication, and path/query results.
+Source scope:
+OALinkInfo, OAObjectInfo.getLinkInfo(...), addLinkInfo(...), OAFkeyInfo, link metadata consumers.
+Related CODEX findings:
+Existing package-info notes cardinality, reverse-link, ownership, and cascade metadata as runtime contracts.
+Suggested unit tests:
+testLinkInfoCardinalityDrivesPathReturnType(), testLinkInfoTargetClassMatchesMetadataLookup(),
+testLinkInfoRelationshipFlagsPreserved()
+Spec target section:
+Metadata Runtime / Link Metadata
 
-  4. Property Metadata Contracts
+META-REVERSE-001 — Reverse-Link Resolution
+Contract statement:
+When reverseName is defined, OALinkInfo.getReverseLinkInfo() must resolve to the target class’s matching reverse
+link metadata and remain stable after metadata initialization.
+Rationale:
+Reverse links drive Hub membership, ownership, cascade, path reversal, trigger traversal, sync propagation, and
+serialization relationships.
+Source scope:
+OALinkInfo.getReverseName(), setReverseName(...), getReverseLinkInfo(), OAObjectInfo link metadata.
+Related CODEX findings:
+Existing package-info identifies reverse-link resolution as stable metadata behavior.
+Suggested unit tests:
+testReverseLinkResolvesByNameIgnoringCase(), testSyntheticReverseLinkCreatedForOneSidedManyWhenContracted(),
+testReverseLinkStableAfterMetadataInitialization()
+Spec target section:
+Metadata Runtime / Reverse-Link Semantics
 
-  META-PROPERTY-001 — Property Name Lookup Is Case-Insensitive And Cache-Consistent
-  Contract statement: Property metadata lookup by name must be case-insensitive, and lookup caches must be reset
-  whenever property metadata is added or replaced through supported paths.
-  Rationale: Path, filter, query, reflect, serialize, and datasource code depend on stable name resolution.
-  Source locations: OAObjectInfo.getPropertyInfo, addPropertyInfo, resetPropertyInfo, OAPropertyInfo.getName,
-  getLowerName
-  Known related CODEX findings: fixed inheritance merge to use addPropertyInfo.
-  Suggested unit tests: testPropertyLookupIsCaseInsensitive(), testPropertyLookupCacheResetsAfterAdd()
-  Spec target section: Metadata Runtime / Property Lookup
+META-OWNERSHIP-001 — Ownership and Cascade Semantics
+Contract statement:
+OALinkInfo owner, reverse-owner, owned-link caches, cascadeSave, cascadeDelete, mustBeEmptyForDelete, and ownership-
+derived state must consistently define graph lifecycle ownership.
+Rationale:
+Save/delete cascade, referenceability, delete restrictions, cache ownership, and graph traversal depend on ownership
+metadata.
+Source scope:
+OALinkInfo.getOwner(), setOwner(...), getCascadeSave(), getCascadeDelete(), getMustBeEmptyForDelete(),
+OAObjectInfo.getOwnedLinkInfos(), getOwnedByOne(), isOwnedAndNoReverseMany().
+Related CODEX findings:
+Existing package-info notes ownership and cascade metadata contracts.
+Suggested unit tests:
+testOwnedLinkInfosReflectOwnerLinks(), testOwnedByOneUsesReverseOwnerMetadata(),
+testCascadeSaveFollowsLinkMetadata(), testMustBeEmptyForDeleteBlocksDeleteWhenLinkHasMembers()
+Spec target section:
+Metadata Runtime / Ownership and Cascade
 
-  META-PROPERTY-002 — Primitive Null Semantics Must Be Metadata-Driven
-  Contract statement: Primitive class type, trackPrimitiveNull, and primitive-property arrays must consistently define
-  which primitive fields participate in OA primitive-null tracking.
-  Rationale: OA primitive-null semantics affect object property reads, serialization, datasource writes, and equality/
-  filter behavior.
-  Source locations: OAPropertyInfo.setClassType, getTrackPrimitiveNull, OAObjectInfo.getPrimitiveProperties,
-  OAObjectInfoService.initialize
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testPrimitiveNullTrackedForConfiguredPrimitiveProperty(),
-  testPrimitivePropertyListIsStableAcrossInheritance()
-  Spec target section: Metadata Runtime / Primitive Null Semantics
+META-CALC-001 — Calculated Metadata Semantics
+Contract statement:
+OACalcInfo must expose stable calculated property name, return type, dependency paths, hub-calculation flag, and
+invocation metadata needed by runtime invalidation, reflection, path traversal, serialization, and UI refresh.
+Rationale:
+Calculated properties are executable semantic metadata and must not become stale or invokable through the wrong
+runtime path.
+Source scope:
+OACalcInfo, OAObjectInfo.addCalcInfo(...), getCalcInfo(...), isHubCalcInfo(...), calculated property consumers.
+Related CODEX findings:
+Existing package-info notes fixed hub-calc index consistency.
+Suggested unit tests:
+testCalculatedPropertyDependenciesAreLoadedFromMetadata(), testHubCalcInfoIndexUpdatedForAllAddPaths(),
+testInheritedHubCalcInfoIsRecognized()
+Spec target section:
+Metadata Runtime / Calculated Metadata
 
-  5. Link / Reverse-Link Contracts
+META-METHOD-001 — Method Metadata Semantics
+Contract statement:
+OAMethodInfo must define stable method/action metadata, callback dependencies, visibility/enabled/context fields,
+and method annotations in a way that lookup and invocation consumers can resolve deterministically.
+Rationale:
+Generated UI actions, callbacks, triggers, and runtime callable graph behavior depend on method metadata.
+Source scope:
+OAMethodInfo, OAObjectInfo.addMethodInfo(...), addMethod(...), getMethodInfo(...), object callback method APIs.
+Related CODEX findings:
+Existing package-info notes method lookup and callback attachment consistency.
+Suggested unit tests:
+testMethodInfoLookupIsCaseInsensitive(), testMethodInfoCacheResetsAfterAdd(),
+testMethodCallbackMetadataAttachesToMethodInfo()
+Spec target section:
+Metadata Runtime / Method Metadata
 
-  META-LINK-001 — Link Metadata Defines Cardinality And Target Type
-  Contract statement: Every OALinkInfo must accurately define name, target class, and cardinality (TYPE_ONE or
-  TYPE_MANY). These values drive Hub/detail behavior, path traversal, datasource reference loading, and serialization.
-  Rationale: Wrong cardinality or target class corrupts object graph shape.
-  Source locations: OALinkInfo.getName, getToClass, getType, isOne, isMany, OAObjectInfo.getLinkInfo
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testLinkInfoCardinalityDrivesPathReturnType(), testLinkInfoTargetClassMatchesMetadataLookup()
-  Spec target section: Metadata Runtime / Link Semantics
+META-CALLBACK-001 — Callback Metadata Attachment
+Contract statement:
+Object, property, link, method, and calculated-property callback metadata must attach to the matching metadata
+element by name and must remain discoverable by runtime callback consumers.
+Rationale:
+Incorrect callback routing creates silent missing behavior in generated applications and callable graph flows.
+Source scope:
+OAObjectInfo.addObjectCallbackMethod(...), getObjectCallbackMethod(...), OAPropertyInfo callback fields, OALinkInfo
+callback fields, OAMethodInfo callback fields.
+Related CODEX findings:
+Existing package-info identifies callback metadata attachment as a runtime contract.
+Suggested unit tests:
+testPropertyCallbackAttachesToPropertyInfo(), testLinkCallbackAttachesToLinkInfo(),
+testObjectCallbackMethodLookupUsesExpectedName()
+Spec target section:
+Metadata Runtime / Callback Metadata
 
-  META-LINK-002 — Reverse-Link Resolution Must Be Stable
-  Contract statement: If reverseName is defined, getReverseLinkInfo() must resolve to the target object’s matching
-  link metadata and remain consistent after metadata initialization.
-  Rationale: Reverse links drive Hub membership, ownership, cascade, trigger reverse traversal, path reversal, and
-  sync propagation.
-  Source locations: OALinkInfo.getReverseName, setReverseName, getReverseLinkInfo, OAObjectInfoService reverse-link
-  setup
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testReverseLinkResolvesByNameIgnoringCase(), testSyntheticReverseLinkCreatedForOneSidedMany()
-  Spec target section: Metadata Runtime / Reverse Link Semantics
+META-DATASOURCE-001 — Datasource Participation Metadata
+Contract statement:
+useDataSource, localOnly, addToCache, initializeNewObjects, supportsStorage, lookup, singleton, preSelect,
+processed, and related class-level metadata must define runtime datasource/cache participation for the object type.
+Rationale:
+Datasource routing, local-only behavior, object cache registration, object initialization, sync, replication, and
+selection behavior depend on class-level metadata.
+Source scope:
+OAObjectInfo.getUseDataSource(), getLocalOnly(), getAddToCache(), getInitializeNewObjects(), getSupportsStorage(),
+getLookup(), getSingleton(), getPreSelect(), getProcessed().
+Related CODEX findings:
+Existing package-info notes datasource flags must be class-level runtime truth.
+Suggested unit tests:
+testAnnotationDatasourceFlagsLoadIntoObjectInfo(), testCombinedObjectInfoPreservesDatasourceFlags(),
+testLocalOnlyObjectInfoSkipsExternalDatasourceByContract()
+Spec target section:
+Metadata Runtime / Datasource Metadata
 
-  6. Ownership / Cascade Contracts
+META-POJO-001 — POJO Metadata Alignment
+Contract statement:
+POJO metadata generated from OAObjectInfo must preserve regular properties, one-link foreign keys, import-match
+fields, many-link presence, primary keys, and unique-link matching rules consistently with OA object identity
+semantics.
+Rationale:
+JSON/Jackson/import tooling must match or create correct OAObjects without duplicate identity or relationship drift.
+Source scope:
+OAObjectInfo.getPojo(), POJO metadata classes, OAPropertyInfo noPojo/pojoKeyPos/importMatch, OALinkInfo import/
+equal/select metadata.
+Related CODEX findings:
+Existing package-info notes accepted nested POJO import-match loader behavior.
+Suggested unit tests:
+testPojoLoaderIncludesRegularPropertiesAndLinks(), testPojoLoaderPreservesImportMatchAndFkeySemantics(),
+testPojoPrimaryKeyMetadataMatchesObjectInfoKey()
+Spec target section:
+Metadata Runtime / POJO Metadata
 
-  META-OWNERSHIP-001 — Ownership Metadata Controls Lifecycle Semantics
-  Contract statement: OALinkInfo.owner, reverse-owner state, and owned-link caches must consistently define object
-  ownership and one-owner relationships.
-  Rationale: Save/delete cascade, referenceability, delete restrictions, and graph ownership depend on this metadata.
-  Source locations: OALinkInfo.getOwner, setOwner, OAObjectInfo.getOwnedLinkInfos, getOwnedByOne,
-  isOwnedAndNoReverseMany
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testOwnedLinkInfosReflectOwnerLinks(), testOwnedByOneUsesReverseOwnerMetadata()
-  Spec target section: Metadata Runtime / Ownership Semantics
+META-PATH-001 — Metadata Resolution for Path and Query
+Contract statement:
+Path traversal, query parsing, filter evaluation, reflective property access, serializer traversal, and generated UI
+behavior must resolve properties, links, calculated properties, and methods through metadata with consistent case-
+insensitive behavior.
+Rationale:
+Runtime packages must agree on graph shape and callable fields.
+Source scope:
+OAObjectInfo.getPropertyInfo(...), getLinkInfo(...), getCalcInfo(...), getMethodInfo(...), OAPropertyInfo,
+OALinkInfo, OACalcInfo, OAMethodInfo.
+Related CODEX findings:
+Existing package-info identifies path/filter/query metadata resolution as a cross-runtime consumer contract.
+Suggested unit tests:
+testOAPathResolvesPropertyLinkAndCalcFromMetadata(), testQueryFilterUsesMetadataCaseInsensitiveLookup(),
+testSerializerUsesMetadataForPropertyAndLinkTraversal()
+Spec target section:
+Metadata Runtime / Cross-Runtime Resolution
 
-  META-CASCADE-001 — Cascade Metadata Must Match Save/Delete Runtime Behavior
-  Contract statement: cascadeSave, cascadeDelete, mustBeEmptyForDelete, and ownership flags must be interpreted
-  consistently by object and Hub save/delete services.
-  Rationale: Cascade metadata defines whether related objects are saved, deleted, blocked, or left untouched.
-  Source locations: OALinkInfo.getCascadeSave, getCascadeDelete, getMustBeEmptyForDelete, object save/delete services
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testCascadeSaveFollowsLinkMetadata(), testMustBeEmptyForDeleteBlocksDeleteWhenLinkHasMembers()
-  Spec target section: Metadata Runtime / Cascade Semantics
+META-TRIGGER-001 — Trigger Metadata Semantics
+Contract statement:
+Metadata-backed triggers must preserve dependent property paths, execution role, registration counters, removal
+semantics, and graph visibility according to trigger/runtime contracts.
+Rationale:
+Triggers are metadata-driven reactive behavior. Incorrect registration or role handling can suppress standalone
+behavior, duplicate execution, or leak trigger hooks.
+Source scope:
+OAObjectInfo.createTrigger(...), removeTrigger(...), getTriggers(...), getHasTriggers(), onChange(...), TriggerInfo
+state.
+Related CODEX findings:
+Existing package-info notes fixed server-side trigger gates and removal/counter consistency concerns.
+Suggested unit tests:
+testServerSideOnlyTriggerRunsInSingleUser(), testServerSideOnlyTriggerDoesNotRunOnClient(),
+testRemoveTriggerRemovesAllRegistrationsAndCounters()
+Spec target section:
+Metadata Runtime / Trigger Metadata
 
-  7. Calculated Property Contracts
+META-MUTATION-001 — Supported Mutation Invalidates Derived State
+Contract statement:
+Supported metadata mutation APIs that add or replace properties, links, calculated properties, methods, callbacks,
+or object-level flags must update or invalidate derived caches and indexes before later lookup.
+Rationale:
+Stale metadata caches cause silent wrong path, property, link, method, ownership, trigger, or calculated-property
+resolution.
+Source scope:
+OAObjectInfo.addPropertyInfo(...), resetPropertyInfo(), addLinkInfo(...), getLinkInfos() custom list hooks,
+addCalcInfo(...), addMethodInfo(...), addObjectCallbackMethod(...).
+Related CODEX findings:
+Existing package-info notes fixed inherited merge paths to use supported add APIs and hub-calc index updates.
+Suggested unit tests:
+testPropertyCacheResetsAfterAddPropertyInfo(), testLinkCacheResetsAfterAddLinkInfo(),
+testServiceAddCalcInfoUpdatesHubCalcIndex()
+Spec target section:
+Metadata Runtime / Metadata Mutation
 
-  META-CALC-001 — Calculated Property Metadata Must Include Dependencies
-  Contract statement: Every calculated property must expose a stable name, return type, dependency paths, and hub-
-  calculation flag when applicable.
-  Rationale: Triggers, UI refresh, serialization, path traversal, and reflection depend on calculated-property
-  metadata.
-  Source locations: OACalcInfo, OAObjectInfo.addCalcInfo, getCalcInfo, OAObjectAnnotationService calculated-property
-  loading
-  Known related CODEX findings: fixed hub-calc index consistency.
-  Suggested unit tests: testCalculatedPropertyDependenciesAreLoadedFromAnnotation(),
-  testHubCalcInfoIndexUpdatedForAllAddPaths()
-  Spec target section: Metadata Runtime / Calculated Property Semantics
+META-STABILITY-001 — Post-Initialization Stability
+Contract statement:
+Once metadata is initialized and consumed by runtime services, it must be treated as stable unless an explicit
+supported mutation/rebuild path resets all dependent caches and consumers.
+Rationale:
+Runtime services cache metadata decisions for performance, identity, graph traversal, path/query execution,
+serialization, sync, and replication.
+Source scope:
+OAObjectInfo property/link/calc/method lists, lookup maps, owned-link caches, hub-calc indexes, trigger registration
+state.
+Related CODEX findings:
+Existing package-info notes supported mutation paths and freeze expectations.
+Suggested unit tests:
+testMetadataInitializationProducesStableLookups(), testSupportedMutationInvalidatesLookupCaches(),
+testArbitraryListMutationRequiresOwnerDecision()
+Spec target section:
+Metadata Runtime / Metadata Stability
 
-  META-CALC-002 — Hub Calculated Properties Must Be Indexed Consistently
-  Contract statement: If an OACalcInfo is marked isForHub, OAObjectInfo.isHubCalcInfo(name) must return true for the
-  same property name.
-  Rationale: Runtime reflection chooses different invocation semantics for Hub calculations.
-  Source locations: OAObjectInfo.addCalcInfo, isHubCalcInfo, OAObjectInfoService.createCombinedObjectInfo,
-  OAObjectReflectService
-  Known related CODEX findings: fixed direct calc list additions bypassing hub-calc index.
-  Suggested unit tests: testServiceAddCalcInfoUpdatesHubCalcIndex(), testInheritedHubCalcInfoIsRecognized()
-  Spec target section: Metadata Runtime / Hub Calculated Properties
+META-FAIL-001 — Invalid Metadata Visibility
+Contract statement:
+Invalid, contradictory, missing, or incomplete metadata required for runtime behavior must fail visibly during
+construction, verification, lookup, or first semantic use; metadata APIs must not produce false success.
+Rationale:
+False metadata success can corrupt persistence, graph traversal, identity, Hub relationships, serialization, sync,
+replication, and generated UI/tooling.
+Source scope:
+OAObjectInfo, OAPropertyInfo, OALinkInfo, OACalcInfo, OAMethodInfo, metadata lookup and construction paths.
+Related CODEX findings:
+Existing package-info notes null-safe presence checks, optional metadata behavior, verifier-alignment risks from
+annotation package, and wrong-metadata prevention.
+Suggested unit tests:
+testInvalidLinkMetadataFailsBeforeRuntimeUse(), testMetadataPresenceChecksAreNullSafe(),
+testMissingRuntimeRequiredMetadataFailsVisibly()
+Spec target section:
+Metadata Runtime / Failure Semantics
 
-  8. Method Metadata Contracts
+META-CONCURRENT-001 — Shared Metadata Thread-Safety Boundary
+Contract statement:
+Shared metadata structures must be safely published after construction, and concurrent reads must see stable
+metadata; concurrent mutation is allowed only through supported paths with defined cache invalidation behavior.
+Rationale:
+Metadata is read by many runtime threads across object, Hub, path, query, serialization, sync, replication, UI, and
+datasource services.
+Source scope:
+OAObjectInfo lookup caches and lists, concurrent trigger maps, OAPropertyInfo/OALinkInfo/OACalcInfo/OAMethodInfo
+metadata fields.
+Related CODEX findings:
+Existing package-info identifies metadata stability and supported mutation cache reset as key contracts.
+Suggested unit tests:
+testConcurrentMetadataLookupsSeeStablePropertyInfo(), testConcurrentTriggerLookupUsesStableRegistrationState(),
+testConcurrentSupportedMetadataAddInvalidatesCachesSafely()
+Spec target section:
+Metadata Runtime / Concurrency
 
-  META-METHOD-001 — Method Metadata Lookup Must Be Case-Insensitive And Cache-Consistent
-  Contract statement: OAMethodInfo lookup by name must be case-insensitive and must reflect supported method
-  additions.
-  Rationale: Model-driven invocation, callbacks, trigger methods, and generated UI actions use method metadata.
-  Source locations: OAObjectInfo.getMethodInfo, addMethod, addMethodInfo, OAMethodInfo
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testMethodInfoLookupIsCaseInsensitive(), testMethodInfoCacheResetsAfterAdd()
-  Spec target section: Metadata Runtime / Method Metadata
+META-COMPAT-001 — Blueprint and Version Compatibility
+Contract statement:
+Metadata must remain compatible with generated blueprint classes and annotation evolution; changes to metadata
+defaults, field meaning, or construction rules must preserve existing generated model behavior or require explicit
+migration/validation.
+Rationale:
+OA applications depend on generated model classes remaining semantically stable across OA 4.0 metadata evolution.
+Source scope:
+OAObjectInfo, OAPropertyInfo, OALinkInfo, OACalcInfo, OAMethodInfo, OAObjectModel, annotation-derived metadata, POJO
+metadata.
+Related CODEX findings:
+Annotation package notes compatibility/default ownership; metadata package notes defaults and generated model
+behavior.
+Suggested unit tests:
+testMetadataDefaultsRemainCompatibleWithExistingGeneratedModels(),
+testAnnotationDefaultChangesRequireMetadataValidation(), testBlueprintMetadataRoundTripPreservesSemantics()
+Spec target section:
+Metadata Runtime / Compatibility
 
-  META-METHOD-002 — Callback Metadata Must Be Attached To The Correct Runtime Element
-  Contract statement: Object, property, link, method, and calculated-property callbacks must attach to the matching
-  metadata element by name.
-  Rationale: Incorrect callback routing creates silent missing behavior in generated applications.
-  Source locations: OAObjectInfo.addObjectCallbackMethod, getObjectCallbackMethod, OAObjectAnnotationService callback
-  processing
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testPropertyCallbackAttachesToPropertyInfo(), testLinkCallbackAttachesToLinkInfo()
-  Spec target section: Metadata Runtime / Callback Semantics
+META-MODEL-001 — UI/Model Policy Metadata
+Contract statement:
+OAObjectModel metadata must represent UI/tooling policy state separately from core runtime object identity/link
+semantics, and defaultAll must set only its documented model-policy flags.
+Rationale:
+Object model metadata can guide UI/tooling behavior without becoming core graph identity or persistence truth.
+Source scope:
+OAObjectModel, display/plural names, allow flags, viewOnly, createUI, table/filter/sorting/download/move/refresh
+flags.
+Related CODEX findings:
+No direct source CODEX finding; package context includes display/UI metadata boundaries.
+Suggested unit tests:
+testObjectModelDefaultAllSetsDocumentedFlags(), testObjectModelDisplayNamesAreIndependentOfObjectInfoIdentity(),
+testObjectModelPolicyDoesNotMutateCoreObjectInfo()
+Spec target section:
+Metadata Runtime / Model Policy Metadata
 
-  9. Datasource Mapping Contracts
-
-  META-DATASOURCE-001 — Datasource Flags Must Be Class-Level Runtime Truth
-  Contract statement: useDataSource, localOnly, addToCache, and initialization flags on OAObjectInfo must define
-  datasource/cache/runtime participation for that object type.
-  Rationale: Datasource routing, local-only behavior, object cache registration, sync, and replication use these
-  flags.
-  Source locations: OAObjectInfo.getUseDataSource, getLocalOnly, getAddToCache, getInitializeNewObjects,
-  OAObjectAnnotationService, OAObjectInfoService
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testAnnotationDatasourceFlagsLoadIntoObjectInfo(),
-  testCombinedObjectInfoPreservesDatasourceFlags()
-  Spec target section: Metadata Runtime / Datasource Mapping
-
-  META-DATASOURCE-002 — Property Column Metadata Must Remain Attached To Property Metadata
-  Contract statement: OAPropertyInfo must retain column, length, format, blob, timestamp, timezone, encrypted, and
-  hash metadata for datasource and serialization consumers.
-  Rationale: Persistence and serialization need metadata-consistent value handling.
-  Source locations: OAPropertyInfo, OAColumn, OAProperty, OAObjectAnnotationService property annotation loading
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testOAColumnMetadataLoadsIntoPropertyInfo(), testBlobTimestampAndFormatMetadataSurviveLookup()
-  Spec target section: Metadata Runtime / Column Mapping
-
-  10. Annotation / POJO Loading Contracts
-
-  META-ANNOTATION-001 — Annotation Defaults Must Preserve OA Defaults
-  Contract statement: Annotation default values such as empty strings or empty arrays must not override computed OA
-  metadata defaults unless explicitly meaningful.
-  Rationale: Generated models commonly rely on annotation defaults. Empty default metadata must not become silent
-  wrong metadata.
-  Source locations: OAObjectAnnotationService, OAObjectInfoService.createCombinedObjectInfo, OAObjectInfo default
-  getters
-  Known related CODEX findings: fixed empty display/plural annotation behavior.
-  Suggested unit tests: testAnnotationEmptyStringDoesNotOverrideObjectInfoDefault(),
-  testAnnotationLowerNameDefaultIsComputed()
-  Spec target section: Metadata Runtime / Annotation Loading
-
-  META-POJO-001 — POJO Metadata Must Preserve OA Match Semantics
-  Contract statement: POJO metadata generated from OAObjectInfo must preserve regular properties, link-one fkeys,
-  import-match fields, link-many presence, and unique-link matching rules.
-  Rationale: JSON/Jackson/import layers depend on POJO metadata to match or create correct OAObjects.
-  Source locations: OAObjectPojoLoader, Pojo, PojoDelegate, PojoLinkOneDelegate, PojoProperty
-  Known related CODEX findings: accepted nested POJO import-match loader behavior per owner.
-  Suggested unit tests: testPojoLoaderIncludesRegularPropertiesAndLinks(),
-  testPojoLoaderPreservesImportMatchAndFkeySemantics()
-  Spec target section: Metadata Runtime / POJO Loading
-
-  11. Metadata Mutability / Consistency Contracts
-
-  META-MUTABILITY-001 — Supported Metadata Mutation Paths Must Reset Derived Caches
-  Contract statement: Adding properties, links, methods, or calc infos through supported APIs must update or
-  invalidate derived caches and indexes.
-  Rationale: Stale metadata caches cause silent wrong path/property/link/method resolution.
-  Source locations: OAObjectInfo.addPropertyInfo, addLinkInfo, addMethodInfo, addCalcInfo, resetPropertyInfo, link
-  list reset hook
-  Known related CODEX findings: fixed inheritance merge paths to use supported add APIs.
-  Suggested unit tests: testLinkCacheResetsAfterAddLinkInfo(), testPropertyCacheResetsAfterAddPropertyInfo()
-  Spec target section: Metadata Runtime / Metadata Consistency
-
-  META-MUTABILITY-002 — Metadata Should Be Treated As Stable After Initialization
-  Contract statement: Once metadata is initialized and consumed by runtime services, arbitrary mutation of live
-  metadata lists or mutable metadata fields must be avoided or must explicitly reset dependent caches.
-  Rationale: Runtime services cache object/link/property decisions for performance and determinism.
-  Source locations: OAObjectInfo.getPropertyInfos, getLinkInfos, getCalcInfos, getMethodInfos, cached lookup maps
-  Known related CODEX findings: none observed beyond fixed supported mutation paths.
-  Suggested unit tests: testSupportedMutationInvalidatesLookupCaches(),
-  testMetadataInitializationProducesStableLookups()
-  Spec target section: Metadata Runtime / Freeze Expectations
-
-  12. Cross-Runtime Consumer Contracts
-
-  META-CONSUMER-001 — Path/Filter/Query Must Resolve Through Metadata
-  Contract statement: Path traversal, filter/query parsing, and reflective property access must resolve properties,
-  links, and calculated properties from metadata with consistent case-insensitive behavior.
-  Rationale: OAPath, filters, selects, serializers, and generated UI must agree on graph shape.
-  Source locations: OAObjectInfo.getPropertyInfo, getLinkInfo, getCalcInfo, OALinkInfo, OAPropertyInfo, OAPath
-  consumers
-  Known related CODEX findings: none observed.
-  Suggested unit tests: testOAPathResolvesPropertyLinkAndCalcFromMetadata(),
-  testQueryFilterUsesMetadataCaseInsensitiveLookup()
-  Spec target section: Metadata Runtime / Cross-Runtime Resolution
-
-  META-CONSUMER-002 — Trigger Metadata Must Honor Sync Role Semantics
-  Contract statement: Trigger metadata marked server-side-only must suppress clients but must still run in SingleUser
-  mode unless explicitly actual-server-only.
-  Rationale: SingleUser is local runtime, not a client. Silent trigger suppression breaks standalone apps and
-  generated model behavior.
-  Source locations: OAObjectInfo.createTrigger, _onChange, _onChange2, OATrigger, OATriggerMethod
-  Known related CODEX findings: fixed isServer() gates to isClient() gates for trigger execution.
-  Suggested unit tests: testServerSideOnlyTriggerRunsInSingleUser(), testServerSideOnlyTriggerDoesNotRunOnClient()
-  Spec target section: Metadata Runtime / Trigger Role Semantics
-
-  13. Failure / Silent Wrong-Metadata Contracts
-
-  META-FAILURE-001 — Metadata Presence Checks Must Not Produce False Success Or NPE
-  Contract statement: Metadata query APIs that answer “has” or lookup questions must return false/null for absence and
-  must not throw for normal unset metadata.
-  Rationale: Runtime services use metadata checks to choose behavior. Exceptions or false positives cause wrong
-  routing or startup failure.
-  Source locations: hasImportMatchProperties, getPropertyInfo, getLinkInfo, getMethodInfo, getCalcInfo
-  Known related CODEX findings: fixed import-match NPE.
-  Suggested unit tests: testMetadataLookupReturnsNullForMissingName(), testMetadataPresenceChecksAreNullSafe()
-  Spec target section: Metadata Runtime / Failure Semantics
-
-  META-FAILURE-002 — Removing Metadata-Backed Runtime Hooks Must Remove All Registrations
-  Contract statement: Removing a trigger or metadata-backed runtime hook must remove every registration created for
-  that hook and keep counters consistent.
-  Rationale: Stale trigger metadata causes callbacks after removal and corrupts trigger accounting.
-  Source locations: OAObjectInfo.removeTrigger, _removeTrigger, hmTriggerInfo, trigger counters
-  Known related CODEX findings: fixed _removeTrigger removing only first matching registration.
-  Suggested unit tests: testRemoveTriggerRemovesAllRegistrationsForSameTrigger(),
-  testTriggerCountersMatchRegisteredTriggerInfosAfterRemove()
-  Spec target section: Metadata Runtime / Hook Cleanup
-
-  14. Test Coverage Matrix
-
-  OAObjectInfo:
-  testObjectInfoClassIdentitySurvivesInheritanceMerge, testUnsetOptionalMetadataPresenceChecksReturnFalse,
-  testSupportedMutationInvalidatesLookupCaches
-
-  ID / key metadata:
-  testIdPropertiesMarkPropertyInfoAsId, testKeyPropertiesMatchObjectKeyConstruction,
-  testPojoPrimaryKeyMetadataMatchesObjectInfoKey
-
-  OAPropertyInfo:
-  testPropertyLookupIsCaseInsensitive, testPrimitiveNullTrackedForConfiguredPrimitiveProperty,
-  testOAColumnMetadataLoadsIntoPropertyInfo
-
-  OALinkInfo:
-  testReverseLinkResolvesByNameIgnoringCase, testLinkInfoCardinalityDrivesPathReturnType,
-  testOwnedLinkInfosReflectOwnerLinks
-
-  Ownership / cascade:
-  testCascadeSaveFollowsLinkMetadata, testMustBeEmptyForDeleteBlocksDeleteWhenLinkHasMembers
-
-  OACalcInfo:
-  testCalculatedPropertyDependenciesAreLoadedFromAnnotation, testHubCalcInfoIndexUpdatedForAllAddPaths,
-  testInheritedHubCalcInfoIsRecognized
-
-  OAMethodInfo / callbacks:
-  testMethodInfoLookupIsCaseInsensitive, testPropertyCallbackAttachesToPropertyInfo,
-  testLinkCallbackAttachesToLinkInfo
-
-  Annotation / POJO:
-  testAnnotationEmptyStringDoesNotOverrideObjectInfoDefault, testPojoLoaderIncludesRegularPropertiesAndLinks,
-  testPojoLoaderPreservesImportMatchAndFkeySemantics
-
-  Cross-runtime:
-  testOAPathResolvesPropertyLinkAndCalcFromMetadata, testServerSideOnlyTriggerRunsInSingleUser,
-  testServerSideOnlyTriggerDoesNotRunOnClient
-
-  Failure / cleanup:
-  testMetadataPresenceChecksAreNullSafe, testRemoveTriggerRemovesAllRegistrationsForSameTrigger,
-  testTriggerCountersMatchRegisteredTriggerInfosAfterRemove
-
+META-INTEGRATION-001 — Cross-Package Metadata Compatibility
+Contract statement:
+Metadata behavior must remain compatible with annotation, reflect, object, Hub, graph, datasource, path, query,
+select, filter, find, serialization, sync, replication, validation, callback, trigger, template, and codegen/tooling
+contracts.
+Rationale:
+Metadata is the executable semantic contract over OA blueprints and live graph behavior; nearly every runtime
+package depends on its authority and stability.
+Source scope:
+com.viaoa.metadata.*, metadata consumers across OA runtime packages.
+Related CODEX findings:
+Existing package-info maps metadata to runtime truth, datasource, path/query, triggers, POJO, annotation defaults,
+cache, and graph services.
+Suggested unit tests:
+testMetadataAnnotationReflectRuntimeAlignment(), testMetadataPathQueryDatasourceSerializationIntegration(),
+testMetadataSyncReplicationIdentityIntegration()
+Spec target section:
+Metadata Runtime / Cross-Package Integration
 
 */
-
-
