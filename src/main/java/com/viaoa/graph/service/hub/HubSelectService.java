@@ -849,7 +849,7 @@ public abstract class HubSelectService {
 			return false;
 		}
 		OAPath<?> propPath = new OAPath(hubSelectWhere.getObjectClass(), pp, true);
-		OAPath ppRev = propPath.getReversePropertyPath();
+		OAPath ppRev = propPath.getReversePath();
 
 		String s = ppRev.getFirstPropertyName();
 		if (!propName.equalsIgnoreCase(s)) {

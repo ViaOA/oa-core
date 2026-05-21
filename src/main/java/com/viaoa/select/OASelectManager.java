@@ -55,7 +55,7 @@ import com.viaoa.object.OAObject;
  * @see OASelect
  * @see OADataSource
  */
-public class OASelectManager {
+class OASelectManager {
     private static Logger LOG = Logger.getLogger(OASelectManager.class.getName());
     
     /**

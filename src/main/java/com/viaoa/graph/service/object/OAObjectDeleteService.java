@@ -252,7 +252,7 @@ public abstract class OAObjectDeleteService {
                     String spp = liRev.getSelectFromPropertyPath();
                     if (OAStr.isNotEmpty(spp)) {
                         OAPath pp = new OAPath(li.getToClass(), spp);
-                        pp = pp.getReversePropertyPath();
+                        pp = pp.getReversePath();
                         if (pp == null) spp = null;
                         else spp = pp.getPropertyPath();
                     }
@@ -262,7 +262,7 @@ public abstract class OAObjectDeleteService {
                             String s = liRev.getEqualPropertyPath();
                             if (OAStr.isNotEmpty(s)) {
                                 OAPath pp = new OAPath(li.getToClass(), s);
-                                pp = pp.getReversePropertyPath();
+                                pp = pp.getReversePath();
                                 if (pp == null) spp = null;
                                 else {
                                     s = pp.getPropertyPath();
@@ -355,7 +355,7 @@ public abstract class OAObjectDeleteService {
     				String spp = liRev.getSelectFromPropertyPath();
     				if (OAStr.isNotEmpty(spp)) {
                         OAPath pp = new OAPath(li.getToClass(), spp);
-    				    pp = pp.getReversePropertyPath();
+    				    pp = pp.getReversePath();
     				    if (pp == null) spp = null;
     				    else spp = pp.getPropertyPath();
     				}
@@ -365,7 +365,7 @@ public abstract class OAObjectDeleteService {
     				        String s = liRev.getEqualPropertyPath();
     	                    if (OAStr.isNotEmpty(s)) {
     	                        OAPath pp = new OAPath(li.getToClass(), s);
-    	                        pp = pp.getReversePropertyPath();
+    	                        pp = pp.getReversePath();
     	                        if (pp == null) spp = null;
     	                        else {
     	                            s = pp.getPropertyPath();

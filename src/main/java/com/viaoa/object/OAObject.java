@@ -572,6 +572,18 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	}
 
 	/**
+	 * Sets an internal flag to know that a primitive property type is null or not.
+	 * Note: no event is sent, no value is set.
+	 * @param propName name of property
+	 * @param b true or false
+	 */
+	protected void setPrimitiveNull(String propName, boolean b) {
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
+		og.objectsInternal().callObjectReflectSetPrimitiveNull(this, propName, b);
+	}
+	
+	
+	/**
 	 * Generic entry point for setting any property by name, with an optional
 	 * format hint for type conversion.
 	 * <p>

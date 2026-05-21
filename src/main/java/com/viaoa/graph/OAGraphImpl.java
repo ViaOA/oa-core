@@ -14,7 +14,6 @@ import com.viaoa.graph.api.internal.ObjectsInternalOps;
 import com.viaoa.graph.api.internal.ReplInternalOps;
 import com.viaoa.graph.api.internal.SyncInternalOps;
 import com.viaoa.graph.api.internal.TriggerInternalOps;
-import com.viaoa.graph.context.OAContext;
 import com.viaoa.graph.service.HubService;
 import com.viaoa.graph.service.OAObjectService;
 import com.viaoa.graph.service.OAReplicationService;
@@ -135,7 +134,6 @@ public class OAGraphImpl implements OAGraphInternal {
 	private HubService srvcHub;
     private OASyncService srvcOASync;
     private OAReplicationService srvcOAReplication;
-    private OAContext context;
     private OATriggerService srvcOATrigger;
 
 	public OAGraphImpl(String packageName) {
@@ -152,10 +150,9 @@ public class OAGraphImpl implements OAGraphInternal {
 		srvcHub = new HubService();
 	    srvcOASync = new OASyncService(this);
 	    srvcOAReplication = new OAReplicationService();
-	    context = new OAContext();
 	    srvcOATrigger = new OATriggerService();
 
-		srvcOAObject.initialize(srvcHub, srvcOASync, srvcThread.getThreadLocalService(), srvcThread.getRemoteThreadService(), context);
+		srvcOAObject.initialize(srvcHub, srvcOASync, srvcThread.getThreadLocalService(), srvcThread.getRemoteThreadService());
 		srvcHub.initialize(srvcOAObject, srvcOASync, srvcThread.getThreadLocalService(), srvcThread.getRemoteThreadService());
 
 		if (packageName != null) {
@@ -420,11 +417,6 @@ public class OAGraphImpl implements OAGraphInternal {
 		Class<?>  c = hub == null ? null : hub.getObjectClass();
 		OAObjectInfo oi = srvcOAObject.callObjectInfoGetOAObjectInfo(c);
 		return oi;
-	}
-
-	@Override
-	public OAContext context() {
-		return context;
 	}
 
 	@Override

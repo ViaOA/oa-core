@@ -1477,7 +1477,7 @@ public class OATemplate<F extends OAObject> {
 	                            if (dn.tagType == TagType.GetProp || dn.tagType == TagType.ForEach) {
 	                                // find column in dataGrid
 	                                OAPath pp = new OAPath( ((Hub) objValue).getObjectClass(), dn.arg1);
-	                                final String sppLinks = pp.getPropertyPathLinksOnly();
+	                                final String sppLinks = pp.getPathLinksOnly();
 	                                col = hmPropertyToColumn.get(sppLinks);
                                     oa = (OAObject) og.getObject(row, col);
 	                            }
@@ -1956,7 +1956,7 @@ public class OATemplate<F extends OAObject> {
 			if (pp.getHasHubProperty()) {
 				// 20190131 useFinder for pp with hubs
 				final VString vs = new VString();
-				OAFinder finder = new OAFinder(pp.getPropertyPathLinksOnly()) {
+				OAFinder finder = new OAFinder(pp.getPathLinksOnly()) {
 					@Override
 					protected void onFound(OAObject obj) {
 						Object objx = obj.getProperty(pp.getLastPropertyName());

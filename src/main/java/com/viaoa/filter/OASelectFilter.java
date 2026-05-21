@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.viaoa.select;
+package com.viaoa.filter;
 
-import com.viaoa.filter.OAQueryFilter;
+import com.viaoa.select.OASelect;
 
 /**
  * Specialized {@link com.viaoa.filter.OAFilter} used during

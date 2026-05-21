@@ -208,7 +208,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
                             + ", propertyFromWhereObject=" + propertyFromWhereObject);
                 }
                 
-                pp = pp.getReversePropertyPath();
+                pp = pp.getReversePath();
                 if (pp == null) {
                     return new OADataSourceEmptyIterator();
                 }
@@ -253,7 +253,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             String spp = liRev.getSelectFromPropertyPath();
             if (OAStr.isNotEmpty(spp)) {
                 OAPath pp = new OAPath(li.getToClass(), spp);
-                pp = pp.getReversePropertyPath();
+                pp = pp.getReversePath();
                 if (pp == null) spp = null;
                 else spp = pp.getPropertyPath();
             }
@@ -263,7 +263,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
                     String s = liRev == null ? null : liRev.getEqualPropertyPath();
                     if (OAStr.isNotEmpty(s)) {
                         OAPath pp = new OAPath(li.getToClass(), s);
-                        pp = pp.getReversePropertyPath();
+                        pp = pp.getReversePath();
                         if (pp == null) spp = null;
                         else {
                             s = pp.getPropertyPath();

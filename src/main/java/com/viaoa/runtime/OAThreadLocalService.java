@@ -22,6 +22,7 @@ import com.viaoa.lang.Tuple3;
 import com.viaoa.object.OAObject;
 import com.viaoa.process.OAProcess;
 import com.viaoa.remote.info.RequestInfo;
+import com.viaoa.runtime.context.OAContextUser;
 import com.viaoa.runtime.thread.OARemoteThread;
 import com.viaoa.runtime.thread.OAThreadLocal;
 import com.viaoa.runtime.thread.OAThreadLocalHubMergerCallback;
@@ -2220,9 +2221,9 @@ public class OAThreadLocalService {
 	 *
 	 * @return the context object
 	 */
-	public Object getContext() {
+	public OAContextUser<?> getContextUser() {
 		OAThreadLocal ti = getThreadLocal(true);
-		return ti.context;
+		return ti.contextUser;
 	}
 
 	/**
@@ -2230,9 +2231,9 @@ public class OAThreadLocalService {
 	 *
 	 * @param context the context to assign
 	 */
-	public void setContext(Object context) {
+	public void setContextUser(OAContextUser<?> cu) {
 		OAThreadLocal ti = getThreadLocal(true);
-		ti.context = context;
+		ti.contextUser = cu;
 	}
 
 	/**
@@ -2312,7 +2313,7 @@ public class OAThreadLocalService {
 		}
 		OAThreadLocal tlx = getThreadLocal(true);
 		tlx.isAdmin = tl.isAdmin;
-		tlx.context = tl.context;
+		tlx.contextUser = tl.contextUser;
 	}
 
 	/**

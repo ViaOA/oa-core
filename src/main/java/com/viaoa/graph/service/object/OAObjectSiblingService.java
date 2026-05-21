@@ -313,7 +313,7 @@ public abstract class OAObjectSiblingService {
 					}
 				}
 				if (b) {
-					ppReverse = ppForward.getReversePropertyPath();
+					ppReverse = ppForward.getReversePath();
 				}
 			}
 

@@ -37,7 +37,7 @@
  *       managing registered DataSources.</li>
  *   <li>{@link com.viaoa.select.OASelectManager} — background manager that monitors
  *       and cleans up active query iterators.</li>
- *   <li>{@link com.viaoa.select.OASelectFilter} — filter bridge for in-memory and
+ *   <li>{@link com.viaoa.filter.OASelectFilter} — filter bridge for in-memory and
  *       DataSource-level selection logic.</li>
  * </ul>
  *

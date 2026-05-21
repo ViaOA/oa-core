@@ -245,7 +245,7 @@ public class OARemoteThread extends Thread {
 		if (t == this) {
 			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 			srvcOAThreadLocal.setSendSyncMessages(getDefaultSendSyncMessages());
-			srvcOAThreadLocal.setContext(null);
+			srvcOAThreadLocal.setContextUser(null);
 			srvcOAThreadLocal.setAdmin(false);
 		}
 	}

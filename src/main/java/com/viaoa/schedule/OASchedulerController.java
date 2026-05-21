@@ -305,7 +305,7 @@ public class OASchedulerController<F extends OAObject, T extends OAObject> {
         hubDetail = hubFrom.getDetailHub(ppSchedule);
         OAPath pp = new OAPath(hubFrom.getObjectClass(), ppSchedule);
         
-        OAPath ppRev = pp.getReversePropertyPath();
+        OAPath ppRev = pp.getReversePath();
         OALinkInfo[] lis = ppRev == null ? null : ppRev.getLinkInfos();
         if (lis == null || lis.length == 0) {
             // no-op

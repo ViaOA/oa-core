@@ -4,6 +4,7 @@ import java.util.logging.Logger;
 
 import javax.swing.SwingUtilities;
 
+import com.viaoa.runtime.context.OAContextUser;
 import com.viaoa.transaction.OATransaction;
 
 /* qqqqqqqqqqqqq
@@ -22,8 +23,6 @@ import com.viaoa.transaction.OATransaction;
  
  
  */
-
-
 
 
 public class OAThreadService {
@@ -51,14 +50,13 @@ public class OAThreadService {
 	}
 	
 	
-	public Object getContext() {
-		Object context = srvcThreadLocal.getContext();
+	public OAContextUser<?> getContextUser() {
+		OAContextUser<?> context = srvcThreadLocal.getContextUser();
 		return context;
 	}
 
-	
-	public void setContext(Object context) {
-		srvcThreadLocal.setContext(context);
+	public void setContextUser(OAContextUser<?> contextUser) {
+		srvcThreadLocal.setContextUser(contextUser);
 	}
 	
 	public boolean isAdmin() {

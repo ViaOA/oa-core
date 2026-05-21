@@ -3,7 +3,6 @@ package com.viaoa.graph;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.find.OAFinder;
 import com.viaoa.graph.api.*;
-import com.viaoa.graph.context.OAContext;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubListener;
 import com.viaoa.hub.auto.HubAutoMatch;
@@ -900,23 +899,6 @@ public interface OAGraph {
      */
     OAObjectInfo info(Hub<?> hub);
 
-
-    // ===========  Context =========== 
-    
-    /**
-     * Returns the access context operations for this graph.
-     * <p>
-     * {@code context()} provides access to the graph-aware context used to evaluate
-     * access, visibility, enabled state, and other permission-related behavior
-     * based on the model, actor objects, OAPaths, and user-specific boundary rules.
-     * <p>
-     * Context is part of the executable blueprint because access rules are defined
-     * in terms of model objects, relationships, and property paths within the
-     * Object Graph.
-     *
-     * @return the context operations for this graph
-     */
-    OAContext context();
 
 
     void addTrigger(OATrigger trigger);

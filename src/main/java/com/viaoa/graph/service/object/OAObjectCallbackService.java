@@ -9,8 +9,9 @@ import com.viaoa.callback.OAObjectCallback.Type;
 import com.viaoa.cascade.OACascade;
 import com.viaoa.compare.OAUnknownObject;
 import com.viaoa.converter.OAConv;
-import com.viaoa.graph.context.OAContext;
-import com.viaoa.graph.context.OAUserAccess;
+import com.viaoa.runtime.OARuntime;
+import com.viaoa.runtime.context.OAContextAccess;
+import com.viaoa.runtime.context.OAContextUser;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListener;
@@ -47,7 +48,7 @@ import com.viaoa.object.OAObject;
  *   <li>Metadata from {@code @OAObjCallback} on class/props/links/methods</li>
  *   <li>Domain logic in {@code callback*}(..) methods</li>
  *   <li>Hub listeners associated with UI contexts</li>
- *   <li>Context-driven {@link com.viaoa.context.OAUserAccess} constraints</li>
+ *   <li>Context-driven {@link com.viaoa.context.OAContextAccess} constraints</li>
  *   <li>Process/edit flags on objects and hubs</li>
  * </ul>
  *
@@ -573,8 +574,7 @@ public abstract class OAObjectCallbackService {
 	 * @return the resulting callback
 	 */
 	public OAObjectCallback getAllowCopyObjectCallback(final OAObject oaObj) {
-		final OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowCopy, OAObjectCallback.CHECK_ALL, null, null, oaObj, null,
-				null);
+		final OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowCopy, OAObjectCallback.CHECK_ALL, null, null, oaObj, null, null);
 		processObjectCallback(objectCallback);
 		return objectCallback;
 	}
@@ -658,8 +658,9 @@ public abstract class OAObjectCallbackService {
 			return;
 		}
 		
-		if (!callContextGetContext().getAllowEditProcessed()) {
-			String sx = callContextGetContext().getAllowEditProcessedPropertyPath();
+		OAContextUser cu = callContextGetDefaultContextUser();
+		if (!cu.getAllowEditProcessed()) {
+			String sx = cu.getContext().getAllowEditProcessedPath();
 			objectCallback.setResponse("User." + sx + "=false");
 			objectCallback.setAllowed(false);
 		}
@@ -766,10 +767,10 @@ public abstract class OAObjectCallbackService {
 		if (objectCallback.getAllowed()) {
 			String pp = oi.getContextEnabledProperty();
 			if (OAString.isNotEmpty(pp)) {
-				if (!callContextGetContext().isEnabled(pp, oi.getContextEnabledValue())) {
+				if (!callContextGetDefaultContextUser().isEnabled(pp, oi.getContextEnabledValue())) {
 					objectCallback.setAllowed(false);
 					String s = "Not enabled, user rule for " + clazz.getSimpleName() + ", ";
-					OAObject user = callContextGetContext().getContextObject();
+					OAObject user = callContextGetDefaultContextUser().getCurrentUserObject();
 					if (user == null) {
 						s = "OAContext.getContextObject (User) returned null";
 					} else {
@@ -1039,10 +1040,10 @@ public abstract class OAObjectCallbackService {
 		if (objectCallback.getAllowed()) {
 			String pp = oi.getContextEnabledProperty();
 			if (OAString.isNotEmpty(pp)) {
-				if (!callContextGetContext().isEnabled(pp, oi.getContextEnabledValue())) {
+				if (!callContextGetDefaultContextUser().isEnabled(pp, oi.getContextEnabledValue())) {
 					objectCallback.setAllowed(false);
 					String s = "Not enabled, user rule for " + clazz.getSimpleName() + ", ";
-					OAObject user = callContextGetContext().getContextObject();
+					OAObject user = callContextGetDefaultContextUser().getCurrentUserObject();
 					if (user == null) {
 						s = "OAContext.getContextObject (User) returned null";
 					} else {
@@ -1333,13 +1334,6 @@ public abstract class OAObjectCallbackService {
 	}
 
 	/**
-	 * Global demo-mode flag that forces all OAObjectCallback evaluations
-	 * to succeed. When enabled, callback failures are overridden to allow
-	 * all operations, useful for demos or testing scenarios.
-	 */
-	private static volatile boolean DEMO_AllowAllToPass;
-	
-	/**
 	 * Processes the supplied callback by delegating to the internal
 	 * {@code _processObjectCallback} method. After processing, the
 	 * callback is updated to allow all operations when the demo flag
@@ -1349,40 +1343,15 @@ public abstract class OAObjectCallbackService {
 	 */
 	protected void processObjectCallback(OAObjectCallback objectCallback) {
 		_processObjectCallback(objectCallback);
-		if (DEMO_AllowAllToPass) {
-			objectCallback.setThrowable(null);
-			objectCallback.setAllowed(true);
-		} else if ((!objectCallback.getAllowed() || objectCallback.getThrowable() != null)) {
+		if ((!objectCallback.getAllowed() || objectCallback.getThrowable() != null)) {
 			// allow AppUser.admin=true to always be valid
-			if (callContextGetContext().isSuperAdmin()) { // allow all if super admin
+			if (callContextGetDefaultContextUser().isSuperAdmin()) { // allow all if super admin
 				objectCallback.setThrowable(null);
 				objectCallback.setAllowed(true);
 			}
 		}
 	}
     
-	/**
-	 * Enables or disables demo mode for allowing all callbacks to pass.
-	 * When enabled, warning messages are logged and printed to standard
-	 * output. This flag affects subsequent callback processing.
-	 *
-	 * @param b {@code true} to allow all callbacks to pass; otherwise {@code false}
-	 */
-	public void demoAllowAllToPass(boolean b) {
-		String msg = "WARNING: OAObjectCallbackDelegate.demoAllowAllToPass=" + b;
-		if (b) {
-			msg += " - all OAObjectCallback will be allowed";
-		}
-		LOG.warning(msg);
-		for (int i = 0; i < 20; i++) {
-			System.out.println(msg);
-			if (!b) {
-				break;
-			}
-		}
-		DEMO_AllowAllToPass = b;
-	}
-	
 	/**
 	 * Processes the supplied callback by evaluating rules based on hub context,
 	 * class metadata, object state, property-level definitions, user-access
@@ -1418,23 +1387,23 @@ public abstract class OAObjectCallbackService {
 			}
 		}
 
-		final OAUserAccess userAccess = callContextGetContext().getContextUserAccess();
+		final OAContextAccess contextAccess = callContextGetDefaultContextUser().getContext().getContextAccess();
 		
 		// 20200217 add OAUserAccess
 		if (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType() == Type.AllowVisible) {
-			if (userAccess != null) {
+			if (contextAccess != null) {
 				boolean bx = true;
 				if (objectCallback.getType() == Type.AllowEnabled) {
 					if (oaObj != null) {
-						bx = userAccess.getEnabled(oaObj);
+						bx = contextAccess.getEnabled(oaObj);
 					} else {
-						bx = userAccess.getEnabled(clazz);
+						bx = contextAccess.getEnabled(clazz);
 					}
 				} else {
 					if (oaObj != null) {
-						bx = userAccess.getVisible(oaObj);
+						bx = contextAccess.getVisible(oaObj);
 					} else {
-						bx = userAccess.getVisible(clazz);
+						bx = contextAccess.getVisible(clazz);
 					}
 				}
 				if (!bx) {
@@ -1568,7 +1537,7 @@ public abstract class OAObjectCallbackService {
 				}
 			}
 			if ((!bHadVisibleProperty || objectCallback.getAllowed()) && OAString.isNotEmpty(sx)) {
-				OAObject user = callContextGetContext().getContextObject();
+				OAObject user = callContextGetDefaultContextUser().getCurrentUserObject();
 				if (user == null) {
 					
 					if (callSyncIsClient()) {
@@ -1661,13 +1630,13 @@ public abstract class OAObjectCallbackService {
 				}
 			}
 			if ((!bHadEnabledProperty || objectCallback.getAllowed()) && OAString.isNotEmpty(enabledName) && bCheckUserEnabledProperty) {
-				boolean b = callContextGetContext().isEnabled(enabledName, enabledValue);
+				boolean b = callContextGetDefaultContextUser().isEnabled(enabledName, enabledValue);
 				objectCallback.setAllowed(b);
 				if (!b) {
 					objectCallback.setAllowed(false);
 					if (OAString.isEmpty(objectCallback.getResponse())) {
 						objectCallback.setAllowed(false);
-						OAObject user = callContextGetContext().getContextObject();
+						OAObject user = callContextGetDefaultContextUser().getCurrentUserObject();
 						String s = user == null ? "User" : user.getClass().getSimpleName();
 						s = "Not enabled, " + s + "." + enabledName + " is not " + enabledValue;
 						objectCallback.setResponse(s);
@@ -1786,7 +1755,7 @@ public abstract class OAObjectCallbackService {
 			if (bPassed && OAString.isNotEmpty(pp)) {
 				b = oi.getContextVisibleValue();
 
-				OAObject user = callContextGetContext().getContextObject();
+				OAObject user = callContextGetDefaultContextUser().getCurrentUserObject();
 				if (user == null) {
 					if (callSyncIsClient()) {
 						bPassed = false;
@@ -1833,7 +1802,7 @@ public abstract class OAObjectCallbackService {
 				pp = li.getContextVisibleProperty();
 				if (OAString.isNotEmpty(pp)) {
 					b = li.getContextVisibleValue();
-					OAObject user = callContextGetContext().getContextObject();
+					OAObject user = callContextGetDefaultContextUser().getCurrentUserObject();
 					if (user == null) {
 						if (callSyncIsClient()) {
 							bPassed = false;
@@ -1889,11 +1858,11 @@ public abstract class OAObjectCallbackService {
 			pp = oi.getContextEnabledProperty();
 			if (bPassed && OAString.isNotEmpty(pp) && bCheckUserEnabledProperty) {
 				b = oi.getContextEnabledValue();
-				if (!callContextGetContext().isEnabled(pp, b)) {
+				if (!callContextGetDefaultContextUser().isEnabled(pp, b)) {
 					bPassed = false;
 					objectCallback.setAllowed(false);
 					String s = "Not enabled, user rule for " + oaObj.getClass().getSimpleName() + ", ";
-					OAObject user = callContextGetContext().getContextObject();
+					OAObject user = callContextGetDefaultContextUser().getCurrentUserObject();
 					if (user == null) {
 						s = "OAAuthDelegate.getUser returned null";
 					} else {
@@ -1935,8 +1904,8 @@ public abstract class OAObjectCallbackService {
 				pp = li.getContextEnabledProperty();
 				if (OAString.isNotEmpty(pp) && bCheckUserEnabledProperty) {
 					b = li.getContextEnabledValue();
-					if (!callContextGetContext().isEnabled(pp, b)) {
-						OAObject user = callContextGetContext().getContextObject();
+					if (!callContextGetDefaultContextUser().isEnabled(pp, b)) {
+						OAObject user = callContextGetDefaultContextUser().getCurrentUserObject();
 						objectCallback.setAllowed(false);
 						String s = "Not enabled, user rule for " + oaObj.getClass().getSimpleName() + "." + propertyName + ", ";
 						if (user == null) {
@@ -2234,7 +2203,7 @@ public abstract class OAObjectCallbackService {
 							(OAString.isEmpty(prop) && oi.getProcessed()),
 							changeListener);
 
-		final Hub hubUser = callContextGetContext().getContextHub();
+		final Hub hubUser = callContextGetDefaultContextUser().getUserHub();
 		if (bEnabled) {
 			s = oi.getContextEnabledProperty();
 		} else {
@@ -2361,7 +2330,7 @@ public abstract class OAObjectCallbackService {
 			}
 		}
 		if (contextDependentProperties != null) {
-			Hub hubUser = callContextGetContext().getContextHub();
+			Hub hubUser = callContextGetDefaultContextUser().getUserHub();
 			if (contextDependentProperties.length > 0 && hubUser == null) {
 				changeListener.addAlwaysFalse(hub);
 			}
@@ -2370,11 +2339,11 @@ public abstract class OAObjectCallbackService {
 			}
 		}
 		if (bProcessed) {
-			Hub hubUser = callContextGetContext().getContextHub();
+			Hub hubUser = callContextGetDefaultContextUser().getUserHub();
 			if (hubUser == null) {
 				changeListener.addAlwaysFalse(hub);
 			}
-			changeListener.add(hubUser, callContextGetContext().getAllowEditProcessedPropertyPath());
+			changeListener.add(hubUser, callContextGetDefaultContextUser().getContext().getAllowEditProcessedPath());
 		}
 	}
 
@@ -2393,6 +2362,6 @@ public abstract class OAObjectCallbackService {
 	public abstract <T extends OAObject> HubListener<T>[] callHubEventGetAllListeners(Hub<T> hub);
 
 	public abstract boolean callSyncIsClient();
-	protected abstract OAContext callContextGetContext();
+	protected abstract OAContextUser callContextGetDefaultContextUser();
 }
 

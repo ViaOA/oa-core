@@ -2535,7 +2535,7 @@ public abstract class OAObjectReflectService {
                             }
                             else {
                                 pp = new OAPath(li.getToClass(), s);
-                                OAPath ppRev = pp.getReversePropertyPath();
+                                OAPath ppRev = pp.getReversePath();
                                 s = ppRev.getPropertyPath();
                                 s = s.substring(0, s.lastIndexOf('.'));
                                 

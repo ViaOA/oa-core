@@ -14,6 +14,7 @@ import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
+import com.viaoa.runtime.context.OAContextUser;
 import com.viaoa.trigger.OATrigger;
 import com.viaoa.trigger.OATriggerListener;
 
@@ -207,7 +208,7 @@ public class OATriggerService implements TriggerOps, TriggerInternalOps {
 		Runnable runnable;
 		boolean bIsLoading;
 		boolean bSendMessages;
-		public Object context;
+		public OAContextUser contextUser;
 
 		/**
 		 * Captures the current thread-local loading state and context
@@ -219,7 +220,7 @@ public class OATriggerService implements TriggerOps, TriggerInternalOps {
 			this.runnable = runnable;
 			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 			this.bIsLoading = srvcOAThreadLocal.isLoading();
-			this.context = srvcOAThreadLocal.getContext();
+			this.contextUser = srvcOAThreadLocal.getContextUser();
 			this.bSendMessages = srvcOAThreadLocal.getSendSyncMessages();
 		}
 
@@ -233,14 +234,14 @@ public class OATriggerService implements TriggerOps, TriggerInternalOps {
 			boolean bWasLoading = true;
 			boolean bHold2 = srvcOAThreadLocal.getSendSyncMessages();
 			try {
-				srvcOAThreadLocal.setContext(context);
+				srvcOAThreadLocal.setContextUser(contextUser);
 				if (bIsLoading) {
 					bWasLoading = srvcOAThreadLocal.setLoading(true);
 				}
 				srvcOAThreadLocal.setSendSyncMessages(bSendMessages);
 				runnable.run();
 			} finally {
-				srvcOAThreadLocal.setContext(null);
+				srvcOAThreadLocal.setContextUser(null);
 				if (bIsLoading) {
 					srvcOAThreadLocal.setLoading(bWasLoading);
 				}

@@ -732,6 +732,11 @@ public class OAObjectService extends OAObjectParentService implements ObjectsInt
 	}
 
 	@Override
+	public void callObjectReflectSetPrimitiveNull(OAObject oaObj, String prop, boolean b) {
+	    getOAObjectReflectService().setPrimitiveNull(oaObj, prop, b);
+	}
+	
+	@Override
 	public void callObjectReflectLoadAllReferences(OAObject oaObj, boolean bIncludeCalc) {
 	    getOAObjectReflectService().loadAllReferences(oaObj, bIncludeCalc);
 	}

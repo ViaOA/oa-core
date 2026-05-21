@@ -358,7 +358,7 @@ public class OAEqualPathFilter implements OAFilter {
 				if (li != null && li.getType() == OALinkInfo.MANY) {
 					return true;
 				}
-				OAPath ppRev = ppTo.getReversePropertyPath(true);
+				OAPath ppRev = ppTo.getReversePath(true);
 				if (ppRev == null) return true;
 
 				if (!(objFromPPValue instanceof OAObject)) return true;

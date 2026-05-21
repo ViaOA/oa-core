@@ -1538,10 +1538,7 @@ public abstract class HubChangeListener {
 					return false;
 				}
 				if (compareValue == Type.OnlySuperAdmin) {
-					OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-					if (og.context().isSuperAdmin()) {
-						return true;
-					}
+					if (OARuntime.context().getDefaultContextUser().isSuperAdmin()) return true;
 					failureReason = "only SuperAdmin";
 					return false;
 				}

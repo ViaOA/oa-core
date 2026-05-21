@@ -9,6 +9,7 @@ import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
+import com.viaoa.runtime.context.OAContextUser;
 
 
 /*qqqqqqqqqqqqqq
@@ -226,7 +227,9 @@ public abstract class OAObjectInitializeService {
 
 					// 20190205 set default linkOne
 					if (li.getType() == li.TYPE_ONE && OAString.isNotEmpty(li.getDefaultContextPropertyPath())) {
-						OAObject objx = callContextGetContextObject();
+						
+						OAContextUser cu = callContextGetContextUser();
+						OAObject objx = cu == null ? null : cu.getCurrentUserObject();
 						if (objx != null) {
 							if (!li.getDefaultContextPropertyPath().equals(".")) {
 								OAFinder hf = new OAFinder(li.getDefaultContextPropertyPath());
@@ -382,6 +385,6 @@ public abstract class OAObjectInitializeService {
 	public abstract void callSyncClientObjectCreated(OAObject obj);	
 	public abstract boolean callThreadLocalIsLoading();
 	public abstract boolean callThreadLocalSetLoading(boolean b);
-	public abstract OAObject callContextGetContextObject();
+	public abstract OAContextUser callContextGetContextUser();
 }
 

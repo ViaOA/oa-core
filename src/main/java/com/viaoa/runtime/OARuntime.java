@@ -83,6 +83,7 @@ public final class OARuntime {
 
 	private final OADataSourceService srvcDataSource = new OADataSourceService();
 	private final OAThreadService srvcThread = new OAThreadService();
+	private final OAContextService srvcContext = new OAContextService();
 	
 	private OARuntime() {
 	}
@@ -263,6 +264,10 @@ public final class OARuntime {
 		return runtime.srvcDataSource;
 	}
 		
+	public static OAContextService context() {
+		return runtime.srvcContext;
+	}
+	
 	
 	//qqqqqqq temporary	
 	/**

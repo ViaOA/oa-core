@@ -19,7 +19,7 @@
  *
  * The classes in this package define how an application's thread-local context
  * is associated with a logged-in OAObject, a Hub representing the active user,
- * and an {@link com.viaoa.context.OAUserAccess} instance that governs visibility
+ * and an {@link com.viaoa.context.OAContextAccess} instance that governs visibility
  * and enabled/disabled access across an OAObject graph. <p>
  *
  * Features include:
@@ -36,7 +36,7 @@
  * properties behave relative to user or system context.
  */
 
-package com.viaoa.graph.context;
+package com.viaoa.runtime.context;
 
 /* CODEX Invariants
 

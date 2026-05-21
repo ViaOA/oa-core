@@ -217,6 +217,7 @@ public interface ObjectsInternalOps {
 	public boolean callObjectReflectIsReferenceObjectNullOrEmpty(OAObject oaObj, String name);
 	public byte[] callObjectReflectGetReferenceBlob(OAObject oaObj, String linkPropertyName);
 	public boolean callObjectReflectGetPrimitiveNull(OAObject oaObj, String prop);
+	public void callObjectReflectSetPrimitiveNull(OAObject oaObj, String prop, boolean b);
 	public void callObjectReflectLoadAllReferences(OAObject oaObj, boolean bIncludeCalc);
 	public void callObjectReflectLoadAllReferences(OAObject oaObj, boolean bOne, boolean bMany, boolean bIncludeCalc);
 	public void callObjectReflectLoadAllReferences(OAObject oaObj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc);

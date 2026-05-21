@@ -316,8 +316,8 @@ public class OAPath<TYPE extends OAObject> {
 	 *
 	 * @return the reverse property path, or {@code null} if not available
 	 */
-	public OAPath getReversePropertyPath() {
-		return getReversePropertyPath(false);
+	public OAPath getReversePath() {
+		return getReversePath(false);
 	}
 
 	/**
@@ -328,7 +328,7 @@ public class OAPath<TYPE extends OAObject> {
 	 * @param bAllowPrivateLinks if true, private links are allowed
 	 * @return the reverse property path, or {@code null} if not available
 	 */
-	public OAPath getReversePropertyPath(final boolean bAllowPrivateLinks) {
+	public OAPath getReversePath(final boolean bAllowPrivateLinks) {
 		
 		if (bAllowPrivateLinks) {
 			if (revPropertyPathTrue != null) {
@@ -380,7 +380,7 @@ public class OAPath<TYPE extends OAObject> {
 	 *
 	 * @return the link-only property path string, or {@code null} if no links exist
 	 */
-	public String getPropertyPathLinksOnly() {
+	public String getPathLinksOnly() {
 		if (linkInfos == null || linkInfos.length == 0) {
 			return null;
 		}

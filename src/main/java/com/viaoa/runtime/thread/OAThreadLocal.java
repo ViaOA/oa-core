@@ -24,6 +24,7 @@ import com.viaoa.lang.Tuple3;
 import com.viaoa.object.OAObject;
 import com.viaoa.process.OAProcess;
 import com.viaoa.remote.info.RequestInfo;
+import com.viaoa.runtime.context.OAContextUser;
 import com.viaoa.serialize.OAObjectSerializer;
 import com.viaoa.transaction.OATransaction;
 
@@ -456,11 +457,9 @@ public class OAThreadLocal {
 	public ArrayList<HubEvent> alHubEvent;
 
 	/**
-	 * Thread-scoped context object used by OAContext. May store any
-	 * value associated with the logical user/session context of this
-	 * thread.
+	 * Thread-scoped OAContext . May store any
 	 */
-	public Object context;
+	public OAContextUser contextUser;
 
 	/**
 	 * Flag used by OAContext to automatically grant admin privileges

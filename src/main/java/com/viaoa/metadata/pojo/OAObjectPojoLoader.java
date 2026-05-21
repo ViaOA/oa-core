@@ -312,7 +312,7 @@ public class OAObjectPojoLoader implements Serializable {
 			return;
 		}
 
-		OALinkInfo lpx = new OAPath(lp.getToClass(), pp).getReversePropertyPath().getEndLinkInfo();
+		OALinkInfo lpx = new OAPath(lp.getToClass(), pp).getReversePath().getEndLinkInfo();
 		if (lpx == null) {
 			return;
 		}

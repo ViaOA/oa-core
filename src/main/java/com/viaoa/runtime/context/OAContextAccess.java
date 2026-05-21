@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.viaoa.graph.context;
+package com.viaoa.runtime.context;
 
 /*qqqqqqqqqq
 CODEX
@@ -35,7 +35,7 @@ CODEX
 
 #4
   file/class/method: src/main/java/com/viaoa/graph/context/OAUserAccess.java:747
-  exact concern: getIsInSamePropertyPath assumes ua.pp.getLinkInfos() is non-null and immediately uses lis.length.
+  exact concern: getIsInSamePath assumes ua.pp.getLinkInfos() is non-null and immediately uses lis.length.
   Public addEnabled/addVisible/addNot... methods accept empty or scalar property paths and create OAPath without
   guarding link info.
   why it matters: a valid-looking rule with an empty/scalar path can fail later during permission evaluation instead
@@ -81,6 +81,9 @@ CODEX
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAArray;
@@ -92,9 +95,9 @@ import com.viaoa.select.OASelect;
 
 /**
  * Used to set the "boundaries" of what objects & properties/methods can be accessed by a user (or system). <br>
- * Used to determine if an object is included in a propertyPath from a root OAObject/Hub.AO Separate methods for 
+ * Used to determine if an object is included in a Path from a root OAObject/Hub.AO Separate methods for 
  * Visible and Enabled property paths, both On and Off (Not).<br>
- * Has methods to add multiple obj/hub and propertyPaths, so that all are searched to see if an Object is included in any of the root +
+ * Has methods to add multiple obj/hub and Paths, so that all are searched to see if an Object is included in any of the root +
  * paths. Allows for adding child[ren] OAUserAccess 
  *
 Used by OAContext<p> 
@@ -147,49 +150,44 @@ Used by OAContext<p>
  * application-level permission enforcement, determining which OAObjects and
  * properties are visible or enabled for a given user or thread context.
  */
-public class OAUserAccess {
+public class OAContextAccess {
 
 	/** Path-based rules granting “enabled” access. */
-	private final ArrayList<UserAccess> alEnabledUserAccess = new ArrayList<>();
+	private final List<UserAccess> alEnabledUserAccess = new ArrayList<>();
 
 	/** Path-based rules denying “enabled” access. */
-	private final ArrayList<UserAccess> alNotEnabledUserAccess = new ArrayList<>();
+	private final List<UserAccess> alNotEnabledUserAccess = new ArrayList<>();
 
 	/** Path-based rules granting “visible” access. */
-	private final ArrayList<UserAccess> alVisibleUserAccess = new ArrayList<>();
+	private final List<UserAccess> alVisibleUserAccess = new ArrayList<>();
 
 	/** Path-based rules denying “visible” access. */
-	private final ArrayList<UserAccess> alNotVisibleUserAccess = new ArrayList<>();
+	private final List<UserAccess> alNotVisibleUserAccess = new ArrayList<>();
 
 	/** Classes that are explicitly marked as enabled. */
-	private final HashSet<Class<? extends OAObject>> hsEnabledClass = new HashSet<>();
+	private final Set<Class<? extends OAObject>> hsEnabledClass = new HashSet<>();
 
 	/** Classes explicitly marked as not enabled. */
-	private final HashSet<Class<? extends OAObject>> hsNotEnabledClass = new HashSet<>();
+	private final Set<Class<? extends OAObject>> hsNotEnabledClass = new HashSet<>();
 	
 	/** Classes that are explicitly marked as visible. */
-	private final HashSet<Class<? extends OAObject>> hsVisibleClass = new HashSet<>();
+	private final Set<Class<? extends OAObject>> hsVisibleClass = new HashSet<>();
 	
 	/** Classes explicitly marked as not visible. */
-	private final HashSet<Class<? extends OAObject>> hsNotVisibleClass = new HashSet<>();
+	private final Set<Class<? extends OAObject>> hsNotVisibleClass = new HashSet<>();
 
 	/** Enabled rules for specific properties of specific classes. */
-	private final HashMap<Class<? extends OAObject>, String[]> hmEnabledClass = new HashMap<>();
+	private final Map<Class<? extends OAObject>, String[]> hmEnabledClass = new HashMap<>();
 
 	/** Not-enabled rules for specific properties of specific classes. */
-	private final HashMap<Class<? extends OAObject>, String[]> hmNotEnabledClass = new HashMap<>();
+	private final Map<Class<? extends OAObject>, String[]> hmNotEnabledClass = new HashMap<>();
 	
 	/** Visible rules for specific properties of specific classes. */
-	private final HashMap<Class<? extends OAObject>, String[]> hmVisibleClass = new HashMap<>();
+	private final Map<Class<? extends OAObject>, String[]> hmVisibleClass = new HashMap<>();
 	
 	/** Not-visible rules for specific properties of specific classes. */
-	private final HashMap<Class<? extends OAObject>, String[]> hmNotVisibleClass = new HashMap<>();
+	private final Map<Class<? extends OAObject>, String[]> hmNotVisibleClass = new HashMap<>();
 
-	/**
-	 * Optional package restriction. When set, classes outside this package may be
-	 * automatically allowed depending on evaluation logic.
-	 */
-	private Package packageValid; // ignore/allow others
 
 	//qqqqqqqqqqqqq
 	// todo? add query extraWhereClause .....
@@ -233,24 +231,14 @@ public class OAUserAccess {
 	 * Child OAUserAccess instances. After this OAUserAccess computes a result,
 	 * each child reevaluates it, allowing hierarchical permission rules.
 	 */
-	private final ArrayList<OAUserAccess> alOAUserAccess = new ArrayList<>();
+	private final ArrayList<OAContextAccess> alOAUserAccess = new ArrayList<>();
 
 	/**
 	 * Constructs an OAUserAccess with default values of false for both enabled
 	 * and visible. No package restriction is applied.
 	 */
-	public OAUserAccess() {
+	public OAContextAccess() {
 
-	}
-
-	/**
-	 * Sets a package whose classes will be evaluated with special logic during
-	 * access determination.
-	 *
-	 * @param packageValid package to validate against
-	 */
-	public void setValidPackage(Package packageValid) {
-		this.packageValid = packageValid;
 	}
 
 	/**
@@ -260,7 +248,7 @@ public class OAUserAccess {
 	 * @param bDefaultEnabled default enabled flag
 	 * @param bDefaultVisible default visible flag
 	 */
-	public OAUserAccess(boolean bDefaultEnabled, boolean bDefaultVisible) {
+	public OAContextAccess(boolean bDefaultEnabled, boolean bDefaultVisible) {
 		this.bDefaultEnabled = bDefaultEnabled;
 		this.bDefaultVisible = bDefaultVisible;
 	}
@@ -271,7 +259,7 @@ public class OAUserAccess {
 	 *
 	 * @param ua child OAUserAccess
 	 */
-	public void addUserAccess(OAUserAccess ua) {
+	public void addUserAccess(OAContextAccess ua) {
 		if (ua != null) {
 			alOAUserAccess.add(ua);
 		}
@@ -314,7 +302,7 @@ public class OAUserAccess {
 		public UserAccess(OAObject obj, String pp, boolean bOnlyEndProperty) {
 			this.obj = obj;
 			this.pp = new OAPath(obj.getClass(), pp);
-			this.ppReverse = this.pp.getReversePropertyPath();
+			this.ppReverse = this.pp.getReversePath();
 			this.bOnlyEndProperty = bOnlyEndProperty;
 		}
 
@@ -328,7 +316,7 @@ public class OAUserAccess {
 		public UserAccess(Hub hub, String pp, boolean bOnlyEndProperty) {
 			this.hub = hub;
 			this.pp = new OAPath(hub.getObjectClass(), pp);
-			this.ppReverse = this.pp.getReversePropertyPath();
+			this.ppReverse = this.pp.getReversePath();
 			this.bOnlyEndProperty = bOnlyEndProperty;
 		}
 
@@ -634,12 +622,6 @@ public class OAUserAccess {
 	protected boolean getEnabled(final OAObject obj, final Class cz, final String propertyName, final boolean bDefault) {
 		boolean bResult = bDefault;
 
-		if (cz != null && packageValid != null) {
-			if (packageValid.equals(cz.getPackage())) {
-				return true;
-			}
-		}
-
 		if (hsEnabledClass.contains(cz)) {
 			bResult = true;
 		}
@@ -667,17 +649,17 @@ public class OAUserAccess {
 				}
 			}
 
-			boolean b = getIsInSamePropertyPath(obj, propertyName, alEnabledUserAccess);
+			boolean b = getIsInSamePath(obj, propertyName, alEnabledUserAccess);
 			if (b) {
 				bResult = true;
 			}
-			b = getIsInSamePropertyPath(obj, propertyName, alNotEnabledUserAccess);
+			b = getIsInSamePath(obj, propertyName, alNotEnabledUserAccess);
 			if (b) {
 				bResult = false;
 			}
 		}
 
-		for (OAUserAccess ua : alOAUserAccess) {
+		for (OAContextAccess ua : alOAUserAccess) {
 			bResult = ua.getEnabled(obj, cz, propertyName, bResult);
 		}
 		return bResult;
@@ -740,11 +722,6 @@ public class OAUserAccess {
 	 * @return visibility result
 	 */
 	protected boolean getVisible(final OAObject obj, final Class cz, final String propertyName, final boolean bDefault) {
-		if (cz != null && packageValid != null) {
-			if (!packageValid.equals(cz.getPackage())) {
-				return true; // allow other packages
-			}
-		}
 
 		boolean bResult = bDefault;
 
@@ -775,17 +752,17 @@ public class OAUserAccess {
 				}
 			}
 
-			boolean b = getIsInSamePropertyPath(obj, propertyName, alVisibleUserAccess);
+			boolean b = getIsInSamePath(obj, propertyName, alVisibleUserAccess);
 			if (b) {
 				bResult = true;
 			}
-			b = getIsInSamePropertyPath(obj, propertyName, alNotVisibleUserAccess);
+			b = getIsInSamePath(obj, propertyName, alNotVisibleUserAccess);
 			if (b) {
 				bResult = false;
 			}
 		}
 
-		for (OAUserAccess ua : alOAUserAccess) {
+		for (OAContextAccess ua : alOAUserAccess) {
 			bResult = ua.getVisible(obj, cz, propertyName, bResult);
 		}
 		return bResult;
@@ -807,8 +784,8 @@ public class OAUserAccess {
 	 * @param alUserAccess list of rules to evaluate
 	 * @return true if object matches rule; false otherwise
 	 */
-	protected boolean getIsInSamePropertyPath(final OAObject objSearch, final String propertyName,
-			final ArrayList<UserAccess> alUserAccess) {
+	protected boolean getIsInSamePath(final OAObject objSearch, final String propertyName,
+			final List<UserAccess> alUserAccess) {
 		if (objSearch == null || alUserAccess == null) {
 			return false;
 		}
@@ -836,7 +813,7 @@ public class OAUserAccess {
 				return true;
 			}
 
-			// see if obj type is in ua propertyPath type of objects
+			// see if obj type is in ua Path type of objects
 			OALinkInfo[] lis = ua.pp.getLinkInfos();
 
 			int i = 0;
@@ -895,7 +872,7 @@ public class OAUserAccess {
 				OALinkInfo[] liz = ua.ppReverse.getLinkInfos();
 				int k = (liz.length - i) - 1;
 				Object objz = objSearch;
-				for (; k < lis.length; k++) {
+				for (; k < liz.length; k++) {
 					if (liz[k].getType() != OALinkInfo.TYPE_ONE) {
 						break;
 					}
