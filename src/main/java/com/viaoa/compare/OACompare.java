@@ -18,6 +18,7 @@ package com.viaoa.compare;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.Collection;
 
 import com.viaoa.converter.OAConv;
@@ -28,7 +29,6 @@ import com.viaoa.datetime.OATime;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAString;
-import com.viaoa.math.OAMath;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.reflect.OAReflect;
@@ -821,62 +821,6 @@ public class OACompare {
 		return Integer.compare(a, b);
 	}
 
-    /**
-     * Compares two double values using the specified decimal precision.
-     *
-     * @param d1 first double value
-     * @param d2 second double value
-     * @param decimalPlaces number of decimal places to use for rounding, or a
-     *        negative value to use epsilon-based comparison
-     * @return -1, 0, or 1 based on the comparison result
-     */
-    public static int compare(double d1, double d2, int decimalPlaces) {
-		if (Double.isNaN(d1) || Double.isNaN(d2)) return Double.compare(d1, d2);
-		if (Double.isInfinite(d1) || Double.isInfinite(d2)) return Double.compare(d1, d2);
-		
-		if (decimalPlaces < 0) {
-			final double dx = d1 - d2;
-			final double eps = 1e-12 * Math.max(1.0, Math.max(Math.abs(d1), Math.abs(d2)));			
-			if (Math.abs(dx) < eps) return 0;
-			
-			return (dx < 0) ? -1 : 1;
-		}
-		
-		long l1 = getLongCompareValue(d1, decimalPlaces);
-		long l2 = getLongCompareValue(d2, decimalPlaces);
-		return Long.compare(l1, l2);
-	}
-    
-    
-    /**
-     * Converts a double value into a scaled long value for comparison purposes.
-     *
-     * @param d the double value to convert
-     * @param decimalPlaces number of decimal places to use for scaling
-     * @return the scaled long comparison value
-     */
-	private static long getLongCompareValue(double d, int decimalPlaces) {
-	    if (decimalPlaces < 0) decimalPlaces = 0;
-	    else if (decimalPlaces > 9) decimalPlaces = 9; // prevent FP drift, and long overrun
-
-	    if (Double.isNaN(d)) return 0;
-	    if (Double.isInfinite(d)) return (d > 0) ? Long.MAX_VALUE : Long.MIN_VALUE;
-
-	    boolean negative = d < 0;
-	    if (negative) d = -d;
-
-	    double scaled;
-	    if (decimalPlaces == 0) {
-	    	scaled = d;
-	    }
-	    else {
-		    double scale = Math.pow(10, decimalPlaces);
-		    scaled = d * scale;
-	    }
-
-	    long result = StrictMath.round(scaled);
-	    return negative ? -result : result;
-	}
 	
 	/**
 	 * Returns {@code true} if the two double values are equal using the specified
@@ -950,7 +894,7 @@ public class OACompare {
 		    Number n2 = (Number) matchValue;
 
 		    // Case 1: No rounding
-		    if (decimalPlaces <= 0) {
+		    if (decimalPlaces < 0) {
 		        // Optimize for identical numeric wrapper types
 		        if (n1.getClass() == n2.getClass()) {
 		            if (n1 instanceof Integer)   return Integer.compare(n1.intValue(),   n2.intValue());
@@ -963,12 +907,7 @@ public class OACompare {
 		            if (n1 instanceof BigInteger) return ((BigInteger)n1).compareTo((BigInteger)n2);
 		        }
 		    }
-
-		    // Case 2: Rounding enabled 
-		    double d1 = n1.doubleValue();
-		    double d2 = n2.doubleValue();
-
-		    return compare(d1, d2, decimalPlaces);
+		    return compareNumbers(n1, n2, decimalPlaces);
 		}				
 		
         if (value instanceof OASpecialCompareObject || matchValue instanceof OASpecialCompareObject) {
@@ -1287,18 +1226,9 @@ public class OACompare {
 			classMatchValue = (matchValue == null) ? null : matchValue.getClass();
 		}
 
-		if (decimalPlaces > 0) {
-			if (OAReflect.isFloat(classValue)) {
-				double d = OAConv.toDouble(value);
-				value = OAMath.round(d, decimalPlaces);
-			}
-			if (OAReflect.isFloat(classMatchValue)) {
-				double d = OAConv.toDouble(matchValue);
-				matchValue = OAMath.round(d, decimalPlaces);
-			}
-			classValue = (value == null) ? null : value.getClass();
-			classMatchValue = (matchValue == null) ? null : matchValue.getClass();
-		}
+		if (value instanceof Number && matchValue instanceof Number) {
+		    return compareNumbers((Number) value, (Number) matchValue, decimalPlaces);
+		}		
 
 		if (!(matchValue instanceof Comparable) || !(value instanceof Comparable)) {
 			if (value == null) {
@@ -1315,6 +1245,7 @@ public class OACompare {
 			}
 			return value.toString().compareTo(matchValue.toString());
 		}
+		
 		int x = ((Comparable) value).compareTo(matchValue);
 		return x;
 	}
@@ -1377,7 +1308,7 @@ public class OACompare {
 		if (obj.getClass().isArray()) {
 			return (Array.getLength(obj) == 0);
 		}
-
+		
 		Class c = obj.getClass();
 		if (OAReflect.isPrimitiveClassWrapper(c)) {
 			if (obj instanceof Number) {
@@ -1395,4 +1326,83 @@ public class OACompare {
 		return OAString.isEmpty(obj, bTrim);
 	}
 
+	
+	public static int compare(double d1, double d2, int decimalPlaces) {
+		return compare(d1, d2,decimalPlaces, null);
+	}
+	
+	public static int compare(double d1, double d2, int decimalPlaces, RoundingMode rmode) {
+		// Note: decimalPlaces should not be over 12-16 
+		if (rmode == null) rmode = RoundingMode.HALF_UP;
+	    if (Double.isNaN(d1) || Double.isNaN(d2)) {
+	        return Double.compare(d1, d2);
+	    }
+	    if (Double.isInfinite(d1) || Double.isInfinite(d2)) {
+	        return Double.compare(d1, d2);
+	    }
+
+	    if (decimalPlaces >= 0) {
+	        BigDecimal bd1 = BigDecimal.valueOf(d1).setScale(decimalPlaces, rmode);
+	        BigDecimal bd2 = BigDecimal.valueOf(d2).setScale(decimalPlaces, rmode);
+	        return bd1.compareTo(bd2);
+	    }
+
+	    return Double.compare(d1, d2);
+	}
+
+
+
+	public static int compareNumbers(Number n1, Number n2, int decimalPlaces) {
+		return compareNumbers(n1, n2, decimalPlaces, null);
+	}
+
+	public static int compareNumbers(Number n1, Number n2, int decimalPlaces, RoundingMode rmode) {
+		if (rmode == null) rmode = RoundingMode.HALF_UP;
+		if (n1 == n2) return 0;
+		if (n1 == null  || n2 == null) {
+			if (n1 == null) return -1;
+			return 1;
+		}
+
+		if (isNonFinite(n1) || isNonFinite(n2)) {
+	        return Double.compare(n1.doubleValue(), n2.doubleValue());
+	    }		
+		
+	    BigDecimal bd1 = toBigDecimal(n1);
+	    BigDecimal bd2 = toBigDecimal(n2);
+
+	    if (decimalPlaces >= 0) {
+	        bd1 = bd1.setScale(decimalPlaces, rmode);
+	        bd2 = bd2.setScale(decimalPlaces, rmode);
+	    }
+
+	    return bd1.compareTo(bd2);
+	}
+
+	public static BigDecimal toBigDecimal(Number n) {
+	    if (n == null) return null;
+	    if (n instanceof BigDecimal) return (BigDecimal) n;
+	    if (n instanceof BigInteger) return new BigDecimal((BigInteger) n);
+
+	    if (n instanceof Byte || n instanceof Short || n instanceof Integer || n instanceof Long) {
+	        return BigDecimal.valueOf(n.longValue());
+	    }
+
+	    return BigDecimal.valueOf(n.doubleValue());
+	}
+
+	public static boolean isNonFinite(Number n) {
+	    if (n instanceof Double) {
+	        double d = n.doubleValue();
+	        return Double.isNaN(d) || Double.isInfinite(d);
+	    }
+	    if (n instanceof Float) {
+	        float f = n.floatValue();
+	        return Float.isNaN(f) || Float.isInfinite(f);
+	    }
+	    return false;
+	}
+	
 }
+
+

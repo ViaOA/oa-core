@@ -763,7 +763,7 @@ CODEX
 	
     /**
      * Core implementation of all arithmetic operations. Coerces both inputs to {@link BigDecimal},
-     * applies pre- and post-rounding, executes the requested operation, and returns a double result.
+     * executes the requested operation, and returns a double result that is rounded to x amount of decimal places.
      * <p>
      * If division is performed and the divisor is zero, {@link Double#NaN} is returned.
      * </p>
@@ -779,14 +779,18 @@ CODEX
 		if (roundType < 0) roundType = BigDecimal.ROUND_HALF_UP;
 		else if (roundType > BigDecimal.ROUND_UNNECESSARY) throw new IllegalArgumentException("unknown roundTpype "+roundType);
 		BigDecimal bd1 = toBigDecimal(n1);
+		/*remove
 		if (decimalPlaces >= 0) {
 			bd1 = bd1.setScale(decimalPlaces, roundType);
 		}
+		*/
 
 		BigDecimal bd2 = toBigDecimal(n2);
+		/*remove
 		if (decimalPlaces >= 0) {
 			bd2 = bd2.setScale(decimalPlaces, roundType);
 		}
+		*/
 
 		switch (opType) {
 		case MATH_OP_MULTIPLY:
@@ -797,7 +801,7 @@ CODEX
 			
 			// uses hardcoded values (8, roundHalfUp) to avoid: ArithmeticException: Non-terminating decimal expansion.
 			//   ex: 1/3 is repeating, need to use scale to limit/max how many decimal places.
-			int x = (decimalPlaces >= 0) ? decimalPlaces : 16;
+			int x = (decimalPlaces >= 0) ? Math.max(decimalPlaces+8, 16) : 16;
 			bd1 = bd1.divide(bd2, x, roundType);  
 			break;
 		case MATH_OP_ADD:

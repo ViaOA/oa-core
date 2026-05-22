@@ -211,6 +211,7 @@ public abstract class HubAOService {
 		setActiveObject(thisHub, object, pos, bUpdateLink, bForce, bCalledByShareHub, true);
 	}
 
+	
 	protected final HashSet<Hub<?>> hsWarnOnSettingAO = new HashSet<>();
 
 	/**

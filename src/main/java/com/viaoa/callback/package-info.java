@@ -18,6 +18,8 @@
  */
 package com.viaoa.callback;
 
+// JUnit tests created 
+
 /* CODEX Invariants
 
 CALLBACK-RUNTIME-001 — Runtime Callback Contract

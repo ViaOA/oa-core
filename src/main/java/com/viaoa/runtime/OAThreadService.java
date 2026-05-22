@@ -78,6 +78,10 @@ public class OAThreadService {
 		return srvcThreadLocal.isRefreshing();
 	}
 
+	public boolean isRemoteThread() {
+		return getRemoteThreadService().isRemoteThread();
+	}
+	
 //qqqqqqqqqqqq
 	public boolean isUIThread() {
 //qqqqqqq create a plugin/provider for this		
