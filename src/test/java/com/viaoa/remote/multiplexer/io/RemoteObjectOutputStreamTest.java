@@ -1,11 +1,9 @@
 package com.viaoa.remote.multiplexer.io;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
 
 import com.viaoa.OAUnitTest;
-
-import test.xice.tsac3.model.oa.*;
 
 public class RemoteObjectOutputStreamTest extends OAUnitTest {
 

@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
 import com.viaoa.datetime.OADateTime;
 import com.viaoa.lang.OAStr;
 import com.viaoa.lang.OAString;
-import com.viaoa.model.oa.VEnum;
+import com.viaoa.lang.oa.VEnum;
 import com.viaoa.reflect.OAReflect;
 
 /**

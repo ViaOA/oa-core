@@ -1,18 +1,15 @@
 package com.viaoa.remote.multiplexer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import org.junit.After;
-import org.junit.Before;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
 
 import com.viaoa.OAUnitTest;
 import com.viaoa.comm.multiplexer.OAMultiplexerClient;
 import com.viaoa.comm.multiplexer.OAMultiplexerServer;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAObjectCacheDelegate;
 import com.viaoa.object.OAObjectKey;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.model.ClientInfo;
 import com.viaoa.sync.remote.RemoteClientCallbackInterface;
 import com.viaoa.sync.remote.RemoteClientInterface;
@@ -23,7 +20,7 @@ import com.viaoa.sync.remote.RemoteSessionInterface;
 import com.viaoa.sync.remote.RemoteSyncImpl;
 import com.viaoa.sync.remote.RemoteSyncInterface;
 
-import test.xice.tsac3.model.oa.Server;
+import test.xice.tsac.model.oa.Server;
 
 public class RemoteMultiplexer3Test extends OAUnitTest {
 	private OAMultiplexerServer multiplexerServer;
@@ -44,7 +41,7 @@ public class RemoteMultiplexer3Test extends OAUnitTest {
 
 	private Server serverTest;
 
-	@Before
+	@BeforeEach
 	public void setup() throws Exception {
 		// setup server
 		multiplexerServer = new OAMultiplexerServer(port);
@@ -75,7 +72,7 @@ public class RemoteMultiplexer3Test extends OAUnitTest {
 		serverTest.setId(1);
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() throws Exception {
 		if (multiplexerClient != null) {
 			multiplexerClient.close();
@@ -141,6 +138,11 @@ public class RemoteMultiplexer3Test extends OAUnitTest {
 				// TODO Auto-generated method stub  qqqqqqqqqqqqqq
 				return null;
 			}
+
+			@Override
+			public long getNextFiftyObjectGuids() {
+				return 1;
+			}
 		};
 		return rsi;
 	}
@@ -191,7 +193,7 @@ public class RemoteMultiplexer3Test extends OAUnitTest {
 		if (serverPingCount2 == 0) {
 			Thread.sleep(25);
 		}
-		assertTrue("serverPingCount2=" + serverPingCount2, serverPingCount2 > 0);
+		assertTrue(serverPingCount2 > 0, "serverPingCount2=" + serverPingCount2);
 
 		// C2S using queued request/reply
 		RemoteServerInterface remoteServerQ = (RemoteServerInterface) remoteMultiplexerClient.lookup("serverQ");
@@ -228,7 +230,8 @@ public class RemoteMultiplexer3Test extends OAUnitTest {
 
 		Server server = (Server) remoteServerQ.getObject(Server.class, new OAObjectKey(1));
 		if (server == null) {
-			OAObject objx = (OAObject) OAObjectCacheDelegate.getObject(Server.class, new OAObjectKey(1));
+			OAGraph og = OARuntime.graph(Server.class);
+			OAObject objx = (OAObject) og.get(Server.class, new OAObjectKey(1));
 
 			Server server2 = (Server) remoteServerQ.getObject(Server.class, new OAObjectKey(1));
 			server = server2;

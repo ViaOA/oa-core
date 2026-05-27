@@ -13,38 +13,50 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.viaoa.model.oa;
+package com.viaoa.lang.oa;
 
 import java.util.logging.Logger;
 
 import com.viaoa.annotation.OAClass;
 import com.viaoa.annotation.OAProperty;
-import com.viaoa.datetime.OADateTime;
 import com.viaoa.object.OAObject;
 
 @OAClass(
-    shortName = "dt",
-    displayName = "DateTime",
-    displayProperty = "value",
+    shortName = "nv",
+    displayName = "NameValue",
+    displayProperty = "name",
     sortProperty = "value",
     localOnly = true,
     useDataSource = false
 )
-public class VDateTime extends OAObject {
+public class VNameValue extends OAObject {
     private static final long serialVersionUID = 1L;
-    private static Logger LOG = Logger.getLogger(VDateTime.class.getName());
+    private static Logger LOG = Logger.getLogger(VNameValue.class.getName());
     
+    public static final String P_Name = "Name";
     public static final String P_Value = "Value";
     
-    private OADateTime value;
+    private String name;
+    private String value;
+
+    @OAProperty(displayLength = 12)
+    public String getName() {
+        return name;
+    }
+    public void setName(String newValue) {
+        fireBeforePropertyChange(P_Name, this.value, newValue);
+        String old = name;
+        this.name = newValue;
+        firePropertyChange(P_Name, old, this.name);
+    }
     
-    @OAProperty(displayLength = 14)
-    public OADateTime getValue() {
+    @OAProperty(displayLength = 12)
+    public String getValue() {
         return value;
     }
-    public void setValue(OADateTime newValue) {
+    public void setValue(String newValue) {
         fireBeforePropertyChange(P_Value, this.value, newValue);
-        OADateTime old = value;
+        String old = value;
         this.value = newValue;
         firePropertyChange(P_Value, old, this.value);
     }

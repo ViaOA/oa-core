@@ -16,7 +16,7 @@
 package com.viaoa.converter.internal;
 
 import com.viaoa.lang.OAString;
-import com.viaoa.model.oa.VEnum;
+import com.viaoa.lang.oa.VEnum;
 
 public class OAConverterVEnum implements OAConverterInterface<VEnum> {
     
@@ -27,7 +27,7 @@ public class OAConverterVEnum implements OAConverterInterface<VEnum> {
 
 	@Override
 	public String convertToString(VEnum venum, String fmt) {
-		if (venum == null) return null;
+		if (venum == null) return "";
 		return OAString.format(venum.getName(), fmt);
 	}
 }

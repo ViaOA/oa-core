@@ -645,13 +645,15 @@ public class OARemoteMultiplexerServer {
         // accept new connections
         Thread t = new Thread(new Runnable() {
             public void run() {
-                for (;;) {
+                for (; multiplexerServer.isStarted() ;) {
                     try {
                         Socket socket = ssCtoS.accept();
                         onNewConnectionForCtoS(socket);
                     }
                     catch (Exception e) {
-                        LOG.log(Level.WARNING, "Exception on new CtoS socket", e);
+                    	if (multiplexerServer.isStarted()) {
+                    		LOG.log(Level.WARNING, "Exception on new CtoS socket", e);
+                    	}
                     }
                 }
             }
@@ -1012,13 +1014,15 @@ public class OARemoteMultiplexerServer {
         // accept new connections
         Thread t = new Thread(new Runnable() {
             public void run() {
-                for (;;) {
+                for (; multiplexerServer.isStarted() ;) {
                     try {
                         Socket socket = ssStoC.accept();
                         onNewConnectionForStoC(socket);
                     }
                     catch (Exception e) {
-                        LOG.log(Level.WARNING, "Exception on new StoC socket", e);
+                    	if (multiplexerServer.isStarted()) {
+                    		LOG.log(Level.WARNING, "Exception on new StoC socket", e);
+                    	}
                     }
                 }
             }

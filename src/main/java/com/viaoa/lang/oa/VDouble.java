@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.viaoa.model.oa;
+package com.viaoa.lang.oa;
 
 import java.util.logging.Logger;
 
@@ -22,41 +22,28 @@ import com.viaoa.annotation.OAProperty;
 import com.viaoa.object.OAObject;
 
 @OAClass(
-    shortName = "nv",
-    displayName = "NameValue",
-    displayProperty = "name",
+    shortName = "double",
+    displayName = "Double",
+    displayProperty = "value",
     sortProperty = "value",
     localOnly = true,
     useDataSource = false
 )
-public class VNameValue extends OAObject {
+public class VDouble extends OAObject {
     private static final long serialVersionUID = 1L;
-    private static Logger LOG = Logger.getLogger(VNameValue.class.getName());
+    private static Logger LOG = Logger.getLogger(VDouble.class.getName());
     
-    public static final String P_Name = "Name";
     public static final String P_Value = "Value";
     
-    private String name;
-    private String value;
-
-    @OAProperty(displayLength = 12)
-    public String getName() {
-        return name;
-    }
-    public void setName(String newValue) {
-        fireBeforePropertyChange(P_Name, this.value, newValue);
-        String old = name;
-        this.name = newValue;
-        firePropertyChange(P_Name, old, this.name);
-    }
+    private double value;
     
-    @OAProperty(displayLength = 12)
-    public String getValue() {
+    @OAProperty(displayLength = 3)
+    public double getValue() {
         return value;
     }
-    public void setValue(String newValue) {
+    public void setValue(double newValue) {
         fireBeforePropertyChange(P_Value, this.value, newValue);
-        String old = value;
+        double old = value;
         this.value = newValue;
         firePropertyChange(P_Value, old, this.value);
     }

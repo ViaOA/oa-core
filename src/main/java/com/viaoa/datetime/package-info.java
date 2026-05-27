@@ -19,7 +19,7 @@
  */
 package com.viaoa.datetime;
 
-//CODEX unit tests <todo>
+//CODEX unit tests ??
 
 /* CODEX Invariants
 

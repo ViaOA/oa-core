@@ -19,7 +19,9 @@
  */
 package com.viaoa.converter;
 
-//CODEX unit tests <todo>
+//CODEX unit tests 20260527
+
+
 
 
 /* CODEX Invariants
@@ -468,4 +470,424 @@ Converter Runtime / Cross-Package Contracts
 
 */
 
+/* Codex unit test outline
 
+
+1. Production Classes Found
+
+  com.viaoa.converter
+
+  - OAConverter
+  - OAConv
+  - package-info.java
+
+  com.viaoa.converter.internal
+
+  - OAConverterInterface
+  - OAConverterString
+  - OAConverterNumber
+  - OAConverterBigDecimal
+  - OAConverterBigInteger
+  - OAConverterBoolean
+  - OAConverterCharacter
+  - OAConverterDate
+  - OAConverterSqlDate
+  - OAConverterTime
+  - OAConverterTimestamp
+  - OAConverterOADate
+  - OAConverterOADateTime
+  - OAConverterOATime
+  - OAConverterLocalDate
+  - OAConverterLocalTime
+  - OAConverterLocalDateTime
+  - OAConverterInstant
+  - OAConverterZonedDateTime
+  - OAConverterTimeZone
+  - OAConverterZoneId
+  - OAConverterClass
+  - OAConverterEnum
+  - OAConverterVEnum
+
+  UI converters such as Point/Dimension/Rectangle/Color/Font appear moved/commented out of core registration and
+  should not be treated as normal com.viaoa.converter coverage unless still reachable through remaining
+  production code.
+
+  2. Public API Surface To Test
+
+  MUST_TEST:
+
+  - OAConverter.convert(Class<T>, Object)
+  - OAConverter.convert(Class<T>, Object, String)
+  - primitive target dispatch through wrapper converters
+  - assignable-value fast path behavior
+  - registered converter lookup, including superclass lookup
+  - OAConv alias behavior
+
+  MUST_TEST:
+
+  - toString(...) overloads
+  - toBoolean(...)
+  - toChar(...)
+  - toInt, toLong, toShort, toByte, toFloat, toDouble
+  - toBigDecimal, toBD, toBigInteger
+  - toDate, toTime, toDateTime
+  - isEmpty, isNotEmpty
+  - round
+
+  SHOULD_TEST:
+
+  - global format getters/setters
+  - getFormat
+  - custom converter registration and replacement
+  - repeated conversion determinism after failures
+
+  CONTRACT_QUESTION:
+
+  - Whether mutating static global formats during tests is acceptable, and whether tests should restore them
+    with try/finally.
+  - Whether converter isEmpty intentionally differs from OACompare empty/coercion semantics.
+
+  3. Existing Tests Found
+
+  SHOULD_FIX_SOON:
+
+  - Existing tests under src/test/java/com/viaoa/util/converter/*Test.java appear mostly legacy, shallow, or
+    placeholder-style. They are useful as smoke coverage but not enough for converter hardening.
+  - Several UI converter tests may be stale because core no longer registers those UI converters.
+
+  SHOULD_TEST:
+
+  - src/test/java/com/viaoa/util/OAConverterTest.java has useful baseline coverage for primitive helpers,
+    BigDecimal basics, boolean basics, null string behavior, isEmpty, and Java time round trips.
+  - JDBC/query converter tests are useful integration coverage, but they do not replace focused converter unit
+    tests.
+
+  OK_TO_DEFER:
+
+  - Existing test package names under com.viaoa.util are historically odd but not a correctness blocker.
+
+  4. Proposed Test Classes
+
+  MUST_TEST:
+
+  - OAConverterDispatchTest
+  - OAConverterNullAndDefaultTest
+  - OAConverterStringTest
+  - OAConverterNumberTest
+  - OAConverterBigDecimalBigIntegerTest
+  - OAConverterBooleanTest
+  - OAConverterCharacterTest
+  - OAConverterLegacyTemporalTest
+  - OAConverterJavaTimeTest
+  - OAConverterEnumClassVEnumTest
+
+  SHOULD_TEST:
+
+  - OAConverterFormatTest
+  - OAConverterRoundTripTest
+  - OAConverterIntegrationBoundaryTest
+
+  NICE_TO_HAVE:
+
+  - OAConverterThreadSafetyTest
+
+  5. Proposed Test Methods
+
+  OAConverterDispatchTest — MUST_TEST
+
+  - convertUsesRequestedTargetType
+  - primitiveTargetsUseWrapperConverters
+  - assignableValueReturnsSameInstanceWhenNoFormat
+  - assignableStringWithFormatStillFormats
+  - oaConvMatchesOAConverterForRepresentativeCalls
+  - converterLookupFindsSuperclassConverter
+  - unknownTargetWithoutConverterReturnsNull
+  - customConverterRegistrationIsUsed
+
+  OAConverterNullAndDefaultTest — MUST_TEST
+
+  - nullToStringReturnsEmptyString
+  - nullToPrimitiveHelpersReturnsDocumentedDefaults
+  - nullToNumericObjectTargetsReturnsZero
+  - nullToBooleanReturnsFalse
+  - nullToCharacterHelperReturnsZeroChar
+  - nullToTemporalObjectTargetsReturnsNull
+  - isEmptyRecognizesNullBlankArraysCollectionsMapsAndHub
+  - isEmptyDoesNotTreatZeroFalseOrCharZeroAsEmpty
+
+  OAConverterStringTest — MUST_TEST
+
+  - byteArrayConvertsUsingUtf8
+  - blobConversionCharsetContract
+  - clobConvertsFullContent
+  - nullStringUsesThirdBooleanFormatFieldWhenProvided
+  - sourceConverterConvertToStringIsUsed
+  - formatMaskIsAppliedToStringValues
+  - toStringNeverReturnsNullThroughCentralApi
+
+  OAConverterNumberTest — MUST_TEST
+
+  - nullAndEmptyStringConvertToZero
+  - stringGroupingCurrencyAndWhitespaceParse
+  - partialNumericParseIsRejected
+  - integerFloatDoubleShortByteNarrowing
+  - booleanToNumberUsesOneAndZero
+  - characterToNumberUsesCodePoint
+  - enumToNumberUsesOrdinal
+  - vEnumToNumberUsesValue
+  - byteArrayToNumberUsesBigInteger
+  - kAndMSuffixParsingContract
+  - decimalSuffixParsingContract
+  - numberToStringUsesExplicitFormat
+  - invalidNumberStringReturnsNullThroughConverter
+  - invalidNumberHelperThrows
+
+  OAConverterBigDecimalBigIntegerTest — MUST_TEST
+
+  - bigDecimalNullReturnsZero
+  - bigDecimalFromIntegerLongBigIntegerIsExact
+  - bigDecimalFromFloatDoubleUsesDocumentedPrecision
+  - bigDecimalFromStringPreservesPrecisionContract
+  - bigDecimalFromFormattedStringParsesGrouping
+  - bigIntegerNullReturnsZero
+  - bigIntegerFromDecimalTruncatesOrRejectsByContract
+  - bigIntegerFromFloatDoubleTruncationContract
+  - toBigDecimalScaleAndRoundingAreStable
+  - roundUsesConfiguredRoundType
+
+  OAConverterBooleanTest — MUST_TEST
+
+  - standardTrueFalseVocabulary
+  - numericZeroStringsConvertFalse
+  - signedZeroStringContract
+  - nonZeroNumberStringsConvertTrue
+  - numberZeroAndNonZeroConvertCorrectly
+  - characterZeroAndNonZeroConvertCorrectly
+  - customBooleanFormatRoundTrips
+  - unknownStringBehaviorContract
+  - oneFieldCustomBooleanFormatInvalidInputDoesNotThrowUnexpectedNpe
+  - helperInvalidBooleanThrows
+
+  OAConverterCharacterTest — SHOULD_TEST
+
+  - singleCharacterStringConverts
+  - emptyOrMultiCharacterStringReturnsNull
+  - booleanConvertsToTAndF
+  - numberWithinCharRangeConverts
+  - numberOutsideCharRangeReturnsNull
+  - invalidCharacterHelperThrows
+
+  OAConverterLegacyTemporalTest — MUST_TEST
+
+  - dateNullReturnsNull
+  - sqlDateNullReturnsNull
+  - timeNullReturnsNull
+  - timestampNullReturnsNull
+  - stringBlankTemporalReturnsNull
+  - paddedTimeStringParsesTrimmedValue
+  - paddedTimestampStringParsesTrimmedValue
+  - numericEpochMillisConvertsDeterministically
+  - byteArrayEpochMillisConvertsDeterministically
+  - dateToStringWithDateFormat
+  - dateToStringWithDateTimeFormatPreservesOrDropsTimeContract
+  - oaDateOaTimeOaDateTimeCrossConversions
+
+  OAConverterJavaTimeTest — MUST_TEST
+
+  - localDateFromStringDateOADateAndEpoch
+  - localTimeFromStringOATimeAndEpoch
+  - localTimeFromDateOADateTimeAndLocalDateTimeContract
+  - localDateTimeFromStringDateOADateTimeAndEpoch
+  - localDateTimeFromShortByteArrayFailureContract
+  - instantFromStringDateTemporalAndEpoch
+  - zonedDateTimeFromStringDateTemporalAndEpoch
+  - zonedDateTimeToStringPreservesZoneContract
+  - timeZoneRoundTripKnownIds
+  - zoneIdRoundTripKnownIds
+  - invalidZoneReturnsNullOrThrowsByContract
+
+  OAConverterEnumClassVEnumTest — MUST_TEST
+
+  - enumFromNameCaseInsensitive
+  - enumFromOrdinal
+  - enumUnknownNameReturnsNull
+  - enumBadOrdinalReturnsNull
+  - enumRejectsDifferentEnumClass
+  - enumToStringUsesName
+  - classFromFullyQualifiedName
+  - classInvalidNameReturnsNull
+  - vEnumFromValue
+  - vEnumToStringNullDirectVsCentralContract
+
+  OAConverterFormatTest — SHOULD_TEST
+
+  - defaultFormatForKnownTypes
+  - explicitFormatOverridesDefault
+  - globalDateTimeNumberBooleanFormatsAreUsed
+  - globalFormatMutationsAreRestoredAfterTest
+  - useDefaultFormatFalseBypassesGlobalFormat
+
+  OAConverterRoundTripTest — SHOULD_TEST
+
+  - numberStringNumberRoundTrip
+  - bigDecimalStringBigDecimalRoundTrip
+  - booleanStringBooleanRoundTripWithCustomFormat
+  - enumStringEnumRoundTrip
+  - classStringClassRoundTrip
+  - dateTimeStringDateTimeRoundTripWithExplicitFormat
+  - zoneIdStringZoneIdRoundTrip
+
+  OAConverterIntegrationBoundaryTest — SHOULD_TEST
+
+  - converterAndCompareHaveDocumentedEmptyBoundary
+  - queryStyleStringToNumberConversionIsDeterministic
+  - hubDisplayToStringDoesNotReturnNull
+  - replicationRelevantTemporalConversionsDoNotDependOnObjectIdentity
+
+  6. Edge Cases By Converter Type
+
+  MUST_TEST:
+
+  - String: null, empty, whitespace, byte array UTF-8, Blob, Clob, formatting masks, source converter
+    delegation.
+  - Number: blank strings, grouping separators, currency symbols, signs, decimals, exponent-like input if
+    supported, partial parse, overflow/narrowing, suffixes k/M, byte arrays, booleans, characters, enums.
+  - BigDecimal/BigInteger: large precision values, scale preservation, double/float precision, truncation,
+    grouping formats, invalid strings.
+  - Boolean: vocabulary, custom format, signed zero, numeric strings, unknown strings, numeric/char/object
+    truthiness.
+  - Character: null, empty string, multi-character string, numeric bounds, booleans.
+  - Legacy temporal: blank/padded strings, epoch millis, byte arrays, SQL date truncation, timestamp/time
+    parsing, format round trips.
+  - Java time: local/system zone dependence, zone preservation, epoch conversions, byte arrays, invalid zones.
+  - Enum/Class/VEnum: invalid names, wrong enum type, ordinal bounds, null string behavior.
+
+  7. Null/Default Semantics To Lock Down
+
+  MUST_TEST:
+
+  - OAConverter.toString(null) returns "".
+  - Central string conversion should not expose null for normal callers.
+  - Numeric object converters currently default null to zero.
+  - Primitive helper methods return primitive defaults for null.
+  - Temporal object converters generally return null for null.
+  - Boolean converter defaults null to false.
+  - Character helper defaults null to char zero.
+  - Invalid non-null helper conversions generally throw when helper cannot produce primitive/default-safe value.
+
+  CONTRACT_QUESTION:
+
+  - Whether object-level numeric convert(BigDecimal.class, null) / convert(Number.class, null) should remain
+    zero rather than null.
+  - Whether direct converter convertToString(null) may return null while central OAConverter.toString normalizes
+    to "".
+
+  8. Invalid Input Semantics To Lock Down
+
+  MUST_TEST:
+
+  - Central convert returning null for unsupported/invalid object conversion.
+  - Primitive helper methods throwing on invalid non-null input.
+  - Boolean unknown string behavior.
+  - Number partial parse rejection.
+  - Temporal invalid parse behavior.
+  - Enum invalid name/ordinal behavior.
+  - Class invalid name behavior.
+  - Zone invalid ID behavior.
+
+  CONTRACT_QUESTION:
+
+  - Boolean strings such as "fx" currently risk truthy behavior depending on first character rules. This should
+    be documented before tests lock it down.
+  - Numeric suffix parsing for decimal values such as "3.2M" should be documented before tests assert current
+    behavior.
+
+  9. Cross-Class Interactions To Test
+
+  MUST_TEST:
+
+  - OAConverter.convert(String.class, value, fmt) calls the source converter’s convertToString.
+  - OAConverter.convert(target, String, fmt) calls the target converter’s parse path.
+  - OAConv remains behaviorally identical to OAConverter.
+  - Primitive target classes dispatch to wrapper converters.
+  - Format defaults from OAConverter.getFormat are honored consistently.
+
+  SHOULD_TEST:
+
+  - OACompare boundary: converter conversion/default behavior must not be assumed to equal compare coercion
+    behavior.
+  - OAPath/OAQuery-style string-to-number/date conversion should be deterministic.
+  - Hub/display usage should rely on central toString never returning null.
+
+  10. Likely Bugs/Risks Discovered During Review
+
+  MUST_TEST or FIX_BEFORE_LOCKING_CONTRACT:
+
+  - OAConverterEnum appears to return any Enum instance without verifying it belongs to the requested enum
+    class. This can produce wrong-type results.
+  - OAConverterBigDecimal string conversion likely routes through generic Number, risking precision loss for
+    large decimal strings.
+  - OAConverterBoolean signed zero strings such as "-0" or "+0" may convert to true.
+  - OAConverterBoolean custom one-field format can produce an unexpected NullPointerException for unrecognized
+    input.
+  - OAConverterTime and OAConverterTimestamp trim into a local variable but may parse the original untrimmed
+    string.
+  - OAConverterLocalDateTime byte-array conversion requires exactly eight bytes and can throw
+    BufferUnderflowException, unlike related converters.
+  - OAConverterLocalTime does not appear to handle some deterministic time-bearing inputs such as Date,
+    OADateTime, or LocalDateTime.
+  - OAConverterDate.convertToString may drop time by wrapping java.util.Date as OADate, even when a datetime
+    format is requested.
+  - OAConverterZonedDateTime.convertToString may lose the original zone/offset by converting through Date/
+    default zone.
+  - Blob-to-string conversion appears to use platform default charset while byte-array conversion uses UTF-8.
+
+  SHOULD_TEST:
+
+  - BigInteger conversion from decimal values truncates through longValue; this may be intentional but should be
+    locked down.
+  - Calendar string conversion may not preserve populated date-time state.
+  - VEnum direct converter null-string behavior may differ from central OAConverter.toString.
+
+  11. Recommended Order To Generate Tests
+
+  1. MUST_TEST: dispatch, null/default, invalid-input semantics.
+  2. MUST_TEST: string, number, BigDecimal/BigInteger, boolean.
+  3. MUST_TEST: temporal converters, first legacy then Java time.
+  4. MUST_TEST: enum/class/VEnum.
+  5. SHOULD_TEST: format/global default behavior.
+  6. SHOULD_TEST: round-trip and integration-boundary tests.
+  7. NICE_TO_HAVE: concurrency/thread-safety tests around formatter reuse and registry lookup.
+
+  12. Behavior To Document As CONTRACT Before Testing
+
+  CONTRACT_QUESTION:
+
+  - Null numeric conversion returns zero rather than null.
+  - Central toString(null) returns "", while some direct converter convertToString(null) methods may return
+    null.
+  - Converter isEmpty is narrower than OACompare emptiness and does not treat zero/false/char-zero as empty.
+  - Boolean unknown string behavior, especially signed zero and first-character truthiness.
+  - Decimal k/M suffix parsing behavior.
+  - BigDecimal precision expectations for string inputs.
+  - BigInteger truncation from decimal inputs.
+  - Date/time conversions that use the JVM default time zone.
+  - ZonedDateTime string formatting zone preservation or loss.
+  - Whether invalid conversion should return null or throw for each public helper versus central convert.
+
+  READY_TO_MOVE_ON after the MUST_TEST plan is accepted, but converter behavior has enough contract questions
+  that tests should be generated in small groups, starting with dispatch/null/invalid semantics before locking
+  down questionable edge behavior.
+
+
+
+
+
+*/
+
+
+
+/* Notes
+
+
+*/

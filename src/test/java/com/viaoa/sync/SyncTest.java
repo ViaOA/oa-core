@@ -1,17 +1,12 @@
 package com.viaoa.sync;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
 
 import java.net.Socket;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import com.viaoa.OAUnitTest;
-import com.viaoa.object.OAThreadLocalDelegate;
 
-import test.xice.tsac3.model.oa.Server;
 
 /**
  * NOT Done:

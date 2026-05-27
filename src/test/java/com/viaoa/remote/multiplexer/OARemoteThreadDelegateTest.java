@@ -1,17 +1,9 @@
 package com.viaoa.remote.multiplexer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
 
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
 import com.viaoa.comm.multiplexer.OAMultiplexerClient;
@@ -19,7 +11,6 @@ import com.viaoa.comm.multiplexer.OAMultiplexerServer;
 import com.viaoa.datetime.OADateTime;
 import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.remote.multiplexer.annotation.OARemoteMethod;
 // test package only
@@ -51,7 +42,7 @@ public class OARemoteThreadDelegateTest extends OAUnitTest {
 	final Object lockServer = new Object();
 	final Object lockServerNoQ = new Object();
 
-	@Before
+	@BeforeEach
 	public void setup() throws Exception {
 		OAObject.setDebugMode(true);
 
@@ -68,7 +59,7 @@ public class OARemoteThreadDelegateTest extends OAUnitTest {
 					return;
 				}
 				aiClientRegisterCount.incrementAndGet();
-				RequestInfo ri = OAThreadLocalDelegate.getRemoteRequestInfo();
+				// RequestInfo ri = OAThreadLocalDelegate.getRemoteRequestInfo();
 				synchronized (testClients) {
 					testClients[id].remoteClientInterface = rci;
 				}
@@ -215,7 +206,7 @@ public class OARemoteThreadDelegateTest extends OAUnitTest {
 		remoteMultiplexerServer.start();
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() throws Exception {
 		System.out.println("unittest After(), calling tearDown");
 		multiplexerServer.stop();

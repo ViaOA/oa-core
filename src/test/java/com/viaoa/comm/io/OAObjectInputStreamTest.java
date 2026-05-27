@@ -2,7 +2,8 @@ package com.viaoa.comm.io;
 
 import java.io.*;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
 
 import com.viaoa.io.OAFile;
 

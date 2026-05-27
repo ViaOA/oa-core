@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.viaoa.model.oa;
+package com.viaoa.lang.oa;
 
 import java.util.logging.Logger;
 

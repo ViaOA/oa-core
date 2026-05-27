@@ -5,7 +5,7 @@ import java.util.logging.Logger;
 import com.viaoa.hub.Hub;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.metadata.OAPropertyInfo;
-import com.viaoa.model.oa.VEnum;
+import com.viaoa.lang.oa.VEnum;
 import com.viaoa.object.OAObject;
 
 public abstract class OAObjectEnumService {

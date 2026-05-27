@@ -16,9 +16,9 @@ import com.viaoa.hub.HubListenerAdapter;
 import com.viaoa.lang.OAString;
 import com.viaoa.log.OALogUtil;
 import com.viaoa.object.OAObject;
-import com.viaoa.object.OAThreadLocalDelegate;
 import com.viaoa.queue.OACircularQueue;
 import com.viaoa.remote.info.RequestInfo;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.remote.RemoteBroadcastInterface;
 import com.viaoa.sync.remote.RemoteTestInterface;
 import com.viaoa.sync.remote.RemoteTsamInterface;
@@ -48,7 +48,7 @@ import test.xice.tsam.util.DataGenerator;
 
 /**
  * Server for Unit Tests - 
- *   ==> Run this manually, Run this manually, Run this manually,  Run this manually, .... 
+ *   ==> Run this manually, Run this manually, Run this manually,  Run this manually !!!! Run this manually, Run this manually <== 
  *   and then run OASyncClientTest multiple times, 
  *   and then run it as a junit test.
  */
@@ -89,7 +89,7 @@ public class OASyncServerTest {
 					return;
 				}
 
-				OAThreadLocalDelegate.setDefaultSendSyncMessages(true);
+				//was:  OAThreadLocalDelegate.setDefaultSendSyncMessages(true);
 				site.setName("Server running test");
 
 				Thread t = new Thread(new Runnable() {

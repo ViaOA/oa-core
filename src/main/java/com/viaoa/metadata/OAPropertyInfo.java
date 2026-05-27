@@ -20,11 +20,9 @@ import java.lang.reflect.Method;
 import com.viaoa.annotation.OAColumn;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAString;
-import com.viaoa.model.oa.VEnum;
-import com.viaoa.model.oa.VString;
+import com.viaoa.lang.oa.VEnum;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 

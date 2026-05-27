@@ -16,7 +16,7 @@
 /**
  * <p>
  */
-package com.viaoa.model;
+package com.viaoa.lang.oa;
 
 //CODEX unit tests <todo>
 

@@ -66,7 +66,7 @@ import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAStr;
 import com.viaoa.lang.OAString;
 import com.viaoa.math.OAMath;
-import com.viaoa.model.oa.VEnum;
+import com.viaoa.lang.oa.VEnum;
 import com.viaoa.reflect.OAReflect;
 
 /**

@@ -1,8 +1,8 @@
 package com.viaoa.text;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
 import java.util.*;
-import org.junit.Test;
 
 import com.viaoa.text.OATextLineWrap;
 
@@ -269,20 +269,19 @@ public class OATextLineWrapTest {
 
             // 1 No row should exceed configured width
             for (String r : rows) {
-                assertTrue("Row width exceeded", r.length() <= width);
+                assertTrue(r.length() <= width, "Row width exceeded");
             }
 
             // 2 No row should be empty unless input was empty
             if (!text.isEmpty()) {
                 for (String r : rows) {
-                    assertFalse("Unexpected empty row", r.isEmpty());
+                    assertFalse(r.isEmpty(), "Unexpected empty row");
                 }
             }
 
             // 3 Should not append hyphen after whitespace-only rows
             for (String r : rows) {
-                assertFalse("Bad trailing hyphen on whitespace", 
-                    r.trim().isEmpty() && r.endsWith("-"));
+                assertFalse(r.trim().isEmpty() && r.endsWith("-"), "Bad trailing hyphen on whitespace");
             }
 
             // 4) Reconstructing from rows should contain all visible characters (ignoring breaks & whitespace)
@@ -294,10 +293,8 @@ public class OATextLineWrapTest {
                     .replace("-", "")          // ignore original hyphens for this invariant
                     .replaceAll("\\s+", "");   // ignore all whitespace
 
-            assertTrue(
-                "Content mismatch after wrapping",
-                combined.contains(originalNoBreaks) || originalNoBreaks.contains(combined)
-            );
+            assertTrue(combined.contains(originalNoBreaks) || originalNoBreaks.contains(combined), "Content mismatch after wrapping");
+            
             
         }
     }

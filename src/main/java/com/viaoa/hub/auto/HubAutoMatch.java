@@ -43,7 +43,7 @@ import com.viaoa.callback.OAObjectCallback;
 import com.viaoa.converter.OAConv;
 import com.viaoa.converter.OAConverter;
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.model.oa.VEnum;
+import com.viaoa.lang.oa.VEnum;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;

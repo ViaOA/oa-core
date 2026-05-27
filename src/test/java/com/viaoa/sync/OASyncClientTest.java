@@ -1,10 +1,7 @@
 package com.viaoa.sync;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -15,10 +12,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
 import com.viaoa.datasource.OADataSource;
@@ -574,7 +567,7 @@ public class OASyncClientTest extends OAUnitTest {
 		}
 	}
 
-	@Before
+	@BeforeEach
 	public void setup() throws Exception {
 	    
         OAObjectCacheDelegate.setUnitTestMode(true);
@@ -712,7 +705,7 @@ public class OASyncClientTest extends OAUnitTest {
 		}
 	}
 
-	@After
+	@AfterEach
 	public void tearDown() throws Exception {
 		System.out.println("stopping client");
 		syncClient.stop();

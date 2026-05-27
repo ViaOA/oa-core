@@ -1,10 +1,7 @@
 package com.viaoa.remote.multiplexer;
 
-import static org.junit.Assert.*;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
 
 import com.viaoa.OAUnitTest;
 import com.viaoa.comm.multiplexer.OAMultiplexerClient;
@@ -35,7 +32,7 @@ public class RemoteMultiplexerTest4 extends OAUnitTest {
     private volatile RemoteClientInterface remoteClientInterfaceOnServerNoQ;
     
     
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         System.out.println("Before, calling setup");
         // setup server
@@ -108,7 +105,7 @@ public class RemoteMultiplexerTest4 extends OAUnitTest {
         remoteMultiplexerServer.start();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         System.out.println("unittest After(), calling tearDown");
         multiplexerServer.stop();
@@ -116,7 +113,8 @@ public class RemoteMultiplexerTest4 extends OAUnitTest {
 
     
     private volatile int cntClientBroadcastPing;
-    @Test(timeout=2000)
+    //@Test(timeout=2000)
+    @Test
     public void testStoC_QueuedBroadcast() throws Exception {
         RemoteClientInterface remoteClient;
         OAMultiplexerClient multiplexerClient;

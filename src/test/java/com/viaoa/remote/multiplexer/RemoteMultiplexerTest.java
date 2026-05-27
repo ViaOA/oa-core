@@ -1,10 +1,7 @@
 package com.viaoa.remote.multiplexer;
 
-import static org.junit.Assert.*;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
 
 import com.viaoa.OAUnitTest;
 import com.viaoa.comm.multiplexer.OAMultiplexerClient;
@@ -12,8 +9,6 @@ import com.viaoa.comm.multiplexer.OAMultiplexerServer;
 import com.viaoa.datetime.OADateTime;
 import com.viaoa.object.OAObject;
 import com.viaoa.remote.info.RequestInfo;
-import com.viaoa.remote.multiplexer.OARemoteMultiplexerClient;
-import com.viaoa.remote.multiplexer.OARemoteMultiplexerServer;
 import com.viaoa.remote.multiplexer.remote.*;  // test package only
 
 public class RemoteMultiplexerTest extends OAUnitTest {
@@ -35,9 +30,9 @@ public class RemoteMultiplexerTest extends OAUnitTest {
     private volatile RemoteClientInterface remoteClientInterfaceOnServerNoQ;
     
     
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
-        System.out.println("Before, calling setup");
+        System.out.println("setup called");
         // setup server
         multiplexerServer = new OAMultiplexerServer(port);        
         remoteMultiplexerServer = new OARemoteMultiplexerServer(multiplexerServer) {
@@ -143,7 +138,7 @@ public class RemoteMultiplexerTest extends OAUnitTest {
         remoteMultiplexerServer.start();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         System.out.println("unittest After(), calling tearDown");
         multiplexerServer.stop();

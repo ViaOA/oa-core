@@ -1,17 +1,18 @@
 package com.viaoa.comm.multiplexer;
 
-import static org.junit.Assert.assertTrue;
-
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
 
 import com.viaoa.OAUnitTest;
 
+@DisplayName("Multiplexer")
 public class MultiplexerTest extends OAUnitTest {
 	static final int[] Maxes = {
 			1000000, 123000, 15000, 501, 232, 14, 1
 	};
 
 	@Test
+	@DisplayName("run server and client")
 	public void test() throws Exception {
 
 		MultiplexerServerTest stest = new MultiplexerServerTest();
@@ -38,7 +39,7 @@ public class MultiplexerTest extends OAUnitTest {
 		stest.stop();
 
 		int x = ctest.getCount();
-		assertTrue("x=" + x + ", should be > 1000", x > 1000);
+		assertTrue(x > 1000, "x=" + x + ", should be > 1000");
 	}
 
 	public static void main(String[] args) throws Exception {

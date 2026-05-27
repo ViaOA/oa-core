@@ -1,7 +1,8 @@
 package com.viaoa.sync;
 
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
 
 import java.util.logging.Level;
 import com.viaoa.OAUnitTest;

@@ -13,39 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.viaoa.model.oa;
-
+package com.viaoa.lang.oa;
 
 import java.util.logging.Logger;
 
 import com.viaoa.annotation.OAClass;
 import com.viaoa.annotation.OAProperty;
-import com.viaoa.datetime.OADate;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.object.OAObject;
 
 @OAClass(
-    shortName = "date",
-    displayName = "Date",
+    shortName = "dt",
+    displayName = "DateTime",
     displayProperty = "value",
     sortProperty = "value",
     localOnly = true,
     useDataSource = false
 )
-public class VDate extends OAObject {
+public class VDateTime extends OAObject {
     private static final long serialVersionUID = 1L;
-    private static Logger LOG = Logger.getLogger(VDate.class.getName());
+    private static Logger LOG = Logger.getLogger(VDateTime.class.getName());
     
     public static final String P_Value = "Value";
     
-    private OADate value;
+    private OADateTime value;
     
-    @OAProperty(displayLength = 8)
-    public OADate getValue() {
+    @OAProperty(displayLength = 14)
+    public OADateTime getValue() {
         return value;
     }
-    public void setValue(OADate newValue) {
+    public void setValue(OADateTime newValue) {
         fireBeforePropertyChange(P_Value, this.value, newValue);
-        OADate old = value;
+        OADateTime old = value;
         this.value = newValue;
         firePropertyChange(P_Value, old, this.value);
     }

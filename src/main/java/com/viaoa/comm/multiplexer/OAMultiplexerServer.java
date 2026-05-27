@@ -185,9 +185,9 @@ public class OAMultiplexerServer {
      */
     public void stopServerSocket() throws Exception {
         if (!_bAllowConnections || _serverSocket == null) return;
+        _bAllowConnections = false;
         getServerSocketController().stopAccepting();
         LOG.fine("stop serversocket accept");
-        _bAllowConnections = false;
         _serverSocket.close();
     }
 

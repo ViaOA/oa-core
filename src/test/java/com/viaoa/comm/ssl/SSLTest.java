@@ -1,12 +1,9 @@
 package com.viaoa.comm.ssl;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
 
 import java.util.logging.*;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 import com.viaoa.OAUnitTest;
 
@@ -24,7 +21,7 @@ public class SSLTest extends OAUnitTest {
     volatile boolean bStop;
     volatile int cntServer, cntClient;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         server = new OASslServer("localhost", 1101) {
             @Override
@@ -44,7 +41,7 @@ public class SSLTest extends OAUnitTest {
         test();
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         System.out.println("Stopping SSLTest");
         bStop = true;

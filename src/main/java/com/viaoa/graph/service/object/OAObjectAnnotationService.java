@@ -34,7 +34,7 @@ import com.viaoa.metadata.OAMethodInfo;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.metadata.OAObjectModel;
 import com.viaoa.metadata.OAPropertyInfo;
-import com.viaoa.model.oa.VEnum;
+import com.viaoa.lang.oa.VEnum;
 import com.viaoa.object.OAObject;
 import com.viaoa.reflect.OAReflect;
 import com.viaoa.runtime.OARuntime;

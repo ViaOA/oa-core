@@ -28,12 +28,10 @@ import com.viaoa.metadata.OACalcInfo;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.metadata.OAPropertyInfo;
-import com.viaoa.model.oa.VEnum;
-import com.viaoa.model.oa.VString;
+import com.viaoa.lang.oa.VEnum;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.schedule.OAScheduler;
-import com.viaoa.serialize.OASerializeWriter;
 
 public class OAObjectService extends OAObjectParentService implements ObjectsInternalOps {
 	private static final Logger LOG = Logger.getLogger(OAObjectService.class.getName());

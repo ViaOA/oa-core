@@ -30,7 +30,7 @@ import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAStr;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OALinkInfo;
-import com.viaoa.model.oa.VString;
+import com.viaoa.lang.oa.VString;
 import com.viaoa.object.*;
 import com.viaoa.path.OAPath;
 import com.viaoa.runtime.OARuntime;
