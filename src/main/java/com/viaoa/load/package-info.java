@@ -19,6 +19,8 @@
  */
 package com.viaoa.load;
 
+//CODEX unit tests <todo>
+
 /* CODEX Invariants
 
 LOAD-STATE-001 — Load State Distinction

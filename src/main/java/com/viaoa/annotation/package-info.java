@@ -70,6 +70,8 @@
  */
 package com.viaoa.annotation;
 
+// CODEX unit tests <todo>
+
 /* CODEX Invariants
 
 ANN-RUNTIME-001 — Executable Blueprint Metadata

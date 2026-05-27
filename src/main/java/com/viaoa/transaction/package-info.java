@@ -60,6 +60,8 @@
  */
 package com.viaoa.transaction;
 
+//CODEX unit tests <todo>
+
 /* CODEX Invariants
 
 TX-LIFECYCLE-001 — Explicit Transaction Lifecycle

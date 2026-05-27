@@ -4,8 +4,8 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 import com.viaoa.OAUnitTest;
-import com.viaoa.compare.OANotExist;
-import com.viaoa.compare.OANullObject;
+import com.viaoa.compare.match.OAMatchNotExist;
+import com.viaoa.compare.match.OAMatchNull;
 
 import test.xice.tsac3.model.oa.*;
 
@@ -36,11 +36,11 @@ public class OAObjectPropertyDelegateTest extends OAUnitTest {
         assertNull(objx);
         
         objx = OAObjectPropertyDelegate.getProperty(server, "zzz", true, true);
-        assertTrue(objx instanceof OANotExist);
+        assertTrue(objx instanceof OAMatchNotExist);
         
         OAObjectPropertyDelegate.removeProperty(server, "serveridx", true);
         objx = OAObjectPropertyDelegate.getProperty(server, "ServerIdX", true, true);
-        assertTrue(objx instanceof OANotExist);
+        assertTrue(objx instanceof OAMatchNotExist);
     }
     
 }

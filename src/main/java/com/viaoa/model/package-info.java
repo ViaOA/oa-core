@@ -18,6 +18,8 @@
  */
 package com.viaoa.model;
 
+//CODEX unit tests <todo>
+
 /* CODEX Invariants
 
 MODEL-BLUEPRINT-001 — Executable Blueprint Authority

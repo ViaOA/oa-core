@@ -38,6 +38,8 @@
  */
 package com.viaoa.schedule;
 
+//CODEX unit tests <todo>
+
 /* CODEX Invariants
 
 SCHED-SCOPE-001 — Scheduling Availability Authority

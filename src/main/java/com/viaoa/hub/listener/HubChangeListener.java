@@ -18,12 +18,12 @@ package com.viaoa.hub.listener;
 import java.util.ArrayList;
 
 import com.viaoa.callback.OAObjectCallback;
-import com.viaoa.compare.OAAnyValueObject;
+import com.viaoa.compare.match.OAMatchAny;
 import com.viaoa.compare.OACompare;
-import com.viaoa.compare.OAEmptyObject;
-import com.viaoa.compare.OANotEmptyObject;
-import com.viaoa.compare.OANotNullObject;
-import com.viaoa.compare.OANullObject;
+import com.viaoa.compare.match.OAMatchEmpty;
+import com.viaoa.compare.match.OAMatchNotEmpty;
+import com.viaoa.compare.match.OAMatchNotNull;
+import com.viaoa.compare.match.OAMatchNull;
 import com.viaoa.converter.OAConv;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.graph.OAGraphInternal;
@@ -53,8 +53,8 @@ import com.viaoa.select.OASelect;
  * invokes {@code callOnChange()} in subclasses.
  * <p>
  * Comparisons are expressed via {@link Type} or by compare-value objects
- * (including {@code OANullObject}, {@code OANotNullObject}, {@code OAEmptyObject},
- * {@code OANotEmptyObject}, {@code OAAnyValueObject}). Tooltips/failure reasons
+ * (including {@code OAMatchNull}, {@code OAMatchNotNull}, {@code OAMatchEmpty},
+ * {@code OAMatchNotEmpty}, {@code OAMatchAny}). Tooltips/failure reasons
  * are tracked to aid UI enablement/visibility logic.
  */
 public abstract class HubChangeListener {
@@ -948,15 +948,15 @@ public abstract class HubChangeListener {
 		String[] props;
 
 		if (bUseCompareValue && compareValue != null) {
-			if (compareValue instanceof OANullObject) {
+			if (compareValue instanceof OAMatchNull) {
 				compareValue = Type.PropertyNull;
-			} else if (compareValue instanceof OANotNullObject) {
+			} else if (compareValue instanceof OAMatchNotNull) {
 				compareValue = Type.PropertyNotNull;
-			} else if (compareValue instanceof OAEmptyObject) {
+			} else if (compareValue instanceof OAMatchEmpty) {
 				compareValue = Type.PropertyEmpty;
-			} else if (compareValue instanceof OANotEmptyObject) {
+			} else if (compareValue instanceof OAMatchNotEmpty) {
 				compareValue = Type.PropertyNotEmpty;
-			} else if (compareValue instanceof OAAnyValueObject) {
+			} else if (compareValue instanceof OAMatchAny) {
 				compareValue = Type.AlwaysTrue;
 			}
 		}
@@ -1023,7 +1023,7 @@ public abstract class HubChangeListener {
 			if (h != null) {
 				if (HubLinkDelegate.isLinkAutoCreated(hub, true)) {
 					// need to listen for AO changes, newList, etc from the linkTo Hub
-					add(h, null, OAAnyValueObject.instance);
+					add(h, null, OAMatchAny.instance);
 				} else {
 					addHubValid(h);
 				}
@@ -1643,14 +1643,14 @@ public abstract class HubChangeListener {
 
 			boolean b;
 			if (bUseCompareValue && compareValue != null) {
-				if (compareValue == Type.PropertyNull || (compareValue instanceof OANullObject)) {
+				if (compareValue == Type.PropertyNull || (compareValue instanceof OAMatchNull)) {
 					b = (hub != null && hub.getAO() != null && value == null);
 					if (!b) {
 						failureReason = "compare != null";
 					}
 					return b;
 				}
-				if (compareValue == Type.PropertyNotNull || (compareValue instanceof OANotNullObject)) {
+				if (compareValue == Type.PropertyNotNull || (compareValue instanceof OAMatchNotNull)) {
 					b = (value != null);
 					if (!b) {
 						failureReason = "compare == null";

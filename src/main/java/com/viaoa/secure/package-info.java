@@ -18,6 +18,8 @@
  */
 package com.viaoa.secure;
 
+//CODEX unit tests <todo>
+
 /* CODEX Invariants
 
 SECURE-SCOPE-001 — Runtime Security Boundary Authority

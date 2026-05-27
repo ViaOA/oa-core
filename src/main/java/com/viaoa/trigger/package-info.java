@@ -18,6 +18,8 @@
  */
 package com.viaoa.trigger;
 
+//CODEX unit tests <todo>
+
 /* CODEX Invariants
 
 TRIGGER-RUNTIME-001 — Metadata-Driven Reactive Contract

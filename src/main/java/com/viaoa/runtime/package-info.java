@@ -15,6 +15,8 @@
  */
 package com.viaoa.runtime;
 
+//CODEX unit tests <todo>
+
 /* CODEX Invariants
 
 RT-AUTHORITY-001 — OARuntime Is The Runtime Authority Entry Point

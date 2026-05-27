@@ -19,7 +19,7 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import com.viaoa.callback.OAObjectSerializerCallback;
-import com.viaoa.compare.OANotExist;
+import com.viaoa.compare.match.OAMatchNotExist;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.sibling.OASiblingHelper;
@@ -404,7 +404,7 @@ public class ClientGetDetail {
 				}
 				
 				Object value = og.objectsInternal().callObjectPropertyGetProperty(obj, propFromMaster, true, true);
-				if (value instanceof OANotExist || value instanceof OAObjectKey) { // not loaded from ds
+				if (value instanceof OAMatchNotExist || value instanceof OAObjectKey) { // not loaded from ds
 					if (bLoad) {
 						bLoad = ((System.currentTimeMillis() - msStart) < (bForHubMerger ? 225 : 85));
 					}

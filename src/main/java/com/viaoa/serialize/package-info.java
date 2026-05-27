@@ -19,6 +19,7 @@
  */
 package com.viaoa.serialize;
 
+//CODEX unit tests <todo>
 
 /* CODEX Invariants
 

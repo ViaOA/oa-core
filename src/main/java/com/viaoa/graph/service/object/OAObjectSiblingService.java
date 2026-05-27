@@ -9,7 +9,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
-import com.viaoa.compare.OANotExist;
+import com.viaoa.compare.match.OAMatchNotExist;
 import com.viaoa.concurrent.OAThrottle;
 import com.viaoa.find.OAFinder;
 import com.viaoa.graph.sibling.OASiblingHelper;
@@ -534,7 +534,7 @@ public abstract class OAObjectSiblingService {
 						return false;
 					}
 				} else if (linkInfo == null) { // must be blob
-					if (!(propertyValue instanceof OANotExist)) {
+					if (!(propertyValue instanceof OAMatchNotExist)) {
 						return false;
 					}
 				}

@@ -5,7 +5,7 @@ import java.util.Hashtable;
 import java.util.logging.Logger;
 
 import com.viaoa.compare.OACompare;
-import com.viaoa.compare.OANullObject;
+import com.viaoa.compare.match.OAMatchNull;
 import com.viaoa.hub.*;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
@@ -62,7 +62,7 @@ public abstract class HubPropertyService {
 
 	/**
 	 * Stores a named property value on the hub. Property names are normalized to
-	 * uppercase. A {@link OANullObject} marker is stored when the value is
+	 * uppercase. A {@link OAMatchNull} marker is stored when the value is
 	 * {@code null}. A new property map is created on demand.
 	 *
 	 * @param thisHub the hub whose property map is updated
@@ -78,12 +78,12 @@ public abstract class HubPropertyService {
 		if (hd.getHashProperty() == null) {
 			hd.setHashProperty(new Hashtable(7));
 		}
-		hd.getHashProperty().put(name, (obj == null) ? OANullObject.instance : obj);
+		hd.getHashProperty().put(name, (obj == null) ? OAMatchNull.instance : obj);
 	}
 
 	/**
 	 * Retrieves a named property value previously stored on the hub. Property names
-	 * are normalized to uppercase. A stored {@link OANullObject} resolves to
+	 * are normalized to uppercase. A stored {@link OAMatchNull} resolves to
 	 * {@code null}. If no property map exists, {@code null} is returned.
 	 *
 	 * @param thisHub the hub whose property is requested
@@ -98,7 +98,7 @@ public abstract class HubPropertyService {
 
 		name = name.toUpperCase();
 		Object obj = hd.getHashProperty().get(name);
-		if (obj instanceof OANullObject) {
+		if (obj instanceof OAMatchNull) {
 			obj = null;
 		}
 		return obj;

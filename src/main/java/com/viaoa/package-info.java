@@ -139,6 +139,8 @@
  */
 package com.viaoa;
 
+//CODEX unit tests <todo>
+
 /* CODEX Invariants
 
 VIAOA-ROOT-001 — Platform Runtime Authority

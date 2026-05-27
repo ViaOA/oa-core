@@ -8,8 +8,8 @@ import java.util.logging.Logger;
 
 import com.viaoa.callback.OAObjectCallback;
 import com.viaoa.compare.OACompare;
-import com.viaoa.compare.OANotExist;
-import com.viaoa.compare.OANullObject;
+import com.viaoa.compare.match.OAMatchNotExist;
+import com.viaoa.compare.match.OAMatchNull;
 import com.viaoa.concurrent.OAThrottle;
 import com.viaoa.converter.OAConv;
 import com.viaoa.datetime.OADateTime;
@@ -213,7 +213,7 @@ public abstract class OAObjectEventService {
 
 		// check to see if it is actually changed
 		if (oldObj != null) {
-			if (callReflectGetPrimitiveNull(oaObj, propertyName) || oldObj instanceof OANullObject) {
+			if (callReflectGetPrimitiveNull(oaObj, propertyName) || oldObj instanceof OAMatchNull) {
 				oldObj = null;
 			}
 		}
@@ -502,13 +502,13 @@ public abstract class OAObjectEventService {
 		final OAObjectInfo oi = callInfoGetObjectInfo(oaObj.getClass());
 
 		if (oldObj != null && !bUnknownValues) {
-			if (callReflectGetPrimitiveNull(oaObj, propertyU) || oldObj instanceof OANullObject) {
+			if (callReflectGetPrimitiveNull(oaObj, propertyU) || oldObj instanceof OAMatchNull) {
 				oldObj = null;
 			}
 		}
 
 		//  note: a primitive null can only be set by calling srvcObject.getOAObjectReflectService().setProperty(...)
-		if (newObj instanceof OANullObject) {
+		if (newObj instanceof OAMatchNull) {
 			newObj = null;
 		}
 
@@ -516,7 +516,7 @@ public abstract class OAObjectEventService {
 			callReflectSetPrimitiveNull(oaObj, propertyU, (newObj == null));
 		}
 
-		if (oldObj instanceof OANullObject) {
+		if (oldObj instanceof OAMatchNull) {
 			oldObj = null;
 		}
 
@@ -526,7 +526,7 @@ public abstract class OAObjectEventService {
 			// oldObj might never have been loaded before setMethod was called, which will have the oldValue=null -
 			//   need to check in oaObj.properties to see what orig value was.
 			oldObj = callPropertyGetProperty(oaObj, propertyName, true, true);
-			if (oldObj == OANotExist.instance) {
+			if (oldObj == OAMatchNotExist.instance) {
 				bWasEmpty = true;
 				oldObj = null;
 			}

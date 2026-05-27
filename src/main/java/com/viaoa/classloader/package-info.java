@@ -18,6 +18,8 @@
  */
 package com.viaoa.classloader;
 
+//CODEX unit tests <todo>
+
 /* CODEX Invariants
 
 CLASSLOAD-RESOLVE-001 — Intended Class Resolution

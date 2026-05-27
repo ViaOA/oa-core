@@ -19,6 +19,8 @@
  */
 package com.viaoa.compare;
 
+// CODEX unit tests 20260526
+
 /* CODEX Invariants
 
 COMPARE-EQ-001 — Equality Means Semantic Equality Under The Active OA Mode
@@ -71,8 +73,8 @@ Contract statement: Null may equal only null or documented null/empty/special to
 null/default coercion contract applies.
 Rationale: Null means absence or unknown in object properties and criteria; implicit null-to-zero/false/empty
 matching can corrupt filtering decisions.
-Source scope: OACompare.compare, isEqual, isIn, OANullObject, OANotNullObject, OAEmptyObject, OANotEmptyObject,
-OANotExist.
+Source scope: OACompare.compare, isEqual, isIn, OAMatchNull, OAMatchNotNull, OAMatchEmpty, OAMatchNotEmpty,
+OAMatchNotExist.
 Related CODEX findings: Null converted to numeric/boolean defaults; isIn(null, ...) cannot match null; null token
 comparison findings.
 Suggested unit tests: testNullVsZeroComparisonContract(), testNullVsFalseComparisonContract(),
@@ -83,7 +85,7 @@ COMPARE-EMPTY-001 — Empty And Not-Empty Use OA Emptiness Rules
 Contract statement: Empty and not-empty special comparisons must use OA’s documented emptiness rules for null,
 strings, arrays, Hubs, collections, and other supported values.
 Rationale: Empty/not-empty is used by filters, criteria, UI enablement, and object state logic.
-Source scope: OACompare.isEmpty, isNotEmpty, OAEmptyObject, OANotEmptyObject.
+Source scope: OACompare.isEmpty, isNotEmpty, OAMatchEmpty, OAMatchNotEmpty.
 Related CODEX findings: Empty/not-empty mismatch with documented emptiness.
 Suggested unit tests: testEmptyTokenUsesOAEmptinessRules(), testNotEmptyTokenUsesOAEmptinessRules(),
 testWhitespaceStringEmptyTrimContract()
@@ -188,8 +190,8 @@ Contract statement: Special comparison token objects must have documented predic
 OACompare.compare/isEqual must honor those same semantics consistently.
 Rationale: Tokens are used by HubChangeListener, filters, criteria, callbacks, object-state handling, and runtime
 matching.
-Source scope: OASpecialCompareObject, OAAnyValueObject, OANullObject, OANotNullObject, OAEmptyObject,
-OANotEmptyObject, OAUnknownObject, OANotExist, OAGreaterThanZero, OALessThanZero, OACompare.compare.
+Source scope: OASpecialCompareObject, OAMatchAny, OAMatchNull, OAMatchNotNull, OAMatchEmpty,
+OAMatchNotEmpty, OAMatchUnknown, OAMatchNotExist, OAMatchGreaterThanZero, OAMatchLessThanZero, OACompare.compare.
 Related CODEX findings: Greater/less-than-zero not handled in OACompare special-object path; unknown matched by
 broad tokens; empty/not-empty mismatch.
 Suggested unit tests: testSpecialTokensThroughOACompare(), testUnknownObjectMatchesOnlyContractedUnknown(),
@@ -200,8 +202,8 @@ COMPARE-SPECIAL-002 — Numeric Predicate Tokens Preserve Numeric Precision
 Contract statement: Greater-than-zero and less-than-zero special predicates must use OA numeric precision semantics
 rather than lossy double-only comparison.
 Rationale: Tiny BigDecimal/BigInteger values and underflow edge cases must not produce false predicate results.
-Source scope: OAGreaterThanZero.equals, OALessThanZero.equals, OACompare special token handling.
-Related CODEX findings: OAGreaterThanZero/OALessThanZero convert to Number and compare using doubleValue.
+Source scope: OAMatchGreaterThanZero.equals, OAMatchLessThanZero.equals, OACompare special token handling.
+Related CODEX findings: OAMatchGreaterThanZero/OAMatchLessThanZero convert to Number and compare using doubleValue.
 Suggested unit tests: testBigDecimalTinyGreaterThanZero(), testBigDecimalTinyLessThanZero(),
 testSpecialNumericPredicatesDoNotUnderflowThroughDouble()
 Spec target section: Compare Runtime / Numeric Predicate Tokens
@@ -290,4 +292,55 @@ Spec target section: Compare Runtime / Deterministic Comparison Semantics
 */
 
 
+
+/* Notes
+
+1. Exact identity
+   value == matchValue => equal
+
+2. OAMatch tokens
+   OAMatch is semantic matching, not equality.
+   OACompare maps matches(...) true to compare result 0.
+
+3. Numeric comparison
+   decimalPlaces < 0 => native/exact numeric comparison
+   decimalPlaces >= 0 => BigDecimal scale-aware comparison
+
+4. Numeric strings
+   "5" and "5.00" compare numerically equal.
+   "2" < "10" numerically, not lexically.
+
+5. Boolean coercion
+   Boolean vs non-Boolean can coerce through OA boolean rules.
+   String vs String does not coerce to boolean.
+
+6. Empty semantics
+   OACompare.isEmpty is semantic emptiness:
+   null, zero numbers, false, empty arrays/collections/maps/Hubs, etc.
+   BigDecimal uses exact zero comparison.
+
+7. Containers
+   Arrays/Hubs/Collections are structural containers.
+   Comparison/membership may use OACompare recursively where defined.
+
+8. OAMatchUnknown
+   Unknown is opaque. It should not be swallowed by broad tokens like Any/NotNull/NotEmpty.
+
+9. OAObject/OAObjectKey
+   Object identity comparison goes through OAGraph/ObjectKey semantics.
+
+10. Fallback
+   If values remain Comparable, use compareTo.
+   Otherwise fallback to equals/toString ordering.
+   
+
+The important wording:   
+OACompare owns coercion.
+OAMatch owns match intent.
+OAConverter owns conversion mechanics.
+Comparable owns raw Java ordering only after OA semantics are exhausted.   
+   
+ 
+ 
+ */
 

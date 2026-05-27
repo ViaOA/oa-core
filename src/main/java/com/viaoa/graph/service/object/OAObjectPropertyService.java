@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.logging.Logger;
 
 import com.viaoa.cascade.OACascade;
-import com.viaoa.compare.OANotExist;
+import com.viaoa.compare.match.OAMatchNotExist;
 import com.viaoa.hub.Hub;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
@@ -505,7 +505,7 @@ public abstract class OAObjectPropertyService {
 	 * @param matchValue       the expected current value
 	 * @param bMustNotExist    if true, the update occurs only when the
 	 *                         property does not already exist
-	 * @param bReturnNotExist  if true, returns {@code OANotExist.instance}
+	 * @param bReturnNotExist  if true, returns {@code OAMatchNotExist.instance}
 	 *                         when the match fails and the property does not exist
 	 * @return the value stored after the operation, or the existing value
 	 *         when the match fails
@@ -522,7 +522,7 @@ public abstract class OAObjectPropertyService {
 				if (!bMustNotExist) {
 					if (matchValue != null) {
 						if (bReturnNotExist) {
-							return OANotExist.instance;
+							return OAMatchNotExist.instance;
 						}
 						return null;
 					}
@@ -574,7 +574,7 @@ public abstract class OAObjectPropertyService {
 					if (!bMustNotExist) {
 						if (matchValue != null) {
 							if (bReturnNotExist) {
-								return OANotExist.instance;
+								return OAMatchNotExist.instance;
 							}
 							return null;
 						}
@@ -586,7 +586,7 @@ public abstract class OAObjectPropertyService {
 					if (!bMustNotExist) {
 						if (matchValue != null) {
 							if (bReturnNotExist) {
-								return OANotExist.instance;
+								return OAMatchNotExist.instance;
 							}
 							return null;
 						}
@@ -617,7 +617,7 @@ public abstract class OAObjectPropertyService {
 	/**
 	 * Convenience wrapper that retrieves the value of the specified property
 	 * without converting WeakReference values and without returning
-	 * {@code OANotExist} for missing entries.
+	 * {@code OAMatchNotExist} for missing entries.
 	 *
 	 * @param oaObj the target object
 	 * @param name  the property name, case-insensitive
@@ -635,15 +635,15 @@ public abstract class OAObjectPropertyService {
 	 * <p>If {@code bConvertWeakRef} is true and the stored value is a
 	 * WeakReference, its referent is returned when available. If the referent
 	 * has been garbage collected, the method returns either null or
-	 * {@code OANotExist.instance}, depending on {@code bReturnNotExist}.</p>
+	 * {@code OAMatchNotExist.instance}, depending on {@code bReturnNotExist}.</p>
 	 *
 	 * @param oaObj           the target object
 	 * @param name            the property name, case-insensitive
-	 * @param bReturnNotExist true to return {@code OANotExist.instance} when
+	 * @param bReturnNotExist true to return {@code OAMatchNotExist.instance} when
 	 *                        the property does not exist or is unresolved
 	 * @param bConvertWeakRef true to resolve and return values stored as
 	 *                        WeakReferences
-	 * @return the stored value, a resolved referent, {@code OANotExist.instance},
+	 * @return the stored value, a resolved referent, {@code OAMatchNotExist.instance},
 	 *         or null depending on the parameters and property state
 	 */
 	public Object getProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef) {
@@ -654,7 +654,7 @@ public abstract class OAObjectPropertyService {
 		Object[] objs = faObject.getProperties(oaObj);
 		if (objs == null) {
 			if (bReturnNotExist) {
-				return OANotExist.instance;
+				return OAMatchNotExist.instance;
 			}
 			return null;
 		}
@@ -667,7 +667,7 @@ public abstract class OAObjectPropertyService {
 				objx = ((WeakReference<?>) objx).get();
 				if (objx == null) {
 					if (bReturnNotExist) {
-						return OANotExist.instance;
+						return OAMatchNotExist.instance;
 					}
 					return null;
 				}
@@ -675,7 +675,7 @@ public abstract class OAObjectPropertyService {
 			return objx;
 		}
 		if (bReturnNotExist) {
-			return OANotExist.instance;
+			return OAMatchNotExist.instance;
 		}
 		return null;
 	}
@@ -834,7 +834,7 @@ public abstract class OAObjectPropertyService {
 
 			if (liRev.getCacheSize() > 0) {
 				Object objx = getProperty((OAObject) parent, liRev.getName(), true, false);
-				if (objx instanceof OANotExist) {
+				if (objx instanceof OAMatchNotExist) {
 					continue;
 				}
 

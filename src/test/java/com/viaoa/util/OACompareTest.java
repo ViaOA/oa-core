@@ -14,12 +14,12 @@ import org.junit.Test;
 import com.messagedesigner.model.oa.MessageGroup;
 import com.messagedesigner.model.oa.MessageType;
 import com.viaoa.OAUnitTest;
-import com.viaoa.compare.OAAnyValueObject;
+import com.viaoa.compare.match.OAMatchAny;
 import com.viaoa.compare.OACompare;
-import com.viaoa.compare.OAEmptyObject;
-import com.viaoa.compare.OANotExist;
-import com.viaoa.compare.OANotNullObject;
-import com.viaoa.compare.OANullObject;
+import com.viaoa.compare.match.OAMatchEmpty;
+import com.viaoa.compare.match.OAMatchNotExist;
+import com.viaoa.compare.match.OAMatchNotNull;
+import com.viaoa.compare.match.OAMatchNull;
 import com.viaoa.object.OAObjectKey;
 
 public class OACompareTest extends OAUnitTest {
@@ -244,18 +244,18 @@ public class OACompareTest extends OAUnitTest {
 		x = OACompare.compare(1.2345,  1.2344999, 3);
 		assertTrue(x > 0);
 
-		x = OACompare.compare('a', OANotExist.instance);
+		x = OACompare.compare('a', OAMatchNotExist.instance);
 		assertTrue(x != 0);
-		x = OACompare.compare(null, OAAnyValueObject.instance);
+		x = OACompare.compare(null, OAMatchAny.instance);
 		assertTrue(x == 0);
-		x = OACompare.compare(null, OANullObject.instance);
+		x = OACompare.compare(null, OAMatchNull.instance);
 		assertTrue(x == 0);
-		x = OACompare.compare(null, OANotNullObject.instance);
+		x = OACompare.compare(null, OAMatchNotNull.instance);
 		assertTrue(x != 0);
 
-		x = OACompare.compare(null, OAEmptyObject.instance);
+		x = OACompare.compare(null, OAMatchEmpty.instance);
 		assertTrue(x == 0);
-		x = OACompare.compare("", OAEmptyObject.instance);
+		x = OACompare.compare("", OAMatchEmpty.instance);
 		assertTrue(x == 0);
 		
 		

@@ -18,6 +18,8 @@
  */
 package com.viaoa.performance;
 
+//CODEX unit tests <todo>
+
 /* CODEX Invariants
 
 PERF-SCOPE-001 — Performance Diagnostic Boundary

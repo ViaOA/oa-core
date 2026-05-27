@@ -7,7 +7,7 @@ import com.viaoa.callback.OACallbackLabel;
 import com.viaoa.callback.OAObjectCallback;
 import com.viaoa.callback.OAObjectCallback.Type;
 import com.viaoa.cascade.OACascade;
-import com.viaoa.compare.OAUnknownObject;
+import com.viaoa.compare.match.OAMatchUnknown;
 import com.viaoa.converter.OAConv;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.context.OAContextAccess;
@@ -1137,7 +1137,7 @@ public abstract class OAObjectCallbackService {
 	 * Creates a confirmation {@link OAObjectCallback} for a property change
 	 * using an unknown future value. This delegates to
 	 * {@code getConfirmPropertyChangeObjectCallback} with the value set to
-	 * {@code OAUnknownObject.instance}.
+	 * {@code OAMatchUnknown.instance}.
 	 *
 	 * @param oaObj          the target object
 	 * @param property       the property being changed
@@ -1147,14 +1147,14 @@ public abstract class OAObjectCallbackService {
 	 */
     public OAObjectCallback getPreConfirmPropertyChangeObjectCallback(final OAObject oaObj, String property, 
             String confirmMessage, String confirmTitle) {
-        return getConfirmPropertyChangeObjectCallback(oaObj, property, OAUnknownObject.instance, confirmMessage, confirmTitle);
+        return getConfirmPropertyChangeObjectCallback(oaObj, property, OAMatchUnknown.instance, confirmMessage, confirmTitle);
     }
 
     /**
      * Creates a confirmation {@link OAObjectCallback} for a property change
      * using an unknown future value. This delegates to
      * {@code getConfirmPropertyChangeObjectCallback} with the value set to
-     * {@code OAUnknownObject.instance}.
+     * {@code OAMatchUnknown.instance}.
      *
      * @param oaObj          the target object
      * @param property       the property being changed

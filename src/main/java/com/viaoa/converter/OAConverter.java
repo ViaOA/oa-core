@@ -17,6 +17,7 @@ package com.viaoa.converter;
 
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -25,6 +26,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +34,31 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.viaoa.converter.internal.OAConverterBigDecimal;
+import com.viaoa.converter.internal.OAConverterBigInteger;
+import com.viaoa.converter.internal.OAConverterBoolean;
+import com.viaoa.converter.internal.OAConverterCalendar;
+import com.viaoa.converter.internal.OAConverterCharacter;
+import com.viaoa.converter.internal.OAConverterClass;
+import com.viaoa.converter.internal.OAConverterDate;
+import com.viaoa.converter.internal.OAConverterEnum;
+import com.viaoa.converter.internal.OAConverterInstant;
+import com.viaoa.converter.internal.OAConverterInterface;
+import com.viaoa.converter.internal.OAConverterLocalDate;
+import com.viaoa.converter.internal.OAConverterLocalDateTime;
+import com.viaoa.converter.internal.OAConverterLocalTime;
+import com.viaoa.converter.internal.OAConverterNumber;
+import com.viaoa.converter.internal.OAConverterOADate;
+import com.viaoa.converter.internal.OAConverterOADateTime;
+import com.viaoa.converter.internal.OAConverterOATime;
+import com.viaoa.converter.internal.OAConverterSqlDate;
+import com.viaoa.converter.internal.OAConverterString;
+import com.viaoa.converter.internal.OAConverterTime;
+import com.viaoa.converter.internal.OAConverterTimeZone;
+import com.viaoa.converter.internal.OAConverterTimestamp;
+import com.viaoa.converter.internal.OAConverterVEnum;
+import com.viaoa.converter.internal.OAConverterZoneId;
+import com.viaoa.converter.internal.OAConverterZonedDateTime;
 import com.viaoa.datetime.OADate;
 import com.viaoa.datetime.OADateTime;
 import com.viaoa.datetime.OATime;
@@ -102,6 +129,7 @@ public class OAConverter {
 		addConverter(Character.class, new OAConverterCharacter());
 		addConverter(Boolean.class, new OAConverterBoolean());
 		addConverter(BigDecimal.class, new OAConverterBigDecimal());
+		addConverter(BigInteger.class, new OAConverterBigInteger());
 		addConverter(java.sql.Date.class, new OAConverterSqlDate());
 		addConverter(java.sql.Time.class, new OAConverterTime());
 		addConverter(java.sql.Timestamp.class, new OAConverterTimestamp());
@@ -110,7 +138,7 @@ public class OAConverter {
 		addConverter(com.viaoa.datetime.OADate.class, new OAConverterOADate());
 		addConverter(com.viaoa.datetime.OATime.class, new OAConverterOATime());
 		addConverter(Calendar.class, new OAConverterCalendar());
-/* moved to oa-corre-ui repo		
+/* moved to oa-core-ui repo		
 		addConverter(java.awt.Point.class, new OAConverterPoint());
 		addConverter(java.awt.Dimension.class, new OAConverterDimension());
 		addConverter(java.awt.Rectangle.class, new OAConverterRectangle());
@@ -499,6 +527,15 @@ public class OAConverter {
 		return num;
 	}
 
+	public static BigInteger toBigInteger(Object value) {
+		BigInteger num = (BigInteger) convert(BigInteger.class, value);
+		if (num == null) {
+			throw new IllegalArgumentException("OAConverter.toBigInteger(): '" + value + "' cant be converted to BigInteger");
+		}
+		return num;
+	}
+	
+	
 	/**
 	 * Convenience alias for {@link #toBigDecimal(Object)}.
 	 */
@@ -980,12 +1017,8 @@ public class OAConverter {
 			if (((Map) obj).size() == 0) {
 				return true;
 			}
-		} else if (obj instanceof Set) {
-			if (((Set) obj).size() == 0) {
-				return true;
-			}
-		} else if (obj instanceof List) {
-			if (((List) obj).size() == 0) {
+		} else if (obj instanceof Collection) {
+			if (((Collection) obj).size() == 0) {
 				return true;
 			}
 		}

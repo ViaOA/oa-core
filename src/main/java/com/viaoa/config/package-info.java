@@ -18,6 +18,8 @@
  */
 package com.viaoa.config;
 
+//CODEX unit tests <todo>
+
 /* CODEX Invariants
 
 CONFIG-SOURCE-001 — Configuration Source Authority

@@ -72,6 +72,8 @@
  */
 package com.viaoa.query;
 
+//CODEX unit tests <todo>
+
 /* CODEX Invariants
 
 QUERY-SEMANTIC-001 — Query Text Is An Executable Semantic Contract

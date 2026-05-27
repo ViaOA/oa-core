@@ -20,7 +20,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
-import com.viaoa.compare.OANullObject;
+import com.viaoa.compare.match.OAMatchNull;
 import com.viaoa.datasource.*;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
@@ -683,7 +683,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
 
     /**
      * Serializes a vector by writing its capacity, size, and each element
-     * in order, substituting {@link OANullObject} for missing entries.
+     * in order, substituting {@link OAMatchNull} for missing entries.
      *
      * @param s   the output stream used for serialization
      * @param vec the vector to serialize, or {@code null}
@@ -714,13 +714,13 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
         }
         for (; i<max; i++) {
             // write out bogus objects
-            s.writeObject(OANullObject.instance);
+            s.writeObject(OAMatchNull.instance);
         }        
     }
     
     /**
      * Deserializes a vector previously written by {@link #writeVector}.
-     * Reconstructs elements in order, skipping {@link OANullObject} markers.
+     * Reconstructs elements in order, skipping {@link OAMatchNull} markers.
      *
      * @param s the input stream used for deserialization
      * @return the reconstructed vector, or {@code null}
@@ -737,7 +737,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
         // Read in all elements in the proper order. 
         for (int i=0; i<max; i++) {
             Object obj = s.readObject();
-            if (!(obj instanceof OANullObject)) vec.addElement(obj);
+            if (!(obj instanceof OAMatchNull)) vec.addElement(obj);
         }
         return vec;
     }

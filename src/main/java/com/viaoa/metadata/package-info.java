@@ -19,6 +19,8 @@
  */
 package com.viaoa.metadata;
 
+//CODEX unit tests <todo>
+
 /* CODEX Invariants
 
 META-RUNTIME-001 — Executable Runtime Metadata

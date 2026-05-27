@@ -45,6 +45,8 @@
  */
 package com.viaoa.sync;
 
+//CODEX unit tests <todo>
+
 /* CODEX Invariants
 
 SYNC-RUNTIME-001 — Live Graph Synchronization Authority

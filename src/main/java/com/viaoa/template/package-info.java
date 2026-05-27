@@ -52,6 +52,8 @@
  */
 package com.viaoa.template;
 
+//CODEX unit tests <todo>
+
 /* CODEX Invariants
 
 TEMPLATE-RUNTIME-001 — Deterministic Rendering

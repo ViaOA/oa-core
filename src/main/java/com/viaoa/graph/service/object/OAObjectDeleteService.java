@@ -5,7 +5,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.callback.OACallback;
 import com.viaoa.cascade.OACascade;
-import com.viaoa.compare.OANotExist;
+import com.viaoa.compare.match.OAMatchNotExist;
 import com.viaoa.find.OAFinder;
 import com.viaoa.graph.service.OAObjectService;
 import com.viaoa.hub.Hub;
@@ -569,7 +569,7 @@ public abstract class OAObjectDeleteService {
 			}
 
 			// 20160120
-			if (bIsNew && callPropertyGetProperty(oaObj, prop, true, false) == OANotExist.instance) {
+			if (bIsNew && callPropertyGetProperty(oaObj, prop, true, false) == OAMatchNotExist.instance) {
 				continue;
 			}
 

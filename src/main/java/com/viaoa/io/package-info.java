@@ -18,6 +18,8 @@
  */
 package com.viaoa.io;
 
+//CODEX unit tests <todo>
+
 /* CODEX Invariants
 
 IO-READ-001 — Complete Read Semantics

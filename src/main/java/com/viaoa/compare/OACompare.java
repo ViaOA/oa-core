@@ -20,7 +20,10 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 
+import com.viaoa.compare.match.OAMatch;
 import com.viaoa.converter.OAConv;
 import com.viaoa.converter.OAConverter;
 import com.viaoa.datetime.OADate;
@@ -28,6 +31,7 @@ import com.viaoa.datetime.OADateTime;
 import com.viaoa.datetime.OATime;
 import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.hub.Hub;
+import com.viaoa.lang.OAStr;
 import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
@@ -60,10 +64,10 @@ CODEX
   - Classification: CODEX/FIXNOW
 
  - Method: compare(Object, Object, int)
-  - Issue: OAEmptyObject / OANotEmptyObject handling only recognizes null and literal "".
+  - Issue: OAMatchEmpty / OAMatchNotEmpty handling only recognizes null and literal "".
   - Why it is a problem: The sentinel classes document OA emptiness semantics through OAString.isEmpty /
     OAConverter.isNotEmpty, which include arrays, collections, Hubs, zero primitive wrappers, etc.
-    compare(emptyArray, OAEmptyObject.instance) currently does not match.
+    compare(emptyArray, OAMatchEmpty.instance) currently does not match.
   - Classification: CODEX/FIXNOW
 
  - Method: isLike(Object, Object)
@@ -111,15 +115,15 @@ CODEX
   Minimal fix direction: treat only decimalPlaces < 0 as “no rounding.” Let decimalPlaces == 0 go through the rounding
   path consistently for all numeric classes.
 
- #3 — OACompare.compare(Object, Object, int) with OAGreaterThanZero / OALessThanZero
+ #3 — OACompare.compare(Object, Object, int) with OAMatchGreaterThanZero / OAMatchLessThanZero
 
   File/class/method: src/main/java/com/viaoa/compare/OACompare.java, compare(Object, Object, int)
 
-  Concrete bug: OAGreaterThanZero and OALessThanZero implement OASpecialCompareObject, but the OACompare special-
+  Concrete bug: OAMatchGreaterThanZero and OAMatchLessThanZero implement OASpecialCompareObject, but the OACompare special-
   object branch does not handle them.
 
-  Runtime scenario: OACompare.isEqual(5, OAGreaterThanZero.instance) returns false even though
-  OAGreaterThanZero.instance.equals(5) returns true. Same for negative values with OALessThanZero.
+  Runtime scenario: OACompare.isEqual(5, OAMatchGreaterThanZero.instance) returns false even though
+  OAMatchGreaterThanZero.instance.equals(5) returns true. Same for negative values with OAMatchLessThanZero.
 
   Why this violates OA/OG comparison semantics: special compare tokens should work through OA’s central comparison
   path, not only by direct token.equals(value) calls. Otherwise filters/matchers that use OACompare get false
@@ -162,15 +166,15 @@ CODEX
   Minimal fix direction: build local Method[][] and boolean[] fully, then publish them together under synchronization
   or with a volatile initialized-state. Alternatively make eager initialization happen in the constructor.
 
-#3 — OACompare.compare(Object, Object, int) with OAGreaterThanZero / OALessThanZero
+#3 — OACompare.compare(Object, Object, int) with OAMatchGreaterThanZero / OAMatchLessThanZero
 
   File/class/method: src/main/java/com/viaoa/compare/OACompare.java, compare(Object, Object, int)
 
-  Concrete bug: OAGreaterThanZero and OALessThanZero implement OASpecialCompareObject, but the OACompare special-
+  Concrete bug: OAMatchGreaterThanZero and OAMatchLessThanZero implement OASpecialCompareObject, but the OACompare special-
   object branch does not handle them.
 
-  Runtime scenario: OACompare.isEqual(5, OAGreaterThanZero.instance) returns false even though
-  OAGreaterThanZero.instance.equals(5) returns true. Same for negative values with OALessThanZero.
+  Runtime scenario: OACompare.isEqual(5, OAMatchGreaterThanZero.instance) returns false even though
+  OAMatchGreaterThanZero.instance.equals(5) returns true. Same for negative values with OAMatchLessThanZero.
 
   Why this violates OA/OG comparison semantics: special compare tokens should work through OA’s central comparison
   path, not only by direct token.equals(value) calls. Otherwise filters/matchers that use OACompare get false
@@ -233,22 +237,22 @@ CODEX
 1. file/class/method
      src/main/java/com/viaoa/compare/OACompare.java — compare(Object value, Object matchValue, int decimalPlaces)
   2. concrete bug
-     OAUnknownObject can incorrectly match broad special tokens before the unknown-value branch is reached.
+     OAMatchUnknown can incorrectly match broad special tokens before the unknown-value branch is reached.
   3. runtime scenario
-     OACompare.compare(OAUnknownObject.instance, OANotNullObject.instance) returns 0 because
-     OAUnknownObject.instance != null.
-     OACompare.compare(OAUnknownObject.instance, OANotEmptyObject.instance) also returns 0.
-     OACompare.compare(OAUnknownObject.instance, OAAnyValueObject.instance) returns 0 immediately.
+     OACompare.compare(OAMatchUnknown.instance, OAMatchNotNull.instance) returns 0 because
+     OAMatchUnknown.instance != null.
+     OACompare.compare(OAMatchUnknown.instance, OAMatchNotEmpty.instance) also returns 0.
+     OACompare.compare(OAMatchUnknown.instance, OAMatchAny.instance) returns 0 immediately.
   4. why this violates OA/OG comparison semantics
-     OAUnknownObject documents that it represents an opaque/unknown value where no comparison should succeed except
+     OAMatchUnknown documents that it represents an opaque/unknown value where no comparison should succeed except
      its own singleton identity. Matching it as “not null”, “not empty”, or “any value” creates false positives in
      filters, criteria, diff logic, partial-deserialization comparison, and Hub/query-style matching.
   5. minimal fix direction
-     Handle OAUnknownObject before broad special tokens such as OAAnyValueObject, OANotNullObject, and
-     OANotEmptyObject, or explicitly document that OAAnyValueObject overrides unknown semantics. Based on current
-     OAUnknownObject javadoc, unknown should probably be checked first.
+     Handle OAMatchUnknown before broad special tokens such as OAMatchAny, OAMatchNotNull, and
+     OAMatchNotEmpty, or explicitly document that OAMatchAny overrides unknown semantics. Based on current
+     OAMatchUnknown javadoc, unknown should probably be checked first.
   6. suggested CODEX comment location
-     In OACompare.compare(...), at the start of the OASpecialCompareObject block, before the OAAnyValueObject branch.
+     In OACompare.compare(...), at the start of the OASpecialCompareObject block, before the OAMatchAny branch.
 
 
 1. file/class/method
@@ -281,7 +285,7 @@ CODEX
   5. minimal fix direction
      Before converting a null operand to the opposite operand’s concrete type, decide whether OACompare’s contract
      really allows null/default equality. If not, preserve null ordering and only allow null equality through explicit
-     null, OANullObject, OAEmptyObject, or a documented primitive-null path.
+     null, OAMatchNull, OAMatchEmpty, or a documented primitive-null path.
   6. suggested CODEX comment location
      In OACompare.compare(...), immediately above:
 
@@ -297,7 +301,7 @@ CODEX
  *   <li>Values of different types (e.g., String "123" vs. Double 123.0) are automatically coerced for comparison.</li>
  *   <li>Supports comparisons involving OAObject, OAObjectKey, arrays, and Hub collections.</li>
  *   <li>Boolean, numeric, and date/time types are normalized through OAConverter before comparing.</li>
- *   <li>Special placeholder objects (e.g., OANullObject, OAAnyValueObject) are supported for flexible matching.</li>
+ *   <li>Special placeholder objects (e.g., OAMatchNull, OAMatchAny) are supported for flexible matching.</li>
  * </ul>
  * <p>
  * Comparison results follow standard compareTo semantics:
@@ -330,31 +334,54 @@ public class OACompare {
 	}
 
 	/**
-     * Returns true if {@code obj} is contained in {@code matchValue}.
+     * Returns true if {@code findValue} is contained in {@code sourceValue}.
      * <p>
      * Works with Hubs, arrays, or single values. Uses {@link #isEqual(Object, Object)} for element comparison.
      *
-     * @param obj         the object to test
-     * @param matchValue  a Hub, array, or single object
+     * @param findValue         the object to test
+     * @param sourceValue  a Hub, array, or single object
      * @return true if {@code obj} matches or is contained
      */
-	public static boolean isIn(Object obj, Object matchValue) {
-		if (obj == null || matchValue == null) {
+	public static boolean isIn(final Object findValue, final Object sourceValue) {
+		if (findValue == null || sourceValue == null) {
+			if (findValue == sourceValue) return true;
+			if (sourceValue == null) return false;
+		}
+		if (sourceValue instanceof Hub) {
+			if (!(findValue instanceof OAObject)) return false;
+			Hub hx = (Hub) sourceValue;
+			if (hx.contains(findValue)) return true;
+			for (Object objx : hx) {
+				if (compare(findValue, objx) == 0) return true;
+			}
+		}
+		if (sourceValue instanceof Collection) {
+			Collection cx = (Collection) sourceValue;
+			if (findValue != null && cx.contains(findValue)) return true;
+			for (Object objx : cx) {
+				if (compare(findValue, objx) == 0) return true;
+			}
 			return false;
 		}
-		if (matchValue instanceof Hub) {
-			return ((Hub) matchValue).contains(obj);
+		if (sourceValue instanceof Map) {
+			Map mx = (Map) sourceValue;
+			if (findValue != null && mx.containsKey(findValue)) return true;
+			for (Object objx : mx.keySet()) {
+				if (compare(findValue, objx) == 0) return true;
+			}
+			return false;
 		}
-		if (matchValue.getClass().isArray()) {
-			int x = Array.getLength(matchValue);
+		
+		if (sourceValue.getClass().isArray()) {
+			int x = Array.getLength(sourceValue);
 			for (int i = 0; i < x; i++) {
-				Object objx = Array.get(matchValue, i);
-				if (isEqual(obj, objx)) {
+				Object objx = Array.get(sourceValue, i);
+				if (compare(findValue, objx) == 0) {
 					return true;
 				}
 			}
 		}
-		return isEqual(obj, matchValue);
+		return isEqual(findValue, sourceValue);
 	}
 
     /**
@@ -885,6 +912,14 @@ public class OACompare {
 		    if (value == matchValue) return 0;
 		    if (value == null) return -1;
 		    if (matchValue == null) return 1;
+		    
+			if (OAStr.isNumber((String) value) && OAStr.isNumber((String) matchValue)) {
+				return compareNumbers(
+			            OAConv.toBigDecimal((String) value),
+			            OAConv.toBigDecimal((String) matchValue),
+			            decimalPlaces);
+			}
+		    
 		    return ((String)value).compareTo((String)matchValue);
 		}		
 
@@ -901,91 +936,41 @@ public class OACompare {
 		            if (n1 instanceof Long)      return Long.compare(n1.longValue(),     n2.longValue());
 		            if (n1 instanceof Short)     return Short.compare(n1.shortValue(),   n2.shortValue());
 		            if (n1 instanceof Byte)      return Byte.compare(n1.byteValue(),     n2.byteValue());
-		            if (n1 instanceof Double)    return Double.compare(n1.doubleValue(), n2.doubleValue());
-		            if (n1 instanceof Float)     return Float.compare(n1.floatValue(),   n2.floatValue());
+		            if (n1 instanceof Double) {
+		            	double d1 = n1.doubleValue();
+		            	if (d1 == 0d) d1 = 0d;
+		            	double d2 = n2.doubleValue();
+		            	if (d2 == 0d) d2 = 0d;
+		            	return Double.compare(d1, d2);
+		            }
+		            if (n1 instanceof Float) {
+		            	float f1 = n1.floatValue();
+		            	if (f1 == 0.0) f1 = 0f;
+		            	float f2 = n2.floatValue();
+		            	if (f2 == 0.0) f2 = 0f;
+		            	return Float.compare(f1, f2);
+		            }
 		            if (n1 instanceof BigDecimal) return ((BigDecimal)n1).compareTo((BigDecimal)n2);
 		            if (n1 instanceof BigInteger) return ((BigInteger)n1).compareTo((BigInteger)n2);
 		        }
 		    }
 		    return compareNumbers(n1, n2, decimalPlaces);
 		}				
-		
-        if (value instanceof OASpecialCompareObject || matchValue instanceof OASpecialCompareObject) {
-    		if (value instanceof OAAnyValueObject || matchValue instanceof OAAnyValueObject) {
-    			return 0;
-    		}
-    		if (value instanceof OANotExist) {
-    			if (matchValue == null || (matchValue instanceof OANotExist)) {
-    				return 0;
-    			}
-    			return -1;
-    		}
-    		if (matchValue instanceof OANotExist) {
-    			if (value == null) {
-    				return 0;
-    			}
-    			return 1;
-    		}
-    		if (value instanceof OANullObject) {
-    			if (matchValue == null || (matchValue instanceof OANullObject)) {
-    				return 0;
-    			}
-    			return 1;
-    		}
-    		if (matchValue instanceof OANullObject) {
-    			if (value == null) {
-    				return 0;
-    			}
-    			return -1;
-    		}
-    		if (value instanceof OANotNullObject) {
-    			if (matchValue != null) {
-    				return 0;
-    			}
-    			return 1;
-    		}
-    		if (matchValue instanceof OANotNullObject) {
-    			if (value != null) {
-    				return 0;
-    			}
-    			return -1;
-    		}
-    
-            if (value instanceof OAEmptyObject) {
-                if (matchValue == null || "".equals(matchValue) || (matchValue instanceof OAEmptyObject)) {
-                    return 0;
-                }
-                return 1;
-            }
-            if (matchValue instanceof OAEmptyObject) {
-                if (value == null || "".equals(value)) {
-                    return 0;
-                }
-                return -1;
-            }
-    
-            if (value instanceof OANotEmptyObject) {
-                if ((matchValue != null && !"".equals(matchValue)) || (matchValue instanceof OANotEmptyObject)) {
-                    return 0;
-                }
-                return -1;
-            }
-            if (matchValue instanceof OANotEmptyObject) {
-                if (value != null && !"".equals(value)) {
-                    return 0;
-                }
-                return 1;
-            }
-            if (value instanceof OAUnknownObject) {
-                if (matchValue instanceof OAUnknownObject) {
-                    return 0;
-                }
-                return 1;
-            }
-            if (matchValue instanceof OAUnknownObject) {
-                return -1;
-            }
-        }
+
+		if (value instanceof OAMatch) {
+			if (matchValue instanceof OAMatch) {
+			    if (value == matchValue) return 0;
+			    return compareMatchTokens((OAMatch) value, (OAMatch) matchValue);
+			}
+			OAMatch mx = (OAMatch) value;
+			if (mx.matches(matchValue, decimalPlaces)) return 0;
+			return 1;
+		}
+		if (matchValue instanceof OAMatch) {
+			OAMatch mx = (OAMatch) matchValue;
+			if (mx.matches(value, decimalPlaces)) return 0;
+			return -1;
+		}
 
         if (value instanceof OAObject || value instanceof OAObjectKey || matchValue instanceof OAObject || matchValue instanceof OAObjectKey) {
         	Class c;
@@ -1019,7 +1004,7 @@ public class OACompare {
 				for (int i = 0; i < x1 && i < x2; i++) {
 					Object v1 = Array.get(value, i);
 					Object v2 = Array.get(matchValue, i);
-					int x = compare(v1, v2);
+					int x = compare(v1, v2, decimalPlaces);
 					if (x != 0) {
 						return x;
 					}
@@ -1092,7 +1077,7 @@ public class OACompare {
 			} else {
 				matchValue = Array.get(matchValue, 0);
 			}
-			x = compare(value, matchValue);
+			x = compare(value, matchValue, decimalPlaces);
 			return x;
 		}
 
@@ -1125,7 +1110,7 @@ public class OACompare {
 				}
 				value = h.getAt(0);
 			}
-			int x = compare(value, matchValue);
+			int x = compare(value, matchValue, decimalPlaces);
 			return x;
 		} else if (matchValue instanceof Hub) {
 			Hub h = (Hub) matchValue;
@@ -1136,7 +1121,7 @@ public class OACompare {
 				}
 				matchValue = h.getAt(0);
 			}
-			int x = compare(value, matchValue);
+			int x = compare(value, matchValue, decimalPlaces);
 			return x;
 		}
 
@@ -1170,8 +1155,10 @@ public class OACompare {
 				classValue = classMatchValue = Double.class;
 			} else if (OAReflect.isNumber(classMatchValue)
 					|| (classMatchValue.equals(String.class) && OAString.isNumber((String) matchValue))) {
-				value = OAConv.toDouble(value);
-				matchValue = OAConv.toDouble(matchValue);
+				value = OAConv.toBigDecimal(value);
+				//was: value = OAConv.toDouble(value);
+				matchValue = OAConv.toBigDecimal(matchValue);
+				//was: matchValue = OAConv.toDouble(matchValue);
 				classValue = classMatchValue = Double.class;
 			} else {
 				bNeedToConvert = true;
@@ -1305,9 +1292,19 @@ public class OACompare {
 		if (obj instanceof Collection) {
 			return ((Collection) obj).isEmpty();
 		}
+		if (obj instanceof Map) {
+			return ((Map) obj).isEmpty();
+		}
 		if (obj.getClass().isArray()) {
 			return (Array.getLength(obj) == 0);
 		}
+
+		if (obj instanceof BigDecimal) {
+		    return ((BigDecimal) obj).compareTo(BigDecimal.ZERO) == 0;
+		}
+		if (obj instanceof BigInteger) {
+		    return ((BigInteger) obj).signum() == 0;
+		}		
 		
 		Class c = obj.getClass();
 		if (OAReflect.isPrimitiveClassWrapper(c)) {
@@ -1324,8 +1321,9 @@ public class OACompare {
 		}
 
 		return OAString.isEmpty(obj, bTrim);
-	}
-
+	}	
+	
+	
 	
 	public static int compare(double d1, double d2, int decimalPlaces) {
 		return compare(d1, d2,decimalPlaces, null);
@@ -1347,7 +1345,11 @@ public class OACompare {
 	        return bd1.compareTo(bd2);
 	    }
 
-	    return Double.compare(d1, d2);
+        BigDecimal bd1 = BigDecimal.valueOf(d1);
+        BigDecimal bd2 = BigDecimal.valueOf(d2);
+        return bd1.compareTo(bd2);
+	    
+	    //was: return Double.compare(d1, d2);
 	}
 
 
@@ -1401,6 +1403,15 @@ public class OACompare {
 	        return Float.isNaN(f) || Float.isInfinite(f);
 	    }
 	    return false;
+	}
+
+	private static int compareMatchTokens(OAMatch a, OAMatch b) {
+		if (a == null && b == null) return 0;
+		if (a == null) return -1;
+		if (b == null) return 1;
+	    int x = a.getClass().getName().compareTo(b.getClass().getName());
+	    if (x != 0) return x;
+	    return Integer.compare(System.identityHashCode(a), System.identityHashCode(b));
 	}
 	
 }

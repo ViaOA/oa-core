@@ -18,6 +18,8 @@
  */
 package com.viaoa.log;
 
+//CODEX unit tests <todo>
+
 /* CODEX Invariants
 
 LOG-VISIBILITY-001 — Critical Diagnostic Visibility

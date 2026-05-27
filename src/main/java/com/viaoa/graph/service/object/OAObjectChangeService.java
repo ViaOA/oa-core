@@ -150,7 +150,7 @@ public abstract class OAObjectChangeService {
 					return true; //  if there have been adds/removes to hub
 				}
 			} else {
-				if (obj instanceof OAObject) { // 20110420 could be OANullObject
+				if (obj instanceof OAObject) { // 20110420 could be OAMatchNull
 					if (getChanged((OAObject) obj, iCascadeRule, cascade)) {
 						return true;
 					}

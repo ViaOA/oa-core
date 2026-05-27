@@ -121,6 +121,8 @@
  */
 package com.viaoa.filter;
 
+//CODEX unit tests <todo>
+
 /* CODEX Invariants
 
 FILTER-RUNTIME-001 — Deterministic Predicate Semantics

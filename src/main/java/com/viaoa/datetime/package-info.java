@@ -19,6 +19,8 @@
  */
 package com.viaoa.datetime;
 
+//CODEX unit tests <todo>
+
 /* CODEX Invariants
 
 DT-TYPE-001 — Temporal Semantic Type Boundaries

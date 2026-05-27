@@ -24,8 +24,8 @@ import java.util.logging.Logger;
 import com.viaoa.callback.OACallback;
 import com.viaoa.callback.OACopyCallback;
 import com.viaoa.cascade.OACascade;
-import com.viaoa.compare.OANotExist;
-import com.viaoa.compare.OANullObject;
+import com.viaoa.compare.match.OAMatchNotExist;
+import com.viaoa.compare.match.OAMatchNull;
 import com.viaoa.converter.OAConv;
 import com.viaoa.converter.OAConverter;
 import com.viaoa.datasource.OADataSource;
@@ -360,7 +360,7 @@ public abstract class OAObjectReflectService {
 			return true;
 		}
 
-		if (value instanceof OANullObject) {
+		if (value instanceof OAMatchNull) {
 			value = null;
 		}
 		OALinkInfo li = callInfoGetLinkInfo(oi, propNameU);
@@ -921,7 +921,7 @@ public abstract class OAObjectReflectService {
 			}
 			// create an empty hub
 			hub = new Hub(linkInfo.getToClass(), oaObj, callInfoGetReverseLinkInfo(linkInfo), false);
-		} else if (propertyValue == OANotExist.instance) {
+		} else if (propertyValue == OAMatchNotExist.instance) {
 			propertyValue = null;
 		}
 
@@ -1506,7 +1506,7 @@ public abstract class OAObjectReflectService {
 				if (objx == null) {
 					continue;
 				}
-				if (objx != OANotExist.instance) {
+				if (objx != OAMatchNotExist.instance) {
 					if (!(objx instanceof OAObjectKey)) {
 						continue; // already loaded
 					}
@@ -1552,7 +1552,7 @@ public abstract class OAObjectReflectService {
 			String name = li.getName();
 
 			Object val = callPropertyGetProperty(obj, name, true, true);
-			if (val == OANotExist.instance) {
+			if (val == OAMatchNotExist.instance) {
 				return false;
 			}
 			if (val instanceof OAObjectKey) {
@@ -2145,7 +2145,7 @@ public abstract class OAObjectReflectService {
 
 			Object objx = callPropertyGetProperty(obj, li.getName(), true, true);
 
-			if (objx instanceof OANotExist) { // not loaded from ds
+			if (objx instanceof OAMatchNotExist) { // not loaded from ds
 				if (bIsMany) {
 					currentRefsLoaded++;
 				}
@@ -2219,7 +2219,7 @@ public abstract class OAObjectReflectService {
 			if (val instanceof byte[]) {
 				return (byte[]) val;
 			}
-			if (val != OANotExist.instance) {
+			if (val != OAMatchNotExist.instance) {
 				return null;
 			}
 
@@ -2272,7 +2272,7 @@ public abstract class OAObjectReflectService {
 			}
 		}
 
-		boolean bDidNotExist = (objOriginal == OANotExist.instance);
+		boolean bDidNotExist = (objOriginal == OAMatchNotExist.instance);
 		if (bDidNotExist) {
 			objOriginal = null;
 		} else if (objOriginal == null) {
@@ -2323,7 +2323,7 @@ public abstract class OAObjectReflectService {
 		Object obj = callPropertyGetProperty(oaObj, linkPropertyName, true, true);
 
 		if (!(obj instanceof OAObjectKey)) {
-			if (obj == OANotExist.instance || obj == null) {
+			if (obj == OAMatchNotExist.instance || obj == null) {
 				// 20190112
 				String pps = li.getDefaultPropertyPath();
 				if (OAString.isNotEmpty(pps)) {
@@ -2348,7 +2348,7 @@ public abstract class OAObjectReflectService {
 				}
 			}
 
-			if (obj != OANotExist.instance) {
+			if (obj != OAMatchNotExist.instance) {
 				if (obj != null) {
 					return obj;
 				}
@@ -2583,7 +2583,7 @@ public abstract class OAObjectReflectService {
 
 	/**
 	 * Determines whether the reference value for the given property has been
-	 * loaded. This includes detecting stored nulls, OANotExist markers, loaded
+	 * loaded. This includes detecting stored nulls, OAMatchNotExist markers, loaded
 	 * OAObjects, non-key Hubs, and OAObjectKeys that can be resolved from the
 	 * cache. When a cached match is found for a key, the property value is
 	 * updated using CAS assignment.
@@ -2600,7 +2600,7 @@ public abstract class OAObjectReflectService {
 		if (obj == null) {
 			return true;
 		}
-		if (obj == OANotExist.instance) {
+		if (obj == OAMatchNotExist.instance) {
 			return false;
 		}
 		if (obj instanceof OAObject) {
@@ -2632,12 +2632,12 @@ public abstract class OAObjectReflectService {
 
 	/**
 	 * Determines whether the reference property is null or explicitly marked as
-	 * not existing. A stored null or OANotExist marker indicates that the reference
+	 * not existing. A stored null or OAMatchNotExist marker indicates that the reference
 	 * is empty without requiring object loading.
 	 *
 	 * @param oaObj        the object inspected
 	 * @param propertyName the reference property name
-	 * @return true if the property is null or OANotExist, false otherwise
+	 * @return true if the property is null or OAMatchNotExist, false otherwise
 	 */
 	public boolean isReferenceObjectNullOrEmpty(OAObject oaObj, String propertyName) {
 		if (oaObj == null || propertyName == null) {
@@ -2647,7 +2647,7 @@ public abstract class OAObjectReflectService {
 		if (obj == null) {
 			return true; // the ref is null, dont need to load it
 		}
-		if (obj == OANotExist.instance) {
+		if (obj == OAMatchNotExist.instance) {
 			return true;
 		}
 		return false;
@@ -2657,7 +2657,7 @@ public abstract class OAObjectReflectService {
 	 * Determines whether the reference property is loaded and represents
 	 * a non-empty value. Loaded OAObjects, non-key Hubs, and OAObjectKeys
 	 * resolved from cache qualify as loaded and not empty. Null and
-	 * OANotExist indicate empty or not loaded.
+	 * OAMatchNotExist indicate empty or not loaded.
 	 *
 	 * @param oaObj        the object inspected
 	 * @param propertyName the reference property name
@@ -2671,7 +2671,7 @@ public abstract class OAObjectReflectService {
 		if (obj == null) {
 			return false; // the ref is null, dont need to load it
 		}
-		if (obj == OANotExist.instance) {
+		if (obj == OAMatchNotExist.instance) {
 			return false;
 		}
 		if (obj instanceof OAObject) {
@@ -2696,7 +2696,7 @@ public abstract class OAObjectReflectService {
 
 	/**
 	 * Determines whether a reference property is either null or not yet loaded.
-	 * Null, OANotExist, or unresolved OAObjectKeys are treated as null or not
+	 * Null, OAMatchNotExist, or unresolved OAObjectKeys are treated as null or not
 	 * loaded. Loaded OAObjects or Hubs return false.
 	 *
 	 * @param oaObj        the object inspected
@@ -2711,7 +2711,7 @@ public abstract class OAObjectReflectService {
 		if (obj == null) {
 			return true; // not loaded
 		}
-		if (obj == OANotExist.instance) {
+		if (obj == OAMatchNotExist.instance) {
 			return true; // null
 		}
 
@@ -2731,7 +2731,7 @@ public abstract class OAObjectReflectService {
 
 	/**
 	 * Determines whether the reference property is null, not loaded, or
-	 * represented by an empty Hub. A stored null or OANotExist marker,
+	 * represented by an empty Hub. A stored null or OAMatchNotExist marker,
 	 * an unresolved OAObjectKey, or a Hub with zero elements will return
 	 * true. Loaded OAObjects and non-empty Hubs return false.
 	 *
@@ -2747,7 +2747,7 @@ public abstract class OAObjectReflectService {
 		if (obj == null) {
 			return true; // not loaded
 		}
-		if (obj == OANotExist.instance) {
+		if (obj == OAMatchNotExist.instance) {
 			return true; // ref is null
 		}
 
@@ -2781,7 +2781,7 @@ public abstract class OAObjectReflectService {
 		}
 		Object obj = callPropertyGetProperty(oaObj, propertyName, true, true);
 
-		if (obj instanceof OANotExist) {
+		if (obj instanceof OAMatchNotExist) {
 			return false;
 		}
 		if (obj == null) {
@@ -2802,7 +2802,7 @@ public abstract class OAObjectReflectService {
 	/**
 	 * Determines whether the MANY-relationship Hub for the given property
 	 * is both loaded and contains zero elements. A Hub qualifies only if
-	 * it is fully loaded and its size is zero. Null, OANotExist, unresolved
+	 * it is fully loaded and its size is zero. Null, OAMatchNotExist, unresolved
 	 * keys, and non-Hub values do not qualify.
 	 *
 	 * @param oaObj        the object inspected
@@ -2817,7 +2817,7 @@ public abstract class OAObjectReflectService {
 		if (obj == null) {
 			return true;
 		}
-		if (obj instanceof OANotExist) {
+		if (obj instanceof OAMatchNotExist) {
 			return false;
 		}
 
@@ -2836,7 +2836,7 @@ public abstract class OAObjectReflectService {
 	 * Determines whether the MANY-relationship Hub for the given property
 	 * is both fully loaded and contains one or more elements. A Hub must
 	 * be loaded and have a size greater than zero to qualify. Null,
-	 * OANotExist, unresolved keys, and unloaded Hubs do not qualify.
+	 * OAMatchNotExist, unresolved keys, and unloaded Hubs do not qualify.
 	 *
 	 * @param oaObj        the object inspected
 	 * @param propertyName the MANY link property name

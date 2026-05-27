@@ -38,6 +38,8 @@
  */
 package com.viaoa.process;
 
+//CODEX unit tests <todo>
+
 /* CODEX Invariants
 
 PROC-LIFECYCLE-001 — Managed Process Lifecycle

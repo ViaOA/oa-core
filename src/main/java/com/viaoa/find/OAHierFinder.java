@@ -16,7 +16,7 @@
 package com.viaoa.find;
 
 
-import com.viaoa.converter.OAConverterBoolean;
+import com.viaoa.converter.internal.OAConverterBoolean;
 import com.viaoa.filter.OAEmptyFilter;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.filter.OANotEmptyFilter;

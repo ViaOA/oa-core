@@ -7,8 +7,8 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 import com.viaoa.comm.io.IODummy;
-import com.viaoa.compare.OANotExist;
-import com.viaoa.compare.OANullObject;
+import com.viaoa.compare.match.OAMatchNotExist;
+import com.viaoa.compare.match.OAMatchNull;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.auto.HubAutoMatch;
 import com.viaoa.metadata.OALinkInfo;
@@ -56,7 +56,7 @@ public abstract class OAObjectSerializeService {
 	 *
 	 * <p>Special handling includes:</p>
 	 * <ul>
-	 *   <li>Converting {@link OANullObject} to {@code null}.</li>
+	 *   <li>Converting {@link OAMatchNull} to {@code null}.</li>
 	 *   <li>On servers, skipping calculated properties and stripping dummy or
 	 *       unresolved hub values.</li>
 	 *   <li>Blob properties are assigned directly using {@link OAObject#setProperty}.</li>
@@ -102,7 +102,7 @@ public abstract class OAObjectSerializeService {
 			String key = (String) obj;
 			Object value = in.readObject();
 
-			if (value instanceof OANullObject) {
+			if (value instanceof OAMatchNull) {
 				value = null;
 			}
 
@@ -213,7 +213,7 @@ public abstract class OAObjectSerializeService {
 
 			Object localValue = callPropertyGetProperty(oaObjUse, key, true, true);
 
-			if (localValue != OANotExist.instance) {
+			if (localValue != OAMatchNotExist.instance) {
 				if (localValue instanceof OAObjectKey && (value instanceof OAObject)) {
 					OAObjectKey k1 = (OAObjectKey) localValue;
 					OAObjectKey k2 = callKeyGetKey((OAObject) value);
@@ -238,7 +238,7 @@ public abstract class OAObjectSerializeService {
 					try {
 						b = callPropertyAttemptPropertyLock(oaObjUse, key);
 						if (b) {
-							callPropertySetPropertyCAS(oaObjUse, key, value, localValue, (localValue == OANotExist.instance), false);
+							callPropertySetPropertyCAS(oaObjUse, key, value, localValue, (localValue == OAMatchNotExist.instance), false);
 						}
 					} finally {
 						if (b) {
@@ -252,7 +252,7 @@ public abstract class OAObjectSerializeService {
 							value = new WeakReference(hub);
 						}
 					}
-					callPropertySetPropertyCAS(oaObjUse, key, value, localValue, (localValue == OANotExist.instance), false);
+					callPropertySetPropertyCAS(oaObjUse, key, value, localValue, (localValue == OAMatchNotExist.instance), false);
 				}
 			}
 		}
@@ -465,7 +465,7 @@ public abstract class OAObjectSerializeService {
 	 *         <li>hub size, match-property rules, and autoMatch state</li>
 	 *       </ul>
 	 *   <li>Writes property name followed by value, substituting
-	 *       {@link OANullObject#instance} for {@code null}.</li>
+	 *       {@link OAMatchNull#instance} for {@code null}.</li>
 	 * </ul>
 	 *
 	 * @param oi metadata describing the object's properties
@@ -590,7 +590,7 @@ public abstract class OAObjectSerializeService {
 			if (bShouldSerialize) {
 				stream.writeObject(key);
 				if (obj == null) {
-					obj = OANullObject.instance;
+					obj = OAMatchNull.instance;
 				}
 				stream.writeObject(obj);
 			}

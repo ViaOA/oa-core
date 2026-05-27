@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.callback.OAObjectCallback;
 import com.viaoa.compare.OACompare;
-import com.viaoa.compare.OANotExist;
+import com.viaoa.compare.match.OAMatchNotExist;
 import com.viaoa.converter.OAConv;
 import com.viaoa.converter.OAConverter;
 import com.viaoa.datasource.OADataSource;
@@ -2684,14 +2684,14 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * The method first checks OA's primitive-null flag for the property via
 	 * {@link OAObjectReflectDelegate#getPrimitiveNull(OAObject, String)}.
 	 * If that flag is not set, it retrieves the property's stored value
-	 * (possibly a {@link WeakReference} or {@link OANotExist} placeholder)
+	 * (possibly a {@link WeakReference} or {@link OAMatchNotExist} placeholder)
 	 * using {@link OAObjectPropertyDelegate#getProperty(OAObject, String, boolean, boolean)}.
 	 * <p>
 	 * A property is considered null when:
 	 * <ul>
 	 *   <li>its primitive-null flag is set, or</li>
 	 *   <li>its stored value is {@code null}, or</li>
-	 *   <li>its stored value is {@code OANotExist} and the resolved property
+	 *   <li>its stored value is {@code OAMatchNotExist} and the resolved property
 	 *       value obtained from {@link #getProperty(String)} is also {@code null}.</li>
 	 * </ul>
 	 *
@@ -2705,7 +2705,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 			Object objx = og.objectsInternal().callObjectPropertyGetProperty(this, prop, true, false);
 			if (objx == null) {
 				b = true;
-			} else if (!(objx instanceof OANotExist)) {
+			} else if (!(objx instanceof OAMatchNotExist)) {
 				return false;
 			} else if (getProperty(prop) == null) {
 				b = true;
@@ -2916,7 +2916,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * </ul>
 	 * It is considered not loaded when:
 	 * <ul>
-	 *   <li>the stored value is {@link OANotExist}, indicating the property has
+	 *   <li>the stored value is {@link OAMatchNotExist}, indicating the property has
 	 *       not yet been resolved, or</li>
 	 *   <li>the value is a {@link WeakReference} whose referent has been cleared.</li>
 	 * </ul>
@@ -2927,7 +2927,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	public boolean isHubLoaded(String name) {
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		Object objx = og.objectsInternal().callObjectPropertyGetProperty(this, name, true, true);
-		if (objx == OANotExist.instance) {
+		if (objx == OAMatchNotExist.instance) {
 			return false;
 		}
 		if (objx == null) {
