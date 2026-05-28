@@ -5,6 +5,7 @@ import org.junit.jupiter.api.*;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
@@ -15,8 +16,12 @@ import java.util.logging.Level;
 
 import com.viaoa.OAUnitTest;
 import com.viaoa.datasource.OADataSource;
+import com.viaoa.datasource.clientserver.OADataSourceClient;
 import com.viaoa.datetime.OATime;
+import com.viaoa.filter.OAFilter;
 import com.viaoa.find.OAFinder;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListenerAdapter;
@@ -25,6 +30,7 @@ import com.viaoa.lang.OAString;
 import com.viaoa.log.OALogUtil;
 import com.viaoa.object.*;
 import com.viaoa.remote.info.RequestInfo;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.remote.RemoteBroadcastInterface;
 import com.viaoa.sync.remote.RemoteTsamInterface;
 
@@ -48,10 +54,14 @@ import test.xice.tsam.remote.RemoteAppInterface;
 
 /**
  * Client for OASyncServerTest. This will run within junit test and will connect to oasyncservertest, and any other standalone instances of
- * oasyncclienttest. IMPORTANT to run as Junit test, OASyncServerTest will need to be running in a separate JVM and then run 1+ of these in
- * a separate JVM If the server is not running, then unit test will not fail, the tests in this class will just exit without any errors.
+ * oasyncclienttest. 
+ * 
+ * IMPORTANT to run as Junit test, OASyncServerTest will need to be running in a separate JVM and then run 1+ of these in
+ * a separate JVM If the server is not running, then unit test will not fail, 
+ * the tests in this class will just exit without any errors.
  */
 public class OASyncClientTest extends OAUnitTest {
+	
 	private static int port = 1102;
 	private static ServerRoot serverRoot;
 	private static OASyncClient syncClient;
@@ -156,7 +166,10 @@ public class OASyncClientTest extends OAUnitTest {
 		 */
 
 		final Site site = serverRoot.getSites().getAt(0);
-		OADataSource ds = OADataSource.getDataSource(MRADClientCommand.class);
+		
+		
+		OADataSource ds = OARuntime.datasource().get(MRADClientCommand.class);
+		//qqqqqqqqqq was: OADataSource ds = OADataSource.getDataSource(MRADClientCommand.class);
 		assertNotNull(ds); // make sure that the server has DS setup
 		Silo silo = site.getEnvironments().getAt(0).getSilos().getAt(0);
 		Server server = silo.getServers().getAt(0);
@@ -560,22 +573,49 @@ public class OASyncClientTest extends OAUnitTest {
 			}
 		};
 
-		ArrayList<Silo> al = finder.find(serverRoot.getSites());
+		List<Silo> al = finder.find(serverRoot.getSites());
 
 		for (Silo silo : al) {
 			assertEquals(silo.getServers().size(), 0);
 		}
 	}
+	
+	private OAGraphInternal og;
+	private OADataSourceClient dsClient;
 
 	@BeforeEach
 	public void setup() throws Exception {
 	    
+//qqqqqqqqqqqq		
+		og = (OAGraphInternal) OARuntime.createGraph(Site.class.getPackage().getName());
+
+		syncClient = og.syncInternal().getClient();
+		
+		og.sync().createClient("localhost", port);
+		og.sync().start();
+		
+		syncClient = og.syncInternal().getClient();
+		
+		
+		dsClient = new OADataSourceClient() {
+			@Override
+			public boolean isClassSupported(Class clazz, OAFilter filter) {
+				if (clazz == null) return false;
+				boolean bx = (clazz.getPackage().equals(Site.class.getPackage()));
+				return bx;
+			}
+		};
+		OARuntime.datasource().register(dsClient);
+		
+		
+		/*qqqqqqqq was:		
         OAObjectCacheDelegate.setUnitTestMode(true);
         OAObjectCacheDelegate.resetCache();
         OAObjectCacheDelegate.setUnitTestMode(false);
-	    
-	    
+		 */	    
 		OAObject.setDebugMode(true);
+		
+		/*qqqqqqq was:
 		syncClient = new OASyncClient("localhost", port) {
 			@Override
 			public void onStopCalled(String title, String msg) {
@@ -595,11 +635,32 @@ public class OASyncClientTest extends OAUnitTest {
 			protected void logRequest(RequestInfo ri) {
 				System.out.println((++cnt) + ") " + ri.toLogString());
 			}
+
+			@Override
+			protected void createRemoteDataSource() {
+				//qqqqqqqqqqqqqqq we might want to create this automatically and not use these abstract methods for datasource qqqqqqqqqqqqqqq
+				
+				OADataSourceClient dsClient = new OADataSourceClient() {
+					@Override
+					public boolean isClassSupported(Class clazz, OAFilter filter) {
+						boolean b = super.isClassSupported(clazz, filter);
+						
+						return b;
+					}
+				};
+				OARuntime.datasource().register(dsClient);
+			}
+
+			@Override
+			protected void closeRemoteDataSource() {
+				// TODO Auto-generated method stub
+			}
 		};
+		*/
 
 		// **NOTE** need to make sure that ServerTest is running in another jvm
 		try {
-			syncClient.start();
+			// syncClient.start();
 
 			remoteTsam = (RemoteTsamInterface) syncClient.lookup(RemoteTsamInterface.BindName);
 
@@ -626,44 +687,55 @@ public class OASyncClientTest extends OAUnitTest {
 
 				@Override
 				public void onClientTestStarted() {
+					/*qqqqqqqqqq
 					RequestInfo ri = OAThreadLocalDelegate.getRemoteRequestInfo();
 					String s = ri == null ? "" : ", connection=" + ri.connectionId;
 					System.out.println("received onClientTestStarted" + s);
+					*/
 					aiOnClientTestStart.incrementAndGet();
 				}
 
 				@Override
 				public void onClientTestDone() {
+					/*qqqqqqqqqq
 					RequestInfo ri = OAThreadLocalDelegate.getRemoteRequestInfo();
 					String s = ri == null ? "" : ", connection=" + ri.connectionId;
 					System.out.println("received onClientTestDone" + s);
+					*/
 					aiOnClientTestDone.incrementAndGet();
 				}
 
 				@Override
 				public void onClientStatsSent() {
+					/*qqqqqqqqqq
 					RequestInfo ri = OAThreadLocalDelegate.getRemoteRequestInfo();
 					String s = ri == null ? "" : ", connection=" + ri.connectionId;
 					System.out.println("received onClientStatsSent" + s);
+					*/
 					aiOnClientSentStats.incrementAndGet();
 				}
 
 				@Override
 				public void respondStats(Site site, String name) {
+					/*qqqqqqqqqq
 					RequestInfo ri = OAThreadLocalDelegate.getRemoteRequestInfo();
 					String s = ri == null ? "" : ", connection=" + ri.connectionId;
 					if (!OAString.isEqual(site.getName(), name)) {
 						queErrors.offer(site.getId() + " has site.name=" + site.getName() + ", broadcast name=" + name + s);
 						s += " ERROR, this.site.name=" + site.getName();
 					}
+					*/
 					//System.out.println("site.sendName called, name="+name+s);
 				}
 
 				@Override
 				public void respondStats(Server server, String name, int cntApps, long nameChecksum) {
 					aiSendStats.incrementAndGet();
+					/*qqqqqqqqqq
 					RequestInfo ri = OAThreadLocalDelegate.getRemoteRequestInfo();
 					String s = ri == null ? "" : ", connection=" + ri.connectionId;
+					*/
+					String s = "qqqqq";
 					if (!OAString.isEqual(server.getName(), name) || server.getApplications().getSize() != cntApps
 							|| server.getNameChecksum() != nameChecksum) {
 						queErrors.offer(
@@ -681,16 +753,20 @@ public class OASyncClientTest extends OAUnitTest {
 
 				@Override
 				public void respondStats(String msg) {
+					/*qqqqqqqqqq
 					RequestInfo ri = OAThreadLocalDelegate.getRemoteRequestInfo();
 					String s = ri == null ? "" : ", connection=" + ri.connectionId;
 					System.out.println("received respondStats" + s + ", stats: " + msg);
+					*/
 				}
 
 				@Override
 				public void onClientDone() {
+					/*qqqqqqqqqq
 					RequestInfo ri = OAThreadLocalDelegate.getRemoteRequestInfo();
 					String s = ri == null ? "" : ", connection=" + ri.connectionId;
 					System.out.println("received onClientDone" + s);
+					*/
 					aiOnClientDone.incrementAndGet();
 				}
 			};
@@ -769,6 +845,12 @@ public class OASyncClientTest extends OAUnitTest {
 
 		OASyncClientTest test = new OASyncClientTest();
 
+		test.setup();
+		
+		test.testA();
+		
+		
+		
 		/*
 		test.setup();
 		test.testA();
@@ -776,7 +858,7 @@ public class OASyncClientTest extends OAUnitTest {
 
 		//        test.runLocalClientTest();
 		//test.tsamTest();
-		test.test2();
+		// test.test2();
 
 		System.out.println("DONE running test, exiting program");
 	}

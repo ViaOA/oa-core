@@ -278,7 +278,7 @@ public class MultiplexerSocketController {
                 }
                 catch (Exception e) {
                     boolean b = wasCloseAlreadyCalled();
-                    LOG.log(Level.FINE, "error in socket thread for connection "+_connectionId+", wasSocketClosed="+b, e);
+                    if (!b) LOG.log(Level.FINE, "error in socket thread for connection "+_connectionId+", wasSocketClosed="+b, e);
                     // if (Log.DEBUG) Log.debug("MultiplexerSocketController: error reading real socket, " + e +", vsc.id="+MultiplexerSocketController.this._vscId);
                     if (!b) {
                         onSocketException(e);

@@ -34,6 +34,16 @@ public class OASyncClientTest2 extends OAUnitTest {
             protected void logRequest(RequestInfo ri) {
                 System.out.println((++cnt)+") "+ri.toLogString());
             }
+			@Override
+			protected void createRemoteDataSource() {
+				// TODO Auto-generated method stub
+				
+			}
+			@Override
+			protected void closeRemoteDataSource() {
+				// TODO Auto-generated method stub
+				
+			}
         };
         
         syncClient.start();

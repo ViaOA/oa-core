@@ -11,7 +11,7 @@ public class HubAODelegate {
 	// TEMP for v4.0 phase 4
 	
 	public static void warnOnSettingAO(Hub h1) {
-		((HubService) OARuntime.graph(GSMRClient.class).hubs()).getHubAOService().warnOnSettingAO(h1);		
+//		((HubService) OARuntime.graph(GSMRClient.class).hubs()).getHubAOService().warnOnSettingAO(h1);		
 	}
 	
 }

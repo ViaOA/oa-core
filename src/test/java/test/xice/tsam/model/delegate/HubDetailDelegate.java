@@ -1,5 +1,6 @@
 package test.xice.tsam.model.delegate;
 
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.graph.service.HubService;
 import com.viaoa.hub.Hub;
 import com.viaoa.metadata.OALinkInfo;
@@ -21,6 +22,10 @@ public class HubDetailDelegate {
 	}
 	
 	public static boolean getIsFromSameMasterHub(Hub<?> hub1, Hub<?> hub2) {
+/*qqq		
+		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(GSMRClient.class);
+		og.getHubDetailService().getIsFromSameMasterHub(hub1, hub2);		
+*/		
 		return ((HubService) OARuntime.graph(GSMRClient.class).hubs()).getHubDetailService().getIsFromSameMasterHub(hub1, hub2);		
 	}
 

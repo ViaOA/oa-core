@@ -47,9 +47,13 @@ import test.xice.tsam.remote.RemoteModelInterface;
 import test.xice.tsam.util.DataGenerator;
 
 /**
- * Server for Unit Tests - 
- *   ==> Run this manually, Run this manually, Run this manually,  Run this manually !!!! Run this manually, Run this manually <== 
- *   and then run OASyncClientTest multiple times, 
+ * Server for Unit Tests -
+ *  
+ *   ==> Run this manually, Run this manually, Run this manually,  
+ *    Run this manually !!!! Run this manually, Run this manually   <==
+ *   ...
+ *   and then run OASyncClientTest multiple times,
+ *   ... 
  *   and then run it as a junit test.
  */
 public class OASyncServerTest {
@@ -61,7 +65,13 @@ public class OASyncServerTest {
 	public void start() throws Exception {
 		DataGenerator dg = new DataGenerator();
 
-		serverRoot = dg.readSerializeFromFile();
+		serverRoot = new ServerRoot();
+		dg.populate(serverRoot);
+		
+//qqqqqqqqqq need to generate data qqqqqqqqqqqqqqq		
+
+		
+		
 		setupTestB();
 		ModelDelegate.initialize(serverRoot, null);
 		getSyncServer().start();

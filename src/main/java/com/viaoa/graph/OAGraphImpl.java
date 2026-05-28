@@ -1,14 +1,12 @@
 package com.viaoa.graph;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.logging.Logger;
 
 import com.viaoa.filter.OAFilter;
 import com.viaoa.find.OAFinder;
 import com.viaoa.graph.api.ReplOps;
 import com.viaoa.graph.api.SyncOps;
-import com.viaoa.graph.api.TriggerOps;
 import com.viaoa.graph.api.internal.HubsInternalOps;
 import com.viaoa.graph.api.internal.ObjectsInternalOps;
 import com.viaoa.graph.api.internal.ReplInternalOps;

@@ -6,6 +6,9 @@ import org.junit.jupiter.api.*;
 import java.net.Socket;
 
 import com.viaoa.OAUnitTest;
+import com.viaoa.runtime.OARuntime;
+
+import test.xice.tsac.model.oa.Server;
 
 
 /**
@@ -28,19 +31,34 @@ public class SyncTest extends OAUnitTest {
         syncServer = new OASyncServer(port);
         syncServer.start();
         
-        syncClient = new OASyncClient("localhost", port);
+        syncClient = new OASyncClient("localhost", port) {
+
+			@Override
+			protected void createRemoteDataSource() {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			protected void closeRemoteDataSource() {
+				// TODO Auto-generated method stub
+				
+			}
+        	
+        };
+        
         syncClient.start();
 //        ServerRoot serverRoot = (ServerRoot) syncClient.getRemoteServer().getObject(ServerRoot.class, new OAObjectKey(777));
         
 
         // create sample object on server
         try {
-            OAThreadLocalDelegate.setLoading(true);
+            OARuntime.thread().getThreadLocalService().setLoading(true);
             serverTest = new Server();
             serverTest.setId(1);
         }
         finally {
-            OAThreadLocalDelegate.setLoading(false);
+            OARuntime.thread().getThreadLocalService().setLoading(false);
         }
         serverTest.setName("test");
         

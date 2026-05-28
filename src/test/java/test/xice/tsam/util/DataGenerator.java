@@ -80,14 +80,14 @@ public class DataGenerator {
             }
         };
 
-        OAObjectSerializer.bReadId = false;
+        //qqqqqqqq was: OAObjectSerializer.bReadId = false;
         OAObjectSerializer wrap = (OAObjectSerializer) ois.readObject(); 
         serverRoot = (ServerRoot) wrap.getObject();
         String version = (String) ois.readObject();
         
         ois.close();
         fis.close();
-        OAObjectSerializer.bReadId = false;
+        //qqqqqqqq was: OAObjectSerializer.bReadId = false;
 
         return serverRoot;
     }
@@ -340,16 +340,18 @@ public class DataGenerator {
     public void populate(ApplicationVersion obj) {
         // id is auto assigned
         obj.setCurrentVersion(OAString.getRandomString(0, 55));
+        
+        // packageType
+        hub = ModelDelegate.getPackageTypes();
+        x = (int) (Math.random()*hub.getSize());
+        obj.setPackageType((PackageType) hub.getAt(x));
+        
         // application
         // currentPackageVersion
         hub = (Hub) obj.getProperty(OAString.cpp(ApplicationVersion.P_PackageType, PackageType.P_PackageVersions));
         x = (int) (Math.random()*hub.getSize());
         obj.setCurrentPackageVersion((PackageVersion) hub.getAt(x));
         // newPackageVersion
-        // packageType
-        hub = ModelDelegate.getPackageTypes();
-        x = (int) (Math.random()*hub.getSize());
-        obj.setPackageType((PackageType) hub.getAt(x));
     }
     
     public Command createCommand() {

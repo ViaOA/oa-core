@@ -4,6 +4,7 @@ package test.xice.tsam.model.oa;
 import java.util.logging.*;
 import java.sql.*;
 import com.viaoa.object.*;
+import com.viaoa.runtime.OARuntime;
 import com.viaoa.hub.*;
 import com.viaoa.util.*;
 
@@ -20,6 +21,7 @@ import test.xice.tsam.model.oa.Site;
 import test.xice.tsam.model.oa.propertypath.ApplicationGroupPP;
 import com.viaoa.annotation.*;
 import com.viaoa.find.OAFinder;
+import com.viaoa.graph.OAGraph;
  
 @OAClass(
     shortName = "ag",
@@ -193,7 +195,8 @@ public class ApplicationGroup extends OAObject {
     public Hub<Application> getSelectedApplications() {
         if (hubSelectedApplications != null) return hubSelectedApplications;
         hubSelectedApplications = (Hub<Application>) getHub(P_SelectedApplications);
-        boolean b = !isServer();
+        OAGraph og = OARuntime.graph(this);
+        boolean b = !og.sync().isServer();
         if (b) return hubSelectedApplications;  // serverSide calculated hub
         
         // calc the list

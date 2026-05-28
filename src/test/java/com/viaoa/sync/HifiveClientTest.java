@@ -23,7 +23,21 @@ public class HifiveClientTest extends OAUnitTest {
     
     public void test() throws Exception {
         OAObject.setDebugMode(true);
-        syncClient = new OASyncClient("localhost", port);
+        syncClient = new OASyncClient("localhost", port) {
+
+			@Override
+			protected void createRemoteDataSource() {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			protected void closeRemoteDataSource() {
+				// TODO Auto-generated method stub
+				
+			}
+        	
+        };
         
         // **NOTE** need to make sure that HifiveServerTest is running in another jvm
         syncClient.start();

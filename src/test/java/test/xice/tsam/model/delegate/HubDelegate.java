@@ -11,7 +11,7 @@ public class HubDelegate {
 	// TEMP for v4.0 phase 4
 	
 	public static <T extends OAObject> void setObjectClass(Hub<T> thisHub, Class<T> objClass) {
-		((HubService) OARuntime.graph(GSMRClient.class).hubs()).getHubDataService().setObjectClass(thisHub, objClass);		
+//		((HubService) OARuntime.graph(GSMRClient.class).hubs()).getHubDataService().setObjectClass(thisHub, objClass);		
 	}
 
 }
