@@ -4,17 +4,17 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
-class OAStrTest {
+/**
+ * Internal tests for OAStr.
+ */
+public class OAStrTest {
 
     @Test
-    void oastrIsCompatibilitySubclassOfOAString() {
-        assertInstanceOf(OAString.class, new OAStr());
-    }
+    public void inheritanceTest() {
+        // OAStr is a direct subclass of OAString
+        assertTrue(OAString.class.isAssignableFrom(OAStr.class));
 
-    @Test
-    void inheritedStaticHelpersMatchOAStringBehavior() {
-        assertEquals(OAString.trim("  value  "), OAStr.trim("  value  "));
-        assertEquals(OAString.convert("a-b-c", "-", "."), OAStr.convert("a-b-c", "-", "."));
-        assertTrue(OAStr.isEqual("Alpha", "alpha", true));
+        // static methods inherited from OAString remain available through OAStr
+        assertEquals(OAString.trimSpaces(" abc "), OAStr.trimSpaces(" abc "));
     }
 }

@@ -1,15 +1,17 @@
 package com.viaoa.sync;
 
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.config.OAProperties;
+import com.viaoa.datasource.OADataSource;
+import com.viaoa.datasource.clientserver.OADataSourceClient;
 import com.viaoa.datasource.objectcache.OADataSourceObjectCache;
 import com.viaoa.datetime.OATime;
 import com.viaoa.find.OAFinder;
+import com.viaoa.graph.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListenerAdapter;
@@ -17,7 +19,6 @@ import com.viaoa.lang.OAString;
 import com.viaoa.log.OALogUtil;
 import com.viaoa.object.OAObject;
 import com.viaoa.queue.OACircularQueue;
-import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.remote.RemoteBroadcastInterface;
 import com.viaoa.sync.remote.RemoteTestInterface;
@@ -59,22 +60,48 @@ import test.xice.tsam.util.DataGenerator;
 public class OASyncServerTest {
 	private static Logger LOG = Logger.getLogger(OASyncServerTest.class.getName());
 
-	private ServerRoot serverRoot;
+	private OADataSource ds;
+	private OAGraphInternal og;
+	private OADataSourceClient dsClient;
+
 	public OASyncServer syncServer;
+	private ServerRoot serverRoot;
 
-	public void start() throws Exception {
+	private RemoteBroadcastInterface remoteBroadcast;
+
+	private boolean bRunCommand;
+	private final AtomicInteger aiRunCommand = new AtomicInteger();
+	private final Object lock = new Object();
+	
+	public void setup() throws Exception {
+		
+		// for non-DB objects
+		ds = new OADataSourceObjectCache();
+		// ds.setAssignIdOnCreate(true);
+		OARuntime.datasource().register(ds);
+
+		og = (OAGraphInternal) OARuntime.createGraph(Site.class.getPackage().getName());
+		og.sync().createServer(1102);
+		syncServer = og.syncInternal().getServer();
+		setupRemote();
+		
+
 		DataGenerator dg = new DataGenerator();
-
-		serverRoot = new ServerRoot();
+		//was: serverRoot = dg.readSerializeFromFile();
+		serverRoot = dg.createServerRoot();
 		dg.populate(serverRoot);
-		
-//qqqqqqqqqq need to generate data qqqqqqqqqqqqqqq		
+		if (serverRoot.getDefaultSilo() == null) {
+			Silo silo = serverRoot.getSites().getAt(0).getEnvironments().getAt(0).getSilos().getAt(0);
+			serverRoot.setDefaultSilo(silo); 
+		}
 
-		
+		ModelDelegate.initialize(serverRoot, null);
 		
 		setupTestB();
-		ModelDelegate.initialize(serverRoot, null);
-		getSyncServer().start();
+	}
+	
+	public void start() throws Exception {
+		syncServer.start();
 	}
 
 	public void stop() throws Exception {
@@ -83,95 +110,7 @@ public class OASyncServerTest {
 		}
 	}
 
-	public void setupTestB() {
-		serverRoot.getSites().addHubListener(new HubListenerAdapter<Site>() {
-			@Override
-			public void afterPropertyChange(HubEvent<Site> e) {
-				final Site site = e.getObject();
-				if (site == null) {
-					return;
-				}
-				if (!Site.P_Production.equalsIgnoreCase(e.getPropertyName())) {
-					return;
-				}
-
-				if (!site.getProduction()) {
-					return;
-				}
-
-				//was:  OAThreadLocalDelegate.setDefaultSendSyncMessages(true);
-				site.setName("Server running test");
-
-				Thread t = new Thread(new Runnable() {
-					@Override
-					public void run() {
-						System.out.println("TestA start " + ((new OATime()).toString("HH:mm:ss.SSS")));
-						Silo silo = site.getEnvironments().getAt(0).getSilos().getAt(0);
-						Server server = silo.getServers().getAt(0);
-						MRADServer mradServer = silo.getMRADServer();
-						if (mradServer == null) {
-							mradServer = new MRADServer();
-							silo.setMRADServer(mradServer);
-						}
-
-						for (int i = 0; i < 2000; i++) {
-							if ((i + 1) % 250 == 0) {
-								System.out.println((i + 1));
-							}
-
-							site.setAbbrevName("test." + i);
-							server.setName("test." + i);
-
-							MRADServerCommand sc = new MRADServerCommand();
-							for (int j = 0; j < 5; j++) {
-								MRADClientCommand cc = new MRADClientCommand();
-								sc.getMRADClientCommands().add(cc);
-								if (j == 0) {
-									mradServer.getMRADServerCommands().add(sc);
-								}
-							}
-							sc.delete();
-						}
-						site.setProduction(false);
-						System.out.println("TestA done " + ((new OATime()).toString("HH:mm:ss.SSS")));
-					}
-				});
-				t.start();
-			}
-		});
-	}
-
-	public OASyncServer getSyncServer() {
-		if (syncServer != null) {
-			return syncServer;
-		}
-
-		// for non-DB objects
-		OADataSourceObjectCache ds = new OADataSourceObjectCache();
-		// ds.setAssignIdOnCreate(true);
-
-		syncServer = new OASyncServer(1102) {
-			@Override
-			protected void onClientConnect(Socket socket, int connectionId) {
-				super.onClientConnect(socket, connectionId);
-				//OASyncServerTest.this.onClientConnect(socket, connectionId);
-			}
-
-			@Override
-			protected void onClientDisconnect(int connectionId) {
-				super.onClientDisconnect(connectionId);
-				//OASyncServerTest.this.onClientDisconnect(connectionId);
-			}
-
-			int cnt = 0;
-
-			@Override
-			protected void afterInvokeRemoteMethod(RequestInfo ri) {
-				//                super.afterInvokeRemoteMethod(ri);
-				System.out.println((++cnt) + ") " + ri.toLogString());
-			}
-		};
-
+	public void setupRemote() {
 		// setup remote objects
 		RemoteAppInterface remoteApp = new RemoteAppImpl() {
 			@Override
@@ -316,15 +255,67 @@ public class OASyncServerTest {
 																				100);
 		//was, in a separate queue
 		// remoteBroadcast = (RemoteBroadcastInterface) syncServer.createBroadcast(RemoteBroadcastInterface.BindName, remoteBroadcast, RemoteBroadcastInterface.class, "broadcast", 100);
-
-		return syncServer;
 	}
 
-	private RemoteBroadcastInterface remoteBroadcast;
+	public void setupTestB() {
+		serverRoot.getSites().addHubListener(new HubListenerAdapter<Site>() {
+			@Override
+			public void afterPropertyChange(HubEvent<Site> e) {
+				final Site site = e.getObject();
+				if (site == null) {
+					return;
+				}
+				if (!Site.P_Production.equalsIgnoreCase(e.getPropertyName())) {
+					return;
+				}
 
-	private boolean bRunCommand;
-	private final AtomicInteger aiRunCommand = new AtomicInteger();
-	private final Object lock = new Object();
+				if (!site.getProduction()) {
+					return;
+				}
+
+				//was:  OAThreadLocalDelegate.setDefaultSendSyncMessages(true);
+				site.setName("Server running test");
+
+				Thread t = new Thread(new Runnable() {
+					@Override
+					public void run() {
+						System.out.println("TestA start " + ((new OATime()).toString("HH:mm:ss.SSS")));
+						Silo silo = site.getEnvironments().getAt(0).getSilos().getAt(0);
+						Server server = silo.getServers().getAt(0);
+						MRADServer mradServer = silo.getMRADServer();
+						if (mradServer == null) {
+							mradServer = new MRADServer();
+							silo.setMRADServer(mradServer);
+						}
+
+						for (int i = 0; i < 2000; i++) {
+							if ((i + 1) % 250 == 0) {
+								System.out.println((i + 1));
+							}
+
+							site.setAbbrevName("test." + i);
+							server.setName("test." + i);
+
+							MRADServerCommand sc = new MRADServerCommand();
+							for (int j = 0; j < 5; j++) {
+								MRADClientCommand cc = new MRADClientCommand();
+								sc.getMRADClientCommands().add(cc);
+								if (j == 0) {
+									mradServer.getMRADServerCommands().add(sc);
+								}
+							}
+							sc.delete();
+						}
+						site.setProduction(false);
+						System.out.println("TestA done " + ((new OATime()).toString("HH:mm:ss.SSS")));
+					}
+				});
+				t.start();
+			}
+		});
+	}
+	
+	
 
 	protected void runCommand(final MRADServerCommand sc) {
 		synchronized (lock) {
@@ -395,8 +386,9 @@ public class OASyncServerTest {
 
 		OASyncServerTest test = new OASyncServerTest();
 
+		test.setup();
 		test.start();
-
+		
 		int scnt = -1;
 		for (int i = 1;; i++) {
 			int x;

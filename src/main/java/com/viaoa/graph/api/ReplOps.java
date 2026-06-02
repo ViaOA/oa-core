@@ -1,5 +1,7 @@
 package com.viaoa.graph.api;
 
+import com.viaoa.sync.OASyncServer;
+
 /*qqqqqqqqqq
 CODEX
 
@@ -22,7 +24,29 @@ CODEX
 
 public interface ReplOps {
 
+	public void createMaster(String guid, String tLogFileName);
+	public void createClient(String guid, String logFileName, String masterHostName, int masterPort);
 	
+	public boolean isMaster();
+	public boolean isClient();
+
+	public void start() throws Exception;
+	public void stop() throws Exception;
+	
+	
+    public enum Status {
+    	UNKNOWN,
+    	READYTOSTART,
+        STARTING,
+        RUNNING,
+        STOPPING,
+        STOPPED
+    }
+	public Status getStatus(); 
+
+	public String getLogFileName();
+	public String getMasterHostName();
+	public int getMasterPort();
 	
 }
 

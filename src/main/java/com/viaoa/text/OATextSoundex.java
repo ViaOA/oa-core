@@ -32,7 +32,7 @@ import java.util.Locale;
 
 /**
  * Utility for generating U.S. Census Soundex codes to support matching of
- * phonetically similar names (e.g., "Vincent" → "V523").
+ * phonetically similar names (e.g., "Vincent" → "V525").
  *
  * <p>Characteristics:
  * <ul>
@@ -47,7 +47,7 @@ import java.util.Locale;
  *
  * <p>Examples:
  * <pre>{@code
- * soundex("Vincent") → "V523"
+ * soundex("Vincent") → "V525"
  * soundex("Via")     → "V000"
  * soundex(null)      → "0000"
  * }</pre>

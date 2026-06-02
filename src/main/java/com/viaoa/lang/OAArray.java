@@ -888,6 +888,7 @@ public class OAArray {
 		int pos = -1;
 		for (int i = 0; pos < 0 && i < x; i++) {
 			if (searchValue == array[i]) {
+				pos = i;
 				break;
 			}
 		}
@@ -956,6 +957,7 @@ public class OAArray {
 		int pos = -1;
 		for (int i = 0; pos < 0 && i < x; i++) {
 			if (searchValue == array[i]) {
+				pos = i;
 				break;
 			}
 		}

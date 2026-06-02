@@ -19,7 +19,7 @@ import com.viaoa.lang.oa.VNameValue;
 import com.viaoa.lang.oa.VString;
 import com.viaoa.lang.oa.VTime;
 
-class OALangValueTypesTest {
+class OALangValueTypesExtraTest {
 
     @Test
     void stringAndPrimitiveValueTypesRoundTripValues() {

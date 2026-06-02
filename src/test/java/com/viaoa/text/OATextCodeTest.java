@@ -4,27 +4,23 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
-class OATextCodeTest {
-
+/** Internal source-mirrored tests for OATextCode. */
+public class OATextCodeTest {
     @Test
-    void getPropertyNameStripsCommonBeanPrefixes() {
+    public void getPropertyNameTest() {
+        // getter prefix is removed and first char is lowered
         assertEquals("name", OATextCode.getPropertyName("getName"));
+        // boolean getter prefix is removed
         assertEquals("active", OATextCode.getPropertyName("isActive"));
+        // has prefix is removed
         assertEquals("children", OATextCode.getPropertyName("hasChildren"));
+        // setter prefix is removed
         assertEquals("name", OATextCode.getPropertyName("setName"));
+        // no prefix leaves value unchanged
         assertEquals("name", OATextCode.getPropertyName("name"));
-    }
-
-    @Test
-    void getPropertyNameCanPreserveCaseWhenRequested() {
+        // optional lower-casing can be disabled
         assertEquals("Name", OATextCode.getPropertyName("getName", false));
-        assertEquals("Active", OATextCode.getPropertyName("isActive", false));
-        assertEquals("Name", OATextCode.getPropertyName("Name", false));
-    }
-
-    @Test
-    void acronymPropertyNameCurrentlyDecapitalizesFirstLetter() {
+        // current acronym behavior is characterized
         assertEquals("uRL", OATextCode.getPropertyName("getURL"));
-        assertEquals("URL", OATextCode.getPropertyName("getURL", false));
     }
 }

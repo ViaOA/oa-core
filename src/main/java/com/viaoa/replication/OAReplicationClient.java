@@ -678,8 +678,7 @@ public class OAReplicationClient extends OAReplicationBase {
         		throw new RuntimeException("Exception loading TLog file", e);
         	}
     		
-        	boolean bDontSend = (OAStr.equals(guid, tlog.getSource())); 
-			if (!bDontSend) {
+			if (!OAStr.equals(guid, tlog.getSource())) {
 				alTLogToMaster.put(tlog);
 		    	LOG.fine(String.format("%,d) guid=%s, masterSeq=%,d, clientSeq=%,d, methodName=%s", cnt+1, 
 			    		guid, tlog.getMasterSeq(), tlog.getClientSeq(), tlog.getMethodName()));
@@ -701,7 +700,7 @@ public class OAReplicationClient extends OAReplicationBase {
         File file = new File(fn);
     	LOG.fine(String.format("tlogFileName=%s, exists=%b", fn, file.exists()));
         final boolean bAppend = file.exists() && file.length() > 0;
-        fileOutputStream = new FileOutputStream(file, true); // append
+        fileOutputStream = new FileOutputStream(file, bAppend);
         BufferedOutputStream bos = new BufferedOutputStream(fileOutputStream, 64 * 1024);
         objectOutputStream = new ObjectOutputStream(bos) {
         	@Override

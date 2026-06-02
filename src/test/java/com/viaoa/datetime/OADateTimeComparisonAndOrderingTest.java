@@ -41,7 +41,7 @@ class OADateTimeComparisonAndOrderingTest {
         OADate start = new OADate(2026, 4, 27);
         OADate end = new OADate(2026, 4, 28);
 
-        assertFalse(target.between(start, end));
+        assertTrue(target.between(start, end));  
         assertTrue(target.betweenOrEqual(start, end));
         assertFalse(target.betweenNotEqual(start, end));
     }

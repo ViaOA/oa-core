@@ -182,18 +182,6 @@ public class Silo extends OAObject {
     )
     public MRADServer getMRADServer() {
         if (mradServer == null) {
-            //qqqqqqqqq    used to read older model data.bin
-            mradServer = (MRADServer) OAObjectPropertyDelegate.getProperty(getEnvironment(), PROPERTY_MRADServer);
-            if (mradServer != null) {
-                OAObjectPropertyDelegate.setProperty(this, PROPERTY_MRADServer, mradServer);
-                OAObjectPropertyDelegate.setProperty(mradServer, MRADServer.PROPERTY_Silo, this);
-                
-                OAObjectPropertyDelegate.removeProperty(getEnvironment(), PROPERTY_MRADServer, false);
-                OAObjectPropertyDelegate.removeProperty(mradServer, PROPERTY_Environment, false);
-            }
-            else {
-                mradServer = (MRADServer)  getObject(P_MRADServer);
-            }
             mradServer = (MRADServer) getObject(P_MRADServer);
         }
         return mradServer;

@@ -743,7 +743,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		filter = null;
 	}
 
-	public void addFilter(OAFilter filter) {
+	public void addFilter(OAFilter<T> filter) {
 		if (this.filter == null) {
 			this.filter = filter;
 		} else {
@@ -756,11 +756,11 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		bAddAndFilter = bAddOrFilter = false;
 	}
 
-	public OAFilter getFilter() {
+	public OAFilter<T> getFilter() {
 		return this.filter;
 	}
 
-	public void setFilter(OAFilter f) {
+	public void setFilter(OAFilter<T> f) {
 		this.filter = f;
 	}
 

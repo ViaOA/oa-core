@@ -50,7 +50,8 @@ class OATextGenerateSoundexFormatterTest {
     void soundexHandlesCommonExamplesAndNull() {
         assertEquals("0000", OATextSoundex.soundex(null));
         assertEquals("0000", OATextSoundex.soundex(""));
-        assertEquals("V523", OATextSoundex.soundex("Vincent"));
+        String s = OATextSoundex.soundex("Vincent");
+        assertEquals("V525", s); 
         assertEquals("V000", OATextSoundex.soundex("Via"));
     }
 

@@ -335,19 +335,19 @@ CODEX
 import java.io.IOException;
 import java.sql.Time;
 import java.text.DateFormat;
+import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
-import java.util.Vector;
-
-import com.viaoa.concurrent.OAPool;
 
 
 /**
@@ -407,11 +407,6 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	protected TimeZone timeZone;
 	
 	/**
-	 * Flag indicating that time zone should be ignored during serialization.
-	 */
-	protected boolean ignoreTimeZone;
-
-	/**
 	 * Instance-specific output format used when converting to a string.
 	 */
 	protected String format;
@@ -419,26 +414,10 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	/**
 	 * Default time zone used when no instance time zone is specified.
 	 */
-	private static TimeZone defaultTimeZone;
-
-	/**
-	 * Pool of {@link SimpleDateFormat} instances used for formatting and parsing.
-	 */
-	private static SimpleDateFormat[] simpleDateFormats;
-	
-	/**
-	 * Counter used to rotate through the SimpleDateFormat pool.
-	 */
-	private static int simpleDateFormatCounter;
-	
-	static {
-		// used by getFormatter()
-		simpleDateFormats = new SimpleDateFormat[12]; // keeps a pool of 12 that are shared in a "round robin" pool
-	}
+	protected static TimeZone defaultTimeZone;
 
 	// RFC-339 format
-	// Note: the 'Z' is not a timezone, it means that the timezone should be set to
-	// UTC.
+	// Note: the 'Z' is not a timezone, it means that the timezone should be set to UTC.
 	// The calling code should call dt.setTimeZoneUTC()
 
 	/**
@@ -479,7 +458,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	/**
 	 * Collection of global date/time parse formats.
 	 */
-	private static Vector vecDateTimeParseFormat;
+	private static List<String> alDateTimeParseFormat;
 
 	static {
 		setLocale(Locale.getDefault());
@@ -508,46 +487,22 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Pool of GregorianCalendar instances used to reduce allocation overhead.
-	 */
-	private static final OAPool<GregorianCalendar> poolGregorianCalendar = new OAPool<GregorianCalendar>(GregorianCalendar.class, 20, 50) {
-		@Override
-		protected GregorianCalendar create() {
-			GregorianCalendar cal = new GregorianCalendar();
-			return cal;
-		}
-
-		@Override
-		protected void removed(GregorianCalendar resource) {
-		}
-	};
-
-	/**
 	 * Obtains a GregorianCalendar from the pool, initializes it with the current
 	 * time value, and applies the appropriate time zone.
 	 *
 	 * @return a pooled and initialized GregorianCalendar instance
 	 */
 	protected GregorianCalendar _getCal() {
-		GregorianCalendar cal = poolGregorianCalendar.get();
-		cal.setTimeInMillis(_time);
+		GregorianCalendar cal = new GregorianCalendar();
+	    
+	    TimeZone tz = (timeZone != null) ? timeZone : defaultTimeZone;
+	    cal.setTimeZone(tz);
+	    cal.setLenient(false);
+	    cal.setTimeInMillis(_time);
 
-		TimeZone tz = timeZone != null ? timeZone : defaultTimeZone;
-		if (cal.getTimeZone() != tz) {
-			cal.setTimeZone(tz);
-		}
-		return cal;
+	    return cal;
 	}
-
-	/**
-	 * Releases a previously obtained GregorianCalendar back to the pool.
-	 *
-	 * @param cal the GregorianCalendar to release
-	 */
-	protected void _releaseCal(GregorianCalendar cal) {
-		poolGregorianCalendar.release(cal);
-	}
-
+	
 	/**
 	 * Locale used for date/time formatting and parsing.
 	 */
@@ -561,7 +516,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 */
 	public static void setLocale(Locale loc) {
 		locale = loc;
-		vecDateTimeParseFormat = new Vector(15, 10);
+		alDateTimeParseFormat = new ArrayList<>();
 		String s = getFormat(DateFormat.SHORT, locale);
 		boolean bMonthFirst = true;
 		boolean bYearFirst = false;
@@ -578,72 +533,72 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			staticOutputFormat = "MM/dd/yyyy hh:mma";
 			// the "yy" formats must be before the "yyyy" formats because "yyyy" will
 			// convert "05/04/65" -> "05/04/0065"
-			vecDateTimeParseFormat.addElement("MM/dd/yy hh:mm:ss.Sa");
-			vecDateTimeParseFormat.addElement("MM/dd/yy hh:mm:ssa");
-			vecDateTimeParseFormat.addElement("MM/dd/yy hh:mma");
+			alDateTimeParseFormat.add("MM/dd/yy hh:mm:ss.Sa");
+			alDateTimeParseFormat.add("MM/dd/yy hh:mm:ssa");
+			alDateTimeParseFormat.add("MM/dd/yy hh:mma");
 
-			vecDateTimeParseFormat.addElement("MM/dd/yy hh:mm:ss.S a");
-			vecDateTimeParseFormat.addElement("MM/dd/yy hh:mm:ss a");
-			vecDateTimeParseFormat.addElement("MM/dd/yy hh:mm a");
+			alDateTimeParseFormat.add("MM/dd/yy hh:mm:ss.S a");
+			alDateTimeParseFormat.add("MM/dd/yy hh:mm:ss a");
+			alDateTimeParseFormat.add("MM/dd/yy hh:mm a");
 
-			vecDateTimeParseFormat.addElement("MM/dd/yy HH:mm:ss.S");
-			vecDateTimeParseFormat.addElement("MM/dd/yy HH:mm:ss");
-			vecDateTimeParseFormat.addElement("MM/dd/yy HH:mm");
+			alDateTimeParseFormat.add("MM/dd/yy HH:mm:ss.S");
+			alDateTimeParseFormat.add("MM/dd/yy HH:mm:ss");
+			alDateTimeParseFormat.add("MM/dd/yy HH:mm");
 
-			vecDateTimeParseFormat.addElement("MM/dd/yyyy hh:mm:ss.Sa");
-			vecDateTimeParseFormat.addElement("MM/dd/yyyy hh:mm:ssa");
-			vecDateTimeParseFormat.addElement("MM/dd/yyyy hh:mma");
+			alDateTimeParseFormat.add("MM/dd/yyyy hh:mm:ss.Sa");
+			alDateTimeParseFormat.add("MM/dd/yyyy hh:mm:ssa");
+			alDateTimeParseFormat.add("MM/dd/yyyy hh:mma");
 
-			vecDateTimeParseFormat.addElement("MM/dd/yyyy HH:mm:ss.S");
-			vecDateTimeParseFormat.addElement("MM/dd/yyyy HH:mm:ss");
-			vecDateTimeParseFormat.addElement("MM/dd/yyyy HH:mm");
+			alDateTimeParseFormat.add("MM/dd/yyyy HH:mm:ss.S");
+			alDateTimeParseFormat.add("MM/dd/yyyy HH:mm:ss");
+			alDateTimeParseFormat.add("MM/dd/yyyy HH:mm");
 		} else if (bYearFirst) {
 			staticOutputFormat = "yyyy/MM/dd hh:mma";
 			// the "yy" formats must be before the "yyyy" formats because "yyyy" will
 			// convert "05/04/65" -> "05/04/0065"
-			vecDateTimeParseFormat.addElement("yy/MM/dd hh:mm:ss.Sa");
-			vecDateTimeParseFormat.addElement("yy/MM/dd hh:mm:ssa");
-			vecDateTimeParseFormat.addElement("yy/MM/dd hh:mma");
+			alDateTimeParseFormat.add("yy/MM/dd hh:mm:ss.Sa");
+			alDateTimeParseFormat.add("yy/MM/dd hh:mm:ssa");
+			alDateTimeParseFormat.add("yy/MM/dd hh:mma");
 
-			vecDateTimeParseFormat.addElement("yy/MM/dd HH:mm:ss.S");
-			vecDateTimeParseFormat.addElement("yy/MM/dd HH:mm:ss");
-			vecDateTimeParseFormat.addElement("yy/MM/dd HH:mm");
+			alDateTimeParseFormat.add("yy/MM/dd HH:mm:ss.S");
+			alDateTimeParseFormat.add("yy/MM/dd HH:mm:ss");
+			alDateTimeParseFormat.add("yy/MM/dd HH:mm");
 
-			vecDateTimeParseFormat.addElement("yyyy/MM/dd hh:mm:ss.Sa");
-			vecDateTimeParseFormat.addElement("yyyy/MM/dd hh:mm:ssa");
-			vecDateTimeParseFormat.addElement("yyyy/MM/dd hh:mma");
+			alDateTimeParseFormat.add("yyyy/MM/dd hh:mm:ss.Sa");
+			alDateTimeParseFormat.add("yyyy/MM/dd hh:mm:ssa");
+			alDateTimeParseFormat.add("yyyy/MM/dd hh:mma");
 
-			vecDateTimeParseFormat.addElement("yyyy/MM/dd HH:mm:ss.S");
-			vecDateTimeParseFormat.addElement("yyyy/MM/dd HH:mm:ss");
-			vecDateTimeParseFormat.addElement("yyyy/MM/dd HH:mm");
+			alDateTimeParseFormat.add("yyyy/MM/dd HH:mm:ss.S");
+			alDateTimeParseFormat.add("yyyy/MM/dd HH:mm:ss");
+			alDateTimeParseFormat.add("yyyy/MM/dd HH:mm");
 		} else { // day first
 			staticOutputFormat = "dd/MM/yyyy hh:mma";
 			// the "yy" formats must be before the "yyyy" formats because "yyyy" will
 			// convert "05/04/65" -> "05/04/0065"
-			vecDateTimeParseFormat.addElement("dd/MM/yy hh:mm:ss.Sa");
-			vecDateTimeParseFormat.addElement("dd/MM/yy hh:mm:ssa");
-			vecDateTimeParseFormat.addElement("dd/MM/yy hh:mma");
+			alDateTimeParseFormat.add("dd/MM/yy hh:mm:ss.Sa");
+			alDateTimeParseFormat.add("dd/MM/yy hh:mm:ssa");
+			alDateTimeParseFormat.add("dd/MM/yy hh:mma");
 
-			vecDateTimeParseFormat.addElement("dd/MM/yy HH:mm:ss.S");
-			vecDateTimeParseFormat.addElement("dd/MM/yy HH:mm:ss");
-			vecDateTimeParseFormat.addElement("dd/MM/yy HH:mm");
+			alDateTimeParseFormat.add("dd/MM/yy HH:mm:ss.S");
+			alDateTimeParseFormat.add("dd/MM/yy HH:mm:ss");
+			alDateTimeParseFormat.add("dd/MM/yy HH:mm");
 
-			vecDateTimeParseFormat.addElement("dd/MM/yyyy hh:mm:ss.Sa");
-			vecDateTimeParseFormat.addElement("dd/MM/yyyy hh:mm:ssa");
-			vecDateTimeParseFormat.addElement("dd/MM/yyyy hh:mma");
+			alDateTimeParseFormat.add("dd/MM/yyyy hh:mm:ss.Sa");
+			alDateTimeParseFormat.add("dd/MM/yyyy hh:mm:ssa");
+			alDateTimeParseFormat.add("dd/MM/yyyy hh:mma");
 
-			vecDateTimeParseFormat.addElement("dd/MM/yyyy HH:mm:ss.S");
-			vecDateTimeParseFormat.addElement("dd/MM/yyyy HH:mm:ss");
-			vecDateTimeParseFormat.addElement("dd/MM/yyyy HH:mm");
+			alDateTimeParseFormat.add("dd/MM/yyyy HH:mm:ss.S");
+			alDateTimeParseFormat.add("dd/MM/yyyy HH:mm:ss");
+			alDateTimeParseFormat.add("dd/MM/yyyy HH:mm");
 		}
 		// SQL date formats
-		vecDateTimeParseFormat.addElement("yyyy-MM-dd HH:mm:ss");
-		vecDateTimeParseFormat.addElement("yyyy-MM-dd");
+		alDateTimeParseFormat.add("yyyy-MM-dd HH:mm:ss");
+		alDateTimeParseFormat.add("yyyy-MM-dd");
 
-		vecDateTimeParseFormat.addElement(getFormat(DateFormat.SHORT));
-		vecDateTimeParseFormat.addElement(getFormat(DateFormat.MEDIUM));
-		vecDateTimeParseFormat.addElement(getFormat(DateFormat.LONG));
-		vecDateTimeParseFormat.addElement(getFormat(DateFormat.DEFAULT));
+		alDateTimeParseFormat.add(getFormat(DateFormat.SHORT));
+		alDateTimeParseFormat.add(getFormat(DateFormat.MEDIUM));
+		alDateTimeParseFormat.add(getFormat(DateFormat.LONG));
+		alDateTimeParseFormat.add(getFormat(DateFormat.DEFAULT));
 	}
 
 	/**
@@ -885,38 +840,24 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @throws IOException if an I/O error occurs
 	 */
 	private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
-		// 20240805
-		if (timeZone != null && timeZone != defaultTimeZone) {
-			stream.writeInt(9990); // version
-			stream.writeUTF(timeZone.getID());
-		}
-
 		if (this instanceof OADate) {
 			GregorianCalendar cal = _getCal();
-			try {
-				stream.writeInt(9997); // version
-				stream.writeInt(cal.get(Calendar.YEAR));
-				stream.writeInt(cal.get(Calendar.MONTH));
-				stream.writeInt(cal.get(Calendar.DATE));
-			} finally {
-				_releaseCal(cal);
-			}
+			stream.writeInt(1);
+			stream.writeInt(cal.get(Calendar.YEAR));
+			stream.writeInt(cal.get(Calendar.MONTH));
+			stream.writeInt(cal.get(Calendar.DATE));
 		} else if (this instanceof OATime) {
 			GregorianCalendar cal = _getCal();
-			try {
-				stream.writeInt(9998); // version
-				stream.writeInt(cal.get(Calendar.HOUR_OF_DAY));
-				stream.writeInt(cal.get(Calendar.MINUTE));
-				stream.writeInt(cal.get(Calendar.SECOND));
-				stream.writeInt(cal.get(Calendar.MILLISECOND));
-			} finally {
-				_releaseCal(cal);
-			}
-
-		} else if (ignoreTimeZone) {
-			GregorianCalendar cal = _getCal();
-			try {
-				stream.writeInt(9995); // version
+			stream.writeInt(2);
+			stream.writeInt(cal.get(Calendar.HOUR_OF_DAY));
+			stream.writeInt(cal.get(Calendar.MINUTE));
+			stream.writeInt(cal.get(Calendar.SECOND));
+			stream.writeInt(cal.get(Calendar.MILLISECOND));
+		} else {
+			if (this.timeZone != null) {
+				stream.writeInt(3);
+				stream.writeUTF(this.timeZone.getID());
+				GregorianCalendar cal = _getCal();
 				stream.writeInt(cal.get(Calendar.YEAR));
 				stream.writeInt(cal.get(Calendar.MONTH));
 				stream.writeInt(cal.get(Calendar.DATE));
@@ -924,93 +865,75 @@ public class OADateTime implements java.io.Serializable, Comparable {
 				stream.writeInt(cal.get(Calendar.MINUTE));
 				stream.writeInt(cal.get(Calendar.SECOND));
 				stream.writeInt(cal.get(Calendar.MILLISECOND));
-			} finally {
-				_releaseCal(cal);
+			} else {
+				stream.writeInt(4); 
+				stream.writeLong(_time);
 			}
-		} else {
-			stream.writeInt(9999); // version
-			stream.writeLong(_time);
 		}
 	}
 
-	/**
-	 * Custom deserialization logic for reading this object from an ObjectInputStream.
-	 * Restores the internal time value and optional time zone based on version data.
-	 *
-	 * @param in the ObjectInputStream to read from
-	 * @throws IOException if an I/O error occurs
-	 * @throws ClassNotFoundException if a class cannot be resolved
-	 */
 	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-		int x = in.readInt();
-		String tzId = null;
-		if (x == 9990) {
-			tzId = in.readUTF();
-			x = in.readInt();
-		}
+		final int x = in.readInt();
 
-		if (x == 9997) {
-			int year = in.readInt();
-			int month = in.readInt();
-			int day = in.readInt();
-			Date d = new Date(year - 1900, month, day);
-			this._time = d.getTime();
-		} else if (x == 9998) {
-			int hour = in.readInt();
-			int minute = in.readInt();
-			int second = in.readInt();
-			int milisecond = in.readInt();
-			Date d = new Date(70, 0, 1, hour, minute, second);
-			this._time = d.getTime();
-			this._time += milisecond;
-		} else if (x == 9999) {
+		this.timeZone = null;
+		int year = 0; 			
+		int month = 0;
+		int day = 0;
+		int hour24 = 0;
+		int minute = 0;
+		int second = 0;
+		int milisecond = 0;
+		this._time = 0L;
+		
+		if (x == 1) {
+			year = in.readInt();
+			month = in.readInt();
+			day = in.readInt();
+		} else if (x == 2) {
+			year = 1970;
+			month = Calendar.JANUARY;
+			day = 1;
+			hour24 = in.readInt();
+			minute = in.readInt();
+			second = in.readInt();
+			milisecond = in.readInt();
+		} else if (x == 3) {
+			String tzId = in.readUTF();
+			this.timeZone = OATimeZone.getTimeZoneById(tzId);
+			
+			year = in.readInt();
+			month = in.readInt();
+			day = in.readInt();
+			hour24 = in.readInt();
+			minute = in.readInt();
+			second = in.readInt();
+			milisecond = in.readInt();
+		} else if (x == 4) {
 			_time = in.readLong();
-		} else if (x == 9995) {
-			int year = in.readInt();
-			int month = in.readInt();
-			int day = in.readInt();
-			int hour = in.readInt();
-			int minute = in.readInt();
-			int second = in.readInt();
-			int milisecond = in.readInt();
-			Date d = new Date(year - 1900, month, day, hour, minute, second);
-			this._time = d.getTime();
-			this._time += milisecond;
-			this.ignoreTimeZone = true;
-		} else { // real old format
-			int year = x;
-			int month = in.readInt();
-			int day = in.readInt();
-			int hour = in.readInt();
-			int minute = in.readInt();
-			int second = in.readInt();
-			int milisecond = in.readInt();
-			Date d = new Date(year - 1900, month, day, hour, minute, second);
-			this._time = d.getTime();
-			this._time += milisecond;
+			return; 
 		}
-
-		if (tzId != null) {
-			TimeZone tz = OATimeZone.getTimeZoneById(tzId);
-			this.timeZone = tz;
+		else {
+		    throw new IOException("Unknown OADateTime serialized type: " + x);
 		}
-
+		
+		TimeZone tz = (this.timeZone != null) ? this.timeZone : defaultTimeZone;
+		GregorianCalendar calNew = new GregorianCalendar(tz);
+		calNew.clear();
+		calNew.setLenient(false);
+		calNew.set(year, month, day, hour24, minute, second);
+		calNew.set(Calendar.MILLISECOND, milisecond);
+		this._time = calNew.getTimeInMillis();		
 	}
-
+	
 	/**
 	 * Returns the value of the specified calendar field.
 	 *
 	 * @param fld the Calendar field constant
 	 * @return the field value
 	 */
-	private int getField(int fld) {
-		int x;
+	public int getField(int fld) {
 		GregorianCalendar c = _getCal();
-		try {
-			x = c.get(fld);
-		} finally {
-			_releaseCal(c);
-		}
+		int x = c.get(fld);
 		return x;
 	}
 
@@ -1020,13 +943,8 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return a cloned Calendar representing this date/time
 	 */
 	public Calendar getCalendar() {
-		Calendar cNew;
 		GregorianCalendar c = _getCal();
-		try {
-			cNew = (Calendar) c.clone();
-		} finally {
-			poolGregorianCalendar.release(c);
-		}
+		Calendar cNew = (Calendar) c.clone();
 		return cNew;
 	}
 
@@ -1169,15 +1087,11 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			return;
 		}
 		GregorianCalendar c = _getCal();
-		try {
-			c.set(c.HOUR_OF_DAY, 0);
-			c.set(c.MINUTE, 0);
-			c.set(c.SECOND, 0);
-			c.set(c.MILLISECOND, 0);
-			_time = c.getTimeInMillis();
-		} finally {
-			_releaseCal(c);
-		}
+		c.set(c.HOUR_OF_DAY, 0);
+		c.set(c.MINUTE, 0);
+		c.set(c.SECOND, 0);
+		c.set(c.MILLISECOND, 0);
+		_time = c.getTimeInMillis();
 	}
 
 	/**
@@ -1195,21 +1109,17 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			return;
 		}
 		GregorianCalendar c = _getCal();
-		try {
-			c.set(c.YEAR, 1970);
-			c.set(c.MONTH, c.JANUARY);
-			c.set(c.DATE, 1);
+		c.set(c.YEAR, 1970);
+		c.set(c.MONTH, c.JANUARY);
+		c.set(c.DATE, 1);
 
-			// these are added to make sure timezone is calculated correctly
-			c.set(c.HOUR_OF_DAY, get24Hour());
-			c.set(c.MINUTE, getMinute());
-			c.set(c.SECOND, getSecond());
-			c.set(c.MILLISECOND, getMilliSecond());
+		// these are added to make sure timezone is calculated correctly
+		c.set(c.HOUR_OF_DAY, get24Hour());
+		c.set(c.MINUTE, getMinute());
+		c.set(c.SECOND, getSecond());
+		c.set(c.MILLISECOND, getMilliSecond());
 
-			_time = c.getTimeInMillis();
-		} finally {
-			_releaseCal(c);
-		}
+		_time = c.getTimeInMillis();
 	}
 
 	/**
@@ -1249,15 +1159,11 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			return;
 		}
 		GregorianCalendar c = _getCal();
-		try {
-			c.set(c.HOUR_OF_DAY, hr);
-			c.set(c.MINUTE, m);
-			c.set(c.SECOND, s);
-			c.set(c.MILLISECOND, ms);
-			_time = c.getTimeInMillis();
-		} finally {
-			_releaseCal(c);
-		}
+		c.set(c.HOUR_OF_DAY, hr);
+		c.set(c.MINUTE, m);
+		c.set(c.SECOND, s);
+		c.set(c.MILLISECOND, ms);
+		_time = c.getTimeInMillis();
 	}
 
 	/**
@@ -1276,15 +1182,11 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			return;
 		}
 		GregorianCalendar c = _getCal();
-		try {
-			c.set(c.HOUR_OF_DAY, t.get24Hour());
-			c.set(c.MINUTE, t.getMinute());
-			c.set(c.SECOND, t.getSecond());
-			c.set(c.MILLISECOND, t.getMilliSecond());
-			_time = c.getTimeInMillis();
-		} finally {
-			_releaseCal(c);
-		}
+		c.set(c.HOUR_OF_DAY, t.get24Hour());
+		c.set(c.MINUTE, t.getMinute());
+		c.set(c.SECOND, t.getSecond());
+		c.set(c.MILLISECOND, t.getMilliSecond());
+		_time = c.getTimeInMillis();
 	}
 
 	/**
@@ -1306,14 +1208,10 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			return;
 		}
 		GregorianCalendar c = _getCal();
-		try {
-			c.set(c.YEAR, yr);
-			c.set(c.MONTH, m);
-			c.set(c.DATE, d);
-			_time = c.getTimeInMillis();
-		} finally {
-			_releaseCal(c);
-		}
+		c.set(c.YEAR, yr);
+		c.set(c.MONTH, m);
+		c.set(c.DATE, d);
+		_time = c.getTimeInMillis();
 	}
 
 	/**
@@ -1341,12 +1239,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			return d.getYear() + 1900;
 		}
 		GregorianCalendar c = _getCal();
-		int yr;
-		try {
-			yr = c.get(c.YEAR);
-		} finally {
-			_releaseCal(c);
-		}
+		int yr = c.get(c.YEAR);
 		return yr;
 	}
 
@@ -1367,12 +1260,8 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			return;
 		}
 		GregorianCalendar c = _getCal();
-		try {
-			c.set(c.YEAR, y);
-			_time = c.getTimeInMillis();
-		} finally {
-			_releaseCal(c);
-		}
+		c.set(c.YEAR, y);
+		_time = c.getTimeInMillis();
 	}
 
 	/**
@@ -1386,12 +1275,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			return d.getMonth();
 		}
 		GregorianCalendar c = _getCal();
-		int m;
-		try {
-			m = c.get(c.MONTH);
-		} finally {
-			_releaseCal(c);
-		}
+		int m = c.get(c.MONTH);
 		return m;
 	}
 
@@ -1423,12 +1307,8 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			return;
 		}
 		GregorianCalendar c = _getCal();
-		try {
-			c.set(c.MONTH, month);
-			_time = c.getTimeInMillis();
-		} finally {
-			_releaseCal(c);
-		}
+		c.set(c.MONTH, month);
+		_time = c.getTimeInMillis();
 	}
 
 	/**
@@ -1442,12 +1322,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			return d.getDate();
 		}
 		GregorianCalendar c = _getCal();
-		int d;
-		try {
-			d = c.get(c.DATE);
-		} finally {
-			_releaseCal(c);
-		}
+		int d = c.get(c.DATE);
 		return d;
 	}
 
@@ -1468,12 +1343,8 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			return;
 		}
 		GregorianCalendar c = _getCal();
-		try {
-			c.set(c.DAY_OF_MONTH, d);
-			_time = c.getTimeInMillis();
-		} finally {
-			_releaseCal(c);
-		}
+		c.set(c.DAY_OF_MONTH, d);
+		_time = c.getTimeInMillis();
 	}
 
 	/**
@@ -1492,38 +1363,44 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		setTimeZone(tz.timeZone);
 	}
 
+	
+	
 	/**
 	 * Sets the time zone for this date/time while keeping the same date and time
 	 * field values, adjusting the underlying time value accordingly.
 	 *
-	 * @param tz the TimeZone to set
+     * Important Note:  changes _time so that the current Y/M/D/H/M/S/MS fields remain the same under the new timezone.
+	 *
+	 * @param tzNew the TimeZone to set
 	 */
-	public void setTimeZone(TimeZone tz) {
-		if (tz == timeZone) {
+	public void setTimeZone(TimeZone tzNew) {
+		if (tzNew == timeZone) {
 			return;
 		}
-		if (timeZone == null && tz == defaultTimeZone) {
-			return;
-		}
-
-		long ms = getMilliSecond();
-
+		
 		// need to create a new cal, otherwise setting tz will adjust the other values
 		// (use convertTo(tz) instead)
-		GregorianCalendar calNew = new GregorianCalendar(tz);
+		GregorianCalendar calNew = new GregorianCalendar(tzNew != null ? tzNew : defaultTimeZone);
+		calNew.clear();
+		calNew.setLenient(false);
 
 		GregorianCalendar c = _getCal();
-		try {
-			calNew.set(c.get(c.YEAR), c.get(c.MONTH), c.get(c.DAY_OF_MONTH), c.get(c.HOUR_OF_DAY), c.get(c.MINUTE), c.get(c.SECOND));
-			calNew.set(Calendar.MILLISECOND, c.get(c.MILLISECOND));
-		} finally {
-			_releaseCal(c);
-		}
+		int y = c.get(c.YEAR); 			
+		int month = c.get(c.MONTH);
+		int d = c.get(c.DAY_OF_MONTH);
+		int h24 = c.get(c.HOUR_OF_DAY);
+		int minute = c.get(c.MINUTE);
+		int sec = c.get(c.SECOND);
+		int ms = c.get(c.MILLISECOND);
+
+		calNew.set(y, month, d, h24, minute, sec);
+		calNew.set(Calendar.MILLISECOND, ms);
 
 		this._time = calNew.getTimeInMillis();
-		this.timeZone = tz;
+		this.timeZone = tzNew;
 	}
 
+	
 	/**
 	 * Returns the time zone associated with this date/time.
 	 *
@@ -1545,12 +1422,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			return hr;
 		}
 		GregorianCalendar c = _getCal();
-		int hr;
-		try {
-			hr = c.get(c.HOUR_OF_DAY); // 24 hr
-		} finally {
-			_releaseCal(c);
-		}
+		int hr = c.get(c.HOUR_OF_DAY); // 24 hr
 		return hr;
 	}
 
@@ -1571,12 +1443,8 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			return;
 		}
 		GregorianCalendar c = _getCal();
-		try {
-			c.set(c.HOUR_OF_DAY, hr);
-			_time = c.getTimeInMillis();
-		} finally {
-			_releaseCal(c);
-		}
+		c.set(c.HOUR_OF_DAY, hr);
+		_time = c.getTimeInMillis();
 	}
 
 	/**
@@ -1594,12 +1462,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			return hr;
 		}
 		GregorianCalendar c = _getCal();
-		int hr;
-		try {
-			hr = c.get(c.HOUR); // 12 hr format
-		} finally {
-			_releaseCal(c);
-		}
+		int hr = c.get(c.HOUR); // 12 hr format
 		return hr;
 	}
 
@@ -1652,6 +1515,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 *
 	 * @param ap Calendar.AM or Calendar.PM
 	 */
+	@Deprecated
 	public void setAM_PM(int ap) {
 		int hr = getHour();
 
@@ -1765,12 +1629,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 */
 	public int getDayOfWeek() {
 		GregorianCalendar c = _getCal();
-		int x;
-		try {
-			x = c.get(Calendar.DAY_OF_WEEK);
-		} finally {
-			poolGregorianCalendar.release(c);
-		}
+		int x = c.get(Calendar.DAY_OF_WEEK);
 		return x;
 	}
 
@@ -1781,12 +1640,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 */
 	public int getDayOfYear() {
 		GregorianCalendar c = _getCal();
-		int x;
-		try {
-			x = c.get(Calendar.DAY_OF_YEAR);
-		} finally {
-			poolGregorianCalendar.release(c);
-		}
+		int x = c.get(Calendar.DAY_OF_YEAR);
 		return x;
 	}
 
@@ -1797,12 +1651,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 */
 	public int getWeekOfMonth() {
 		GregorianCalendar c = _getCal();
-		int x;
-		try {
-			x = c.get(Calendar.WEEK_OF_MONTH);
-		} finally {
-			poolGregorianCalendar.release(c);
-		}
+		int x = c.get(Calendar.WEEK_OF_MONTH);
 		return x;
 	}
 
@@ -1813,12 +1662,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 */
 	public int getWeekOfYear() {
 		GregorianCalendar c = _getCal();
-		int x;
-		try {
-			x = c.get(Calendar.WEEK_OF_YEAR);
-		} finally {
-			poolGregorianCalendar.release(c);
-		}
+		int x = c.get(Calendar.WEEK_OF_YEAR);
 		return x;
 	}
 
@@ -1829,12 +1673,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 */
 	public int getDaysInMonth() {
 		GregorianCalendar c = _getCal();
-		int x;
-		try {
-			x = c.getActualMaximum(Calendar.DAY_OF_MONTH);
-		} finally {
-			poolGregorianCalendar.release(c);
-		}
+		int x = c.getActualMaximum(Calendar.DAY_OF_MONTH);
 		return x;
 	}
 
@@ -2017,6 +1856,8 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	/**
 	 * Converts this date/time to the specified time zone.
 	 *
+     * Important Note: _time does not change,  Y/M/D/H/M/S/MS will be different. 
+     * 
 	 * @param tz the TimeZone to convert to
 	 * @return a new OADateTime converted to the specified time zone
 	 */
@@ -2031,18 +1872,13 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 
 		GregorianCalendar c = dt._getCal();
-		try {
-			c.setTimeZone(tz);
-			dt = new OADateTime(c);
-			if (this instanceof OADate) {
-				dt = new OADate(dt);
-			} else if (this instanceof OATime) {
-				dt = new OATime(dt);
-			}
-		} finally {
-			poolGregorianCalendar.release(c);
+		c.setTimeZone(tz);
+		dt = new OADateTime(c);
+		if (this instanceof OADate) {
+			dt = new OADate(dt);
+		} else if (this instanceof OATime) {
+			dt = new OATime(dt);
 		}
-
 		return dt;
 	}
 
@@ -2067,14 +1903,10 @@ public class OADateTime implements java.io.Serializable, Comparable {
 				dt.setTimeZone(tz);
 			} else {
 				GregorianCalendar c = dt._getCal();
-				try {
-					c.setTimeZone(tz.timeZone);
-					dt = new OADateTime(c);
-					if (this instanceof OATime) {
-						dt = new OATime(dt);
-					}
-				} finally {
-					poolGregorianCalendar.release(c);
+				c.setTimeZone(tz.timeZone);
+				dt = new OADateTime(c);
+				if (this instanceof OATime) {
+					dt = new OATime(dt);
 				}
 			}
 		}
@@ -2097,27 +1929,19 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return a new OADateTime instance
 	 */
 	public OADateTime addDays(int amount) {
-		if (amount == 0) {
-			return this;
-		}
 		if (this instanceof OATime) {
 			return new OATime(this);
 		}
 
 		OADateTime dtNew;
 		final GregorianCalendar c = _getCal();
-		try {
-			c.add(Calendar.DATE, amount);
+		c.add(Calendar.DATE, amount);
 
-			if (this instanceof OADate) {
-				dtNew = new OADate(c);
-			} else {
-				dtNew = new OADateTime(c);
-			}
-		} finally {
-			poolGregorianCalendar.release(c);
+		if (this instanceof OADate) {
+			dtNew = new OADate(c);
+		} else {
+			dtNew = new OADateTime(c);
 		}
-
 		return dtNew;
 	}
 
@@ -2200,18 +2024,13 @@ public class OADateTime implements java.io.Serializable, Comparable {
 
 		OADateTime dtNew;
 		GregorianCalendar c = _getCal();
-		try {
-			c.add(Calendar.MONTH, amount);
+		c.add(Calendar.MONTH, amount);
 
-			if (this instanceof OADate) {
-				dtNew = new OADate(c);
-			} else {
-				dtNew = new OADateTime(c);
-			}
-		} finally {
-			poolGregorianCalendar.release(c);
+		if (this instanceof OADate) {
+			dtNew = new OADate(c);
+		} else {
+			dtNew = new OADateTime(c);
 		}
-
 		return dtNew;
 	}
 
@@ -2247,18 +2066,13 @@ public class OADateTime implements java.io.Serializable, Comparable {
 
 		OADateTime dtNew;
 		GregorianCalendar c = _getCal();
-		try {
-			c.add(Calendar.YEAR, amount);
+		c.add(Calendar.YEAR, amount);
 
-			if (this instanceof OADate) {
-				dtNew = new OADate(c);
-			} else {
-				dtNew = new OADateTime(c);
-			}
-		} finally {
-			poolGregorianCalendar.release(c);
+		if (this instanceof OADate) {
+			dtNew = new OADate(c);
+		} else {
+			dtNew = new OADateTime(c);
 		}
-
 		return dtNew;
 	}
 
@@ -2290,18 +2104,14 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	public OADateTime addHours(int amount) {
 		OADateTime dtNew;
 		GregorianCalendar c = _getCal();
-		try {
-			c.add(Calendar.HOUR_OF_DAY, amount);
+		c.add(Calendar.HOUR_OF_DAY, amount);
 
-			if (this instanceof OATime) {
-				dtNew = new OATime(c);
-			} else if (this instanceof OADate) {
-				dtNew = new OADate(c);
-			} else {
-				dtNew = new OADateTime(c);
-			}
-		} finally {
-			poolGregorianCalendar.release(c);
+		if (this instanceof OATime) {
+			dtNew = new OATime(c);
+		} else if (this instanceof OADate) {
+			dtNew = new OADate(c);
+		} else {
+			dtNew = new OADateTime(c);
 		}
 		return dtNew;
 	}
@@ -2334,18 +2144,14 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	public OADateTime addMinutes(int amount) {
 		OADateTime dtNew;
 		GregorianCalendar c = _getCal();
-		try {
-			c.add(Calendar.MINUTE, amount);
+		c.add(Calendar.MINUTE, amount);
 
-			if (this instanceof OATime) {
-				dtNew = new OATime(c);
-			} else if (this instanceof OADate) {
-				dtNew = new OADate(c);
-			} else {
-				dtNew = new OADateTime(c);
-			}
-		} finally {
-			poolGregorianCalendar.release(c);
+		if (this instanceof OATime) {
+			dtNew = new OATime(c);
+		} else if (this instanceof OADate) {
+			dtNew = new OADate(c);
+		} else {
+			dtNew = new OADateTime(c);
 		}
 		return dtNew;
 	}
@@ -2378,18 +2184,14 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	public OADateTime addSeconds(int amount) {
 		OADateTime dtNew;
 		GregorianCalendar c = _getCal();
-		try {
-			c.add(Calendar.SECOND, amount);
+		c.add(Calendar.SECOND, amount);
 
-			if (this instanceof OATime) {
-				dtNew = new OATime(c);
-			} else if (this instanceof OADate) {
-				dtNew = new OADate(c);
-			} else {
-				dtNew = new OADateTime(c);
-			}
-		} finally {
-			poolGregorianCalendar.release(c);
+		if (this instanceof OATime) {
+			dtNew = new OATime(c);
+		} else if (this instanceof OADate) {
+			dtNew = new OADate(c);
+		} else {
+			dtNew = new OADateTime(c);
 		}
 		return dtNew;
 	}
@@ -2423,18 +2225,14 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	public OADateTime addMilliSeconds(int amount) {
 		OADateTime dtNew;
 		GregorianCalendar c = _getCal();
-		try {
-			c.add(Calendar.MILLISECOND, amount);
+		c.add(Calendar.MILLISECOND, amount);
 
-			if (this instanceof OATime) {
-				dtNew = new OATime(c);
-			} else if (this instanceof OADate) {
-				dtNew = new OADate(c);
-			} else {
-				dtNew = new OADateTime(c);
-			}
-		} finally {
-			poolGregorianCalendar.release(c);
+		if (this instanceof OATime) {
+			dtNew = new OATime(c);
+		} else if (this instanceof OADate) {
+			dtNew = new OADate(c);
+		} else {
+			dtNew = new OADateTime(c);
 		}
 		return dtNew;
 	}
@@ -2509,15 +2307,9 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		OADateTime d = convert(obj, true);
 		d.setTime(this.getHour(), this.getMinute(), this.getSecond(), this.getMilliSecond());
 
-		double millis;
 		GregorianCalendar cThis = _getCal();
 		GregorianCalendar cOther = d._getCal();
-		try {
-			millis = Math.abs(cThis.getTime().getTime() - cOther.getTime().getTime());
-		} finally {
-			poolGregorianCalendar.release(cThis);
-			poolGregorianCalendar.release(cOther);
-		}
+		double millis = Math.abs(cThis.getTime().getTime() - cOther.getTime().getTime());
 		return (int) Math.floor(millis / (1000 * 60 * 60 * 24) + .5d); // accounts for daylight savings (23hr day, or 25hr day)
 	}
 
@@ -2541,9 +2333,6 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		GregorianCalendar cOther = d._getCal();
 
 		double millis = Math.abs(cThis.getTime().getTime() - cOther.getTime().getTime());
-
-		poolGregorianCalendar.release(cThis);
-		poolGregorianCalendar.release(cOther);
 
 		return (int) Math.ceil(millis / (1000 * 60 * 60));
 	}
@@ -2569,9 +2358,6 @@ public class OADateTime implements java.io.Serializable, Comparable {
 
 		double millis = Math.abs(cThis.getTime().getTime() - cOther.getTime().getTime());
 
-		poolGregorianCalendar.release(cThis);
-		poolGregorianCalendar.release(cOther);
-
 		return (int) Math.ceil(millis / (1000 * 60));
 	}
 
@@ -2596,9 +2382,6 @@ public class OADateTime implements java.io.Serializable, Comparable {
 
 		double millis = Math.abs(cThis.getTime().getTime() - cOther.getTime().getTime());
 
-		poolGregorianCalendar.release(cThis);
-		poolGregorianCalendar.release(cOther);
-
 		return (int) Math.ceil(millis / (1000));
 	}
 
@@ -2621,9 +2404,6 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		GregorianCalendar cOther = d._getCal();
 
 		long millis = Math.abs(cThis.getTime().getTime() - cOther.getTime().getTime());
-
-		poolGregorianCalendar.release(cThis);
-		poolGregorianCalendar.release(cOther);
 
 		return millis;
 	}
@@ -2712,7 +2492,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		if (strDateTime == null) {
 			return null;
 		}
-		Date d = valueOfMain(strDateTime, fmt, bTryOtherFormats ? vecDateTimeParseFormat : null, bTryOtherFormats ? staticOutputFormat : null);
+		Date d = valueOfMain(strDateTime, fmt, bTryOtherFormats ? alDateTimeParseFormat : null, bTryOtherFormats ? staticOutputFormat : null);
 		if (d == null) {
 			return null;
 		}
@@ -2773,11 +2553,11 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 *
 	 * @param value the string to parse
 	 * @param inputFormat the preferred input format
-	 * @param vec collection of fallback parse formats
+	 * @param alFormat collection of fallback parse formats
 	 * @param outputFormat fallback output format
 	 * @return a Date instance or null
 	 */
-	protected static Date valueOfMain(String value, String inputFormat, Vector vec, String outputFormat) {
+	protected static Date valueOfMain(String value, String inputFormat, List<String> alFormat, String outputFormat) {
 		if (value == null || value.length() == 0) {
 			return null;
 		}
@@ -2792,21 +2572,23 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			String s = inputFormat.toUpperCase();
 			int pos = s.indexOf("YYYY");
 			if (pos >= 0) {
-				format = inputFormat.substring(0, pos) + inputFormat.substring(pos + 2);
+				if (value.length() != inputFormat.length()) {
+					format = inputFormat.substring(0, pos) + inputFormat.substring(pos + 2);
+				}
 			}
 		}
 
 		Date date = null;
-		int x = vec == null ? 0 : vec.size();
+		int x = alFormat == null ? 0 : alFormat.size();
 
 		int j = (format == null) ? -1 : -2;
 		for (; j <= x && date == null; j++) {
 			if (j == -1) {
 				format = inputFormat;
 			}
-			if (j >= 0) {
+			else if (j >= 0) {
 				if (j < x) {
-					format = (String) vec.elementAt(j);
+					format = (String) alFormat.get(j);
 				} else {
 					format = outputFormat;
 				}
@@ -2816,10 +2598,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 				synchronized (sdf) {
 					sdf.applyPattern(format);
 					try {
-						date = sdf.parse(value);
-						if (date != null) {
+						ParsePosition pos = new ParsePosition(0);
+						date = sdf.parse(value, pos);
+						if (date != null && pos.getIndex() == value.length()) {
 							break;
 						}
+						
 					} catch (Exception e) {
 						int xx = 3;
 						xx++;
@@ -2918,7 +2702,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @param fmt the parse format to add
 	 */
 	public static void addGlobalParseFormat(String fmt) {
-		vecDateTimeParseFormat.addElement(fmt);
+		alDateTimeParseFormat.add(fmt);
 	}
 
 	/**
@@ -2927,14 +2711,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @param fmt the parse format to remove
 	 */
 	public static void removeGlobalParseFormat(String fmt) {
-		vecDateTimeParseFormat.removeElement(fmt);
-	}
-
-	/**
-	 * Removes all global parse formats.
-	 */
-	public static void removeAllGlobalParseFormats() {
-		vecDateTimeParseFormat.removeAllElements();
+		alDateTimeParseFormat.remove(fmt);
 	}
 
 	/**
@@ -3055,23 +2832,13 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Returns a SimpleDateFormat instance from the formatter pool.
+	 * Returns a SimpleDateFormat instance.
 	 *
-	 * @return a pooled SimpleDateFormat instance
+	 * @return SimpleDateFormat instance
 	 */
 	protected static SimpleDateFormat getFormatter() {
-		SimpleDateFormat sdf;
-		synchronized (simpleDateFormats) {
-			simpleDateFormatCounter++;
-			if (simpleDateFormatCounter >= simpleDateFormats.length) {
-				simpleDateFormatCounter = 0;
-			}
-			sdf = simpleDateFormats[simpleDateFormatCounter];
-			if (sdf == null) {
-				sdf = simpleDateFormats[simpleDateFormatCounter] = new SimpleDateFormat();
-				sdf.setLenient(false);
-			}
-		}
+		SimpleDateFormat sdf = new SimpleDateFormat();
+		sdf.setLenient(false);
 		return sdf;
 	}
 
@@ -3183,25 +2950,6 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return -1; // error
 	}
 
-	/**
-	 * Sets whether the time zone should be ignored during serialization.
-	 *
-	 * @param b true to ignore the time zone; false otherwise
-	 */
-	public void setIgnoreTimeZone(boolean b) {
-		this.ignoreTimeZone = b;
-	}
-
-	/**
-	 * Returns whether the time zone is ignored during serialization.
-	 *
-	 * @return true if the time zone is ignored; false otherwise
-	 */
-	public boolean getIgnoreTimeZone() {
-		return this.ignoreTimeZone;
-	}
-
-	
 	public static void main2(String[] args) throws Exception {
 		OADateTime dt;
 		SimpleDateFormat sdf;

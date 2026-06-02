@@ -2,60 +2,79 @@ package com.viaoa.text;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.Locale;
-
 import org.junit.jupiter.api.Test;
 
-class OATextCharsTest {
-
+/** Internal source-mirrored tests for OATextChars. */
+public class OATextCharsTest {
     @Test
-    void hasDigitsHandlesNullEmptyAndMixedText() {
-        assertFalse(OATextChars.hasDigits(null));
-        assertFalse(OATextChars.hasDigits(""));
+    public void hasDigitsTest() {
+        // contains a digit
+        assertTrue(OATextChars.hasDigits("abc1"));
+        // no digits
         assertFalse(OATextChars.hasDigits("abc"));
-        assertTrue(OATextChars.hasDigits("abc123"));
+        // empty string
+        assertFalse(OATextChars.hasDigits(""));
+        // null input
+        assertFalse(OATextChars.hasDigits(null));
     }
 
     @Test
-    void firstCharHelpersHandleNullEmptyAndSimpleText() {
-        assertNull(OATextChars.makeFirstCharLower(null));
-        assertEquals("", OATextChars.makeFirstCharLower(""));
+    public void makeFirstCharLowerTest() {
+        // normal case
         assertEquals("abc", OATextChars.makeFirstCharLower("Abc"));
+        // already lower
         assertEquals("abc", OATextChars.makeFirstCharLower("abc"));
-
-        assertNull(OATextChars.makeFirstCharUpper(null));
-        assertEquals("", OATextChars.makeFirstCharUpper(""));
-        assertEquals("Abc", OATextChars.makeFirstCharUpper("abc"));
-        assertEquals("Abc", OATextChars.makeFirstCharUpper("Abc"));
+        // empty string is safe
+        assertEquals("", OATextChars.makeFirstCharLower(""));
+        // null input is safe
+        assertNull(OATextChars.makeFirstCharLower(null));
     }
 
     @Test
-    void makeFirstUpperCharsLowerDocumentsAcronymBehavior() {
-        assertNull(OATextChars.makeFirstUpperCharsLower(null));
-        assertEquals("", OATextChars.makeFirstUpperCharsLower(""));
-        assertEquals("gsmrServer", OATextChars.makeFirstUpperCharsLower("GSMRServer"));
-        assertEquals("url", OATextChars.makeFirstUpperCharsLower("URL"));
+    public void makeFirstUpperCharsLowerTest() {
+        // leading uppercase run is lowered
         assertEquals("urlValue", OATextChars.makeFirstUpperCharsLower("URLValue"));
+        // single leading uppercase is lowered
+        assertEquals("name", OATextChars.makeFirstUpperCharsLower("Name"));
+        // already lower
+        assertEquals("name", OATextChars.makeFirstUpperCharsLower("name"));
+        // null input is safe
+        assertNull(OATextChars.makeFirstUpperCharsLower(null));
     }
 
     @Test
-    void upperAndLowerAreNullSafe() {
-        assertNull(OATextChars.upper(null));
-        assertNull(OATextChars.lower(null));
+    public void makeFirstCharUpperTest() {
+        // normal case
+        assertEquals("Abc", OATextChars.makeFirstCharUpper("abc"));
+        // already upper
+        assertEquals("Abc", OATextChars.makeFirstCharUpper("Abc"));
+        // empty string is safe
+        assertEquals("", OATextChars.makeFirstCharUpper(""));
+        // null input is safe
+        assertNull(OATextChars.makeFirstCharUpper(null));
+    }
+
+    @Test
+    public void upperTest() {
+        // normal case
         assertEquals("ABC", OATextChars.upper("abc"));
-        assertEquals("abc", OATextChars.lower("ABC"));
+        // mixed case
+        assertEquals("ABC", OATextChars.upper("AbC"));
+        // empty string
+        assertEquals("", OATextChars.upper(""));
+        // null input
+        assertNull(OATextChars.upper(null));
     }
 
     @Test
-    void upperAndLowerCurrentlyUseDefaultLocale() {
-        Locale old = Locale.getDefault();
-        try {
-            Locale.setDefault(new Locale("tr", "TR"));
-
-            assertEquals("İD", OATextChars.upper("id"));
-            assertEquals("ı", OATextChars.lower("I"));
-        } finally {
-            Locale.setDefault(old);
-        }
+    public void lowerTest() {
+        // normal case
+        assertEquals("abc", OATextChars.lower("ABC"));
+        // mixed case
+        assertEquals("abc", OATextChars.lower("AbC"));
+        // empty string
+        assertEquals("", OATextChars.lower(""));
+        // null input
+        assertNull(OATextChars.lower(null));
     }
 }

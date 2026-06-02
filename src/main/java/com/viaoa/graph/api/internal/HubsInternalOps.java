@@ -78,6 +78,7 @@ public interface HubsInternalOps {
 	// CS
 	public void callHubCSSendRefresh(Hub<?> hub);
 	public boolean callHubCSIsServer(Hub<?> hub);
+	public boolean callHubCSIsClient(Hub<?> hub);
 	
 	// Data
 	public <T extends OAObject> void callHubDataSetObjectClass(Hub<T> hubDetail, Class<T> clazz);

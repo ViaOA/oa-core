@@ -697,13 +697,16 @@ public abstract class OACircularQueue<TYPE> {
             if (slowSessionFound != null) {
                 ++cntQueueWait;
                 if (tsNow > tsLastAvoidOverrunLog + 1000) {
-                    String s = ("cqName="+name+", avoiding queue overrun, queSize="+queueSize+", queHeadPos="+queueHeadPosition+
-                        ", totalSessions="+hmSession.size() +
-                        ", slowSession="+slowSessionFound.id +
-                        ", qpos="+slowSessionFound.queuePos +
-                        ", totalWaits="+cntQueueWait +
-                        ", totalThrottles="+cntQueueThrottle
-                        );
+                    String s = String.format("cqName=%s, avoiding queue overrun, queSize=%,d, " +
+                		"queHeadPos=%,d, totalSessions=%,d, " +
+                        "slowSession=%d, qpos=%,d, " +
+                        "totalWaits=%,d, totalThrottles=%,d",
+                        name, queueSize, 
+                        queueHeadPosition, hmSession.size(),
+                        slowSessionFound.id, slowSessionFound.queuePos,
+                        cntQueueWait, cntQueueThrottle
+                    );
+                	
                     OACircularQueue.LOG.fine(s);
                     if (OAPerformance.IncludeCircularQueue) OAPerformance.LOG.fine(s);
                     tsLastAvoidOverrunLog = tsNow;
@@ -717,12 +720,16 @@ public abstract class OACircularQueue<TYPE> {
             if (bNeedsThrottle) {
                 ++cntQueueThrottle;
                 if (tsNow > tsLastThrottleLog + 1000) {
-                    String s = ("cqName="+name+", queue throttle, queSize="+queueSize+", queHeadPos="+queueHeadPosition+
-                        ", totalSessions="+hmSession.size() +
-                        ", throttleAmount="+throttleAmount +
-                        ", totalWaits="+cntQueueWait +
-                        ", totalThrottles="+cntQueueThrottle
-                        );
+                    String s = String.format("cqName=%s, queue throttle, queSize=%,d, " +
+                		"queHeadPos=%,d, totalSessions=%,d, " +
+                        "throttleAmount=%,d, " +
+                        "totalWaits=%,d, totalThrottles=%,d",
+                        name, queueSize, 
+                        queueHeadPosition, hmSession.size(),
+                        throttleAmount,
+                        cntQueueWait, cntQueueThrottle
+                    );
+                	
                     OACircularQueue.LOG.fine(s);
                     if (OAPerformance.IncludeCircularQueue) OAPerformance.LOG.fine(s);
                     tsLastThrottleLog = tsNow;
@@ -734,12 +741,15 @@ public abstract class OACircularQueue<TYPE> {
         }
 
         if (tsNow > tsLastAddLog + 5000) {
-            String s = ("cqName="+name+", queSize="+queueSize+", queHeadPos="+queueHeadPosition+
-                ", totalSessions="+hmSession.size() +
-                ", throttleAmount="+throttleAmount +
-                ", totalWaits="+cntQueueWait +
-                ", totalThrottles="+cntQueueThrottle
-                );
+            String s = String.format("cqName=%s, queSize=%,d, " +
+        		"queHeadPos=%,d, totalSessions=%,d, " +
+                "throttleAmount=%,d, " +
+                "totalWaits=%,d, totalThrottles=%,d",
+                name, queueSize, 
+                queueHeadPosition, hmSession.size(),
+                throttleAmount,
+                cntQueueWait, cntQueueThrottle
+            );
             OACircularQueue.LOG.fine(s);
             if (OAPerformance.IncludeCircularQueue) OAPerformance.LOG.fine(s);
             tsLastAddLog = tsNow;

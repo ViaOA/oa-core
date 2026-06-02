@@ -68,7 +68,8 @@ class OADateTimeFormatAndGlobalStateTest {
         OATime time = new OATime(7, 8, 9, 123);
         OATime.setGlobalOutputFormat("HH:mm:ss.SSS");
 
-        assertEquals("07:08:09.123", time.toString());
+        String s = time.toString();
+        assertEquals("07:08:09.123", s); // 07:08:09.000
     }
 
     @Test

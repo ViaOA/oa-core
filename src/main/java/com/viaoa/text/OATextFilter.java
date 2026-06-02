@@ -590,6 +590,7 @@ public class OATextFilter {
 		if (s.length() <= pos) {
 			return "";
 		}
+		if (pos < 0) return "";
 		return s.substring(pos);
 	}
 

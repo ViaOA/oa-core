@@ -111,7 +111,8 @@ import com.viaoa.trigger.OATriggerListener;
  * This class is central to OA’s “object-automation” pattern, enabling reactive,
  * declarative binding between model, view, and persistence layers.
  */
-public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Cloneable, Iterable<TYPE> {
+public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Cloneable, Comparable<Hub<?>>, Iterable<TYPE> {
+	
 	/**
 	 * Serialization version identifier used to validate compatibility when
 	 * Hub instances are serialized and deserialized.
@@ -730,6 +731,14 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		return h;
 	}
 
+	@Override
+	public int compareTo(Hub<?> obj) {
+		if (obj == null) return 1;
+		if (obj == this) return 0;
+		return Integer.compare(System.identityHashCode(this), System.identityHashCode(obj));
+	}
+	
+	
 	/**
 	 * Retrieves an object from this Hub by matching its key. Uses the object's
 	 * hashCode() and equals() (or OAObjectKey comparison) to determine a match.
@@ -1052,7 +1061,11 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	@Override
 	public boolean add(TYPE obj) {
-		Class c = obj == null ? null : obj.getClass();
+		if (obj == null) return false;
+		Class c = obj.getClass();
+		if (data.getObjClass() == null) {
+			data.setObjClass(c);
+		}
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
 		return og.hubsInternal().callHubAddRemoveAdd(this, obj);
 	}
@@ -1067,6 +1080,9 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		if (list == null) return;
 		Class c = this.getObjectClass();
 		if (c == null && list.size() > 0) c = list.get(0).getClass();
+		if (data.getObjClass() == null) {
+			data.setObjClass(c);
+		}
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
 		for (TYPE obj : list) {
 			og.hubsInternal().callHubAddRemoveAdd(this, obj);
@@ -1093,6 +1109,9 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		*/
 		Class c = this.getObjectClass();
 		if (c == null) c = hub.getObjectClass();
+		if (data.getObjClass() == null) {
+			data.setObjClass(c);
+		}
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
 		try {
 			for (TYPE obj : hub) {
@@ -1138,9 +1157,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 * @param obj object to add
 	 */
 	public void addElement(TYPE obj) {
-		if (obj == null) return;
-		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj.getClass());
-		og.hubsInternal().callHubAddRemoveAdd(this, obj);
+		add(obj);
 	}
 
 	/**
@@ -1179,16 +1196,14 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public boolean insert(TYPE obj, int pos) {
 		if (obj == null) return false;
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj.getClass());
+		Class c = obj.getClass();
+		if (data.getObjClass() == null) {
+			data.setObjClass(c);
+		}
+		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
 		return og.hubsInternal().callHubAddRemoveInsert(this, obj, pos);
 	}
 
-	
-	
-	
-	
-//qqqqqqqqqqqqqqq create:   qqqqqqqqqqqqqqqqq	
-	
 	
 	/**
 	 * Removes and returns the object at the supplied position. Sends a remove
@@ -3320,4 +3335,5 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	public OAGraph getGraph() {
 		return OARuntime.graph(this);
 	}
+
 }

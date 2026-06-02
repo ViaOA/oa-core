@@ -445,13 +445,17 @@ public class OATimeZone {
 			value = TimeZone.getDefault().getID();
 		}
 
-		for (TZ tz : getOATimeZones()) {
-			if (value.equalsIgnoreCase(tz.id) || value.equalsIgnoreCase(tz.utcValue) || value.equalsIgnoreCase(tz.shortName)
-					|| value.equalsIgnoreCase(tz.longName) || value.equalsIgnoreCase(tz.getDisplay())) {
+		TZ tzFound = null;
+		ArrayList<TZ> al = getOATimeZones(); 
+		for (TZ tz : al) {
+			if (value.equalsIgnoreCase(tz.id)) {
 				return tz;
 			}
+			if (value.equalsIgnoreCase(tz.utcValue) || value.equalsIgnoreCase(tz.shortName) || value.equalsIgnoreCase(tz.longName) || value.equalsIgnoreCase(tz.getDisplay())) {
+				if (tzFound != null) tzFound = tz;
+			}
 		}
-		return null;
+		return tzFound;
 	}
 
 	/**

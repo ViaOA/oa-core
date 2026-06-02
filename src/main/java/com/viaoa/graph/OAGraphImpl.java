@@ -147,7 +147,18 @@ public class OAGraphImpl implements OAGraphInternal {
 		srvcOAObject = new OAObjectService();
 		srvcHub = new HubService();
 	    srvcOASync = new OASyncService(this);
-	    srvcOAReplication = new OAReplicationService();
+	    srvcOAReplication = new OAReplicationService() {
+			@Override
+			public void createClient(String guid, String tLogFileName, String replicationMasterHostName, int replicationMasterPort) {
+				super.createClient(guid, srvcOASync.getServer(), tLogFileName, replicationMasterHostName, replicationMasterPort);
+			}
+
+			@Override
+			public void createMaster(String guid, String tLogFileName) {
+				super.createMaster(guid, srvcOASync.getServer(), tLogFileName);
+			}
+	    	
+	    };
 	    srvcOATrigger = new OATriggerService();
 
 		srvcOAObject.initialize(srvcHub, srvcOASync, srvcThread.getThreadLocalService(), srvcThread.getRemoteThreadService());

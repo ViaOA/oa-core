@@ -32,9 +32,9 @@ public class DataGenerator {
     OASelect sel;
     Hub hub;
     int x;
-    public static ServerRoot serverRoot;
+    public ServerRoot serverRoot;
     
-    
+    /*
     public static ServerRoot getServerRoot() throws Exception {
         if (serverRoot == null) {
             serverRoot = readSerializeFromFile();
@@ -44,7 +44,9 @@ public class DataGenerator {
     public static void clearServerRoot() {
         serverRoot = null;
     }
+    */
     
+    /*qqqqqqqqq FYI: does not work post OA 3.9.x
     public static ServerRoot readSerializeFromFile() throws Exception {
         File file = new File(OAFile.convertFileName("runtime/test/tsam.bin"));
         if (!file.exists()) {
@@ -91,15 +93,79 @@ public class DataGenerator {
 
         return serverRoot;
     }
+    */
     
     
-    
-    public void populate(ServerRoot root) {
-        
-        Site site = createSite();
-        populate(site);
-//qqqqqqqqq todo:        
+    public ServerRoot createServerRoot() {
+    	serverRoot = new ServerRoot();
+    	return serverRoot;
     }
+    
+    public void populate(ServerRoot serverRoot) {
+    	for (int i=0; i<5; i++) {
+    		ApplicationStatus as = createApplicationStatus();
+    		populate(as);
+    		serverRoot.getApplicationStatuses().add(as);
+    	}
+    	for (int i=0; i<5; i++) {
+    		ApplicationType x = createApplicationType();
+    		populate(x);
+    		serverRoot.getApplicationTypes().add(x);
+    	}
+    	for (int i=0; i<5; i++) {
+    		Command x = createCommand();
+    		populate(x);
+    		serverRoot.getCommands().add(x);
+    	}
+    	for (int i=0; i<5; i++) {
+    		Developer x = createDeveloper();
+    		populate(x);
+    		serverRoot.getDevelopers().add(x);
+    	}
+    	for (int i=0; i<5; i++) {
+    		EnvironmentType x = createEnvironmentType();
+    		populate(x);
+    		serverRoot.getEnvironmentTypes().add(x);
+    	}
+    	for (int i=0; i<5; i++) {
+    		IDL x = createIDL();
+    		populate(x);
+    		serverRoot.getIDLs().add(x);
+    	}
+    	for (int i=0; i<5; i++) {
+    		OperatingSystem x = createOperatingSystem();
+    		populate(x);
+    		serverRoot.getOperatingSystems().add(x);
+    	}
+    	for (int i=0; i<5; i++) {
+    		PackageType x = createPackageType();
+    		populate(x);
+    		serverRoot.getPackageTypes().add(x);
+    	}
+    	for (int i=0; i<5; i++) {
+    		SiloType x = createSiloType();
+    		populate(x);
+    		serverRoot.getSiloTypes().add(x);
+    	}
+    	for (int i=0; i<5; i++) {
+    		Site x = createSite();
+    		populate(x);
+    		serverRoot.getSites().add(x);
+    	}
+    	for (int i=0; i<5; i++) {
+    		Timezone x = createTimezone();
+    		populate(x);
+    		serverRoot.getTimezones().add(x);
+    	}
+    	
+    	ServerInfo si = new ServerInfo();
+    	serverRoot.setServerInfo(si);
+    	AdminUser au = createAdminUser();
+    	populate(au);
+    	serverRoot.getAdminUsers().add(au);
+    }
+    
+    
     
     
     public AdminUser createAdminUser() {
@@ -236,7 +302,7 @@ public class DataGenerator {
         x = sel.getCount();
         x = (int) (Math.random() * x);
         for (int i=0; i<x; i++) sel.next();
-        obj.getSelectedApplications().add((Application) sel.next());
+        // obj.getSelectedApplications().add((Application) sel.next());
         // silo
     }
     
@@ -349,8 +415,10 @@ public class DataGenerator {
         // application
         // currentPackageVersion
         hub = (Hub) obj.getProperty(OAString.cpp(ApplicationVersion.P_PackageType, PackageType.P_PackageVersions));
-        x = (int) (Math.random()*hub.getSize());
-        obj.setCurrentPackageVersion((PackageVersion) hub.getAt(x));
+        if (hub != null) {
+	        x = (int) (Math.random()*hub.getSize());
+	        obj.setCurrentPackageVersion((PackageVersion) hub.getAt(x));
+        }
         // newPackageVersion
     }
     

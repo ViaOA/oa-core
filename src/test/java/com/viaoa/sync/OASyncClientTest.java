@@ -63,11 +63,11 @@ import test.xice.tsam.remote.RemoteAppInterface;
 public class OASyncClientTest extends OAUnitTest {
 	
 	private static int port = 1102;
-	private static ServerRoot serverRoot;
-	private static OASyncClient syncClient;
+	private ServerRoot serverRoot;
+	private OASyncClient syncClient;
 
-	private final int maxThreads = 3; // 7;
-	private final int testSeconds = 10; // 30;
+	private final int maxThreads = 20;
+	private final int testSeconds = 90; 
 
 	private RemoteTsamInterface remoteTsam;
 	private RemoteAppInterface remoteApp;
@@ -99,7 +99,7 @@ public class OASyncClientTest extends OAUnitTest {
 			hub.add(mc);
 		}
 
-		int maxThreads = 2;
+		int maxThreads = 52;
 		final CyclicBarrier barrier = new CyclicBarrier(maxThreads);
 		final CountDownLatch countDownLatch = new CountDownLatch(maxThreads);
 		for (int i = 0; i < maxThreads; i++) {
@@ -148,7 +148,7 @@ public class OASyncClientTest extends OAUnitTest {
 			assertTrue(remoteTsam.runCommand(msc));
 
 			System.out.println(i + ") tsamTest, hubApplication.size=" + hubApplication.size() + ", hubMRADClientCommand.size="
-					+ hubMRADClientCommand.size());
+					+ hubMRADClientCommand.size()+"  "+Thread.currentThread());
 			Thread.sleep(250);
 		}
 	}
@@ -167,15 +167,12 @@ public class OASyncClientTest extends OAUnitTest {
 
 		final Site site = serverRoot.getSites().getAt(0);
 		
-		
 		OADataSource ds = OARuntime.datasource().get(MRADClientCommand.class);
-		//qqqqqqqqqq was: OADataSource ds = OADataSource.getDataSource(MRADClientCommand.class);
 		assertNotNull(ds); // make sure that the server has DS setup
 		Silo silo = site.getEnvironments().getAt(0).getSilos().getAt(0);
 		Server server = silo.getServers().getAt(0);
 
 		MRADServer mradServer = silo.getMRADServer();
-
 		MRADServerCommand msc = new MRADServerCommand();
 		assertEquals(0, msc.getId());
 
@@ -198,7 +195,7 @@ public class OASyncClientTest extends OAUnitTest {
 		mradServer.save();
 		assertNotEquals(0, msc.getId());
 		for (MRADClientCommand mc : msc.getMRADClientCommands()) {
-			// assertNotEquals(0, mc.getId());
+			assertNotEquals(0, mc.getId());
 		}
 	}
 
@@ -583,21 +580,17 @@ public class OASyncClientTest extends OAUnitTest {
 	private OAGraphInternal og;
 	private OADataSourceClient dsClient;
 
+	
+	
 	@BeforeEach
 	public void setup() throws Exception {
 	    
-//qqqqqqqqqqqq		
 		og = (OAGraphInternal) OARuntime.createGraph(Site.class.getPackage().getName());
-
-		syncClient = og.syncInternal().getClient();
-		
 		og.sync().createClient("localhost", port);
 		og.sync().start();
-		
 		syncClient = og.syncInternal().getClient();
-		
-		
-		dsClient = new OADataSourceClient() {
+
+		dsClient = new OADataSourceClient(Site.class.getPackageName()) {
 			@Override
 			public boolean isClassSupported(Class clazz, OAFilter filter) {
 				if (clazz == null) return false;
@@ -623,7 +616,7 @@ public class OASyncClientTest extends OAUnitTest {
 				super.onStopCalled(title, msg);
 			}
 
-			int cnt = 0;
+			int 'cnt = 0;
 
 			@Override
 			protected void afterInvokeRemoteMethod(RequestInfo ri) {
@@ -735,6 +728,7 @@ public class OASyncClientTest extends OAUnitTest {
 					RequestInfo ri = OAThreadLocalDelegate.getRemoteRequestInfo();
 					String s = ri == null ? "" : ", connection=" + ri.connectionId;
 					*/
+					/*
 					String s = "qqqqq";
 					if (!OAString.isEqual(server.getName(), name) || server.getApplications().getSize() != cntApps
 							|| server.getNameChecksum() != nameChecksum) {
@@ -747,6 +741,7 @@ public class OASyncClientTest extends OAUnitTest {
 						s += ", ERROR, this.server.name=" + server.getName();
 						s += ", server.apps.size=" + server.getApplications().getSize();
 					}
+					*/
 					//System.out.println("site.sendName/apps.size called, name="+name+", cntApps="+cntApps+s);
 
 				}
@@ -846,19 +841,19 @@ public class OASyncClientTest extends OAUnitTest {
 		OASyncClientTest test = new OASyncClientTest();
 
 		test.setup();
-		
-		test.testA();
-		
-		
-		
-		/*
-		test.setup();
-		test.testA();
-		*/
 
-		//        test.runLocalClientTest();
-		//test.tsamTest();
-		// test.test2();
+		// TEST#1
+		// test.tsamTest();
+		
+		
+		// test.testA();
+		// test.testB();
+		// test.testC();
+		
+		test.testForMain();
+		
+		test.tearDown();
+		
 
 		System.out.println("DONE running test, exiting program");
 	}

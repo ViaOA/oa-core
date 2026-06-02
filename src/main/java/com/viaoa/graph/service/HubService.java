@@ -152,6 +152,12 @@ public class HubService extends HubParentService implements HubsInternalOps {
 	    return getHubCSService().isServer(hub);
 	}
 
+	@Override
+	public boolean callHubCSIsClient(Hub<?> hub) {
+	    return getHubCSService().isClient(hub);
+	}
+	
+	
 	// Data =========================
 	@Override
 	public <T extends OAObject> void callHubDataSetObjectClass(Hub<T> hubDetail, Class<T> clazz) {

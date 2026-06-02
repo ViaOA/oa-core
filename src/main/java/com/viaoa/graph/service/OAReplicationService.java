@@ -31,11 +31,7 @@ CODEX
  * Allows offline support and reconnect with resync support.
  * 
  */
-public class OAReplicationService implements ReplInternalOps {
-
-	
-//qqqqqqqqqqqqqq exception if OASync is not server	
-	
+public abstract class OAReplicationService implements ReplInternalOps {
 	private String guid;
     private OASyncServer syncServer;
     private String tLogFileName;
@@ -47,18 +43,26 @@ public class OAReplicationService implements ReplInternalOps {
 	private OAReplicationMaster replMaster;
     private OAReplicationClient replClient;
 
-    public enum Status {
-    	UNKNOWN,
-    	READYTOSTART,
-        STARTING,
-        RUNNING,
-        STOPPING,
-        STOPPED
-    }
-    
 	public OAReplicationService() {
 	}
-    
+
+	
+	@Override
+	public String getLogFileName() {
+		return tLogFileName;
+	}
+
+	@Override
+	public String getMasterHostName() {
+		return replicationMasterHostName;
+	}
+
+	@Override
+	public int getMasterPort() {
+		return replicationMasterPort;
+	}
+	
+	@Override
 	public Status getStatus() {
 		return status;
 	}
@@ -79,6 +83,7 @@ public class OAReplicationService implements ReplInternalOps {
 		this.status = Status.READYTOSTART;
 	}
 
+
 	
 	/**
 	 * Create OAReplication Client
@@ -98,6 +103,7 @@ public class OAReplicationService implements ReplInternalOps {
 		this.status = Status.READYTOSTART;
 	}
 	
+	@Override
     public void start() throws Exception {
     	if (this.status != Status.READYTOSTART) throw new IllegalStateException("must call create Client or Maste before starting");
 		this.status = Status.STARTING;
@@ -117,6 +123,7 @@ public class OAReplicationService implements ReplInternalOps {
 		}
     }
 
+	@Override
     public void stop() throws Exception {
     	if (this.status != Status.RUNNING) return;
     	Status hold = this.status; 
@@ -131,11 +138,20 @@ public class OAReplicationService implements ReplInternalOps {
 		}
     }
 
+	@Override
 	public boolean isMaster() {
 		return (status != Status.UNKNOWN && bIsMaster);
 	}
 	
+	@Override
 	public boolean isClient() {
 		return (status != Status.UNKNOWN && !bIsMaster);
 	}
+
+	@Override
+	public abstract void createClient(String guid, String tLogFileName, String replicationMasterHostName, int replicationMasterPort);
+
+	@Override
+	public abstract void createMaster(String guid, String tLogFileName);
+
 }

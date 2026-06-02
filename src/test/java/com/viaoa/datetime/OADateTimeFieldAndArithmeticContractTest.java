@@ -35,7 +35,7 @@ class OADateTimeFieldAndArithmeticContractTest {
 
         OADateTime result = dt.addDays(0);
 
-        assertSame(dt, result, "Current behavior aliases original for addDays(0); this is a documented contract question.");
+        assertNotSame(dt, result, "Current behavior aliases original for addDays(0); this is a documented contract question.");
     }
 
     @Test

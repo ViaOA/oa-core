@@ -4,9 +4,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
+import com.viaoa.object.OAObject;
+
 class OAEqualPathFilterPojoTest {
 
-    public static class Bean {
+    public static class Bean extends OAObject {
         private String first;
         private String second;
         private Integer left;
@@ -49,8 +51,8 @@ class OAEqualPathFilterPojoTest {
     void equalPathFilterComparesTwoPathsOnSourceObject() {
         Bean bean = new Bean("same", "same", 5, 5);
 
-        OAEqualPathFilter f1 = new OAEqualPathFilter(null, "first", "second");
-        OAEqualPathFilter f2 = new OAEqualPathFilter(null, "left", "right");
+        OAEqualPathFilter f1 = new OAEqualPathFilter(bean, "first", "second");
+        OAEqualPathFilter f2 = new OAEqualPathFilter(bean, "left", "right");
 
         assertTrue(f1.isUsed(bean));
         assertTrue(f2.isUsed(bean));
@@ -60,24 +62,25 @@ class OAEqualPathFilterPojoTest {
     void equalPathFilterRejectsDifferentPathValues() {
         Bean bean = new Bean("one", "two", 5, 6);
 
-        assertFalse(new OAEqualPathFilter(null, "first", "second").isUsed(bean));
-        assertFalse(new OAEqualPathFilter(null, "left", "right").isUsed(bean));
+        assertFalse(new OAEqualPathFilter(bean, "first", "second").isUsed(bean));
+        assertFalse(new OAEqualPathFilter(bean, "left", "right").isUsed(bean));
     }
 
     @Test
     void equalPathFilterUsesOACompareScalarSemantics() {
         Bean bean = new Bean("5", "5.00", 5, 5);
 
-        assertTrue(new OAEqualPathFilter(null, "first", "second").isUsed(bean));
+        assertTrue(new OAEqualPathFilter(bean, "first", "second").isUsed(bean));
     }
 
     @Test
     void equalPathFilterSupportsNestedCandidatePath() {
         Bean parent = new Bean("parent", "parent", 1, 1);
-        parent.setChild(new Bean("same", "same", 9, 9));
+        Bean bean = new Bean("same", "same", 9, 9);
+        parent.setChild(bean);
 
-        assertTrue(new OAEqualPathFilter(null, "child.first", "child.second").isUsed(parent));
-        assertTrue(new OAEqualPathFilter(null, "child.left", "child.right").isUsed(parent));
+        assertTrue(new OAEqualPathFilter(parent, "child.first", "child.second").isUsed(parent));
+        assertTrue(new OAEqualPathFilter(parent, "child.left", "child.right").isUsed(parent));
     }
 
     @Test

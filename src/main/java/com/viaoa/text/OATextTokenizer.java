@@ -413,14 +413,14 @@ public class OATextTokenizer {
 		if (name == null || words == null) {
 			return value;
 		}
-		if (bCaseSensitive) {
+		if (!bCaseSensitive) {
 			name = name.toLowerCase();
 		}
 		for (String word : words) {
 			if (word == null) {
 				continue;
 			}
-			if (bCaseSensitive) {
+			if (!bCaseSensitive) {
 				word = word.toLowerCase();
 			}
 			boolean b = name.indexOf(word) >= 0;
@@ -722,7 +722,7 @@ public class OATextTokenizer {
 			value = "";
 		} else {
 			boolean bIsString = value instanceof String;
-			value = value.toString();
+			if (!bIsString) value = value.toString();
 
 			if (bIsString || ((String) value).indexOf(',') >= 0 || ((String) value).indexOf('\n') >= 0
 					|| ((String) value).indexOf('\"') >= 0) {

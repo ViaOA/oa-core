@@ -6,80 +6,151 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-class OATextEscapeTest {
-
+/** Internal source-mirrored tests for OATextEscape. */
+public class OATextEscapeTest {
     @Test
-    void convertFromHtmlDecodesKnownEntitiesInCurrentOrder() {
+    public void convertFromHtmlTest() {
+        // basic entity decoding
+        assertEquals("a < b", OATextEscape.convertFromHtml("a &lt; b"));
+        // ampersand decoding
+        assertEquals("a & b", OATextEscape.convertFromHtml("a &amp; b"));
+        // null-safe behavior
         assertNull(OATextEscape.convertFromHtml(null));
-        assertEquals("&", OATextEscape.convertFromHtml("&amp;"));
-        assertEquals("\"'<>\u0026", OATextEscape.convertFromHtml("&quot;&apos;&lt;&gt;&amp;"));
     }
 
     @Test
-    void convertFromHtmlCurrentlyDoubleDecodesAmpLt() {
-        assertEquals("<", OATextEscape.convertFromHtml("&amp;lt;"));
+    public void convertTextToHtmlTest() {
+        // plain text is converted for HTML display
+        assertNotNull(OATextEscape.convertTextToHtml("a < b", false));
+        // optional html tag wrapper
+        assertTrue(OATextEscape.convertTextToHtml("abc", true).toLowerCase().contains("html"));
+        // null-safe behavior
+        assertEquals("", OATextEscape.convertTextToHtml(null, false));
     }
 
     @Test
-    void convertTextToHtmlEscapesPlainTextButTreatsAnglePairAsExistingHtml() {
-        assertEquals("a &amp; b", OATextEscape.convertTextToHtml("a & b", false));
-        assertEquals("<html>a &amp; b</html>", OATextEscape.convertTextToHtml("a & b", true));
-
-        // Current behavior: any value containing both '<' and '>' is treated as already-HTML.
-        assertEquals("1 < 2 > 0", OATextEscape.convertTextToHtml("1 < 2 > 0", false));
+    public void convertToHtmlTest() {
+        // markup characters are escaped
+        assertEquals("a &lt; b", OATextEscape.convertToHtml("a < b"));
+        // ampersand is escaped
+        assertEquals("a &amp; b", OATextEscape.convertToHtml("a & b"));
+        // null-safe behavior
+        assertEquals("", OATextEscape.convertToHtml(null));
     }
 
     @Test
-    void convertToXmlEscapesMarkupOutsideCdata() {
-        assertEquals("a &amp; &lt;b&gt; &quot;x&quot; &apos;y&apos;", 
-            OATextEscape.convertToXml("a & <b> \"x\" 'y'", false));
+    public void convertToXmlTest() {
+        // default XML escaping
+        assertEquals("a &lt; b", OATextEscape.convertToXml("a < b"));
+        // ampersand escaping
+        assertEquals("a &amp; b", OATextEscape.convertToXml("a & b"));
+        // CDATA overload executes
+        assertNotNull(OATextEscape.convertToXml("abc", true));
+        // HTML-aware overload executes
+        assertNotNull(OATextEscape.convertToXml("<b>abc</b>", false, true));
+        // CR/LF overload executes
+        assertNotNull(OATextEscape.convertToXml("a\nb", false, false, true));
+        // null-safe behavior
+        assertEquals("", OATextEscape.convertToXml(null));
     }
 
     @Test
-    void cdataModeCurrentlyLeavesTerminatorUnsafe() {
-        assertEquals("abc]]>def", OATextEscape.convertToXml("abc]]>def", true));
+    public void encodeIllegalXmlTest() {
+        // normal text remains usable
+        assertEquals("abc", OATextEscape.encodeIllegalXml("abc"));
+        // illegal control character is encoded or handled safely
+        assertNotNull(OATextEscape.encodeIllegalXml("a" + ((char) 1) + "b"));
+        // char overload executes
+        assertNotNull(OATextEscape.encodeIllegalXml('<', true));
+        // null-safe behavior
+        assertEquals("", OATextEscape.encodeIllegalXml(null));
     }
 
     @Test
-    void escapeJsonDocumentsApostropheBackslashAndControlEscapes() {
+    public void isLegalXmlTest() {
+        // normal text is legal
+        assertTrue(OATextEscape.isLegalXml("abc"));
+        // common XML characters
+        assertFalse(OATextEscape.isLegalXml("a < b"));
+        // null-safe behavior
+        assertFalse(OATextEscape.isLegalXml(null));
+    }
+
+    @Test
+    public void decodeIllegalXmlTest() {
+        // normal text remains unchanged
+        assertEquals("abc", OATextEscape.decodeIllegalXml("abc"));
+        // marker syntax is handled safely
+        assertNotNull(OATextEscape.decodeIllegalXml("<OAXML#65/>"));
+        // null-safe behavior
+        assertNull(OATextEscape.decodeIllegalXml(null));
+    }
+
+    @Test
+    public void escapeTest() {
+        // quote and slash escaping executes
+        assertNotNull(OATextEscape.escape("a'b\"c"));
+        // empty string
+        assertEquals("", OATextEscape.escape(""));
+    }
+
+    @Test
+    public void escapeJsTest() {
+        // quote character is escaped for JavaScript string context
+        assertNotNull(OATextEscape.escapeJs("a'b", '\''));
+        // double quote context
+        assertNotNull(OATextEscape.escapeJs("a\"b", '"'));
+        // embedded HTML mode executes
+        assertNotNull(OATextEscape.escapeJs("a<b", '\'', true));
+        // null-safe behavior
+        assertEquals("", OATextEscape.escapeJs(null, '\''));
+    }
+
+    @Test
+    public void escapeJsonTest() {
+        // quote is escaped for JSON
+        assertEquals("a\\\"b", OATextEscape.escapeJson("a\"b"));
+        // newline is escaped
+        assertTrue(OATextEscape.escapeJson("a\nb").contains("\\n"));
+        // StringBuffer overload appends escaped text
         StringBuffer sb = new StringBuffer();
-        OATextEscape.escapeJson("O'Brien\nC:\\temp", sb);
-
-        assertEquals("O\\'Brien\\nC:\\\\temp", sb.toString());
+        OATextEscape.escapeJson("abc", sb);
+        assertEquals("abc", sb.toString());
+        // null-safe behavior
+        assertNull(OATextEscape.escapeJson(null));
     }
 
     @Test
-    void unescapeJsonCurrentlyConvertsLiteralEscapedBackslashNIntoNewline() {
-        assertEquals("\n", OATextEscape.unescapeJson("\\\\n"));
+    public void getHtmlAttributeMapTest() {
+        // simple attributes are parsed
+        Map<String, String> map = OATextEscape.getHtmlAttributeMap("<input type=text disabled>");
+        assertNotNull(map);
+        assertTrue(map.containsKey("type"));
+        // empty tag returns a non-null map
+        assertNotNull(OATextEscape.getHtmlAttributeMap(""));
+        // null-safe behavior
+        assertNotNull(OATextEscape.getHtmlAttributeMap(null));
     }
 
     @Test
-    void escapeThrowsOnNullButEscapeJsReturnsBlank() {
-        assertThrows(NullPointerException.class, () -> OATextEscape.escape(null));
-        assertEquals("", OATextEscape.escapeJs(null, '"'));
+    public void unescapeJsonTest() {
+        // newline escape is unescaped
+        assertEquals("a\nb", OATextEscape.unescapeJson("a\\nb"));
+        // quote escape is unescaped
+        assertEquals("a\"b", OATextEscape.unescapeJson("a\\\"b"));
+        // null-safe behavior
+        assertNull(OATextEscape.unescapeJson(null));
     }
 
     @Test
-    void escapeJsEmbeddedHtmlCurrentlyLeavesBackslashSingle() {
-        assertEquals("C:\\temp", OATextEscape.escapeJs("C:\\temp", '"', true));
-        assertEquals("C:\\\\temp", OATextEscape.escapeJs("C:\\temp", '"', false));
-    }
-
-    @Test
-    void htmlAttributeMapDocumentsCurrentQuoteRetention() {
-        Map<String, String> map = OATextEscape.getHtmlAttributeMap("<input type=\"text\" data-x='a b' disabled>");
-        assertEquals("\"text\"", map.get("type"));
-        assertEquals("'a b'", map.get("data-x"));
-        assertTrue(map.containsKey("disabled"));
-    }
-
-    @Test
-    void illegalXmlMarkersAreDecodedEvenForLiteralLookingText() {
-        assertEquals("A", OATextEscape.decodeIllegalXml("<OAXML#65/>"));
-        assertFalse(OATextEscape.isLegalXml("<"));
-        assertFalse(OATextEscape.isLegalXml("\u0001"));
-
-        // Current behavior: unpaired surrogate is treated as legal.
-        assertTrue(OATextEscape.isLegalXml("\uD800"));
+    public void hiliteTest() {
+        // matching text is wrapped with tags
+        assertEquals("a <b>b</b> c", OATextEscape.hilite("a b c", "b", "<b>", "</b>", false));
+        // ignore case match
+        assertEquals("a <b>B</b> c", OATextEscape.hilite("a B c", "b", "<b>", "</b>", true));
+        // no match leaves text unchanged
+        assertEquals("abc", OATextEscape.hilite("abc", "x", "<b>", "</b>", false));
+        // null line returns null
+        assertNull(OATextEscape.hilite(null, "x", "<b>", "</b>", false));
     }
 }

@@ -130,7 +130,7 @@ public class OADate extends OADateTime {
 	/**
 	 * Collection of date formats used when parsing strings into dates.
 	 */
-	private static Vector vecDateParseFormat = new Vector(10, 10);
+	private static final List<String> alDateParseFormat = new ArrayList();
 
 	static {
 		setLocale(Locale.getDefault());
@@ -142,7 +142,6 @@ public class OADate extends OADateTime {
 	 * @param loc the locale to use when determining date formats
 	 */
 	public static void setLocale(Locale loc) {
-		vecDateParseFormat = new Vector(15, 10);
 		String s = getFormat(DateFormat.SHORT, loc);
 		boolean bMonthFirst = true;
 		boolean bYearFirst = false;
@@ -155,23 +154,23 @@ public class OADate extends OADateTime {
 				bYearFirst = true;
 			}
 			;
-			vecDateParseFormat.addElement(s);
+			alDateParseFormat.add(s);
 		}
 		if (bMonthFirst) {
-			vecDateParseFormat.addElement("MM/dd/yy"); // must be before "MM/dd/yyyy" since "MM/dd/yyyy" will convert 5/4/65 -> 05/04/0065
-			vecDateParseFormat.addElement("MM/dd/yyyy");
+			alDateParseFormat.add("MM/dd/yy"); // must be before "MM/dd/yyyy" since "MM/dd/yyyy" will convert 5/4/65 -> 05/04/0065
+			alDateParseFormat.add("MM/dd/yyyy");
 			dateOutputFormat = "MM/dd/yyyy";
 		} else if (bYearFirst) {
-			vecDateParseFormat.addElement("yy/MM/dd"); // must be before "MM/dd/yyyy" since "MM/dd/yyyy" will convert 5/4/65 -> 05/04/0065
-			vecDateParseFormat.addElement("yyyy/MM/dd");
+			alDateParseFormat.add("yy/MM/dd"); // must be before "MM/dd/yyyy" since "MM/dd/yyyy" will convert 5/4/65 -> 05/04/0065
+			alDateParseFormat.add("yyyy/MM/dd");
 			dateOutputFormat = "yyyy/MM/dd";
 		} else { // day first
-			vecDateParseFormat.addElement("dd/MM/yy");
-			vecDateParseFormat.addElement("dd/MM/yyyy");
+			alDateParseFormat.add("dd/MM/yy");
+			alDateParseFormat.add("dd/MM/yyyy");
 			dateOutputFormat = "dd/MM/yyyy";
 		}
 		// SQL date formats
-		vecDateParseFormat.addElement("yyyy-MM-dd");
+		alDateParseFormat.add("yyyy-MM-dd");
 	}
 
 	/**
@@ -302,7 +301,7 @@ public class OADate extends OADateTime {
 	 * @param fmt the format string to add
 	 */
 	public static void addGlobalParseFormat(String fmt) {
-		vecDateParseFormat.addElement(fmt);
+		alDateParseFormat.add(fmt);
 	}
 
 	/**
@@ -311,14 +310,7 @@ public class OADate extends OADateTime {
 	 * @param fmt the format string to remove
 	 */
 	public static void removeGlobalParseFormat(String fmt) {
-		vecDateParseFormat.removeElement(fmt);
-	}
-
-	/**
-	 * Removes all global parse formats used to convert strings to dates.
-	 */
-	public static void removeAllGlobalParseFormats() {
-		vecDateParseFormat.removeAllElements();
+		alDateParseFormat.remove(fmt);
 	}
 
 	/**
@@ -451,13 +443,13 @@ public class OADate extends OADateTime {
 		if (date == null) {
 			return null;
 		}
-		Date d = valueOfMain(date, fmt, vecDateParseFormat, dateOutputFormat);
+		Date d = valueOfMain(date, fmt, alDateParseFormat, dateOutputFormat);
 		if (d == null) {
 			if (date.length() < 6 && OAString.isNumber(date)) {
 				return OADate.valueOf(date + "/" + (new OADate()).getYear());
 			}
 
-			d = valueOfMain(fixDate(date), fmt, vecDateParseFormat, dateOutputFormat);
+			d = valueOfMain(fixDate(date), fmt, alDateParseFormat, dateOutputFormat);
 			if (d == null) {
 				return null;
 			}
@@ -501,4 +493,8 @@ public class OADate extends OADateTime {
 		return ld;
 	}
 
+	@Override
+	public void setTimeZone(TimeZone tz) {
+	    // no-op
+	}
 }

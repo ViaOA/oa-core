@@ -7,7 +7,7 @@ import java.lang.reflect.Modifier;
 
 import org.junit.jupiter.api.Test;
 
-class OATupleTest {
+class OATupleExtraTest {
 
     @Test
     void tupleStoresValuesInFinalFields() throws Exception {

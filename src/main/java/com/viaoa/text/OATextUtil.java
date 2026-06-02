@@ -433,9 +433,10 @@ public class OATextUtil {
 	 * line contains the low nibble, using uppercase hex digits.
 	 *
 	 * @param bs byte array to render
-	 * @return two-line hex representation
+	 * @return null if bs is null, else two-line hex representation
 	 */
 	public static String getVerticalHex(byte[] bs) {
+		if (bs == null) return null;
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < bs.length; i++) {
 			String hex = String.format("%02x", bs[i]).toUpperCase();
@@ -466,6 +467,7 @@ public class OATextUtil {
 	 * @return hex string representation of {@code bytes}
 	 */
 	public static String bytesToHex(byte[] bytes) {
+		if (bytes == null) return null;
 		char[] hexChars = new char[bytes.length * 2];
 		for (int j = 0; j < bytes.length; j++) {
 			int v = bytes[j] & 0xFF;

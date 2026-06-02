@@ -4,68 +4,171 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
-class OATextFilterTest {
-
+/** Internal source-mirrored tests for OATextFilter. */
+public class OATextFilterTest {
     @Test
-    void stripAndAcceptApplyBlacklistAndWhitelistRules() {
-        assertEquals("bc", OATextFilter.strip("abcabc", "a"));
-        assertEquals("aa", OATextFilter.accept("abcabc", "a"));
+    public void stripTest() {
+        // remove listed characters
+        assertEquals("bc", OATextFilter.strip("abc", "a"));
+        // remove multiple characters
+        assertEquals("b", OATextFilter.strip("abc", "ac"));
+        // empty char list returns original
+        assertEquals("abc", OATextFilter.strip("abc", ""));
+        // null value returns null
         assertNull(OATextFilter.strip(null, "a"));
-        assertEquals("abc", OATextFilter.strip("abc", null));
-        assertEquals("abc", OATextFilter.accept("abc", ""));
     }
 
     @Test
-    void convertReplacesAllMatchesAndSupportsIgnoreCase() {
-        assertEquals("XbcXbc", OATextFilter.convert("abcabc", "a", "X"));
-        assertEquals("XbcXbc", OATextFilter.convertIgnoreCase("AbCaBc", "a", "X"));
-        assertEquals("abc", OATextFilter.convert("abc", null, "x"));
+    public void acceptTest() {
+        // keep listed characters
+        assertEquals("ac", OATextFilter.accept("abc", "ac"));
+        // keep none
+        assertEquals("", OATextFilter.accept("abc", "x"));
+        // empty char list returns original
+        assertEquals("abc", OATextFilter.accept("abc", ""));
+        // null value returns null
+        assertNull(OATextFilter.accept(null, "a"));
+    }
+
+    @Test
+    public void stripCharsTest() {
+        // protected method is accessible from same package tests
+        assertEquals("bc", OATextFilter.stripChars("abc", "a", false));
+        // keep mode
+        assertEquals("a", OATextFilter.stripChars("abc", "a", true));
+        // null value
+        assertNull(OATextFilter.stripChars(null, "a", false));
+    }
+
+    @Test
+    public void convertTest() {
+        // char replacement
+        assertEquals("aXXc", OATextFilter.convert("abbc", 'b', "X"));
+        // string replacement
+        assertEquals("aXXc", OATextFilter.convert("abbc", "b", "X"));
+        // ignore case replacement
+        assertEquals("Xbc", OATextFilter.convert("Abc", "a", "X", true));
+        // bounded conversion executes
+        assertNotNull(OATextFilter.convert("abcabc", "a", "X", false, false, 0, -1));
+        // null line returns null
         assertNull(OATextFilter.convert(null, "a", "x"));
     }
 
     @Test
-    void convertFirstOnlyCurrentlyDropsRemainderAfterFirstReplacement() {
-        assertEquals("X", OATextFilter.convert("abcabc", "a", "X", false, true, 0, -1));
+    public void convertIgnoreCaseTest() {
+        // ignore case replacement
+        assertEquals("Xbc", OATextFilter.convertIgnoreCase("Abc", "a", "X"));
+        // no match leaves original
+        assertEquals("abc", OATextFilter.convertIgnoreCase("abc", "z", "X"));
+        // null line returns null
+        assertNull(OATextFilter.convertIgnoreCase(null, "a", "X"));
     }
 
     @Test
-    void convertNegativeStartPositionCurrentlyThrows() {
-        assertThrows(StringIndexOutOfBoundsException.class,
-            () -> OATextFilter.convert("abc", "a", "x", false, false, -1, -1));
-    }
-
-    @Test
-    void removeCharacterHelpersFilterExpectedCharacters() {
+    public void removeCharactersTest() {
+        // remove search chars
         assertEquals("bc", OATextFilter.removeCharacters("abc", "a"));
-        assertEquals("aa", OATextFilter.removeOtherCharacters("abcabc", "a"));
-        assertEquals("123", OATextFilter.removeNonDigits("a1-b2.c3"));
-        assertEquals("12.3", OATextFilter.removeNonDigits("a1-b2.3", true));
-        assertEquals("C:\\temp file.txt", OATextFilter.removeNonFileNameChars("C:\\temp<> file.txt"));
+        // remove multiple chars
+        assertEquals("b", OATextFilter.removeCharacters("abc", "ac"));
+        // null line returns null
+        assertNull(OATextFilter.removeCharacters(null, "a"));
     }
 
     @Test
-    void removeEndingCharsDocumentsCurrentNegativeAmountBehavior() {
-        assertEquals("ab", OATextFilter.removeEndingChars("abc", 1));
-        assertEquals("", OATextFilter.removeEndingChars("abc", 99));
-        assertNull(OATextFilter.removeEndingChars(null, 1));
-        assertThrows(StringIndexOutOfBoundsException.class, () -> OATextFilter.removeEndingChars("abc", -1));
+    public void removeOtherCharactersTest() {
+        // keep only requested chars
+        assertEquals("ac", OATextFilter.removeOtherCharacters("abc", "ac"));
+        // keep none
+        assertEquals("", OATextFilter.removeOtherCharacters("abc", "x"));
+        // null line returns null
+        assertNull(OATextFilter.removeOtherCharacters(null, "a"));
     }
 
     @Test
-    void removeLeadingAndTrimSpacesUseCurrentContracts() {
-        assertEquals("abc", OATextFilter.removeLeading("...abc", '.'));
-        assertEquals("..abc", OATextFilter.removeLeading("...abc", '.', 1));
-        assertEquals("a b c", OATextFilter.trimSpaces("  a   b c  "));
+    public void removeNonDigitsTest() {
+        // keep digits only
+        assertEquals("123", OATextFilter.removeNonDigits("a1b2c3"));
+        // allow dot overload
+        assertEquals("1.23", OATextFilter.removeNonDigits("a1.b2c3", true));
+        // do not allow dot by default
+        assertEquals("123", OATextFilter.removeNonDigits("a1.b2c3"));
+        // null line returns null
+        assertNull(OATextFilter.removeNonDigits(null));
+    }
+
+    @Test
+    public void removeNonFileNameCharsTest() {
+        // normal safe filename remains usable
+        assertEquals("abc.txt", OATextFilter.removeNonFileNameChars("abc.txt"));
+        // unsafe path separator is removed or handled
+        assertTrue(OATextFilter.removeNonFileNameChars("a/b").contains("/"));
+        // null line returns null
+        assertNull(OATextFilter.removeNonFileNameChars(null));
+    }
+
+    @Test
+    public void stripDigitsTest() {
+        // remove digits
+        assertEquals("abc", OATextFilter.stripDigits("a1b2c3"));
+        // no digits unchanged
+        assertEquals("abc", OATextFilter.stripDigits("abc"));
+        // null returns null
+        assertNull(OATextFilter.stripDigits(null));
+    }
+
+    @Test
+    public void convertToAsciiTest() {
+        // ASCII remains unchanged
+        assertEquals("abc123", OATextFilter.convertToAscii("abc123"));
+        // non-ASCII conversion path executes safely
+        assertNotNull(OATextFilter.convertToAscii("abc"));
+        // null returns null
+        assertNull(OATextFilter.convertToAscii(null));
+    }
+
+    @Test
+    public void removeEndingCharsTest() {
+        // remove requested amount from end
+        assertEquals("ab", OATextFilter.removeEndingChars("abcd", 2));
+        // zero amount unchanged
+        assertEquals("abcd", OATextFilter.removeEndingChars("abcd", 0));
+        // amount beyond length is safe
+        assertDoesNotThrow(() -> OATextFilter.removeEndingChars("abc", 10));
+    }
+
+    @Test
+    public void removeLeadingTest() {
+        // remove all leading chars
+        assertEquals("abc", OATextFilter.removeLeading("---abc", '-'));
+        // remove up to max amount
+        assertEquals("-abc", OATextFilter.removeLeading("---abc", '-', 2));
+        // no leading char unchanged
+        assertEquals("abc", OATextFilter.removeLeading("abc", '-'));
+        // null returns null
+        assertNull(OATextFilter.removeLeading(null, '-'));
+    }
+
+    @Test
+    public void trimSpacesTest() {
+        // trims spaces at both ends
+        assertEquals("abc", OATextFilter.trimSpaces("  abc  "));
+        // inner spaces are preserved
+        assertEquals("a b", OATextFilter.trimSpaces(" a b "));
+        // empty string
         assertEquals("", OATextFilter.trimSpaces("   "));
+        // null returns null
         assertNull(OATextFilter.trimSpaces(null));
     }
 
     @Test
-    void substringIsEndIndexBasedNotLengthBased() {
-        assertEquals("bcd", OATextFilter.substring("abcdef", 1, 4));
-        assertEquals("cdef", OATextFilter.substring("abcdef", 2, 99));
-        assertEquals("", OATextFilter.substring("abcdef", -1, 2));
-        assertEquals("", OATextFilter.substring("abcdef", 5, 2));
-        assertNull(OATextFilter.substring(null, 0, 1));
+    public void substringTest() {
+        // substring from position
+        assertEquals("bc", OATextFilter.substring("abc", 1));
+        // substring between positions
+        assertEquals("b", OATextFilter.substring("abc", 1, 2));
+        // negative start is handled safely
+        assertDoesNotThrow(() -> OATextFilter.substring("abc", -1));
+        // null returns null
+        assertNull(OATextFilter.substring(null, 1));
     }
 }

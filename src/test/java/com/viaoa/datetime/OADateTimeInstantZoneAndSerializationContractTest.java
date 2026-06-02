@@ -81,7 +81,7 @@ class OADateTimeInstantZoneAndSerializationContractTest {
 
         assertEquals(date.getYear(), copy.getYear());
         assertEquals(date.getMonth(), copy.getMonth());
-        assertEquals(date.getDay(), copy.getDay());
+        assertEquals(date.getDay(), copy.getDay());  // expected 18, but was 17 
         assertEquals(date.getTimeZone().getID(), copy.getTimeZone().getID());
     }
 
@@ -92,7 +92,7 @@ class OADateTimeInstantZoneAndSerializationContractTest {
 
         OATime copy = roundTrip(time, OATime.class);
 
-        assertEquals(time.get24Hour(), copy.get24Hour());
+        assertEquals(time.get24Hour(), copy.get24Hour());  // expected 10, but was: 4
         assertEquals(time.getMinute(), copy.getMinute());
         assertEquals(time.getSecond(), copy.getSecond());
         assertEquals(time.getMilliSecond(), copy.getMilliSecond());

@@ -53,7 +53,7 @@ class OADateTimeJavaTimeRoundTripTest {
         assertEquals(7, time.get24Hour());
         assertEquals(8, time.getMinute());
         assertEquals(9, time.getSecond());
-        assertEquals(123, time.getMilliSecond());
+        assertEquals(123, time.getMilliSecond()); // was 0
         assertEquals(lt, time.getLocalTime());
     }
 
@@ -71,7 +71,7 @@ class OADateTimeJavaTimeRoundTripTest {
 
         // Current implementation has had CODEX attention around nanos/millis.
         // This assertion locks the intended public LocalDateTime view.
-        assertEquals(ldt, dt.getLocalDateTime());
+        assertEquals(ldt, dt.getLocalDateTime()); // expected: <2026-05-27T07:08:09.123> but was: <2026-05-27T07:08:09>
     }
 
     @Test
@@ -80,7 +80,7 @@ class OADateTimeJavaTimeRoundTripTest {
         OADateTime dt = new OADateTime(instant);
 
         assertEquals(1716818889123L, dt.getTime());
-        assertEquals(instant, dt.getInstant());
+        assertEquals(instant, dt.getInstant()); // expected: <2024-05-27T14:08:09.123Z> but was: <2024-05-27T14:08:09Z>
     }
 
     @Test
@@ -91,8 +91,8 @@ class OADateTimeJavaTimeRoundTripTest {
         assertEquals(zdt.toInstant().toEpochMilli(), dt.getTime());
 
         ZonedDateTime actual = dt.getZonedDateTime();
-        assertEquals(zdt.toInstant(), actual.toInstant());
-
+        assertEquals(zdt.toInstant(), actual.toInstant()); // expected: <2026-05-27T11:08:09.123Z> but was: <2026-05-27T11:08:09Z> 
+        
         // If this fails, it documents whether current OADateTime(ZonedDateTime)
         // preserves the source zone or normalizes to the OA/default timezone.
         assertEquals(ZoneId.of("America/New_York"), actual.getZone());
@@ -102,7 +102,7 @@ class OADateTimeJavaTimeRoundTripTest {
     void getLocalDateAndLocalTimeViewsAreConsistentWithFields() {
         OADateTime dt = new OADateTime(2026, 4, 27, 7, 8, 9, 123);
 
-        assertEquals(LocalDate.of(2026, 5, 27), dt.getLocalDateTime());
+        assertEquals(LocalDate.of(2026, 5, 27), dt.getLocalDateTime());  // 2026-05-27, but was: 2026-05-27T07:08:09
         assertEquals(LocalTime.of(7, 8, 9, 123_000_000), dt.getLocalDateTime());
     }
 }

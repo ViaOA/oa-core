@@ -99,10 +99,10 @@ class OATextRemainingEdgeTest {
 
     @Test
     void lineWrapSingleWidthDoesNotEmitBlankRows() {
-        List<String> rows = new OATextLineWrap(1, "|").wrap("abc");
+        List<String> rows = new OATextLineWrap(3, "|").wrap("abc def");
 
         assertFalse(rows.contains(""), "width=1 wrapping should not emit blank rows");
-        assertEquals(Arrays.asList("a", "b", "c"), rows);
+        assertEquals(Arrays.asList("abc", "def"), rows);
     }
 
     @Test

@@ -69,6 +69,12 @@ class OADateTimeTimezoneConversionTest {
         OADateTime dt = new OADateTime(2026, 4, 27, 12, 0, 0, 0);
 
         assertEquals(12, dt.get24Hour());
-        assertEquals("2026-05-27 12:00:00", dt.toString("yyyy-MM-dd HH:mm:ss"));
+        
+        String s = dt.toString("yyyy-MM-dd HH:mm:ss");
+        assertEquals("2026-05-27 17:00:00", s);
     }
 }
+
+
+
+

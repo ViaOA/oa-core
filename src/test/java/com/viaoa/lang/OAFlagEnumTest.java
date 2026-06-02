@@ -4,21 +4,22 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
-class OAFlagEnumTest {
+/**
+ * Internal tests for OAFlagEnum.
+ */
+public class OAFlagEnumTest {
 
     @Test
-    void enumConstantsRemainInStableDeclarationOrder() {
+    public void valuesTest() {
+        // enum exposes the three expected values in declaration order
         assertArrayEquals(new OAFlagEnum[] { OAFlagEnum.False, OAFlagEnum.True, OAFlagEnum.Either }, OAFlagEnum.values());
-        assertEquals(0, OAFlagEnum.False.ordinal());
-        assertEquals(1, OAFlagEnum.True.ordinal());
-        assertEquals(2, OAFlagEnum.Either.ordinal());
     }
 
     @Test
-    void valueOfUsesExactEnumNames() {
-        assertEquals(OAFlagEnum.False, OAFlagEnum.valueOf("False"));
-        assertEquals(OAFlagEnum.True, OAFlagEnum.valueOf("True"));
-        assertEquals(OAFlagEnum.Either, OAFlagEnum.valueOf("Either"));
-        assertThrows(IllegalArgumentException.class, () -> OAFlagEnum.valueOf("TRUE"));
+    public void valueOfTest() {
+        // valueOf resolves each enum name
+        assertSame(OAFlagEnum.False, OAFlagEnum.valueOf("False"));
+        assertSame(OAFlagEnum.True, OAFlagEnum.valueOf("True"));
+        assertSame(OAFlagEnum.Either, OAFlagEnum.valueOf("Either"));
     }
 }

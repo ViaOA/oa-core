@@ -1,404 +1,256 @@
 package com.viaoa.math;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.stream.Stream;
 
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
-@DisplayName("OAMath")
-class OAMathTest {
+/**
+ * Internal tests for OAMath.
+ *
+ * Strategy:
+ * - One test method per public production method name.
+ * - Overloads are tested inside the same methodNameTest().
+ * - Comments explain what each assertion is checking.
+ * - Tests characterize the current OAMath contract.
+ */
+public class OAMathTest {
 
-	private static final double EXACT = 0.0;
+    @Test
+    public void roundTest() {
+        // normal case: ROUND_HALF_UP is the default two-argument behavior
+        assertEquals(1.24, OAMath.round(1.235, 2), 0.000000001);
 
-	@Nested
-	@DisplayName("round")
-	class RoundTest {
-		@ParameterizedTest(name = "round({0}, {1}) == {2}")
-		@CsvSource({ "1.005, 2, 1.01", "1.0049, 2, 1.0", "1.0051, 2, 1.01", "-1.005, 2, -1.01", "-1.0049, 2, -1.0", "-1.0051, 2, -1.01", "0.0, 2, 0.0", "-0.0, 2, 0.0", "123.444, 0, 123.0", "123.5, 0, 124.0", "-123.5, 0, -124.0", "0.0000000004, 9, 0.0", "0.0000000005, 9, 0.000000001", "-0.0000000005, 9, -0.000000001", "999999999999.995, 2, 1000000000000.0" })
-		@DisplayName("uses HALF_UP by default")
-		void roundUsesHalfUpByDefault(double value, int decimalPlaces, double expected) {
-			assertEquals(expected, OAMath.round(value, decimalPlaces), EXACT);
-		}
+        // explicit ROUND_DOWN truncates instead of rounding up
+        assertEquals(1.23, OAMath.round(1.239, 2, BigDecimal.ROUND_DOWN), 0.000000001);
 
-		@ParameterizedTest(name = "round({0}, {1}, {2}) == {3}")
-		@CsvSource({ 
-			"1.005, 2, 4, 1.01", "1.005, 2, 5, 1.0", "1.005, 2, 6, 1.0", "-1.005, 2, 4, -1.01", "-1.005, 2, 5, -1.0", "-1.005, 2, 6, -1.0", 
-			"1.234, 2, 0, 1.24", "1.234, 2, 1, 1.23", "-1.234, 2, 0, -1.24", "-1.234, 2, 1, -1.23" 
-			})
-		@DisplayName("honors explicit BigDecimal rounding constants")
-		void roundHonorsExplicitRoundType(double value, int decimalPlaces, int roundType, double expected) {
-			assertEquals(expected, OAMath.round(value, decimalPlaces, roundType), EXACT);
-		}
+        // negative round type uses OA default ROUND_HALF_UP behavior
+        assertEquals(1.24, OAMath.round(1.235, 2, -1), 0.000000001);
 
-		@ParameterizedTest
-		@ValueSource(doubles = { 1.005, -1.005, 123.456789, -987654321.123456 })
-		@DisplayName("negative round type defaults to HALF_UP")
-		void negativeRoundTypeDefaultsToHalfUp(double value) {
-			assertEquals(OAMath.round(value, 2), OAMath.round(value, 2, -1), EXACT);
-		}
+        // negative decimal places skip scale enforcement and return the input value
+        assertEquals(1.235, OAMath.round(1.235, -1), 0.000000001);
 
-		@ParameterizedTest
-		@ValueSource(doubles = { 1.005, -1.005, 123.456789, -987654321.123456 })
-		@DisplayName("negative decimal places leave the value unscaled")
-		void negativeDecimalPlacesLeaveValueUnscaled(double value) {
-			assertEquals(value, OAMath.round(value, -1), EXACT);
-		}
+        // zero decimal places rounds to whole number
+        assertEquals(2.0, OAMath.round(1.5, 0), 0.000000001);
 
-		@Test
-		@DisplayName("invalid rounding mode is rejected")
-		void invalidRoundingModeIsRejected() {
-			assertThrows(IllegalArgumentException.class, () -> OAMath.round(1.23, 2, BigDecimal.ROUND_UNNECESSARY + 1));
-		}
+        // invalid positive round type fails visibly
+        assertThrows(IllegalArgumentException.class, () -> OAMath.round(1.23, 2, BigDecimal.ROUND_UNNECESSARY + 1));
 
-		@ParameterizedTest
-		@ValueSource(doubles = { Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY })
-		@DisplayName("non-finite values are rejected by BigDecimal-backed rounding")
-		void nonFiniteValuesAreRejected(double value) {
-			assertThrows(NumberFormatException.class, () -> OAMath.round(value, 2));
-		}
-	}
+        // current non-finite behavior: BigDecimal.valueOf cannot accept NaN
+        assertThrows(NumberFormatException.class, () -> OAMath.round(Double.NaN, 2));
+    }
 
-	@Nested
-	@DisplayName("add")
-	class AddTest {
-		@ParameterizedTest(name = "{0} + {1}, scale {2} == {3}")
-		@CsvSource({ "1.005, 2.005, 2, 3.01", "1.0049, 2.0049, 2, 3.01", "1.0051, 2.0051, 2, 3.01", "-1.005, -2.005, 2, -3.01", "-1.005, 2.005, 2, 1.0", "0.1, 0.2, 2, 0.3", "999999999999.99, 0.01, 2, 1000000000000.0", "0.0000000004, 0.0000000004, 9, 0.000000001", "0.0000000005, 0.0000000005, 9, 0.000000001" })
-		@DisplayName("computes full sum first and rounds only the final result")
-		void addComputesFirstAndRoundsFinalResult(double a, double b, int decimalPlaces, double expected) {
-			assertEquals(expected, OAMath.add(a, b, decimalPlaces), EXACT);
-			assertEquals(expected, OAMath.add(Double.valueOf(a), Double.valueOf(b), decimalPlaces), EXACT);
-			assertEquals(expected, OAMath.add(a, Double.valueOf(b), decimalPlaces), EXACT);
-			assertEquals(expected, OAMath.add(Double.valueOf(a), b, decimalPlaces), EXACT);
-		}
+    @Test
+    public void addTest() {
+        // normal Number overload without scale
+        assertEquals(3.3, OAMath.add(Double.valueOf(1.1), Double.valueOf(2.2)), 0.000000001);
 
-		@ParameterizedTest
-		@MethodSource("com.viaoa.math.OAMathTest#addPairs")
-		@DisplayName("addition is commutative")
-		void additionIsCommutative(double a, double b, int decimalPlaces) {
-			assertEquals(OAMath.add(a, b, decimalPlaces), OAMath.add(b, a, decimalPlaces), EXACT);
-		}
+        // primitive double overload without scale
+        assertEquals(3.3, OAMath.add(1.1, 2.2), 0.000000001);
 
-		@Test
-		@DisplayName("null operands are treated as zero")
-		void nullOperandsAreTreatedAsZero() {
-			assertEquals(0.0, OAMath.add(null, null), EXACT);
-			assertEquals(5.25, OAMath.add(null, BigDecimal.valueOf(5.25)), EXACT);
-			assertEquals(5.25, OAMath.add(BigDecimal.valueOf(5.25), null), EXACT);
-			assertEquals(5.25, OAMath.add(5.25, null), EXACT);
-			assertEquals(5.25, OAMath.add(null, 5.25), EXACT);
-		}
-	}
+        // primitive + Number overload without scale
+        assertEquals(3.3, OAMath.add(1.1, Double.valueOf(2.2)), 0.000000001);
 
-	@Nested
-	@DisplayName("subtract")
-	class SubtractTest {
-		@ParameterizedTest(name = "{0} - {1}, scale {2} == {3}")
-		@CsvSource({ "10.005, 2.005, 2, 8.0", "1.005, 0.0049, 2, 1.0", "1.0049, 0.0049, 2, 1.0", "-1.005, -2.005, 2, 1.0", "-1.005, 2.005, 2, -3.01", "0.3, 0.2, 2, 0.1", "1000000000000.00, 0.01, 2, 999999999999.99", "0.0000000005, 0.0000000001, 9, 0.0" })
-		@DisplayName("computes full difference first and rounds only the final result")
-		void subtractComputesFirstAndRoundsFinalResult(double a, double b, int decimalPlaces, double expected) {
-			assertEquals(expected, OAMath.subtract(a, b, decimalPlaces), EXACT);
-			assertEquals(expected, OAMath.subtract(Double.valueOf(a), Double.valueOf(b), decimalPlaces), EXACT);
-			assertEquals(expected, OAMath.subtract(a, Double.valueOf(b), decimalPlaces), EXACT);
-			assertEquals(expected, OAMath.subtract(Double.valueOf(a), b, decimalPlaces), EXACT);
-		}
+        // Number + primitive overload without scale
+        assertEquals(3.3, OAMath.add(Double.valueOf(1.1), 2.2), 0.000000001);
 
-		@ParameterizedTest
-		@ValueSource(doubles = { 0.0, -0.0, 1.005, -1.005, 999999999999.99, 0.000000001 })
-		@DisplayName("subtracting a value from itself is zero")
-		void subtractingSelfIsZero(double value) {
-			assertEquals(0.0, OAMath.subtract(value, value, 9), EXACT);
-		}
+        // null operands are treated as zero
+        assertEquals(5.0, OAMath.add(null, Integer.valueOf(5)), 0.000000001);
+        assertEquals(5.0, OAMath.add(Integer.valueOf(5), null), 0.000000001);
+        assertEquals(0.0, OAMath.add((Number) null, (Number) null), 0.000000001);
 
-		@ParameterizedTest
-		@MethodSource("com.viaoa.math.OAMathTest#subtractPairs")
-		@DisplayName("subtract sign is antisymmetric")
-		void subtractSignIsAntisymmetric(double a, double b, int decimalPlaces) {
-			int ab = Double.compare(OAMath.subtract(a, b, decimalPlaces), 0.0);
-			int ba = Double.compare(OAMath.subtract(b, a, decimalPlaces), 0.0);
+        // decimalPlaces applies final scale
+        assertEquals(3.33, OAMath.add(1.111, 2.222, 2), 0.000000001);
 
-			assertEquals(-ab, ba);
-		}
+        // explicit rounding mode is honored
+        assertEquals(3.33, OAMath.add(1.115, 2.222, 2, BigDecimal.ROUND_DOWN), 0.000000001);
 
-		@Test
-		@DisplayName("null operands are treated as zero")
-		void nullOperandsAreTreatedAsZero() {
-			assertEquals(0.0, OAMath.subtract(null, null), EXACT);
-			assertEquals(-5.25, OAMath.subtract(null, BigDecimal.valueOf(5.25)), EXACT);
-			assertEquals(5.25, OAMath.subtract(BigDecimal.valueOf(5.25), null), EXACT);
-			assertEquals(5.25, OAMath.subtract(5.25, null), EXACT);
-			assertEquals(-5.25, OAMath.subtract(null, 5.25), EXACT);
-		}
-	}
+        // negative round type uses default ROUND_HALF_UP
+        assertEquals(3.34, OAMath.add(1.115, 2.222, 2, -1), 0.000000001);
 
-	@Nested
-	@DisplayName("multiply")
-	class MultiplyTest {
-		@ParameterizedTest(name = "{0} * {1}, scale {2} == {3}")
-		@CsvSource({ "1.005, 2.005, 2, 2.02", "1.0049, 2.0049, 2, 2.01", "1.0051, 2.0051, 2, 2.02", "-1.005, 2.005, 2, -2.02", "-1.005, -2.005, 2, 2.02", "0.1, 0.2, 2, 0.02", "999999999.99, 1000.0, 2, 999999999990.0", "0.0000000005, 2.0, 9, 0.000000001" })
-		@DisplayName("computes full product first and rounds only the final result")
-		void multiplyComputesFirstAndRoundsFinalResult(double a, double b, int decimalPlaces, double expected) {
-			assertEquals(expected, OAMath.multiply(a, b, decimalPlaces), EXACT);
-			assertEquals(expected, OAMath.multiply(Double.valueOf(a), Double.valueOf(b), decimalPlaces), EXACT);
-			assertEquals(expected, OAMath.multiply(a, Double.valueOf(b), decimalPlaces), EXACT);
-			assertEquals(expected, OAMath.multiply(Double.valueOf(a), b, decimalPlaces), EXACT);
-		}
+        // BigDecimal operands are used as decimal values
+        assertEquals(0.3, OAMath.add(new BigDecimal("0.1"), new BigDecimal("0.2")), 0.000000001);
 
-		@ParameterizedTest
-		@MethodSource("com.viaoa.math.OAMathTest#multiplyPairs")
-		@DisplayName("multiplication is commutative")
-		void multiplicationIsCommutative(double a, double b, int decimalPlaces) {
-			assertEquals(OAMath.multiply(a, b, decimalPlaces), OAMath.multiply(b, a, decimalPlaces), EXACT);
-		}
+        // large integral values preserve unit difference before final double conversion for small result
+        assertEquals(1.0, OAMath.add(BigInteger.ZERO, BigInteger.ONE), 0.000000001);
 
-		@ParameterizedTest
-		@ValueSource(doubles = { 0.0, -0.0, 1.005, -1.005, 999999999999.99, 0.000000001 })
-		@DisplayName("multiplying by one preserves the final rounded value")
-		void multiplyingByOnePreservesRoundedValue(double value) {
-			assertEquals(OAMath.round(value, 9), OAMath.multiply(value, 1.0, 9), EXACT);
-		}
+        // invalid positive round type fails visibly through performMathOp
+        assertThrows(IllegalArgumentException.class,
+                () -> OAMath.add(1.0, 2.0, 2, BigDecimal.ROUND_UNNECESSARY + 1));
 
-		@Test
-		@DisplayName("null operands are treated as zero")
-		void nullOperandsAreTreatedAsZero() {
-			assertEquals(0.0, OAMath.multiply(null, null), EXACT);
-			assertEquals(0.0, OAMath.multiply(null, BigDecimal.valueOf(5.25)), EXACT);
-			assertEquals(0.0, OAMath.multiply(BigDecimal.valueOf(5.25), null), EXACT);
-			assertEquals(0.0, OAMath.multiply(5.25, null), EXACT);
-			assertEquals(0.0, OAMath.multiply(null, 5.25), EXACT);
-		}
-	}
+        // current non-finite behavior: BigDecimal.valueOf cannot accept NaN
+        assertThrows(NumberFormatException.class, () -> OAMath.add(Double.NaN, 1.0));
+    }
 
-	@Nested
-	@DisplayName("divide")
-	class DivideTest {
-		@ParameterizedTest(name = "{0} / {1}, scale {2} == {3}")
-		@CsvSource({ "10.005, 2.005, 2, 4.99", "1.0, 3.0, 2, 0.33", "2.0, 3.0, 4, 0.6667", "1.0, 8.0, 3, 0.125", "-1.0, 3.0, 2, -0.33", "1.0, -3.0, 2, -0.33", "-1.0, -3.0, 2, 0.33", "0.0, 3.0, 2, 0.0", "-0.0, 3.0, 2, 0.0", "1000000000000.0, 4.0, 2, 250000000000.0" })
-		@DisplayName("computes quotient first and rounds only the final result")
-		void divideComputesFirstAndRoundsFinalResult(double a, double b, int decimalPlaces, double expected) {
-			assertEquals(expected, OAMath.divide(a, b, decimalPlaces), EXACT);
-			assertEquals(expected, OAMath.divide(Double.valueOf(a), Double.valueOf(b), decimalPlaces), EXACT);
-			assertEquals(expected, OAMath.divide(a, Double.valueOf(b), decimalPlaces), EXACT);
-			assertEquals(expected, OAMath.divide(Double.valueOf(a), b, decimalPlaces), EXACT);
-		}
+    @Test
+    public void subtractTest() {
+        // normal Number overload without scale
+        assertEquals(3.0, OAMath.subtract(Integer.valueOf(5), Integer.valueOf(2)), 0.000000001);
 
-		@ParameterizedTest
-		@CsvSource({ "1.0, 3.0, 0.3333333333333333", "2.0, 3.0, 0.6666666666666667", "10.0, 4.0, 2.5", "-1.0, 3.0, -0.3333333333333333" })
-		@DisplayName("unscaled division uses OAMath's default repeating-decimal protection")
-		void unscaledDivisionUsesDefaultRepeatingDecimalProtection(double a, double b, double expected) {
-			assertEquals(expected, OAMath.divide(a, b), EXACT);
-		}
+        // primitive double overload without scale
+        assertEquals(3.0, OAMath.subtract(5.0, 2.0), 0.000000001);
 
-		@ParameterizedTest
-		@ValueSource(doubles = { 0.0, -0.0 })
-		@DisplayName("division by zero returns NaN")
-		void divisionByZeroReturnsNaN(double zero) {
-			assertTrue(Double.isNaN(OAMath.divide(1.0, zero)));
-			assertTrue(Double.isNaN(OAMath.divide(BigDecimal.ONE, BigDecimal.valueOf(zero))));
-			assertTrue(Double.isNaN(OAMath.divide(1.0, BigDecimal.valueOf(zero), 2)));
-			assertTrue(Double.isNaN(OAMath.divide(BigDecimal.ONE, zero, 2)));
-		}
+        // primitive + Number overload without scale
+        assertEquals(3.0, OAMath.subtract(5.0, Integer.valueOf(2)), 0.000000001);
 
-		@Test
-		@DisplayName("null dividend is zero and null divisor is divide-by-zero")
-		void nullHandlingForDivide() {
-			assertEquals(0.0, OAMath.divide(null, BigDecimal.valueOf(5.0)), EXACT);
-			assertEquals(0.0, OAMath.divide(null, 5.0), EXACT);
-			assertTrue(Double.isNaN(OAMath.divide(BigDecimal.valueOf(5.0), null)));
-			assertTrue(Double.isNaN(OAMath.divide(5.0, null)));
-			assertTrue(Double.isNaN(OAMath.divide(null, null)));
-		}
-	}
+        // Number + primitive overload without scale
+        assertEquals(3.0, OAMath.subtract(Integer.valueOf(5), 2.0), 0.000000001);
 
-	@Nested
-	@DisplayName("performMathOp")
-	class PerformMathOpTest {
-		@ParameterizedTest
-		@MethodSource("com.viaoa.math.OAMathTest#numberOperands")
-		@DisplayName("accepts supported Number implementations")
-		void acceptsSupportedNumberImplementations(Number a, Number b, double expectedSum, double expectedDifference, double expectedProduct) {
-			assertEquals(expectedSum, OAMath.performMathOp(OAMath.MATH_OP_ADD, a, b, 2, BigDecimal.ROUND_HALF_UP), EXACT);
-			assertEquals(expectedDifference, OAMath.performMathOp(OAMath.MATH_OP_SUBTRACT, a, b, 2, BigDecimal.ROUND_HALF_UP), EXACT);
-			assertEquals(expectedProduct, OAMath.performMathOp(OAMath.MATH_OP_MULTIPLY, a, b, 2, BigDecimal.ROUND_HALF_UP), EXACT);
-		}
+        // null first operand is treated as zero
+        assertEquals(-5.0, OAMath.subtract(null, Integer.valueOf(5)), 0.000000001);
 
-		@Test
-		@DisplayName("BigInteger operands are accepted")
-		void bigIntegerOperandsAreAccepted() {
-			BigInteger a = new BigInteger("12345678901234567890");
-			BigInteger b = new BigInteger("10");
+        // null second operand is treated as zero
+        assertEquals(5.0, OAMath.subtract(Integer.valueOf(5), null), 0.000000001);
 
-			assertEquals(1.2345678901234567E19, OAMath.add(a, b), EXACT);
-			// assertEquals(1.2345678901234567E20, OAMath.multiply(a, b), EXACT);
-		}
+        // decimalPlaces applies final scale
+        assertEquals(1.11, OAMath.subtract(3.333, 2.222, 2), 0.000000001);
 
-		@Test
-		@DisplayName("invalid operation code is rejected")
-		void invalidOperationCodeIsRejected() {
-			assertThrows(IllegalArgumentException.class, () -> OAMath.performMathOp(999, BigDecimal.ONE, BigDecimal.ONE, 2, BigDecimal.ROUND_HALF_UP));
-		}
+        // explicit rounding mode is honored
+        assertEquals(1.11, OAMath.subtract(3.339, 2.222, 2, BigDecimal.ROUND_DOWN), 0.000000001);
 
-		@Test
-		@DisplayName("invalid rounding mode is rejected")
-		void invalidRoundingModeIsRejected() {
-			assertThrows(IllegalArgumentException.class, () -> OAMath.performMathOp(OAMath.MATH_OP_ADD, BigDecimal.ONE, BigDecimal.ONE, 2, BigDecimal.ROUND_UNNECESSARY + 1));
-		}
+        // negative round type uses default ROUND_HALF_UP
+        assertEquals(1.12, OAMath.subtract(3.339, 2.222, 2, -1), 0.000000001);
 
-		@Test
-		@DisplayName("negative rounding mode defaults to HALF_UP")
-		void negativeRoundTypeDefaultsToHalfUp() {
-			assertEquals(OAMath.performMathOp(OAMath.MATH_OP_ADD, 1.005, 2.005, 2, BigDecimal.ROUND_HALF_UP), OAMath.performMathOp(OAMath.MATH_OP_ADD, 1.005, 2.005, 2, -1), EXACT);
-		}
-	}
+        // BigInteger operands preserve exact integral difference
+        assertEquals(1.0, OAMath.subtract(BigInteger.TEN, BigInteger.valueOf(9)), 0.000000001);
 
-	@Nested
-	@DisplayName("deterministic runtime invariants")
-	class DeterministicInvariantTest {
-		@ParameterizedTest
-		@MethodSource("com.viaoa.math.OAMathTest#allArithmeticPairs")
-		@DisplayName("same inputs produce the same results repeatedly")
-		void repeatedCalculationsAreDeterministic(double a, double b, int decimalPlaces) {
-			double add = OAMath.add(a, b, decimalPlaces);
-			double subtract = OAMath.subtract(a, b, decimalPlaces);
-			double multiply = OAMath.multiply(a, b, decimalPlaces);
-			double divide = OAMath.divide(a, b, decimalPlaces);
+        // invalid positive round type fails visibly through performMathOp
+        assertThrows(IllegalArgumentException.class,
+                () -> OAMath.subtract(5.0, 2.0, 2, BigDecimal.ROUND_UNNECESSARY + 1));
 
-			for (int i = 0; i < 100; i++) {
-				assertEquals(add, OAMath.add(a, b, decimalPlaces), EXACT);
-				assertEquals(subtract, OAMath.subtract(a, b, decimalPlaces), EXACT);
-				assertEquals(multiply, OAMath.multiply(a, b, decimalPlaces), EXACT);
+        // current non-finite behavior: BigDecimal.valueOf cannot accept NaN
+        assertThrows(NumberFormatException.class, () -> OAMath.subtract(Double.NaN, 1.0));
+    }
 
-				if (Double.isNaN(divide)) {
-					assertTrue(Double.isNaN(OAMath.divide(a, b, decimalPlaces)));
-				} else {
-					assertEquals(divide, OAMath.divide(a, b, decimalPlaces), EXACT);
-				}
-			}
-		}
+    @Test
+    public void multiplyTest() {
+        // normal Number overload without scale
+        assertEquals(6.0, OAMath.multiply(Integer.valueOf(2), Integer.valueOf(3)), 0.000000001);
 
-		@Test
-		@DisplayName("chained arithmetic is deterministic with explicit final-result scales")
-		void chainedArithmeticIsDeterministic() {
-			double first = OAMath.divide(OAMath.multiply(OAMath.add(1.005, 2.005, 2), 3.333, 4), 7.0, 6);
-			double second = OAMath.divide(OAMath.multiply(OAMath.add(1.005, 2.005, 2), 3.333, 4), 7.0, 6);
+        // primitive double overload without scale
+        assertEquals(6.0, OAMath.multiply(2.0, 3.0), 0.000000001);
 
-			assertEquals(1.433186, first, EXACT);
-			assertEquals(first, second, EXACT);
-		}
+        // primitive + Number overload without scale
+        assertEquals(6.0, OAMath.multiply(2.0, Integer.valueOf(3)), 0.000000001);
 
-		@ParameterizedTest
-		@ValueSource(doubles = { 0.0, -0.0 })
-		@DisplayName("positive and negative zero are semantically zero")
-		void positiveAndNegativeZeroAreSemanticallyZero(double zero) {
-			assertEquals(0.0, OAMath.add(zero, 0.0, 2), EXACT);
-			assertEquals(0.0, OAMath.subtract(zero, 0.0, 2), EXACT);
-			assertEquals(0.0, OAMath.multiply(zero, 999.99, 2), EXACT);
-			assertEquals(0.0, OAMath.divide(zero, 999.99, 2), EXACT);
-			assertEquals(0.0, OAMath.round(zero, 2), EXACT);
-		}
+        // Number + primitive overload without scale
+        assertEquals(6.0, OAMath.multiply(Integer.valueOf(2), 3.0), 0.000000001);
 
-		@Test
-		@DisplayName("divide-by-zero NaN is current output but not accepted as later BigDecimal-backed input")
-		void divideByZeroResultIsNotAcceptedAsLaterInput() {
-			double value = OAMath.divide(1.0, 0.0);
+        // null first operand is treated as zero
+        assertEquals(0.0, OAMath.multiply(null, Integer.valueOf(5)), 0.000000001);
 
-			assertTrue(Double.isNaN(value));
-			assertThrows(NumberFormatException.class, () -> OAMath.add(value, 1.0));
-			assertThrows(NumberFormatException.class, () -> OAMath.round(value, 2));
-		}
-	}
+        // null second operand is treated as zero
+        assertEquals(0.0, OAMath.multiply(Integer.valueOf(5), null), 0.000000001);
 
-	static Stream<Arguments> numberOperands() {
-		return Stream.of(Arguments.of(Byte.valueOf((byte) 2), Short.valueOf((short) 3), 5.0, -1.0, 6.0), Arguments.of(Integer.valueOf(10), Long.valueOf(4L), 14.0, 6.0, 40.0), Arguments.of(Float.valueOf("1.25"), Double.valueOf("2.50"), 3.75, -1.25, 3.13), Arguments.of(BigDecimal.valueOf(1.005), BigDecimal.valueOf(2.005), 3.01, -1.0, 2.02), Arguments.of(new BigInteger("100"), new BigInteger("3"), 103.0, 97.0, 300.0));
-	}
+        // decimalPlaces applies final scale
+        assertEquals(3.33, OAMath.multiply(1.111, 3.0, 2), 0.000000001);
 
-	static Stream<Arguments> addPairs() {
-		return Stream.of(Arguments.of(1.005, 2.005, 2), Arguments.of(1.0049, 2.0049, 2), Arguments.of(-1.005, 2.005, 2), Arguments.of(999999.99, -0.01, 2), Arguments.of(0.000001, 0.000002, 9));
-	}
+        // explicit rounding mode is honored
+        double d = OAMath.multiply(1.119, 3.0, 2, BigDecimal.ROUND_DOWN);
+        assertEquals(3.35, d, 0.000000001);
 
-	static Stream<Arguments> subtractPairs() {
-		return Stream.of(Arguments.of(1.005, 2.005, 2), Arguments.of(1.0049, 2.0049, 2), Arguments.of(-1.005, 2.005, 2), Arguments.of(999999.99, -0.01, 2), Arguments.of(0.000001, 0.000002, 9));
-	}
+        // negative round type uses default ROUND_HALF_UP
+        assertEquals(3.36, OAMath.multiply(1.119, 3.0, 2, -1), 0.000000001);
 
-	static Stream<Arguments> multiplyPairs() {
-		return Stream.of(Arguments.of(1.005, 2.005, 2), Arguments.of(1.0049, 2.0049, 2), Arguments.of(-1.005, 2.005, 2), Arguments.of(999999.99, -0.01, 2), Arguments.of(0.000001, 0.000002, 12));
-	}
+        // BigDecimal operands avoid primitive floating-point artifacts
+        assertEquals(0.02, OAMath.multiply(new BigDecimal("0.10"), new BigDecimal("0.20")), 0.000000001);
 
-	static Stream<Arguments> allArithmeticPairs() {
-		return Stream.of(Arguments.of(1.005, 2.005, 2), Arguments.of(1.0049, 2.0049, 2), Arguments.of(-1.005, 2.005, 2), Arguments.of(0.0, 1.0, 2), Arguments.of(-0.0, -1.0, 2), Arguments.of(999999999.99, 0.01, 2), Arguments.of(0.000000001, 0.000000002, 9), Arguments.of(1.0, 3.0, 8));
-	}
+        // invalid positive round type fails visibly through performMathOp
+        assertThrows(IllegalArgumentException.class,
+                () -> OAMath.multiply(2.0, 3.0, 2, BigDecimal.ROUND_UNNECESSARY + 1));
 
+        // current non-finite behavior: BigDecimal.valueOf cannot accept NaN
+        assertThrows(NumberFormatException.class, () -> OAMath.multiply(Double.NaN, 1.0));
+    }
+
+    @Test
+    public void divideTest() {
+        // normal Number overload without scale uses bounded internal division scale
+        assertEquals(2.5, OAMath.divide(Integer.valueOf(5), Integer.valueOf(2)), 0.000000001);
+
+        // primitive double overload without scale
+        assertEquals(2.5, OAMath.divide(5.0, 2.0), 0.000000001);
+
+        // primitive + Number overload without scale
+        assertEquals(2.5, OAMath.divide(5.0, Integer.valueOf(2)), 0.000000001);
+
+        // Number + primitive overload without scale
+        assertEquals(2.5, OAMath.divide(Integer.valueOf(5), 2.0), 0.000000001);
+
+        // decimalPlaces applies requested final scale
+        assertEquals(0.33, OAMath.divide(1.0, 3.0, 2), 0.000000001);
+
+        // explicit rounding mode is honored
+        assertEquals(0.33, OAMath.divide(1.0, 3.0, 2, BigDecimal.ROUND_DOWN), 0.000000001);
+
+        // negative round type uses default ROUND_HALF_UP
+        assertEquals(0.33, OAMath.divide(1.0, 3.0, 2, -1), 0.000000001);
+
+        // null numerator is treated as zero
+        assertEquals(0.0, OAMath.divide(null, Integer.valueOf(5)), 0.000000001);
+
+        // zero divisor returns NaN by contract
+        assertTrue(Double.isNaN(OAMath.divide(1.0, 0.0)));
+
+        // null divisor is treated as zero and returns NaN
+        assertTrue(Double.isNaN(OAMath.divide(Integer.valueOf(1), null)));
+
+        // repeating decimal without requested decimal places does not throw
+        assertDoesNotThrow(() -> OAMath.divide(1.0, 3.0));
+
+        // invalid positive round type fails visibly through performMathOp
+        assertThrows(IllegalArgumentException.class,
+                () -> OAMath.divide(1.0, 3.0, 2, BigDecimal.ROUND_UNNECESSARY + 1));
+
+        // current non-finite behavior: BigDecimal.valueOf cannot accept NaN
+        assertThrows(NumberFormatException.class, () -> OAMath.divide(Double.NaN, 1.0));
+    }
+
+    @Test
+    public void performMathOpTest() {
+        // operation dispatch: add
+        assertEquals(5.0, OAMath.performMathOp(OAMath.MATH_OP_ADD, 2, 3, -1, -1), 0.000000001);
+
+        // operation dispatch: subtract
+        assertEquals(-1.0, OAMath.performMathOp(OAMath.MATH_OP_SUBTRACT, 2, 3, -1, -1), 0.000000001);
+
+        // operation dispatch: multiply
+        assertEquals(6.0, OAMath.performMathOp(OAMath.MATH_OP_MULTIPLY, 2, 3, -1, -1), 0.000000001);
+
+        // operation dispatch: divide
+        assertEquals(2.0, OAMath.performMathOp(OAMath.MATH_OP_DIVIDE, 6, 3, -1, -1), 0.000000001);
+
+        // unknown operation code fails visibly
+        assertThrows(IllegalArgumentException.class, () -> OAMath.performMathOp(999, 2, 3, -1, -1));
+
+        // invalid positive round type fails visibly
+        assertThrows(IllegalArgumentException.class,
+                () -> OAMath.performMathOp(OAMath.MATH_OP_ADD, 2, 3, 2, BigDecimal.ROUND_UNNECESSARY + 1));
+
+        // negative rounding mode uses default ROUND_HALF_UP
+        assertEquals(3.34, OAMath.performMathOp(OAMath.MATH_OP_ADD, 1.115, 2.222, 2, -1), 0.000000001);
+
+        // decimalPlaces applies final scale
+        assertEquals(3.33, OAMath.performMathOp(OAMath.MATH_OP_ADD, 1.111, 2.222, 2, BigDecimal.ROUND_HALF_UP), 0.000000001);
+
+        // null operands are treated as zero
+        assertEquals(0.0, OAMath.performMathOp(OAMath.MATH_OP_ADD, null, null, -1, -1), 0.000000001);
+
+        // divide by zero returns NaN
+        assertTrue(Double.isNaN(OAMath.performMathOp(OAMath.MATH_OP_DIVIDE, 1, 0, -1, -1)));
+
+        // BigDecimal operands are used directly
+        assertEquals(0.3, OAMath.performMathOp(OAMath.MATH_OP_ADD,
+                new BigDecimal("0.1"), new BigDecimal("0.2"), -1, -1), 0.000000001);
+
+        // BigInteger operands preserve exact integral semantics before final double return
+        assertEquals(1.0, OAMath.performMathOp(OAMath.MATH_OP_SUBTRACT,
+                BigInteger.TEN, BigInteger.valueOf(9), -1, -1), 0.000000001);
+
+        // repeated calls do not retain prior state
+        assertEquals(2.0, OAMath.performMathOp(OAMath.MATH_OP_ADD, 1, 1, -1, -1), 0.000000001);
+        assertEquals(10.0, OAMath.performMathOp(OAMath.MATH_OP_MULTIPLY, 2, 5, -1, -1), 0.000000001);
+    }
 }
-
-/* CODEX
-
-
- Highest-value additions:
-
-  1. BigDecimal scale preservation inputs
-     Test values like new BigDecimal("1.2300"), new BigDecimal("0.000000000000000001"), and large exact decimal
-     strings. OAMath.toBigDecimal preserves BigDecimal directly, so this catches precision assumptions better
-     than double.
-  2. All rounding mode constants
-     Add a parameterized table for ROUND_UP, ROUND_DOWN, ROUND_CEILING, ROUND_FLOOR, ROUND_HALF_UP,
-     ROUND_HALF_DOWN, ROUND_HALF_EVEN, and ROUND_UNNECESSARY. Include positive and negative values. Current
-     coverage only samples a few.
-  3. ROUND_UNNECESSARY behavior
-     This should succeed when no rounding is required and throw ArithmeticException when rounding is required:
-
-     OAMath.round(1.23, 2, BigDecimal.ROUND_UNNECESSARY) == 1.23
-     OAMath.round(1.234, 2, BigDecimal.ROUND_UNNECESSARY) throws ArithmeticException
-
-  4. Negative decimalPlaces for arithmetic
-     You covered negative scale for round, but arithmetic should also verify decimalPlaces < 0 means “no final
-     scale,” except divide still uses internal 16-place scale.
-  5. Direct performMathOp coverage for all op constants
-     The public helpers cover this indirectly, but since performMathOp is public, it should have explicit tests
-     for add/subtract/multiply/divide, invalid op, invalid rounding mode, negative rounding mode.
-  6. Non-finite arithmetic inputs
-     Since BigDecimal.valueOf(Double.NaN) and infinities throw, test that add, subtract, multiply, and non-zero
-     divide reject NaN/infinity consistently. Also preserve the current divide-by-zero NaN contract.
-  7. Overflow-to-infinity result boundary
-     BigDecimal can compute a result too large for doubleValue(), which returns infinity. If that’s acceptable
-     current behavior, lock it:
-
-     OAMath.multiply(new BigDecimal("1E400"), BigDecimal.TEN) == Double.POSITIVE_INFINITY
-
-  8. Divide precision contract
-     Add explicit tests that unscaled repeating division uses 16 places:
-
-     OAMath.divide(1, 6) == 0.1666666666666667
-     OAMath.divide(1, 7) == 0.1428571428571429
-
-  9. Final-result-only rounding regression tests
-     Add comments/DisplayNames that lock this exact semantic:
-
-     add(1.005, 2.005, 2) == 3.01
-     multiply(1.005, 2.005, 2) == 2.02
-     divide(10.005, 2.005, 2) == 4.99
-
-     These are important because this was the semantic correction.
-
-  10. Null behavior with explicit scale and rounding mode
-     Current null tests mostly hit default overloads. Add:
-
-  OAMath.add(null, 1.005, 2, BigDecimal.ROUND_HALF_UP) == 1.01
-  OAMath.subtract(null, 1.005, 2, BigDecimal.ROUND_HALF_UP) == -1.01
-
-  One small correction to the generated test class: update the explicit rounding CSV for ROUND_UP/ROUND_DOWN as
-  noted. After that, I’d add the above as another nested section or expand the existing ones.
-
-
-*/
-

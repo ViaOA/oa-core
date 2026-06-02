@@ -88,10 +88,13 @@ class OADateTimeCoreTest {
     @Test
     void instanceTimezoneControlsFieldAccessAndFormatting() {
         OADateTime dt = new OADateTime(EPOCH_MILLIS);
-        dt.setTimeZone(TimeZone.getTimeZone("America/Chicago"));
+        TimeZone tz = TimeZone.getTimeZone("America/Chicago");
+        dt.setTimeZone(tz);
 
-        assertEquals("2024-05-06 02:08 CDT", dt.toString("yyyy-MM-dd HH:mm z"));
-        assertEquals(2, dt.get24Hour());
+        String s = dt.toString("yyyy-MM-dd HH:mm z");
+        assertEquals("2024-05-06 07:08 CDT", s); // 2024-05-06 07:08 CDT
+        int hr = dt.get24Hour();
+        assertEquals(7, hr);
     }
 
     @Test

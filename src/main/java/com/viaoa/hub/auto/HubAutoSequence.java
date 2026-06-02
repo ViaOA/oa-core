@@ -197,7 +197,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
      */
     public HubAutoSequence(Hub hub, String propertyName, int startNumber, boolean bKeepSeq, boolean bServerSideOnly) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-        if (bServerSideOnly && !og.hubsInternal().callHubCSIsServer(hub)) {
+        if (bServerSideOnly && og.hubsInternal().callHubCSIsClient(hub)) {
             LOG.warning("bServerSideOnly should be false, since this is not the server");
         }
         this.startNumber = startNumber;

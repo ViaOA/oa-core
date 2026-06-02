@@ -41,7 +41,7 @@ class OATimeCoreTest {
     void fieldConstructorPreservesClockFieldsAndClearsDate() {
         OATime time = new OATime(7, 8, 9, 123);
 
-        assertEquals(0, time.getYear());
+        assertEquals(0, time.getYear());  // expected 0 but was 1970
         assertEquals(0, time.getMonth());
         assertEquals(0, time.getDay());
         assertEquals(7, time.get24Hour());
@@ -66,7 +66,7 @@ class OATimeCoreTest {
         LocalTime localTime = LocalTime.of(7, 8, 9, 123_000_000);
         OATime time = new OATime(localTime);
 
-        assertEquals(localTime, time.getLocalTime());
+        assertEquals(localTime, time.getLocalTime());  // 07:08:09.123, but was: 07:08:09
     }
 
     @Test
@@ -86,7 +86,7 @@ class OATimeCoreTest {
         OATime time = new OATime(7, 8, 9, 123);
         OADateTime dateTime = new OADateTime(2026, 4, 18, 7, 8, 9, 123);
 
-        assertEquals(0, time.compare(dateTime));
+        assertEquals(0, time.compare(dateTime)); // 1
     }
 
     @Test

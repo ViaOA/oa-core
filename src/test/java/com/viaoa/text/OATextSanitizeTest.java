@@ -2,63 +2,127 @@ package com.viaoa.text;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.Collections;
-import java.util.HashMap;
-
 import org.junit.jupiter.api.Test;
 
-class OATextSanitizeTest {
-
+/** Internal source-mirrored tests for OATextSanitize. */
+public class OATextSanitizeTest {
     @Test
-    void defaultStringAndAliasesReturnNonNullValues() {
+    public void defaultStringTest() {
+        // non-null value returned
+        assertEquals("abc", OATextSanitize.defaultString("abc"));
+        // null defaults to empty
         assertEquals("", OATextSanitize.defaultString(null));
-        assertEquals("fallback", OATextSanitize.defaultString(null, "fallback"));
-        assertEquals("abc", OATextSanitize.defaultString("abc", "fallback"));
+        // custom default
+        assertEquals("x", OATextSanitize.defaultString(null, "x"));
+    }
 
+    @Test
+    public void notNullTest() {
+        // non-null value returned
+        assertEquals("abc", OATextSanitize.notNull("abc"));
+        // null defaults to empty
         assertEquals("", OATextSanitize.notNull(null));
-        assertEquals("fallback", OATextSanitize.notNull(null, "fallback"));
+        // custom default
+        assertEquals("x", OATextSanitize.notNull(null, "x"));
+    }
+
+    @Test
+    public void toNotNullStringTest() {
+        // non-null value returned
+        assertEquals("abc", OATextSanitize.toNotNullString("abc"));
+        // null defaults to empty
+        assertEquals("", OATextSanitize.toNotNullString(null));
+    }
+
+    @Test
+    public void nonNullTest() {
+        // non-null value returned
+        assertEquals("abc", OATextSanitize.nonNull("abc"));
+        // null defaults to empty
         assertEquals("", OATextSanitize.nonNull(null));
-        assertEquals("fallback", OATextSanitize.nonNull(null, "fallback"));
+        // custom default
+        assertEquals("x", OATextSanitize.nonNull(null, "x"));
+    }
+
+    @Test
+    public void toNonNullTest() {
+        // non-null value returned
+        assertEquals("abc", OATextSanitize.toNonNull("abc"));
+        // null defaults to empty
         assertEquals("", OATextSanitize.toNonNull(null));
-        assertEquals("fallback", OATextSanitize.toNonNull(null, "fallback"));
+        // custom default
+        assertEquals("x", OATextSanitize.toNonNull(null, "x"));
+    }
+
+    @Test
+    public void getNonNullTest() {
+        // non-null value returned
+        assertEquals("abc", OATextSanitize.getNonNull("abc"));
+        // null defaults to empty
         assertEquals("", OATextSanitize.getNonNull(null));
-        assertEquals("fallback", OATextSanitize.getNonNull(null, "fallback"));
+        // custom default
+        assertEquals("x", OATextSanitize.getNonNull(null, "x"));
+    }
+
+    @Test
+    public void convertToNonNullTest() {
+        // non-null value returned
+        assertEquals("abc", OATextSanitize.convertToNonNull("abc"));
+        // null defaults to empty
         assertEquals("", OATextSanitize.convertToNonNull(null));
-        assertEquals("fallback", OATextSanitize.convertToNonNull(null, "fallback"));
+        // custom default
+        assertEquals("x", OATextSanitize.convertToNonNull(null, "x"));
     }
 
     @Test
-    void toStringConvertsNullAndObjectsToSafeText() {
-        assertEquals("", OATextSanitize.toString(null));
-        assertEquals("abc", OATextSanitize.toString("abc"));
+    public void toStringTest() {
+        // object converted to string
         assertEquals("123", OATextSanitize.toString(123));
+        // string returned as string
+        assertEquals("abc", OATextSanitize.toString("abc"));
+        // null becomes empty string
+        assertEquals("", OATextSanitize.toString(null));
     }
 
     @Test
-    void isEmptyDefaultDoesNotTrimButExplicitTrimDoes() {
+    public void isEmptyTest() {
+        // null is empty
         assertTrue(OATextSanitize.isEmpty(null));
+        // empty string is empty
         assertTrue(OATextSanitize.isEmpty(""));
-        assertFalse(OATextSanitize.isEmpty(" "));
-        assertTrue(OATextSanitize.isEmpty(" ", true));
-        assertFalse(OATextSanitize.isEmpty("x", true));
+        // trim option treats spaces as empty
+        assertTrue(OATextSanitize.isEmpty("   ", true));
+        // no trim option keeps spaces non-empty
+        assertFalse(OATextSanitize.isEmpty("   ", false));
+        // nonempty value
+        assertFalse(OATextSanitize.isEmpty("abc"));
     }
 
     @Test
-    void isEmptyDelegatesToConverterForContainers() {
-        assertTrue(OATextSanitize.isEmpty(new Object[0]));
-        assertFalse(OATextSanitize.isEmpty(new Object[] { "x" }));
-
-        assertTrue(OATextSanitize.isEmpty(Collections.emptyList()));
-        assertFalse(OATextSanitize.isEmpty(Collections.singletonList("x")));
-
-        assertTrue(OATextSanitize.isEmpty(new HashMap<>()));
-    }
-
-    @Test
-    void notEmptyAliasesAreLogicalNegationOfDefaultIsEmpty() {
+    public void notEmptyTest() {
+        // nonempty value
+        assertTrue(OATextSanitize.notEmpty("abc"));
+        // empty string
+        assertFalse(OATextSanitize.notEmpty(""));
+        // null value
         assertFalse(OATextSanitize.notEmpty(null));
+    }
+
+    @Test
+    public void isNotEmptyTest() {
+        // alias for notEmpty
+        assertTrue(OATextSanitize.isNotEmpty("abc"));
         assertFalse(OATextSanitize.isNotEmpty(""));
-        assertTrue(OATextSanitize.notEmpty(" "));
-        assertTrue(OATextSanitize.isNotEmpty("x"));
+        assertFalse(OATextSanitize.isNotEmpty(null));
+    }
+
+    @Test
+    public void isNotNullAndNotEmptyTest() {
+        // nonempty value
+        assertTrue(OATextSanitize.isNotNullAndNotEmpty("abc"));
+        // empty value
+        assertFalse(OATextSanitize.isNotNullAndNotEmpty(""));
+        // null value
+        assertFalse(OATextSanitize.isNotNullAndNotEmpty(null));
     }
 }

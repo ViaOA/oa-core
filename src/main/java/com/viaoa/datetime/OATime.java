@@ -16,9 +16,13 @@
 package com.viaoa.datetime;
 
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Vector;
+import java.util.List;
+import java.util.TimeZone;
+
+import com.viaoa.lang.OAStr;
 
 /*qqqqqqqqqq
 CODEX
@@ -113,24 +117,24 @@ public class OATime extends OADateTime {
 	/**
 	 * Collection of default formats used when parsing time values from strings.
 	 */
-	private static Vector vecTimeParseFormat = new Vector(10, 10);
+	private static final List<String> alTimeParseFormat = new ArrayList<>();
 
 	static {
-		vecTimeParseFormat.addElement("hh:mm:ss.S a");
-		vecTimeParseFormat.addElement("hh:mm:ss a");
-		vecTimeParseFormat.addElement("hh:mm a");
+		alTimeParseFormat.add("hh:mm:ss.S a");
+		alTimeParseFormat.add("hh:mm:ss a");
+		alTimeParseFormat.add("hh:mm a");
 
-		vecTimeParseFormat.addElement("hh:mm:ss.Sa");
-		vecTimeParseFormat.addElement("hh:mm:ssa");
-		vecTimeParseFormat.addElement("hh:mma");
+		alTimeParseFormat.add("hh:mm:ss.Sa");
+		alTimeParseFormat.add("hh:mm:ssa");
+		alTimeParseFormat.add("hh:mma");
 
-		vecTimeParseFormat.addElement("HH:mm:ss.S");
-		vecTimeParseFormat.addElement("HH:mm:ss");
-		vecTimeParseFormat.addElement("HH:mm");
+		alTimeParseFormat.add("HH:mm:ss.S");
+		alTimeParseFormat.add("HH:mm:ss");
+		alTimeParseFormat.add("HH:mm");
 
-		vecTimeParseFormat.addElement("hha");
-		vecTimeParseFormat.addElement("hh a");
-		vecTimeParseFormat.addElement("HH");
+		alTimeParseFormat.add("hha");
+		alTimeParseFormat.add("hh a");
+		alTimeParseFormat.add("HH");
 	}
 
 	/**
@@ -251,7 +255,7 @@ public class OATime extends OADateTime {
 	 * @param secs the second value
 	 */
 	public OATime(int hrs, int mins, int secs) {
-		super(0, 0, 0, hrs, mins, secs, 0);
+		super(1900, 0, 1, hrs, mins, secs, 0);
 		clearDate();
 	}
 
@@ -267,7 +271,7 @@ public class OATime extends OADateTime {
 	 * @param mili the millisecond value
 	 */
 	public OATime(int hrs, int mins, int secs, int mili) {
-		super(0, 0, 0, hrs, mins, secs, mili);
+		super(1900, 0, 1, hrs, mins, secs, mili);
 		clearDate();
 	}
 
@@ -304,7 +308,8 @@ public class OATime extends OADateTime {
 		if (f == null) {
 			f = (format == null) ? timeOutputFormat : format;
 			if (f == null || f.length() == 0) {
-				f = "hh:mma";
+				f = getGlobalOutputFormat();
+				if (OAStr.isEmpty(f)) f = "hh:mma";
 			}
 		}
 		return toStringMain(f);
@@ -357,8 +362,8 @@ public class OATime extends OADateTime {
 				time += "m";
 			}
 		}
-
-		Date d = valueOfMain(time, fmt, vecTimeParseFormat, timeOutputFormat);
+		List<String> alx = OATime.alTimeParseFormat;
+		Date d = valueOfMain(time, fmt, alx, timeOutputFormat);
 		if (d == null) {
 			return null;
 		}
@@ -409,7 +414,7 @@ public class OATime extends OADateTime {
 	 * @param fmt the format to add
 	 */
 	public static void addGlobalParseFormat(String fmt) {
-		vecTimeParseFormat.addElement(fmt);
+		alTimeParseFormat.add(fmt);
 	}
 
 	/**
@@ -418,16 +423,10 @@ public class OATime extends OADateTime {
 	 * @param fmt the format to remove
 	 */
 	public static void removeGlobalParseFormat(String fmt) {
-		vecTimeParseFormat.removeElement(fmt);
+		alTimeParseFormat.remove(fmt);
 	}
 
-	/**
-	 * Removes all global parse formats used when converting strings to times.
-	 */
-	public static void removeAllGlobalParseFormats() {
-		vecTimeParseFormat.removeAllElements();
-	}
-
+	
 	/**
 	 * Converts this time to a {@link LocalTime} instance.
 	 *
@@ -438,4 +437,8 @@ public class OATime extends OADateTime {
 		return lt;
 	}
 
+	@Override
+	public void setTimeZone(TimeZone tz) {
+	    // no-op
+	}
 }
