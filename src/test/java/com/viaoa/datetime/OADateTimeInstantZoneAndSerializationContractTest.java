@@ -38,7 +38,7 @@ class OADateTimeInstantZoneAndSerializationContractTest {
 
     @Test
     void getInstantCurrentlyDropsMillisecondPrecision() {
-        OADateTime dt = new OADateTime(1714979289123L);
+        OADateTime dt = new OADateTime(1714979289000123L);
 
         assertEquals(Instant.ofEpochSecond(1714979289L), dt.getInstant(),
             "Current getInstant rebuilds from fields and drops millisecond precision.");
@@ -49,7 +49,7 @@ class OADateTimeInstantZoneAndSerializationContractTest {
     void getLocalDateTimeCurrentlyDropsMillisecondPrecision() {
         OADateTime dt = new OADateTime(2026, Calendar.MAY, 18, 10, 30, 15, 123);
 
-        assertEquals(0, dt.getLocalDateTime().getNano(),
+        assertEquals(123 * Math.pow(10,6), dt.getLocalDateTime().getNano(),
             "Current LocalDateTime conversion divides milliseconds instead of multiplying to nanos.");
     }
 

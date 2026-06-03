@@ -7,6 +7,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.TimeZone;
 
@@ -310,10 +312,20 @@ public class OADateTimeExtensiveTest {
     @Test
     public void testZonedDateTimeCarriesMillisecondsAsNanoseconds() {
         OADateTime dt = new OADateTime(2026, Calendar.JUNE, 2, 10, 15, 30, 789);
+        long t = dt.getTime();
+        ZonedDateTime zdt = dt.getZonedDateTime();
+        long x = dt.getZonedDateTime().getNano();
+        
         dt.setTimeZone(UTC);
-
-        assertEquals(789_000_000, dt.getZonedDateTime().getNano());
-        assertEquals(789_000_000, dt.getLocalDateTime().getNano());
+        x = dt.getZonedDateTime().getNano();
+        
+        zdt = dt.getZonedDateTime();
+        x = zdt.getNano();
+        
+        assertEquals(789_000_000, x);
+        
+        LocalDateTime ldt = dt.getLocalDateTime();
+        assertEquals(789_000_000, ldt.getNano());
     }
 
     @Test

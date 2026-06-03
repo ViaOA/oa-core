@@ -19,6 +19,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.TimeZone;
 
@@ -148,18 +149,6 @@ public class OATime extends OADateTime {
 	}
 
 	/**
-	 * Creates a new time instance using the supplied {@link java.sql.Time}.
-	 * <p>
-	 * The date portion is cleared so that only time values are retained.
-	 *
-	 * @param time the SQL time value to use
-	 */
-	public OATime(java.sql.Time time) {
-		super(time);
-		clearDate();
-	}
-
-	/**
 	 * Creates a new time instance using the supplied {@link Date}.
 	 * <p>
 	 * The date portion is cleared so that only time values are retained.
@@ -167,21 +156,10 @@ public class OATime extends OADateTime {
 	 * @param date the date whose time value will be used
 	 */
 	public OATime(Date date) {
-		this(new java.sql.Time(date.getTime()));
+		super(date.getTime());
 		clearDate();
 	}
 
-	/**
-	 * Creates a new time instance using the supplied time in milliseconds.
-	 * <p>
-	 * The date portion is cleared so that only time values are retained.
-	 *
-	 * @param time the time value in milliseconds since the epoch
-	 */
-	public OATime(long time) {
-		this(new java.sql.Time(time));
-		clearDate();
-	}
 
 	/**
 	 * Creates a new time instance using the supplied {@link Calendar}.
@@ -204,9 +182,7 @@ public class OATime extends OADateTime {
 	 * @param od the date-time instance to copy from
 	 */
 	public OATime(OADateTime od) {
-		super(od);
-		clearDate();
-		this.timeZone = od.getTimeZone();
+		this(od.get24Hour(), od.getMinute(), od.getSecond(), od.getMilliSecond());
 	}
 
 	/**
@@ -218,8 +194,7 @@ public class OATime extends OADateTime {
 	 * @param strTime the string representation of the time
 	 */
 	public OATime(String strTime) {
-		this(OATime.valueOf(strTime));
-		clearDate();
+		this(strTime, null);
 	}
 
 	/**
@@ -232,8 +207,11 @@ public class OATime extends OADateTime {
 	 * @param fmt the format used to parse the time string
 	 */
 	public OATime(String strTime, String fmt) {
-		this(OATime.valueOf(strTime, fmt));
-		clearDate();
+		OADateTime dt = OATime.valueOf(strTime, fmt);
+		if (dt == null) throw new IllegalArgumentException("OATime cant create time from String \"" + strTime + "\"");
+		GregorianCalendar c = _getCal();
+		setCalendar(1970, 0, 1, c.get(c.HOUR_OF_DAY), c.get(c.MINUTE), c.get(c.SECOND), c.get(c.MILLISECOND));
+		if (dt.timeZone != null) setTimeZone(timeZone);
 	}
 
 	/**
@@ -242,7 +220,7 @@ public class OATime extends OADateTime {
 	 * @param lt the local time whose hour, minute, second, and millisecond values are used
 	 */
 	public OATime(LocalTime lt) {
-		this(lt.getHour(), lt.getMinute(), lt.getSecond(), (int) (lt.getNano() / Math.pow(10, 6)));
+		this(lt.getHour(), lt.getMinute(), lt.getSecond(), (int) (lt.getNano() / 1_000_000));
 	}
 
 	/**
@@ -255,7 +233,7 @@ public class OATime extends OADateTime {
 	 * @param secs the second value
 	 */
 	public OATime(int hrs, int mins, int secs) {
-		super(1900, 0, 1, hrs, mins, secs, 0);
+		super(1970, 0, 1, hrs, mins, secs, 0);
 		clearDate();
 	}
 
@@ -271,50 +249,207 @@ public class OATime extends OADateTime {
 	 * @param mili the millisecond value
 	 */
 	public OATime(int hrs, int mins, int secs, int mili) {
-		super(1900, 0, 1, hrs, mins, secs, mili);
+		super(1970, 0, 1, hrs, mins, secs, mili);
 		clearDate();
 	}
 
-	/**
-	 * Compares this time with another object.
-	 * <p>
-	 * The supplied object is compared using {@link #compareTo(Object)}.
-	 *
-	 * @param obj the object to compare with
-	 * @return 0 if equal, -1 if less than, 1 if greater than, or 2 if not comparable
-	 */
-	public int compare(Object obj) {
-		return this.compareTo(obj);
+	@Override
+	protected void setCalendar(GregorianCalendar c) {
+		if (c == null) return;
+		setCalendar(1970, 0, 1, c.get(c.HOUR_OF_DAY), c.get(c.MINUTE), c.get(c.SECOND), c.get(c.MILLISECOND));
 	}
 
-	/**
-	 * Converts this time to a string using the default output format.
-	 *
-	 * @return the formatted time string
-	 */
-	public String toString() {
-		return toString(null);
+	@Override
+	protected void setCalendar(Date date) {
+		super.setCalendar(date);
+		clearDate();
 	}
 
-	/**
-	 * Converts this time to a string using the supplied format.
-	 * <p>
-	 * If the format is {@code null}, a default format is selected.
-	 *
-	 * @param f the format to use, or {@code null} to use the default
-	 * @return the formatted time string
-	 */
-	public String toString(String f) {
-		if (f == null) {
-			f = (format == null) ? timeOutputFormat : format;
-			if (f == null || f.length() == 0) {
-				f = getGlobalOutputFormat();
-				if (OAStr.isEmpty(f)) f = "hh:mma";
-			}
-		}
-		return toStringMain(f);
+	@Override
+	protected void setCalendar(int year, int month, int day, int hrs, int mins, int secs, int milsecs) {
+		super.setCalendar(1970, 0, 1, hrs, mins, secs, milsecs);
 	}
 
+	@Override
+	protected void setCalendar(String strDate) {
+		OADateTime dt = valueOf(strDate);
+		super.setCalendar(1970, 0, 1, dt.getHour(), dt.getMinute(), dt.getSecond(), dt.getMilliSecond());
+	}
+	
+	@Override
+	protected void setCalendar(String strDate, String fmt) {
+		OADateTime dt = valueOf(strDate, fmt);
+		super.setCalendar(1970, 0, 1, dt.getHour(), dt.getMinute(), dt.getSecond(), dt.getMilliSecond());
+	}
+	
+	@Override
+	public void setDate(int yr, int m, int d) {
+	    // no-op, not used
+	}
+	
+	public void setDate(OADate d) {
+	    // no-op, not used
+	}
+	
+	@Override
+	public void setYear(int y) {
+	    // no-op, not used
+	}
+	
+	@Override
+	public void setMonth(int month) {
+	    // no-op, not used
+	}
+
+	@Override
+	public void setMonthValue(int monthValue) {
+	    // no-op, not used
+	}
+
+	@Override
+	public void setDay(int d) {
+	    // no-op, not used
+	}
+
+	@Override
+	public void setTimeZoneUTC() {
+	    super.setTimeZoneUTC();
+	    clearDate();
+	}
+	
+	@Override
+	public void setTimeZone(OATimeZone.TZ tz) {
+	    super.setTimeZone(tz);
+	    clearDate();
+	}
+	
+	public void setTimeZone(TimeZone tzNew) {
+		super.setTimeZone(tzNew);
+		clearDate();
+	}
+	
+	@Override
+	public OADateTime convertToUTC() {
+		OADateTime dt = super.convertToUTC();
+		OATime t = new OATime(dt);
+		return t;
+	}
+	
+	@Override
+	public OADateTime convertTo(TimeZone tz) {
+		OADateTime dt = super.convertTo(tz);
+		OATime t = new OATime(dt);
+		return t;
+	}
+	
+	@Override
+	public OADateTime convertTo(OATimeZone.TZ tz) {
+		OADateTime dt = super.convertTo(tz);
+		OATime t = new OATime(dt);
+		return t;
+	}
+
+	@Override
+	public OADateTime addYears(int amount) {
+		OATime t = new OATime(this);
+		return t;
+	}
+
+	@Override
+	public OADateTime subtractYears(int amount) {
+		OATime t = new OATime(this);
+		return t;
+	}
+	
+	@Override
+	public OADateTime addMonths(int amount) {
+		OATime t = new OATime(this);
+		return t;
+	}
+
+	@Override
+	public OADateTime subtractMonths(int amount) {
+		OATime t = new OATime(this);
+		return t;
+	}
+
+	
+	@Override
+	public OADateTime addDays(int amount) {
+		OATime t = new OATime(this);
+		return t;
+	}
+
+	@Override
+	public OADateTime subtractDays(int amount) {
+		OATime t = new OATime(this);
+		return t;
+	}
+	
+	
+	
+	@Override
+	public OADateTime addHours(int amount) {
+		OADateTime dt = super.addHours(amount);
+		OATime t = new OATime(dt);
+		return t;
+	}
+	@Override
+	public OADateTime subtractHours(int amount) {
+		OADateTime dt = super.subtractHours(amount);
+		OATime t = new OATime(dt);
+		return t;
+	}
+
+	@Override
+	public OADateTime addMinutes(int amount) {
+		OADateTime dt = super.addMinutes(amount);
+		OATime t = new OATime(dt);
+		return t;
+	}
+	@Override
+	public OADateTime subtractMinutes(int amount) {
+		OADateTime dt = super.subtractMinutes(amount);
+		OATime t = new OATime(dt);
+		return t;
+	}
+	
+	@Override
+	public OADateTime addSeconds(int amount) {
+		OADateTime dt = super.addSeconds(amount);
+		OATime t = new OATime(dt);
+		return t;
+	}
+	@Override
+	public OADateTime subtractSeconds(int amount) {
+		OADateTime dt = super.subtractSeconds(amount);
+		OATime t = new OATime(dt);
+		return t;
+	}
+
+	@Override
+	public OADateTime addMilliSeconds(int amount) {
+		OADateTime dt = super.addMilliSeconds(amount);
+		OATime t = new OATime(dt);
+		return t;
+	}
+	@Override
+	public OADateTime subtractMilliSeconds(int amount) {
+		OADateTime dt = super.subtractMilliSeconds(amount);
+		OATime t = new OATime(dt);
+		return t;
+	}
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	/**
 	 * Converts a string to an {@link OATime} using the supplied format.
 	 *
@@ -356,7 +491,8 @@ public class OATime extends OADateTime {
 	 * @return an {@link OADateTime} representing the parsed time, or {@code null} if parsing fails
 	 */
 	public static OADateTime valueOf(String time, String fmt) {
-		if (time != null && time.length() > 0) {
+		if (time == null) return null;
+		if (time.length() > 0) {
 			char c = time.charAt(time.length() - 1);
 			if (c == 'A' || c == 'a' || c == 'P' || c == 'p') {
 				time += "m";
@@ -437,8 +573,49 @@ public class OATime extends OADateTime {
 		return lt;
 	}
 
-	@Override
-	public void setTimeZone(TimeZone tz) {
-	    // no-op
+	/**
+	 * Converts this time to a string using the default output format.
+	 *
+	 * @return the formatted time string
+	 */
+	public String toString() {
+		return toString(null);
 	}
+
+	/**
+	 * Converts this time to a string using the supplied format.
+	 * <p>
+	 * If the format is {@code null}, a default format is selected.
+	 *
+	 * @param f the format to use, or {@code null} to use the default
+	 * @return the formatted time string
+	 */
+	public String toString(String f) {
+		if (f == null) {
+			f = (format == null) ? timeOutputFormat : format;
+			if (f == null || f.length() == 0) {
+				f = getGlobalOutputFormat();
+				if (OAStr.isEmpty(f)) f = "hh:mma";
+			}
+		}
+		return toStringMain(f);
+	}
+
+	
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

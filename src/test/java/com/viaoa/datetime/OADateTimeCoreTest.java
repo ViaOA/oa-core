@@ -64,8 +64,13 @@ class OADateTimeCoreTest {
     void getInstantCurrentlyDropsMillisecondPrecision() {
         OADateTime dt = new OADateTime(EPOCH_MILLIS);
 
-        assertEquals(Instant.ofEpochSecond(1714979289L), dt.getInstant());
-        assertNotEquals(Instant.ofEpochMilli(EPOCH_MILLIS), dt.getInstant());
+        Instant ix = Instant.ofEpochMilli(1714979289123L);
+        Instant ix2 = dt.getInstant();
+        assertEquals(ix, ix2);
+        
+        ix = Instant.ofEpochSecond(EPOCH_MILLIS);
+        ix2 = dt.getInstant();
+        assertNotEquals(ix, ix2);
     }
 
     @Test
@@ -73,7 +78,7 @@ class OADateTimeCoreTest {
         OADateTime dt = new OADateTime(EPOCH_MILLIS);
         LocalDateTime ldt = dt.getLocalDateTime();
 
-        assertEquals(LocalDateTime.of(2024, 5, 6, 7, 8, 9, 0), ldt);
+        assertEquals(LocalDateTime.of(2024, 5, 6, 7, 8, 9, (int) (123 * Math.pow(10,6))), ldt);
     }
 
     @Test
