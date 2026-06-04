@@ -2539,19 +2539,15 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			if (format != null && format.length() > 0) {
 				SimpleDateFormat sdf = getFormatter();
 				sdf.setTimeZone(getDefaultTimeZone());
-				synchronized (sdf) {
-					sdf.applyPattern(format);
-					try {
-						ParsePosition pos = new ParsePosition(0);
-						date = sdf.parse(value, pos);
-						if (date != null && pos.getIndex() == value.length()) {
-							break;
-						}
-						
-					} catch (Exception e) {
-						int xx = 3;
-						xx++;
+				sdf.applyPattern(format);
+				try {
+					ParsePosition pos = new ParsePosition(0);
+					date = sdf.parse(value, pos);
+					if (date != null && pos.getIndex() == value.length()) {
+						break;
 					}
+					date = null;
+				} catch (Exception e) {
 				}
 			}
 		}
@@ -2608,11 +2604,9 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 		String s;
 		SimpleDateFormat sdf = getFormatter();
-		synchronized (sdf) {
-			sdf.applyPattern(format);
-			sdf.setTimeZone(getTimeZone());
-			s = sdf.format(getDate());
-		}
+		sdf.applyPattern(format);
+		sdf.setTimeZone(getTimeZone());
+		s = sdf.format(getDate());
 		return s;
 	}
 

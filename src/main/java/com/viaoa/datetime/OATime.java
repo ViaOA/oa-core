@@ -179,10 +179,11 @@ public class OATime extends OADateTime {
 	 * The date portion is cleared and the timezone is copied from the
 	 * supplied instance.
 	 *
-	 * @param od the date-time instance to copy from
+	 * @param dt the date-time instance to copy from
 	 */
-	public OATime(OADateTime od) {
-		this(od.get24Hour(), od.getMinute(), od.getSecond(), od.getMilliSecond());
+	public OATime(OADateTime dt) {
+		this(dt.get24Hour(), dt.getMinute(), dt.getSecond(), dt.getMilliSecond());
+		if (dt.timeZone != null) setTimeZone(dt.timeZone);
 	}
 
 	/**
@@ -209,9 +210,9 @@ public class OATime extends OADateTime {
 	public OATime(String strTime, String fmt) {
 		OADateTime dt = OATime.valueOf(strTime, fmt);
 		if (dt == null) throw new IllegalArgumentException("OATime cant create time from String \"" + strTime + "\"");
-		GregorianCalendar c = _getCal();
+		GregorianCalendar c = dt._getCal();
 		setCalendar(1970, 0, 1, c.get(c.HOUR_OF_DAY), c.get(c.MINUTE), c.get(c.SECOND), c.get(c.MILLISECOND));
-		if (dt.timeZone != null) setTimeZone(timeZone);
+		if (dt.timeZone != null) setTimeZone(dt.timeZone);
 	}
 
 	/**
@@ -601,21 +602,64 @@ public class OATime extends OADateTime {
 		return toStringMain(f);
 	}
 
+
+	@Override
+	public OADateTime withYear(int year) {
+		return new OATime(this);
+	}
+	@Override
+	public OADateTime withMonth(int month) {
+		return new OATime(this);
+	}
+	@Override
+	public OADateTime withDay(int day) {
+		return new OATime(this);
+	}
+	@Override
+	public OADateTime withDate(int year, int month, int day) {
+		return new OATime(this);
+	}
 	
+	@Override
+	public OADateTime withHour(int hour) {
+		OADateTime dt = super.withHour(hour);
+		return new OATime(dt);
+	}
+	@Override
+	public OADateTime withMinute(int minute) {
+		OADateTime dt = super.withMinute(minute);
+		return new OATime(dt);
+	}
+	@Override
+	public OADateTime withSecond(int second) {
+		OADateTime dt = super.withSecond(second);
+		return new OATime(dt);
+	}
+	@Override
+	public OADateTime withMilliSecond(int ms) {
+		OADateTime dt = super.withMilliSecond(ms);
+		return new OATime(dt);
+	}
+
+	@Override
+	public OADateTime withTime(int hour, int minute) {
+		OADateTime dt = super.withTime(hour, minute);
+		return new OATime(dt);
+	}
+	@Override
+	public OADateTime withTime(int hour, int minute, int second) {
+		OADateTime dt = super.withTime(hour, minute, second);
+		return new OATime(dt);
+	}
+	@Override
+	public OADateTime withTime(int hour, int minute, int second, int millisecond) {
+		OADateTime dt = super.withTime(hour, minute, second, millisecond);
+		return new OATime(dt);
+	}
+	
+	@Override
+	public OADateTime withTimeZone(TimeZone tz) {
+		OADateTime dt = super.withTimeZone(tz);
+		return new OATime(dt);
+	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

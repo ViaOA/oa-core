@@ -357,7 +357,8 @@ public abstract class OAObjectEventService {
 
 				if (newObj instanceof OADateTime) { // 20191222
 					if (propInfo.getIgnoreTimeZone()) {
-						((OADateTime) newObj).setIgnoreTimeZone(true);
+						// 20260603 no longer in OADateTime
+						// ((OADateTime) newObj).setIgnoreTimeZone(true);
 					}
 				}
 

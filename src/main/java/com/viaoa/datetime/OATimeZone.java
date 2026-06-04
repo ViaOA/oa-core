@@ -452,7 +452,7 @@ public class OATimeZone {
 				return tz;
 			}
 			if (value.equalsIgnoreCase(tz.utcValue) || value.equalsIgnoreCase(tz.shortName) || value.equalsIgnoreCase(tz.longName) || value.equalsIgnoreCase(tz.getDisplay())) {
-				if (tzFound != null) tzFound = tz;
+				if (tzFound == null) tzFound = tz;
 			}
 		}
 		return tzFound;
