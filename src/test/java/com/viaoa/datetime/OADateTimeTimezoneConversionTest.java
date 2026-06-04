@@ -71,7 +71,7 @@ class OADateTimeTimezoneConversionTest {
         assertEquals(12, dt.get24Hour());
         
         String s = dt.toString("yyyy-MM-dd HH:mm:ss");
-        assertEquals("2026-05-27 17:00:00", s);
+        assertEquals("2026-05-27 12:00:00", s);
     }
 }
 

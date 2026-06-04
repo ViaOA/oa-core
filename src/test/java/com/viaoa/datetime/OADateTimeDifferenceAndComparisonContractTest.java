@@ -48,7 +48,7 @@ class OADateTimeDifferenceAndComparisonContractTest {
     @Test
     void betweenDaysHoursMinutesSecondsAndMillisAreDeterministic() {
         OADateTime start = new OADateTime(2026, Calendar.MAY, 18, 10, 0, 0, 0);
-        OADateTime end = new OADateTime(2026, Calendar.MAY, 19, 11, 2, 3, 4);
+        OADateTime end =   new OADateTime(2026, Calendar.MAY, 19, 11, 2, 3, 4);
 
         assertEquals(1, start.betweenDays(end));
         assertEquals(25, start.betweenHours(end));

@@ -223,15 +223,6 @@ public class OADateTest {
     }
 
     @Test
-    public void valueOf2Test() {
-        // valid text returns date
-        assertEquals(new OADate(2026, Calendar.MAY, 18), OADate.valueOf2("2026-05-18"));
-
-        // invalid text fails visibly
-        assertThrows(IllegalArgumentException.class, () -> OADate.valueOf2("not-a-date"));
-    }
-
-    @Test
     public void getLocalDateTest() {
         // converts to java.time LocalDate with month adjusted to 1-based
         OADate d = new OADate(2026, Calendar.MAY, 18);

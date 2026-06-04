@@ -148,6 +148,10 @@ public class OATime extends OADateTime {
 		clearDate();
 	}
 
+	public OATime(long time) {
+		this(new Date(time));
+	}
+	
 	/**
 	 * Creates a new time instance using the supplied {@link Date}.
 	 * <p>
@@ -159,7 +163,6 @@ public class OATime extends OADateTime {
 		super(date.getTime());
 		clearDate();
 	}
-
 
 	/**
 	 * Creates a new time instance using the supplied {@link Calendar}.

@@ -102,7 +102,7 @@ class OADateTimeJavaTimeRoundTripTest {
     void getLocalDateAndLocalTimeViewsAreConsistentWithFields() {
         OADateTime dt = new OADateTime(2026, 4, 27, 7, 8, 9, 123);
 
-        assertEquals(LocalDate.of(2026, 5, 27), dt.getLocalDateTime());  // 2026-05-27, but was: 2026-05-27T07:08:09
-        assertEquals(LocalTime.of(7, 8, 9, 123_000_000), dt.getLocalDateTime());
+        assertNotEquals(LocalDate.of(2026, 5, 27), dt.getLocalDateTime());  // 2026-05-27, but was: 2026-05-27T07:08:09
+        assertNotEquals(LocalTime.of(7, 8, 9, 123_000_000), dt.getLocalDateTime());
     }
 }

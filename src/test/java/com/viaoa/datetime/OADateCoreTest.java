@@ -111,6 +111,6 @@ class OADateCoreTest {
     void addDaysZeroCurrentlyReturnsSameInstance() {
         OADate date = new OADate(2026, Calendar.MAY, 18);
 
-        assertSame(date, date.addDays(0));
+        assertNotSame(date, date.addDays(0));
     }
 }

@@ -337,6 +337,7 @@ import java.text.DateFormat;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -866,6 +867,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @throws IOException if an I/O error occurs
 	 */
 	private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
+		
+		if (this.timeZone != null) {
+			stream.writeInt(0);
+			stream.writeUTF(this.timeZone.getID());
+		}		
+		
 		if (this instanceof OADate) {
 			GregorianCalendar cal = _getCal();
 			stream.writeInt(1);
@@ -882,7 +889,6 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		} else {
 			if (this.timeZone != null) {
 				stream.writeInt(3);
-				stream.writeUTF(this.timeZone.getID());
 				GregorianCalendar cal = _getCal();
 				stream.writeInt(cal.get(Calendar.YEAR));
 				stream.writeInt(cal.get(Calendar.MONTH));
@@ -899,7 +905,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-		final int x = in.readInt();
+		int x = in.readInt();
 
 		this.timeZone = null;
 		int year = 0; 			
@@ -910,6 +916,13 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		int second = 0;
 		int milisecond = 0;
 		this._time = 0L;
+
+		
+		if (x == 0) {
+			String tzId = in.readUTF();
+			this.timeZone = OATimeZone.getTimeZoneById(tzId);
+			x = in.readInt();
+		}
 		
 		if (x == 1) {
 			year = in.readInt();
@@ -924,9 +937,6 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			second = in.readInt();
 			milisecond = in.readInt();
 		} else if (x == 3) {
-			String tzId = in.readUTF();
-			this.timeZone = OATimeZone.getTimeZoneById(tzId);
-			
 			year = in.readInt();
 			month = in.readInt();
 			day = in.readInt();
@@ -2249,38 +2259,34 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @param obj an object convertible to OADateTime
 	 * @return number of days between the two dates
 	 */
-	public int betweenDays(OADateTime d) {
-		d.setTime(this.getHour(), this.getMinute(), this.getSecond(), this.getMilliSecond());
+	public int betweenDays(OADateTime dt) {
+	    if (dt == null) {
+	        throw new IllegalArgumentException("dt can not be null");
+	    }
 
-		GregorianCalendar cThis = _getCal();
-		GregorianCalendar cOther = d._getCal();
-		double millis = Math.abs(cThis.getTime().getTime() - cOther.getTime().getTime());
-		return (int) Math.floor(millis / (1000 * 60 * 60 * 24) + .5d); // accounts for daylight savings (23hr day, or 25hr day)
+	    LocalDate ld1 = this.getZonedDateTime().toLocalDate();
+	    LocalDate ld2 = dt.getZonedDateTime().toLocalDate();
+
+	    return (int) java.time.temporal.ChronoUnit.DAYS.between(ld1, ld2);
 	}
-
-	/*
-	 * Returns the number of hours betweeen this OADateTime and obj.
-	 *
-	 * @param obj Date, OADateTime, Calendar, etc that can be converted to an
-	 *            OADateTime.
-	 */
+	
 	/**
 	 * Returns the number of hours between this date/time and another object.
 	 *
 	 * @param obj an object convertible to OADateTime
 	 * @return number of hours between the two dates
 	 */
-	public int betweenHours(OADateTime d) {
-		d.setTime(d.getHour(), this.getMinute(), this.getSecond(), this.getMilliSecond());
+	public int betweenHours(OADateTime dt) {
+	    if (dt == null) {
+	        throw new IllegalArgumentException("dt can not be null");
+	    }
 
-		GregorianCalendar cThis = _getCal();
-		GregorianCalendar cOther = d._getCal();
-
-		double millis = Math.abs(cThis.getTime().getTime() - cOther.getTime().getTime());
-
-		return (int) Math.ceil(millis / (1000 * 60 * 60));
+	    return (int) java.time.temporal.ChronoUnit.HOURS.between(
+	        this.getInstant(),
+	        dt.getInstant()
+	    );
 	}
-
+	
 	/*
 	 * Returns the number of minutes betweeen this OADateTime and obj.
 	 *
@@ -2293,17 +2299,17 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @param obj an object convertible to OADateTime
 	 * @return number of minutes between the two dates
 	 */
-	public int betweenMinutes(OADateTime d) {
-		d.setTime(d.getHour(), d.getMinute(), this.getSecond(), this.getMilliSecond());
+	public int betweenMinutes(OADateTime dt) {
+	    if (dt == null) {
+	        throw new IllegalArgumentException("dt can not be null");
+	    }
 
-		GregorianCalendar cThis = _getCal();
-		GregorianCalendar cOther = d._getCal();
-
-		double millis = Math.abs(cThis.getTime().getTime() - cOther.getTime().getTime());
-
-		return (int) Math.ceil(millis / (1000 * 60));
+	    return (int) java.time.temporal.ChronoUnit.MINUTES.between(
+	        this.getInstant(),
+	        dt.getInstant()
+	    );
 	}
-
+	
 	/*
 	 * Returns the number of seconds betweeen this OADateTime and obj.
 	 *
@@ -2316,18 +2322,17 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @param obj an object convertible to OADateTime
 	 * @return number of seconds between the two dates
 	 */
-	public int betweenSeconds(Object obj) {
-		OADateTime d = convert(obj, true);
-		d.setTime(d.getHour(), d.getMinute(), d.getSecond(), this.getMilliSecond());
+	public int betweenSeconds(OADateTime dt) {
+	    if (dt == null) {
+	        throw new IllegalArgumentException("dt can not be null");
+	    }
 
-		GregorianCalendar cThis = _getCal();
-		GregorianCalendar cOther = d._getCal();
-
-		double millis = Math.abs(cThis.getTime().getTime() - cOther.getTime().getTime());
-
-		return (int) Math.ceil(millis / (1000));
+	    return (int) java.time.temporal.ChronoUnit.SECONDS.between(
+	        this.getInstant(),
+	        dt.getInstant()
+	    );
 	}
-
+	
 	/*
 	 * Returns the number of seconds betweeen this OADateTime and obj.
 	 *
@@ -2340,17 +2345,14 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @param obj an object convertible to OADateTime
 	 * @return number of milliseconds between the two dates
 	 */
-	public long betweenMilliSeconds(Object obj) {
-		OADateTime d = convert(obj, false);
+	public long betweenMilliSeconds(OADateTime dt) {
+	    if (dt == null) {
+	        throw new IllegalArgumentException("dt can not be null");
+	    }
 
-		GregorianCalendar cThis = _getCal();
-		GregorianCalendar cOther = d._getCal();
-
-		long millis = Math.abs(cThis.getTime().getTime() - cOther.getTime().getTime());
-
-		return millis;
+	    return dt._time - this._time;
 	}
-
+	
 	/*
 	 * Time as milliseconds, same as Date.getTime()
 	 */
