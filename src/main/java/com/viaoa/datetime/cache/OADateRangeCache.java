@@ -123,18 +123,18 @@ public abstract class OADateRangeCache<T> {
 
 						x = rangeMissing.endDate.compare(rangeCache.endDate);
 						if (x > 0) {
-							alMissing.add(new DateRange((OADate) rangeCache.endDate.addDay(), rangeMissing.endDate));
+							alMissing.add(new DateRange((OADate) rangeCache.endDate.plusDay(), rangeMissing.endDate));
 						}
 						bStartOver = true;
 						break;
 
 					} else if (x < 0) {
-						alMissing.add(new DateRange(rangeMissing.beginDate, (OADate) rangeCache.beginDate.subtractDay()));
+						alMissing.add(new DateRange(rangeMissing.beginDate, (OADate) rangeCache.beginDate.minusDay()));
 						alMissing.remove(rangeMissing);
 
 						x = rangeMissing.endDate.compare(rangeCache.endDate);
 						if (x > 0) {
-							alMissing.add(new DateRange((OADate) rangeCache.endDate.addDay(), rangeMissing.endDate));
+							alMissing.add(new DateRange((OADate) rangeCache.endDate.plusDay(), rangeMissing.endDate));
 						}
 						bStartOver = true;
 						break;
@@ -143,7 +143,7 @@ public abstract class OADateRangeCache<T> {
 
 						x = rangeMissing.endDate.compare(rangeCache.endDate);
 						if (x > 0) {
-							alMissing.add(new DateRange((OADate) rangeCache.endDate.addDay(), rangeMissing.endDate));
+							alMissing.add(new DateRange((OADate) rangeCache.endDate.plusDay(), rangeMissing.endDate));
 						}
 						bStartOver = true;
 						break;

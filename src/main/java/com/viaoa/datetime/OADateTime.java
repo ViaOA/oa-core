@@ -15,332 +15,30 @@
  */
 package com.viaoa.datetime;
 
-
-// NOTE: OA uses Calendar and it uses month 0-11 ... java.time.* uses month 1-12  qqqqqqqqqq 
-
-/*
-CODEX
-
-- Class: OADateTime
-  - Method: getInstant, getZonedDateTime, getLocalDateTime
-  - Issue: Milliseconds are converted to nanoseconds using division instead of multiplication, and getInstant()
-    reconstructs an instant from local fields instead of returning _time.
-  - Why it is a problem: Milliseconds are truncated to zero for most values. During DST fall-back overlaps,
-    reconstructing from local fields can choose the wrong offset and return an instant one hour off.
-  - Classification: Fix Now
-  - Suggested Fix: getInstant() should return Instant.ofEpochMilli(_time). getZonedDateTime() should use
-    Instant.ofEpochMilli(_time).atZone(getTimeZone().toZoneId()). Nanoseconds should be getMilliSecond() *
-    1_000_000.
-  - Class: OADateTime
-  - Method: getMinute, setMinute, getSecond, setSecond, clearSecondAndMilliSecond
-  - Issue: These methods ignore timeZone and use deprecated Date methods in the JVM default timezone.
-  - Why it is a problem: Instances with non-default timezones can report or mutate the wrong wall-clock minute/
-    second, especially for zones with non-hour offsets.
-  - Classification: Fix Now
-  - Suggested Fix: Use _getCal() for all field access/mutation when timezone semantics matter, matching getYear,
-    getMonth, getHour.
-  - Class: OADateTime
-  - Method: valueOfMain
-  - Issue: Pooled SimpleDateFormat instances retain timezone state from previous formatting/parsing use.
-  - Why it is a problem: Parsing a timezone-less string can depend on which pooled formatter was last used and what
-    timezone it had. That is nondeterministic in server/distributed use.
-  - Classification: Fix Now
-  - Suggested Fix: Before every parse, set the formatter timezone explicitly to OA default/system default. Also
-    reset other mutable formatter state needed for deterministic parsing.
-  - Class: OADateTime
-  - Method: valueOfMain
-  - Issue: Uses SimpleDateFormat.parse(String) without verifying full input consumption.
-  - Why it is a problem: Invalid values with trailing garbage can parse as valid dates, producing wrong query/
-    filter/replication values.
-  - Classification: Fix Now
-  - Suggested Fix: Parse with ParsePosition and require pos.getIndex() == value.length().
-  - Class: OADateTime
-  - Method: OADateTime(ZonedDateTime)
-  - Issue: The instant is copied but the ZonedDateTime zone is discarded.
-  - Why it is a problem: OA has explicit timezone-aware semantics. A value created from ZonedDateTime loses the
-    zone needed for later wall-clock field access and formatting.
-  - Classification: Fix Now
-  - Suggested Fix: Set _time from zdt.toInstant() and timeZone = TimeZone.getTimeZone(zdt.getZone()).
-  - Class: OADateTime
-  - Method: RFC339Format, RFC339FormatWms
-  - Issue: The Z is quoted as a literal, not parsed/formatted as UTC offset.
-  - Why it is a problem: A string ending in Z means UTC, but parsing with this format interprets fields in the
-    formatter’s timezone and merely consumes a literal Z.
-  - Classification: Fix Now
-  - Suggested Fix: Use an ISO offset pattern such as X/XXX, or force UTC timezone when using the literal-Z format.
-  - Class: OADate
-  - Method: OADate(Calendar), OADate(OADateTime)
-  - Issue: Constructors build the date instant in the JVM default timezone, then assign the source timezone
-    afterward.
-  - Why it is a problem: For non-default source timezones, the stored instant can represent the previous/next day
-    when viewed in the assigned timezone.
-  - Classification: Fix Now
-  - Suggested Fix: Build the backing instant using a Calendar/GregorianCalendar already configured with the source
-    timezone and desired Y/M/D at midnight.
-  - Class: OADateTime
-  - Method: writeObject, readObject
-  - Issue: Serialized OADate/OATime with timezone writes local fields plus timezone id, but read reconstructs those
-    fields using JVM default timezone before assigning the timezone.
-  - Why it is a problem: Date-only and time-only values can shift when deserialized on a JVM in a different default
-    timezone.
-  - Classification: Fix Now
-  - Suggested Fix: During read, resolve tzId first and construct calendar fields in that timezone.
-  - Class: OADateTime, OADate, OATime
-  - Method: equals, hashCode
-  - Issue: equals for OADate and OATime uses semantic date-only/time-only comparison, but hashCode always uses raw
-    _time.
-  - Why it is a problem: Equal OADate or OATime values can have different hash codes, breaking HashMap, HashSet,
-    caches, and graph identity structures.
-  - Classification: Fix Now
-  - Suggested Fix: Override hash-code semantics for date-only and time-only values, or make base hashCode mirror
-    compareTo equality semantics.
-  - Class: OATime
-  - Method: OATime(Date), OATime(Time), OATime(long), clearDate
-  - Issue: Time-only construction depends on JVM default timezone.
-  - Why it is a problem: The class contract says OATime is not affected by timezone, but the same millis value can
-    become a different wall-clock time on different machines.
-  - Classification: Fix Now
-  - Suggested Fix: Normalize time-only values using explicit local-time fields or a fixed timezone/epoch
-    convention, not JVM default Date field extraction.
-  - Class: OADate
-  - Method: OADate(Date), OADate(long), clearTime
-  - Issue: Date-only construction from an instant depends on JVM default timezone.
-  - Why it is a problem: The class documentation says date-only values are consistent across JVM default timezones,
-    but the same instant can become different calendar dates.
-  - Classification: Fix Now
-  - Suggested Fix: Define the intended conversion zone explicitly. For deterministic distributed behavior, avoid
-    default timezone unless explicitly requested.
-  - Class: OATimeZone
-  - Method: getTimeZone, getOATimeZone
-  - Issue: Lookup accepts timezone abbreviations and display names.
-  - Why it is a problem: Abbreviations such as CST, IST, EST are ambiguous or fixed-offset aliases and can resolve
-    differently than intended for DST-aware business zones.
-  - Classification: Defer
-  - Class: OATimeZone
-  - Method: _getOATimeZones, getUtcTimeZone
-  - Issue: UTC display/lookup is based on getRawOffset(), not offset at a specific instant.
-  - Why it is a problem: DST-observing zones display and sort by standard offset, not current/effective offset. A
-    user selecting by UTC-05 during daylight time may not get the intended zone.
-  - Classification: Defer
-  - Class: OATimeZone
-  - Method: getOATimeZones
-  - Issue: Refresh path never rebuilds once alTZ is non-null, even when msNextUpdate has expired.
-  - Why it is a problem: Cached timezone display metadata is intended to refresh but does not. This matters if
-    display names/offset displays are expected to track day changes or timezone database updates.
-  - Classification: Defer
-
-  COMPLETE
-
-
-
-1. file/class/method
-     src/main/java/com/viaoa/datetime/OADateTime.java — set12Hour(int hr)
-  2. concrete bug
-     set12Hour discards the existing AM/PM state and always writes the hour into the AM half of the day.
-  3. runtime scenario
-     For an instance representing 3:00 PM:
-
-  dt.set12Hour(4);
-
-  Expected wall-clock result is usually 4:00 PM, preserving PM. Current code does:
-
-  int h = (hr % 12);
-  setHour(h);
-
-  So the result becomes 4:00 AM.
-
-  4. why this violates OA/OG datetime semantics
-     This can corrupt UI/form-driven time edits where hour and AM/PM are edited independently. OA time semantics must
-     preserve the intended time-only/datetime wall-clock value unless the caller explicitly changes AM/PM.
-  5. minimal fix direction
-     Use the existing AM_PM state when converting 12-hour input to 24-hour time, or set Calendar.HOUR instead of
-     HOUR_OF_DAY while preserving Calendar.AM_PM.
-  6. suggested CODEX comment location
-     Above OADateTime.set12Hour(int hr).
-
-
-1. file/class/method
-     src/main/java/com/viaoa/datetime/OADateTime.java — addDays(int amount)
-  2. concrete bug
-     addDays(0) returns this, while the method contract says it returns a new OADateTime object.
-  3. runtime scenario
-
-  OADate d1 = new OADate(2026, 4, 18);
-  OADate d2 = (OADate) d1.addDays(0);
-  d2.setDay(19);
-
-  Because d2 == d1, mutating the result mutates the original. Other arithmetic methods generally return a new object,
-  so this is an aliasing trap.
-
-  4. why this violates OA/OG datetime semantics
-     OA date/time wrappers are mutable in practice. Arithmetic methods that claim to return a new value must not
-     sometimes return the original instance. This can corrupt scheduler/date-range/cache logic when the amount happens
-     to be zero.
-
-5.1. file/class/method
-  src/main/java/com/viaoa/datetime/OADateTime.java — set12Hour(int hr)
-
-  2. concrete bug
-     set12Hour discards the current AM/PM state and always writes the hour as AM.
-  3. runtime scenario
-     For an instance representing 3:30 PM, calling:
-
-  dt.set12Hour(4);
-
-  sets the hour to 04:30 AM, not 04:30 PM.
-
-  Execution path:
-
-  int h = (hr % 12);
-  setHour(h);
-
-  4. why this violates OA/OG datetime semantics
-     A 12-hour setter should preserve or explicitly coordinate with AM_PM. OA scheduling, UI binding, template/report
-     formatting, and property editing can split hour and AM/PM controls. This silently changes the instant by 12
-     hours.
-  5. minimal fix direction
-     Implement set12Hour using the current getAM_PM() value, or set Calendar.HOUR rather than HOUR_OF_DAY. For
-     example, preserve PM by adding 12 when current AM_PM is PM and hr != 12.
-  6. suggested CODEX comment location
-     Above OADateTime.set12Hour(int hr).
-
-
- 1. file/class/method
-     src/main/java/com/viaoa/datetime/OADateTime.java — valueOfMain(...)
-  2. concrete bug
-     Parsing uses lenient SimpleDateFormat, so invalid dates/times can silently normalize to different valid values.
-  3. runtime scenario
-     Inputs like these can parse successfully instead of failing:
-
-  OADate.valueOf("2026-02-31")
-  OATime.valueOf("25:00")
-  OADateTime.valueOf("2026-13-01 10:00")
-
-  SimpleDateFormat can roll these into another date/time instead of rejecting them.
-
-  4. why this violates OA/OG datetime semantics
-     Datasource values, query criteria, serialized values, UI input, and filter/template values must not silently
-     become a different date/time. This is a false-success parse.
-  5. minimal fix direction
-     Set sdf.setLenient(false) before parsing, and keep the existing CODEX full-consumption requirement as a separate
-     check.
-  6. suggested CODEX comment location
-     Inside OADateTime.valueOfMain(...), immediately after sdf.applyPattern(format).
-
- 1. file/class/method
-     src/main/java/com/viaoa/datetime/OADateTime.java — addDays(int amount)
-  2. concrete bug
-     addDays(0) returns this, while the method contract says it returns a new date/time instance.
-  3. runtime scenario
-     Caller code can accidentally alias the original:
-
-  OADate d1 = new OADate();
-  OADate d2 = (OADate) d1.addDays(0);
-  d2.setDay(1); // mutates d1 too
-
-  Other add methods generally return a new object, so this zero-day path is inconsistent.
-
-  4. why this violates OA/OG datetime semantics
-     OA date/time wrappers are mutable. Returning the same object from a method documented as producing a new value
-     can corrupt caller state, date-range calculations, scheduling logic, and cache keys.
-  5. minimal fix direction
-     For amount == 0, return a new instance of the same semantic type (OADate, OATime, or OADateTime) instead of this.
-  6. suggested CODEX comment location
-     At the top of OADateTime.addDays(int amount), above the if (amount == 0) branch.
-
-  1. file/class/method
-     src/main/java/com/viaoa/datetime/OADateTime.java — OADateTime(LocalDateTime ldt)
-  2. concrete bug
-     LocalDateTime conversion uses ZoneId.systemDefault() instead of OA’s configured defaultTimeZone.
-  3. runtime scenario
-     If OA sets:
-
-  OADateTime.setDefaultTimeZone(TimeZone.getTimeZone("UTC"));
-
-  on a JVM running in America/Chicago, then:
-
-  new OADateTime(LocalDateTime.of(2026, 5, 18, 10, 0))
-
-  interprets 10:00 in the JVM system zone, not OA’s configured default zone.
-
-  4. why this violates OA/OG datetime semantics
-     OA exposes a default timezone for date/time semantics. Bypassing it can create persisted/serialized/comparison
-     values that drift between servers, clients, replication nodes, or tests with different JVM defaults.
-  5. minimal fix direction
-     Resolve LocalDateTime using OADateTime.getDefaultTimeZone().toZoneId() unless the contract explicitly says Java
-     LocalDateTime always uses JVM default.
-  6. suggested CODEX comment location
-     Above OADateTime(LocalDateTime ldt).
-
-
-  1. file/class/method
-     src/main/java/com/viaoa/datetime/OADateTime.java — betweenYears(Object obj) / betweenMonths(Object obj)
-  2. concrete bug
-     Elapsed year/month calculations ignore lower-order fields. Adjacent dates crossing a year/month boundary can
-     return 1 year/month even when only one day apart.
-  3. runtime scenario
-     new OADate(2025, 11, 31).betweenYears(new OADate(2026, 0, 1)) returns 1.
-     new OADate(2026, 0, 31).betweenMonths(new OADate(2026, 1, 1)) returns 1.
-  4. why this violates OA/OG datetime semantics
-     If these methods are used for elapsed age, duration, scheduling, query windows, or report calculations, they
-     silently overstate elapsed time.
-  5. minimal fix direction
-     Define the contract explicitly: field-boundary difference vs full elapsed units. If full elapsed units are
-     intended, account for month/day/time before counting the final year/month.
-  6. suggested CODEX comment location
-     Above betweenYears(Object obj) and betweenMonths(Object obj).
-
-
-1. file/class/method
-     src/main/java/com/viaoa/datetime/OADateTime.java — field constructors and setters: OADateTime(int...),
-     setDate(...), setYear(...), setMonth(...), setDay(...), setTime(...); also inherited by OADate(int...) /
-     OATime(int...)
-  2. concrete bug
-     Field-based construction/mutation uses lenient Date / Calendar behavior, so invalid field combinations silently
-     normalize to a different valid date/time.
-  3. runtime scenario
-     new OADate(2026, Calendar.FEBRUARY, 31) can become a March date.
-     dt.setMonth(Calendar.FEBRUARY) on a March 31 value can roll into March instead of producing February semantics or
-     failing.
-     new OATime(25, 0, 0) can normalize to 01:00.
-  4. why this violates OA/OG datetime semantics
-     OA date/time values are used for persisted values, query criteria, schedules, UI edits, and replication. Silent
-     rollover is false-success mutation: caller asked for one semantic value and got another.
-  5. minimal fix direction
-     Validate field ranges and actual date validity before committing _time, or use non-lenient calendar construction.
-     Month/day edits need an explicit contract: reject invalid day/month combinations or clamp only if that is
-     documented.
-  6. suggested CODEX comment location
-     Above the field-based constructors, setDate, setMonth, setDay, and setTime.
-
- 1. file/class/method
-     src/main/java/com/viaoa/datetime/OADateTime.java — compareTo(Object obj), indirectly after(Object) /
-     isAfter(Object)
-  2. concrete bug
-     compareTo returns positive 2 when the object is not convertible, and after() treats any positive value as true.
-  3. runtime scenario
-     new OADateTime().after(new Object()) returns true because convert(obj, false) returns null, compareTo returns 2,
-     and after checks > 0.
-  4. why this violates OA/OG datetime semantics
-     A non-comparable value should not silently mean “this date is after that value.” That can produce false-positive
-     filters, comparisons, or business rules if an unexpected value type reaches date comparison.
-  5. minimal fix direction
-     Make non-convertible comparison fail visibly or return a comparison sentinel that before/after/between do not
-     treat as ordered. Minimal local fix: after/isAfter should only treat known ordered positive comparison as true,
-     not the non-comparable sentinel.
-  6. suggested CODEX comment location
-     Above compareTo(Object obj) and the after/isAfter helpers.
-*/
-
 import java.io.IOException;
 import java.text.DateFormat;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
+import java.time.DateTimeException;
+import java.time.DayOfWeek;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Month;
+import java.time.OffsetDateTime;
+import java.time.Period;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.ResolverStyle;
+import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalQueries;
+import java.time.temporal.WeekFields;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -349,59 +47,49 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import com.viaoa.lang.OAStr;
 
 /**
  * Core OA date/time class used to normalize, convert, format, parse, compare,
- * and calculate date/time values across the OA platform.
+ * serialize, and calculate date/time values across the OA platform.
  * <p>
- * This class exists because Java date/time support spans several generations of
- * APIs. OADateTime provides one OA-level abstraction for working with legacy
- * and modern Java date/time types, including:
- * <ul>
- *   <li>{@link java.util.Date}</li>
- *   <li>{@link java.sql.Date}</li>
- *   <li>{@link java.sql.Time}</li>
- *   <li>{@link java.sql.Timestamp}</li>
- *   <li>{@link java.util.Calendar}</li>
- *   <li>{@link java.util.GregorianCalendar}</li>
- *   <li>{@link java.time.Instant}</li>
- *   <li>{@link java.time.LocalDate}</li>
- *   <li>{@link java.time.LocalTime}</li>
- *   <li>{@link java.time.LocalDateTime}</li>
- *   <li>{@link java.time.ZonedDateTime}</li>
- * </ul>
+ * OADateTime is the OA-level date/time abstraction. It accepts legacy Java
+ * values such as {@link java.util.Date}, {@link java.sql.Date},
+ * {@link java.sql.Time}, {@link java.sql.Timestamp}, and
+ * {@link java.util.Calendar}, while using {@code java.time} types internally for
+ * field access and calculations.
  *
  * <h3>Internal model</h3>
- * OADateTime stores its value as milliseconds from the epoch plus an optional
- * {@link java.util.TimeZone}. A {@link java.util.GregorianCalendar} is created
- * only as a temporary helper for field access, field mutation, formatting,
- * parsing, and arithmetic.
+ * The stored value is {@link #_time}, expressed as milliseconds from the epoch,
+ * plus an optional {@link #zoneId}. When {@code zoneId} is {@code null},
+ * {@link #defaultZoneId} is used for local field interpretation and formatting.
  * <p>
- * OA follows {@link java.util.Calendar} month numbering: January is {@code 0}
- * and December is {@code 11}. Java {@code java.time} APIs use month values
- * {@code 1} through {@code 12}; conversion methods must account for this.
+ * Month values follow {@code java.time} conventions: January is {@code 1} and
+ * December is {@code 12}.
  *
- * <h3>Timezone model</h3>
- * The stored millisecond value represents the underlying instant. When this
- * object has a timezone, calendar fields such as year, month, day, hour,
- * minute, and second are interpreted using that timezone. When no timezone is
- * assigned, the OA default timezone is used.
+ * <h3>Date/time semantics</h3>
+ * Each instance has a {@link DateTimeType}:
+ * <ul>
+ *   <li>{@link DateTimeType#Instant}: {@code _time} is authoritative.</li>
+ *   <li>{@link DateTimeType#ZonedInstant}: {@code _time} and {@code zoneId}
+ *       are authoritative.</li>
+ *   <li>{@link DateTimeType#Floating}: wall-clock fields are authoritative;
+ *       {@code _time} is derived using the active/default zone.</li>
+ * </ul>
  *
- * <h3>Mutable and immutable APIs</h3>
- * OADateTime supports both legacy mutable methods and modern immutable-style
- * methods.
- * <p>
- * Methods named {@code setXxx(...)} mutate this instance.
- * <p>
- * Methods named {@code withXxx(...)} return a new instance with the requested
- * field changed.
- * <p>
- * Arithmetic methods such as {@code addDays(...)}, {@code addMonths(...)},
- * {@code subtractDays(...)}, and related methods also return new instances.
+ * <h3>Timezone behavior</h3>
+ * {@link #withZoneIdSameInstant(ZoneId)} preserves {@code _time} and changes the
+ * zone used for display. {@link #withZoneIdSameWallTime(ZoneId)} preserves the
+ * displayed local fields and adjusts {@code _time} for the target zone.
+ *
+ * <h3>Immutable-style API</h3>
+ * Methods named {@code withXxx(...)} and arithmetic methods such as
+ * {@code plusDays(...)}, {@code plusMonths(...)}, and {@code minusDays(...)}
+ * return new instances rather than modifying this instance.
  *
  * <h3>Specialized subclasses</h3>
- * {@link OADate} provides date-only semantics.
- * {@link OATime} provides time-only semantics.
+ * {@link OADate} provides date-only semantics. {@link OATime} provides time-only
+ * semantics.
  *
  * @see OADate
  * @see OATime
@@ -410,42 +98,50 @@ import java.util.TimeZone;
  * @see java.time.ZonedDateTime
  */
 public class OADateTime implements java.io.Serializable, Comparable {
+	/**
+	 * Serialization version for OADateTime serialized form.
+	 */
 	private static final long serialVersionUID = 1L;
 
 
 	/**
-	 * Time value stored as milliseconds since the epoch.
+	 * Milliseconds from the epoch. For {@link DateTimeType#Instant} this is the authoritative value; for {@link DateTimeType#Floating} it is derived from local wall-clock fields using the active/default zone.
 	 */
 	protected long _time;
 	
 	/**
-	 * Optional time zone associated with this date/time.
+	 * Optional zone associated with this value. When {@code null}, {@link #defaultZoneId} is used for field access, formatting, and conversions that require a zone.
 	 */
-	protected TimeZone timeZone;
+	protected ZoneId zoneId;
 	
 	/**
-	 * Instance-specific output format used when converting to a string.
+	 * Optional instance-specific output format used by {@link #toString()} when no explicit format is supplied.
 	 */
 	protected String format;
 
+	/**
+	 * Semantic type for this value. The type determines whether {@link #_time}, {@link #zoneId}, or wall-clock fields are authoritative.
+	 */
+	protected DateTimeType type = DateTimeType.Instant; 
+	
 	
 	/**
-	 * Default time zone used when no instance time zone is specified.
+	 * Default zone used when an instance does not carry an explicit {@link #zoneId}.
 	 */
-	protected static TimeZone defaultTimeZone;
+	protected static ZoneId defaultZoneId;
 
 	/**
-	 * Locale used for date/time formatting and parsing.
+	 * Locale used to initialize default parse and output formats.
 	 */
 	private static Locale locale;
 	
 	/**
-	 * Long date/time format including milliseconds and AM/PM.
+	 * Default long date/time format including milliseconds and AM/PM marker.
 	 */
 	public final static String FORMAT_long = "yyyy/MM/dd hh:mm:ss.S a";
 	
 	/**
-	 * Long date/time format including milliseconds and time zone.
+	 * Default extended date/time format including milliseconds, AM/PM marker, and time zone text.
 	 */
 	public final static String FORMAT_xlong = "yyyy/MM/dd hh:mm:ss.S a z";
 	
@@ -455,96 +151,80 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	// The calling code should call dt.setTimeZoneUTC()
 
 	/**
-	 * RFC-339 compliant date/time format without milliseconds.
+	 * RFC-3339 style UTC literal format without milliseconds. The literal {@code Z} is output text, not an automatically parsed zone.
 	 */
 	public final static String RFC339Format = "yyyy-MM-dd'T'HH:mm:ss'Z'"; // 2023-09-04T07:11:12:32-0400
 	
 	/**
-	 * RFC-339 compliant date/time format with milliseconds.
+	 * RFC-3339 style UTC literal format with milliseconds. The literal {@code Z} is output text, not an automatically parsed zone.
 	 */
 	public final static String RFC339FormatWms = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"; // 2023-09-04T07:11:12:32.123-0400
 
 	/**
-	 * Global default output format used when converting date/time values to strings.
+	 * Global output format used by {@link #toString()} when an instance-specific format has not been set.
 	 */
 	protected static String staticOutputFormat;
 	
 	/**
-	 * JSON date/time format without time zone.
+	 * JSON/ISO-style local date/time format without an offset or zone.
 	 */
 	public final static String JsonFormat = "yyyy-MM-dd'T'HH:mm:ss";
 	
 	/**
-	 * JSON date/time format including time zone.
+	 * JSON/ISO-style date/time format including an ISO-8601 offset.
 	 */
 	public final static String JsonFormatTZ = "yyyy-MM-dd'T'HH:mm:ssX";
 
 	/**
-	 * JDBC-compatible SQL date/time format.
+	 * JDBC-compatible SQL timestamp format.
 	 */
 	public final static String JdbcFormat = "yyyy-MM-dd HH:mm:ss"; // SQL
 
 	// format used by browser: : "YYYY-MM-DD'T'HH:mm";
 	// same as json format
 	// public final static String HtmlInputDateTimeFormat = "yyyy-MM-dd'T'hh:mm"; //
-	// java format to use
 
 	/**
-	 * Collection of global date/time parse formats.
+	 * Ordered fallback parse formats used by {@link #valueOf(String)} and related parsing methods.
 	 */
 	private static List<String> alDateTimeParseFormat;
 
 	static {
 		setLocale(Locale.getDefault());
-		defaultTimeZone = TimeZone.getDefault();
+		defaultZoneId = ZoneId.systemDefault();
 	}
 
 	/**
-	 * Sets the default time zone to use when no instance-specific time zone is defined.
+	 * Sets the default zone used when an OADateTime does not have an instance-specific zone.
 	 *
-	 * @param tz the default TimeZone to use; if null, the system default is used
+	 * @param zid the default zone; when {@code null}, {@link ZoneId#systemDefault()} is used
 	 */
-	public static void setDefaultTimeZone(TimeZone tz) {
-		if (tz == null) {
-			tz = TimeZone.getDefault();
+	public static void setDefaultZoneId(ZoneId zid) {
+		if (zid == null) {
+			zid = ZoneId.systemDefault();
 		}
-		defaultTimeZone = tz;
+		defaultZoneId = zid;
 	}
 
-	/**
-	 * Returns the default time zone used when no instance-specific time zone is set.
-	 *
-	 * @return the default TimeZone
-	 */
-	public static TimeZone getDefaultTimeZone() {
-		return defaultTimeZone;
-	}
 
 	/**
-	 * Creates a GregorianCalendar, initializes it with the current
-	 * time value, and applies the appropriate time zone.
+	 * Returns the current OA default zone.
 	 *
-	 * @return an initialized GregorianCalendar instance
+	 * @return default zone used for instances with no explicit zone
 	 */
-	protected GregorianCalendar _getCal() {
-		GregorianCalendar cal = new GregorianCalendar();
-	    
-	    TimeZone tz = (timeZone != null) ? timeZone : defaultTimeZone;
-	    cal.setTimeZone(tz);
-	    cal.setLenient(false);
-	    cal.setTimeInMillis(_time);
-
-	    return cal;
+	public static ZoneId getDefaultZoneId() {
+		return defaultZoneId;
 	}
 	
-
 	/**
-	 * Sets the locale used for formatting and parsing date/time values and
-	 * initializes global parse and output formats based on the locale.
+	 * Sets the locale used to derive default date/time parse and output formats.
+	 * <p>
+	 * Passing {@code null} resets the locale to {@link Locale#getDefault()}.
 	 *
-	 * @param loc the Locale to use
+	 * @param loc locale to use for formatting/parsing defaults
 	 */
 	public static void setLocale(Locale loc) {
+		if (loc == null) loc = Locale.getDefault(); 
 		locale = loc;
 		alDateTimeParseFormat = new ArrayList<>();
 		String s = getFormat(DateFormat.SHORT, locale);
@@ -632,226 +312,577 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Creates a new date/time initialized to the current system time.
+	 * Defines the business semantics of an OADateTime value.
+	 * <p>
+	 * The type controls which part of the value is authoritative during serialization,
+	 * timezone conversion, display, and reconstruction.
+	 */
+	public enum DateTimeType {
+
+	    /**
+	     * Wall-clock fields are authoritative.
+	     * <p>
+	     * Examples:
+	     * <ul>
+	     *   <li>July 4, 2026 at 12:00 PM local time</li>
+	     *   <li>Store opens at 8:00 AM local time</li>
+	     *   <li>Daily lunch break at noon</li>
+	     * </ul>
+	     *
+	     * Serialization:
+	     * <ul>
+	     *   <li>Serialize fields (Y/M/D/H/M/S/MS)</li>
+	     *   <li>Do not serialize _time as authoritative</li>
+	     * </ul>
+	     *
+	     * Timezone:
+	     * <ul>
+	     *   <li>No fixed timezone semantics</li>
+	     *   <li>Reader/local timezone is used to derive _time</li>
+	     * </ul>
+	     *
+	     * DST:
+	     * <ul>
+	     *   <li>Fields remain authoritative</li>
+	     *   <li>Derived _time may differ by timezone</li>
+	     *   <li>Deserialize should use lenient resolution</li>
+	     * </ul>
+	     */
+	    Floating,
+
+	    /**
+	     * Represents an exact instant in time.
+	     * <p>
+	     * Examples:
+	     * <ul>
+	     *   <li>CreatedDateTime</li>
+	     *   <li>UpdatedDateTime</li>
+	     *   <li>Audit timestamp</li>
+	     *   <li>Replication timestamp</li>
+	     * </ul>
+	     *
+	     * Serialization:
+	     * <ul>
+	     *   <li>Serialize _time</li>
+	     *   <li>Optional timezone metadata may be preserved</li>
+	     * </ul>
+	     *
+	     * Display:
+	     * <ul>
+	     *   <li>Display using runtime/default timezone</li>
+	     * </ul>
+	     *
+	     * DST:
+	     * <ul>
+	     *   <li>_time is authoritative</li>
+	     *   <li>DST only affects displayed fields</li>
+	     * </ul>
+	     */
+	    Instant,
+
+	    /**
+	     * Represents an exact instant whose associated timezone
+	     * is part of the business meaning.
+	     * <p>
+	     * Examples:
+	     * <ul>
+	     *   <li>Meeting at 9:00 AM America/New_York</li>
+	     *   <li>Market open in London</li>
+	     *   <li>Flight departure timezone</li>
+	     * </ul>
+	     *
+	     * Serialization:
+	     * <ul>
+	     *   <li>Serialize _time</li>
+	     *   <li>Serialize timeZone</li>
+	     * </ul>
+	     *
+	     * Display:
+	     * <ul>
+	     *   <li>Display using the stored timezone</li>
+	     * </ul>
+	     *
+	     * DST:
+	     * <ul>
+	     *   <li>_time and timeZone are authoritative</li>
+	     *   <li>DST only affects displayed fields within that timezone</li>
+	     * </ul>
+	     */
+	    ZonedInstant
+	}	
+	
+	
+	/**
+	 * Creates an instant-valued OADateTime initialized to the current system time.
 	 */
 	public OADateTime() {
 		this._time = System.currentTimeMillis();
 	}
 
 	/**
-	 * Creates a new date/time using the specified millisecond value since the epoch.
+	 * Creates an instant-valued OADateTime using milliseconds from the epoch.
 	 *
 	 * @param time milliseconds since the epoch
 	 */
 	public OADateTime(long time) {
 		this._time = time;
 	}
+	
 
+	/**
+	 * Creates an OADateTime using milliseconds from the epoch and an optional zone.
+	 * <p>
+	 * The supplied zone affects field access and formatting; the stored epoch
+	 * milliseconds are not recalculated.
+	 *
+	 * @param time milliseconds since the epoch
+	 * @param zid zone to associate with this value, or {@code null} to use the default zone
+	 */
+	public OADateTime(long time, ZoneId zid) {
+		this._time = time;
+		this.zoneId = zid;
+	}
+
+	/**
+	 * Creates an OADateTime using milliseconds from the epoch and an optional legacy {@link TimeZone}.
+	 *
+	 * @param time milliseconds since the epoch
+	 * @param tz legacy timezone to associate with this value, or {@code null} to use the default zone
+	 */
 	public OADateTime(long time, TimeZone tz) {
 		this._time = time;
-		this.timeZone = tz;
+		if (tz != null) this.zoneId = tz.toZoneId();
 	}
 	
+
 	/**
-	 * Creates a new date/time using the specified date, time, and millisecond values.
+	 * Creates an OADateTime from explicit local date/time fields in the supplied zone.
+	 * <p>
+	 * Month follows {@code java.time} numbering: January is {@code 1}, December is {@code 12}.
 	 *
-	 * @param year full year value
-	 * @param month month value from 0 to 11
+	 * @param zoneId zone used to resolve the local fields; {@code null} uses the OA default zone
+	 * @param year full year
+	 * @param month month from 1 to 12
 	 * @param day day of month
-	 * @param hrs hour value
-	 * @param mins minute value
-	 * @param secs second value
-	 * @param milsecs millisecond value
+	 * @param hrs hour of day from 0 to 23
+	 * @param mins minute of hour
+	 * @param secs second of minute
+	 * @param milsecs millisecond of second from 0 to 999
+	 * @throws RuntimeException if {@code milsecs} is outside 0..999
+	 * @throws DateTimeException if the supplied fields do not form a valid date/time
+	 */
+	public OADateTime(ZoneId zoneId, int year, int month, int day, int hrs, int mins, int secs, int milsecs) {
+	    this.zoneId = zoneId;
+
+	    if (milsecs < 0 || milsecs > 999) {
+	        throw new RuntimeException("Invalid millisecond value: " + milsecs);
+	    }
+	    
+	    LocalDateTime ldt = LocalDateTime.of(
+	        year,
+	        month,
+	        day,
+	        hrs,
+	        mins,
+	        secs,
+	        milsecs * 1_000_000
+	    );
+	    this._time = ldt.atZone(getZoneId()).toInstant().toEpochMilli();
+	}	
+	
+	/**
+	 * Creates an OADateTime from local date/time fields using the OA default zone.
+	 *
+	 * @param year full year
+	 * @param month month from 1 to 12
+	 * @param day day of month
+	 * @param hrs hour of day from 0 to 23
+	 * @param mins minute of hour
+	 * @param secs second of minute
+	 * @param milsecs millisecond of second from 0 to 999
 	 */
 	public OADateTime(int year, int month, int day, int hrs, int mins, int secs, int milsecs) {
-		setCalendar(year, month, day, hrs, mins, secs, milsecs);
-	}
+		this(null, year, month, day, hrs, mins, secs, milsecs);
+	}	
 	
 	/**
-	 * Creates a new date/time using the specified year, month, and day.
+	 * Creates an OADateTime for the start of the supplied date using the OA default zone.
 	 *
-	 * @param year full year value
-	 * @param month month value from 0 to 11
-	 * @param day day of month from 1 to 31
+	 * @param year full year
+	 * @param month month from 1 to 12
+	 * @param day day of month
 	 */
 	public OADateTime(int year, int month, int day) {
-		setCalendar(year, month, day, 0, 0, 0, 0);
+		this(year, month, day, 0, 0, 0, 0);
 	}
-
+	
 	/**
-	 * Creates a new date/time using the specified date and time values.
+	 * Creates an OADateTime from date, hour, and minute fields using the OA default zone.
 	 *
-	 * @param year full year value
-	 * @param month month value from 0 to 11
-	 * @param day day of month from 1 to 31
-	 * @param hrs hour value
-	 * @param mins minute value
+	 * @param year full year
+	 * @param month month from 1 to 12
+	 * @param day day of month
+	 * @param hrs hour of day from 0 to 23
+	 * @param mins minute of hour
 	 */
 	public OADateTime(int year, int month, int day, int hrs, int mins) {
-		setCalendar(year, month, day, hrs, mins, 0, 0);
+		this(year, month, day, hrs, mins, 0, 0);
 	}
 
 	/**
-	 * Creates a new date/time using the specified date and time values.
+	 * Creates an OADateTime from date and time fields using the OA default zone.
 	 *
-	 * @param year full year value
-	 * @param month month value from 0 to 11
-	 * @param day day of month from 1 to 31
-	 * @param hrs hour value
-	 * @param mins minute value
-	 * @param secs second value
+	 * @param year full year
+	 * @param month month from 1 to 12
+	 * @param day day of month
+	 * @param hrs hour of day from 0 to 23
+	 * @param mins minute of hour
+	 * @param secs second of minute
 	 */
 	public OADateTime(int year, int month, int day, int hrs, int mins, int secs) {
-		setCalendar(year, month, day, hrs, mins, secs, 0);
+		this(year, month, day, hrs, mins, secs, 0);
 	}
 	
+	/**
+	 * Creates an OADateTime using a {@link Month} enum for the month value.
+	 *
+	 * @param year full year
+	 * @param month month enum value
+	 * @param day day of month
+	 * @param hrs hour of day from 0 to 23
+	 * @param mins minute of hour
+	 * @param secs second of minute
+	 */
+	public OADateTime(int year, Month month, int day, int hrs, int mins, int secs) {
+		this(year, month.getValue(), day, hrs, mins, secs, 0);
+	}
 	
 	/**
-	 * Creates a new date/time using another OADateTime instance.
-	 * If the parameter is null, the current system time is used.
+	 * Copies another OADateTime, preserving epoch milliseconds, zone metadata, and semantic type.
+	 * <p>
+	 * If {@code dt} is {@code null}, this value is initialized to the current system time.
 	 *
-	 * @param odt the OADateTime to copy from
+	 * @param dt value to copy, or {@code null} for current time
 	 */
-	public OADateTime(OADateTime odt) {
-		if (odt == null) {
-			this._time = System.currentTimeMillis();
-		} else {
-			this._time = odt.getTime();
-			this.timeZone = odt.timeZone;
+	public OADateTime(OADateTime dt) {
+		if (dt == null) {
+			this._time = Instant.now().toEpochMilli();
+		} 
+		else {
+			this._time = dt.getTime();
+			this.zoneId = dt.zoneId;
+			this.type = dt.type;
 		}
 	}
 
+	/**
+	 * Copies another OADateTime while replacing its associated zone.
+	 * <p>
+	 * This constructor preserves {@code _time}; it does not recalculate epoch milliseconds
+	 * from wall-clock fields.
+	 *
+	 * @param dt value to copy, or {@code null} for current time
+	 * @param zid replacement zone, or {@code null} to use the default zone when accessed
+	 */
+	public OADateTime(OADateTime dt, ZoneId zid) {
+		if (dt == null) {
+			this._time = Instant.now().toEpochMilli();
+		} else {
+			this._time = dt.getTime();
+			this.type = dt.type;
+		}
+		this.zoneId = zid;
+	}
+	
 	
 	/**
-	 * Creates a new date/time using a date and time.
-	 * If the date is null, a new OADate is created.
-	 * If the time is not null, its time value is applied.
+	 * Copies another OADateTime while replacing its semantic type.
 	 *
-	 * @param d the OADate providing the date portion
-	 * @param t the OATime providing the time portion
+	 * @param dt value to copy, or {@code null} for current time
+	 * @param type replacement semantic type
+	 */
+	public OADateTime(OADateTime dt, DateTimeType type) {
+		if (dt == null) {
+			this._time = Instant.now().toEpochMilli();
+		} else {
+			this._time = dt.getTime();
+			this.zoneId = dt.zoneId;
+		}
+		this.type = type;
+	}
+	
+	
+	/**
+	 * Creates a floating OADateTime by combining an OA date with an OA time.
+	 * <p>
+	 * If the date is {@code null}, the current OA date is used. If the time is
+	 * {@code null}, midnight is used.
+	 *
+	 * @param d date portion, or {@code null} for current date
+	 * @param t time portion, or {@code null} for midnight
 	 */
 	public OADateTime(OADate d, OATime t) {
-		if (d == null) {
-			d = new OADate();
-		}
-		this._time = d.getTime();
+	    if (d == null) {
+	    	d = new OADate();
+	    }
+        int year = d.getYear();
+        int month = d.getMonthValue();
+        int day = d.getDayOfMonth();
 
-		if (t != null) {
-			setTime(t);
-		}
-	}
-	
-	
-	/**
-	 * Creates a new date/time using the specified Calendar value.
-	 * If the calendar is null, the current system time is used.
-	 *
-	 * @param c the Calendar used to initialize this instance
-	 */
-	public OADateTime(Calendar c) {
-		if (c == null) {
-			this._time = System.currentTimeMillis();
-		} else {
-			this._time = c.getTimeInMillis();
-			this.timeZone = c.getTimeZone();
-		}
-	}
-
-	/**
-	 * Creates a new date/time using the specified Instant value.
-	 *
-	 * @param instant the Instant used to initialize this instance
-	 */
-	public OADateTime(Instant instant) {
-		this(instant.toEpochMilli());
-	}
-	
-	/**
-	 * Creates a new date/time using the specified LocalDateTime value.
-	 *
-	 * @param ldt the LocalDateTime used to initialize this instance
-	 */
-	public OADateTime(LocalDateTime ldt) {
-	    if (ldt == null) {
-	        this._time = System.currentTimeMillis();
-	        return;
+	    final int hour;
+	    final int minute;
+	    final int second;
+	    final int millisecond;
+	    if (t == null) {
+	        hour = 0;
+	        minute = 0;
+	        second = 0;
+	        millisecond = 0;
+	    } else {
+	        hour = t.getHour();
+	        minute = t.getMinute();
+	        second = t.getSecond();
+	        millisecond = t.getMilliSecond();
 	    }
 
-	    ZoneId zid = defaultTimeZone.toZoneId();
-	    this._time = ldt
-	        .atZone(zid)
-	        .toInstant()
-	        .toEpochMilli();
+	    LocalDateTime ldt = LocalDateTime.of(
+	        year,
+	        month,
+	        day,
+	        hour,
+	        minute,
+	        second,
+	        millisecond * 1_000_000
+	    );
+
+	    this._time = ldt.atZone(getZoneId()).toInstant().toEpochMilli();
+	    this.type = DateTimeType.Floating;;
+	}	
+	
+	/**
+	 * Creates an OADateTime from a legacy {@link Calendar}.
+	 * <p>
+	 * The calendar instant is preserved. A non-default calendar zone is retained as a
+	 * {@link DateTimeType#ZonedInstant}; otherwise the value is treated as an
+	 * {@link DateTimeType#Instant}.
+	 *
+	 * @param c calendar to copy, or {@code null} for current system time
+	 */
+	public OADateTime(Calendar c) {
+	    final long time;
+	    ZoneId zId;
+	    final DateTimeType dtType;
+
+	    if (c == null) {
+	        time = System.currentTimeMillis();
+	        zId = null;
+	        dtType = DateTimeType.Instant;
+	    } else {
+	        time = c.getTimeInMillis();
+	        zId = c.getTimeZone().toZoneId();
+
+	        if (zId != null && !zId.equals(defaultZoneId)) {
+	            dtType = DateTimeType.ZonedInstant;
+	        } else {
+	            dtType = DateTimeType.Instant;
+	            zId = null;
+	        }
+	    }
+
+	    this._time = time;
+	    this.zoneId = zId;
+	    this.type = dtType;
 	}
 	
 	/**
-	 * Creates a new date/time using the specified ZonedDateTime value.
+	 * Creates an instant-valued OADateTime from a {@link Instant}.
 	 *
-	 * @param zdt the ZonedDateTime used to initialize this instance
+	 * @param instant instant to use, or {@code null} for current system time
+	 */
+	public OADateTime(Instant instant) {
+	    if (instant == null) {
+	        this._time = System.currentTimeMillis();
+	    } 
+	    else {
+	        this._time = instant.toEpochMilli();
+	    }
+	    this.zoneId = null;
+	    this.type = DateTimeType.Instant;
+	}
+	
+	/**
+	 * Creates a floating OADateTime from local date/time fields using the OA default zone.
+	 *
+	 * @param ldt local date/time fields, or {@code null} for current system time
+	 */
+	public OADateTime(LocalDateTime ldt) {
+	    this.zoneId = null;
+	    this.type = DateTimeType.Floating;
+
+	    if (ldt == null) {
+	        this._time = System.currentTimeMillis();
+	    }
+	    else {
+		    this._time = ldt.atZone(defaultZoneId).toInstant().toEpochMilli();
+	    }
+	}
+
+	/**
+	 * Creates a floating OADateTime at the start of the supplied local date using the OA default zone.
+	 *
+	 * @param ld local date, or {@code null} for the current local date
+	 */
+	public OADateTime(LocalDate ld) {
+	    if (ld == null) ld = LocalDate.now();
+		this.type = DateTimeType.Floating;
+	    this._time = ld.atStartOfDay().atZone(defaultZoneId).toInstant().toEpochMilli();
+	}
+
+	/**
+	 * Creates a floating time-only value using {@code 1970-01-01} as the anchor date.
+	 * <p>
+	 * Nanoseconds are truncated to millisecond precision.
+	 *
+	 * @param time local time, or {@code null} for the current local time
+	 */
+	protected OADateTime(LocalTime time) {
+	    if (time == null) {
+	        time = LocalTime.now();
+	    }
+
+	    LocalDateTime ldt = LocalDateTime.of(LocalDate.of(1970, 1, 1), time.withNano((time.getNano() / 1_000_000) * 1_000_000));
+
+	    this.zoneId = null;
+	    this.type = DateTimeType.Floating;
+	    this._time = ldt.atZone(getZoneId()).toInstant().toEpochMilli();
+	}	
+	
+	/**
+	 * Creates a zoned-instant OADateTime from a {@link ZonedDateTime}.
+	 * <p>
+	 * Both the instant and the zone are preserved.
+	 *
+	 * @param zdt zoned date/time, or {@code null} for current system time
 	 */
 	public OADateTime(ZonedDateTime zdt) {
 	    if (zdt == null) {
 	        this._time = System.currentTimeMillis();
-	        return;
 	    }
-		this._time = zdt.toInstant().toEpochMilli();
-		ZoneId zid = zdt.getZone();
-		this.timeZone = TimeZone.getTimeZone(zid);
+	    else {
+			this._time = zdt.toInstant().toEpochMilli();
+			zoneId = zdt.getZone();
+	    }
+		this.type = DateTimeType.ZonedInstant;
 	}
 	
+	/**
+	 * Creates an instant-valued OADateTime from a legacy {@link Date}.
+	 *
+	 * @param date date to copy, or {@code null} for current system time
+	 */
 	public OADateTime(Date date) {
 		if (date == null) {
 			this._time = System.currentTimeMillis();
 		} else {
 			this._time = date.getTime();
 		}
+		this.type = DateTimeType.Instant;
 	}
-
+	
 	/**
-	 * Creates a new date/time using a string value.
+	 * Parses a string into an OADateTime using the global parse formats.
 	 *
-	 * @param strDate the string representation of the date/time
+	 * @param strDate text to parse, or {@code null} for current system time
 	 * @see #valueOf(String)
 	 */
 	public OADateTime(String strDate) {
-		setCalendar(strDate);
+		this(strDate, null);
 	}
 
 	/**
-	 * Creates a new date/time using a string value and a specified format.
+	 * Parses a string into an OADateTime using the supplied format and optional fallback formats.
 	 *
-	 * @param strDate the string representation of the date/time
-	 * @param format the format used to parse the string
-	 * @see #valueOf(String)
+	 * @param strDate text to parse, or {@code null} for current system time
+	 * @param format preferred parse pattern
+	 * @throws IllegalArgumentException if the non-null text cannot be parsed
+	 * @see #valueOf(String, String)
 	 */
 	public OADateTime(String strDate, String format) {
-		setCalendar(strDate, format);
+		if (strDate == null) {
+			this._time = System.currentTimeMillis();
+		} else {
+			OADateTime dt = valueOf(strDate, format);
+			if (dt == null) {
+				throw new IllegalArgumentException("OADateTime cant create date from String \"" + strDate + "\"");
+			}
+			this._time = dt.getTime();
+			this.zoneId = dt.zoneId;
+			this.type = dt.type;
+		}
+	}
+
+	
+	/**
+	 * Returns the stored epoch-millisecond value.
+	 *
+	 * @return milliseconds from the epoch
+	 */
+	public long getTime() {
+		return _time;
+	}
+	
+	/**
+	 * Returns the semantic type for this value.
+	 *
+	 * @return semantic date/time type
+	 */
+	public DateTimeType getType() {
+		return type;
+	}
+	
+	/**
+	 * Returns the effective zone for this value.
+	 * <p>
+	 * If no instance zone is assigned, the OA default zone is returned.
+	 *
+	 * @return effective zone id
+	 */
+	public ZoneId getZoneId() {
+		if (this.zoneId == null) return defaultZoneId;
+		return this.zoneId;
 	}
 
 	/**
-	 * Returns this date/time as a LocalDateTime using the current field values.
+	 * Returns the effective zone as a legacy {@link TimeZone}.
 	 *
-	 * @return a LocalDateTime representation of this instance
+	 * @return legacy timezone equivalent of {@link #getZoneId()}
+	 */
+	public TimeZone getTimeZone() {
+		return TimeZone.getTimeZone(getZoneId());
+	}
+	
+	/**
+	 * Returns the local date/time fields for this value using the effective zone.
+	 *
+	 * @return local date/time representation
 	 */
 	public LocalDateTime getLocalDateTime() {
-		GregorianCalendar c = _getCal();
-		LocalDateTime ldt = LocalDateTime.of(c.get(c.YEAR), c.get(c.MONTH) + 1, c.get(c.DAY_OF_MONTH), c.get(c.HOUR_OF_DAY), c.get(c.MINUTE), c.get(c.SECOND), (int) (c.get(c.MILLISECOND) * 1_000_000));
-		return ldt;
-	}
+	    return Instant.ofEpochMilli(_time).atZone(getZoneId()).toLocalDateTime();
+	}	
 
 	/**
-	 * Returns this date/time as a ZonedDateTime using the associated time zone.
+	 * Returns this value as a {@link ZonedDateTime} using the effective zone.
 	 *
-	 * @return a ZonedDateTime representation of this instance
+	 * @return zoned date/time representation
 	 */
 	public ZonedDateTime getZonedDateTime() {
-		return Instant.ofEpochMilli(_time).atZone(getTimeZone().toZoneId());
+		return Instant.ofEpochMilli(_time).atZone(getZoneId());
 	}
 
 	/**
-	 * Returns this date/time as an Instant.
+	 * Returns this value as an {@link Instant} based on {@link #_time}.
 	 *
-	 * @return an Instant representing this date/time
+	 * @return instant representation
 	 */
 	public Instant getInstant() {
 		Instant instant = Instant.ofEpochMilli(_time);
@@ -859,770 +890,586 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Custom serialization logic for writing this object to an ObjectOutputStream.
-	 * Handles different versions and serialization formats depending on type and
-	 * time zone settings.
+	 * Writes the custom serialized representation.
+	 * <p>
+	 * Instant values serialize {@code _time}. Zoned-instant values serialize both the
+	 * zone and {@code _time}. Floating values serialize local fields so they can be
+	 * re-derived in the reader/default zone.
 	 *
-	 * @param stream the ObjectOutputStream to write to
-	 * @throws IOException if an I/O error occurs
+	 * @param stream target object stream
+	 * @throws IOException if serialization fails
 	 */
 	private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
+		stream.writeInt(1); // version
 		
-		if (this.timeZone != null) {
-			stream.writeInt(0);
-			stream.writeUTF(this.timeZone.getID());
-		}		
+		final DateTimeType dtType = (this.type == null) ? DateTimeType.Instant : this.type;
+		stream.writeUTF(dtType.name());
 		
-		if (this instanceof OADate) {
-			GregorianCalendar cal = _getCal();
-			stream.writeInt(1);
-			stream.writeInt(cal.get(Calendar.YEAR)); // 0-11
-			stream.writeInt(cal.get(Calendar.MONTH));
-			stream.writeInt(cal.get(Calendar.DATE));
-		} else if (this instanceof OATime) {
-			GregorianCalendar cal = _getCal();
-			stream.writeInt(2);
-			stream.writeInt(cal.get(Calendar.HOUR_OF_DAY));
-			stream.writeInt(cal.get(Calendar.MINUTE));
-			stream.writeInt(cal.get(Calendar.SECOND));
-			stream.writeInt(cal.get(Calendar.MILLISECOND));
-		} else {
-			if (this.timeZone != null) {
-				stream.writeInt(3);
-				GregorianCalendar cal = _getCal();
-				stream.writeInt(cal.get(Calendar.YEAR));
-				stream.writeInt(cal.get(Calendar.MONTH));
-				stream.writeInt(cal.get(Calendar.DATE));
-				stream.writeInt(cal.get(Calendar.HOUR_OF_DAY));
-				stream.writeInt(cal.get(Calendar.MINUTE));
-				stream.writeInt(cal.get(Calendar.SECOND));
-				stream.writeInt(cal.get(Calendar.MILLISECOND));
-			} else {
-				stream.writeInt(4); 
-				stream.writeLong(_time);
-			}
+		switch (dtType) {
+		case Instant:
+			stream.writeLong(_time);
+			break;
+		case ZonedInstant:
+			stream.writeUTF(getZoneId().getId());
+			stream.writeLong(_time);
+			break;
+		case Floating:
+			ZonedDateTime zdt = getZonedDateTime();
+			stream.writeInt(zdt.getYear());
+			stream.writeInt(zdt.getMonthValue());
+			stream.writeInt(zdt.getDayOfMonth());
+			stream.writeInt(zdt.getHour());
+			stream.writeInt(zdt.getMinute());
+			stream.writeInt(zdt.getSecond());
+			stream.writeInt(zdt.get(ChronoField.MILLI_OF_SECOND));
+			break;
 		}
 	}
 
+	/**
+	 * Reads the custom serialized representation written by {@link #writeObject(java.io.ObjectOutputStream)}.
+	 *
+	 * @param in source object stream
+	 * @throws IOException if the serialized form is invalid or unreadable
+	 * @throws ClassNotFoundException if a required class cannot be resolved
+	 */
 	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-		int x = in.readInt();
+		final int version = in.readInt();
+		if (version != 1) {
+	        throw new IOException("Unknown OADateTime serialized version: " + version);
+	    }		
+		
+		final String sType = in.readUTF();
+		
+		this.type = DateTimeType.valueOf(sType);
 
-		this.timeZone = null;
-		int year = 0; 			
-		int month = 0;
-		int day = 0;
-		int hour24 = 0;
-		int minute = 0;
-		int second = 0;
-		int milisecond = 0;
-		this._time = 0L;
-
-		
-		if (x == 0) {
-			String tzId = in.readUTF();
-			this.timeZone = OATimeZone.getTimeZoneById(tzId);
-			x = in.readInt();
+		switch (this.type) {
+		case Instant:
+			this._time = in.readLong();
+			break;
+		case ZonedInstant:
+			String zId = in.readUTF();
+			this.zoneId = ZoneId.of(zId);
+			this._time = in.readLong();
+			break;
+		case Floating:
+			int year = in.readInt();
+			int month = in.readInt();
+			int day = in.readInt();
+			int hour24 = in.readInt();
+			int minute = in.readInt();
+			int second = in.readInt();
+			int milisecond = in.readInt();
+			
+		    LocalDateTime ldt = LocalDateTime.of(
+			        year,
+			        month,
+			        day,
+			        hour24,
+			        minute,
+			        second,
+			        milisecond * 1_000_000
+			    );
+			    this._time = ldt.atZone(defaultZoneId).toInstant().toEpochMilli();
+			
+			break;
 		}
-		
-		if (x == 1) {
-			year = in.readInt();
-			month = in.readInt();
-			day = in.readInt();
-		} else if (x == 2) {
-			year = 1970;
-			month = Calendar.JANUARY;
-			day = 1;
-			hour24 = in.readInt();
-			minute = in.readInt();
-			second = in.readInt();
-			milisecond = in.readInt();
-		} else if (x == 3) {
-			year = in.readInt();
-			month = in.readInt();
-			day = in.readInt();
-			hour24 = in.readInt();
-			minute = in.readInt();
-			second = in.readInt();
-			milisecond = in.readInt();
-		} else if (x == 4) {
-			_time = in.readLong();
-			return; 
-		}
-		else {
-		    throw new IOException("Unknown OADateTime serialized type: " + x);
-		}
-		
-		TimeZone tz = (this.timeZone != null) ? this.timeZone : defaultTimeZone;
-		GregorianCalendar calNew = new GregorianCalendar(tz);
-		calNew.clear();
-		calNew.setLenient(false);
-		calNew.set(year, month, day, hour24, minute, second);
-		calNew.set(Calendar.MILLISECOND, milisecond);
-		this._time = calNew.getTimeInMillis();		
 	}
 	
 	/**
-	 * Returns the value of the specified calendar field.
+	 * Returns the local date portion using the effective zone.
 	 *
-	 * @param fld the Calendar field constant
-	 * @return the field value
+	 * @return local date
 	 */
-	public int getField(int fld) {
-		GregorianCalendar c = _getCal();
-		int x = c.get(fld);
+	public LocalDate getLocalDate() {
+	    return getZonedDateTime().toLocalDate();
+	}
+
+	/**
+	 * Returns the local time portion using the effective zone, truncated to millisecond precision.
+	 *
+	 * @return local time
+	 */
+	public LocalTime getLocalTime() {
+	    ZonedDateTime zdt = getZonedDateTime();
+	    return zdt.toLocalTime().withNano( (zdt.getNano() / 1_000_000) * 1_000_000 );
+	}
+	
+	/**
+	 * Returns a supported {@link ChronoField} value using the effective zone.
+	 *
+	 * @param fld field to read
+	 * @return field value
+	 * @throws DateTimeException if the field is not supported by the zoned representation
+	 */
+	public int getField(ChronoField fld) {
+		int x = getInstant().atZone(getZoneId()).get(fld);
 		return x;
 	}
 
 	/**
-	 * Returns a clone of the Calendar used by this date/time instance.
+	 * Returns a legacy {@link Calendar} representation using the effective zone.
 	 *
-	 * @return a cloned Calendar representing this date/time
+	 * @return non-lenient GregorianCalendar set to this value
 	 */
 	public Calendar getCalendar() {
-		GregorianCalendar c = _getCal();
-		Calendar cNew = (Calendar) c.clone();
-		return cNew;
+		GregorianCalendar cal = new GregorianCalendar();
+		TimeZone tz = TimeZone.getTimeZone(getZoneId());		
+	    cal.setTimeZone(tz);
+	    cal.setLenient(false);
+	    cal.setTimeInMillis(_time);
+
+	    return cal;
 	}
 
 	/**
-	 * Sets the internal time value using the specified date and time components.
+	 * Returns a new OADateTime with all date/time fields replaced, preserving this value's zone and semantic type.
 	 *
-	 * @param year full year value
-	 * @param month month value from 0 to 11
+	 * @param year full year
+	 * @param month month from 1 to 12
 	 * @param day day of month
-	 * @param hrs hour value
-	 * @param mins minute value
-	 * @param secs second value
-	 * @param milsecs millisecond value
+	 * @param hrs hour of day from 0 to 23
+	 * @param mins minute of hour
+	 * @param secs second of minute
+	 * @param milsecs millisecond of second from 0 to 999
+	 * @return new value with the supplied fields
 	 */
-	protected void setCalendar(int year, int month, int day, int hrs, int mins, int secs, int milsecs) {
-		GregorianCalendar c = new GregorianCalendar(getTimeZone());
-		c.clear();
-		c.setLenient(false);
-		c.set(year, month, day, hrs, mins, secs);
-		c.set(Calendar.MILLISECOND, milsecs);
-		_time = c.getTimeInMillis();		
+	public OADateTime withDateTime(int year, int month, int day, int hrs, int mins, int secs, int milsecs) {
+		OADateTime dt = new OADateTime(this.zoneId, year, month, day, hrs, mins, secs, milsecs);
+		dt.type = this.type;
+		return dt;
 	}
 
 	/**
-	 * Sets the internal time value using the specified GregorianCalendar.
-	 * If the calendar is null, the current system time is used.
+	 * Returns a new OADateTime with the date fields replaced and the current time fields preserved.
 	 *
-	 * @param c the GregorianCalendar to copy values from
+	 * @param year full year
+	 * @param month month from 1 to 12
+	 * @param day day of month
+	 * @return new value with the supplied date
 	 */
-	protected void setCalendar(GregorianCalendar c) {
-		if (c == null) {
-			this._time = System.currentTimeMillis();
-		} else {
-			this._time = c.getTimeInMillis();
-			this.timeZone = c.getTimeZone();
-		}
+	public OADateTime withDate(int year, int month, int day) {
+		ZonedDateTime ldt = getZonedDateTime();
+		OADateTime dt = new OADateTime(this.zoneId, year, month, day, ldt.getHour(), ldt.getMinute(), ldt.getSecond(), ldt.getNano() / 1_000_000);
+		dt.type = this.type;
+		return dt;
 	}
 
 	/**
-	 * Sets the internal time value using the specified SQL Timestamp.
-	 * If the timestamp is null, the current system time is used.
+	 * Returns a new OADateTime with the year replaced.
 	 *
-	 * @param date the SQL Timestamp to use
+	 * @param year replacement year
+	 * @return new value with the supplied year
 	 */
-	protected void setCalendar(java.sql.Timestamp date) {
-		if (date == null) {
-			this._time = System.currentTimeMillis();
-		} else {
-			this._time = date.getTime();
-		}
+	public OADateTime withYear(int year) {
+		ZonedDateTime ldt = getZonedDateTime();
+		OADateTime dt = new OADateTime(this.zoneId, year, ldt.getMonthValue(), ldt.getDayOfMonth(), ldt.getHour(), ldt.getMinute(), ldt.getSecond(), ldt.getNano() / 1_000_000);
+		dt.type = this.type;
+		return dt;
 	}
 
 	/**
-	 * Sets the internal time value using the specified Date.
-	 * If the date is null, the current system time is used.
+	 * Returns a new OADateTime with the month replaced.
 	 *
-	 * @param date the Date to use
+	 * @param month replacement month
+	 * @return new value with the supplied month
 	 */
-	protected void setCalendar(Date date) {
-		if (date == null) {
-			this._time = System.currentTimeMillis();
-		} else {
-			this._time = date.getTime();
-		}
+	public OADateTime withMonth(Month month) {
+		ZonedDateTime ldt = getZonedDateTime();
+		OADateTime dt = new OADateTime(this.zoneId, ldt.getYear(), month.getValue(), ldt.getDayOfMonth(), ldt.getHour(), ldt.getMinute(), ldt.getSecond(), ldt.getNano() / 1_000_000);
+		dt.type = this.type;
+		return dt;
 	}
 
 	/**
-	 * Sets the internal time value using another OADateTime instance.
-	 * If the instance is null, the current system time is used.
+	 * Returns a new OADateTime with the month replaced.
 	 *
-	 * @param dt the OADateTime to copy values from
+	 * @param month replacement month from 1 to 12
+	 * @return new value with the supplied month
 	 */
-	protected void setCalendar(OADateTime dt) {
-		if (dt == null) {
-			this._time = System.currentTimeMillis();
-		} else {
-			this._time = dt.getTime();
-			this.timeZone = dt.timeZone;
-		}
+	public OADateTime withMonthValue(int month) {
+		ZonedDateTime ldt = getZonedDateTime();
+		OADateTime dt = new OADateTime(this.zoneId, ldt.getYear(), month, ldt.getDayOfMonth(), ldt.getHour(), ldt.getMinute(), ldt.getSecond(), ldt.getNano() / 1_000_000);
+		dt.type = this.type;
+		return dt;
 	}
-
+	
 	/**
-	 * Sets the internal time value using a string representation of a date/time.
-	 * If the string is null, the current system time is used.
+	 * Returns a new OADateTime with the day-of-month replaced.
 	 *
-	 * @param strDate the string representation of the date/time
-	 * @throws IllegalArgumentException if the string cannot be converted
+	 * @param dom replacement day of month
+	 * @return new value with the supplied day of month
 	 */
-	protected void setCalendar(String strDate) {
-		if (strDate == null) {
-			this._time = System.currentTimeMillis();
-		} else {
-			OADateTime dt = valueOf(strDate);
-			if (dt == null) {
-				throw new IllegalArgumentException("OADateTime cant create date from String \"" + strDate + "\"");
-			}
-			setCalendar(dt);
-		}
+	public OADateTime withDayOfMonth(int dom) {
+		ZonedDateTime ldt = getZonedDateTime();
+		OADateTime dt = new OADateTime(this.zoneId, ldt.getYear(), ldt.getMonthValue(), dom, ldt.getHour(), ldt.getMinute(), ldt.getSecond(), ldt.getNano() / 1_000_000);
+		dt.type = this.type;
+		return dt;
 	}
-
+	
 	/**
-	 * Sets the internal time value using a string representation and format.
-	 * If the string is null, the current system time is used.
+	 * Returns a new OADateTime with the date portion anchored to {@code 1970-01-01} and the time portion preserved.
 	 *
-	 * @param strDate the string representation of the date/time
-	 * @param fmt the format used to parse the string
-	 * @throws IllegalArgumentException if the string cannot be converted
+	 * @return new value with the anchor date
 	 */
-	protected void setCalendar(String strDate, String fmt) {
-		if (strDate == null) {
-			this._time = System.currentTimeMillis();
-		} else {
-			OADateTime dt = valueOf(strDate, fmt);
-			if (dt == null) {
-				throw new IllegalArgumentException("OADateTime cant create date from String \"" + strDate + "\"");
-			}
-			setCalendar(dt);
-		}
+	public OADateTime withoutDate() {
+		return withDate(1970, Month.JANUARY.getValue(), 1);
 	}
-
+	
 	/**
-	 * Sets the hour, minute, second, and millisecond values to zero.
-	 */
-	public void clearTime() {
-		GregorianCalendar c = _getCal();
-		c.set(c.HOUR_OF_DAY, 0);
-		c.set(c.MINUTE, 0);
-		c.set(c.SECOND, 0);
-		c.set(c.MILLISECOND, 0);
-		_time = c.getTimeInMillis();
-	}
-
-	/**
-	 * Sets the date portion to January 1, 1970 while preserving the time portion.
-	 */
-	public void clearDate() {
-		GregorianCalendar c = _getCal();
-		c.set(c.YEAR, 1970);
-		c.set(c.MONTH, c.JANUARY);
-		c.set(c.DATE, 1);
-
-		// these are added to make sure timezone is calculated correctly
-		c.set(c.HOUR_OF_DAY, get24Hour());
-		c.set(c.MINUTE, getMinute());
-		c.set(c.SECOND, getSecond());
-		c.set(c.MILLISECOND, getMilliSecond());
-
-		_time = c.getTimeInMillis();
-	}
-
-	/**
-	 * Sets the time using hour and minute values.
+	 * Returns a new OADateTime with the date portion copied from an {@link OADate}.
+	 * <p>
+	 * If {@code d} is {@code null}, the date portion is anchored to {@code 1970-01-01}.
 	 *
-	 * @param hr hour value
-	 * @param m minute value
+	 * @param d date source, or {@code null} to remove business date fields
+	 * @return new value with the supplied date portion
 	 */
-	public void setTime(int hr, int m) {
-		setTime(hr, m, 0, 0);
-	}
-
-	/**
-	 * Sets the time using hour, minute, and second values.
-	 *
-	 * @param hr hour value
-	 * @param m minute value
-	 * @param s second value
-	 */
-	public void setTime(int hr, int m, int s) {
-		setTime(hr, m, s, 0);
-	}
-
-	/**
-	 * Sets the hour, minute, second, and millisecond values.
-	 *
-	 * @param hr hour value
-	 * @param m minute value
-	 * @param s second value
-	 * @param ms millisecond value
-	 */
-	public void setTime(int hr, int m, int s, int ms) {
-		GregorianCalendar c = _getCal();
-		c.set(c.HOUR_OF_DAY, hr);
-		c.set(c.MINUTE, m);
-		c.set(c.SECOND, s);
-		c.set(c.MILLISECOND, ms);
-		_time = c.getTimeInMillis();
-	}
-
-	/**
-	 * Sets the time using an OATime instance.
-	 * If the parameter is null, the time portion is cleared.
-	 *
-	 * @param t the OATime to copy values from
-	 */
-	public void setTime(OATime t) {
-		if (t == null) {
-			clearTime();
-			return;
-		}
-		setTime(t.get24Hour(), t.getMinute(), t.getSecond(), t.getMilliSecond());
-	}
-
-	/**
-	 * Sets the date using year, month, and day values.
-	 *
-	 * @param yr full year value
-	 * @param m month value from 0 to 11
-	 * @param d day of month
-	 */
-	public void setDate(int yr, int m, int d) {
-		GregorianCalendar c = _getCal();
-		c.set(c.YEAR, yr);
-		c.set(c.MONTH, m);
-		c.set(c.DATE, d);
-		_time = c.getTimeInMillis();
-	}
-
-	/**
-	 * Sets the date using an OADate instance.
-	 * If the parameter is null, the date portion is cleared.
-	 *
-	 * @param d the OADate to copy values from
-	 */
-	public void setDate(OADate d) {
+	public OADateTime withDate(OADate d) {
 		if (d == null) {
-			clearDate();
-			return;
+			return withoutDate();
 		}
-		setDate(d.getYear(), d.getMonth(), d.getDay());
+		return withDate(d.getYear(), d.getMonthValue(), d.getDayOfMonth());
 	}
 
 	/**
-	 * Returns the full year value for this date/time.
+	 * Returns a new OADateTime with the time fields replaced and the current date fields preserved.
 	 *
-	 * @return the year value
+	 * @param hours hour of day from 0 to 23
+	 * @param minutes minute of hour
+	 * @param seconds second of minute
+	 * @param millisecond millisecond of second from 0 to 999
+	 * @return new value with the supplied time
+	 */
+	public OADateTime withTime(int hours, int minutes, int seconds, int millisecond) {
+		ZonedDateTime ldt = getZonedDateTime();
+		OADateTime dt = new OADateTime(this.zoneId, ldt.getYear(), ldt.getMonthValue(), ldt.getDayOfMonth(), hours, minutes, seconds, millisecond);
+		dt.type = this.type;
+		return dt;
+	}
+
+	/**
+	 * Returns a new OADateTime with hour and minute replaced, and seconds/milliseconds set to zero.
+	 *
+	 * @param hours hour of day from 0 to 23
+	 * @param minutes minute of hour
+	 * @return new value with the supplied hour and minute
+	 */
+	public OADateTime withTime(int hours, int minutes) {
+		return withTime(hours, minutes, 0, 0);
+	}
+	
+	/**
+	 * Returns a new OADateTime with the hour replaced.
+	 *
+	 * @param hours replacement hour of day from 0 to 23
+	 * @return new value with the supplied hour
+	 */
+	public OADateTime withHours(int hours) {
+		ZonedDateTime ldt = getZonedDateTime();
+		return withTime(hours, ldt.getMinute(), ldt.getSecond(), ldt.getNano() / 1_000_000);
+	}
+
+	/**
+	 * Returns a new OADateTime with the minute replaced.
+	 *
+	 * @param minutes replacement minute of hour
+	 * @return new value with the supplied minute
+	 */
+	public OADateTime withMinutes(int minutes) {
+		ZonedDateTime ldt = getZonedDateTime();
+		return withTime(ldt.getHour(), minutes, ldt.getSecond(), ldt.getNano() / 1_000_000);
+	}
+
+	/**
+	 * Returns a new OADateTime with the second replaced.
+	 *
+	 * @param seconds replacement second of minute
+	 * @return new value with the supplied second
+	 */
+	public OADateTime withSeconds(int seconds) {
+		ZonedDateTime ldt = getZonedDateTime();
+		return withTime(ldt.getHour(), ldt.getMinute(), seconds, ldt.getNano() / 1_000_000);
+	}
+
+	/**
+	 * Returns a new OADateTime with the millisecond replaced.
+	 *
+	 * @param ms replacement millisecond of second from 0 to 999
+	 * @return new value with the supplied millisecond
+	 */
+	public OADateTime withMilliSeconds(int ms) {
+		ZonedDateTime ldt = getZonedDateTime();
+		return withTime(ldt.getHour(), ldt.getMinute(), ldt.getSecond(), ms);
+	}
+	
+	/**
+	 * Returns a new OADateTime with time fields set to midnight.
+	 *
+	 * @return new value with time set to 00:00:00.000
+	 */
+	public OADateTime withoutTime() {
+		return withTime(0,0,0,0);
+	}
+
+	/**
+	 * Returns a new OADateTime with the time portion copied from an {@link OATime}.
+	 * <p>
+	 * If {@code t} is {@code null}, the time portion is set to midnight.
+	 *
+	 * @param t time source, or {@code null} for midnight
+	 * @return new value with the supplied time portion
+	 */
+	public OADateTime withTime(OATime t) {
+		if (t == null) {
+			return withoutTime();
+		}
+		return withTime(t.getHour(), t.getMinute(), t.getSecond(), t.getMilliSecond());
+	}
+	
+	
+	/**
+	 * Returns the local year using the effective zone.
+	 *
+	 * @return year
 	 */
 	public int getYear() {
-		GregorianCalendar c = _getCal();
-		int yr = c.get(c.YEAR);
-		return yr;
+		ZonedDateTime dt = getZonedDateTime();
+		return dt.get(ChronoField.YEAR);
 	}
 
 	/**
-	 * Sets the year value for this date/time.
+	 * Returns the local month value using {@code java.time} numbering.
 	 *
-	 * @param y full year value
-	 */
-	public void setYear(int y) {
-		GregorianCalendar c = _getCal();
-		c.set(c.YEAR, y);
-		_time = c.getTimeInMillis();
-	}
-
-
-	/**
-	 * Returns the quarter of the year.
-	 *
-	 * @return quarter value from 0 to 3
-	 */
-	public int getQuarter() {
-		int x = getMonth();
-		x /= 3;
-		return x;
-	}
-
-	/**
-	 * Returns the month value.
-	 * @return month value from 0 to 11
-	 */
-	public int getMonth() {
-		GregorianCalendar c = _getCal();
-		int m = c.get(c.MONTH);
-		return m;
-	}
-	
-	/**
-	 * Sets the month value.
-	 * @param month month value from 0 to 11
-	 */
-	public void setMonth(int month) {
-		GregorianCalendar c = _getCal();
-		c.set(c.MONTH, month);
-		_time = c.getTimeInMillis();
-	}
-
-	// Note: support for java.time.* MONTH 1-12 , not 0-11 as Calendar does it
-	/**
-	 * Returns the month value.
-	 * @return month value from 1 to 12
+	 * @return month from 1 to 12
 	 */
 	public int getMonthValue() {
-	    return getMonth() + 1;
+		ZonedDateTime dt = getZonedDateTime();
+		return dt.get(ChronoField.MONTH_OF_YEAR);
 	}
 
 	/**
-	 * Sets the month value.
-	 * @param month month value from 1 to 12
-	 */
-	public void setMonthValue(int monthValue) {
-	    setMonth(monthValue - 1);
-	}	
-	
-	
-	/**
-	 * Returns the day of the month.
+	 * Returns the local month enum using the effective zone.
 	 *
-	 * @return day of month from 1 to 31
+	 * @return month enum
 	 */
-	public int getDay() {
-		GregorianCalendar c = _getCal();
-		int d = c.get(c.DAY_OF_MONTH);
-		return d;
+	public Month getMonth() {
+		ZonedDateTime dt = getZonedDateTime();
+		return dt.getMonth();
 	}
-
-	/**
-	 * Sets the day of the month.
-	 *
-	 * @param d day of month from 1 to 31
-	 */
-	public void setDay(int d) {
-		GregorianCalendar c = _getCal();
-		c.set(c.DAY_OF_MONTH, d);
-		_time = c.getTimeInMillis();
-	}
-
-	/**
-	 * Sets the time zone to UTC.
-	 */
-	public void setTimeZoneUTC() {
-		setTimeZone(OATimeZone.getTimeZoneUTC());
-	}
-
-	/**
-	 * Sets the time zone using an OATimeZone.TZ value.
-	 *
-	 * @param tz the OATimeZone.TZ to set
-	 */
-	public void setTimeZone(OATimeZone.TZ tz) {
-		setTimeZone(tz.timeZone);
-	}
-
-	
 	
 	/**
-	 * Sets the time zone for this date/time while keeping the same date and time
-	 * field values, adjusting the underlying time value accordingly.
+	 * Returns the local day of month using the effective zone.
 	 *
-     * Important Note:  changes _time so that the current Y/M/D/H/M/S/MS fields remain the same under the new timezone.
-	 *
-	 * @param tzNew the TimeZone to set
+	 * @return day of month
 	 */
-	public void setTimeZone(TimeZone tzNew) {
-		if (tzNew == timeZone) {
-			return;
-		}
-		
-		// need to create a new cal, otherwise setting tz will adjust the other values
-		// (use convertTo(tz) instead)
-		GregorianCalendar calNew = new GregorianCalendar(tzNew != null ? tzNew : defaultTimeZone);
-		calNew.clear();
-		calNew.setLenient(false);
-
-		GregorianCalendar c = _getCal();
-		int y = c.get(c.YEAR); 			
-		int month = c.get(c.MONTH);
-		int d = c.get(c.DAY_OF_MONTH);
-		int h24 = c.get(c.HOUR_OF_DAY);
-		int minute = c.get(c.MINUTE);
-		int sec = c.get(c.SECOND);
-		int ms = c.get(c.MILLISECOND);
-
-		calNew.set(y, month, d, h24, minute, sec);
-		calNew.set(Calendar.MILLISECOND, ms);
-
-		this._time = calNew.getTimeInMillis();
-		this.timeZone = tzNew;
+	public int getDayOfMonth() {
+		ZonedDateTime dt = getZonedDateTime();
+		return dt.get(ChronoField.DAY_OF_MONTH);
 	}
-
 	
 	/**
-	 * Returns the time zone associated with this date/time.
+	 * Returns the local hour of day using the effective zone.
 	 *
-	 * @return the TimeZone for this instance, or the default time zone if none is set
-	 */
-	public TimeZone getTimeZone() {
-		return timeZone == null ? defaultTimeZone : timeZone;
-	}
-
-	/**
-	 * Returns the hour of the day using a 24-hour clock.
-	 *
-	 * @return hour value from 0 to 23
+	 * @return hour of day from 0 to 23
 	 */
 	public int getHour() {
-		GregorianCalendar c = _getCal();
-		int hr = c.get(c.HOUR_OF_DAY); // 24 hr
-		return hr;
+		ZonedDateTime dt = getZonedDateTime();
+		return dt.get(ChronoField.HOUR_OF_DAY);
 	}
 
 	/**
-	 * Sets the hour of the day using a 24-hour clock.
+	 * Returns the local minute of hour using the effective zone.
 	 *
-	 * @param hr hour value
-	 */
-	public void setHour(int hr) {
-		GregorianCalendar c = _getCal();
-		c.set(c.HOUR_OF_DAY, hr);
-		_time = c.getTimeInMillis();
-	}
-
-	/**
-	 * Returns the hour of the day using a 12-hour clock.
-	 *
-	 * @return hour value from 0 to 11
-	 */
-	public int get12Hour() {
-		GregorianCalendar c = _getCal();
-		int hr = c.get(c.HOUR); // 12 hr format
-		return hr;
-	}
-
-	/**
-	 * Sets the hour of the day using a 12-hour clock.
-	 *
-	 * @param hr hour value from 1 to 12
-	 * @throws IllegalArgumentException if hr is outside the range 1 to 12
-	 */
-	@Deprecated
-	public void set12Hour(int hr) {
-		// Accept 1–12; coerce into 0–11
-		if (hr < 1 || hr > 12) throw new IllegalArgumentException("hr must be 1..12");
-		int h = (hr % 12); // 12→0
-		setHour(h);
-	}
-
-	/**
-	 * Returns the hour of the day using a 24-hour clock.
-	 *
-	 * @return hour value from 0 to 23
-	 */
-	public int get24Hour() {
-		return getHour();
-	}
-
-	/**
-	 * Sets the hour of the day using a 24-hour clock.
-	 *
-	 * @param hr hour value from 0 to 23
-	 */
-	public void set24Hour(int hr) {
-		setHour(hr);
-	}
-
-	/**
-	 * Returns whether the current time is AM or PM.
-	 *
-	 * @return Calendar.AM or Calendar.PM
-	 */
-	public int getAM_PM() {
-		if (getHour() >= 12) {
-			return Calendar.PM;
-		}
-		return Calendar.AM;
-	}
-
-	/**
-	 * Sets the AM or PM value for the current time.
-	 *
-	 * @param ap Calendar.AM or Calendar.PM
-	 */
-	@Deprecated
-	public void setAM_PM(int ap) {
-		int hr = getHour();
-
-		if (ap == Calendar.AM) {
-			if (hr >= 12)
-				hr -= 12; // 12→0; 13..23→1..11; 0..11 stay
-		} else if (ap == Calendar.PM) {
-			if (hr < 12)
-				hr += 12; // 0..11→12..23
-		}
-		set24Hour(hr);
-	}
-
-	/**
-	 * Returns the minute value.
-	 *
-	 * @return minute value from 0 to 59
+	 * @return minute of hour
 	 */
 	public int getMinute() {
-		GregorianCalendar c = _getCal();
-		int m = c.get(c.MINUTE);
-		return m;
+		ZonedDateTime dt = getZonedDateTime();
+		return dt.get(ChronoField.MINUTE_OF_HOUR);
 	}
-
+	
 	/**
-	 * Sets the minute value.
+	 * Returns the local second of minute using the effective zone.
 	 *
-	 * @param mins minute value
-	 */
-	public void setMinute(int mins) {
-		GregorianCalendar c = _getCal();
-		c.set(c.MINUTE, mins);
-		_time = c.getTimeInMillis();
-	}
-
-	/**
-	 * Returns the second value.
-	 *
-	 * @return second value from 0 to 59
+	 * @return second of minute
 	 */
 	public int getSecond() {
-		GregorianCalendar c = _getCal();
-		int x = c.get(c.SECOND);
-		return x;
+		ZonedDateTime dt = getZonedDateTime();
+		return dt.get(ChronoField.SECOND_OF_MINUTE);
 	}
-
+	
 	/**
-	 * Sets the second value.
+	 * Returns the local millisecond of second using the effective zone.
 	 *
-	 * @param s second value
-	 */
-	public void setSecond(int s) {
-		GregorianCalendar c = _getCal();
-		c.set(c.SECOND, s);
-		_time = c.getTimeInMillis();
-	}
-
-	/**
-	 * Clears the second and millisecond values by setting them to zero.
-	 */
-	public void clearSecondAndMilliSecond() {
-		GregorianCalendar c = _getCal();
-		c.set(c.SECOND, 0);
-		c.set(c.MILLISECOND, 0);
-		_time = c.getTimeInMillis();
-	}
-
-	/**
-	 * Returns the millisecond value.
-	 *
-	 * @return millisecond value
+	 * @return millisecond of second
 	 */
 	public int getMilliSecond() {
-		GregorianCalendar c = _getCal();
-		int x = c.get(c.MILLISECOND);
-		return x;
+		ZonedDateTime dt = getZonedDateTime();
+		return dt.get(ChronoField.NANO_OF_SECOND) / 1_000_000;
 	}
-
+	
 	/**
-	 * Sets the millisecond value.
+	 * Returns the zero-based calendar quarter.
 	 *
-	 * @param ms millisecond value
+	 * @return quarter from 0 to 3
 	 */
-	public void setMilliSecond(int ms) {
-		GregorianCalendar c = _getCal();
-		c.set(c.MILLISECOND, ms);
-		_time = c.getTimeInMillis();
+	public int getQuarter() {
+		return (getMonthValue() - 1) / 3;		
 	}
 
 	/**
-	 * Returns a Date instance representing this date/time.
+	 * Returns a copy of this value with a different semantic type.
 	 *
-	 * @return a Date with the same time value
+	 * @param type replacement semantic type
+	 * @return new value with the supplied type
+	 */
+	public OADateTime withType(DateTimeType type) {
+		OADateTime dt = new OADateTime(this, type);
+		return dt;
+	}
+
+	/**
+	 * Returns a new value associated with the supplied zone while preserving the displayed wall-clock fields.
+	 * <p>
+	 * The local year/month/day/hour/minute/second/millisecond stay the same, and
+	 * {@code _time} is recalculated for the target zone.
+	 *
+	 * @param zid target zone, or {@code null} for the OA default zone
+	 * @return new value with the same wall-clock fields in the target zone
+	 */
+	public OADateTime withZoneIdSameWallTime(ZoneId zid) {
+	    if (zid == null) zid = defaultZoneId;
+
+	    LocalDateTime ldt = getLocalDateTime();
+
+	    OADateTime dt = new OADateTime(
+	        zid,
+	        ldt.getYear(),
+	        ldt.getMonthValue(),
+	        ldt.getDayOfMonth(),
+	        ldt.getHour(),
+	        ldt.getMinute(),
+	        ldt.getSecond(),
+	        ldt.getNano() / 1_000_000
+	    );
+
+	    dt.type = this.type;
+	    return dt;
+	}
+
+	/**
+	 * Returns a new value associated with the supplied zone while preserving {@code _time}.
+	 * <p>
+	 * The instant remains the same; displayed local fields may change in the target zone.
+	 *
+	 * @param zid target zone, or {@code null} for the OA default zone
+	 * @return new value with the same instant in the target zone
+	 * @see ZoneOffset#UTC
+	 */
+	public OADateTime withZoneIdSameInstant(ZoneId zid) {
+	    if (zid == null) zid = defaultZoneId;
+	    OADateTime dt = new OADateTime(this, zid);
+	    return dt;
+	}
+	
+	/**
+	 * Returns a new value displayed in UTC while preserving {@code _time}.
+	 *
+	 * @return new UTC-zoned value for the same instant
+	 */
+	public OADateTime withTimeZoneUTCSameInstant() {
+		ZoneId zid = ZoneOffset.UTC;
+		return withZoneIdSameInstant(zid);
+	}
+
+	/**
+	 * Returns a new value in UTC while preserving local wall-clock fields.
+	 *
+	 * @return new UTC-zoned value with the same displayed local fields
+	 */
+	public OADateTime withTimeZoneUTCSameWallTime() {
+		ZoneId zid = ZoneOffset.UTC;
+		return withZoneIdSameWallTime(zid);
+	}
+	
+	/**
+	 * Returns this value as a legacy {@link Date} using {@link #_time}.
+	 *
+	 * @return legacy Date for the stored instant
 	 */
 	public Date getDate() {
 		return new Date(_time);
 	}
 
 	/**
-	 * Returns the day of the week for this date.
+	 * Returns the local day of week using the effective zone.
 	 *
-	 * @return Calendar day-of-week constant
+	 * @return day-of-week enum
 	 */
-	public int getDayOfWeek() {
-		GregorianCalendar c = _getCal();
-		int x = c.get(Calendar.DAY_OF_WEEK);
-		return x;
+	public DayOfWeek getDayOfWeek() {
+		return getZonedDateTime().getDayOfWeek();
 	}
 
 	/**
-	 * Returns the day of the year.
+	 * Returns the local day of year using the effective zone.
 	 *
-	 * @return day of year where January 1 is 1
+	 * @return day of year from 1 to 365/366
 	 */
 	public int getDayOfYear() {
-		GregorianCalendar c = _getCal();
-		int x = c.get(Calendar.DAY_OF_YEAR);
-		return x;
+		return getZonedDateTime().getDayOfYear();
 	}
 
 	/**
-	 * Returns the week of the month.
+	 * Returns the locale-specific week of month using {@link WeekFields} for the default locale.
 	 *
-	 * @return week number within the month, where first week is 1.
+	 * @return week of month
 	 */
 	public int getWeekOfMonth() {
-		GregorianCalendar c = _getCal();
-		int x = c.get(Calendar.WEEK_OF_MONTH);
-		return x;
+		ZonedDateTime zdt = getZonedDateTime();
+		return zdt.get(WeekFields.of(Locale.getDefault()).weekOfMonth());
 	}
 
 	/**
-	 * Returns the week of the year.
+	 * Returns the locale-specific week of year using {@link WeekFields} for the default locale.
 	 *
-	 * @return week number within the year, where first week is 1
+	 * @return week of year
 	 */
 	public int getWeekOfYear() {
-		GregorianCalendar c = _getCal();
-		int x = c.get(Calendar.WEEK_OF_YEAR);
-		return x;
+		ZonedDateTime zdt = getZonedDateTime();
+		return zdt.get(WeekFields.of(Locale.getDefault()).weekOfYear());
 	}
 
 	/**
-	 * Returns the number of days in the current month.
+	 * Returns the number of days in this value's local month.
 	 *
-	 * @return number of days in month
+	 * @return days in month
 	 */
 	public int getDaysInMonth() {
-		GregorianCalendar c = _getCal();
-		int x = c.getActualMaximum(Calendar.DAY_OF_MONTH);
-		return x;
+		ZonedDateTime zdt = getZonedDateTime();
+		return zdt.toLocalDate().lengthOfMonth();
 	}
 
 	/**
-	 * Compares this date/time with another object for equality..
-	 * If object is not an OADateTime, it
-	 * will be converted and then compared.
+	 * Returns the number of days in this value's local year.
 	 *
-	 * @param obj the object to compare
-	 * @return true if equal; false otherwise
+	 * @return days in year
+	 */
+	public int getDaysInYear() {
+		ZonedDateTime zdt = getZonedDateTime();
+		return zdt.toLocalDate().lengthOfYear();
+	}
+	
+	/**
+	 * Compares this value to another OADateTime by stored epoch milliseconds.
+	 *
+	 * @param obj object to compare
+	 * @return {@code true} when {@code obj} is an OADateTime with the same {@code _time}
 	 */
 	public boolean equals(Object obj) {
 		if (this == obj) return true;
-		try {
-			// Warning: calling compareTo could cause an infinite loop if compareTo calls
-			// equals.
-			int i = compareTo(obj);
-			return (i == 0);
-		} catch (Exception e) {
-			return false;
+		if (obj instanceof OADateTime) {
+			return this._time == ((OADateTime) obj)._time;
 		}
+		return false;
 	}
 
 	/**
@@ -1631,48 +1478,89 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return hash code for this instance
 	 */
 	@Override
-	public int hashCode() {
-		return (int) (_time % Integer.MAX_VALUE);
-	}
-
 	/**
-	 * Determines whether this date/time occurs before another object.
-	 * If object is not an OADateTime, it
-	 * will be converted and then compared.
+	 * Returns a hash code based on stored epoch milliseconds.
+	 *
+	 * @return hash code for {@link #_time}
+	 */
+	public int hashCode() {
+		return Long.hashCode(_time);
+	}
+	
+	/**
+	 * Compares this value with another object using {@link #compareTo(Object)}.
+	 *
+	 * @param obj object to compare
+	 * @return comparison result
+	 */
+    public int compare(Object obj) {
+		return compareTo(obj);
+	}
+    
+	/**
+	 * Compares this date/time with another object for ordering.
+	 * Returns a negative value, zero, or a positive value depending on ordering.
 	 *
 	 * @param obj the object to compare to
-	 * @return true if this date/time is before the other
+	 * @return comparison result
+	 */
+	@Override
+	/**
+	 * Compares this value with another OADateTime by stored epoch milliseconds.
+	 * <p>
+	 * A {@code null} value sorts before this value. Non-OADateTime objects sort after
+	 * valid OADateTime values by returning {@code 2}.
+	 *
+	 * @param obj object to compare
+	 * @return negative, zero, or positive comparison result
+	 */
+	public int compareTo(Object obj) {
+	    if (obj == null) {
+	        return 1;
+	    }
+	    if (!(obj instanceof OADateTime)) {
+	        return 2;
+	    }
+
+	    OADateTime other = (OADateTime) obj;
+	    return Long.compare(this._time, other._time);
+	}
+	
+	/**
+	 * Returns whether this value is before another value according to {@link #compareTo(Object)}.
+	 *
+	 * @param obj object to compare
+	 * @return {@code true} if this value is before {@code obj}
 	 */
 	public boolean before(Object obj) {
 		return (compareTo(obj) < 0);
 	}
 
 	/**
-	 * Compares this OADateTime with any object. If object is not an OADateTime, it
-	 * will be converted and then compared.
+	 * Returns whether this value is before another value according to {@link #compareTo(Object)}.
 	 *
-	 * @param obj Date, OADate, Calendar, String, etc.
-	 * @see #compareTo
+	 * @param obj object to compare
+	 * @return {@code true} if this value is before {@code obj}
 	 */
 	public boolean isBefore(Object obj) {
 		return (compareTo(obj) < 0);
 	}
 
 	/**
-	 * Determines whether this date/time occurs after another object.
+	 * Returns whether this value is after another value according to {@link #compareTo(Object)}.
 	 *
-	 * @param obj the object to compare to
-	 * @return true if this date/time is after the other
+	 * @param obj object to compare
+	 * @return {@code true} if this value is after {@code obj}
 	 */
 	public boolean after(Object obj) {
 		return (compareTo(obj) > 0);
 	}
 
 	/**
-	 * Determines whether this date/time occurs after another object.
+	 * Returns whether this value is after another value according to {@link #compareTo(Object)}.
 	 *
-	 * @param obj the object to compare to
-	 * @return true if this date/time is after the other
+	 * @param obj object to compare
+	 * @return {@code true} if this value is after {@code obj}
 	 */
 	public boolean isAfter(Object obj) {
 		return (compareTo(obj) > 0);
@@ -1681,22 +1569,21 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	/**
 	 * Delegates to {@link #isBetweenOrEqual(Object, Object)}.
 	 *
-	 * @param obj1 the lower bound value
-	 * @param obj2 the upper bound value
-	 * @return true if between or equal
+	 * @param obj1 lower bound
+	 * @param obj2 upper bound
+	 * @return {@code true} if this value is between the bounds inclusively
 	 */
     public boolean betweenOrEqual(Object obj1, Object obj2) {
         return isBetweenOrEqual(obj1, obj2);
     }
 
-    /**
-     * Tests whether this date is greater than or equal to the first value
-     * and less than or equal to the second value.
-     *
-     * @param obj1 the lower bound value
-     * @param obj2 the upper bound value
-     * @return true if between or equal
-     */
+	/**
+	 * Tests whether this value is between two values inclusively.
+	 *
+	 * @param obj1 lower bound
+	 * @param obj2 upper bound
+	 * @return {@code true} if this value is greater than or equal to {@code obj1} and less than or equal to {@code obj2}
+	 */
     public boolean isBetweenOrEqual(Object obj1, Object obj2) {
         int i = compareTo(obj1);
         if (i < 0) {
@@ -1706,25 +1593,24 @@ public class OADateTime implements java.io.Serializable, Comparable {
         return (i <= 0);
     }
 	
-    /**
-     * Delegates to {@link #isBetweenNotEqual(Object, Object)}.
-     *
-     * @param obj1 the lower bound value
-     * @param obj2 the upper bound value
-     * @return true if strictly between
-     */
+	/**
+	 * Delegates to {@link #isBetweenNotEqual(Object, Object)}.
+	 *
+	 * @param obj1 lower bound
+	 * @param obj2 upper bound
+	 * @return {@code true} if this value is strictly between the bounds
+	 */
     public boolean betweenNotEqual(Object obj1, Object obj2) {
         return isBetweenNotEqual(obj1, obj2);
     }
     
-    /**
-     * Tests whether this date is strictly greater than the first value
-     * and strictly less than the second value.
-     *
-     * @param obj1 the lower bound value
-     * @param obj2 the upper bound value
-     * @return true if strictly between
-     */
+	/**
+	 * Tests whether this value is strictly between two values.
+	 *
+	 * @param obj1 lower bound
+	 * @param obj2 upper bound
+	 * @return {@code true} if this value is greater than {@code obj1} and less than {@code obj2}
+	 */
     public boolean isBetweenNotEqual(Object obj1, Object obj2) {
         int i = compareTo(obj1);
         if (i <= 0) {
@@ -1733,185 +1619,82 @@ public class OADateTime implements java.io.Serializable, Comparable {
         i = compareTo(obj2);
         return (i < 0);
     }
-	
-	
-	/**
-	 * Compares this date/time with another object.
-	 *
-	 * @param obj the object to compare to
-	 * @return the comparison result
-	 */
-	public int compare(Object obj) {
-		return compareTo(obj);
-	}
-
-	
-	
-	/**
-	 * Compares this date/time with another object for ordering.
-	 * Returns a negative value, zero, or a positive value depending on ordering.
-	 *
-	 * @param obj the object to compare to
-	 * @return comparison result
-	 */
-	public int compareTo(Object obj) {
-		if (obj == null) {
-			return 1;
-		}
-		
-		if (!(obj instanceof OADateTime)) {
-			 return 2;			
-		}
-		
-		OADateTime dtObj = (OADateTime) obj;
-		int result;
-
-	    if (this instanceof OADate || dtObj instanceof OADate) {
-			GregorianCalendar cThis = _getCal();
-			GregorianCalendar cObj = dtObj._getCal();
-			result = Long.compare(cThis.get(cThis.YEAR), cObj.get(cObj.YEAR));
-			if (result == 0) {
-				result = Long.compare(cThis.get(cThis.MONTH), cObj.get(cObj.MONTH));
-				if (result == 0) {
-					result = Long.compare(cThis.get(cThis.DAY_OF_MONTH), cObj.get(cObj.DAY_OF_MONTH));
-				}
-			}
-	    }
-	    else if (this instanceof OATime || dtObj instanceof OATime) {
-			GregorianCalendar cThis = _getCal();
-			GregorianCalendar cObj = dtObj._getCal();
-			result = Long.compare(cThis.get(cThis.HOUR_OF_DAY), cObj.get(cObj.HOUR_OF_DAY));
-			if (result == 0) {
-				result = Long.compare(cThis.get(cThis.MINUTE), cObj.get(cObj.MINUTE));
-				if (result == 0) {
-					result = Long.compare(cThis.get(cThis.SECOND), cObj.get(cObj.SECOND));
-					if (result == 0) {
-						result = Long.compare(cThis.get(cThis.MILLISECOND), cObj.get(cObj.MILLISECOND));
-					}
-				}
-			}
-	    }
-	    else {
-	    	result = Long.compare(this._time, dtObj._time);
-	    }
-	    return result;
-	}
 
 	/**
-	 * Converts this date/time to UTC.
-	 *
-	 * @return a new OADateTime converted to UTC
-	 */
-	public OADateTime convertToUTC() {
-		return convertTo(OATimeZone.getTimeZoneUTC());
-	}
-
-	/*
-	 * Convert the current dt to a different tz, which will adjust the (long) time
-	 * value, affecting (year,month,day,hour) values Note: for OADate
-	 * year,month,day(,hour,min..) are not affected, only the timezone Note: for
-	 * OATime only hour and timezone are affected.
-	 */
-	/**
-	 * Converts this date/time to the specified time zone.
-	 *
-     * Important Note: _time does not change,  Y/M/D/H/M/S/MS will be different. 
-     * 
-	 * @param tz the TimeZone to convert to
-	 * @return a new OADateTime converted to the specified time zone
-	 */
-	public OADateTime convertTo(TimeZone tz) {
-		OADateTime dt;
-		if (this instanceof OADate) {
-			dt = new OADate(this);
-		} else if (this instanceof OATime) {
-			dt = new OATime(this);
-		} else {
-			dt = new OADateTime(this);
-		}
-
-		GregorianCalendar c = dt._getCal();
-		c.setTimeZone(tz);
-		dt = new OADateTime(c);
-		if (this instanceof OADate) {
-			dt = new OADate(dt);
-		} else if (this instanceof OATime) {
-			dt = new OATime(dt);
-		}
-		return dt;
-	}
-
-	/**
-	 * Converts this date/time to the specified OATimeZone.
-	 *
-	 * @param tz the OATimeZone.TZ to convert to
-	 * @return a new OADateTime converted to the specified time zone
-	 */
-	public OADateTime convertTo(OATimeZone.TZ tz) {
-		OADateTime dt;
-		if (this instanceof OADate) {
-			dt = new OADate(this);
-		} else if (this instanceof OATime) {
-			dt = new OATime(this);
-		} else {
-			dt = new OADateTime(this);
-		}
-
-		if (tz != null) {
-			if (this instanceof OADate) {
-				dt.setTimeZone(tz);
-			} else {
-				GregorianCalendar c = dt._getCal();
-				c.setTimeZone(tz.timeZone);
-				dt = new OADateTime(c);
-				if (this instanceof OATime) {
-					dt = new OATime(dt);
-				}
-			}
-		}
-		return dt;
-	}
-
-	/*
-	 * Return a new OADateTime where a specified amount of days is added.
+	 * Creates a new OADateTime from a calculated {@link ZonedDateTime}, preserving this value's semantic type and zone metadata.
 	 * <p>
-	 * Note: if this is an instanceof OADate or OATime, then the returned object
-	 * will be the same type.
+	 * Subclasses may override to preserve subclass-specific return types.
 	 *
-	 * @param amount number of days to increment/deincrement (negative number).
-	 * @return new OADateTime object.
+	 * @param zdt calculated zoned date/time
+	 * @return new OADateTime using the calculated instant
 	 */
+    protected OADateTime create(ZonedDateTime zdt) {
+		OADateTime dt = new OADateTime(zdt);
+		dt.type = this.type;
+		dt.zoneId = this.zoneId;
+		return dt;
+    }
+    
 	/**
-	 * Returns a new date/time with the specified number of days added.
+	 * Returns a new value with the supplied number of calendar years added.
 	 *
-	 * @param amount number of days to add (negative to subtract)
-	 * @return a new OADateTime instance
+	 * @param amount years to add; negative values subtract
+	 * @return adjusted value
 	 */
-	public OADateTime addDays(int amount) {
-		if (this instanceof OATime) {
-			return new OATime(this);
-		}
-
-		OADateTime dtNew;
-		final GregorianCalendar c = _getCal();
-		c.add(Calendar.DATE, amount);
-
-		if (this instanceof OADate) {
-			dtNew = new OADate(c);
-		} else {
-			dtNew = new OADateTime(c);
-		}
-		return dtNew;
+	public OADateTime plusYears(int amount) {
+		ZonedDateTime zdt = getZonedDateTime().plusYears(amount);
+		return create(zdt);
 	}
 
 	/**
-	 * Returns a new date/time with the specified number of days subtracted.
+	 * Returns a new value with the supplied number of calendar years subtracted.
 	 *
-	 * @param amount number of days to subtract
-	 * @return a new OADateTime instance
+	 * @param amount years to subtract
+	 * @return adjusted value
 	 */
-	public OADateTime subtractDays(int amount) {
-		return addDays(-amount);
+	public OADateTime subtractYears(int amount) {
+		return plusYears(-amount);
+	}
+    
+	/**
+	 * Returns a new value with the supplied number of calendar months added.
+	 *
+	 * @param amount months to add; negative values subtract
+	 * @return adjusted value
+	 */
+	public OADateTime plusMonths(int amount) {
+		ZonedDateTime zdt = getZonedDateTime().plusMonths(amount);
+		return create(zdt);
+	}
+
+	/**
+	 * Returns a new value with the supplied number of calendar months subtracted.
+	 *
+	 * @param amount months to subtract
+	 * @return adjusted value
+	 */
+	public OADateTime minusMonths(int amount) {
+		return plusMonths(-amount);
+	}
+    
+	
+	/**
+	 * Returns a new value one calendar day after this value.
+	 *
+	 * @return adjusted value
+	 */
+	public OADateTime plusDays(int amount) {
+		ZonedDateTime zdt = getZonedDateTime().plusDays(amount);
+		return create(zdt);
+	}
+
+	/**
+	 * Returns a new value one calendar day before this value.
+	 *
+	 * @return adjusted value
+	 */
+	public OADateTime minusDays(int amount) {
+		return plusDays(-amount);
 	}
 
 	/**
@@ -1919,8 +1702,8 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 *
 	 * @return a new OADateTime instance
 	 */
-	public OADateTime addDay() {
-		return addDays(1);
+	public OADateTime plusDay() {
+		return plusDays(1);
 	}
 
 	/**
@@ -1928,8 +1711,8 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 *
 	 * @return a new OADateTime instance
 	 */
-	public OADateTime subtractDay() {
-		return addDays(-1);
+	public OADateTime minusDay() {
+		return plusDays(-1);
 	}
 
 	/*
@@ -1942,435 +1725,225 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return new OADateTime object.
 	 */
 	/**
-	 * Returns a new date/time with the specified number of weeks added.
+	 * Returns a new value with the supplied number of calendar weeks added.
 	 *
-	 * @param amount number of weeks to add (negative to subtract)
-	 * @return a new OADateTime instance
+	 * @param amount weeks to add; negative values subtract
+	 * @return adjusted value
 	 */
 	public OADateTime addWeeks(int amount) {
-		return addDays(amount * 7);
+		ZonedDateTime zdt = getZonedDateTime().plusWeeks(amount);
+		return create(zdt);
 	}
 
 	/**
-	 * Returns a new date/time with the specified number of weeks subtracted.
+	 * Returns a new value with the supplied number of calendar weeks subtracted.
 	 *
-	 * @param amount number of weeks to subtract
-	 * @return a new OADateTime instance
+	 * @param amount weeks to subtract
+	 * @return adjusted value
 	 */
-	public OADateTime subtractWeeks(int amount) {
-		return addDays(-(amount * 7));
-	}
-
-	/*
-	 * Return an OADateTime where a specified amount of months is added.
-	 * <p>
-	 * Note: if this is an instanceof OADate or OATime, then the returned object
-	 * will be the same type.
-	 *
-	 * @param amount number of months to increment/deincrement (negative number).
-	 * @return new OADateTime object.
-	 */
-	/**
-	 * Returns a new date/time with the specified number of months added.
-	 *
-	 * @param amount number of months to add (negative to subtract)
-	 * @return a new OADateTime instance
-	 */
-	public OADateTime addMonths(int amount) {
-		if (this instanceof OATime) {
-			return new OATime(this);
-		}
-
-		OADateTime dtNew;
-		GregorianCalendar c = _getCal();
-		c.add(Calendar.MONTH, amount);
-
-		if (this instanceof OADate) {
-			dtNew = new OADate(c);
-		} else {
-			dtNew = new OADateTime(c);
-		}
-		return dtNew;
+	public OADateTime minusWeeks(int amount) {
+		return plusDays(-(amount * 7));
 	}
 
 	/**
-	 * Returns a new date/time with the specified number of months subtracted.
+	 * Returns a new value with the supplied number of hours added.
 	 *
-	 * @param amount number of months to subtract
-	 * @return a new OADateTime instance
+	 * @param amount hours to add; negative values subtract
+	 * @return adjusted value
 	 */
-	public OADateTime subtractMonths(int amount) {
-		return addMonths(-amount);
-	}
-
-	/*
-	 * Return an OADateTime where a specified amount of years is added.
-	 * <p>
-	 * Note: if this is an instanceof OADate or OATime, then the returned object
-	 * will be the same type.
-	 *
-	 * @param amount number of years to increment/deincrement (negative number).
-	 * @return new OADateTime object.
-	 */
-	/**
-	 * Returns a new date/time with the specified number of years added.
-	 *
-	 * @param amount number of years to add (negative to subtract)
-	 * @return a new OADateTime instance
-	 */
-	public OADateTime addYears(int amount) {
-		if (this instanceof OATime) {
-			return new OATime(this);
-		}
-
-		OADateTime dtNew;
-		GregorianCalendar c = _getCal();
-		c.add(Calendar.YEAR, amount);
-
-		if (this instanceof OADate) {
-			dtNew = new OADate(c);
-		} else {
-			dtNew = new OADateTime(c);
-		}
-		return dtNew;
+	public OADateTime plusHours(int amount) {
+		ZonedDateTime zdt = getZonedDateTime().plusHours(amount);
+		return create(zdt);
 	}
 
 	/**
-	 * Returns a new date/time with the specified number of years subtracted.
+	 * Returns a new value with the supplied number of hours subtracted.
 	 *
-	 * @param amount number of years to subtract
-	 * @return a new OADateTime instance
+	 * @param amount hours to subtract
+	 * @return adjusted value
 	 */
-	public OADateTime subtractYears(int amount) {
-		return addYears(-amount);
-	}
-
-	/*
-	 * Return an OADateTime where a specified amount of hours is added.
-	 * <p>
-	 * Note: if this is an instanceof OADate or OATime, then the returned object
-	 * will be the same type.
-	 *
-	 * @param amount number of hours to increment/deincrement (negative number).
-	 * @return new OADateTime object.
-	 */
-	/**
-	 * Returns a new date/time with the specified number of hours added.
-	 *
-	 * @param amount number of hours to add (negative to subtract)
-	 * @return a new OADateTime instance
-	 */
-	public OADateTime addHours(int amount) {
-		OADateTime dtNew;
-		GregorianCalendar c = _getCal();
-		c.add(Calendar.HOUR_OF_DAY, amount);
-
-		if (this instanceof OATime) {
-			dtNew = new OATime(c);
-		} else if (this instanceof OADate) {
-			dtNew = new OADate(c);
-		} else {
-			dtNew = new OADateTime(c);
-		}
-		return dtNew;
+	public OADateTime minusHours(int amount) {
+		return plusHours(-amount);
 	}
 
 	/**
-	 * Returns a new date/time with the specified number of hours subtracted.
+	 * Returns a new value with the supplied number of minutes added.
 	 *
-	 * @param amount number of hours to subtract
-	 * @return a new OADateTime instance
+	 * @param amount minutes to add; negative values subtract
+	 * @return adjusted value
 	 */
-	public OADateTime subtractHours(int amount) {
-		return addHours(-amount);
-	}
-
-	/*
-	 * Return an OADateTime where a specified amount of minutes is added.
-	 * <p>
-	 * Note: if this is an instanceof OADate or OATime, then the returned object
-	 * will be the same type.
-	 *
-	 * @param amount number of minutes to increment/deincrement (negative number).
-	 * @return new OADateTime object.
-	 */
-	/**
-	 * Returns a new date/time with the specified number of minutes added.
-	 *
-	 * @param amount number of minutes to add (negative to subtract)
-	 * @return a new OADateTime instance
-	 */
-	public OADateTime addMinutes(int amount) {
-		OADateTime dtNew;
-		GregorianCalendar c = _getCal();
-		c.add(Calendar.MINUTE, amount);
-
-		if (this instanceof OATime) {
-			dtNew = new OATime(c);
-		} else if (this instanceof OADate) {
-			dtNew = new OADate(c);
-		} else {
-			dtNew = new OADateTime(c);
-		}
-		return dtNew;
+	public OADateTime plusMinutes(int amount) {
+		ZonedDateTime zdt = getZonedDateTime().plusMinutes(amount);
+		return create(zdt);
 	}
 
 	/**
-	 * Returns a new date/time with the specified number of minutes subtracted.
+	 * Returns a new value with the supplied number of minutes subtracted.
 	 *
-	 * @param amount number of minutes to subtract
-	 * @return a new OADateTime instance
+	 * @param amount minutes to subtract
+	 * @return adjusted value
 	 */
-	public OADateTime subtractMinutes(int amount) {
-		return addMinutes(-amount);
-	}
-
-	/*
-	 * Return an OADateTime where a specified amount of seconds is added.
-	 * <p>
-	 * Note: if this is an instanceof OADate or OATime, then the returned object
-	 * will be the same type.
-	 *
-	 * @param amount number of seconds to increment/deincrement (negative number).
-	 * @return new OADateTime object.
-	 */
-	/**
-	 * Returns a new date/time with the specified number of seconds added.
-	 *
-	 * @param amount number of seconds to add (negative to subtract)
-	 * @return a new OADateTime instance
-	 */
-	public OADateTime addSeconds(int amount) {
-		OADateTime dtNew;
-		GregorianCalendar c = _getCal();
-		c.add(Calendar.SECOND, amount);
-
-		if (this instanceof OATime) {
-			dtNew = new OATime(c);
-		} else if (this instanceof OADate) {
-			dtNew = new OADate(c);
-		} else {
-			dtNew = new OADateTime(c);
-		}
-		return dtNew;
+	public OADateTime minusMinutes(int amount) {
+		return plusMinutes(-amount);
 	}
 
 	/**
-	 * Returns a new date/time with the specified number of seconds subtracted.
+	 * Returns a new value with the supplied number of seconds added.
 	 *
-	 * @param amount number of seconds to subtract
-	 * @return a new OADateTime instance
+	 * @param amount seconds to add; negative values subtract
+	 * @return adjusted value
 	 */
-	public OADateTime subtractSeconds(int amount) {
-		return addSeconds(-amount);
-	}
-
-	/*
-	 * Return an OADateTime where a specified amount of milliseconds is added.
-	 * <p>
-	 * Note: if this is an instanceof OADate or OATime, then the returned object
-	 * will be the same type.
-	 *
-	 * @param amount number of milliseconds to increment/deincrement (negative
-	 *               number).
-	 * @return new OADateTime object.
-	 */
-	/**
-	 * Returns a new date/time with the specified number of milliseconds added.
-	 *
-	 * @param amount number of milliseconds to add (negative to subtract)
-	 * @return a new OADateTime instance
-	 */
-	public OADateTime addMilliSeconds(int amount) {
-		OADateTime dtNew;
-		GregorianCalendar c = _getCal();
-		c.add(Calendar.MILLISECOND, amount);
-
-		if (this instanceof OATime) {
-			dtNew = new OATime(c);
-		} else if (this instanceof OADate) {
-			dtNew = new OADate(c);
-		} else {
-			dtNew = new OADateTime(c);
-		}
-		return dtNew;
+	public OADateTime plusSeconds(int amount) {
+		ZonedDateTime zdt = getZonedDateTime().plusSeconds(amount);
+		return create(zdt);
 	}
 
 	/**
-	 * Returns a new date/time with the specified number of milliseconds subtracted.
+	 * Returns a new value with the supplied number of seconds subtracted.
 	 *
-	 * @param amount number of milliseconds to subtract
-	 * @return a new OADateTime instance
+	 * @param amount seconds to subtract
+	 * @return adjusted value
 	 */
-	public OADateTime subtractMilliSeconds(int amount) {
-		return addMilliSeconds(-amount);
+	public OADateTime minusSeconds(int amount) {
+		return plusSeconds(-amount);
 	}
 
-	/*
-	 * Returns the number of years between this OADateTime and obj.
-	 *
-	 * @param obj Date, OADateTime, Calendar, etc that can be converted to an
-	 *            OADateTime.
-	 */
 	/**
-	 * Returns the number of years between this date/time and another object.
+	 * Returns a new value with the supplied number of milliseconds added.
 	 *
-	 * @param obj an object convertible to OADateTime
-	 * @return number of years between the two dates
+	 * @param amount milliseconds to add; negative values subtract
+	 * @return adjusted value
 	 */
-	public int betweenYears(OADateTime d) {
-		return Math.abs(this.getYear() - d.getYear());
+	public OADateTime plusMilliSeconds(int amount) {
+		ZonedDateTime zdt = getZonedDateTime().plusNanos(amount * 1_000_000L);
+		return create(zdt);
 	}
 
-	/*
-	 * Returns the number of months betweeen this OADateTime and obj.
-	 *
-	 * @param obj Date, OADateTime, Calendar, etc that can be converted to an
-	 *            OADateTime.
-	 */
 	/**
-	 * Returns the number of months between this date/time and another object.
+	 * Returns a new value with the supplied number of milliseconds subtracted.
 	 *
-	 * @param obj an object convertible to OADateTime
-	 * @return number of months between the two dates
+	 * @param amount milliseconds to subtract
+	 * @return adjusted value
 	 */
-	public int betweenMonths(OADateTime d) {
-		int amt = this.getYear() - d.getYear();
-		amt = Math.abs(amt) * 12;
-
-		if (compareTo(d) >= 0) {
-			amt += (d.getMonth() - this.getMonth());
-		} else {
-			amt += (this.getMonth() - d.getMonth());
-		}
-
-		return Math.abs(amt);
+	public OADateTime minusMilliSeconds(int amount) {
+		return plusMilliSeconds(-amount);
 	}
 
-	/*
-	 * Returns the number of days between this OADateTime and obj.
-	 *
-	 * @param obj Date, OADateTime, Calendar, etc that can be converted to an
-	 *            OADateTime.
-	 */
 	/**
-	 * Returns the number of days between this date/time and another object.
+	 * Returns the calendar period between this value's local date and another value's local date.
 	 *
-	 * @param obj an object convertible to OADateTime
-	 * @return number of days between the two dates
+	 * @param dt ending value
+	 * @return calendar period, or {@link Period#ZERO} when {@code dt} is {@code null}
 	 */
-	public int betweenDays(OADateTime dt) {
+	public Period betweenPeriod(OADateTime dt) {
 	    if (dt == null) {
-	        throw new IllegalArgumentException("dt can not be null");
+	        return Period.ZERO;
 	    }
-
-	    LocalDate ld1 = this.getZonedDateTime().toLocalDate();
-	    LocalDate ld2 = dt.getZonedDateTime().toLocalDate();
-
-	    return (int) java.time.temporal.ChronoUnit.DAYS.between(ld1, ld2);
-	}
-	
-	/**
-	 * Returns the number of hours between this date/time and another object.
-	 *
-	 * @param obj an object convertible to OADateTime
-	 * @return number of hours between the two dates
-	 */
-	public int betweenHours(OADateTime dt) {
-	    if (dt == null) {
-	        throw new IllegalArgumentException("dt can not be null");
-	    }
-
-	    return (int) java.time.temporal.ChronoUnit.HOURS.between(
-	        this.getInstant(),
-	        dt.getInstant()
+	    return Period.between(
+	        this.getLocalDate(),
+	        dt.getLocalDate()
 	    );
 	}
 	
-	/*
-	 * Returns the number of minutes betweeen this OADateTime and obj.
-	 *
-	 * @param obj Date, OADateTime, Calendar, etc that can be converted to an
-	 *            OADateTime.
-	 */
 	/**
-	 * Returns the number of minutes between this date/time and another object.
+	 * Returns the timeline duration between this value and another value using stored instants.
 	 *
-	 * @param obj an object convertible to OADateTime
-	 * @return number of minutes between the two dates
+	 * @param dt ending value
+	 * @return elapsed duration, or {@link Duration#ZERO} when {@code dt} is {@code null}
 	 */
-	public int betweenMinutes(OADateTime dt) {
+	public Duration betweenDuration(OADateTime dt) {
 	    if (dt == null) {
-	        throw new IllegalArgumentException("dt can not be null");
+	        return Duration.ZERO;
 	    }
-
-	    return (int) java.time.temporal.ChronoUnit.MINUTES.between(
-	        this.getInstant(),
-	        dt.getInstant()
+	    return Duration.between(
+	        Instant.ofEpochMilli(this._time),
+	        Instant.ofEpochMilli(dt._time)
 	    );
+	}	
+	
+	/**
+	 * Returns the number of complete calendar years between the local dates of this value and another value.
+	 *
+	 * @param dt ending value
+	 * @return complete years between local dates, or {@code 0} when {@code dt} is {@code null}
+	 */
+	public long betweenYears(OADateTime dt) {
+	    if (dt == null) return 0;
+	    return ChronoUnit.YEARS.between(this.getLocalDate(), dt.getLocalDate());	    
 	}
 	
-	/*
-	 * Returns the number of seconds betweeen this OADateTime and obj.
-	 *
-	 * @param obj Date, OADateTime, Calendar, etc that can be converted to an
-	 *            OADateTime.
-	 */
 	/**
-	 * Returns the number of seconds between this date/time and another object.
+	 * Returns the number of complete calendar months between the local dates of this value and another value.
 	 *
-	 * @param obj an object convertible to OADateTime
-	 * @return number of seconds between the two dates
+	 * @param dt ending value
+	 * @return complete months between local dates, or {@code 0} when {@code dt} is {@code null}
 	 */
-	public int betweenSeconds(OADateTime dt) {
-	    if (dt == null) {
-	        throw new IllegalArgumentException("dt can not be null");
-	    }
+	public long betweenMonths(OADateTime dt) {
+	    if (dt == null) return 0;
+	    return ChronoUnit.MONTHS.between(this.getLocalDate(), dt.getLocalDate());	    
+	}
 
-	    return (int) java.time.temporal.ChronoUnit.SECONDS.between(
-	        this.getInstant(),
-	        dt.getInstant()
-	    );
+	/**
+	 * Returns the number of calendar days between the local dates of this value and another value.
+	 *
+	 * @param dt ending value
+	 * @return days between local dates, or {@code 0} when {@code dt} is {@code null}
+	 */
+	public long betweenDays(OADateTime dt) {
+	    if (dt == null) return 0;
+	    return ChronoUnit.DAYS.between(this.getLocalDate(), dt.getLocalDate());	    
 	}
 	
-	/*
-	 * Returns the number of seconds betweeen this OADateTime and obj.
-	 *
-	 * @param obj Date, OADateTime, Calendar, etc that can be converted to an
-	 *            OADateTime.
-	 */
 	/**
-	 * Returns the number of milliseconds between this date/time and another object.
+	 * Returns the number of elapsed hours between this value and another value using instants.
 	 *
-	 * @param obj an object convertible to OADateTime
-	 * @return number of milliseconds between the two dates
+	 * @param dt ending value
+	 * @return elapsed hours, or {@code 0} when {@code dt} is {@code null}
+	 */
+	public long betweenHours(OADateTime dt) {
+	    if (dt == null) return 0;
+	    return ChronoUnit.HOURS.between(this.getInstant(), dt.getInstant());	    
+	}
+	
+	/**
+	 * Returns the number of elapsed minutes between this value and another value using instants.
+	 *
+	 * @param dt ending value
+	 * @return elapsed minutes, or {@code 0} when {@code dt} is {@code null}
+	 */
+	public long betweenMinutes(OADateTime dt) {
+	    if (dt == null) return 0;
+	    return ChronoUnit.MINUTES.between(this.getInstant(), dt.getInstant());	    
+	}
+	
+	/**
+	 * Returns the number of elapsed seconds between this value and another value using instants.
+	 *
+	 * @param dt ending value
+	 * @return elapsed seconds, or {@code 0} when {@code dt} is {@code null}
+	 */
+	public long betweenSeconds(OADateTime dt) {
+	    if (dt == null) return 0;
+	    return ChronoUnit.SECONDS.between(this.getInstant(), dt.getInstant());	    
+	}
+	
+	/**
+	 * Returns the number of elapsed milliseconds between this value and another value using instants.
+	 *
+	 * @param dt ending value
+	 * @return elapsed milliseconds, or {@code 0} when {@code dt} is {@code null}
 	 */
 	public long betweenMilliSeconds(OADateTime dt) {
-	    if (dt == null) {
-	        throw new IllegalArgumentException("dt can not be null");
-	    }
-
-	    return dt._time - this._time;
+	    if (dt == null) return 0;
+	    return ChronoUnit.MILLIS.between(this.getInstant(), dt.getInstant());	    
 	}
 	
-	/*
-	 * Time as milliseconds, same as Date.getTime()
-	 */
 	/**
-	 * Returns the internal time value as milliseconds since the epoch.
+	 * Converts supported date/time object types into OADateTime.
 	 *
-	 * @return milliseconds since the epoch
-	 */
-	public long getTime() {
-		return _time;
-	}
-
-	/**
-	 * Converts an object to an OADateTime.
-	 *
-	 * @param obj the object to convert
-	 * @param bAlways if true, always return a new instance
-	 * @return an OADateTime instance or null if conversion is not possible
+	 * @param obj source object; supports OADateTime, Date, Calendar, String, java.sql.Time, and java.sql.Timestamp
+	 * @param bAlways when {@code true}, returns a copy for OADateTime inputs
+	 * @return converted value, or {@code null} when unsupported
 	 */
 	protected OADateTime convert(Object obj, boolean bAlways) {
 		if (obj == null) {
@@ -2400,58 +1973,40 @@ public class OADateTime implements java.io.Serializable, Comparable {
 			return new OADateTime((String) obj);
 		}
 		return null;
-		// throw new IllegalArgumentException("OADateTime cant convert class
-		// "+obj.getClass()+" to an OADateTime");
 	}
 
-	/*
-	 * Static method for converting a String date to an OADateTime.<br>
-	 * If date is " " (space) then todays date will be returned.<br>
-	 * If date is null or "" then null is returned.<br>
-	 *
-	 * @param fmt format of date. If not valid, then staticParseFormats and
-	 *            staticOutputFormat will be used.
-	 * @return OADateTime or null
-	 * @see OADateTime#setFormat
-	 * @see OADateTime#valueOf to convert a string using global parse strings
-	 */
 	/**
-	 * Converts a string to an OADateTime using the specified format.
+	 * Parses text using a preferred format and fallback formats.
 	 *
-	 * @param strDateTime the string representation of the date/time
-	 * @param fmt the format to use for parsing
-	 * @return an OADateTime instance or null
+	 * @param strDateTime text to parse
+	 * @param fmt preferred parse pattern
+	 * @return parsed value, or {@code null} when parsing fails
 	 */
 	public static OADateTime valueOf(String strDateTime, String fmt) {
 		return valueOf(strDateTime, fmt, true);
 	}
 
 	/**
-	 * Converts a string to an OADateTime using the specified format.
+	 * Parses text using a preferred format and optionally global fallback formats.
 	 *
-	 * @param strDateTime the string representation of the date/time
-	 * @param fmt the format to use for parsing
-	 * @return an OADateTime instance or null
+	 * @param strDateTime text to parse
+	 * @param fmt preferred parse pattern
+	 * @param bTryOtherFormats whether to try global fallback formats and output format
+	 * @return parsed value, or {@code null} when parsing fails
 	 */
 	public static OADateTime valueOf(String strDateTime, String fmt, boolean bTryOtherFormats) {
 		if (strDateTime == null) {
 			return null;
 		}
-		Date d = valueOfMain(strDateTime, fmt, bTryOtherFormats ? alDateTimeParseFormat : null, bTryOtherFormats ? staticOutputFormat : null);
-		if (d == null) {
-			return null;
-		}
-		return new OADateTime(d);
+		OADateTime dt = valueOfMain(strDateTime, fmt, bTryOtherFormats ? alDateTimeParseFormat : null, bTryOtherFormats ? staticOutputFormat : null);
+		return dt;
 	}
 
-	/*
-	 * Internally used to fix a String date.
-	 */
 	/**
-	 * Normalizes a date string by replacing non-alphanumeric separators.
+	 * Normalizes the first one or two non-alphanumeric separators in a date string to {@code '/'}.
 	 *
-	 * @param s the input string
-	 * @return the normalized date string
+	 * @param s source text
+	 * @return normalized text, or an empty string when {@code s} is {@code null}
 	 */
 	protected static String fixDate(String s) {
 		if (s == null) {
@@ -2471,310 +2026,236 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return new String(sb);
 	}
 
-	/*
-	 * Converts a String date to an OADateTime. <br>
-	 * If value is " " (space) then todays date/time will be returned.<br>
-	 * If value is null or "" then null is returned.<br>
-	 * StaticParseFormats and staticOutputFormat will be used to try to convert.
-	 *
-	 * @return OADateTime or null
-	 * @see OADateTime#setFormat
-	 * @see #setGlobalOutputFormat
-	 * @see #addGlobalParseFormat see #getGlobalParseFormats
-	 * @see #valueOf(String,String)
-	 */
 	/**
-	 * Converts a string to an OADateTime using global parse formats.
+	 * Parses text using global parse formats.
 	 *
-	 * @param strDateTime the string representation of the date/time
-	 * @return an OADateTime instance or null
+	 * @param strDateTime text to parse
+	 * @return parsed value, or {@code null} when parsing fails
 	 */
 	public static OADateTime valueOf(String strDateTime) {
 		return valueOf(strDateTime, null);
 	}
 
 	/**
-	 * Internal method used to parse a string into a Date using multiple formats.
+	 * Attempts to parse text using a preferred input format, an output-format fallback, and additional fallback formats.
 	 *
-	 * @param value the string to parse
-	 * @param inputFormat the preferred input format
-	 * @param alFormat collection of fallback parse formats
-	 * @param outputFormat fallback output format
-	 * @return a Date instance or null
+	 * @param value text to parse
+	 * @param inputFormat preferred parse pattern
+	 * @param alFormat fallback parse patterns
+	 * @param outputFormat output-format fallback pattern
+	 * @return parsed value, or {@code null} when no pattern succeeds
 	 */
-	protected static Date valueOfMain(String value, String inputFormat, List<String> alFormat, String outputFormat) {
+	protected static OADateTime valueOfMain(String value, String inputFormat, List<String> alFormat, String outputFormat) {
 		if (value == null || value.length() == 0) {
 			return null;
 		}
-		if (value.equals(" ")) {
-			return new Date();
+		if (OAStr.trimSpaces(value).equals("")) {
+			return new OADateTime();
 		}
 
 		String format = null;
-		if (inputFormat != null) {
-			// Convert 4 digit year to 2 digit. Otherwise, a 2 digit year input will be
-			// wrong. ex: 1/1/65 -> 01/01/0065
-			String s = inputFormat.toUpperCase();
-			int pos = s.indexOf("YYYY");
-			if (pos >= 0) {
-				if (value.length() != inputFormat.length()) {
-					format = inputFormat.substring(0, pos) + inputFormat.substring(pos + 2);
-				}
-			}
-		}
+		OADateTime dateTime = null;
 
-		Date date = null;
-		int x = alFormat == null ? 0 : alFormat.size();
-
-		int j = (format == null) ? -1 : -2;
-		for (; j <= x && date == null; j++) {
-			if (j == -1) {
+		for (int i=0; dateTime == null; i++) {
+			if (i == 0) {
 				format = inputFormat;
 			}
-			else if (j >= 0) {
-				if (j < x) {
-					format = (String) alFormat.get(j);
-				} else {
-					format = outputFormat;
-				}
+			else if (i == 1) {
+				format = outputFormat;
+			}
+			else {
+				if (alFormat == null) break;
+				int pos = (i - 2);
+				if (pos >= alFormat.size()) break;
+				format = alFormat.get(pos);
 			}
 			if (format != null && format.length() > 0) {
-				SimpleDateFormat sdf = getFormatter();
-				sdf.setTimeZone(getDefaultTimeZone());
-				sdf.applyPattern(format);
+				format = normalizeFormat(format);
 				try {
-					ParsePosition pos = new ParsePosition(0);
-					date = sdf.parse(value, pos);
-					if (date != null && pos.getIndex() == value.length()) {
-						break;
-					}
-					date = null;
-				} catch (Exception e) {
+					DateTimeFormatter fmt = DateTimeFormatter.ofPattern(format) .withResolverStyle(ResolverStyle.STRICT);
+					dateTime = parseDateTime(value, fmt);
+				}
+				catch (Exception e) {
 				}
 			}
 		}
-		return date;
+		return dateTime;
 	}
 
-	/*
-	 * Converts OADateTime to a String using specified formatting String.<br>
-	 * Uses the first format that has been set: "format", "staticOutputFormat" else
-	 * or "yyyy-MMM-dd hh:mma"
-	 */
 	/**
-	 * Converts this date/time to a String using the configured or default format.
+	 * Normalizes OA-compatible date/time patterns before creating a {@link DateTimeFormatter}.
+	 * <p>
+	 * Currently maps common calendar-year symbols to proleptic-year symbols for strict parsing.
 	 *
-	 * @return the formatted date/time string
+	 * @param format source pattern
+	 * @return normalized pattern
+	 */
+	protected static String normalizeFormat(String format) {
+		if (format == null) return null;
+	    return format.replace("yyyy", "uuuu").replace("yy", "uu");
+	}
+
+	/**
+	 * Parses text with a {@link DateTimeFormatter} and derives the OADateTime semantic type from parsed zone/offset content.
+	 * <p>
+	 * Region zones produce {@link DateTimeType#ZonedInstant}, offsets produce
+	 * {@link DateTimeType#Instant}, and local date/time values produce
+	 * {@link DateTimeType#Floating}.
+	 *
+	 * @param text text to parse
+	 * @param fmt formatter to use
+	 * @return parsed value, or {@code null} when parsing fails or does not consume all input
+	 */
+	protected static OADateTime parseDateTime(String text, DateTimeFormatter fmt) {
+	    ParsePosition pos = new ParsePosition(0);
+	    TemporalAccessor ta;
+	    
+	    try {
+	        ta = fmt.parse(text, pos);
+	    }
+	    catch (DateTimeException e) {
+	        return null;
+	    }
+	    
+	    if (pos.getErrorIndex() >= 0 || pos.getIndex() != text.length()) {
+	        return null;
+	    }
+
+	    ZoneId zone = ta.query(TemporalQueries.zone());
+	    ZoneOffset offset = ta.query(TemporalQueries.offset());
+	    LocalDate date = ta.query(TemporalQueries.localDate());
+	    LocalTime time = ta.query(TemporalQueries.localTime());
+
+	    if (date == null) {
+	        return null;
+	    }
+	    if (time == null) {
+	        time = LocalTime.MIDNIGHT;
+	    }
+
+	    LocalDateTime ldt = LocalDateTime.of(date, time);
+
+	    if (zone != null && !(zone instanceof ZoneOffset)) {
+	        ZonedDateTime zdt = ZonedDateTime.of(ldt, zone);
+
+	        OADateTime dt = new OADateTime(zdt.toInstant());
+	        dt.zoneId = zone;
+	        dt.type = DateTimeType.ZonedInstant;
+	        return dt;
+	    }
+
+	    if (offset != null) {
+	        OffsetDateTime odt = OffsetDateTime.of(ldt, offset);
+
+	        OADateTime dt = new OADateTime(odt.toInstant());
+	        dt.type = DateTimeType.Instant;
+	        return dt;
+	    }
+
+	    OADateTime dt = new OADateTime(ldt);
+	    dt.type = DateTimeType.Floating;
+	    return dt;
+	}	
+	
+	/**
+	 * Formats this value using the instance format, global output format, or default fallback format.
+	 *
+	 * @return formatted text
 	 */
 	public String toString() {
 		return toString(null);
 	}
 
-	/*
-	 * Converts OADateTime to a String using specified formatting String.
-	 *
-	 * @param f is format to apply
-	 */
 	/**
-	 * Converts this date/time to a String using the specified format.
+	 * Formats this value using the supplied pattern, or configured defaults when {@code f} is {@code null}.
 	 *
-	 * @param f the format to apply
-	 * @return the formatted date/time string
+	 * @param f output pattern, or {@code null} for configured defaults
+	 * @return formatted text
 	 */
 	public String toString(String f) {
 		if (f == null) {
 			f = (format == null) ? staticOutputFormat : format;
 			if (f == null || f.length() == 0) {
 				f = "yyyy-MMM-dd hh:mma";
-				if (timeZone != null)
+				if (zoneId != null)
 					f += " z";
 			}
 		}
 		return toStringMain(f);
 	}
 
-	// main method called to get string value
 	/**
-	 * Performs the actual formatting of this date/time using the specified format.
+	 * Formats this value using the supplied pattern after OA pattern normalization.
 	 *
-	 * @param format the format to apply
-	 * @return the formatted date/time string
+	 * @param format output pattern
+	 * @return formatted text
+	 * @throws IllegalArgumentException if the pattern is invalid
 	 */
-	protected String toStringMain(String format) {
-		if (format == null || format.length() == 0) {
-			return getDate().toString();
-		}
-		String s;
-		SimpleDateFormat sdf = getFormatter();
-		sdf.applyPattern(format);
-		sdf.setTimeZone(getTimeZone());
-		s = sdf.format(getDate());
-		return s;
-	}
-
+	public String toStringMain(String format) {
+		if (format == null) format = getGlobalOutputFormat();
+		format = normalizeFormat(format);
+	    DateTimeFormatter fmt = DateTimeFormatter.ofPattern(format);
+	    return getZonedDateTime().format(fmt);
+	}	
+	
 	/**
-	 * Sets the global output format used when converting date/time values to strings.
+	 * Sets the global output pattern used when an instance-specific format is not supplied.
 	 *
-	 * @param fmt the global output format
+	 * @param fmt output pattern
 	 */
 	public static void setGlobalOutputFormat(String fmt) {
 		staticOutputFormat = fmt;
 	}
 
 	/**
-	 * Sets the global output format used when converting date/time values to strings.
+	 * Returns the global output pattern.
 	 *
-	 * @param fmt the global output format
+	 * @return global output pattern
 	 */
 	public static String getGlobalOutputFormat() {
 		return staticOutputFormat;
 	}
 
-	/*
-	 * Add additional global parse formats that are used when converting a String to
-	 * OADateTime.
-	 *
-	 * @see #setFormat
-	 */
 	/**
-	 * Adds a global parse format used when converting strings to date/time values.
+	 * Adds a global fallback parse pattern.
 	 *
-	 * @param fmt the parse format to add
+	 * @param fmt parse pattern to add
 	 */
 	public static void addGlobalParseFormat(String fmt) {
 		alDateTimeParseFormat.add(fmt);
 	}
 
 	/**
-	 * Removes a global parse format.
+	 * Removes a global fallback parse pattern.
 	 *
-	 * @param fmt the parse format to remove
+	 * @param fmt parse pattern to remove
 	 */
 	public static void removeGlobalParseFormat(String fmt) {
 		alDateTimeParseFormat.remove(fmt);
 	}
 
 	/**
-	 * Set format to use for this OADateTime This format will be used when
-	 * converting this datetime to a String, unless a format is specified when
-	 * calling toString.
-	 * 
-	 * <pre>
-	    Formatting:
-	
-	    MM/dd HH:mm:ss
-	    MM/dd/yy HH:mm:ss
-	    MM/dd/yyyy HH:mm:ss
-	
-	    'Hms', 'Mdy'
-	
-	    yyyyMMdd_HHmmss.SSS
-	             hhmmssa
-	
-	    JSON / XML
-	    	format – ISO 8601
-				2014-03-12T13:37:27+00:00
-				"yyyy-MM-dd'T'HH:mm:ssZ"
-				also...
-				"yyyy-MM-dd'T'HH:mm:sszzz"
-	
-	        yyyy-MM-dd'T'HH:mm:ssX
-	            Notice the X on the end. It will handle timezones in ISO 8601 standard
-	            see: http://stackoverflow.com/questions/19112357/java-simpledateformatyyyy-mm-ddthhmmssz-gives-timezone-as-ist
-	            ex: 2016-11-22T08:49:02-05
-	        yyyy-MM-dd'T'HH:mm:ssXX
-	            ex: 2016-11-22T08:50:12-0500
-	        yyyy-MM-dd'T'HH:mm:ssXXX
-	            ex: 2016-11-22T08:49:02-05:00
-	
-	    javascript Date.toString()    EEE MMM dd yyyy '00:00:00' 'GMT'Z '('z')'
-	
-	    XSD dateTime
-	        [-]CCYY-MM-DDThh:mm:ss[Z|(+|-)hh:mm]
-	        The time zone may be specified as Z (UTC) or (+|-)hh:mm. Time zones that aren't specified are considered undetermined.
-	       => yyyy-MM-dd'T'HH:mm:ss      -> 2001-10-26T21:32:52
-	       => yyyy-MM-dd'T'HH:mm:ssXXX   -> 2001-10-26T21:32:52+02:00
-	       => yyyy-MM-dd'T'HH:mm:ss'Z'  ->  2001-10-26T19:32:52Z   (UTZ)
-	
-	    <p>
-	    Formatting Symbols used for output display.
-	
-	    SEE: https://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html
-	
-	    G  era designator          (Text)              AD
-	    y  year                    (Number)            1996
-	    M  month in year           (Number)            1, 2, 3, 4 .. 10, 11, 12
-	    MM                         (Number)            01, 02, 03, 04 ... 10, 11, 12
-	    MMM                        (Text)              Jan, Feb, ... Dec
-	    MMMM                       (Text)              January, February, ... December
-	    d  day in month            (Number)            10
-	    h  hour in am/pm (1~12)    (Number)            12
-	    H  hour in day (0~23)      (Number)            0
-	    m  minute in hour          (Number)            30
-	    s  second in minute        (Number)            55
-	    S  millisecond             (Number)            978
-	    E  day in week             (Text)              Tues
-	    EE
-	    EEE
-	    EEEE  day in week          (Text)              Tuesday
-	    D  day in year             (Number)            189
-	    F  day of week in month    (Number)            2 (2nd Wed in July)
-	    w  week in year            (Number)            27
-	    W  week in month           (Number)            2
-	    a  am/pm marker            (Text)              PM
-	    k  hour in day (1~24)      (Number)            24
-	    K  hour in am/pm (0~11)    (Number)            0
-	    z  time zone               (Text)              PST (might not use Abbrev anymore, andthis would be offset amount instead)
-	    zzzz                                           Pacific Standard Time
-	    zz                         (UTC offset)        -05 
-	    X                          (hours)             -04
-	    XX                         (hrsMins)           -0400
-	    XXX                        (hrs:mins)          -04:00
-	    Z                          (hrsMins)           -0400
-	    ZZ   (same as using Z)                         -0400
-	    ZZZ  (same as using Z)                         -0400
-	
-	    '  escape for text         (Delimiter)
-	
-	    '' single quote            (Literal)           '
-	
-	    Examples:
-	    "yyyy.MM.dd G 'at' HH:mm:ss z"    ->>  1996.07.10 AD at 15:08:56 PDT
-	    "EEE, MMM d, ''yy"                ->>  Wed, July 10, '96
-	    "h:mm a"                          ->>  12:08 PM
-	    "hh 'o''clock' a, zzzz"           ->>  12 o'clock PM, Pacific Daylight Time
-	    "K:mm a, z"                       ->>  0:00 PM, PST
-	    "yyyy.MMMMM.dd GGG hh:mm aaa"     ->>  1996.July.10 AD 12:08 PM
-	    "yyyy.MM.dd HH:mm:ss.SSS"
-	
-	    "E dd M yyyy hh:mm:ss a z"          ->> Thu 30 3 2017 11:58:21 AM EDT
-	    "EE dd MM yyyy hh:mm:ss a zz"       ->> Thu 30 03 2017 11:58:52 AM EDT
-	    "EEE dd MMM yyyy hh:mm:ss a zzz"    ->> Thu 30 Mar 2017 11:59:35 AM EDT
-	    "EEEE dd MMMM yyyy hh:mm:ss a zzzz" ->> Thursday 30 March 2017 12:00:33 PM Eastern Daylight Time
-	 * </pre>
-	 * 
-	 * <br>
-	 * 
-	 * @see #setGlobalOutputFormat
-	 * @see java.text.SimpleDateFormat
+	 * Sets the instance-specific output pattern used by {@link #toString()}.
+	 *
+	 * @param fmt output pattern for this instance
 	 */
 	public void setFormat(String fmt) {
 		this.format = fmt;
 	}
 
 	/**
-	 * Returns the instance-specific format used when converting this date/time to a string.
+	 * Returns the instance-specific output pattern.
 	 *
-	 * @return the instance format
+	 * @return instance output pattern, or {@code null} when not set
 	 */
 	public String getFormat() {
 		return format;
 	}
 
 	/**
-	 * Returns a SimpleDateFormat instance.
+	 * Creates a non-lenient legacy {@link SimpleDateFormat}.
 	 *
-	 * @return SimpleDateFormat instance
+	 * @return new non-lenient formatter
 	 */
 	protected static SimpleDateFormat getFormatter() {
 		SimpleDateFormat sdf = new SimpleDateFormat();
@@ -2783,25 +2264,21 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Returns the format string to use for system format.
+	 * Returns the locale-derived date pattern for the configured OA locale.
 	 *
-	 * @param type DateFormat.SHORT, MEDIUM, LONG, FULL, DEFAULT
+	 * @param type DateFormat style constant
+	 * @return date pattern, or {@code null} when unavailable
 	 */
 	public static String getFormat(int type) {
 		return getFormat(type, locale);
 	}
 
-	/*
-	 * Returns the format string to use for system format.
-	 *
-	 * @param type DateFormat.SHORT, MEDIUM, LONG, FULL, DEFAULT
-	 */
 	/**
-	 * Returns a date/time format string for the specified DateFormat style and locale.
+	 * Returns the locale-derived date pattern for the supplied locale.
 	 *
-	 * @param style the DateFormat style constant
-	 * @param loc the Locale to use
-	 * @return the format string
+	 * @param type DateFormat style constant
+	 * @param locale locale to inspect
+	 * @return date pattern, or {@code null} when unavailable
 	 */
 	public static String getFormat(int type, Locale locale) {
 		DateFormat df = DateFormat.getDateInstance(type, locale);
@@ -2813,349 +2290,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	/**
-	 * Determines whether this date/time is on the last day of its month.
+	 * Returns the last day number for this value's local month.
 	 *
-	 * @return true if {@link #getDay()} equals {@link #getDaysInMonth()}; otherwise false
+	 * @return last day of month, for example 28, 29, 30, or 31
 	 */
-	public boolean isLastDayOfMonth() {
-		return getDay() == getDaysInMonth();
-	}
-
-	/**
-	 * Determines whether this date/time falls on the first occurrence of the
-	 * specified weekday within the current month.
-	 *
-	 * @param weekday the Calendar day-of-week constant to test against
-	 * @return true if this date is within the first seven days of the month and
-	 *         its day-of-week matches the specified value; otherwise false
-	 */
-	public boolean isFirstWeekDayOfMonth(int weekday) {
-		int day = getDay();
-		if (day > 7) {
-			return false;
-		}
-		return (getDayOfWeek() == weekday);
-	}
-
-	/**
-	 * Determines whether this date/time falls on the last occurrence of the
-	 * specified weekday within the current month.
-	 *
-	 * @param weekday the Calendar day-of-week constant to test against
-	 * @return true if this date is within the last seven days of the month and
-	 *         its day-of-week matches the specified value; otherwise false
-	 */
-	public boolean isLastWeekDayOfMonth(int weekday) {
-		int d = getDay();
-		if (d + 7 <= getDaysInMonth()) {
-			return false;
-		}
-		return (getDayOfWeek() == weekday);
-	}
-
-	/**
-	 * Returns the day-of-month for the last occurrence of the specified weekday
-	 * within the current month.
-	 *
-	 * @param weekday the Calendar day-of-week constant to locate
-	 * @return the day-of-month for the last matching weekday, or -1 if not found
-	 */
-	public int getLastWeekDayOfMonth(int weekday) {
-		OADateTime dt = new OADateTime(this);
-		int x = getDaysInMonth();
-		for (int i = 0; i < 7; i++) {
-			dt.setDay(x - i);
-			if (dt.getDayOfWeek() == weekday) {
-				return (x - i);
-			}
-		}
-		return -1; // error
-	}
-
-	/**
-	 * Returns the day-of-month for the first occurrence of the specified weekday
-	 * within the current month.
-	 *
-	 * @param weekday the Calendar day-of-week constant to locate
-	 * @return the day-of-month for the first matching weekday, or -1 if not found
-	 */
-	public int getFirstWeekDayOfMonth(int weekday) {
-		OADateTime dt = new OADateTime(this);
-		for (int i = 0; i < 7; i++) {
-			dt.setDay(i + 1);
-			if (dt.getDayOfWeek() == weekday) {
-				return (i + 1);
-			}
-		}
-		return -1; // error
-	}
-
-	
-	// Immutable methods 20260603 qqqqqqqqqqqqqqqqqqqqqqq
-	
-	
-	/**
-	 * Returns a copy with a different year.
-	 */
-	public OADateTime withYear(int year) {
-	    OADateTime dt = new OADateTime(this);
-	    dt.setYear(year);
-	    return dt;
-	}
-
-	/**
-	 * Returns a copy with a different month (Calendar semantics: 0-11).
-	 */
-	public OADateTime withMonth(int month) {
-	    OADateTime dt = new OADateTime(this);
-	    dt.setMonth(month);
-	    return dt;
-	}
-
-	/**
-	 * Returns a copy with a different day.
-	 */
-	public OADateTime withDay(int day) {
-	    OADateTime dt = new OADateTime(this);
-	    dt.setDay(day);
-	    return dt;
-	}
-
-	/**
-	 * Returns a copy with a different hour (24-hour clock).
-	 */
-	public OADateTime withHour(int hour) {
-	    OADateTime dt = new OADateTime(this);
-	    dt.setHour(hour);
-	    return dt;
-	}
-
-	/**
-	 * Returns a copy with a different minute.
-	 */
-	public OADateTime withMinute(int minute) {
-	    OADateTime dt = new OADateTime(this);
-	    dt.setMinute(minute);
-	    return dt;
-	}
-
-	/**
-	 * Returns a copy with a different second.
-	 */
-	public OADateTime withSecond(int second) {
-	    OADateTime dt = new OADateTime(this);
-	    dt.setSecond(second);
-	    return dt;
-	}
-
-	/**
-	 * Returns a copy with a different millisecond.
-	 */
-	public OADateTime withMilliSecond(int ms) {
-	    OADateTime dt = new OADateTime(this);
-	    dt.setMilliSecond(ms);
-	    return dt;
-	}	
-	
-	
-	/**
-	 * Returns a copy with a different date.
-	 */
-	public OADateTime withDate(int year, int month, int day) {
-	    OADateTime dt = new OADateTime(this);
-	    dt.setDate(year, month, day);
-	    return dt;
-	}
-
-	/**
-	 * Returns a copy with a different time.
-	 */
-	public OADateTime withTime(int hour, int minute) {
-	    OADateTime dt = new OADateTime(this);
-	    dt.setTime(hour, minute);
-	    return dt;
-	}
-
-	public OADateTime withTime(int hour, int minute, int second) {
-	    OADateTime dt = new OADateTime(this);
-	    dt.setTime(hour, minute, second);
-	    return dt;
-	}
-
-	public OADateTime withTime(int hour, int minute, int second, int millisecond) {
-	    OADateTime dt = new OADateTime(this);
-	    dt.setTime(hour, minute, second, millisecond);
-	    return dt;
-	}
-	
-	
-	/**
-	 * Returns a copy with a different timezone while preserving wall-clock fields.
-	 */
-	public OADateTime withTimeZone(TimeZone tz) {
-	    OADateTime dt = new OADateTime(this);
-	    dt.setTimeZone(tz);
-	    return dt;
-	}
-
-
-	public final static int SUNDAY = 1;
-	public final static int SUN = 1;
-	public final static int MONDAY = 2;
-	public final static int MON = 2;
-	public final static int TUESDAY = 3;
-	public final static int TUES = 3;
-	public final static int TUE = 3;
-	public final static int WEDNESDAY = 4;
-	public final static int WED = 4;
-	public final static int THURSDAY = 5;
-	public final static int THURS = 5;
-	public final static int THU = 5;
-	public final static int FRIDAY = 6;
-	public final static int FRI = 6;
-	public final static int SATURDAY = 7;
-	public final static int SAT = 7;
-
-	public final static int JANUARY = 0;
-	public final static int JAN = 0;
-	public final static int FEBRUARY = 1;
-	public final static int FEB = 1;
-	public final static int MARCH = 2;
-	public final static int MAR = 2;
-	public final static int APRIL = 3;
-	public final static int APR = 3;
-	public final static int MAY = 4;
-	public final static int JUNE = 5;
-	public final static int JUN = 5;
-	public final static int JULY = 6;
-	public final static int JUL = 6;
-	public final static int AUGUST = 7;
-	public final static int AUG = 7;
-	public final static int SEPTEMBER = 8;
-	public final static int SEPT = 8;
-	public final static int SEP = 8;
-	public final static int OCTOBER = 9;
-	public final static int OCT = 9;
-	public final static int NOVEMBER = 10;
-	public final static int NOV = 10;
-	public final static int DECEMBER = 11;
-	public final static int DEC = 11;
-
-
-	
-	
-	
-	public static void main2(String[] args) throws Exception {
-		OADateTime dt;
-		SimpleDateFormat sdf;
-		String sx;
-
-		sx = (new OADateTime()).toString("yyyy-MM-dd-HH.mm.ss.SSSSSS");
-		Thread.sleep(1);
-		String sx2 = (new OADateTime()).toString("yyyy-MM-dd-HH.mm.ss.SSSSSS");
-
-		String[] tzs = TimeZone.getAvailableIDs();
-		for (String s : tzs) {
-			TimeZone tz = TimeZone.getTimeZone(s);
-			int xx = 0;
-			xx++;
-		}
-
-		String[] ids = TimeZone.getAvailableIDs();
-		for (String id : ids) {
-			TimeZone zone = TimeZone.getTimeZone(id);
-			int offset = zone.getRawOffset() / 1000;
-			int hour = offset / 3600;
-			int minutes = (offset % 3600) / 60;
-			System.err.println(String.format("(GMT%+d:%02d) %s", hour, minutes, id));
-		}
-
-		dt = new OADateTime().addDays(3);
-		String msg1 = dt.toString("yyyy-MM-dd'T'HH:mm:ssZ"); // 2019-11-08T20:31:21-0500
-		String msg2 = dt.toString("yyyy-MM-dd'T'HH:mm:ssXXX"); // 2019-11-08T20:31:21-05:00
-
-		sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-		// or SimpleDateFormat sdf = new SimpleDateFormat( "MM/dd/yyyy KK:mm:ss a Z" );
-		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-		String s = sdf.format(new Date());
-		System.out.println(s);
-
-		sx = (new OADateTime()).toString("yyyy-MM-dd'T'HH:mm:ss.S"); // 2019-08-26T15:47:40.902
-
-		OADate d = new OADate("02/22/2019");
-		OADate today = new OADate();
-		int x = d.compareTo(today);
-
-		System.out.println(d + ", today=" + today + ", x=" + x);
-		int xx = 4;
-		xx++;
-
-		/*
-		 * for (int i=0; i<1;i++) { final int id = i; Thread t = new Thread() {
-		 * 
-		 * @Override public void run() { test(id); } }; t.start(); }
-		 */
-		// test(777);
-	}
-
-	public static void main(String[] args) throws Exception {
-		OADateTime dt;
-		String s, sx;
-
-		sx = "2023-09-08T14:15:47.034Z";
-		dt = new OADateTime(sx, OADateTime.RFC339FormatWms);
-		s = dt.toString("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-
-		if (dt != null)
-			dt.setTimeZoneUTC();
-
-		s = dt.toString("yyyy-MM-dd'T'HH:mm:ss.SSS z");
-
-		dt = dt.convertToUTC();
-		s = dt.toString("yyyy-MM-dd'T'HH:mm:ss.SSS z");
-
-		dt = dt.convertTo(OATimeZone.getLocalTimeZone());
-		s = dt.toString("yyyy-MM-dd'T'HH:mm:ss.SSS z");
-
-		// "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
-
-		sx = "2023-09-08T14:15:47.34Z";
-		dt = new OADateTime(sx, OADateTime.RFC339FormatWms);
-		s = dt.toString(OADateTime.RFC339FormatWms);
-
-		dt = OADateTime.valueOf(sx, "yyyy-MM-dd'T'HH:mm:ss.S'Z'", false);
-		s = dt.toString(OADateTime.RFC339FormatWms);
-
-		sx = "2023-09-08T14:15:47Z";
-		dt = new OADateTime(sx, OADateTime.RFC339Format);
-
-		dt = OADateTime.valueOf(sx, "yyyy-MM-dd'T'HH:mm:ss'Z'", false);
-
-		/*
-		 * dt.setTimeZone(OATimeZone.getTimeZoneUTC());
-		 * 
-		 * String sz = dt.toString(OADateTime.FORMAT_xlong);//qqqqq sz =
-		 * dt.toString(OADateTime.RFC339FormatWms);//qqqqq
-		 * 
-		 * OADateTime dtz = dt.convertTo(OATimeZone.getLocalTimeZone()); sz =
-		 * dtz.toString(OADateTime.FORMAT_xlong);//qqqqq
-		 * 
-		 * dtz = new OADateTime(sz, "yyyy/MM/dd hh:mm:ss.S a z"); sz =
-		 * dtz.toString(OADateTime.FORMAT_xlong);//qqqqq
-		 */
-
-		int xx = 4;
-		xx++;
-	}
-
-	public static void test(int id) {
-		for (int i = 0;; i++) {
-			OADate dx = new OADate(1980 + ((int) (Math.random() * 50)), (int) (Math.random() * 12), (int) (Math.random() * 28));
-			dx = (OADate) dx.addDays(1);
-			// dx = (OADate) dx.addMilliSeconds( (int) (Math.random() * (24*60*60*1000)) );
-			if (i % 25000 == 0) {
-				System.out.println(id + ") " + i + "   " + dx);
-			}
-		}
+	public int getLastDayOfMonth() {
+		int lastDay = getZonedDateTime().toLocalDate().lengthOfMonth();
+		return lastDay;
 	}
 }

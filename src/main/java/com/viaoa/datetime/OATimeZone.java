@@ -247,13 +247,11 @@ public class OATimeZone {
 	public static ArrayList<TZ> getOATimeZones() {
 		if (alTZ == null || msNextUpdate < System.currentTimeMillis()) {
 	        synchronized (lockTimeZones) {
-	            if (alTZ == null) {
-	                alTZ = _getOATimeZones();
-	                
-	                OADate d = new OADate();
-	                d = (OADate) d.addDay();
-	                msNextUpdate = d.getTime();
-	            }	            
+                alTZ = _getOATimeZones();
+                
+                OADate d = new OADate();
+                d = (OADate) d.plusDay();
+                msNextUpdate = d.getTime();
 	        }
 		}
         return alTZ;
@@ -464,8 +462,8 @@ public class OATimeZone {
     public static void main(String[] args) {
         {
             OATimeZone.TZ tz = OATimeZone.getOATimeZone("America/Chicago");  
-            OADateTime dtNow = (new OADateTime()).convertTo(tz);
-            OADate dToday = new OADate( dtNow.convertTo(tz) );
+            OADateTime dtNow = (new OADateTime()).withTimeZone(tz);
+            OADate dToday = new OADate( dtNow.withTimeZone(tz) );
             int i = 0;
             i++;
         }
@@ -476,7 +474,7 @@ public class OATimeZone {
 	    }
 
         final OATimeZone.TZ tzz = OATimeZone.getOATimeZone("America/Chicago");  
-        final OADateTime dtNowz = (new OADateTime()).convertTo(tzz);
+        final OADateTime dtNowz = (new OADateTime()).withTimeZone(tzz);
 		
 		
 		TZ tz1 = getOATimeZone("UTC-06");
@@ -487,10 +485,10 @@ public class OATimeZone {
         OATimeZone.TZ tz = OATimeZone.getOATimeZone("America/Chicago");
         OADateTime dtNow = new OADateTime();
 
-        OADateTime dtNowCST = dtNow.convertTo(tz);
-        OADateTime dtx = dtNow.convertTo(tz1);
-        dtx = dtNow.convertTo(tz2);
-        dtx = dtNow.convertTo(tz3);
+        OADateTime dtNowCST = dtNow.withTimeZone(tz);
+        OADateTime dtx = dtNow.withTimeZone(tz1);
+        dtx = dtNow.withTimeZone(tz2);
+        dtx = dtNow.withTimeZone(tz3);
 		
 		
 		int xx = 4;

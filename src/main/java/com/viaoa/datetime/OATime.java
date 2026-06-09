@@ -186,6 +186,7 @@ public class OATime extends OADateTime {
 	 */
 	public OATime(OADateTime dt) {
 		this(dt.get24Hour(), dt.getMinute(), dt.getSecond(), dt.getMilliSecond());
+		this.type = dt.type;
 		if (dt.timeZone != null) setTimeZone(dt.timeZone);
 	}
 
@@ -213,7 +214,7 @@ public class OATime extends OADateTime {
 	public OATime(String strTime, String fmt) {
 		OADateTime dt = OATime.valueOf(strTime, fmt);
 		if (dt == null) throw new IllegalArgumentException("OATime cant create time from String \"" + strTime + "\"");
-		GregorianCalendar c = dt._getCal();
+		GregorianCalendar c = dt.getCal();
 		setCalendar(1970, 0, 1, c.get(c.HOUR_OF_DAY), c.get(c.MINUTE), c.get(c.SECOND), c.get(c.MILLISECOND));
 		if (dt.timeZone != null) setTimeZone(dt.timeZone);
 	}

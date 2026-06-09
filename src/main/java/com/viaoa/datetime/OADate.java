@@ -255,6 +255,7 @@ public class OADate extends OADateTime {
 	public OADate(OADateTime dt) {
 		super(dt.getYear(), dt.getMonth(), dt.getDay());
 		if (dt.timeZone != null) setTimeZone(dt.timeZone);
+		dt.type = this.type;
 	}
 	
 	/**
@@ -293,7 +294,7 @@ public class OADate extends OADateTime {
 	public OADate(String strDate, String format) {
 		OADateTime dt = OADateTime.valueOf(strDate, format);
 		if (dt == null) throw new IllegalArgumentException("OADate cant create date from String \"" + strDate + "\"");		
-		GregorianCalendar c = dt._getCal();
+		GregorianCalendar c = dt.getCal();
 		setDate(c.get(c.YEAR), c.get(c.MONTH), c.get(c.DAY_OF_MONTH));
 		if (dt.timeZone != null) setTimeZone(dt.timeZone);
 	}
