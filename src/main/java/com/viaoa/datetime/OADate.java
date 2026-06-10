@@ -16,35 +16,13 @@
 package com.viaoa.datetime;
 
 import java.text.DateFormat;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.*;
 
-import com.viaoa.datetime.OATimeZone.TZ;
 import com.viaoa.lang.OAString;
-
-/*qqqqqqqqqqqqqqqqqqqqqq
-CODEX
-
-1. file/class/method
-     src/main/java/com/viaoa/datetime/OADate.java — OADate(LocalDate ld)
-  2. concrete bug
-     LocalDate conversion uses deprecated new Date(year, month, day), which resolves midnight in the JVM default
-     timezone instead of OA’s configured date semantics.
-  3. runtime scenario
-     If OA default timezone is UTC but the JVM default timezone is America/Chicago, new OADate(LocalDate.of(2026, 5,
-     18)) stores an epoch millis based on Chicago midnight. Serialized, compared, or reconstructed elsewhere, that
-     backing millis can represent a different date boundary than the OA runtime expects.
-  4. why this violates OA/OG datetime semantics
-     LocalDate is date-only and should not silently inherit JVM-default timezone behavior. OA date-only values need
-     deterministic distributed semantics.
-  5. minimal fix direction
-     Construct using an explicit OA timezone/calendar, or store date-only fields using the same normalized path
-     intended for OADate.
-  6. suggested CODEX comment location
-     Above OADate(LocalDate ld).
-
-
-*/
 
 /**
  * Immutable date-only value that represents a calendar day independent from
@@ -178,6 +156,8 @@ public class OADate extends OADateTime {
 	 * @param loc the locale to use when determining date formats
 	 */
 	public static void setLocale(Locale loc) {
+		if (loc == null) loc = Locale.getDefault();
+		alDateParseFormat.clear();
 		String s = getFormat(DateFormat.SHORT, loc);
 		boolean bMonthFirst = true;
 		boolean bYearFirst = false;
@@ -212,8 +192,7 @@ public class OADate extends OADateTime {
 	 * Creates a new date initialized to today's date.
 	 */
 	public OADate() {
-		super();
-		clearTime();
+		this(LocalDate.now());
 	}
 
 	/**
@@ -232,9 +211,20 @@ public class OADate extends OADateTime {
 	 * @param date the source date
 	 */
 	public OADate(Date date) {
-		super(date);
-		clearTime();
+	    LocalDate ld;
+
+	    if (date == null) {
+	        ld = LocalDate.now();
+	    } 
+	    else {
+	        ld = Instant.ofEpochMilli(date.getTime()).atZone(defaultZoneId).toLocalDate();
+	    }
+
+	    this.type = DateTimeType.Floating;
+	    this.zoneId = defaultZoneId;
+	    this._time = ld.atStartOfDay().atZone(this.zoneId).toInstant().toEpochMilli();
 	}
+	
 	
 	/**
 	 * Creates a new date using year, month, and day values.
@@ -245,6 +235,8 @@ public class OADate extends OADateTime {
 	 */
 	public OADate(int year, int month, int day) {
 		super(year, month, day);
+	    this.type = DateTimeType.Floating;
+	    this.zoneId = defaultZoneId;
 	}
 	
 	/**
@@ -253,9 +245,9 @@ public class OADate extends OADateTime {
 	 * @param odt the source date-time
 	 */
 	public OADate(OADateTime dt) {
-		super(dt.getYear(), dt.getMonth(), dt.getDay());
-		if (dt.timeZone != null) setTimeZone(dt.timeZone);
-		dt.type = this.type;
+		super(dt.getYear(), dt.getMonthValue(), dt.getDayOfMonth());
+	    this.type = DateTimeType.Floating;
+	    this.zoneId = defaultZoneId;
 	}
 	
 	/**
@@ -264,7 +256,9 @@ public class OADate extends OADateTime {
 	 * @param c the source calendar
 	 */
 	public OADate(Calendar c) {
-		super(c.get(c.YEAR), c.get(c.MONTH), c.get(c.DATE));
+		super(c.get(c.YEAR), c.get(c.MONTH) + 1, c.get(c.DATE));
+	    this.type = DateTimeType.Floating;
+	    this.zoneId = defaultZoneId;
 	}
 
 	/**
@@ -273,7 +267,9 @@ public class OADate extends OADateTime {
 	 * @param ld the source local date
 	 */
 	public OADate(LocalDate ld) {
-		super(ld.getYear(), ld.getMonthValue() - 1, ld.getDayOfMonth());
+		super(ld.getYear(), ld.getMonthValue(), ld.getDayOfMonth());
+	    this.type = DateTimeType.Floating;
+	    this.zoneId = defaultZoneId;
 	}
 	
 	/**
@@ -283,6 +279,8 @@ public class OADate extends OADateTime {
 	 */
 	public OADate(String strDate) {
 		this(strDate, null);
+	    this.type = DateTimeType.Floating;
+	    this.zoneId = defaultZoneId;
 	}
 
 	/**
@@ -293,197 +291,36 @@ public class OADate extends OADateTime {
 	 */
 	public OADate(String strDate, String format) {
 		OADateTime dt = OADateTime.valueOf(strDate, format);
-		if (dt == null) throw new IllegalArgumentException("OADate cant create date from String \"" + strDate + "\"");		
-		GregorianCalendar c = dt.getCal();
-		setDate(c.get(c.YEAR), c.get(c.MONTH), c.get(c.DAY_OF_MONTH));
-		if (dt.timeZone != null) setTimeZone(dt.timeZone);
+		if (dt == null) throw new IllegalArgumentException("OADate cant create date from String \"" + strDate + "\", format="+format);
+		LocalDate ld = LocalDate.of(dt.getYear(), dt.getMonthValue(), dt.getDayOfMonth());
+		
+	    this.type = DateTimeType.Floating;
+	    this.zoneId = defaultZoneId;
+	    this._time = ld.atStartOfDay().atZone(this.zoneId).toInstant().toEpochMilli();
 	}
 
-	/**
-	 * Tests whether this date is between or equal to two other values.
-	 *
-	 * @param obj1 the lower bound value
-	 * @param obj2 the upper bound value
-	 * @return true if between or equal
-	 */
-	public boolean between(Object obj1, Object obj2) {
-		int i = compareTo(obj1);
-		if (i < 0) {
-			return false;
-		}
-		i = compareTo(obj2);
-		return (i <= 0);
-	}
-
-	/**
-	 * Returns a {@link LocalDate} representing this date.
-	 *
-	 * @return the corresponding LocalDate value
-	 */
-	public LocalDate getLocalDate() {
-		LocalDate ld = LocalDate.of(getYear(), getMonth() + 1, getDay());
-		return ld;
-	}
+	
 	
 	@Override
-	protected void setCalendar(GregorianCalendar c) {
-		if (c == null) return;
-		setCalendar(c.get(c.YEAR), c.get(c.MONTH), c.get(c.DAY_OF_MONTH), 0, 0, 0, 0);
+	public OADateTime withTimeZoneUTCSameWallTime() {
+		return new OADate(super.withTimeZoneUTCSameWallTime());
 	}
 
 	@Override
-	protected void setCalendar(Date date) {
-		super.setCalendar(date);
-		clearTime();
+	public OADateTime withTimeZoneUTCSameInstant() {
+		return new OADate(super.withTimeZoneUTCSameInstant());
 	}
 
 	@Override
-	protected void setCalendar(int year, int month, int day, int hrs, int mins, int secs, int milsecs) {
-		super.setCalendar(year, month, day, 0,0,0,0);
-	}
-
-	@Override
-	protected void setCalendar(String strDate) {
-		OADateTime dt = valueOf(strDate);
-		super.setCalendar(dt.getYear(), dt.getMonth(), dt.getDay(), 0, 0, 0, 0);
+	public OADateTime withZoneIdSameWallTime(ZoneId zid) {
+		return new OADate(super.withZoneIdSameWallTime(zid));
 	}
 	
 	@Override
-	protected void setCalendar(String strDate, String fmt) {
-		OADateTime dt = valueOf(strDate, fmt);
-		super.setCalendar(dt.getYear(), dt.getMonth(), dt.getDay(), 0, 0, 0, 0);
+	public OADateTime withZoneIdSameInstant(ZoneId zid) {
+		return new OADate(super.withZoneIdSameInstant(zid));
 	}
 	
-	@Override
-	public void setTime(int hr, int m, int s, int ms) {
-		// no-op
-	}
-	
-	@Override
-	public void setTime(OATime t) {
-		// no-op
-	}
-
-	@Override
-	public void setTimeZone(TimeZone tz) {
-	    super.setTimeZone(tz);
-	    clearTime();
-	}
-	
-	@Override
-	public void setTimeZoneUTC() {
-	    super.setTimeZoneUTC();
-	    clearTime();
-	}
-
-	@Override
-	public void setTimeZone(TZ tz) {
-	    super.setTimeZone(tz);
-	    clearTime();
-	}
-	
-	@Override
-	public void setHour(int hr) {
-	    // no-op
-	}
-
-	@Override
-	public void set12Hour(int hr) {
-	    // no-op
-	}
-	
-	@Override
-	public void set24Hour(int hr) {
-	    // no-op
-	}
-	
-	@Override
-	public void setMinute(int mins) {
-	    // no-op
-	}
-	
-	@Override
-	public void setSecond(int s) {
-	    // no-op
-	}
-	
-	@Override
-	public void setMilliSecond(int ms) {
-	    // no-op
-	}
-	
-	@Override
-	public OADateTime addHours(int amount) {
-		OADateTime dt = super.addHours(amount);
-		OADate d = new OADate(dt);
-		return d;
-	}
-	@Override
-	public OADateTime subtractHours(int amount) {
-		OADateTime dt = super.subtractHours(amount);
-		OADate d = new OADate(dt);
-		return d;
-	}
-
-	@Override
-	public OADateTime addMinutes(int amount) {
-		OADateTime dt = super.addMinutes(amount);
-		OADate d = new OADate(dt);
-		return d;
-	}
-	@Override
-	public OADateTime subtractMinutes(int amount) {
-		OADateTime dt = super.subtractMinutes(amount);
-		OADate d = new OADate(dt);
-		return d;
-	}
-	
-	@Override
-	public OADateTime addSeconds(int amount) {
-		OADateTime dt = super.addSeconds(amount);
-		OADate d = new OADate(dt);
-		return d;
-	}
-	@Override
-	public OADateTime subtractSeconds(int amount) {
-		OADateTime dt = super.subtractSeconds(amount);
-		OADate d = new OADate(dt);
-		return d;
-	}
-
-	@Override
-	public OADateTime addMilliSeconds(int amount) {
-		OADateTime dt = super.addMilliSeconds(amount);
-		OADate d = new OADate(dt);
-		return d;
-	}
-	@Override
-	public OADateTime subtractMilliSeconds(int amount) {
-		OADateTime dt = super.subtractMilliSeconds(amount);
-		OADate d = new OADate(dt);
-		return d;
-	}
-	
-	@Override
-	public OADateTime convertToUTC() {
-		OADateTime dt = super.convertToUTC();
-		OADate d = new OADate(dt);
-		return d;
-	}
-	
-	@Override
-	public OADateTime convertTo(TimeZone tz) {
-		OADateTime dt = super.convertTo(tz);
-		OADate d = new OADate(dt);
-		return d;
-	}
-	
-	@Override
-	public OADateTime convertTo(OATimeZone.TZ tz) {
-		OADateTime dt = super.convertTo(tz);
-		OADate d = new OADate(dt);
-		return d;
-	}
 	
     /**
      * Converts this date to a string using the default format.
@@ -520,7 +357,7 @@ public class OADate extends OADateTime {
 	 * @return the parsed OADate instance
 	 */
 	public static OADate dateValue(String date, String fmt) {
-		return (OADate) valueOf(date, fmt);
+		return (OADate) OADate.valueOf(date, fmt);
 	}
 
 	/**
@@ -530,7 +367,7 @@ public class OADate extends OADateTime {
 	 * @return the parsed OADate instance
 	 */
 	public static OADate dateValue(String date) {
-		return (OADate) valueOf(date, null);
+		return (OADate) OADate.valueOf(date, null);
 	}
 
 	/**
@@ -545,20 +382,36 @@ public class OADate extends OADateTime {
 		if (date == null) {
 			return null;
 		}
-		Date d = valueOfMain(date, fmt, alDateParseFormat, dateOutputFormat);
-		if (d == null) {
+		OADateTime dt = OADate.valueOfMain(date, fmt, alDateParseFormat, dateOutputFormat);
+		if (dt == null) {
 			if (date.length() < 6 && OAString.isNumber(date)) {
 				return OADate.valueOf(date + "/" + (new OADate()).getYear());
 			}
 
-			d = valueOfMain(fixDate(date), fmt, alDateParseFormat, dateOutputFormat);
-			if (d == null) {
+			dt = valueOfMain(fixDate(date), fmt, alDateParseFormat, dateOutputFormat);
+			if (dt == null) {
 				return null;
 			}
 		}
-		return new OADate(d);
+		return new OADate(dt);
 	}
 
+//qqqqqqqqqq change name to createUtil	
+    protected OADateTime createUtil(ZonedDateTime zdt) {
+		OADate d = new OADate(zdt.toLocalDate());
+		d.type = this.type;
+		d.zoneId = this.zoneId;
+		return d;
+    }
+//qqqqqqqqqq change name to createUtil	
+	protected OADateTime createUtil(int year, int month, int day, int hrs, int mins, int secs, int milsecs) {
+		OADateTime dt = new OADate(year, month, day);
+		dt.zoneId = this.zoneId;
+		dt.type = this.type;
+		return dt;
+	}
+	
+    
 	/**
 	 * Converts a string to an {@link OADateTime} using default parsing rules.
 	 *
@@ -569,64 +422,5 @@ public class OADate extends OADateTime {
 		return OADate.valueOf(date, null);
 	}
 
-	
-	@Override
-	public OADateTime withYear(int year) {
-		OADateTime dt = super.withYear(year);
-		return new OADate(dt);
-	}
-	@Override
-	public OADateTime withMonth(int month) {
-		OADateTime dt = super.withMonth(month);
-		return new OADate(dt);
-	}
-	@Override
-	public OADateTime withDay(int day) {
-		OADateTime dt = super.withDay(day);
-		return new OADate(dt);
-	}
-	@Override
-	public OADateTime withDate(int year, int month, int day) {
-		OADateTime dt = super.withDate(year, month, day);
-		return new OADate(dt);
-	}
-	
-	
-	@Override
-	public OADateTime withHour(int hour) {
-		return new OADate(this);
-	}
-	@Override
-	public OADateTime withMinute(int minute) {
-		return new OADate(this);
-	}
-	@Override
-	public OADateTime withSecond(int second) {
-		return new OADate(this);
-	}
-	@Override
-	public OADateTime withMilliSecond(int ms) {
-		return new OADate(this);
-	}
-
-	@Override
-	public OADateTime withTime(int hour, int minute) {
-		return new OADate(this);
-	}
-	@Override
-	public OADateTime withTime(int hour, int minute, int second) {
-		return new OADate(this);
-	}
-	@Override
-	public OADateTime withTime(int hour, int minute, int second, int millisecond) {
-		return new OADate(this);
-	}
-	
-	@Override
-	public OADateTime withTimeZone(TimeZone tz) {
-		OADateTime dt = super.withTimeZone(tz);
-		return new OADate(dt);
-	}
-	
 }
 

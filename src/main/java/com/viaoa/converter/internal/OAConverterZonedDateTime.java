@@ -124,7 +124,7 @@ public class OAConverterZonedDateTime implements OAConverterInterface<ZonedDateT
         if (fromValue instanceof OADate) {
             OADate d = (OADate) fromValue;
             return ZonedDateTime.of(
-                    LocalDate.of(d.getYear(), d.getMonth() + 1, d.getDay()),
+                    LocalDate.of(d.getYear(), d.getMonthValue(), d.getDayOfMonth()),
                     LocalTime.MIDNIGHT,
                     d.getTimeZone().toZoneId());
         }
@@ -195,7 +195,7 @@ public class OAConverterZonedDateTime implements OAConverterInterface<ZonedDateT
      * @return the corresponding {@link ZonedDateTime}
      */
     private ZonedDateTime toZDT(OADateTime dt) {
-        LocalDate ld = LocalDate.of(dt.getYear(), dt.getMonth() + 1, dt.getDay());
+        LocalDate ld = LocalDate.of(dt.getYear(), dt.getMonthValue(), dt.getDayOfMonth());
         LocalTime lt = toLocalTime(dt);
         return ZonedDateTime.of(ld, lt, dt.getTimeZone().toZoneId());
     }

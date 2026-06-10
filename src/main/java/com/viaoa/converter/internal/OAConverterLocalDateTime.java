@@ -134,13 +134,13 @@ public class OAConverterLocalDateTime implements OAConverterInterface<LocalDateT
         if (fromValue instanceof OADateTime) {
             OADateTime dt = (OADateTime) fromValue;
             int nanos = dt.getMilliSecond() * 1_000_000;
-            return LocalDateTime.of(dt.getYear(), dt.getMonth() + 1, dt.getDay(),
+            return LocalDateTime.of(dt.getYear(), dt.getMonthValue(), dt.getDayOfMonth(),
                     dt.getHour(), dt.getMinute(), dt.getSecond(), nanos);
         }
 
         if (fromValue instanceof OADate) {
             OADate d = (OADate) fromValue;
-            return LocalDateTime.of(d.getYear(), d.getMonth() + 1, d.getDay(), 0, 0);
+            return LocalDateTime.of(d.getYear(), d.getMonthValue(), d.getDayOfMonth(), 0, 0);
         }
 
         if (fromValue instanceof OATime) {
@@ -180,7 +180,7 @@ public class OAConverterLocalDateTime implements OAConverterInterface<LocalDateT
             try {
                 OADateTime dt = OADateTime.valueOf(s, fmt);
                 int nanos = dt.getMilliSecond() * 1_000_000;
-                return LocalDateTime.of(dt.getYear(), dt.getMonth() + 1, dt.getDay(),
+                return LocalDateTime.of(dt.getYear(), dt.getMonthValue(), dt.getDayOfMonth(),
                         dt.getHour(), dt.getMinute(), dt.getSecond(), nanos);
             }
             catch (Throwable e) {

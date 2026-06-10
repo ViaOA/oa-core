@@ -94,7 +94,7 @@ public class OAConverterLocalDate implements OAConverterInterface<LocalDate> {
 
         if (fromValue instanceof OADate) {
             OADate d = (OADate) fromValue;
-            return LocalDate.of(d.getYear(), d.getMonth() + 1, d.getDay());
+            return LocalDate.of(d.getYear(), d.getMonthValue(), d.getDayOfMonth());
         }
 
         if (fromValue instanceof OATime) {
@@ -106,7 +106,7 @@ public class OAConverterLocalDate implements OAConverterInterface<LocalDate> {
                 String s = ((String) fromValue).trim();
                 if (s.isEmpty()) return null;
                 OADate d = (OADate) OADate.valueOf(s, fmt);
-                return LocalDate.of(d.getYear(), d.getMonth() + 1, d.getDay());
+                return LocalDate.of(d.getYear(), d.getMonthValue(), d.getDayOfMonth());
             }
             catch (Throwable t) {
                 return null;
@@ -115,7 +115,7 @@ public class OAConverterLocalDate implements OAConverterInterface<LocalDate> {
 
         if (fromValue instanceof java.sql.Date) {
             OADateTime dt = new OADateTime(new Date(((java.sql.Date) fromValue).getTime()));
-            return LocalDate.of(dt.getYear(), dt.getMonth() + 1, dt.getDay());
+            return LocalDate.of(dt.getYear(), dt.getMonthValue(), dt.getDayOfMonth());
         }
 
         if (fromValue instanceof java.sql.Time) {
@@ -125,12 +125,12 @@ public class OAConverterLocalDate implements OAConverterInterface<LocalDate> {
         if (fromValue instanceof byte[]) {
             long tm = new java.math.BigInteger((byte[]) fromValue).longValue();
             OADateTime dt = new OADateTime(tm);
-            return LocalDate.of(dt.getYear(), dt.getMonth() + 1, dt.getDay());
+            return LocalDate.of(dt.getYear(), dt.getMonthValue(), dt.getDayOfMonth());
         }
 
         if (fromValue instanceof Number) {
             OADateTime dt = new OADateTime(((Number) fromValue).longValue());
-            return LocalDate.of(dt.getYear(), dt.getMonth() + 1, dt.getDay());
+            return LocalDate.of(dt.getYear(), dt.getMonthValue(), dt.getDayOfMonth());
         }
 
         if (fromValue instanceof Instant) {

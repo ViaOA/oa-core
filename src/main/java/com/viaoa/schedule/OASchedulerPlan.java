@@ -102,7 +102,7 @@ public class OASchedulerPlan<R> {
      * Creates a scheduling plan covering a default one-day range starting today.
      */
     public OASchedulerPlan() {
-        this(new OADate(), new OADate().addDays(1));
+        this(new OADate(), new OADate().plusDay());
     }
 
     /**
@@ -112,7 +112,7 @@ public class OASchedulerPlan<R> {
      * @param date the starting date for the plan; if null, today's date is used
      */
     public OASchedulerPlan(OADate date) {
-        this(date != null ? date : new OADate(), date != null ? date.addDays(1) : new OADate().addDays(1));
+        this(date != null ? date : new OADate(), date != null ? date.plusDay() : new OADate().plusDay());
     }
     
     /**
@@ -122,7 +122,7 @@ public class OASchedulerPlan<R> {
      * @param dt the starting date–time; if null, the current time is used
      */
     public OASchedulerPlan(OADateTime dt) {
-        this(dt != null ? dt : new OADateTime(), dt != null ? new OADate(dt).addDays(1) : new OADate().addDays(1));
+        this(dt != null ? dt : new OADateTime(), dt != null ? new OADate(dt).plusDay() : new OADate().plusDay());
     }
     
     /**

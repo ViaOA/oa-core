@@ -121,7 +121,7 @@ public class OADateChangeController {
 		OADate dateLast = new OADate();
 		for (;;) {
 			OADateTime dtNext = new OADate(); // today midnight
-			dtNext = dtNext.addDays(1); // tomorrow midnight
+			dtNext = dtNext.plusDay(); // tomorrow midnight
 
 			if (!dtNext.equals(dateLast)) {
 				OADateTime dtNow = new OADateTime();

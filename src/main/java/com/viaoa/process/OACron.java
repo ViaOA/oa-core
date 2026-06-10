@@ -412,7 +412,7 @@ public abstract class OACron {
                     String s;
                     for (int j=0; j<7; j++) {
                         OADate d = new OADate(2017, 0, 1+j);
-                        if (d.getDayOfWeek() != x+1) continue;
+                        if (d.getDayOfWeek().getValue() != x+1) continue;
                         description += d.toString("EEE");
                         break;
                     }
@@ -532,21 +532,21 @@ public abstract class OACron {
     private OADateTime findNextMonth() {
         OADateTime dtFound = null;
 
-        final int fromMonth = dtFrom.getMonth();
+        final int fromMonth = dtFrom.getMonthValue();
 
         OADateTime dtCheck = new OADateTime(dtFrom.getTime());
         for (int i=0; ;i++) {
-            if (i > 0) dtCheck = dtCheck.addYears(1);
+            if (i > 0) dtCheck = dtCheck.plusYears(1);
             for (int m : months) {
                 m--; // cron month is 1-12, java is 0-11
 
-                if (i == 0 && m < dtFrom.getMonth()) continue;
+                if (i == 0 && m < dtFrom.getMonthValue()) continue;
 
-                dtCheck.setDay(1);
-                dtCheck.setMonth(m);
-                dtCheck.clearTime();
+                dtCheck = dtCheck.withDayOfMonth(1);
+                dtCheck = dtCheck.withMonthValue(m);
+                dtCheck = dtCheck.withoutTime();
                 if (dtFound != null && dtFound.before(dtCheck)) continue;
-                OADateTime dtTo = dtCheck.addMonths(1);
+                OADateTime dtTo = dtCheck.plusMonths(1);
 
                 if (dtCheck.before(dtFrom)) dtCheck = new OADateTime(dtFrom);
 
@@ -555,7 +555,7 @@ public abstract class OACron {
             if (dtFound != null) break;
         }
         if (dtFound != null) {
-            dtFound.clearSecondAndMilliSecond();            
+            dtFound = dtFound.withoutSecondAndMilliSecond();            
         }
         return dtFound;
     }
@@ -576,7 +576,7 @@ public abstract class OACron {
         }
         else {
             OADateTime dtx = new OADateTime(dtFrom);
-            dtx.clearTime();
+            dtx = dtx.withoutTime();
 
             int max = dtCheck.getDaysInMonth();
             for (int i=0; i<=monthDays.length; i++) {
@@ -589,12 +589,12 @@ public abstract class OACron {
 
                 if (md > max) continue;
 
-                dtCheck.setDay(md);
+                dtCheck = dtCheck.withDayOfMonth(md);
                 if (dtCheck.before(dtx)) continue;
                 if (dtFound != null && dtFound.before(dtCheck)) continue;
 
-                OADateTime dtTo2 = dtCheck.addDays(1);
-                dtTo2.clearTime();
+                OADateTime dtTo2 = dtCheck.plusDays(1);
+                dtTo2 = dtTo2.withoutTime();
 
                 dtFound = findClosestDayOfWeek(dtFound, dtTo2, dtCheck);
             }
@@ -618,16 +618,16 @@ public abstract class OACron {
             for (;;) {
                 dtFound = findClosestHour(dtFound, dtTo, dtCheck);
                 if (dtFound != null) break;
-                dtCheck = dtCheck.addDays(1);
-                dtCheck.clearTime();
+                dtCheck = dtCheck.plusDays(1);
+                dtCheck = dtCheck.withoutTime();
                 if (dtTo != null && dtTo.compareTo(dtCheck) <= 0) break;
             }
         }
         else {
-            int fromDayOfWeek = dtCheck.getDayOfWeek();
+            int fromDayOfWeek = dtCheck.getDayOfWeek().getValue();
             OADateTime dtHold = dtCheck;
 
-            int fromWd = dtHold.getDayOfWeek();
+            int fromWd = dtHold.getDayOfWeek().getValue();
             for (int i=0; i<2; i++) {
                 for (int wd : daysOfWeek) {
                     wd++;  // cron day is 0 based, java 1 based
@@ -642,8 +642,8 @@ public abstract class OACron {
                         else diff = wd - fromWd;
                     }
 
-                    if (diff != 0) dtCheck = dtHold.addDays(diff);
-                    dtCheck.clearTime();
+                    if (diff != 0) dtCheck = dtHold.plusDays(diff);
+                    dtCheck = dtCheck.withoutTime();
 
                     if (dtTo != null && dtTo.compareTo(dtCheck) <= 0) continue;
 
@@ -671,21 +671,21 @@ public abstract class OACron {
         if (hrs == null || hrs.length == 0) { // any hour
             dtFound = findClosestMinute(dtFound, dtTo, dtCheck);
             if (dtFound == null) {
-                dtCheck = dtCheck.addHours(1);
+                dtCheck = dtCheck.plusHours(1);
                 if (dtTo == null || dtTo.compareTo(dtCheck) > 0) {
                     dtFound = findClosestMinute(dtFound, dtTo, dtCheck);
                 }
             }
         }
         else {
-            dtCheck.setMinute(0);
-            dtCheck.clearSecondAndMilliSecond();            
+        	dtCheck = dtCheck.withMinutes(0);
+        	dtCheck = dtCheck.withoutSecondAndMilliSecond();            
             OADateTime dtx = new OADateTime(dtFrom);
-            dtx.clearTime();
-            dtx.set24Hour(dtFrom.get24Hour());
+            dtx = dtx.withoutTime();
+            dtx = dtx.withHours(dtFrom.get24Hour());
 
             for (int hr : hrs) {
-                dtCheck.set24Hour(hr);
+                dtCheck = dtCheck.withHours(hr);
                 if (dtCheck.before(dtx)) continue;
                 if (dtFound != null && dtFound.before(dtCheck)) continue;
                 dtFound = findClosestMinute(dtFound, dtTo, dtCheck);
@@ -708,13 +708,13 @@ public abstract class OACron {
         if (mins == null || mins.length == 0) {
             if (dtFound == null || dtCheck.before(dtFound)) {
                 dtFound = new OADateTime(dtCheck);
-                if (dtFound.equals(dtFrom)) dtFound = dtFound.addMinutes(1);
+                if (dtFound.equals(dtFrom)) dtFound = dtFound.withMinutes(1);
             }
             return dtFound;
         }
         else {
             for (int m : mins) {
-                dtCheck.setMinute(m);
+                dtCheck = dtCheck.withMinutes(m);
                 if (dtCheck.compareTo(dtFrom) <= 0) continue;
                 if (dtFound != null && dtFound.before(dtCheck)) continue;
                 if (dtCheck.before(dtFrom)) continue;

@@ -268,10 +268,10 @@ public class OACronProcessor {
                 if (iStartStop != aiStartStop.get()) break;
                 
                 OADateTime dtNow = new OADateTime();
-                dtNow.clearSecondAndMilliSecond();
+                dtNow = dtNow.withoutSecondAndMilliSecond();
                 
-                OADateTime dtCompare = dtNow.addMinutes(-1);
-                dtCompare.clearSecondAndMilliSecond();
+                OADateTime dtCompare = dtNow.minusMinutes(1);
+                dtCompare = dtCompare.withoutSecondAndMilliSecond();
 
                 if (dtLast == null || dtLast.before(dtCompare)) {
                     alLast.clear();
@@ -287,7 +287,7 @@ public class OACronProcessor {
                     alLast.add(cron);
 
                     OADateTime dt = new OADateTime(cron.findNext(dtCompare));
-                    dt.clearSecondAndMilliSecond();
+                    dt = dt.withoutSecondAndMilliSecond();
                     
                     int d = dt.compareTo(dtNow);
                     if (d == 0) {

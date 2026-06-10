@@ -1368,7 +1368,7 @@ public class OASyncServer {
 			}
 		}
 		OADate date = new OADate();
-		msNextRemoteRequestLogDateChange = date.addDays(1).getTime();
+		msNextRemoteRequestLogDateChange = date.plusDay().getTime();
 		if (pwRemoteRequestLogger != null) {
 			pwRemoteRequestLogger.close();
 			pwRemoteRequestLogger = null;
