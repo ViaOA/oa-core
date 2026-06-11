@@ -15,45 +15,74 @@
  */
 package com.viaoa.datetime;
 
+import java.text.ParsePosition;
+import java.time.DateTimeException;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.ResolverStyle;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalQueries;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.List;
-import java.util.TimeZone;
 
 import com.viaoa.lang.OAStr;
 
-/*qqqqqqqqqq
-CODEX
-
- 1. file/class/method
-     src/main/java/com/viaoa/datetime/OATime.java — OATime(String strTime) / OATime(String strTime, String fmt)
-  2. concrete bug
-     Invalid or null parse results flow into OATime(OADateTime od), which dereferences od and throws
-     NullPointerException.
-  3. runtime scenario
-     new OATime("bad-time") calls OATime.valueOf(...), gets null, then calls this((OADateTime) null). The constructor
-     eventually executes od.getTimeZone().
-  4. why this violates OA/OG datetime semantics
-     Parsing failure should fail with an intentional parse/argument exception or return null through valueOf, not a
-     constructor NPE. This can corrupt UI/property conversion error handling.
-  5. minimal fix direction
-     Mirror OADate(String) behavior: use a valueOf2-style helper that throws IllegalArgumentException when parsing
-     fails, or explicitly check for null before constructor delegation.
-  6. suggested CODEX comment location
-     Above OATime(String strTime) and OATime(String strTime, String fmt).
+/* CODEX Review
 
 */
 
+/*
+ * Comparison invariant:
+ * OATime normalizes its date fields to 1970-01-01 and uses Floating semantics,
+ * but equality, hashCode, compareTo, and timeline interval methods are inherited
+ * from OADateTime and are based on the resolved _time value.
+ *
+ * Therefore, two OATime instances with the same displayed clock fields can
+ * compare unequal if they were resolved using different captured zones. This is
+ * intentional. OATime is not a pure LocalTime value; it is an OA date/time value
+ * normalized to a fixed date.
+ */
+
 /**
- * Time class that combines Calendar, Time and SimpleDateFormat into a single class.
+ * Time-only OA value.
  * <p>
- * OATime is not affected by timezone. A time created on one system will be the same on another machine, even if the timezone is different.
- * See OADateTime for list or formatting symbols.
+ * OATime is a specialization of {@link OADateTime} whose date portion is always
+ * normalized to {@code 1970-01-01}. It represents a time of day rather than a
+ * full date/time or a precise business timestamp.
+ *
+ * <h3>Semantics</h3>
+ * OATime uses {@link DateTimeType#Floating} semantics. The business meaning is
+ * the local time-of-day. Internally, the underlying epoch-millisecond value is
+ * derived from {@code 1970-01-01} plus the time fields in the active/default OA
+ * zone.
+ *
+ * <h3>Timezone behavior</h3>
+ * A timezone can be used when deriving a local time from an instant, for example
+ * in {@link #OATime(long)} or {@link #createUtil(long, ZoneId)}. After the local
+ * time is derived, OATime discards date and zone metadata and normalizes the
+ * result back to standard time-only semantics.
+ *
+ * <h3>Immutability</h3>
+ * OATime is immutable. Operations inherited from {@link OADateTime}, including
+ * {@code withXxx(...)} and arithmetic methods such as {@code plusHours(...)},
+ * return new OATime instances through the protected {@code createUtil(...)}
+ * factory methods.
+ *
+ * <h3>Parsing and formatting</h3>
+ * Parsing uses OATime-specific formats and normalizes parsed values to
+ * time-only values. Formatting uses either an instance format, the global
+ * OATime output format, or a built-in fallback format.
  *
  * @see OADateTime
+ * @see OADate
+ * @see LocalTime
  */
 public class OATime extends OADateTime {
 	private static final long serialVersionUID = 1L;
@@ -91,7 +120,8 @@ public class OATime extends OADateTime {
 	public final static String Format6 = "HH:mm:ss.SSS";
 
 	/**
-	 * Default output format used when converting this time to a String.
+	 * Default output format used by {@link #toString()} when this instance does
+	 * not have an instance-specific format.
 	 */
 	protected static String timeOutputFormat = "hh:mma";
 
@@ -116,7 +146,7 @@ public class OATime extends OADateTime {
     
 
 	/**
-	 * Collection of default formats used when parsing time values from strings.
+	 * Ordered fallback parse formats used by OATime parsing methods.
 	 */
 	private static final List<String> alTimeParseFormat = new ArrayList<>();
 
@@ -144,316 +174,205 @@ public class OATime extends OADateTime {
 	 * The date portion is cleared so that only time values are retained.
 	 */
 	public OATime() {
-		this(new Date());
-		clearDate();
+		this(LocalTime.now(defaultZoneId));
 	}
 
+	/**
+	 * Creates a time from an epoch-millisecond instant.
+	 * <p>
+	 * The instant is interpreted using the current OA default zone to derive the
+	 * local time-of-day. The date portion is then discarded and normalized to
+	 * {@code 1970-01-01}.
+	 *
+	 * @param time milliseconds since the Java epoch
+	 */
 	public OATime(long time) {
-		this(new Date(time));
+	    this(Instant.ofEpochMilli(time).atZone(defaultZoneId).toLocalTime());
+	}	
+	
+	/**
+	 * Creates a time from explicit time fields.
+	 * <p>
+	 * The date portion is normalized to {@code 1970-01-01}. The created value
+	 * uses {@link DateTimeType#Floating} semantics.
+	 *
+	 * @param hrs hour of day from 0 to 23
+	 * @param mins minute of hour
+	 * @param secs second of minute
+	 * @param mili millisecond of second from 0 to 999
+	 */
+	public OATime(int hrs, int mins, int secs, int mili) {
+		super(1970, Month.JANUARY.getValue(), 1, hrs, mins, secs, mili);
+		type = DateTimeType.Floating;
+		zoneId = defaultZoneId;
 	}
 	
 	/**
-	 * Creates a new time instance using the supplied {@link Date}.
+	 * Creates a time from a {@link LocalTime}.
 	 * <p>
-	 * The date portion is cleared so that only time values are retained.
+	 * Nanoseconds are truncated to millisecond precision. The date portion is
+	 * normalized to {@code 1970-01-01}.
 	 *
-	 * @param date the date whose time value will be used
-	 */
-	public OATime(Date date) {
-		super(date.getTime());
-		clearDate();
-	}
-
-	/**
-	 * Creates a new time instance using the supplied {@link Calendar}.
-	 * <p>
-	 * The date portion is cleared so that only time values are retained.
-	 *
-	 * @param c the calendar whose time value will be used
-	 */
-	public OATime(Calendar c) {
-		super(c);
-		clearDate();
-	}
-
-	/**
-	 * Creates a new time instance using the supplied {@link OADateTime}.
-	 * <p>
-	 * The date portion is cleared and the timezone is copied from the
-	 * supplied instance.
-	 *
-	 * @param dt the date-time instance to copy from
-	 */
-	public OATime(OADateTime dt) {
-		this(dt.get24Hour(), dt.getMinute(), dt.getSecond(), dt.getMilliSecond());
-		this.type = dt.type;
-		if (dt.timeZone != null) setTimeZone(dt.timeZone);
-	}
-
-	/**
-	 * Creates a new time instance by parsing the supplied string using
-	 * the default time format.
-	 * <p>
-	 * The date portion is cleared so that only time values are retained.
-	 *
-	 * @param strTime the string representation of the time
-	 */
-	public OATime(String strTime) {
-		this(strTime, null);
-	}
-
-	/**
-	 * Creates a new time instance by parsing the supplied string using
-	 * the specified format.
-	 * <p>
-	 * The date portion is cleared so that only time values are retained.
-	 *
-	 * @param strTime the string representation of the time
-	 * @param fmt the format used to parse the time string
-	 */
-	public OATime(String strTime, String fmt) {
-		OADateTime dt = OATime.valueOf(strTime, fmt);
-		if (dt == null) throw new IllegalArgumentException("OATime cant create time from String \"" + strTime + "\"");
-		GregorianCalendar c = dt.getCal();
-		setCalendar(1970, 0, 1, c.get(c.HOUR_OF_DAY), c.get(c.MINUTE), c.get(c.SECOND), c.get(c.MILLISECOND));
-		if (dt.timeZone != null) setTimeZone(dt.timeZone);
-	}
-
-	/**
-	 * Creates a new time instance using the supplied {@link LocalTime}.
-	 *
-	 * @param lt the local time whose hour, minute, second, and millisecond values are used
+	 * @param lt local time whose hour, minute, second, and millisecond values are used
 	 */
 	public OATime(LocalTime lt) {
 		this(lt.getHour(), lt.getMinute(), lt.getSecond(), (int) (lt.getNano() / 1_000_000));
 	}
 
 	/**
-	 * Creates a new time instance using the supplied hours, minutes, and seconds.
+	 * Creates a time from a legacy {@link Date}.
 	 * <p>
-	 * The date portion is cleared so that only time values are retained.
+	 * The date instant is interpreted using the OA default zone to derive the
+	 * local time-of-day. The original date portion is discarded.
 	 *
-	 * @param hrs the hour value, from 0 to 23
-	 * @param mins the minute value
-	 * @param secs the second value
+	 * @param date source date whose time-of-day value is used
 	 */
-	public OATime(int hrs, int mins, int secs) {
-		super(1970, 0, 1, hrs, mins, secs, 0);
-		clearDate();
+	public OATime(Date date) {
+		this(date.getTime());
 	}
 
 	/**
-	 * Creates a new time instance using the supplied hours, minutes, seconds,
-	 * and milliseconds.
+	 * Creates a time from a legacy {@link Calendar}.
 	 * <p>
-	 * The date portion is cleared so that only time values are retained.
+	 * The hour, minute, second, and millisecond fields are copied. The calendar
+	 * date portion is discarded.
 	 *
-	 * @param hrs the hour value, from 0 to 23
-	 * @param mins the minute value
-	 * @param secs the second value
-	 * @param mili the millisecond value
+	 * @param c source calendar whose time-of-day fields are used
 	 */
-	public OATime(int hrs, int mins, int secs, int mili) {
-		super(1970, 0, 1, hrs, mins, secs, mili);
-		clearDate();
+	public OATime(Calendar c) {
+		this(c.get(c.HOUR_OF_DAY), c.get(c.MINUTE), c.get(c.SECOND), c.get(c.MILLISECOND));
 	}
 
-	@Override
-	protected void setCalendar(GregorianCalendar c) {
-		if (c == null) return;
-		setCalendar(1970, 0, 1, c.get(c.HOUR_OF_DAY), c.get(c.MINUTE), c.get(c.SECOND), c.get(c.MILLISECOND));
+	/**
+	 * Creates a time from another OA date/time value.
+	 * <p>
+	 * Only the local hour, minute, second, and millisecond fields are retained.
+	 * Date information is discarded and the result is normalized to
+	 * {@code 1970-01-01}.
+	 *
+	 * @param dt source date/time value
+	 */
+	public OATime(OADateTime dt) {
+		this(dt.get24Hour(), dt.getMinute(), dt.getSecond(), dt.getMilliSecond());
 	}
 
-	@Override
-	protected void setCalendar(Date date) {
-		super.setCalendar(date);
-		clearDate();
+	/**
+	 * Creates a time by parsing text with OATime parsing rules.
+	 * <p>
+	 * Parsed date information, if present, is discarded. The result is normalized
+	 * to {@code 1970-01-01} plus the parsed time fields.
+	 *
+	 * @param strTime text representation of the time
+	 */
+	public OATime(String strTime) {
+		this(strTime, null);
 	}
 
-	@Override
-	protected void setCalendar(int year, int month, int day, int hrs, int mins, int secs, int milsecs) {
-		super.setCalendar(1970, 0, 1, hrs, mins, secs, milsecs);
+	/**
+	 * Creates a time by parsing text with the supplied format.
+	 * <p>
+	 * Parsing delegates to {@link #valueOf(String, String)} and then normalizes
+	 * the result to time-only semantics. Parsed date information, if present, is
+	 * discarded.
+	 *
+	 * @param strTime text representation of the time
+	 * @param fmt preferred parse format, or {@code null} to use fallback formats
+	 * @throws IllegalArgumentException if the text cannot be parsed
+	 */
+	public OATime(String strTime, String fmt) {
+	    OADateTime dt = OATime.valueOf(strTime, fmt);
+	    if (dt == null) {
+	        throw new IllegalArgumentException("OATime cant create time from String \"" + strTime + "\", format=" + fmt);
+	    }
+
+	    LocalTime lt = dt.getLocalTime();
+
+	    this.type = DateTimeType.Floating;
+	    this.zoneId = defaultZoneId;
+	    this._time = LocalDate.of(1970, 1, 1)
+	        .atTime(lt)
+	        .atZone(this.zoneId)
+	        .toInstant()
+	        .toEpochMilli();
 	}
 
-	@Override
-	protected void setCalendar(String strDate) {
-		OADateTime dt = valueOf(strDate);
-		super.setCalendar(1970, 0, 1, dt.getHour(), dt.getMinute(), dt.getSecond(), dt.getMilliSecond());
+	/**
+	 * Creates a time from hour, minute, and second fields.
+	 * <p>
+	 * Milliseconds are set to zero and the date portion is normalized to
+	 * {@code 1970-01-01}.
+	 *
+	 * @param hrs hour of day from 0 to 23
+	 * @param mins minute of hour
+	 * @param secs second of minute
+	 */
+	public OATime(int hrs, int mins, int secs) {
+		this(hrs, mins, secs, 0);
 	}
 	
+	/**
+	 * Returns a canonical OATime.
+	 * <p>
+	 * OATime always uses {@link DateTimeType#Floating} semantics. Any requested
+	 * type conversion is ignored and the returned value is normalized back to a
+	 * standard OATime instance.
+	 * <p>
+	 * This preserves OATime invariants:
+	 * <ul>
+	 *   <li>Time-of-day semantics</li>
+	 *   <li>Date normalized to {@code 1970-01-01}</li>
+	 *   <li>{@link DateTimeType#Floating}</li>
+	 * </ul>
+	 *
+	 * @param type requested type (ignored)
+	 * @return normalized OATime using Floating semantics
+	 */
 	@Override
-	protected void setCalendar(String strDate, String fmt) {
-		OADateTime dt = valueOf(strDate, fmt);
-		super.setCalendar(1970, 0, 1, dt.getHour(), dt.getMinute(), dt.getSecond(), dt.getMilliSecond());
+	public OADateTime withType(DateTimeType type) {
+	    return new OATime(this);
 	}
 	
+	/**
+	 * Creates a time-only result from a calculated {@link ZonedDateTime}.
+	 * <p>
+	 * The local time from the supplied value is retained while the date and zone
+	 * metadata are discarded. The resulting value is normalized to
+	 * {@code 1970-01-01}.
+	 */
 	@Override
-	public void setDate(int yr, int m, int d) {
-	    // no-op, not used
-	}
-	
-	public void setDate(OADate d) {
-	    // no-op, not used
-	}
-	
-	@Override
-	public void setYear(int y) {
-	    // no-op, not used
-	}
-	
-	@Override
-	public void setMonth(int month) {
-	    // no-op, not used
-	}
+	protected OADateTime createUtil(ZonedDateTime zdt) {
+	    LocalTime lt = zdt.toLocalTime();
 
-	@Override
-	public void setMonthValue(int monthValue) {
-	    // no-op, not used
-	}
-
-	@Override
-	public void setDay(int d) {
-	    // no-op, not used
-	}
-
-	@Override
-	public void setTimeZoneUTC() {
-	    super.setTimeZoneUTC();
-	    clearDate();
+	    OATime t = new OATime(lt);
+	    t.type = DateTimeType.Floating;
+	    return t;
 	}
 	
+	/**
+	 * Creates a time-only result from explicit date/time fields.
+	 * <p>
+	 * Year, month, day, and zone values are ignored because OATime preserves only
+	 * the time portion. The result is normalized to {@code 1970-01-01}.
+	 */
 	@Override
-	public void setTimeZone(OATimeZone.TZ tz) {
-	    super.setTimeZone(tz);
-	    clearDate();
-	}
+	protected OADateTime createUtil(ZoneId zid, int year, int month, int day, int hrs, int mins, int secs, int milsecs) {
+	    LocalTime lt = LocalTime.of(hrs, mins, secs, milsecs * 1_000_000);
+	    return new OATime(lt);
+	}	
 	
-	public void setTimeZone(TimeZone tzNew) {
-		super.setTimeZone(tzNew);
-		clearDate();
-	}
-	
+	/**
+	 * Creates a time-only result from an instant and timezone.
+	 * <p>
+	 * The supplied zone is used only to determine which local time-of-day the
+	 * instant maps to. The resulting OATime is then normalized to
+	 * {@code 1970-01-01}.
+	 */
 	@Override
-	public OADateTime convertToUTC() {
-		OADateTime dt = super.convertToUTC();
-		OATime t = new OATime(dt);
-		return t;
+	protected OADateTime createUtil(long time, ZoneId zid) {
+	    if (zid == null) zid = defaultZoneId;
+	    LocalTime lt = Instant.ofEpochMilli(time).atZone(zid).toLocalTime();
+	    return new OATime(lt);
 	}
-	
-	@Override
-	public OADateTime convertTo(TimeZone tz) {
-		OADateTime dt = super.convertTo(tz);
-		OATime t = new OATime(dt);
-		return t;
-	}
-	
-	@Override
-	public OADateTime convertTo(OATimeZone.TZ tz) {
-		OADateTime dt = super.convertTo(tz);
-		OATime t = new OATime(dt);
-		return t;
-	}
-
-	@Override
-	public OADateTime addYears(int amount) {
-		OATime t = new OATime(this);
-		return t;
-	}
-
-	@Override
-	public OADateTime subtractYears(int amount) {
-		OATime t = new OATime(this);
-		return t;
-	}
-	
-	@Override
-	public OADateTime addMonths(int amount) {
-		OATime t = new OATime(this);
-		return t;
-	}
-
-	@Override
-	public OADateTime subtractMonths(int amount) {
-		OATime t = new OATime(this);
-		return t;
-	}
-
-	
-	@Override
-	public OADateTime addDays(int amount) {
-		OATime t = new OATime(this);
-		return t;
-	}
-
-	@Override
-	public OADateTime subtractDays(int amount) {
-		OATime t = new OATime(this);
-		return t;
-	}
-	
-	
-	
-	@Override
-	public OADateTime addHours(int amount) {
-		OADateTime dt = super.addHours(amount);
-		OATime t = new OATime(dt);
-		return t;
-	}
-	@Override
-	public OADateTime subtractHours(int amount) {
-		OADateTime dt = super.subtractHours(amount);
-		OATime t = new OATime(dt);
-		return t;
-	}
-
-	@Override
-	public OADateTime addMinutes(int amount) {
-		OADateTime dt = super.addMinutes(amount);
-		OATime t = new OATime(dt);
-		return t;
-	}
-	@Override
-	public OADateTime subtractMinutes(int amount) {
-		OADateTime dt = super.subtractMinutes(amount);
-		OATime t = new OATime(dt);
-		return t;
-	}
-	
-	@Override
-	public OADateTime addSeconds(int amount) {
-		OADateTime dt = super.addSeconds(amount);
-		OATime t = new OATime(dt);
-		return t;
-	}
-	@Override
-	public OADateTime subtractSeconds(int amount) {
-		OADateTime dt = super.subtractSeconds(amount);
-		OATime t = new OATime(dt);
-		return t;
-	}
-
-	@Override
-	public OADateTime addMilliSeconds(int amount) {
-		OADateTime dt = super.addMilliSeconds(amount);
-		OATime t = new OATime(dt);
-		return t;
-	}
-	@Override
-	public OADateTime subtractMilliSeconds(int amount) {
-		OADateTime dt = super.subtractMilliSeconds(amount);
-		OATime t = new OATime(dt);
-		return t;
-	}
-
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	
 	/**
 	 * Converts a string to an {@link OATime} using the supplied format.
@@ -476,124 +395,149 @@ public class OATime extends OADateTime {
 		return (OATime) valueOf(time, null);
 	}
 
-	/*
-	 * Converts a String to an OATime. See OADateTime for list of formatting symbols. If time can not be parsed based on supplied format,
-	 * then other formatting and conversions will be used to try to convert to an OATime.
-	 * <p>
-	 * Note: you will need to cast the return value to a OATime.
-	 *
-	 * @param fmt is format to use for parsing. See OADateTime for list of formatting symbols.
-	 * @see OADateTime
-	 * @see #timeValue(String,String)
-	 */
 	/**
-	 * Converts a string to an {@link OADateTime} using the supplied format.
+	 * Parses text into an OATime.
 	 * <p>
-	 * If parsing fails with the supplied format, additional formats are attempted.
+	 * Parsing is delegated to the shared OADateTime parser using OATime parse
+	 * formats. The parsed value is then normalized into an OATime, discarding any
+	 * parsed date fields.
 	 *
-	 * @param time the string representation of the time
-	 * @param fmt the format to use for parsing
-	 * @return an {@link OADateTime} representing the parsed time, or {@code null} if parsing fails
+	 * @param time text representation of the time
+	 * @param fmt preferred parse format, or {@code null} to try fallback formats
+	 * @return parsed OATime as an OADateTime reference, or {@code null} if parsing fails
 	 */
 	public static OADateTime valueOf(String time, String fmt) {
-		if (time == null) return null;
-		if (time.length() > 0) {
-			char c = time.charAt(time.length() - 1);
-			if (c == 'A' || c == 'a' || c == 'P' || c == 'p') {
-				time += "m";
-			}
-		}
-		List<String> alx = OATime.alTimeParseFormat;
-		Date d = valueOfMain(time, fmt, alx, timeOutputFormat);
-		if (d == null) {
-			return null;
-		}
-		return new OATime(d);
-	}
+	    if (time == null) return null;
 
-	/*
-	 * Converts a String to an OATime using a default format. The default format is the first format that has been set: "format",
-	 * "timeOutputFormat" else or "hh:mma" See OADateTime for list of formatting symbols.
-	 * <p>
-	 * Note: you will need to cast the return value to a OATime.
-	 *
-	 * @see #valueOf(String,String)
-	 * @see OADateTime
-	 * @see #timeValue(String,String)
-	 */
+	    if (time.length() > 0) {
+	        char c = time.charAt(time.length() - 1);
+	        if (c == 'A' || c == 'a' || c == 'P' || c == 'p') {
+	            time += "m";
+	        }
+	    }
+
+	    OADateTime dt = null;
+
+	    if (!OAStr.isEmpty(fmt)) {
+	        DateTimeFormatter dtf = DateTimeFormatter.ofPattern(fmt)
+	            .withResolverStyle(ResolverStyle.STRICT);
+	        dt = parseTime(time, dtf);
+	    }
+
+	    for (int i = 0; dt == null && i < alTimeParseFormat.size(); i++) {
+	        String format = alTimeParseFormat.get(i);
+	        if (OAStr.isEmpty(format)) continue;
+
+	        DateTimeFormatter dtf = DateTimeFormatter.ofPattern(format)
+	            .withResolverStyle(ResolverStyle.STRICT);
+	        dt = parseTime(time, dtf);
+	    }
+
+	    if (dt == null && !OAStr.isEmpty(timeOutputFormat)) {
+	        DateTimeFormatter dtf = DateTimeFormatter.ofPattern(timeOutputFormat)
+	            .withResolverStyle(ResolverStyle.STRICT);
+	        dt = parseTime(time, dtf);
+	    }
+
+	    return dt;
+	}
+	
 	/**
-	 * Converts a string to an {@link OADateTime} using the default format.
+	 * Parses text into an OATime using default parsing rules.
 	 *
-	 * @param time the string representation of the time
-	 * @return an {@link OADateTime} representing the parsed time, or {@code null} if parsing fails
+	 * @param time text representation of the time
+	 * @return parsed OATime as an OADateTime reference, or {@code null} if parsing fails
 	 */
 	public static OADateTime valueOf(String time) {
 		return OATime.valueOf(time, null);
 	}
 
 	/**
-	 * Sets the default global format used when converting times to strings.
+	 * Parses text into an OATime using the supplied formatter.
+	 * <p>
+	 * Unlike {@link OADateTime#parseDateTime(String, DateTimeFormatter)},
+	 * this method accepts time-only formats that do not contain a date.
+	 * <p>
+	 * Parsing must consume the entire input text. Any parse error,
+	 * partially consumed input, or formatter that does not produce a
+	 * {@link LocalTime} result causes {@code null} to be returned.
+	 * <p>
+	 * Successful parses are normalized into an {@link OATime}, which
+	 * uses {@code 1970-01-01} as the fixed date portion and
+	 * {@link DateTimeType#Floating} semantics.
 	 *
-	 * @param fmt the format to use as the global output format
+	 * @param text text to parse
+	 * @param fmt formatter used to parse the text
+	 * @return parsed OATime, or {@code null} if parsing fails
+	 */
+	protected static OATime parseTime(String text, DateTimeFormatter fmt) {
+	    ParsePosition pos = new ParsePosition(0);
+	    TemporalAccessor ta;
+
+	    try {
+	        ta = fmt.parse(text, pos);
+	    } catch (DateTimeException e) {
+	        return null;
+	    }
+
+	    if (pos.getErrorIndex() >= 0 || pos.getIndex() != text.length()) {
+	        return null;
+	    }
+
+	    LocalTime lt = ta.query(TemporalQueries.localTime());
+	    if (lt == null) {
+	        return null;
+	    }
+	    return new OATime(lt);
+	}
+	
+	
+	
+	/**
+	 * Sets the global output format used by OATime string formatting.
+	 *
+	 * @param fmt output format to use, or {@code null} to allow fallback behavior
 	 */
 	public static void setGlobalOutputFormat(String fmt) {
 		timeOutputFormat = fmt;
 	}
 
 	/**
-	 * Returns the default global format used when converting times to strings.
+	 * Returns the global output format used by OATime string formatting.
 	 *
-	 * @return the global output format
+	 * @return global output format, possibly {@code null}
 	 */
 	public static String getGlobalOutputFormat() {
 		return timeOutputFormat;
 	}
 
 	/**
-	 * Adds a global parse format used when converting strings to times.
+	 * Adds a fallback parse format used by OATime parsing methods.
 	 *
-	 * @param fmt the format to add
+	 * @param fmt parse format to add
 	 */
 	public static void addGlobalParseFormat(String fmt) {
 		alTimeParseFormat.add(fmt);
 	}
 
 	/**
-	 * Removes a global parse format used when converting strings to times.
+	 * Removes a fallback parse format used by OATime parsing methods.
 	 *
-	 * @param fmt the format to remove
+	 * @param fmt parse format to remove
 	 */
 	public static void removeGlobalParseFormat(String fmt) {
 		alTimeParseFormat.remove(fmt);
 	}
-
 	
 	/**
-	 * Converts this time to a {@link LocalTime} instance.
-	 *
-	 * @return a {@link LocalTime} representing this time
-	 */
-	public LocalTime getLocalTime() {
-		LocalTime lt = LocalTime.of(get24Hour(), getMinute(), getSecond(), (int) (getMilliSecond() * (Math.pow(10, 6))));
-		return lt;
-	}
-
-	/**
-	 * Converts this time to a string using the default output format.
-	 *
-	 * @return the formatted time string
-	 */
-	public String toString() {
-		return toString(null);
-	}
-
-	/**
-	 * Converts this time to a string using the supplied format.
+	 * Converts this time to text.
 	 * <p>
-	 * If the format is {@code null}, a default format is selected.
+	 * If {@code f} is {@code null}, the instance format is used first, then the
+	 * OATime global output format, then the built-in fallback format
+	 * {@code "hh:mma"}.
 	 *
-	 * @param f the format to use, or {@code null} to use the default
-	 * @return the formatted time string
+	 * @param f explicit output format, or {@code null} to use configured defaults
+	 * @return formatted time string
 	 */
 	public String toString(String f) {
 		if (f == null) {
@@ -606,64 +550,4 @@ public class OATime extends OADateTime {
 		return toStringMain(f);
 	}
 
-
-	@Override
-	public OADateTime withYear(int year) {
-		return new OATime(this);
-	}
-	@Override
-	public OADateTime withMonth(int month) {
-		return new OATime(this);
-	}
-	@Override
-	public OADateTime withDay(int day) {
-		return new OATime(this);
-	}
-	@Override
-	public OADateTime withDate(int year, int month, int day) {
-		return new OATime(this);
-	}
-	
-	@Override
-	public OADateTime withHour(int hour) {
-		OADateTime dt = super.withHour(hour);
-		return new OATime(dt);
-	}
-	@Override
-	public OADateTime withMinute(int minute) {
-		OADateTime dt = super.withMinute(minute);
-		return new OATime(dt);
-	}
-	@Override
-	public OADateTime withSecond(int second) {
-		OADateTime dt = super.withSecond(second);
-		return new OATime(dt);
-	}
-	@Override
-	public OADateTime withMilliSecond(int ms) {
-		OADateTime dt = super.withMilliSecond(ms);
-		return new OATime(dt);
-	}
-
-	@Override
-	public OADateTime withTime(int hour, int minute) {
-		OADateTime dt = super.withTime(hour, minute);
-		return new OATime(dt);
-	}
-	@Override
-	public OADateTime withTime(int hour, int minute, int second) {
-		OADateTime dt = super.withTime(hour, minute, second);
-		return new OATime(dt);
-	}
-	@Override
-	public OADateTime withTime(int hour, int minute, int second, int millisecond) {
-		OADateTime dt = super.withTime(hour, minute, second, millisecond);
-		return new OATime(dt);
-	}
-	
-	@Override
-	public OADateTime withTimeZone(TimeZone tz) {
-		OADateTime dt = super.withTimeZone(tz);
-		return new OATime(dt);
-	}
 }

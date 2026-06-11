@@ -136,17 +136,17 @@ This proposed OADateTimeTest2 covers the missing/strengthening items from the re
           OADateTime.setDefaultZoneId(NEW_YORK);
           OADateTime copy = deserialize(bytes);
 
-          assertFloatingCapturedZone(copy, NEW_YORK);
+          assertFloatingCapturedZone(copy, CHICAGO);
           assertFields(copy, 2026, 6, 9, 10, 30, 15, 123);
           assertEquals(LocalDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000)
-                  .atZone(NEW_YORK).toInstant().toEpochMilli(), copy.getTime());
+                  .atZone(CHICAGO).toInstant().toEpochMilli(), copy.getTime());
 
           OADateTime.setDefaultZoneId(LOS_ANGELES);
 
-          assertFloatingCapturedZone(copy, NEW_YORK);
+          assertFloatingCapturedZone(copy, CHICAGO);
           assertFields(copy, 2026, 6, 9, 10, 30, 15, 123);
           assertEquals(LocalDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000)
-                  .atZone(NEW_YORK).toInstant().toEpochMilli(), copy.getTime());
+                  .atZone(CHICAGO).toInstant().toEpochMilli(), copy.getTime());
       }
 
       @Test

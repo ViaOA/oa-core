@@ -47,7 +47,274 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import com.viaoa.datetime.OADateTime.DateTimeType;
 import com.viaoa.lang.OAStr;
+
+/* CODEX Review
+Overall Assessment: Good
+
+ No serious OADateTime correctness issues found. Remaining items are refinement-level concerns, but a few are important because they can
+ violate the newer Floating invariant or create surprising behavior during refactors.
+
+ High
+
+ 1. Floating values can still be created with zoneId == null
+
+ Method/location:
+
+ - OADateTime(OADateTime dt, ZoneId zid)
+ - OADateTime(OADateTime dt, DateTimeType type)
+ - inherited withType(DateTimeType.Floating) when source has zoneId == null
+
+ Explanation:
+ Most Floating constructors now capture defaultZoneId, but not all public paths enforce that invariant. A caller can create a Floating
+ value with null zone metadata by copying a Floating value with zid == null, or by converting an Instant with null zone to Floating.
+
+ Example failure scenario:
+
+ OADateTime instant = new OADateTime(Instant.parse("2026-06-09T15:30:00Z"));
+ OADateTime floating = instant.withType(DateTimeType.Floating);
+ // floating.type == Floating, but floating.zoneId can be null
+
+ If defaultZoneId later changes, field interpretation can change, violating the intended Floating stability rule.
+
+ Recommended fix:
+ Centralize type assignment through a helper such as setTypeAndNormalizeZone(type):
+
+ - If new type is Floating and zoneId == null, assign defaultZoneId.
+ - Apply in copy-with-type constructor, copy-with-zone constructor, and withType.
+
+ 2. Field constructors create local-field values but leave type as Instant
+
+ Method/location:
+
+ - OADateTime(ZoneId zoneId, int year, int month, int day, int hrs, int mins, int secs, int milsecs)
+ - overloads delegating to it
+
+ Explanation:
+ These constructors accept wall-clock fields and resolve them in a zone, but the default type remains Instant. That may be intentional, but
+ it is semantically mixed: inputs are local fields, while resulting type says _time is authoritative.
+
+ Example failure scenario:
+
+ OADateTime dt = new OADateTime(CHICAGO, 2026, 6, 9, 10, 30, 0, 0);
+ // type == Instant, zoneId == CHICAGO
+
+ This behaves like an instant displayed in Chicago, not a Floating local appointment. That may surprise callers expecting field
+ constructors to produce Floating or ZonedInstant semantics.
+
+ Recommended fix:
+ Decide and document the contract:
+
+ - If field constructors are instant-style display helpers, keep current type and explicitly document.
+ - If they represent wall-clock input semantics, set type = Floating or ZonedInstant consistently.
+
+ 3. withType(...) can produce semantically invalid values
+
+ Method/location:
+ withType(DateTimeType type)
+
+ Explanation:
+ withType lets callers change only type while preserving _time and zone metadata. This can produce combinations that violate type
+ invariants:
+
+ - Floating with null zoneId
+ - ZonedInstant with null zoneId
+ - null type
+
+ Example failure scenario:
+
+ OADateTime dt = new OADateTime(123L);
+ OADateTime zoned = dt.withType(DateTimeType.ZonedInstant);
+ // zoned.type == ZonedInstant, but zoneId can be null
+
+ Recommended fix:
+ Validate and normalize in withType:
+
+ - Reject null type unless intentionally supported.
+ - For Floating, ensure non-null zone.
+ - For ZonedInstant, require/capture an explicit effective zone.
+ - Or remove public ability to arbitrarily switch semantic type.
+
+ Medium
+
+ 4. Null “current” constructors for Floating use current instant, not captured wall fields
+
+ Method/location:
+
+ - OADateTime(LocalDateTime ldt) when ldt == null
+ - OADateTime(LocalTime time) when time == null
+ - OADateTime(LocalDate ld) uses LocalDate.now() without explicit zone
+
+ Explanation:
+ For null Floating inputs, _time is current system millis or current date/time derived from JVM defaults. This is mostly harmless, but it
+ is not as precise as “capture wall fields in defaultZoneId then derive _time.”
+
+ Example failure scenario:
+ If JVM default zone differs from OADateTime.defaultZoneId, new OADateTime((LocalDate) null) can select today according to JVM zone, then
+ derive midnight in OA default zone.
+
+ Recommended fix:
+ Use explicit OA default zone:
+
+ LocalDate.now(defaultZoneId)
+ LocalDateTime.now(defaultZoneId)
+ LocalTime.now(defaultZoneId)
+
+ 5. ZonedDateTime null constructor creates ZonedInstant with null zone
+
+ Method/location:
+ OADateTime(ZonedDateTime zdt) when zdt == null
+
+ Explanation:
+ When zdt == null, _time is current millis and type is set to ZonedInstant, but zoneId remains null. That violates “ZonedInstant: _time and
+ zoneId are authoritative.”
+
+ Example failure scenario:
+
+ OADateTime dt = new OADateTime((ZonedDateTime) null);
+ // type == ZonedInstant, zoneId == null
+
+ Recommended fix:
+ Either:
+
+ - Treat null like Instant and set type = Instant, or
+ - Capture defaultZoneId for null ZonedDateTime.
+
+ 6. parseDateTime loses region-zone intent if pattern produces only an offset
+
+ Method/location:
+ parseDateTime(String text, DateTimeFormatter fmt)
+
+ Explanation:
+ The parser distinguishes region ZoneId from ZoneOffset. That is fine. But patterns like z or offset-only text will produce offset
+ semantics and become Instant, not ZonedInstant. That is correct technically, but easy to misunderstand.
+
+ Example failure scenario:
+ "2026-06-09 10:30 EDT" may not preserve America/New_York; it can parse as an offset/name without a region zone depending on formatter
+ behavior.
+
+ Recommended fix:
+ Document this strongly and prefer VV for region-zone parsing. No code fix required unless business input expects zone abbreviations to
+ preserve region identity.
+
+ 7. equals, hashCode, and compareTo ignore type and zoneId
+
+ Method/location:
+
+ - equals
+ - hashCode
+ - compareTo
+
+ Explanation:
+ This matches the current stated behavior, but it means semantically different values compare equal if _time matches. A Floating
+ appointment, ZonedInstant meeting, and Instant audit timestamp can all be equal.
+
+ Example failure scenario:
+
+ new OADateTime(millis, NEW_YORK).withType(Floating)
+     .equals(new OADateTime(millis).withType(Instant)); // true
+
+ Recommended fix:
+ If this is intentional, keep it. If DateTimeType now matters semantically, equality should either include type/zone or a separate semantic
+ equality method should be added.
+
+ 8. Serialization version is not prepared for legacy/backward compatible forms
+
+ Method/location:
+
+ - writeObject
+ - readObject
+
+ Explanation:
+ Serialization is now custom and versioned, but only version 1 is accepted. If older serialized OADateTime objects exist from pre-refactor
+ Java default serialization, they will not read.
+
+ Example failure scenario:
+ Existing persisted sessions/cache entries fail with IOException("Unknown OADateTime serialized version...") or stream mismatch.
+
+ Recommended fix:
+ If backward compatibility matters, add compatibility read logic or a migration path. If not, document the serialization break.
+
+ Low
+
+ 9. Static global parse/output state is mutable and unsynchronized
+
+ Method/location:
+
+ - defaultZoneId
+ - locale
+ - staticOutputFormat
+ - alDateTimeParseFormat
+ - setLocale
+ - addGlobalParseFormat
+ - removeGlobalParseFormat
+
+ Explanation:
+ Concurrent tests or server code can observe partially mutated global parse formats while another thread calls setLocale or add/remove.
+
+ Example failure scenario:
+ Thread A parses while Thread B calls setLocale, clearing and rebuilding the parse list. Thread A sees an incomplete format list.
+
+ Recommended fix:
+ Use copy-on-write list replacement or synchronize reads/writes. At minimum, document global mutation as non-thread-safe.
+
+ 10. normalizeFormat blindly replaces yyyy and yy
+
+ Method/location:
+ normalizeFormat(String format)
+
+ Explanation:
+ Simple string replacement can affect quoted literals or unusual formatter patterns.
+
+ Example failure scenario:
+ A pattern containing a literal 'yyyy' will be changed to 'uuuu', altering output text.
+
+ Recommended fix:
+ Use a pattern-aware normalizer or document that OA format normalization is simple and should not be used with year-like quoted literals.
+
+ 11. compareTo(non-OADateTime) returns 2, so after(non-date) returns true
+
+ Method/location:
+
+ - compareTo
+ - after
+ - isAfter
+
+ Explanation:
+ This is documented by current code but semantically odd: an OADateTime is “after” any unsupported object.
+
+ Example failure scenario:
+
+ new OADateTime().after("bad input"); // true
+
+ Recommended fix:
+ Return a conventional exception for unsupported comparisons, or return a sentinel that makes before/after false. If current behavior is
+ required, keep tests documenting it.
+
+ Potential Invariant Violations
+
+ - Floating can still have zoneId == null through withType(DateTimeType.Floating) and copy constructors.
+ - ZonedInstant can have zoneId == null through new OADateTime((ZonedDateTime) null) and withType(DateTimeType.ZonedInstant).
+ - Field constructors use wall-clock input but produce DateTimeType.Instant, which may conflict with expected Floating semantics.
+ - withType(null) is allowed and later serializes as Instant because writeObject maps null type to Instant.
+
+ Potential Missing Unit Tests
+
+ - withType(DateTimeType.Floating) from an Instant with null zoneId should either capture default zone or document current violation.
+ - withType(DateTimeType.ZonedInstant) from an Instant with null zoneId.
+ - new OADateTime((ZonedDateTime) null) should pin current type/zone behavior or expected fix.
+ - new OADateTime((LocalDate) null) with JVM default zone different from OA default zone.
+ - new OADateTime((LocalDateTime) null) and new OADateTime((LocalTime) null) should prove captured zone and wall-field stability if current
+   behavior is kept.
+
+ - Serialization of objects with type == null, if null type remains allowed.
+ - Quoted-literal normalizeFormat behavior if callers use quoted year text.
+ - Concurrent/global-state behavior is hard to unit test deterministically, but can be covered with smaller copy-on-write implementation
+   tests if refactored.
+
+*/
+
 
 /**
  * Core OA date/time class used to normalize, convert, format, parse, compare,
@@ -321,6 +588,15 @@ public class OADateTime implements java.io.Serializable, Comparable {
 
 	    /**
 	     * Wall-clock fields are authoritative.
+	     * <p>
+		 * Floating comparison invariant:
+		 * Floating values are resolved into _time at creation/deserialization using
+		 * the then-current/default zone captured by the instance. After resolution,
+		 * _time is the canonical comparison/equality/hash/duration value.
+		 *
+		 * Two Floating values with the same displayed fields but created under
+		 * different zones are not guaranteed to compare equal. This is intentional.
+	     * 
 	     * <p>
 	     * Examples:
 	     * <ul>
@@ -832,7 +1108,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	public long getTime() {
 		return _time;
 	}
-	
+
 	/**
 	 * Returns the semantic type for this value.
 	 *
@@ -904,27 +1180,11 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
 		stream.writeInt(1); // version
 		
-		final DateTimeType dtType = (this.type == null) ? DateTimeType.Instant : this.type;
-		stream.writeUTF(dtType.name());
-		
-		switch (dtType) {
-		case Instant:
-			stream.writeLong(_time);
-			break;
-		case ZonedInstant:
+		stream.writeUTF(type.name());
+		stream.writeLong(_time);
+
+		if (!DateTimeType.Instant.equals(type)) {
 			stream.writeUTF(getZoneId().getId());
-			stream.writeLong(_time);
-			break;
-		case Floating:
-			ZonedDateTime zdt = getZonedDateTime();
-			stream.writeInt(zdt.getYear());
-			stream.writeInt(zdt.getMonthValue());
-			stream.writeInt(zdt.getDayOfMonth());
-			stream.writeInt(zdt.getHour());
-			stream.writeInt(zdt.getMinute());
-			stream.writeInt(zdt.getSecond());
-			stream.writeInt(zdt.get(ChronoField.MILLI_OF_SECOND));
-			break;
 		}
 	}
 
@@ -941,41 +1201,12 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	        throw new IOException("Unknown OADateTime serialized version: " + version);
 	    }		
 		
-		final String sType = in.readUTF();
-		
-		this.type = DateTimeType.valueOf(sType);
-
-		switch (this.type) {
-		case Instant:
-			this._time = in.readLong();
-			break;
-		case ZonedInstant:
+		final String s = in.readUTF();
+		this.type = DateTimeType.valueOf(s);
+		this._time = in.readLong();
+		if (!DateTimeType.Instant.equals(this.type)) {
 			String zId = in.readUTF();
 			this.zoneId = ZoneId.of(zId);
-			this._time = in.readLong();
-			break;
-		case Floating:
-			int year = in.readInt();
-			int month = in.readInt();
-			int day = in.readInt();
-			int hour24 = in.readInt();
-			int minute = in.readInt();
-			int second = in.readInt();
-			int milisecond = in.readInt();
-			
-		    LocalDateTime ldt = LocalDateTime.of(
-			        year,
-			        month,
-			        day,
-			        hour24,
-			        minute,
-			        second,
-			        milisecond * 1_000_000
-			    );
-			    this._time = ldt.atZone(defaultZoneId).toInstant().toEpochMilli();
-			    this.zoneId = defaultZoneId;
-			
-			break;
 		}
 	}
 	
@@ -1043,9 +1274,18 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 
 	protected OADateTime createUtil(int year, int month, int day, int hrs, int mins, int secs, int milsecs) {
-		OADateTime dt = new OADateTime(this.zoneId, year, month, day, hrs, mins, secs, milsecs);
-		dt.type = this.type;
-		return dt;
+		return this.createUtil(getZoneId(), year, month, day, hrs, mins, secs, milsecs);
+	}
+	
+	protected OADateTime createUtil(ZoneId zid, int year, int month, int day, int hrs, int mins, int secs, int milsecs) {
+	    OADateTime dt = new OADateTime(zid, year, month, day, hrs, mins, secs, milsecs);
+	    dt.type = this.type;
+	    return dt;
+	}	
+	protected OADateTime createUtil(long time, ZoneId zid) {
+	    OADateTime dt = new OADateTime(time, zid);
+	    dt.type = this.type;
+	    return dt;
 	}
 	
 	/**
@@ -1372,7 +1612,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 */
 	public OADateTime withType(DateTimeType type) {
 		OADateTime dt = createUtil(getZonedDateTime());
-		this.type = type;
+		dt.type = type;
 		return dt;
 	}
 
@@ -1390,7 +1630,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 
 	    LocalDateTime ldt = getLocalDateTime();
 
-	    OADateTime dt = new OADateTime(
+	    OADateTime dt = createUtil(
 	        zid,
 	        ldt.getYear(),
 	        ldt.getMonthValue(),
@@ -1416,7 +1656,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 */
 	public OADateTime withZoneIdSameInstant(ZoneId zid) {
 	    if (zid == null) zid = defaultZoneId;
-	    OADateTime dt = new OADateTime(this, zid);
+	    OADateTime dt = createUtil(this._time, zid);
 	    return dt;
 	}
 	
@@ -1979,8 +2219,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @param bAlways when {@code true}, returns a copy for OADateTime inputs
 	 * @return converted value, or {@code null} when unsupported
 	 */
-/*qqqqqqqqqqq not used	
-	protected OADateTime convert(Object obj, boolean bAlways) {
+	public static OADateTime convert(Object obj, boolean bAlways) {
 		if (obj == null) {
 			return null;
 		}
@@ -2009,7 +2248,18 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 		return null;
 	}
-*/
+
+	
+	/**
+	 * Parses text using global parse formats.
+	 *
+	 * @param strDateTime text to parse
+	 * @return parsed value, or {@code null} when parsing fails
+	 */
+	public static OADateTime valueOf(String strDateTime) {
+		return valueOf(strDateTime, null);
+	}
+	
 	/**
 	 * Parses text using a preferred format and fallback formats.
 	 *
@@ -2030,45 +2280,9 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return parsed value, or {@code null} when parsing fails
 	 */
 	public static OADateTime valueOf(String strDateTime, String fmt, boolean bTryOtherFormats) {
-		if (strDateTime == null) {
-			return null;
-		}
+		if (strDateTime == null) return null;
 		OADateTime dt = valueOfMain(strDateTime, fmt, bTryOtherFormats ? alDateTimeParseFormat : null, bTryOtherFormats ? staticOutputFormat : null);
 		return dt;
-	}
-
-	/**
-	 * Normalizes the first one or two non-alphanumeric separators in a date string to {@code '/'}.
-	 *
-	 * @param s source text
-	 * @return normalized text, or an empty string when {@code s} is {@code null}
-	 */
-	protected static String fixDate(String s) {
-		if (s == null) {
-			return "";
-		}
-		int x = s.length();
-		int max = (x > 3) ? 2 : 1;
-		StringBuffer sb = new StringBuffer(x + 1);
-		for (int i = 0, j = 0; i < x; i++) {
-			char c = s.charAt(i);
-			if (!Character.isLetterOrDigit(c) && j < max) {
-				j++;
-				c = '/';
-			}
-			sb.append(c);
-		}
-		return new String(sb);
-	}
-
-	/**
-	 * Parses text using global parse formats.
-	 *
-	 * @param strDateTime text to parse
-	 * @return parsed value, or {@code null} when parsing fails
-	 */
-	public static OADateTime valueOf(String strDateTime) {
-		return valueOf(strDateTime, null);
 	}
 
 	/**
@@ -2117,6 +2331,30 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return dateTime;
 	}
 
+	/**
+	 * Normalizes the first one or two non-alphanumeric separators in a date string to {@code '/'}.
+	 *
+	 * @param s source text
+	 * @return normalized text, or an empty string when {@code s} is {@code null}
+	 */
+	protected static String fixDate(String s) {
+		if (s == null) {
+			return "";
+		}
+		int x = s.length();
+		int max = (x > 3) ? 2 : 1;
+		StringBuffer sb = new StringBuffer(x + 1);
+		for (int i = 0, j = 0; i < x; i++) {
+			char c = s.charAt(i);
+			if (!Character.isLetterOrDigit(c) && j < max) {
+				j++;
+				c = '/';
+			}
+			sb.append(c);
+		}
+		return new String(sb);
+	}
+	
 	/**
 	 * Normalizes OA-compatible date/time patterns before creating a {@link DateTimeFormatter}.
 	 * <p>
@@ -2336,176 +2574,82 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	}
 }
 
-/* CODEX invariants 20260609
-Summary: these invariants define _time as the stored epoch-millisecond value, make zoneId explicit for Floating values, distinguish
-instant-preserving from wall-clock-preserving zone conversion, and document which operations use calendar math versus timeline math. They
-also lock down parse, format, serialization, equality, and legacy bridge behavior without relying on OADate or OATime details.
+/* CODEX invariants 20260611
+Executive Design Decision – OATime / OADate / Floating Semantics
+
+We reviewed several alternatives for equality, hashCode, compareTo, interval calculations, 
+and Floating normalization.
+
+Decision:
+Keep the model simple and consistent.
+
+Final semantics:
+
+OADateTime
+-----------
+- _time is the canonical stored value.
+- Instant and ZonedInstant use _time directly.
+- Floating values are resolved into _time at creation/deserialization time.
+- After resolution, _time is authoritative.
+- equals, hashCode, compareTo, and timeline interval methods use _time.
+- No special Floating comparison normalization is performed.
+
+Floating
+--------
+- Floating does NOT mean zone-free.
+- Floating means local fields were resolved into _time using the zone captured at creation/deserialization.
+- After that resolution, _time becomes authoritative.
+- Two Floating values with identical displayed fields are not guaranteed to compare equal if they were resolved using different captured zones.
+
+OADate
+------
+- OADate is a date-only Floating value.
+- Time is always normalized to 00:00:00.000.
+- withType(...) always returns a canonical OADate.
+- createUtil(...) methods preserve OADate semantics.
+- OADate does not override equals/hashCode/compareTo.
+- OADate uses inherited _time-based comparison behavior.
+
+OATime
+------
+- OATime is a time-only Floating value.
+- Date is always normalized to 1970-01-01.
+- withType(...) always returns a canonical OATime.
+- createUtil(...) methods preserve OATime semantics.
+- OATime does not override equals/hashCode/compareTo.
+- OATime uses inherited _time-based comparison behavior.
+
+Important consequence:
+----------------------
+This edge case is accepted:
+
+    OATime t1 = ... 3:20 PM resolved using UTC
+    OATime t2 = ... 3:20 PM resolved using America/New_York
+
+    t1.equals(t2) may be false
+
+because _time differs.
+
+This is intentional.
+
+Reason:
+-------
+We considered introducing semantic comparison domains:
+
+- OADate compares by date fields
+- OATime compares by time fields
+- OADateTime compares by instant
+
+However this created additional complexity:
+
+- cross-type comparison rules
+- cross-type equality rules
+- different comparison units
+- interval semantics ambiguity
+- additional subclass overrides
+- additional maintenance burden
+
+The decision is to keep comparison semantics unified around _time.
 */
 
-/*
- * Implementation invariants
- * -------------------------
- * Core storage:
- * - _time is always milliseconds from the Java epoch, 1970-01-01T00:00:00Z.
- * - zoneId is optional only for instant-style values that do not carry business
- *   timezone meaning.
- * - getZoneId() is the only supported way to read the effective zone. When
- *   zoneId is null, getZoneId() falls back to defaultZoneId.
- * - defaultZoneId is a fallback/resolution value. It must not become hidden
- *   mutable meaning for already-created Floating values.
- *
- * DateTimeType semantics:
- * - Instant: _time is authoritative. zoneId may be null. If zoneId is null,
- *   field getters format/derive fields using defaultZoneId through getZoneId().
- *   Serialization writes _time only. Zone conversion with same-instant keeps
- *   _time fixed; same-wall-time recalculates _time.
- * - ZonedInstant: _time and zoneId are authoritative. zoneId should be non-null.
- *   Field getters derive values from _time in zoneId. Serialization writes both
- *   zoneId and _time. Same-instant zone conversion changes displayed fields;
- *   same-wall-time zone conversion changes _time.
- * - Floating: wall-clock date/time fields are authoritative. zoneId must be
- *   non-null after construction/deserialization and records the zone used to
- *   derive _time. Field getters derive values from _time in zoneId. Serialization
- *   writes wall-clock fields, not _time as authoritative.
- *
- * Floating values:
- * - Floating represents local wall-clock date/time semantics, such as
- *   "2026-06-09 10:30" in the zone captured by this instance.
- * - A Floating instance must preserve its displayed fields across serialization.
- * - A Floating instance must capture the zone used to derive _time so a later
- *   change to static defaultZoneId does not change its interpreted wall-clock
- *   fields.
- * - Floating deserialization resolves zoneId to the current defaultZoneId and
- *   derives _time from the serialized wall-clock fields in that resolved zone.
- */
-
-/*
- * Floating invariant:
- * - zoneId is resolved at creation/deserialization time.
- * - After that, Floating does not depend on future defaultZoneId changes.
- * - _time is derived from the wall-clock fields using this captured zoneId.
- * - Changing the defaultZoneId later must not change this instance's fields.
- */
-
-/*
- * Zone conversion invariants
- * --------------------------
- * withZoneIdSameInstant(ZoneId):
- * - Preserves _time exactly.
- * - Changes the effective zone used for displayed fields.
- * - Local date/time fields may change because the same instant is being viewed
- *   in a different zone.
- * - A null target zone resolves to defaultZoneId at conversion time.
- *
- * withZoneIdSameWallTime(ZoneId):
- * - Preserves the current local date/time fields.
- * - Changes the effective zone.
- * - Recalculates _time from the preserved fields in the target zone.
- * - A null target zone resolves to defaultZoneId at conversion time.
- *
- * withTimeZoneUTCSameInstant():
- * - Equivalent to withZoneIdSameInstant(ZoneOffset.UTC).
- * - Keeps _time unchanged and displays the same instant in UTC.
- *
- * withTimeZoneUTCSameWallTime():
- * - Equivalent to withZoneIdSameWallTime(ZoneOffset.UTC).
- * - Keeps local date/time fields unchanged and recalculates _time in UTC.
- */
-
-/*
- * Arithmetic and interval invariants
- * ----------------------------------
- * - plusYears, plusMonths, plusDays, addWeeks, plusHours, plusMinutes,
- *   plusSeconds, and plusMilliSeconds use ZonedDateTime arithmetic based on
- *   getZonedDateTime().
- * - subtract/minus methods delegate to the corresponding plus method with a
- *   negative amount.
- * - Date-based arithmetic follows calendar and zone rules, including daylight
- *   saving transitions.
- * - plusDays is calendar-day arithmetic and can preserve local wall-clock time
- *   across DST boundaries even when the elapsed timeline duration is not exactly
- *   24 hours.
- * - betweenYears, betweenMonths, and betweenDays use LocalDate/calendar math.
- * - betweenDuration, betweenHours, betweenMinutes, betweenSeconds, and
- *   betweenMilliSeconds use Instant/timeline math based on _time.
- * - Null interval endpoints return zero values: Period.ZERO, Duration.ZERO, or
- *   numeric zero depending on the method.
- */
-
-/*
- * Parsing invariants
- * ------------------
- * - Parsing uses DateTimeFormatter with ResolverStyle.STRICT.
- * - normalizeFormat(String) is applied before DateTimeFormatter creation.
- * - normalizeFormat maps calendar-year pattern letters yyyy/yy to proleptic-year
- *   uuuu/uu so strict parsing accepts common user patterns.
- * - parseDateTime must consume the full input. Any trailing or unparsed text
- *   causes parsing to fail.
- * - Parsed values with a region ZoneId, such as America/New_York, become
- *   DateTimeType.ZonedInstant and preserve that region zone.
- * - Parsed values with only a ZoneOffset become DateTimeType.Instant.
- * - Parsed values with no zone or offset become DateTimeType.Floating.
- * - Date-only parsed values use midnight as the time portion.
- */
-
-/*
- * Formatting invariants
- * ---------------------
- * - Formatting derives output fields from getZonedDateTime().
- * - toString() uses the instance format when one is set.
- * - If no instance format is set, toString() uses the global output format.
- * - If neither instance nor global format is available, toString() uses the
- *   built-in fallback format.
- * - toString(format) uses the explicit format argument and does not consult the
- *   instance or global format.
- * - toStringMain(format) applies normalizeFormat before creating the
- *   DateTimeFormatter.
- */
-
-/*
- * Serialization invariants
- * ------------------------
- * - OADateTime uses custom versioned Java serialization.
- * - Version 1 is the current serialized form.
- * - Instant serializes _time only.
- * - ZonedInstant serializes zoneId and _time.
- * - Floating serializes wall-clock fields; _time is not authoritative in the
- *   serialized Floating form.
- * - Floating deserialization rebuilds _time from serialized wall-clock fields
- *   and the resolved zoneId.
- * - Instance format is not part of the custom serialized form. If format should
- *   be serialized later, writeObject/readObject must be changed deliberately and
- *   version compatibility must be considered.
- */
-
-/*
- * Equality and comparison invariants
- * ----------------------------------
- * - equals(Object), hashCode(), compareTo(Object), and compare(Object) are based
- *   on _time.
- * - zoneId does not participate in equality, hashCode, or comparison.
- * - DateTimeType does not participate in equality, hashCode, or comparison.
- * - null compares before this instance.
- * - Non-OADateTime objects compare using the explicit non-date branch in
- *   compareTo(Object).
- * - OADate/OATime subclass-specific equality or comparison semantics are not
- *   implemented here unless added deliberately later.
- */
-
-/*
- * Legacy bridge invariants
- * ------------------------
- * - java.util.Date input is treated as an Instant: its epoch milliseconds are
- *   copied into _time.
- * - Calendar input preserves the calendar instant.
- * - Calendar input with a zone different from defaultZoneId becomes
- *   DateTimeType.ZonedInstant and preserves the calendar zone.
- * - Calendar input with the default zone becomes DateTimeType.Instant and does
- *   not retain explicit zone metadata.
- * - TimeZone inputs are converted to ZoneId.
- * - getDate(), getCalendar(), and getTimeZone() are compatibility bridges for
- *   legacy APIs and should reflect the current _time and effective zone.
- * - getCalendar() returns a non-lenient GregorianCalendar set to this _time and
- *   effective zone.
- */
 
