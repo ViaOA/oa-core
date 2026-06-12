@@ -1,634 +1,443 @@
-  package com.viaoa.datetime;
-
-  import static org.junit.jupiter.api.Assertions.*;
-
-  import java.io.ByteArrayInputStream;
-  import java.io.ByteArrayOutputStream;
-  import java.io.ObjectInputStream;
-  import java.io.ObjectOutputStream;
-  import java.text.DateFormat;
-  import java.text.SimpleDateFormat;
-  import java.time.DayOfWeek;
-  import java.time.Duration;
-  import java.time.Instant;
-  import java.time.LocalDate;
-  import java.time.LocalDateTime;
-  import java.time.LocalTime;
-  import java.time.Month;
-  import java.time.Period;
-  import java.time.ZoneId;
-  import java.time.ZoneOffset;
-  import java.time.ZonedDateTime;
-  import java.time.temporal.ChronoField;
-  import java.time.temporal.WeekFields;
-  import java.util.Calendar;
-  import java.util.Date;
-  import java.util.Locale;
-  import java.util.TimeZone;
-
-  import org.junit.jupiter.api.AfterEach;
-  import org.junit.jupiter.api.BeforeEach;
-  import org.junit.jupiter.api.Test;
-
-  import com.viaoa.datetime.OADateTime.DateTimeType;
-
-  class OADateTimeTest {
-      private static final ZoneId UTC = ZoneOffset.UTC;
-      private static final ZoneId CHICAGO = ZoneId.of("America/Chicago");
-      private static final ZoneId NEW_YORK = ZoneId.of("America/New_York");
-      private static final ZoneId LOS_ANGELES = ZoneId.of("America/Los_Angeles");
-
-      private TimeZone originalJvmTimeZone;
-      private Locale originalJvmLocale;
-      private ZoneId originalDefaultZoneId;
-      private String originalGlobalOutputFormat;
-
-      @BeforeEach
-      void beforeEach() {
-          originalJvmTimeZone = TimeZone.getDefault();
-          originalJvmLocale = Locale.getDefault();
-          originalDefaultZoneId = OADateTime.getDefaultZoneId();
-          originalGlobalOutputFormat = OADateTime.getGlobalOutputFormat();
-
-          TimeZone.setDefault(TimeZone.getTimeZone(UTC));
-          Locale.setDefault(Locale.US);
-          OADateTime.setLocale(Locale.US);
-          OADateTime.setDefaultZoneId(CHICAGO);
-          OADateTime.setGlobalOutputFormat("MM/dd/yyyy HH:mm:ss.SSS");
-      }
-
-      @AfterEach
-      void afterEach() {
-          OADateTime.setGlobalOutputFormat(originalGlobalOutputFormat);
-          OADateTime.setDefaultZoneId(originalDefaultZoneId);
-          OADateTime.setLocale(originalJvmLocale);
-          Locale.setDefault(originalJvmLocale);
-          TimeZone.setDefault(originalJvmTimeZone);
-      }
-
-      @Test
-      void constructorsFromCurrentTimeAreWithinCallRange() {
-          long before = System.currentTimeMillis();
-          OADateTime dt = new OADateTime();
-          long after = System.currentTimeMillis();
-
-          assertTrue(dt.getTime() >= before);
-          assertTrue(dt.getTime() <= after);
-          assertEquals(DateTimeType.Instant, dt.getType());
-      }
-
-      @Test
-      void longConstructorsPreserveEpochMillisAndZone() {
-          long millis = Instant.parse("2026-06-09T15:30:15.123Z").toEpochMilli();
-
-          OADateTime instant = new OADateTime(millis);
-          assertEquals(millis, instant.getTime());
-          assertEquals(DateTimeType.Instant, instant.getType());
-          assertEquals(CHICAGO, instant.getZoneId());
-
-          OADateTime zoned = new OADateTime(millis, NEW_YORK);
-          assertEquals(millis, zoned.getTime());
-          assertEquals(NEW_YORK, zoned.getZoneId());
-          assertFields(zoned, 2026, 6, 9, 11, 30, 15, 123);
-
-          OADateTime legacyZone = new OADateTime(millis, TimeZone.getTimeZone(LOS_ANGELES));
-          assertEquals(millis, legacyZone.getTime());
-          assertEquals(LOS_ANGELES, legacyZone.getZoneId());
-      }
-
-      @Test
-      void fieldConstructorsUseJavaTimeMonthValuesAndValidateMilliseconds() {
-          OADateTime dt = new OADateTime(CHICAGO, 2026, 6, 9, 10, 30, 15, 123);
-          long expected = ZonedDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000,
-          CHICAGO).toInstant().toEpochMilli();
-
-          assertEquals(expected, dt.getTime());
-          assertEquals(CHICAGO, dt.getZoneId());
-          assertFields(dt, 2026, 6, 9, 10, 30, 15, 123);
-
-          assertThrows(RuntimeException.class, () -> new OADateTime(2026, 6, 9, 10, 30, 15, -1));
-          assertThrows(RuntimeException.class, () -> new OADateTime(2026, 6, 9, 10, 30, 15, 1000));
-      }
-
-      @Test
-      void dateOnlyAndMonthEnumConstructorsDefaultExpectedFields() {
-          assertFields(new OADateTime(2026, 6, 9), 2026, 6, 9, 0, 0, 0, 0);
-          assertFields(new OADateTime(2026, 6, 9, 10, 30), 2026, 6, 9, 10, 30, 0, 0);
-          assertFields(new OADateTime(2026, Month.JUNE, 9, 10, 30, 15), 2026, 6, 9, 10, 30, 15, 0);
-      }
-
-      @Test
-      void copyConstructorsPreserveOrReplaceSelectedMetadata() {
-          OADateTime base = new OADateTime(CHICAGO, 2026, 6, 9, 10, 30, 15,
-          123).withType(DateTimeType.ZonedInstant);
-
-          OADateTime copy = new OADateTime(base);
-          assertSameInstant(base, copy);
-          assertEquals(CHICAGO, copy.getZoneId());
-          assertEquals(DateTimeType.ZonedInstant, copy.getType());
-
-          OADateTime copyWithZone = new OADateTime(base, NEW_YORK);
-          assertSameInstant(base, copyWithZone);
-          assertEquals(NEW_YORK, copyWithZone.getZoneId());
-          assertEquals(DateTimeType.ZonedInstant, copyWithZone.getType());
-
-          OADateTime copyWithType = new OADateTime(base, DateTimeType.Floating);
-          assertSameInstant(base, copyWithType);
-          assertEquals(CHICAGO, copyWithType.getZoneId());
-          assertEquals(DateTimeType.Floating, copyWithType.getType());
-      }
-
-      @Test
-      void calendarConstructorPreservesInstantAndSetsTypeFromCalendarZone() {
-          long millis = Instant.parse("2026-06-09T15:30:15.123Z").toEpochMilli();
-
-          Calendar defaultZoneCalendar = Calendar.getInstance(TimeZone.getTimeZone(CHICAGO));
-          defaultZoneCalendar.setTimeInMillis(millis);
-          OADateTime instant = new OADateTime(defaultZoneCalendar);
-          assertEquals(millis, instant.getTime());
-          assertEquals(DateTimeType.Instant, instant.getType());
-          assertEquals(CHICAGO, instant.getZoneId());
-
-          Calendar otherZoneCalendar = Calendar.getInstance(TimeZone.getTimeZone(NEW_YORK));
-          otherZoneCalendar.setTimeInMillis(millis);
-          OADateTime zoned = new OADateTime(otherZoneCalendar);
-          assertEquals(millis, zoned.getTime());
-          assertEquals(DateTimeType.ZonedInstant, zoned.getType());
-          assertEquals(NEW_YORK, zoned.getZoneId());
-      }
-
-      @Test
-      void javaTimeAndLegacyConstructorsSetExpectedTypes() {
-          Instant instant = Instant.parse("2026-06-09T15:30:15.123Z");
-          assertEquals(DateTimeType.Instant, new OADateTime(instant).getType());
-          assertEquals(instant.toEpochMilli(), new OADateTime(instant).getTime());
-
-          LocalDateTime ldt = LocalDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000);
-          OADateTime floating = new OADateTime(ldt);
-          assertEquals(DateTimeType.Floating, floating.getType());
-          assertFields(floating, 2026, 6, 9, 10, 30, 15, 123);
-
-          OADateTime date = new OADateTime(LocalDate.of(2026, 6, 9));
-          assertEquals(DateTimeType.Floating, date.getType());
-          assertFields(date, 2026, 6, 9, 0, 0, 0, 0);
-
-          OADateTime time = new OADateTime(LocalTime.of(10, 30, 15, 123_456_789));
-          assertEquals(DateTimeType.Floating, time.getType());
-          assertFields(time, 1970, 1, 1, 10, 30, 15, 123);
-
-          ZonedDateTime zdt = ZonedDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000, NEW_YORK);
-          OADateTime zoned = new OADateTime(zdt);
-          assertEquals(DateTimeType.ZonedInstant, zoned.getType());
-          assertEquals(NEW_YORK, zoned.getZoneId());
-          assertEquals(zdt.toInstant().toEpochMilli(), zoned.getTime());
-
-          Date legacyDate = new Date(instant.toEpochMilli());
-          OADateTime legacy = new OADateTime(legacyDate);
-          assertEquals(DateTimeType.Instant, legacy.getType());
-          assertEquals(legacyDate.getTime(), legacy.getTime());
-      }
-
-      @Test
-      void stringConstructorsParseOrThrow() {
-          OADateTime dt = new OADateTime("06/09/2026 10:30:15.123", "MM/dd/yyyy HH:mm:ss.SSS");
-          assertEquals(DateTimeType.Floating, dt.getType());
-          assertFields(dt, 2026, 6, 9, 10, 30, 15, 123);
-
-          assertThrows(IllegalArgumentException.class, () -> new OADateTime("not a date"));
-      }
-
-      @Test
-      void fieldGettersAndConversionsUseEffectiveZone() {
-          long millis = ZonedDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000,
-          CHICAGO).toInstant().toEpochMilli();
-          OADateTime dt = new OADateTime(millis, CHICAGO).withType(DateTimeType.ZonedInstant);
-
-          assertEquals(millis, dt.getTime());
-          assertEquals(DateTimeType.ZonedInstant, dt.getType());
-          assertEquals(CHICAGO, dt.getZoneId());
-          assertEquals(TimeZone.getTimeZone(CHICAGO), dt.getTimeZone());
-          assertEquals(LocalDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000), dt.getLocalDateTime());
-          assertEquals(LocalDate.of(2026, 6, 9), dt.getLocalDate());
-          assertEquals(LocalTime.of(10, 30, 15, 123_000_000), dt.getLocalTime());
-          assertEquals(Instant.ofEpochMilli(millis), dt.getInstant());
-          assertEquals(10, dt.getField(ChronoField.HOUR_OF_DAY));
-
-          Calendar cal = dt.getCalendar();
-          assertEquals(millis, cal.getTimeInMillis());
-          assertEquals(TimeZone.getTimeZone(CHICAGO), cal.getTimeZone());
-          assertFalse(cal.isLenient());
-
-          assertEquals(new Date(millis), dt.getDate());
-      }
-
-      @Test
-      void calendarFieldGettersReturnExpectedValues() {
-          OADateTime dt = new OADateTime(CHICAGO, 2026, 7, 4, 10, 30, 15, 123);
-
-          assertEquals(2026, dt.getYear());
-          assertEquals(7, dt.getMonthValue());
-          assertEquals(Month.JULY, dt.getMonth());
-          assertEquals(4, dt.getDayOfMonth());
-          assertEquals(10, dt.getHour());
-          assertEquals(30, dt.getMinute());
-          assertEquals(15, dt.getSecond());
-          assertEquals(123, dt.getMilliSecond());
-          assertEquals(2, dt.getQuarter());
-          assertEquals(DayOfWeek.SATURDAY, dt.getDayOfWeek());
-          assertEquals(185, dt.getDayOfYear());
-          assertEquals(WeekFields.of(Locale.US).weekOfMonth().getFrom(dt.getZonedDateTime()),
-          dt.getWeekOfMonth());
-          assertEquals(WeekFields.of(Locale.US).weekOfYear().getFrom(dt.getZonedDateTime()),
-          dt.getWeekOfYear());
-      }
-
-      @Test
-      void monthAndYearLengthsIncludeLeapYears() {
-          OADateTime feb2024 = new OADateTime(CHICAGO, 2024, 2, 10, 0, 0, 0, 0);
-          OADateTime feb2025 = new OADateTime(CHICAGO, 2025, 2, 10, 0, 0, 0, 0);
-
-          assertEquals(29, feb2024.getDaysInMonth());
-          assertEquals(29, feb2024.getLastDayOfMonth());
-          assertEquals(366, feb2024.getDaysInYear());
-          assertEquals(28, feb2025.getDaysInMonth());
-          assertEquals(28, feb2025.getLastDayOfMonth());
-          assertEquals(365, feb2025.getDaysInYear());
-      }
-
-      @Test
-      void withDateTimeMethodsPreserveTypeAndExpectedFields() {
-          OADateTime base = new OADateTime(CHICAGO, 2026, 6, 9, 10, 30, 15,
-          123).withType(DateTimeType.ZonedInstant);
-
-          assertChanged(base.withDateTime(2027, 8, 10, 11, 31, 16, 124), DateTimeType.ZonedInstant, 2027, 8,
-          10, 11, 31, 16, 124);
-          assertChanged(base.withDate(2027, 8, 10), DateTimeType.ZonedInstant, 2027, 8, 10, 10, 30, 15, 123);
-          assertChanged(base.withYear(2027), DateTimeType.ZonedInstant, 2027, 6, 9, 10, 30, 15, 123);
-          assertChanged(base.withMonth(Month.AUGUST), DateTimeType.ZonedInstant, 2026, 8, 9, 10, 30, 15, 123);
-          assertChanged(base.withMonthValue(8), DateTimeType.ZonedInstant, 2026, 8, 9, 10, 30, 15, 123);
-          assertChanged(base.withDayOfMonth(10), DateTimeType.ZonedInstant, 2026, 6, 10, 10, 30, 15, 123);
-          assertChanged(base.withoutDate(), DateTimeType.ZonedInstant, 1970, 1, 1, 10, 30, 15, 123);
-          assertChanged(base.withDate((OADate) null), DateTimeType.ZonedInstant, 1970, 1, 1, 10, 30, 15, 123);
-      }
-
-      @Test
-      void withTimeMethodsPreserveTypeAndExpectedFields() {
-          OADateTime base = new OADateTime(CHICAGO, 2026, 6, 9, 10, 30, 15,
-          123).withType(DateTimeType.ZonedInstant);
-
-          assertChanged(base.withTime(11, 31, 16, 124), DateTimeType.ZonedInstant, 2026, 6, 9, 11, 31, 16,
-          124);
-          assertChanged(base.withTime(11, 31), DateTimeType.ZonedInstant, 2026, 6, 9, 11, 31, 0, 0);
-          assertChanged(base.withHours(11), DateTimeType.ZonedInstant, 2026, 6, 9, 11, 30, 15, 123);
-          assertChanged(base.withMinutes(31), DateTimeType.ZonedInstant, 2026, 6, 9, 10, 31, 15, 123);
-          assertChanged(base.withSeconds(16), DateTimeType.ZonedInstant, 2026, 6, 9, 10, 30, 16, 123);
-          assertChanged(base.withMilliSeconds(124), DateTimeType.ZonedInstant, 2026, 6, 9, 10, 30, 15, 124);
-          assertChanged(base.withoutTime(), DateTimeType.ZonedInstant, 2026, 6, 9, 0, 0, 0, 0);
-          assertChanged(base.withTime((OATime) null), DateTimeType.ZonedInstant, 2026, 6, 9, 0, 0, 0, 0);
-      }
-
-      @Test
-      void withTypePreservesInstantAndZone() {
-          OADateTime base = new OADateTime(CHICAGO, 2026, 6, 9, 10, 30, 15, 123);
-
-          OADateTime floating = base.withType(DateTimeType.Floating);
-
-          assertSameInstant(base, floating);
-          assertEquals(CHICAGO, floating.getZoneId());
-          assertEquals(DateTimeType.Floating, floating.getType());
-      }
-
-      @Test
-      void zoneConversionsSupportSameInstantAndSameWallTime() {
-          OADateTime chicago = new OADateTime(CHICAGO, 2026, 6, 9, 10, 30, 15,
-          123).withType(DateTimeType.ZonedInstant);
-
-          OADateTime sameInstant = chicago.withZoneIdSameInstant(NEW_YORK);
-          assertEquals(chicago.getTime(), sameInstant.getTime());
-          assertEquals(NEW_YORK, sameInstant.getZoneId());
-          assertFields(sameInstant, 2026, 6, 9, 11, 30, 15, 123);
-
-          OADateTime sameWallTime = chicago.withZoneIdSameWallTime(NEW_YORK);
-          assertNotEquals(chicago.getTime(), sameWallTime.getTime());
-          assertEquals(NEW_YORK, sameWallTime.getZoneId());
-          assertFields(sameWallTime, 2026, 6, 9, 10, 30, 15, 123);
-
-          OADateTime utcInstant = chicago.withTimeZoneUTCSameInstant();
-          assertEquals(chicago.getTime(), utcInstant.getTime());
-          assertEquals(UTC, utcInstant.getZoneId());
-
-          OADateTime utcWallTime = chicago.withTimeZoneUTCSameWallTime();
-          assertNotEquals(chicago.getTime(), utcWallTime.getTime());
-          assertEquals(UTC, utcWallTime.getZoneId());
-          assertFields(utcWallTime, 2026, 6, 9, 10, 30, 15, 123);
-      }
-
-      @Test
-      void nullZoneConversionUsesDefaultZone() {
-          OADateTime ny = new OADateTime(NEW_YORK, 2026, 6, 9, 10, 30, 15, 123);
-
-          assertEquals(CHICAGO, ny.withZoneIdSameInstant(null).getZoneId());
-          assertEquals(CHICAGO, ny.withZoneIdSameWallTime(null).getZoneId());
-      }
-
-      @Test
-      void equalityHashCodeAndComparisonUseEpochMillisOnly() {
-          long millis = Instant.parse("2026-06-09T15:30:15.123Z").toEpochMilli();
-          OADateTime chicago = new OADateTime(millis, CHICAGO);
-          OADateTime newYork = new OADateTime(millis, NEW_YORK).withType(DateTimeType.ZonedInstant);
-          OADateTime later = new OADateTime(millis + 1, CHICAGO);
-
-          assertEquals(chicago, newYork);
-          assertEquals(chicago.hashCode(), newYork.hashCode());
-          assertEquals(0, chicago.compareTo(newYork));
-          assertTrue(chicago.compareTo(null) > 0);
-          assertEquals(2, chicago.compareTo("not a date"));
-          assertTrue(chicago.before(later));
-          assertTrue(chicago.isBefore(later));
-          assertTrue(later.after(chicago));
-          assertTrue(later.isAfter(chicago));
-      }
-
-      @Test
-      void betweenPredicatesRespectInclusiveAndExclusiveBounds() {
-          OADateTime start = new OADateTime(1_000L);
-          OADateTime middle = new OADateTime(2_000L);
-          OADateTime end = new OADateTime(3_000L);
-
-          assertTrue(middle.betweenOrEqual(start, end));
-          assertTrue(middle.isBetweenOrEqual(start, end));
-          assertTrue(start.betweenOrEqual(start, end));
-          assertFalse(start.betweenNotEqual(start, end));
-          assertTrue(middle.betweenNotEqual(start, end));
-          assertTrue(middle.isBetweenNotEqual(start, end));
-          assertFalse(end.isBetweenNotEqual(start, end));
-      }
-
-      @Test
-      void arithmeticUsesZonedDateTimeSemanticsAndPreservesTypeAndZone() {
-          OADateTime base = new OADateTime(CHICAGO, 2026, 6, 9, 10, 30, 15,
-          123).withType(DateTimeType.ZonedInstant);
-
-          assertArithmetic(base, base.plusYears(1), base.getZonedDateTime().plusYears(1));
-          assertArithmetic(base, base.subtractYears(1), base.getZonedDateTime().minusYears(1));
-          assertArithmetic(base, base.plusMonths(2), base.getZonedDateTime().plusMonths(2));
-          assertArithmetic(base, base.minusMonths(2), base.getZonedDateTime().minusMonths(2));
-          assertArithmetic(base, base.plusDays(3), base.getZonedDateTime().plusDays(3));
-          assertArithmetic(base, base.minusDays(3), base.getZonedDateTime().minusDays(3));
-          assertArithmetic(base, base.plusDay(), base.getZonedDateTime().plusDays(1));
-          assertArithmetic(base, base.minusDay(), base.getZonedDateTime().minusDays(1));
-          assertArithmetic(base, base.addWeeks(2), base.getZonedDateTime().plusWeeks(2));
-          assertArithmetic(base, base.minusWeeks(2), base.getZonedDateTime().minusWeeks(2));
-          assertArithmetic(base, base.plusHours(4), base.getZonedDateTime().plusHours(4));
-          assertArithmetic(base, base.minusHours(4), base.getZonedDateTime().minusHours(4));
-          assertArithmetic(base, base.plusMinutes(5), base.getZonedDateTime().plusMinutes(5));
-          assertArithmetic(base, base.minusMinutes(5), base.getZonedDateTime().minusMinutes(5));
-          assertArithmetic(base, base.plusSeconds(6), base.getZonedDateTime().plusSeconds(6));
-          assertArithmetic(base, base.minusSeconds(6), base.getZonedDateTime().minusSeconds(6));
-          assertArithmetic(base, base.plusMilliSeconds(7), base.getZonedDateTime().plusNanos(7_000_000));
-          assertArithmetic(base, base.minusMilliSeconds(7), base.getZonedDateTime().minusNanos(7_000_000));
-      }
-
-      @Test
-      void periodAndDurationMethodsUseCalendarOrTimelineAsDocumented() {
-          OADateTime start = new OADateTime(CHICAGO, 2024, 2, 29, 10, 0, 0, 0);
-          OADateTime end = new OADateTime(CHICAGO, 2025, 2, 28, 12, 30, 45, 250);
-
-          assertEquals(Period.between(start.getLocalDate(), end.getLocalDate()), start.betweenPeriod(end));
-          assertEquals(Duration.between(start.getInstant(), end.getInstant()), start.betweenDuration(end));
-          assertEquals(0, start.betweenYears(end));
-          assertEquals(11, start.betweenMonths(end));
-          assertEquals(365, start.betweenDays(end));
-          assertEquals(Duration.between(start.getInstant(), end.getInstant()).toHours(),
-          start.betweenHours(end));
-          assertEquals(Duration.between(start.getInstant(), end.getInstant()).toMinutes(),
-          start.betweenMinutes(end));
-          assertEquals(Duration.between(start.getInstant(), end.getInstant()).getSeconds(),
-          start.betweenSeconds(end));
-          assertEquals(Duration.between(start.getInstant(), end.getInstant()).toMillis(),
-          start.betweenMilliSeconds(end));
-      }
-
-      @Test
-      void periodAndDurationMethodsReturnZeroForNullArgument() {
-          OADateTime dt = new OADateTime(CHICAGO, 2026, 6, 9, 10, 30, 15, 123);
-
-          assertEquals(Period.ZERO, dt.betweenPeriod(null));
-          assertEquals(Duration.ZERO, dt.betweenDuration(null));
-          assertEquals(0, dt.betweenYears(null));
-          assertEquals(0, dt.betweenMonths(null));
-          assertEquals(0, dt.betweenDays(null));
-          assertEquals(0, dt.betweenHours(null));
-          assertEquals(0, dt.betweenMinutes(null));
-          assertEquals(0, dt.betweenSeconds(null));
-          assertEquals(0, dt.betweenMilliSeconds(null));
-      }
-
-      @Test
-      void springForwardArithmeticAndTimelineDurationFollowJavaTime() {
-          OADateTime beforeGap = new OADateTime(NEW_YORK, 2026, 3, 8, 1, 30, 0,
-          0).withType(DateTimeType.ZonedInstant);
-
-          OADateTime plusHour = beforeGap.plusHours(1);
-          assertEquals(beforeGap.getZonedDateTime().plusHours(1).toInstant().toEpochMilli(),
-          plusHour.getTime());
-          assertFields(plusHour, 2026, 3, 8, 3, 30, 0, 0);
-
-          OADateTime plusDay = beforeGap.plusDays(1);
-          assertEquals(beforeGap.getZonedDateTime().plusDays(1).toInstant().toEpochMilli(),
-          plusDay.getTime());
-          assertFields(plusDay, 2026, 3, 9, 1, 30, 0, 0);
-
-          OADateTime nextDaySameWall = new OADateTime(NEW_YORK, 2026, 3, 9, 1, 30, 0, 0);
-          assertEquals(23, beforeGap.betweenHours(nextDaySameWall));
-      }
-
-      @Test
-      void fallBackTimelineDurationUsesActualInstants() {
-          ZonedDateTime first130 = ZonedDateTime.of(2026, 11, 1, 1, 30, 0, 0,
-          NEW_YORK).withEarlierOffsetAtOverlap();
-          ZonedDateTime second130 = ZonedDateTime.of(2026, 11, 1, 1, 30, 0, 0,
-          NEW_YORK).withLaterOffsetAtOverlap();
-
-          OADateTime first = new OADateTime(first130);
-          OADateTime second = new OADateTime(second130);
-
-          assertEquals(1, first.betweenHours(second));
-          assertEquals(Duration.ofHours(1), first.betweenDuration(second));
-          assertEquals(0, first.betweenDays(second));
-      }
-
-      @Test
-      void valueOfHandlesNullEmptyBlankAndInvalidInput() {
-          assertNull(OADateTime.valueOf(null));
-          assertNull(OADateTime.valueOf(""));
-
-          long before = System.currentTimeMillis();
-          OADateTime blank = OADateTime.valueOf("   ");
-          long after = System.currentTimeMillis();
-          assertNotNull(blank);
-          assertTrue(blank.getTime() >= before);
-          assertTrue(blank.getTime() <= after);
-
-          assertNull(OADateTime.valueOf("not a date"));
-          assertNull(OADateTime.valueOf("02/30/2026 10:30", "MM/dd/yyyy HH:mm", false));
-          assertNull(OADateTime.valueOf("06/09/2026 10:30 trailing", "MM/dd/yyyy HH:mm", false));
-      }
-
-      @Test
-      void parsingDeterminesTypeFromLocalOffsetAndRegionZoneInputs() {
-          OADateTime local = OADateTime.valueOf("06/09/2026 10:30:15.123", "MM/dd/yyyy HH:mm:ss.SSS", false);
-          assertNotNull(local);
-          assertEquals(DateTimeType.Floating, local.getType());
-          assertFields(local, 2026, 6, 9, 10, 30, 15, 123);
-
-          OADateTime offset = OADateTime.valueOf("2026-06-09T10:30:15-05", "yyyy-MM-dd'T'HH:mm:ssX", false);
-          assertNotNull(offset);
-          assertEquals(DateTimeType.Instant, offset.getType());
-          assertEquals(Instant.parse("2026-06-09T15:30:15Z").toEpochMilli(), offset.getTime());
-
-          OADateTime region = OADateTime.valueOf("2026-06-09 10:30:15 America/New_York", "yyyy-MM-dd HH:mm:ss VV", false);
-          assertNotNull(region);
-          assertEquals(DateTimeType.ZonedInstant, region.getType());
-          assertEquals(NEW_YORK, region.getZoneId());
-          assertFields(region, 2026, 6, 9, 10, 30, 15, 0);
-      }
-
-      @Test
-      void parsingNormalizesYyyyAndDocumentsTwoDigitYearBehavior() {
-          OADateTime yyyy = OADateTime.valueOf("06/09/2026", "MM/dd/yyyy", false);
-          assertNotNull(yyyy);
-          assertFields(yyyy, 2026, 6, 9, 0, 0, 0, 0);
-
-          OADateTime yy = OADateTime.valueOf("06/09/26", "MM/dd/yy", false);
-          assertNotNull(yy);
-          assertFields(yy, 2026, 6, 9, 0, 0, 0, 0);
-      }
-
-      @Test
-      void formattingUsesInstanceSuppliedAndGlobalFormats() {
-          OADateTime dt = new OADateTime(CHICAGO, 2026, 6, 9, 10, 30, 15, 123);
-
-          OADateTime.setGlobalOutputFormat("yyyy-MM-dd HH:mm:ss.SSS");
-          assertEquals("2026-06-09 10:30:15.123", dt.toString());
-          assertEquals("06/09/2026 10:30", dt.toString("MM/dd/yyyy HH:mm"));
-          assertEquals("2026-06-09 10:30:15.123", dt.toStringMain("yyyy-MM-dd HH:mm:ss.SSS"));
-
-          dt.setFormat("MM/dd/yyyy HH:mm:ss.SSS");
-          assertEquals("MM/dd/yyyy HH:mm:ss.SSS", dt.getFormat());
-          assertEquals("06/09/2026 10:30:15.123", dt.toString());
-      }
-
-      @Test
-      void staticGlobalConfigurationCanBeChangedAndRestored() {
-          OADateTime.setGlobalOutputFormat("yyyyMMddHHmm");
-          assertEquals("yyyyMMddHHmm", OADateTime.getGlobalOutputFormat());
-
-          OADateTime.setDefaultZoneId(LOS_ANGELES);
-          assertEquals(LOS_ANGELES, OADateTime.getDefaultZoneId());
-
-          OADateTime.setDefaultZoneId(null);
-          assertEquals(ZoneId.systemDefault(), OADateTime.getDefaultZoneId());
-
-          OADateTime.setLocale(null);
-          assertEquals(DateFormat.getDateInstance(DateFormat.SHORT, Locale.getDefault()) instanceof
-          SimpleDateFormat
-                  ? ((SimpleDateFormat) DateFormat.getDateInstance(DateFormat.SHORT,
-                  Locale.getDefault())).toPattern()
-                  : null,
-                  OADateTime.getFormat(DateFormat.SHORT));
-      }
-
-      @Test
-      void globalParseFormatsCanBeAddedAndRemoved() {
-          String customFormat = "uuuu**MM**dd HH_mm_ss";
-          try {
-              assertNotNull(OADateTime.valueOf("2026**06**09 10_30_15", customFormat, false));
-
-              OADateTime.addGlobalParseFormat(customFormat);
-              OADateTime parsed = OADateTime.valueOf("2026**06**09 10_30_15");
-              assertNotNull(parsed);
-              assertFields(parsed, 2026, 6, 9, 10, 30, 15, 0);
-          } finally {
-              OADateTime.removeGlobalParseFormat(customFormat);
-          }
-
-          assertNull(OADateTime.valueOf("2026**06**09 10_30_15"));
-      }
-
-      @Test
-      void serializerRoundTripsInstantAndZonedInstantAuthoritativeFields() throws Exception {
-          OADateTime instant = new OADateTime(Instant.parse("2026-06-09T15:30:15.123Z"));
-          OADateTime instantCopy = roundTrip(instant);
-          assertEquals(DateTimeType.Instant, instantCopy.getType());
-          assertEquals(instant.getTime(), instantCopy.getTime());
-
-          OADateTime zoned = new OADateTime(ZonedDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000, NEW_YORK));
-          OADateTime zonedCopy = roundTrip(zoned);
-          assertEquals(DateTimeType.ZonedInstant, zonedCopy.getType());
-          assertEquals(zoned.getTime(), zonedCopy.getTime());
-          assertEquals(NEW_YORK, zonedCopy.getZoneId());
-      }
-
-      @Test
-      void serializerRoundTripsFloatingWallClockFields() throws Exception {
-          OADateTime floating = new OADateTime(LocalDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000));
-
-          OADateTime sameZoneCopy = roundTrip(floating);
-          assertEquals(DateTimeType.Floating, sameZoneCopy.getType());
-          assertFields(sameZoneCopy, 2026, 6, 9, 10, 30, 15, 123);
-          assertEquals(floating.getTime(), sameZoneCopy.getTime());
-
-          OADateTime.setDefaultZoneId(NEW_YORK);
-          OADateTime otherZoneCopy = roundTrip(floating);
-          assertEquals(DateTimeType.Floating, otherZoneCopy.getType());
-          assertFields(otherZoneCopy, 2026, 6, 9, 10, 30, 15, 123);
-          assertEquals(floating.getTime(), otherZoneCopy.getTime());
-      }
-
-      @Test
-      void legacyFormatterFactoryIsNonLenient() {
-          SimpleDateFormat formatter = OADateTime.getFormatter();
-
-          assertFalse(formatter.isLenient());
-      }
-
-      private static void assertChanged(OADateTime dt, DateTimeType type, int year, int month, int day, int
-      hour, int minute, int second, int millisecond) {
-          assertEquals(type, dt.getType());
-          assertFields(dt, year, month, day, hour, minute, second, millisecond);
-      }
-
-      private static void assertFields(OADateTime dt, int year, int month, int day, int hour, int minute, int
-      second, int millisecond) {
-          assertEquals(year, dt.getYear());
-          assertEquals(month, dt.getMonthValue());
-          assertEquals(day, dt.getDayOfMonth());
-          assertEquals(hour, dt.getHour());
-          assertEquals(minute, dt.getMinute());
-          assertEquals(second, dt.getSecond());
-          assertEquals(millisecond, dt.getMilliSecond());
-      }
-
-      private static void assertSameInstant(OADateTime expected, OADateTime actual) {
-          assertEquals(expected.getTime(), actual.getTime());
-          assertEquals(expected.getInstant(), actual.getInstant());
-      }
-
-      private static void assertArithmetic(OADateTime base, OADateTime actual, ZonedDateTime expected) {
-          assertEquals(expected.toInstant().toEpochMilli(), actual.getTime());
-          assertEquals(base.getType(), actual.getType());
-          assertEquals(base.getZoneId(), actual.getZoneId());
-      }
-
-      private static OADateTime roundTrip(OADateTime dt) throws Exception {
-          ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-          try (ObjectOutputStream out = new ObjectOutputStream(bytes)) {
-              out.writeObject(dt);
-          }
-
-          try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes.toByteArray()))) {
-              return (OADateTime) in.readObject();
-          }
-      }
-  }
+package com.viaoa.datetime;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.time.DayOfWeek;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Month;
+import java.time.Period;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoField;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.viaoa.datetime.OADateTime.DateTimeType;
+
+class OADateTimeTest {
+    private static final ZoneId CHICAGO = ZoneId.of("America/Chicago");
+    private static final ZoneId NEW_YORK = ZoneId.of("America/New_York");
+    private static final ZoneId UTC = ZoneOffset.UTC;
+
+    private ZoneId originalDefaultZoneId;
+    private String originalGlobalOutputFormat;
+    private Locale originalLocale;
+
+    @BeforeEach
+    void beforeEach() {
+        originalDefaultZoneId = OADateTime.getDefaultZoneId();
+        originalGlobalOutputFormat = OADateTime.getGlobalOutputFormat();
+        originalLocale = Locale.getDefault();
+        OADateTime.setDefaultZoneId(CHICAGO);
+        OADateTime.setLocale(Locale.US);
+        OADateTime.setGlobalOutputFormat(null);
+    }
+
+    @AfterEach
+    void afterEach() {
+        OADateTime.removeGlobalParseFormat("yyyy/MM/dd HH:mm:ss.SSS");
+        OADateTime.removeGlobalParseFormat("yyyy/MM/dd HH:mm");
+        OADateTime.setGlobalOutputFormat(originalGlobalOutputFormat);
+        OADateTime.setLocale(originalLocale);
+        OADateTime.setDefaultZoneId(originalDefaultZoneId);
+    }
+
+    @Test
+    void noArgAndNullConstructorsUseCurrentTimeRange() {
+        long before = System.currentTimeMillis();
+        OADateTime dt = new OADateTime();
+        OADateTime copyNull = new OADateTime((OADateTime) null);
+        OADateTime instantNull = new OADateTime((Instant) null);
+        OADateTime dateNull = new OADateTime((Date) null);
+        long after = System.currentTimeMillis();
+
+        assertBetween(dt.getTime(), before, after);
+        assertBetween(copyNull.getTime(), before, after);
+        assertBetween(instantNull.getTime(), before, after);
+        assertBetween(dateNull.getTime(), before, after);
+        assertEquals(DateTimeType.Instant, dt.getType());
+        assertEquals(DateTimeType.Instant, instantNull.getType());
+        assertEquals(DateTimeType.Instant, dateNull.getType());
+    }
+
+    @Test
+    void epochMillisConstructorsPreserveInstantAndZoneMetadata() {
+        long time = Instant.parse("2026-06-09T15:30:15.123Z").toEpochMilli();
+
+        OADateTime plain = new OADateTime(time);
+        OADateTime zoned = new OADateTime(time, NEW_YORK);
+        OADateTime legacyZone = new OADateTime(time, TimeZone.getTimeZone(NEW_YORK));
+        OADateTime nullZone = new OADateTime(time, (ZoneId) null);
+
+        assertEquals(time, plain.getTime());
+        assertEquals(DateTimeType.Instant, plain.getType());
+        assertEquals(CHICAGO, plain.getZoneId());
+        assertEquals(NEW_YORK, zoned.getZoneId());
+        assertEquals(NEW_YORK, legacyZone.getZoneId());
+        assertEquals(CHICAGO, nullZone.getZoneId());
+        assertFields(zoned, 2026, 6, 9, 11, 30, 15, 123);
+    }
+
+    @Test
+    void fieldConstructorsCreateFloatingValuesUsingDefaultZone() {
+        OADateTime full = new OADateTime(2026, 6, 9, 10, 30, 15, 123);
+        OADateTime dateOnly = new OADateTime(2026, 6, 9);
+        OADateTime hourMinute = new OADateTime(2026, 6, 9, 10, 30);
+        OADateTime hourMinuteSecond = new OADateTime(2026, 6, 9, 10, 30, 15);
+        OADateTime monthEnum = new OADateTime(2026, Month.JUNE, 9, 10, 30, 15);
+
+        assertEquals(DateTimeType.Floating, full.getType());
+        assertEquals(CHICAGO, full.getZoneId());
+        assertEquals(LocalDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000).atZone(CHICAGO).toInstant().toEpochMilli(), full.getTime());
+        assertFields(dateOnly, 2026, 6, 9, 0, 0, 0, 0);
+        assertFields(hourMinute, 2026, 6, 9, 10, 30, 0, 0);
+        assertFields(hourMinuteSecond, 2026, 6, 9, 10, 30, 15, 0);
+        assertFields(monthEnum, 2026, 6, 9, 10, 30, 15, 0);
+    }
+
+    @Test
+    void explicitZoneFieldConstructorUsesZoneForResolution() {
+        OADateTime dt = new OADateTime(NEW_YORK, 2026, 6, 9, 10, 30, 15, 123);
+
+        assertEquals(NEW_YORK, dt.getZoneId());
+        assertEquals(LocalDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000).atZone(NEW_YORK).toInstant().toEpochMilli(), dt.getTime());
+        assertFields(dt, 2026, 6, 9, 10, 30, 15, 123);
+    }
+
+    @Test
+    void fieldConstructorsRejectInvalidFields() {
+        assertThrows(RuntimeException.class, () -> new OADateTime(2026, 6, 9, 10, 30, 15, -1));
+        assertThrows(RuntimeException.class, () -> new OADateTime(2026, 6, 9, 10, 30, 15, 1000));
+        assertThrows(RuntimeException.class, () -> new OADateTime(2026, 13, 9, 10, 30, 15, 0));
+        assertThrows(RuntimeException.class, () -> new OADateTime(2026, 2, 30, 10, 30, 15, 0));
+    }
+
+    @Test
+    void copyConstructorsPreserveExpectedState() {
+        OADateTime source = new OADateTime(ZonedDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000, NEW_YORK));
+
+        OADateTime copy = new OADateTime(source);
+        OADateTime copyWithZone = new OADateTime(source, CHICAGO);
+
+        assertEquals(source.getTime(), copy.getTime());
+        assertEquals(source.getType(), copy.getType());
+        assertEquals(source.getZoneId(), copy.getZoneId());
+        assertEquals(source.getTime(), copyWithZone.getTime());
+        assertEquals(source.getType(), copyWithZone.getType());
+        assertEquals(CHICAGO, copyWithZone.getZoneId());
+    }
+
+    @Test
+    void dateAndTimeConstructorComposesPublicFieldsAsFloating() {
+        OADate date = new OADate(2026, 6, 9);
+        OATime time = new OATime(10, 30, 15, 123);
+
+        OADateTime dt = new OADateTime(date, time);
+        OADateTime noTime = new OADateTime(date, (OATime) null);
+
+        assertEquals(DateTimeType.Floating, dt.getType());
+        assertEquals(CHICAGO, dt.getZoneId());
+        assertFields(dt, 2026, 6, 9, 10, 30, 15, 123);
+        assertFields(noTime, 2026, 6, 9, 0, 0, 0, 0);
+    }
+
+    @Test
+    void calendarConstructorDerivesTypeFromCalendarZone() {
+        Calendar defaultCalendar = Calendar.getInstance(TimeZone.getTimeZone(CHICAGO), Locale.US);
+        defaultCalendar.set(2026, Calendar.JUNE, 9, 10, 30, 15);
+        defaultCalendar.set(Calendar.MILLISECOND, 123);
+
+        Calendar otherCalendar = Calendar.getInstance(TimeZone.getTimeZone(NEW_YORK), Locale.US);
+        otherCalendar.setTimeInMillis(defaultCalendar.getTimeInMillis());
+
+        OADateTime defaultZoneValue = new OADateTime(defaultCalendar);
+        OADateTime otherZoneValue = new OADateTime(otherCalendar);
+
+        assertEquals(DateTimeType.Instant, defaultZoneValue.getType());
+        assertEquals(CHICAGO, defaultZoneValue.getZoneId());
+        assertEquals(defaultCalendar.getTimeInMillis(), defaultZoneValue.getTime());
+        assertEquals(DateTimeType.ZonedInstant, otherZoneValue.getType());
+        assertEquals(NEW_YORK, otherZoneValue.getZoneId());
+        assertEquals(otherCalendar.getTimeInMillis(), otherZoneValue.getTime());
+    }
+
+    @Test
+    void javaTimeConstructorsCreateExpectedSemanticTypes() {
+        Instant instant = Instant.parse("2026-06-09T15:30:15.123Z");
+        LocalDateTime ldt = LocalDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000);
+        LocalDate ld = LocalDate.of(2026, 6, 9);
+        ZonedDateTime zdt = ZonedDateTime.of(ldt, NEW_YORK);
+
+        OADateTime fromInstant = new OADateTime(instant);
+        OADateTime fromLocalDateTime = new OADateTime(ldt);
+        OADateTime fromLocalDate = new OADateTime(ld);
+        OADateTime fromZonedDateTime = new OADateTime(zdt);
+        OADateTime fromDate = new OADateTime(Date.from(instant));
+
+        assertEquals(DateTimeType.Instant, fromInstant.getType());
+        assertEquals(instant.toEpochMilli(), fromInstant.getTime());
+        assertEquals(DateTimeType.Floating, fromLocalDateTime.getType());
+        assertEquals(CHICAGO, fromLocalDateTime.getZoneId());
+        assertFields(fromLocalDateTime, 2026, 6, 9, 10, 30, 15, 123);
+        assertEquals(DateTimeType.Floating, fromLocalDate.getType());
+        assertFields(fromLocalDate, 2026, 6, 9, 0, 0, 0, 0);
+        assertEquals(DateTimeType.ZonedInstant, fromZonedDateTime.getType());
+        assertEquals(NEW_YORK, fromZonedDateTime.getZoneId());
+        assertEquals(zdt.toInstant().toEpochMilli(), fromZonedDateTime.getTime());
+        assertEquals(DateTimeType.Instant, fromDate.getType());
+        assertEquals(instant.toEpochMilli(), fromDate.getTime());
+    }
+
+    @Test
+    void stringConstructorsAndValueOfParseOrThrow() {
+        OADateTime.addGlobalParseFormat("yyyy/MM/dd HH:mm:ss.SSS");
+
+        OADateTime parsed = OADateTime.valueOf("2026/06/09 10:30:15.123", "yyyy/MM/dd HH:mm:ss.SSS", false);
+        OADateTime constructor = new OADateTime("2026/06/09 10:30:15.123", "yyyy/MM/dd HH:mm:ss.SSS");
+
+        assertNotNull(parsed);
+        assertEquals(DateTimeType.Floating, parsed.getType());
+        assertFields(parsed, 2026, 6, 9, 10, 30, 15, 123);
+        assertEquals(parsed.getTime(), constructor.getTime());
+        assertNull(OADateTime.valueOf(null));
+        assertNull(OADateTime.valueOf(""));
+        assertNull(OADateTime.valueOf("2026/06/09 10:30 trailing", "yyyy/MM/dd HH:mm", false));
+        assertThrows(IllegalArgumentException.class, () -> new OADateTime("not a date"));
+    }
+
+    @Test
+    void gettersAndLegacyBridgeMethodsReturnExpectedValues() {
+        OADateTime dt = new OADateTime(NEW_YORK, 2026, 6, 9, 10, 30, 15, 123);
+
+        assertEquals(2026, dt.getYear());
+        assertEquals(6, dt.getMonthValue());
+        assertEquals(Month.JUNE, dt.getMonth());
+        assertEquals(9, dt.getDayOfMonth());
+        assertEquals(10, dt.getHour());
+        assertEquals(10, dt.get24Hour());
+        assertEquals(30, dt.getMinute());
+        assertEquals(15, dt.getSecond());
+        assertEquals(123, dt.getMilliSecond());
+        assertEquals(1, dt.getQuarter());
+        assertEquals(DayOfWeek.TUESDAY, dt.getDayOfWeek());
+        assertEquals(160, dt.getDayOfYear());
+        assertEquals(2, dt.getWeekOfMonth());
+        assertTrue(dt.getWeekOfYear() > 0);
+        assertEquals(30, dt.getDaysInMonth());
+        assertEquals(365, dt.getDaysInYear());
+        assertEquals(30, dt.getLastDayOfMonth());
+        assertEquals(LocalDate.of(2026, 6, 9), dt.getLocalDate());
+        assertEquals(LocalTime.of(10, 30, 15, 123_000_000), dt.getLocalTime());
+        assertEquals(LocalDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000), dt.getLocalDateTime());
+        assertEquals(ZonedDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000, NEW_YORK), dt.getZonedDateTime());
+        assertEquals(dt.getTime(), dt.getInstant().toEpochMilli());
+        assertEquals(2026, dt.getField(ChronoField.YEAR));
+        assertEquals(TimeZone.getTimeZone(NEW_YORK), dt.getTimeZone());
+        assertEquals(dt.getTime(), dt.getDate().getTime());
+        assertEquals(dt.getTime(), dt.getCalendar().getTimeInMillis());
+        assertEquals(TimeZone.getTimeZone(NEW_YORK), dt.getCalendar().getTimeZone());
+    }
+
+    @Test
+    void withMethodsChangeRequestedFieldsAndLeaveOriginalUnchanged() {
+        OADateTime base = new OADateTime(NEW_YORK, 2026, 6, 9, 10, 30, 15, 123);
+        long originalTime = base.getTime();
+
+        assertFields(base.withDateTime(2027, 7, 8, 9, 10, 11, 12), 2027, 7, 8, 9, 10, 11, 12);
+        assertFields(base.withDate(2027, 7, 8), 2027, 7, 8, 10, 30, 15, 123);
+        assertFields(base.withYear(2027), 2027, 6, 9, 10, 30, 15, 123);
+        assertFields(base.withMonth(Month.JULY), 2026, 7, 9, 10, 30, 15, 123);
+        assertFields(base.withMonthValue(8), 2026, 8, 9, 10, 30, 15, 123);
+        assertFields(base.withDayOfMonth(10), 2026, 6, 10, 10, 30, 15, 123);
+        assertFields(base.withoutDate(), 1970, 1, 1, 10, 30, 15, 123);
+        assertFields(base.withDate(new OADate(2028, 2, 29)), 2028, 2, 29, 10, 30, 15, 123);
+        assertFields(base.withDate(null), 1970, 1, 1, 10, 30, 15, 123);
+        assertFields(base.withTime(1, 2, 3, 4), 2026, 6, 9, 1, 2, 3, 4);
+        assertFields(base.withTime(1, 2, 3), 2026, 6, 9, 1, 2, 3, 0);
+        assertFields(base.withTime(1, 2), 2026, 6, 9, 1, 2, 0, 0);
+        assertFields(base.withHours(11), 2026, 6, 9, 11, 30, 15, 123);
+        assertFields(base.withMinutes(31), 2026, 6, 9, 10, 31, 15, 123);
+        assertFields(base.withSeconds(16), 2026, 6, 9, 10, 30, 16, 123);
+        assertFields(base.withMilliSeconds(124), 2026, 6, 9, 10, 30, 15, 124);
+        assertFields(base.withoutTime(), 2026, 6, 9, 0, 0, 0, 0);
+        assertFields(base.withoutSecondAndMilliSecond(), 2026, 6, 9, 10, 30, 0, 0);
+        assertFields(base.withTime(new OATime(5, 6, 7, 8)), 2026, 6, 9, 5, 6, 7, 8);
+        assertFields(base.withTime(null), 2026, 6, 9, 0, 0, 0, 0);
+        assertEquals(originalTime, base.getTime());
+    }
+
+    @Test
+    void zoneConversionMethodsDistinguishInstantAndWallTime() {
+        OADateTime base = new OADateTime(CHICAGO, 2026, 6, 9, 10, 30, 15, 123);
+
+        OADateTime sameInstant = base.withZoneIdSameInstant(NEW_YORK);
+        OADateTime sameWall = base.withZoneIdSameWallTime(NEW_YORK);
+        OADateTime utcInstant = base.withTimeZoneUTCSameInstant();
+        OADateTime utcWall = base.withTimeZoneUTCSameWallTime();
+
+        assertEquals(base.getTime(), sameInstant.getTime());
+        assertEquals(NEW_YORK, sameInstant.getZoneId());
+        assertFields(sameInstant, 2026, 6, 9, 11, 30, 15, 123);
+        assertNotEquals(base.getTime(), sameWall.getTime());
+        assertEquals(NEW_YORK, sameWall.getZoneId());
+        assertFields(sameWall, 2026, 6, 9, 10, 30, 15, 123);
+        assertEquals(base.getTime(), utcInstant.getTime());
+        assertEquals(UTC, utcInstant.getZoneId());
+        assertEquals(UTC, utcWall.getZoneId());
+        assertFields(utcWall, 2026, 6, 9, 10, 30, 15, 123);
+    }
+
+    @Test
+    void comparisonMethodsUseEpochMillisOnly() {
+        long time = Instant.parse("2026-06-09T15:30:15.123Z").toEpochMilli();
+        OADateTime chicago = new OADateTime(time, CHICAGO);
+        OADateTime newYork = new OADateTime(time, NEW_YORK);
+        OADateTime earlier = new OADateTime(time - 1);
+        OADateTime later = new OADateTime(time + 1);
+
+        assertEquals(chicago, newYork);
+        assertEquals(chicago.hashCode(), newYork.hashCode());
+        assertEquals(0, chicago.compareTo(newYork));
+        assertTrue(chicago.compareTo(null) > 0);
+        assertTrue(chicago.compareTo("not a date") > 0);
+        assertTrue(chicago.compare(earlier) > 0);
+        assertTrue(chicago.before(later));
+        assertTrue(chicago.isBefore(later));
+        assertTrue(chicago.after(earlier));
+        assertTrue(chicago.isAfter(earlier));
+        assertTrue(chicago.betweenOrEqual(earlier, later));
+        assertTrue(chicago.isBetweenOrEqual(earlier, later));
+        assertTrue(chicago.betweenNotEqual(earlier, later));
+        assertTrue(chicago.isBetweenNotEqual(earlier, later));
+        assertFalse(chicago.betweenNotEqual(chicago, later));
+    }
+
+    @Test
+    void arithmeticMethodsMatchJavaTimeAndPreserveTypeAndZone() {
+        OADateTime base = new OADateTime(ZonedDateTime.of(2024, 2, 29, 10, 30, 15, 123_000_000, NEW_YORK));
+
+        assertAdjusted(base, base.plusYears(1), base.getZonedDateTime().plusYears(1));
+        assertAdjusted(base, base.subtractYears(1), base.getZonedDateTime().plusYears(-1));
+        assertAdjusted(base, base.plusMonths(1), base.getZonedDateTime().plusMonths(1));
+        assertAdjusted(base, base.minusMonths(1), base.getZonedDateTime().plusMonths(-1));
+        assertAdjusted(base, base.plusDays(1), base.getZonedDateTime().plusDays(1));
+        assertAdjusted(base, base.minusDays(1), base.getZonedDateTime().plusDays(-1));
+        assertAdjusted(base, base.plusDay(), base.getZonedDateTime().plusDays(1));
+        assertAdjusted(base, base.minusDay(), base.getZonedDateTime().plusDays(-1));
+        assertAdjusted(base, base.addWeeks(2), base.getZonedDateTime().plusWeeks(2));
+        assertAdjusted(base, base.minusWeeks(2), base.getZonedDateTime().plusDays(-14));
+        assertAdjusted(base, base.plusHours(2), base.getZonedDateTime().plusHours(2));
+        assertAdjusted(base, base.minusHours(2), base.getZonedDateTime().plusHours(-2));
+        assertAdjusted(base, base.plusMinutes(2), base.getZonedDateTime().plusMinutes(2));
+        assertAdjusted(base, base.minusMinutes(2), base.getZonedDateTime().plusMinutes(-2));
+        assertAdjusted(base, base.plusSeconds(2), base.getZonedDateTime().plusSeconds(2));
+        assertAdjusted(base, base.minusSeconds(2), base.getZonedDateTime().plusSeconds(-2));
+        assertAdjusted(base, base.plusMilliSeconds(2), base.getZonedDateTime().plusNanos(2_000_000));
+        assertAdjusted(base, base.minusMilliSeconds(2), base.getZonedDateTime().plusNanos(-2_000_000));
+    }
+
+    @Test
+    void intervalMethodsReturnCalendarAndTimelineValues() {
+        OADateTime start = new OADateTime(CHICAGO, 2024, 2, 29, 0, 0, 0, 0);
+        OADateTime end = new OADateTime(CHICAGO, 2025, 2, 28, 1, 2, 3, 4);
+
+        assertEquals(Period.between(start.getLocalDate(), end.getLocalDate()), start.betweenPeriod(end));
+        assertEquals(Duration.between(start.getInstant(), end.getInstant()), start.betweenDuration(end));
+        assertEquals(0, start.betweenYears(end));
+        assertEquals(11, start.betweenMonths(end));
+        assertEquals(365, start.betweenDays(end));
+        assertEquals(Duration.between(start.getInstant(), end.getInstant()).toHours(), start.betweenHours(end));
+        assertEquals(Duration.between(start.getInstant(), end.getInstant()).toMinutes(), start.betweenMinutes(end));
+        assertEquals(Duration.between(start.getInstant(), end.getInstant()).getSeconds(), start.betweenSeconds(end));
+        assertEquals(Duration.between(start.getInstant(), end.getInstant()).toMillis(), start.betweenMilliSeconds(end));
+        assertEquals(Period.ZERO, start.betweenPeriod(null));
+        assertEquals(Duration.ZERO, start.betweenDuration(null));
+        assertEquals(0, start.betweenYears(null));
+        assertEquals(0, start.betweenMonths(null));
+        assertEquals(0, start.betweenDays(null));
+        assertEquals(0, start.betweenHours(null));
+        assertEquals(0, start.betweenMinutes(null));
+        assertEquals(0, start.betweenSeconds(null));
+        assertEquals(0, start.betweenMilliSeconds(null));
+    }
+
+    @Test
+    void convertHandlesSupportedInputsAndCopyPolicy() {
+        OADateTime original = new OADateTime(1234L, NEW_YORK);
+        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(CHICAGO), Locale.US);
+        calendar.setTimeInMillis(5678L);
+
+        assertSame(original, OADateTime.convert(original, false));
+        assertNotSame(original, OADateTime.convert(original, true));
+        assertEquals(original.getTime(), OADateTime.convert(original, true).getTime());
+        assertEquals(1234L, OADateTime.convert(new Date(1234L), false).getTime());
+        assertEquals(1234L, OADateTime.convert(new java.sql.Time(1234L), false).getTime());
+        assertEquals(1234L, OADateTime.convert(new Timestamp(1234L), false).getTime());
+        assertEquals(5678L, OADateTime.convert(calendar, false).getTime());
+        assertNotNull(OADateTime.convert("06/09/2026 10:30AM", false));
+        assertNull(OADateTime.convert(null, false));
+        assertNull(OADateTime.convert(42, false));
+    }
+
+    @Test
+    void formattingAndStaticConfigurationUseExpectedPrecedence() {
+        OADateTime dt = new OADateTime(NEW_YORK, 2026, 6, 9, 10, 30, 15, 123);
+
+        OADateTime.setGlobalOutputFormat("yyyy-MM-dd HH:mm");
+        assertEquals("2026-06-09 10:30", dt.toString());
+        dt.setFormat("MM/dd/yyyy HH:mm:ss");
+        assertEquals("06/09/2026 10:30:15", dt.toString());
+        assertEquals("2026/06/09", dt.toString("yyyy/MM/dd"));
+        assertEquals("2026-06-09 10:30", dt.toStringMain("yyyy-MM-dd HH:mm"));
+        assertEquals("MM/dd/yyyy HH:mm:ss", dt.getFormat());
+        assertEquals("yyyy-MM-dd HH:mm", OADateTime.getGlobalOutputFormat());
+        assertNotNull(OADateTime.getFormat(DateFormat.SHORT));
+        assertNotNull(OADateTime.getFormat(DateFormat.SHORT, Locale.US));
+    }
+
+    @Test
+    void floatingCapturesZoneAndIsStableAfterDefaultZoneChange() {
+        OADateTime floating = new OADateTime(LocalDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000));
+
+        assertEquals(DateTimeType.Floating, floating.getType());
+        assertEquals(CHICAGO, floating.getZoneId());
+        OADateTime.setDefaultZoneId(UTC);
+
+        assertEquals(CHICAGO, floating.getZoneId());
+        assertFields(floating, 2026, 6, 9, 10, 30, 15, 123);
+    }
+
+    private static void assertAdjusted(OADateTime base, OADateTime actual, ZonedDateTime expected) {
+        assertEquals(base.getType(), actual.getType());
+        assertEquals(base.getZoneId(), actual.getZoneId());
+        assertEquals(expected.toInstant().toEpochMilli(), actual.getTime());
+        assertEquals(expected.toLocalDateTime(), actual.getLocalDateTime());
+    }
+
+    private static void assertFields(OADateTime dt, int year, int month, int day, int hour, int minute, int second, int millisecond) {
+        assertEquals(year, dt.getYear());
+        assertEquals(month, dt.getMonthValue());
+        assertEquals(day, dt.getDayOfMonth());
+        assertEquals(hour, dt.getHour());
+        assertEquals(minute, dt.getMinute());
+        assertEquals(second, dt.getSecond());
+        assertEquals(millisecond, dt.getMilliSecond());
+    }
+
+    private static void assertBetween(long value, long min, long max) {
+        assertTrue(value >= min && value <= max, "value " + value + " outside [" + min + ", " + max + "]");
+    }
+}

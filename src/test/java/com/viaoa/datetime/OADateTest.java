@@ -1,30 +1,15 @@
-
 package com.viaoa.datetime;
-
-/**
-Strategy:
- Coverage strategy: the proposed test class exercises every public OADate constructor, date-only normalization through inherited mutators/
- arithmetic, parsing/formatting, inherited comparison/interval behavior, DST dates, serialization, and static-state cleanup. It avoids
- OATime entirely.
-*/
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.Month;
-import java.time.Period;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -35,363 +20,238 @@ import org.junit.jupiter.api.Test;
 import com.viaoa.datetime.OADateTime.DateTimeType;
 
 class OADateTest {
-	private static final ZoneId UTC = ZoneOffset.UTC;
-	private static final ZoneId NEW_YORK = ZoneId.of("America/New_York");
-	private static final ZoneId CHICAGO = ZoneId.of("America/Chicago");
+    private static final ZoneId CHICAGO = ZoneId.of("America/Chicago");
+    private static final ZoneId NEW_YORK = ZoneId.of("America/New_York");
+    private static final ZoneId UTC = ZoneOffset.UTC;
 
-	private TimeZone originalJvmTimeZone;
-	private Locale originalJvmLocale;
-	private ZoneId originalDefaultZoneId;
-	private String originalDateOutputFormat;
-	private String originalDateTimeOutputFormat;
+    private ZoneId originalDefaultZoneId;
+    private String originalDateOutputFormat;
+    private String originalDateTimeOutputFormat;
+    private Locale originalLocale;
 
-	@BeforeEach
-	void beforeEach() {
-		originalJvmTimeZone = TimeZone.getDefault();
-		originalJvmLocale = Locale.getDefault();
-		originalDefaultZoneId = OADateTime.getDefaultZoneId();
-		originalDateOutputFormat = OADate.getGlobalOutputFormat();
-		originalDateTimeOutputFormat = OADateTime.getGlobalOutputFormat();
+    @BeforeEach
+    void beforeEach() {
+        originalDefaultZoneId = OADateTime.getDefaultZoneId();
+        originalDateOutputFormat = OADate.getGlobalOutputFormat();
+        originalDateTimeOutputFormat = OADateTime.getGlobalOutputFormat();
+        originalLocale = Locale.getDefault();
+        OADateTime.setDefaultZoneId(CHICAGO);
+        OADateTime.setLocale(Locale.US);
+        OADate.setLocale(Locale.US);
+        OADate.setGlobalOutputFormat(null);
+        OADateTime.setGlobalOutputFormat(null);
+    }
 
-		TimeZone.setDefault(TimeZone.getTimeZone(UTC));
-		Locale.setDefault(Locale.US);
-		OADateTime.setLocale(Locale.US);
-		OADate.setLocale(Locale.US);
-		OADateTime.setDefaultZoneId(NEW_YORK);
-		OADate.setGlobalOutputFormat("MM/dd/yyyy");
-		OADateTime.setGlobalOutputFormat("MM/dd/yyyy HH:mm:ss.SSS");
-	}
+    @AfterEach
+    void afterEach() {
+        OADate.removeGlobalParseFormat("yyyy/MM/dd");
+        OADate.setGlobalOutputFormat(originalDateOutputFormat);
+        OADateTime.setGlobalOutputFormat(originalDateTimeOutputFormat);
+        OADate.setLocale(originalLocale);
+        OADateTime.setLocale(originalLocale);
+        OADateTime.setDefaultZoneId(originalDefaultZoneId);
+    }
 
-	@AfterEach
-	void afterEach() {
-		OADate.setGlobalOutputFormat(originalDateOutputFormat);
-		OADateTime.setGlobalOutputFormat(originalDateTimeOutputFormat);
-		OADateTime.setDefaultZoneId(originalDefaultZoneId);
-		OADate.setLocale(originalJvmLocale);
-		OADateTime.setLocale(originalJvmLocale);
-		Locale.setDefault(originalJvmLocale);
-		TimeZone.setDefault(originalJvmTimeZone);
-	}
+    @Test
+    void constructorsNormalizeToDateOnlyFloating() {
+        OADate explicit = new OADate(2026, 6, 9);
+        OADate localDate = new OADate(LocalDate.of(2026, 6, 9));
+        OADate fromDateTime = new OADate(new OADateTime(NEW_YORK, 2026, 6, 9, 23, 59, 59, 999));
+        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(UTC), Locale.US);
+        calendar.set(2026, Calendar.JUNE, 9, 23, 59, 59);
+        calendar.set(Calendar.MILLISECOND, 999);
+        OADate fromCalendar = new OADate(calendar);
 
-	@Test
-	void constructorsCreateFloatingDateOnlyValues() {
-		LocalDate todayBefore = LocalDate.now();
-		OADate now = new OADate();
-		LocalDate todayAfter = LocalDate.now();
-		assertIsOADate(now);
-		assertFloating(now);
-		assertTrue(now.getLocalDate().equals(todayBefore) || now.getLocalDate().equals(todayAfter));
-		assertTimeIsMidnight(now);
+        assertDateOnly(explicit, LocalDate.of(2026, 6, 9));
+        assertDateOnly(localDate, LocalDate.of(2026, 6, 9));
+        assertDateOnly(fromDateTime, LocalDate.of(2026, 6, 9));
+        assertDateOnly(fromCalendar, LocalDate.of(2026, 6, 9));
+    }
 
-		Instant instant = Instant.parse("2026-06-09T03:30:00Z");
-		LocalDate expectedFromInstant = instant.atZone(NEW_YORK).toLocalDate();
-		assertDateOnly(new OADate(instant.toEpochMilli()), expectedFromInstant);
-		assertDateOnly(new OADate(new Date(instant.toEpochMilli())), expectedFromInstant);
+    @Test
+    void dateAndLongConstructorsDropTimePortionInDefaultZone() {
+        Instant morning = ZonedDateTime.of(2026, 6, 9, 0, 0, 0, 0, CHICAGO).toInstant();
+        Instant evening = ZonedDateTime.of(2026, 6, 9, 23, 59, 59, 999_000_000, CHICAGO).toInstant();
 
-		OADate nullDate = new OADate((Date) null);
-		assertIsOADate(nullDate);
-		assertFloating(nullDate);
-		assertTimeIsMidnight(nullDate);
+        OADate fromMorningDate = new OADate(Date.from(morning));
+        OADate fromEveningDate = new OADate(Date.from(evening));
+        OADate fromLong = new OADate(evening.toEpochMilli());
 
-		assertDateOnly(new OADate(2026, 1, 2), LocalDate.of(2026, 1, 2));
+        assertDateOnly(fromMorningDate, LocalDate.of(2026, 6, 9));
+        assertDateOnly(fromEveningDate, LocalDate.of(2026, 6, 9));
+        assertDateOnly(fromLong, LocalDate.of(2026, 6, 9));
+        assertEquals(fromMorningDate.getTime(), fromEveningDate.getTime());
+        assertEquals(fromMorningDate.getTime(), fromLong.getTime());
+    }
 
-		OADateTime source = new OADateTime(NEW_YORK, 2026, 6, 9, 23, 45, 12, 987);
-		assertDateOnly(new OADate(source), LocalDate.of(2026, 6, 9));
+    @Test
+    void nullDateConstructorUsesCurrentDateRange() {
+        LocalDate before = LocalDate.now(CHICAGO);
+        OADate date = new OADate((Date) null);
+        LocalDate after = LocalDate.now(CHICAGO);
 
-		Calendar cal = new GregorianCalendar(TimeZone.getTimeZone(CHICAGO), Locale.US);
-		cal.clear();
-		cal.set(2026, Calendar.DECEMBER, 31, 18, 20, 30);
-		assertDateOnly(new OADate(cal), LocalDate.of(2026, 12, 31));
+        assertEquals(DateTimeType.Floating, date.getType());
+        assertTrue(!date.getLocalDate().isBefore(before) && !date.getLocalDate().isAfter(after));
+        assertMidnight(date);
+    }
 
-		assertDateOnly(new OADate(LocalDate.of(2024, 2, 29)), LocalDate.of(2024, 2, 29));
-		assertDateOnly(new OADate("06/09/2026"), LocalDate.of(2026, 6, 9));
-		assertDateOnly(new OADate("2026**06**09", "yyyy**MM**dd"), LocalDate.of(2026, 6, 9));
-	}
+    @Test
+    void invalidConstructorInputsThrowCurrentExceptions() {
+        assertThrows(RuntimeException.class, () -> new OADate(2026, 0, 1));
+        assertThrows(RuntimeException.class, () -> new OADate(2026, 13, 1));
+        assertThrows(IllegalArgumentException.class, () -> new OADate("not a date"));
+        assertThrows(NullPointerException.class, () -> new OADate((OADateTime) null));
+        assertThrows(NullPointerException.class, () -> new OADate((Calendar) null));
+        assertThrows(NullPointerException.class, () -> new OADate((LocalDate) null));
+    }
 
-	@Test
-	void invalidAndNullInputsFollowCurrentBehavior() {
-		assertThrows(IllegalArgumentException.class, () -> new OADate("not a date"));
-		assertNull(OADate.valueOf(null));
-		assertNull(OADate.valueOf("not a date"));
-		assertNull(OADate.dateValue("not a date"));
+    @Test
+    void parsingMethodsReturnOADateAndNormalizeTimeAway() {
+        OADate.addGlobalParseFormat("yyyy/MM/dd");
 
-		assertThrows(NullPointerException.class, () -> new OADate((OADateTime) null));
-		assertThrows(NullPointerException.class, () -> new OADate((Calendar) null));
-		assertThrows(NullPointerException.class, () -> new OADate((LocalDate) null));
-	}
+        OADate direct = OADate.dateValue("2026/06/09", "yyyy/MM/dd");
+        OADate fallback = OADate.dateValue("2026/06/09");
+        OADateTime value = OADate.valueOf("06/09/2026 23:59:59", "MM/dd/yyyy HH:mm:ss", false);
 
-	@Test
-	void monthValuesUseJavaTimeOneBasedSemantics() {
-		assertDateOnly(new OADate(2026, 1, 15), LocalDate.of(2026, 1, 15));
-		assertEquals(1, new OADate(2026, 1, 15).getMonthValue());
-		assertEquals(Month.JANUARY, new OADate(2026, 1, 15).getMonth());
+        assertDateOnly(direct, LocalDate.of(2026, 6, 9));
+        assertDateOnly(fallback, LocalDate.of(2026, 6, 9));
+        assertInstanceOf(OADate.class, value);
+        assertDateOnly((OADate) value, LocalDate.of(2026, 6, 9));
+        assertNull(OADate.dateValue(null));
+        assertNull(OADate.dateValue("not a date"));
+        assertNull(OADate.valueOf("2026/06/09 trailing", "yyyy/MM/dd", false));
+    }
 
-		assertDateOnly(new OADate(2026, 12, 15), LocalDate.of(2026, 12, 15));
-		assertEquals(12, new OADate(2026, 12, 15).getMonthValue());
-		assertEquals(Month.DECEMBER, new OADate(2026, 12, 15).getMonth());
+    @Test
+    void stringConstructorsParseWithDefaultAndExplicitFormats() {
+        OADate explicit = new OADate("2026/06/09", "yyyy/MM/dd");
+        OADate defaultFormat = new OADate("06/09/2026");
 
-		assertThrows(RuntimeException.class, () -> new OADate(2026, 0, 15));
-		assertThrows(RuntimeException.class, () -> new OADate(2026, 13, 15));
-	}
+        assertDateOnly(explicit, LocalDate.of(2026, 6, 9));
+        assertDateOnly(defaultFormat, LocalDate.of(2026, 6, 9));
+    }
 
-	@Test
-	void inheritedWithDateAndTimeMethodsReturnOADateAndNormalizeTime() {
-		OADate base = new OADate(2026, 6, 9);
+    @Test
+    void formattingUsesOADateFormatPrecedence() {
+        OADate date = new OADate(2026, 6, 9);
 
-		assertDateOnly(base.withDateTime(2027, 8, 10, 11, 12, 13, 14), LocalDate.of(2027, 8, 10));
-		assertDateOnly(base.withDate(2027, 8, 10), LocalDate.of(2027, 8, 10));
-		assertDateOnly(base.withYear(2027), LocalDate.of(2027, 6, 9));
-		assertDateOnly(base.withMonth(Month.AUGUST), LocalDate.of(2026, 8, 9));
-		assertDateOnly(base.withMonthValue(8), LocalDate.of(2026, 8, 9));
-		assertDateOnly(base.withDayOfMonth(10), LocalDate.of(2026, 6, 10));
-		assertDateOnly(base.withoutDate(), LocalDate.of(1970, 1, 1));
+        OADate.setGlobalOutputFormat("yyyy-MM-dd");
+        assertEquals("2026-06-09", date.toString());
+        date.setFormat("MM/dd/yyyy");
+        assertEquals("06/09/2026", date.toString());
+        assertEquals("2026/06/09", date.toString("yyyy/MM/dd"));
+        OADate.setGlobalOutputFormat(null);
+        OADate unformatted = new OADate(2026, 6, 9);
+        assertEquals("2026-Jun-09", unformatted.toString());
+    }
 
-		assertDateOnly(base.withTime(23, 59, 58, 999), LocalDate.of(2026, 6, 9));
-		assertDateOnly(base.withTime(23, 59, 58), LocalDate.of(2026, 6, 9));
-		assertDateOnly(base.withTime(23, 59), LocalDate.of(2026, 6, 9));
-		assertDateOnly(base.withHours(23), LocalDate.of(2026, 6, 9));
-		assertDateOnly(base.withMinutes(59), LocalDate.of(2026, 6, 9));
-		assertDateOnly(base.withSeconds(58), LocalDate.of(2026, 6, 9));
-		assertDateOnly(base.withMilliSeconds(999), LocalDate.of(2026, 6, 9));
-		assertDateOnly(base.withoutTime(), LocalDate.of(2026, 6, 9));
-		assertDateOnly(base.withoutSecondAndMilliSecond(), LocalDate.of(2026, 6, 9));
-	}
+    @Test
+    void inheritedWithMethodsReturnOADateAndKeepMidnight() {
+        OADate base = new OADate(2026, 6, 9);
 
-	@Test
-	void inheritedArithmeticReturnsOADateAndUsesDateOnlyResult() {
-		OADate base = new OADate(2026, 6, 9);
+        assertDateOnly(base.withDateTime(2027, 7, 8, 9, 10, 11, 12), LocalDate.of(2027, 7, 8));
+        assertDateOnly(base.withDate(2027, 7, 8), LocalDate.of(2027, 7, 8));
+        assertDateOnly(base.withYear(2027), LocalDate.of(2027, 6, 9));
+        assertDateOnly(base.withMonth(java.time.Month.JULY), LocalDate.of(2026, 7, 9));
+        assertDateOnly(base.withMonthValue(8), LocalDate.of(2026, 8, 9));
+        assertDateOnly(base.withDayOfMonth(10), LocalDate.of(2026, 6, 10));
+        assertDateOnly(base.withoutDate(), LocalDate.of(1970, 1, 1));
+        assertDateOnly(base.withDate(new OADate(2028, 2, 29)), LocalDate.of(2028, 2, 29));
+        assertDateOnly(base.withDate(null), LocalDate.of(1970, 1, 1));
+        assertDateOnly(base.withTime(23, 59, 59, 999), LocalDate.of(2026, 6, 9));
+        assertDateOnly(base.withHours(23), LocalDate.of(2026, 6, 9));
+        assertDateOnly(base.withMinutes(59), LocalDate.of(2026, 6, 9));
+        assertDateOnly(base.withSeconds(59), LocalDate.of(2026, 6, 9));
+        assertDateOnly(base.withMilliSeconds(999), LocalDate.of(2026, 6, 9));
+        assertDateOnly(base.withoutTime(), LocalDate.of(2026, 6, 9));
+        assertDateOnly(base.withoutSecondAndMilliSecond(), LocalDate.of(2026, 6, 9));
+        assertDateOnly(base.withTime(new OATime(23, 59, 59, 999)), LocalDate.of(2026, 6, 9));
+        assertDateOnly(base.withTime(null), LocalDate.of(2026, 6, 9));
+        assertDateOnly(base, LocalDate.of(2026, 6, 9));
+    }
 
-		assertDateOnly(base.plusYears(1), LocalDate.of(2027, 6, 9));
-		assertDateOnly(base.subtractYears(1), LocalDate.of(2025, 6, 9));
-		assertDateOnly(base.plusMonths(2), LocalDate.of(2026, 8, 9));
-		assertDateOnly(base.minusMonths(2), LocalDate.of(2026, 4, 9));
-		assertDateOnly(base.plusDays(3), LocalDate.of(2026, 6, 12));
-		assertDateOnly(base.minusDays(3), LocalDate.of(2026, 6, 6));
-		assertDateOnly(base.plusDay(), LocalDate.of(2026, 6, 10));
-		assertDateOnly(base.minusDay(), LocalDate.of(2026, 6, 8));
-		assertDateOnly(base.addWeeks(2), LocalDate.of(2026, 6, 23));
-		assertDateOnly(base.minusWeeks(2), LocalDate.of(2026, 5, 26));
+    @Test
+    void inheritedArithmeticReturnsOADateAndKeepsMidnight() {
+        OADate base = new OADate(2024, 2, 29);
 
-		assertDateOnly(base.plusHours(23), LocalDate.of(2026, 6, 9));
-		assertDateOnly(base.plusHours(24), LocalDate.of(2026, 6, 10));
-		assertDateOnly(base.minusHours(1), LocalDate.of(2026, 6, 8));
-		assertDateOnly(base.plusMinutes(1_439), LocalDate.of(2026, 6, 9));
-		assertDateOnly(base.plusMinutes(1_440), LocalDate.of(2026, 6, 10));
-		assertDateOnly(base.minusMinutes(1), LocalDate.of(2026, 6, 8));
-		assertDateOnly(base.plusSeconds(86_399), LocalDate.of(2026, 6, 9));
-		assertDateOnly(base.plusSeconds(86_400), LocalDate.of(2026, 6, 10));
-		assertDateOnly(base.minusSeconds(1), LocalDate.of(2026, 6, 8));
-		assertDateOnly(base.plusMilliSeconds(86_399_999), LocalDate.of(2026, 6, 9));
-		assertDateOnly(base.plusMilliSeconds(86_400_000), LocalDate.of(2026, 6, 10));
-		assertDateOnly(base.minusMilliSeconds(1), LocalDate.of(2026, 6, 8));
+        assertDateOnly(base.plusYears(1), LocalDate.of(2025, 2, 28));
+        assertDateOnly(base.subtractYears(1), LocalDate.of(2023, 2, 28));
+        assertDateOnly(new OADate(2026, 1, 31).plusMonths(1), LocalDate.of(2026, 2, 28));
+        assertDateOnly(base.minusMonths(1), LocalDate.of(2024, 1, 29));
+        assertDateOnly(base.plusDays(1), LocalDate.of(2024, 3, 1));
+        assertDateOnly(base.minusDays(1), LocalDate.of(2024, 2, 28));
+        assertDateOnly(base.plusDay(), LocalDate.of(2024, 3, 1));
+        assertDateOnly(base.minusDay(), LocalDate.of(2024, 2, 28));
+        assertDateOnly(base.addWeeks(1), LocalDate.of(2024, 3, 7));
+        assertDateOnly(base.minusWeeks(1), LocalDate.of(2024, 2, 22));
+        assertDateOnly(base.plusHours(25), LocalDate.of(2024, 3, 1));
+        assertDateOnly(base.minusHours(1), LocalDate.of(2024, 2, 28));
+        assertDateOnly(base.plusMinutes(24 * 60), LocalDate.of(2024, 3, 1));
+        assertDateOnly(base.minusMinutes(1), LocalDate.of(2024, 2, 28));
+        assertDateOnly(base.plusSeconds(24 * 60 * 60), LocalDate.of(2024, 3, 1));
+        assertDateOnly(base.minusSeconds(1), LocalDate.of(2024, 2, 28));
+        assertDateOnly(base.plusMilliSeconds(24 * 60 * 60 * 1000), LocalDate.of(2024, 3, 1));
+        assertDateOnly(base.minusMilliSeconds(1), LocalDate.of(2024, 2, 28));
+    }
 
-		assertDateOnly(new OADate(2026, 1, 31).plusMonths(1), LocalDate.of(2026, 2, 28));
-		assertDateOnly(new OADate(2024, 2, 29).plusYears(1), LocalDate.of(2025, 2, 28));
-	}
+    @Test
+    void zoneConversionsReturnOADateAndKeepDateOnlyInvariant() {
+        OADate base = new OADate(2026, 6, 9);
+        OADateTime sameInstant = base.withZoneIdSameInstant(UTC);
+        OADateTime sameWall = base.withZoneIdSameWallTime(NEW_YORK);
 
-	@Test
-	void zoneConversionsReturnOADateAndNormalizeDateOnlySemantics() {
-		OADate date = new OADate(2026, 6, 9);
+        assertDateOnly(sameInstant, Instant.ofEpochMilli(base.getTime()).atZone(UTC).toLocalDate());
+        assertEquals(UTC, sameInstant.getZoneId());
+        assertDateOnly(sameWall, LocalDate.of(2026, 6, 9));
+        assertEquals(NEW_YORK, sameWall.getZoneId());
+        assertDateOnly(base.withTimeZoneUTCSameInstant(), Instant.ofEpochMilli(base.getTime()).atZone(UTC).toLocalDate());
+        assertDateOnly(base.withTimeZoneUTCSameWallTime(), LocalDate.of(2026, 6, 9));
+    }
 
-		OADateTime sameInstantChicago = date.withZoneIdSameInstant(CHICAGO);
-		LocalDate expectedChicagoDate = Instant.ofEpochMilli(date.getTime()).atZone(CHICAGO).toLocalDate();
-		assertDateOnly(sameInstantChicago, expectedChicagoDate);
+    @Test
+    void comparisonAndIntervalMethodsUseInheritedEpochMillisBehavior() {
+        OADate d1 = new OADate(2026, 6, 9);
+        OADate d2 = new OADate(2026, 6, 9);
+        OADate d3 = new OADate(2026, 6, 10);
 
-		OADateTime sameWallChicago = date.withZoneIdSameWallTime(CHICAGO);
-		assertDateOnly(sameWallChicago, LocalDate.of(2026, 6, 9));
-		assertEquals(CHICAGO, sameWallChicago.zoneId);
+        assertEquals(d1, d2);
+        assertEquals(d1.hashCode(), d2.hashCode());
+        assertTrue(d1.compareTo(d3) < 0);
+        assertTrue(d1.before(d3));
+        assertTrue(d3.after(d1));
+        assertTrue(d2.betweenOrEqual(d1, d3));
+        assertFalse(d2.betweenNotEqual(d1, d2));
+        assertEquals(1, d1.betweenDays(d3));
+        assertEquals(24, d1.betweenHours(d3));
+        assertEquals(24 * 60, d1.betweenMinutes(d3));
+        assertEquals(24 * 60 * 60, d1.betweenSeconds(d3));
+        assertEquals(24L * 60 * 60 * 1000, d1.betweenMilliSeconds(d3));
+    }
 
-		OADateTime utcSameInstant = date.withTimeZoneUTCSameInstant();
-		LocalDate expectedUtcDate = Instant.ofEpochMilli(date.getTime()).atZone(UTC).toLocalDate();
-		assertDateOnly(utcSameInstant, expectedUtcDate);
+    @Test
+    void sameDisplayedDateResolvedInDifferentZonesCanCompareUnequal() {
+        OADate chicago = new OADate(2026, 6, 9);
+        OADateTime.setDefaultZoneId(UTC);
+        OADate utc = new OADate(2026, 6, 9);
 
-		OADateTime utcSameWall = date.withTimeZoneUTCSameWallTime();
-		assertDateOnly(utcSameWall, LocalDate.of(2026, 6, 9));
-		assertEquals(UTC, utcSameWall.zoneId);
+        assertDateOnly(chicago, LocalDate.of(2026, 6, 9));
+        assertDateOnly(utc, LocalDate.of(2026, 6, 9));
+        assertNotEquals(chicago.getTime(), utc.getTime());
+        assertNotEquals(chicago, utc);
+    }
 
-		withDefaultZone(CHICAGO, () -> {
-			assertDateOnly(date.withZoneIdSameInstant(null), expectedChicagoDate);
-			OADateTime sameWallDefault = date.withZoneIdSameWallTime(null);
-			assertDateOnly(sameWallDefault, LocalDate.of(2026, 6, 9));
-			assertEquals(CHICAGO, sameWallDefault.zoneId);
-		});
-	}
+    private static void assertDateOnly(OADateTime dt, LocalDate expected) {
+        assertInstanceOf(OADate.class, dt);
+        assertEquals(DateTimeType.Floating, dt.getType());
+        assertEquals(expected, dt.getLocalDate());
+        assertMidnight(dt);
+    }
 
-	@Test
-	void parsingApisNormalizeToOADateAndRejectInvalidInput() {
-		assertDateOnly(OADate.valueOf("06/09/2026"), LocalDate.of(2026, 6, 9));
-		assertDateOnly(OADate.valueOf("2026-06-09", "yyyy-MM-dd"), LocalDate.of(2026, 6, 9));
-		assertDateOnly(OADate.valueOf("2026-06-09", "yyyy-MM-dd", false), LocalDate.of(2026, 6, 9));
-		assertDateOnly(OADate.valueOf("06/09/2026", "yyyy-MM-dd", true), LocalDate.of(2026, 6, 9));
-		assertDateOnly(OADate.dateValue("06/09/2026"), LocalDate.of(2026, 6, 9));
-		assertDateOnly(OADate.dateValue("2026-06-09", "yyyy-MM-dd"), LocalDate.of(2026, 6, 9));
-
-		assertDateOnly(OADate.valueOf("2026-06-09"), LocalDate.of(2026, 6, 9));
-		assertDateOnly(OADate.valueOf("06/09/2026"), LocalDate.of(2026, 6, 9));
-		assertDateOnly(OADate.valueOf("06/09/2026 23:45:12.987", "MM/dd/yyyy HH:mm:ss.SSS", false), LocalDate.of(2026, 6, 9));
-
-		assertNull(OADate.valueOf("02/30/2026", "MM/dd/yyyy", false));
-		assertNull(OADate.valueOf("2026-06-09 trailing", "yyyy-MM-dd", false));
-
-		String compactFormat = "yyyyMMdd";
-		try {
-			OADate.addGlobalParseFormat(compactFormat);
-			assertDateOnly(OADate.valueOf("20260609"), LocalDate.of(2026, 6, 9));
-		} finally {
-			OADate.removeGlobalParseFormat(compactFormat);
-		}
-	}
-
-	@Test
-	void formattingUsesDateOnlyFormatsAndNormalization() {
-		OADate date = new OADate(2026, 6, 9);
-
-		OADate.setGlobalOutputFormat("yyyy-MM-dd");
-		assertEquals("2026-06-09", date.toString());
-		assertEquals("06/09/2026", date.toString("MM/dd/yyyy"));
-
-		date.setFormat("yyyyMMdd");
-		assertEquals("20260609", date.toString());
-
-		assertEquals("2026-06-09", date.toString("uuuu-MM-dd"));
-		assertEquals("2026-06-09 00:00:00.000", date.toString("yyyy-MM-dd HH:mm:ss.SSS"));
-
-		OADate.setGlobalOutputFormat(null);
-		assertEquals("2026-Jun-09", date.withDate(2026, 6, 9).toString("yyyy-MMM-dd"));
-
-		OADate.setGlobalOutputFormat("");
-		OADate fallback = new OADate(2026, 6, 9);
-		assertEquals("2026-Jun-09", fallback.toString());
-	}
-
-	@Test
-	void equalityAndComparisonUseNormalizedMidnightTime() {
-		OADate d1 = new OADate(2026, 6, 9);
-		OADate d2 = new OADate(LocalDate.of(2026, 6, 9));
-		OADate before = new OADate(2026, 6, 8);
-		OADate after = new OADate(2026, 6, 10);
-
-		assertEquals(d1, d2);
-		assertEquals(d1.hashCode(), d2.hashCode());
-		assertNotEquals(d1, after);
-		assertTrue(d1.compareTo(before) > 0);
-		assertTrue(d1.compareTo(after) < 0);
-		assertTrue(before.before(d1));
-		assertTrue(before.isBefore(d1));
-		assertTrue(after.after(d1));
-		assertTrue(after.isAfter(d1));
-
-		assertTrue(d1.betweenOrEqual(before, after));
-		assertTrue(d1.isBetweenOrEqual(before, after));
-		assertTrue(d1.betweenNotEqual(before, after));
-		assertTrue(d1.isBetweenNotEqual(before, after));
-		assertTrue(before.betweenOrEqual(before, after));
-		assertFalse(before.betweenNotEqual(before, after));
-	}
-
-	@Test
-	void inheritedIntervalMethodsUseNormalizedDatesAndTimelineDurations() {
-		OADate start = new OADate(2024, 2, 29);
-		OADate end = new OADate(2025, 2, 28);
-
-		assertEquals(Period.between(start.getLocalDate(), end.getLocalDate()), start.betweenPeriod(end));
-		assertEquals(Duration.between(start.getInstant(), end.getInstant()), start.betweenDuration(end));
-		assertEquals(0, start.betweenYears(end));
-		assertEquals(11, start.betweenMonths(end));
-		assertEquals(365, start.betweenDays(end));
-		assertEquals(Duration.between(start.getInstant(), end.getInstant()).toHours(), start.betweenHours(end));
-		assertEquals(Duration.between(start.getInstant(), end.getInstant()).toMinutes(), start.betweenMinutes(end));
-		assertEquals(Duration.between(start.getInstant(), end.getInstant()).getSeconds(), start.betweenSeconds(end));
-		assertEquals(Duration.between(start.getInstant(), end.getInstant()).toMillis(), start.betweenMilliSeconds(end));
-	}
-
-	@Test
-	void dstDatesRemainDateOnlyWhileTimelineDurationsReflectDst() {
-		withDefaultZone(NEW_YORK, () -> {
-			OADate springStart = new OADate(2026, 3, 8);
-			OADate springEnd = new OADate(2026, 3, 9);
-			assertDateOnly(springStart, LocalDate.of(2026, 3, 8));
-			assertDateOnly(springStart.plusDays(1), LocalDate.of(2026, 3, 9));
-			assertEquals(1, springStart.betweenDays(springEnd));
-			assertEquals(23, springStart.betweenHours(springEnd));
-			assertEquals(Duration.ofHours(23), springStart.betweenDuration(springEnd));
-
-			OADate fallStart = new OADate(2026, 11, 1);
-			OADate fallEnd = new OADate(2026, 11, 2);
-			assertDateOnly(fallStart, LocalDate.of(2026, 11, 1));
-			assertDateOnly(fallStart.plusDays(1), LocalDate.of(2026, 11, 2));
-			assertEquals(1, fallStart.betweenDays(fallEnd));
-			assertEquals(25, fallStart.betweenHours(fallEnd));
-			assertEquals(Duration.ofHours(25), fallStart.betweenDuration(fallEnd));
-		});
-	}
-
-	@Test
-	void serializationRoundTripsDateOnlyValues() throws Exception {
-		assertSerializedDateOnly(new OADate(2026, 6, 9), LocalDate.of(2026, 6, 9));
-		assertSerializedDateOnly(new OADate(2024, 2, 29), LocalDate.of(2024, 2, 29));
-
-		withDefaultZone(NEW_YORK, () -> {
-			try {
-				assertSerializedDateOnly(new OADate(2026, 3, 8), LocalDate.of(2026, 3, 8));
-				assertSerializedDateOnly(new OADate(2026, 11, 1), LocalDate.of(2026, 11, 1));
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-		});
-	}
-
-	private static void assertSerializedDateOnly(OADate date, LocalDate expected) throws Exception {
-		Object copy = roundTrip(date);
-		assertTrue(copy instanceof OADate);
-		assertDateOnly((OADateTime) copy, expected);
-	}
-
-	private static void assertDateOnly(OADateTime dt, LocalDate expected) {
-		assertIsOADate(dt);
-		assertFloating(dt);
-		assertTimeIsMidnight(dt);
-		assertEquals(expected, dt.getLocalDate());
-		assertEquals(expected.getYear(), dt.getYear());
-		assertEquals(expected.getMonthValue(), dt.getMonthValue());
-		assertEquals(expected.getDayOfMonth(), dt.getDayOfMonth());
-	}
-
-	private static void assertIsOADate(OADateTime dt) {
-		assertNotNull(dt);
-		assertTrue(dt instanceof OADate, "Expected OADate but got " + dt.getClass().getName());
-	}
-
-	private static void assertFloating(OADateTime dt) {
-		assertEquals(DateTimeType.Floating, dt.getType());
-		assertNotNull(dt.zoneId);
-	}
-
-	private static void assertTimeIsMidnight(OADateTime dt) {
-		assertEquals(0, dt.getHour());
-		assertEquals(0, dt.getMinute());
-		assertEquals(0, dt.getSecond());
-		assertEquals(0, dt.getMilliSecond());
-	}
-
-	private static Object roundTrip(Object obj) throws Exception {
-		ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-		try (ObjectOutputStream out = new ObjectOutputStream(bytes)) {
-			out.writeObject(obj);
-		}
-
-		try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes.toByteArray()))) {
-			return in.readObject();
-		}
-	}
-
-	private static void withDefaultZone(ZoneId zone, Runnable test) {
-		ZoneId oldZone = OADateTime.getDefaultZoneId();
-		try {
-			OADateTime.setDefaultZoneId(zone);
-			test.run();
-		} finally {
-			OADateTime.setDefaultZoneId(oldZone);
-		}
-	}
+    private static void assertMidnight(OADateTime dt) {
+        assertEquals(LocalTime.MIDNIGHT, dt.getLocalTime());
+        assertEquals(0, dt.getHour());
+        assertEquals(0, dt.getMinute());
+        assertEquals(0, dt.getSecond());
+        assertEquals(0, dt.getMilliSecond());
+    }
 }

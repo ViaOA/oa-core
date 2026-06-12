@@ -455,44 +455,4 @@ public class OATimeZone {
 		}
 		return tzFound;
 	}
-
-	/**
-	 * Test and demonstration entry point for time zone conversion and lookup.
-	 */
-    public static void main(String[] args) {
-        {
-            OATimeZone.TZ tz = OATimeZone.getOATimeZone("America/Chicago");  
-            OADateTime dtNow = (new OADateTime()).withTimeZone(tz);
-            OADate dToday = new OADate( dtNow.withTimeZone(tz) );
-            int i = 0;
-            i++;
-        }
-        
-	    int i = 0;
-	    for (TZ tz : getOATimeZones()) {
-	        System.out.println((++i) + ") " + tz.getDisplay());
-	    }
-
-        final OATimeZone.TZ tzz = OATimeZone.getOATimeZone("America/Chicago");  
-        final OADateTime dtNowz = (new OADateTime()).withTimeZone(tzz);
-		
-		
-		TZ tz1 = getOATimeZone("UTC-06");
-		TZ tz2 = getOATimeZone("CST");
-        TZ tz3 = getOATimeZone("CDT");
-        
-        
-        OATimeZone.TZ tz = OATimeZone.getOATimeZone("America/Chicago");
-        OADateTime dtNow = new OADateTime();
-
-        OADateTime dtNowCST = dtNow.withTimeZone(tz);
-        OADateTime dtx = dtNow.withTimeZone(tz1);
-        dtx = dtNow.withTimeZone(tz2);
-        dtx = dtNow.withTimeZone(tz3);
-		
-		
-		int xx = 4;
-		xx++;
-		//System.out.println(tz.getDisplay());
-	}
 }

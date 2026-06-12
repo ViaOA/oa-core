@@ -18,9 +18,7 @@ package com.viaoa.datetime;
 import java.text.DateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.*;
 
@@ -28,201 +26,73 @@ import com.viaoa.datetime.OADateTime.DateTimeType;
 
 /* CODEX Review
   
-Summary Assessment
 
-  No serious OADate correctness issues found.
-
-  The core date-only invariants are mostly coherent now: constructors normalize to midnight, type is normally Floating, zoneId is captured,
-  parsing wraps through OADate, and inherited withXxx/arithmetic methods generally route through createUtil and return OADate.
-
-  The remaining risks are semantic edge cases rather than obvious breakages. The biggest concern is that inherited withType(...) can
-  intentionally produce an OADate whose type is not Floating, which conflicts with the stated OADate invariant. The next meaningful risk is
-  serialization: OADate relies on OADateTime’s private custom serialization and has no subclass-specific read validation.
-
-  Critical
-
-  None.
-
-  High
-1. withType(DateTimeType) inherited from OADateTime
-
-  Why it matters:
-  OADate’s intended invariant says type should be DateTimeType.Floating, but inherited withType(...) allows callers to create an OADate with
-  Instant, ZonedInstant, or null type. It still remains date-only because createUtil(getZonedDateTime()) returns an OADate, but semantic
-  type is no longer date-only/Floating.
-
-  Example failure scenario:
-
-  OADate d = new OADate(2026, 6, 9);
-  OADateTime x = d.withType(DateTimeType.Instant);
-
-  x is an OADate, time is midnight, but x.getType() is Instant. Serialization now follows OADateTime Instant serialization and writes _time
-  as authoritative instead of date fields.
-
-  Recommended fix:
-  Override withType(DateTimeType) in OADate to either:
-
-  - always return a Floating OADate and ignore/reject non-Floating types, or
-  - throw IllegalArgumentException for anything other than DateTimeType.Floating.
-
-  If non-Floating OADate is intentionally supported, then weaken the invariant: “Normal OADate construction uses Floating; withType may
-  deliberately override type.”
-  
-1. Null handling is inconsistent across constructors
-
-  Method/location:
-
-  - OADate(OADateTime dt)
-  - OADate(Calendar c)
-  - OADate(LocalDate ld)
-
-  Why it matters:
-  Some constructors handle null (OADate(Date)), while others throw NullPointerException. OADateTime constructors often treat null as current
-  value. This makes call sites harder to reason about and can create migration bugs.
-
-  Example failure scenario:
-
-  OADateTime maybeDateTime = null;
-  new OADate(maybeDateTime); // NPE
-
-  Recommended fix:
-  Choose one policy and enforce it consistently:
-
-  - If null means “today,” mirror OADate(Date) and OADateTime null constructor behavior.
-  - If null is invalid, use Objects.requireNonNull(...) with a clear message.
-
-
-  
- 2. OADate no-arg and null-Date constructors use JVM default date, not OA default zone
-
-  Method/location:
-
-  - OADate()
-  - OADate(Date date) when date == null
-
-  Why it matters:
-  OADate() calls LocalDate.now() and OADate(Date null) uses LocalDate.now(), both using the JVM default zone. Other OADate paths use
-  OADateTime.defaultZoneId to derive local date and midnight. If JVM default and OA default zone differ near midnight, “today” can be
-  different.
-
-  Example failure scenario:
-  JVM default is UTC, OA default is America/New_York, current instant is 2026-06-10T02:00Z.
-
-  - JVM LocalDate.now() => June 10
-  - OA default local date => June 9
-
-  Recommended fix:
-  Use LocalDate.now(defaultZoneId) in OADate() and null-Date handling.
-
-  3. createUtil(long time, ZoneId zid) maps date in target zone but then re-normalizes in default zone
-
-  Method/location:
-  OADate.createUtil(long time, ZoneId zid)
-
-  Why it matters:
-  This matches the stated intended semantics, but it is subtle. withZoneIdSameInstant(CHICAGO) uses Chicago to pick the calendar date, then
-  creates an OADate whose zoneId is defaultZoneId, not Chicago. This can surprise callers who expect zone conversion methods to preserve the
-  target zone consistently.
-
-  Example failure scenario:
-
-  OADate d = new OADate(2026, 6, 9); // default New York
-  OADateTime c = d.withZoneIdSameInstant(CHICAGO);
-  c.zoneId; // defaultZoneId, not CHICAGO
-
-  Recommended fix:
-  If this is intended, document it explicitly near createUtil(long, ZoneId) and tests. If it is not intended, assign d.zoneId = zid and
-  recompute _time at midnight in zid, consistent with the other createUtil overloads.
-
-  Low
-
-  1. dateValue(...) casts the result of OADate.valueOf(...)
-
-  Method/location:
-
-  - dateValue(String)
-  - dateValue(String, String)
-
-  Why it matters:
-  Currently safe because OADate.valueOf(...) wraps successful parses into new OADate(dt). But the cast is brittle if future refactoring
-  changes valueOf(...) to return a different subtype or plain OADateTime.
-
-  Example failure scenario:
-  A future change returns OADateTime directly from valueOf(...); dateValue(...) starts throwing ClassCastException.
-
-  Recommended fix:
-  Change return path to:
-
-  OADateTime dt = OADate.valueOf(...);
-  return (dt == null) ? null : new OADate(dt);
-
-  or change valueOf return type to OADate if source compatibility allows.
-
-  2. Global parse formats are mutable and unsynchronized
-
-  Method/location:
-
-  - alDateParseFormat
-  - setLocale
-  - addGlobalParseFormat
-  - removeGlobalParseFormat
-
-  Why it matters:
-  Concurrent parsing while another thread changes locale or parse formats can see inconsistent state. This is likely consistent with the
-  rest of OA date/time globals, but it is still a regression risk for server code.
-
-  Example failure scenario:
-  One thread calls OADate.setLocale(...) while another parses with OADate.valueOf(...); the parser observes the list mid-change.
-
-  Recommended fix:
-  Use copy-on-write list replacement or synchronize static parse format mutations and reads.
-
-  3. OADate can format time fields if caller supplies a time pattern
-
-  Method/location:
-  toString(String f)
-
-  Why it matters:
-  The value remains date-only, but toString("yyyy-MM-dd HH:mm:ss") emits midnight time fields. This is technically correct because fields
-  are normalized, but if “formatting is date-only” means time fields should never be emitted, explicit patterns can violate that
-  presentation rule.
-
-  Example failure scenario:
-
-  new OADate(2026, 6, 9).toString("yyyy-MM-dd HH:mm:ss");
-  // "2026-06-09 00:00:00"
-
-  Recommended fix:
-  No code change needed if explicit format means caller controls output. If strict date-only presentation is required, validate/reject time
-  fields in OADate format strings.
- 
-  
-  
-
- */
+*/
 
 /**
  * Date-only OA value.
  * <p>
- * OADate is a specialization of {@link OADateTime} whose time portion is always
- * normalized to {@code 00:00:00.000}. It represents a calendar date rather than
- * a precise timestamp.
+ * OADate is a specialization of {@link OADateTime} whose time portion is
+ * always normalized to {@code 00:00:00.000}. It represents a calendar date
+ * rather than a precise timestamp.
  *
  * <h3>Semantics</h3>
- * OADate uses {@link DateTimeType#Floating} semantics. The business meaning is
- * the local calendar date. Internally, the underlying epoch-millisecond value is
- * derived from midnight of that date in the active/default OA timezone.
+ * OADate always uses {@link DateTimeType#Floating} semantics.
+ * The business meaning of an OADate is the local calendar date.
+ * <p>
+ * During creation or deserialization, the local date fields are resolved
+ * using the effective OA zone and converted into a canonical internal
+ * epoch-millisecond value inherited from {@link OADateTime}. Once created,
+ * the instance is immutable.
+ *
+ * <h3>Internal representation</h3>
+ * OADate stores:
+ * <ul>
+ *   <li>A canonical {@code _time} value inherited from {@link OADateTime}</li>
+ *   <li>An associated {@code zoneId}</li>
+ *   <li>{@link DateTimeType#Floating}</li>
+ * </ul>
+ * <p>
+ * The stored {@code _time} is derived from midnight
+ * ({@code 00:00:00.000}) of the represented date in the effective zone.
+ *
+ * <h3>Timezone behavior</h3>
+ * OADate is not a zone-free value.
+ * <p>
+ * The effective zone is used when creating, deserializing, converting,
+ * formatting, and interpreting the internal value.
+ * Existing instances do not change meaning if
+ * {@link OADateTime#setDefaultZoneId(java.time.ZoneId)} is changed later.
+ *
+ * <h3>Comparison and equality</h3>
+ * OADate inherits comparison, equality, hashing, ordering, and interval
+ * semantics from {@link OADateTime}.
+ * <p>
+ * These operations are based on the canonical internal value rather than
+ * purely on displayed date fields.
  *
  * <h3>Immutability</h3>
- * OADate is immutable. Operations inherited from {@link OADateTime}, including
- * {@code withXxx(...)} and arithmetic methods such as {@code plusDays(...)},
- * return new OADate instances through the protected {@code createUtil(...)}
- * factory methods.
+ * OADate behaves as an immutable value type.
+ * Methods inherited from {@link OADateTime}, including
+ * {@code withXxx(...)}, {@code plusXxx(...)}, and
+ * {@code minusXxx(...)}, return new OADate instances through
+ * {@code createUtil(...)} overrides and never modify existing instances.
  *
  * <h3>Parsing and formatting</h3>
- * Parsing uses OADate-specific formats and normalizes results to date-only
- * values. Formatting uses either an instance format, the global OADate output
- * format, or a built-in fallback format.
+ * OADate provides date-only parsing and formatting behavior.
+ * Parsing delegates to the shared OADateTime infrastructure and then
+ * normalizes the result into a date-only value.
+ * Formatting uses either:
+ * <ul>
+ *   <li>an instance format</li>
+ *   <li>the global OADate output format</li>
+ *   <li>a built-in fallback format</li>
+ * </ul>
+ *
+ * <h3>Java Time</h3>
+ * New OA code should generally prefer {@link LocalDate} for pure date
+ * semantics. OADate primarily exists as the OA-compatible date value
+ * layer for existing applications and framework services.
  *
  * @see OADateTime
  * @see OATime
@@ -372,7 +242,7 @@ public class OADate extends OADateTime {
 	 * Creates an OADate initialized to the current local date.
 	 */
 	public OADate() {
-		this(LocalDate.now());
+		this(LocalDate.now(defaultZoneId));
 	}
 
 	/**
@@ -398,10 +268,11 @@ public class OADate extends OADateTime {
 	 * @param date source date, or {@code null} for today
 	 */
 	public OADate(Date date) {
+		super(false);
 	    LocalDate ld;
 
 	    if (date == null) {
-	        ld = LocalDate.now();
+	        ld = LocalDate.now(defaultZoneId);
 	    } 
 	    else {
 	        ld = Instant.ofEpochMilli(date.getTime()).atZone(defaultZoneId).toLocalDate();
@@ -488,6 +359,7 @@ public class OADate extends OADateTime {
 	 * @throws IllegalArgumentException if the text can not be parsed
 	 */
 	public OADate(String strDate, String format) {
+		super(false);
 		OADateTime dt = OADate.valueOf(strDate, format);
 		if (dt == null) throw new IllegalArgumentException("OADate cant create date from String \"" + strDate + "\", format="+format);
 		LocalDate ld = LocalDate.of(dt.getYear(), dt.getMonthValue(), dt.getDayOfMonth());
@@ -495,28 +367,6 @@ public class OADate extends OADateTime {
 	    this.type = DateTimeType.Floating;
 	    this.zoneId = defaultZoneId;
 	    this._time = ld.atStartOfDay().atZone(this.zoneId).toInstant().toEpochMilli();
-	}
-	
-	/**
-	 * Returns a canonical OADate.
-	 * <p>
-	 * OADate always uses {@link DateTimeType#Floating} semantics. Any requested
-	 * type conversion is ignored and the returned value is normalized back to a
-	 * standard OADate instance.
-	 * <p>
-	 * This preserves OADate invariants:
-	 * <ul>
-	 *   <li>Date-only semantics</li>
-	 *   <li>Time normalized to {@code 00:00:00.000}</li>
-	 *   <li>{@link DateTimeType#Floating}</li>
-	 * </ul>
-	 *
-	 * @param type requested type (ignored)
-	 * @return normalized OADate using Floating semantics
-	 */
-	@Override
-	public OADateTime withType(DateTimeType type) {
-	    return new OADate(this);
 	}
 	
 	/**
@@ -674,132 +524,78 @@ public class OADate extends OADateTime {
 	}
 }
 
-/* CODEX invariants 20260610
+/* CODEX invariants 20260611
 
+  OADate implementation invariants
+  --------------------------------
+ 
+  Core date-only semantics
+  - OADate is the OA date-only value type and is an OADateTime subclass.
+  - OADate always represents a local calendar date, not a full timestamp.
+  - Date fields are the only input fields retained by OADate-specific
+    construction, parsing, and factory paths.
+  - Time-of-day is always normalized to 00:00:00.000.
+  - Month values use java.time numbering: January is 1 and December is 12.
+  - type must be DateTimeType.Floating for canonical OADate values.
+  - _time is inherited from OADateTime and is the canonical stored value.
+  - _time is derived from the represented local date at midnight in the
+    captured/effective zone.
+ 
+  Floating/zone semantics
+  - OADate uses OADateTime Floating semantics.
+  - Floating is not zone-free. The local date at midnight is resolved into
+    _time using the effective zone at creation/deserialization time.
+  - OADate stores both _time and zoneId after creation.
+  - Existing OADate instances must not change meaning if
+    OADateTime.defaultZoneId changes later.
+  - OADate values with the same displayed date can have different _time values
+    if they were resolved in different zones. That is accepted because _time is
+    the inherited comparison value.
+ 
+  Factory/subclass behavior
+  - createUtil(...) methods must always return OADate instances.
+  - createUtil(...) must discard hour, minute, second, and millisecond inputs.
+  - createUtil(ZonedDateTime) retains only the local date from the supplied
+    ZonedDateTime and resolves that date at midnight in the supplied zone.
+  - createUtil(ZoneId, fields...) retains only year/month/day and resolves
+    midnight in the supplied zone, or defaultZoneId when the zone is null.
+  - createUtil(long, ZoneId) maps the instant to a local date in the supplied
+    zone, then resolves that date at midnight in that zone.
+  - Inherited withXxx/plusXxx/minusXxx methods rely on createUtil(...) so
+    adjusted OADate values preserve the OADate runtime type and date-only
+    invariants.
+ 
+  Parsing/formatting
+  - valueOf(...) delegates parsing to OADateTime parsing through
+    valueOfMain(...), using OADate parse formats.
+  - Successful parses are wrapped/normalized into OADate.
+  - Any parsed time portion is discarded; only the parsed local date is retained.
+  - Failed valueOf(...) parsing returns null.
+  - String constructors throw IllegalArgumentException for invalid non-null
+    strings.
+  - Formatting uses OADate format selection: instance format, then global
+    OADate output format, then the built-in fallback format.
+  - Formatting ultimately derives fields from inherited _time plus effective
+    zone through OADateTime formatter behavior.
+ 
+  Comparison/equality
+  - OADate inherits equals(Object), hashCode(), compareTo(Object), compare(Object),
+    and timeline interval behavior from OADateTime.
+  - These inherited operations use _time.
+  - Do not add date-field-only equality or comparison semantics to OADate.
+  - OADate is an OA legacy value type with date-only normalization, not a pure
+    LocalDate replacement.
+ 
+  Serialization
+  - OADate inherits OADateTime custom serialization.
+  - OADate should deserialize as an OADate instance.
+  - Because canonical OADate values are Floating, serialization writes type,
+    _time, and zoneId through OADateTime.
+  - Floating deserialization re-resolves local fields using the receiving
+    JVM/default zone according to OADateTime rules.
+  - After deserialization, OADate invariants must still hold: runtime type is
+    OADate, type is Floating, time is 00:00:00.000, and zoneId is captured.
+ 
 */
-
-/*
- * OADate implementation invariants
- * --------------------------------
- * Core date-only semantics:
- * - OADate represents a calendar date only. LocalDate is the conceptual model.
- * - Year, month, and day are the authoritative business fields.
- * - Month values follow java.time numbering: January is 1 and December is 12.
- * - Time-of-day is never business state for OADate. Constructors, factories,
- *   parsing, and inherited withXxx/plusXxx/minusXxx operations must discard or
- *   normalize hour/minute/second/millisecond to 00:00:00.000.
- * - OADate values use DateTimeType.Floating. The stored _time is derived from
- *   the date at local midnight in the zone selected by the constructor/factory.
- * - A valid OADate instance should have a non-null zoneId because Floating values
- *   capture the zone used to derive _time.
- */
-
-/*
- * OADate timezone invariants
- * --------------------------
- * - defaultZoneId is used to resolve constructors that do not receive an
- *   explicit zone-bearing source.
- * - Date and long inputs are instants; they are interpreted in defaultZoneId to
- *   determine the OADate calendar date, then normalized to midnight.
- * - Calendar input uses the Calendar's date fields directly, then normalizes the
- *   result as an OADate.
- * - OADateTime input keeps only the source's effective local year/month/day
- *   fields. Source time-of-day is discarded.
- * - createUtil(long time, ZoneId zid) uses zid to map an instant to a local
- *   calendar date. It must not preserve time-of-day from the instant.
- * - OADate does not generally preserve source OADateTime zone metadata unless a
- *   specific createUtil override explicitly assigns a zone for the returned
- *   date-only value.
- */
-
-/*
- * OADate factory invariants
- * -------------------------
- * - All createUtil(...) overrides must return OADate instances, never plain
- *   OADateTime instances.
- * - Inherited OADateTime withXxx/plusXxx/minusXxx operations rely on createUtil
- *   to preserve the OADate runtime type and date-only semantics.
- * - createUtil(ZoneId, fields...) ignores hour, minute, second, and millisecond.
- *   It keeps only year/month/day and resolves midnight in the supplied zone.
- * - createUtil(ZonedDateTime) keeps only zdt.toLocalDate(), discards time-of-day,
- *   and resolves midnight for that local date.
- * - createUtil(long, ZoneId) maps the instant to a LocalDate in the supplied
- *   zone, then returns a standard Floating OADate normalized to midnight.
- * - Methods inherited from OADateTime that conceptually set time fields, such as
- *   withTime(...), withHours(...), withMinutes(...), withSeconds(...), and
- *   withMilliSeconds(...), must still return date-only OADate values.
- */
-
-/*
- * OADate parsing invariants
- * -------------------------
- * - OADate.valueOf(...) delegates text parsing to OADateTime.valueOfMain(...)
- *   using OADate-specific parse formats and output-format fallback.
- * - A successful parse is wrapped into a new OADate so any parsed time-of-day,
- *   offset, or region-zone instant semantics are reduced to date-only OADate
- *   semantics.
- * - A failed parse returns null from valueOf/dateValue methods.
- * - String constructors throw IllegalArgumentException for invalid non-null text.
- * - Date-only parsing must not preserve parsed time-of-day in the resulting
- *   OADate.
- */
-
-/*
- * OADate formatting invariants
- * ----------------------------
- * - toString() delegates to toString(null).
- * - toString(null) uses the instance format first, then OADate's global
- *   dateOutputFormat, then the built-in date-only fallback format.
- * - An explicit toString(format) argument overrides instance and global formats.
- * - Formatting should emit date-only fields. Patterns containing time fields
- *   should observe normalized midnight values.
- * - Formatting uses OADateTime.toStringMain(...), including OADateTime's format
- *   normalization rules before DateTimeFormatter creation.
- */
-
-/*
- * OADate constructor invariants
- * -----------------------------
- * - The no-arg constructor represents the current LocalDate and normalizes to
- *   midnight.
- * - long and Date constructors interpret the supplied instant in defaultZoneId,
- *   keep only the resulting LocalDate, and normalize to midnight.
- * - Calendar constructor keeps the Calendar year/month/day fields and normalizes
- *   to an OADate.
- * - LocalDate constructor maps directly to midnight for that date.
- * - OADateTime constructor keeps only effective local year/month/day fields from
- *   the source value and discards source time-of-day.
- * - String constructors parse through OADate.valueOf(...), then normalize the
- *   parsed result to date-only Floating state.
- */
-
-/*
- * OADate equality and comparison invariants
- * -----------------------------------------
- * - equals(Object), hashCode(), compareTo(Object), and compare(Object) are
- *   inherited from OADateTime and are based on _time.
- * - Because OADate normalizes _time to local midnight, equality and comparison
- *   operate as date comparisons only within the normalized zone model used to
- *   derive each instance.
- * - zoneId and DateTimeType do not participate in inherited equality,
- *   hashCode, or comparison.
- * - If two OADate instances for the same calendar date are normalized in
- *   different zones, their _time values can differ and inherited equality can
- *   report them as not equal.
- */
-
-/*
- * OADate serialization invariants
- * -------------------------------
- * - OADate inherits OADateTime custom Java serialization.
- * - Serialized OADate state should preserve enough date-only information to
- *   round-trip as an OADate with DateTimeType.Floating, non-null zoneId, and
- *   normalized midnight time fields.
- * - Floating serialization writes wall-clock fields rather than treating _time
- *   as authoritative.
- * - Deserialization must not leave an OADate with non-midnight time fields.
- * - If subclass-specific serialization behavior is required, OADate must define
- *   it deliberately rather than relying accidentally on OADateTime internals.
- */
 
 

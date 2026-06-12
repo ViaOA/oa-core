@@ -2,189 +2,235 @@ package com.viaoa.datetime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.sql.Time;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/**
- * Internal tests for OATime.
- *
- * Strategy:
- * - One test method per public production method name.
- * - Overloads are tested inside the same methodNameTest().
- * - Comments explain what each assertion is checking.
- * - Tests characterize current time-only behavior using simple ASCII values.
- */
-public class OATimeTest {
+import com.viaoa.datetime.OADateTime.DateTimeType;
 
-    @Test
-    public void constructorTest() {
-        // default constructor creates a usable time-only value
-        assertNotNull(new OATime());
+class OATimeTest {
+    private static final ZoneId CHICAGO = ZoneId.of("America/Chicago");
+    private static final ZoneId NEW_YORK = ZoneId.of("America/New_York");
+    private static final ZoneId UTC = ZoneOffset.UTC;
 
-        // SQL Time constructor keeps clock fields
-        OATime t1 = new OATime(Time.valueOf("13:02:03"));
-        assertEquals(13, t1.get24Hour());
-        assertEquals(2, t1.getMinute());
-        assertEquals(3, t1.getSecond());
+    private ZoneId originalDefaultZoneId;
+    private String originalTimeOutputFormat;
+    private String originalDateTimeOutputFormat;
+    private Locale originalLocale;
 
-        // Date constructor creates a usable time-only value
-        assertNotNull(new OATime(new Date(0)));
+    @BeforeEach
+    void beforeEach() {
+        originalDefaultZoneId = OADateTime.getDefaultZoneId();
+        originalTimeOutputFormat = OATime.getGlobalOutputFormat();
+        originalDateTimeOutputFormat = OADateTime.getGlobalOutputFormat();
+        originalLocale = Locale.getDefault();
+        OADateTime.setDefaultZoneId(CHICAGO);
+        OADateTime.setLocale(Locale.US);
+        OATime.setGlobalOutputFormat(null);
+        OADateTime.setGlobalOutputFormat(null);
+    }
 
-        // long constructor creates a usable time-only value
-        assertNotNull(new OATime(0L));
-
-        // Calendar constructor copies clock fields
-        Calendar cal = Calendar.getInstance();
-        cal.set(2026, Calendar.MAY, 18, 14, 15, 16);
-        cal.set(Calendar.MILLISECOND, 17);
-        OATime t2 = new OATime(cal);
-        assertEquals(14, t2.get24Hour());
-        assertEquals(15, t2.getMinute());
-        assertEquals(16, t2.getSecond());
-
-        // OADateTime constructor copies clock fields
-        OADateTime dt = new OADateTime(2026, Calendar.MAY, 18, 10, 20, 30, 40);
-        OATime t3 = new OATime(dt);
-        assertEquals(10, t3.get24Hour());
-        assertEquals(20, t3.getMinute());
-        assertEquals(30, t3.getSecond());
-
-        // string constructor parses explicit format
-        OATime t4 = new OATime("13:02:03", OATime.Format5);
-        assertEquals(13, t4.get24Hour());
-        assertEquals(2, t4.getMinute());
-        assertEquals(3, t4.getSecond());
-
-        // LocalTime constructor preserves clock fields
-        OATime t5 = new OATime(LocalTime.of(9, 8, 7, 6_000_000));
-        assertEquals(9, t5.get24Hour());
-        assertEquals(8, t5.getMinute());
-        assertEquals(7, t5.getSecond());
-        assertEquals(6, t5.getMilliSecond());
-
-        // field constructor preserves clock fields
-        OATime t6 = new OATime(1, 2, 3, 4);
-        assertEquals(1, t6.get24Hour());
-        assertEquals(2, t6.getMinute());
-        assertEquals(3, t6.getSecond());
-        assertEquals(4, t6.getMilliSecond());
+    @AfterEach
+    void afterEach() {
+        OATime.removeGlobalParseFormat("HH|mm|ss");
+        OATime.setGlobalOutputFormat(originalTimeOutputFormat);
+        OADateTime.setGlobalOutputFormat(originalDateTimeOutputFormat);
+        OADateTime.setLocale(originalLocale);
+        OADateTime.setDefaultZoneId(originalDefaultZoneId);
     }
 
     @Test
-    public void compareTest() {
-        OATime early = new OATime(9, 0, 0);
-        OATime late = new OATime(10, 0, 0);
+    void constructorsNormalizeToTimeOnlyFloating() {
+        OATime fields = new OATime(10, 30, 15, 123);
+        OATime noMillis = new OATime(10, 30, 15);
+        OATime localTime = new OATime(LocalTime.of(10, 30, 15, 123_456_789));
+        OATime dateTime = new OATime(new OADateTime(NEW_YORK, 2026, 6, 9, 10, 30, 15, 123));
+        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(NEW_YORK), Locale.US);
+        calendar.set(2026, Calendar.JUNE, 9, 10, 30, 15);
+        calendar.set(Calendar.MILLISECOND, 123);
+        OATime fromCalendar = new OATime(calendar);
 
-        // same time compares equal
-        assertEquals(0, early.compare(new OATime(9, 0, 0)));
-
-        // earlier time compares before later time
-        assertTrue(early.compare(late) < 0);
-
-        // later time compares after earlier time
-        assertTrue(late.compare(early) > 0);
+        assertTimeOnly(fields, LocalTime.of(10, 30, 15, 123_000_000));
+        assertTimeOnly(noMillis, LocalTime.of(10, 30, 15));
+        assertTimeOnly(localTime, LocalTime.of(10, 30, 15, 123_000_000));
+        assertTimeOnly(dateTime, LocalTime.of(10, 30, 15, 123_000_000));
+        assertTimeOnly(fromCalendar, LocalTime.of(10, 30, 15, 123_000_000));
     }
 
     @Test
-    public void toStringTest() {
-        OATime t = new OATime(13, 2, 3, 4);
+    void dateAndLongConstructorsDeriveTimeAndDropDateInDefaultZone() {
+        Instant instant = ZonedDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000, CHICAGO).toInstant();
 
-        // explicit 24-hour format
-        assertEquals("13:02:03", t.toString(OATime.Format5));
+        OATime fromLong = new OATime(instant.toEpochMilli());
+        OATime fromDate = new OATime(Date.from(instant));
 
-        // explicit 24-hour format with milliseconds
-        assertEquals("13:02:03.004", t.toString(OATime.Format6));
-
-        // default toString returns non-empty text
-        assertNotNull(t.toString());
-        assertFalse(t.toString().isEmpty());
+        assertTimeOnly(fromLong, LocalTime.of(10, 30, 15, 123_000_000));
+        assertTimeOnly(fromDate, LocalTime.of(10, 30, 15, 123_000_000));
     }
 
     @Test
-    public void timeValueTest() {
-        // explicit format parses time
-        OATime t1 = OATime.timeValue("13:02:03", OATime.Format5);
-        assertNotNull(t1);
-        assertEquals(13, t1.get24Hour());
+    void invalidConstructorInputsThrowCurrentExceptions() {
+        assertThrows(RuntimeException.class, () -> new OATime(24, 0, 0, 0));
+        assertThrows(RuntimeException.class, () -> new OATime(1, 60, 0, 0));
+        assertThrows(RuntimeException.class, () -> new OATime(1, 0, 60, 0));
+        assertThrows(RuntimeException.class, () -> new OATime(1, 0, 0, 1000));
+        assertThrows(NullPointerException.class, () -> new OATime((Date) null));
+        assertThrows(NullPointerException.class, () -> new OATime((Calendar) null));
+        assertThrows(NullPointerException.class, () -> new OATime((OADateTime) null));
+        assertThrows(NullPointerException.class, () -> new OATime((LocalTime) null));
+        assertThrows(IllegalArgumentException.class, () -> new OATime("not a time"));
+    }
 
-        // default parse handles 24-hour time
-        OATime t2 = OATime.timeValue("13:02:03");
-        assertNotNull(t2);
-        assertEquals(13, t2.get24Hour());
+    @Test
+    void parsingMethodsSupportTimeOnlyFormatsAndNormalize() {
+        OATime.addGlobalParseFormat("HH|mm|ss");
 
-        // null input returns null
+        assertTimeOnly(OATime.timeValue("10:30"), LocalTime.of(10, 30));
+        assertTimeOnly(OATime.timeValue("10:30:15"), LocalTime.of(10, 30, 15));
+        assertTimeOnly(OATime.timeValue("10:30AM"), LocalTime.of(10, 30));
+        assertTimeOnly(OATime.timeValue("10:30:15PM"), LocalTime.of(22, 30, 15));
+        assertTimeOnly(OATime.timeValue("10|30|15"), LocalTime.of(10, 30, 15));
+        assertTimeOnly(OATime.timeValue("10-30-15", "HH-mm-ss"), LocalTime.of(10, 30, 15));
+        assertInstanceOf(OATime.class, OATime.valueOf("10:30"));
         assertNull(OATime.timeValue(null));
+        assertNull(OATime.timeValue("not a time"));
+        assertNull(OATime.valueOf("10:30 trailing"));
     }
 
     @Test
-    public void valueOfTest() {
-        // explicit format parses time
-        OATime t1 = (OATime) OATime.valueOf("13:02:03", OATime.Format5);
-        assertNotNull(t1);
-        assertEquals(13, t1.get24Hour());
-
-        // default parse handles 24-hour time
-        OATime t2 = (OATime) OATime.valueOf("13:02:03");
-        assertNotNull(t2);
-        assertEquals(13, t2.get24Hour());
-
-        // null input returns null
-        assertNull(OATime.valueOf(null));
+    void stringConstructorsParseDefaultAndExplicitFormats() {
+        assertTimeOnly(new OATime("10:30:15PM"), LocalTime.of(22, 30, 15));
+        assertTimeOnly(new OATime("10-30-15", "HH-mm-ss"), LocalTime.of(10, 30, 15));
     }
 
     @Test
-    public void setGlobalOutputFormatTest() {
-        // set explicit global output format
-        OATime.setGlobalOutputFormat(OATime.Format5);
-        assertEquals(OATime.Format5, OATime.getGlobalOutputFormat());
+    void formattingUsesOATimeFormatPrecedence() {
+        OATime time = new OATime(10, 30, 15, 123);
 
-        // cleanup
-        OATime.setGlobalOutputFormat(OATime.Format1);
+        OATime.setGlobalOutputFormat("HH:mm:ss");
+        assertEquals("10:30:15", time.toString());
+        time.setFormat("HH:mm");
+        assertEquals("10:30", time.toString());
+        assertEquals("10:30:15.123", time.toString("HH:mm:ss.SSS"));
+        assertEquals("1970-01-01 10:30", time.toString("yyyy-MM-dd HH:mm"));
+        OATime.setGlobalOutputFormat(null);
+        OATime fallback = new OATime(10, 30, 0, 0);
+        assertEquals("10:30AM", fallback.toString());
     }
 
     @Test
-    public void getGlobalOutputFormatTest() {
-        // current global output format is readable after setting
-        OATime.setGlobalOutputFormat(OATime.Format4);
-        assertEquals(OATime.Format4, OATime.getGlobalOutputFormat());
+    void inheritedWithMethodsReturnOATimeAndKeepEpochDate() {
+        OATime base = new OATime(10, 30, 15, 123);
 
-        // cleanup
-        OATime.setGlobalOutputFormat(OATime.Format1);
+        assertTimeOnly(base.withDateTime(2027, 7, 8, 9, 10, 11, 12), LocalTime.of(9, 10, 11, 12_000_000));
+        assertTimeOnly(base.withDate(2027, 7, 8), LocalTime.of(10, 30, 15, 123_000_000));
+        assertTimeOnly(base.withYear(2027), LocalTime.of(10, 30, 15, 123_000_000));
+        assertTimeOnly(base.withMonth(java.time.Month.JULY), LocalTime.of(10, 30, 15, 123_000_000));
+        assertTimeOnly(base.withMonthValue(8), LocalTime.of(10, 30, 15, 123_000_000));
+        assertTimeOnly(base.withDayOfMonth(10), LocalTime.of(10, 30, 15, 123_000_000));
+        assertTimeOnly(base.withoutDate(), LocalTime.of(10, 30, 15, 123_000_000));
+        assertTimeOnly(base.withDate(new OADate(2028, 2, 29)), LocalTime.of(10, 30, 15, 123_000_000));
+        assertTimeOnly(base.withDate(null), LocalTime.of(10, 30, 15, 123_000_000));
+        assertTimeOnly(base.withTime(1, 2, 3, 4), LocalTime.of(1, 2, 3, 4_000_000));
+        assertTimeOnly(base.withTime(1, 2, 3), LocalTime.of(1, 2, 3));
+        assertTimeOnly(base.withTime(1, 2), LocalTime.of(1, 2));
+        assertTimeOnly(base.withHours(11), LocalTime.of(11, 30, 15, 123_000_000));
+        assertTimeOnly(base.withMinutes(31), LocalTime.of(10, 31, 15, 123_000_000));
+        assertTimeOnly(base.withSeconds(16), LocalTime.of(10, 30, 16, 123_000_000));
+        assertTimeOnly(base.withMilliSeconds(124), LocalTime.of(10, 30, 15, 124_000_000));
+        assertTimeOnly(base.withoutTime(), LocalTime.MIDNIGHT);
+        assertTimeOnly(base.withoutSecondAndMilliSecond(), LocalTime.of(10, 30));
+        assertTimeOnly(base.withTime(new OATime(5, 6, 7, 8)), LocalTime.of(5, 6, 7, 8_000_000));
+        assertTimeOnly(base.withTime(null), LocalTime.MIDNIGHT);
+        assertTimeOnly(base, LocalTime.of(10, 30, 15, 123_000_000));
     }
 
     @Test
-    public void addGlobalParseFormatTest() {
-        // custom parse format can be added and used
-        OATime.addGlobalParseFormat("HH.mm.ss");
-        OATime t = OATime.timeValue("13.02.03");
-        assertNotNull(t);
-        assertEquals(13, t.get24Hour());
+    void inheritedArithmeticReturnsOATimeAndKeepsEpochDate() {
+        OATime base = new OATime(23, 59, 59, 999);
 
-        // cleanup
-        OATime.removeGlobalParseFormat("HH.mm.ss");
+        assertTimeOnly(base.plusYears(1), LocalTime.of(23, 59, 59, 999_000_000));
+        assertTimeOnly(base.subtractYears(1), LocalTime.of(23, 59, 59, 999_000_000));
+        assertTimeOnly(base.plusMonths(1), LocalTime.of(23, 59, 59, 999_000_000));
+        assertTimeOnly(base.minusMonths(1), LocalTime.of(23, 59, 59, 999_000_000));
+        assertTimeOnly(base.plusDays(1), LocalTime.of(23, 59, 59, 999_000_000));
+        assertTimeOnly(base.minusDays(1), LocalTime.of(23, 59, 59, 999_000_000));
+        assertTimeOnly(base.plusDay(), LocalTime.of(23, 59, 59, 999_000_000));
+        assertTimeOnly(base.minusDay(), LocalTime.of(23, 59, 59, 999_000_000));
+        assertTimeOnly(base.addWeeks(1), LocalTime.of(23, 59, 59, 999_000_000));
+        assertTimeOnly(base.minusWeeks(1), LocalTime.of(23, 59, 59, 999_000_000));
+        assertTimeOnly(base.plusHours(1), LocalTime.of(0, 59, 59, 999_000_000));
+        assertTimeOnly(base.minusHours(24), LocalTime.of(23, 59, 59, 999_000_000));
+        assertTimeOnly(base.plusMinutes(1), LocalTime.of(0, 0, 59, 999_000_000));
+        assertTimeOnly(base.minusMinutes(60), LocalTime.of(22, 59, 59, 999_000_000));
+        assertTimeOnly(base.plusSeconds(1), LocalTime.of(0, 0, 0, 999_000_000));
+        assertTimeOnly(base.minusSeconds(60), LocalTime.of(23, 58, 59, 999_000_000));
+        assertTimeOnly(base.plusMilliSeconds(1), LocalTime.MIDNIGHT);
+        assertTimeOnly(base.minusMilliSeconds(999), LocalTime.of(23, 59, 59));
     }
 
     @Test
-    public void removeGlobalParseFormatTest() {
-        // removing a known custom format should not throw
-        OATime.addGlobalParseFormat("HH.mm.ss");
-        assertDoesNotThrow(() -> OATime.removeGlobalParseFormat("HH.mm.ss"));
+    void zoneConversionsReturnOATimeAndKeepTimeOnlyInvariant() {
+        OATime base = new OATime(10, 30, 15, 123);
+        OADateTime sameInstant = base.withZoneIdSameInstant(UTC);
+        OADateTime sameWall = base.withZoneIdSameWallTime(NEW_YORK);
+
+        assertTimeOnly(sameInstant, Instant.ofEpochMilli(base.getTime()).atZone(UTC).toLocalTime());
+        assertTimeOnly(sameWall, LocalTime.of(10, 30, 15, 123_000_000));
+        assertTimeOnly(base.withTimeZoneUTCSameInstant(), Instant.ofEpochMilli(base.getTime()).atZone(UTC).toLocalTime());
+        assertTimeOnly(base.withTimeZoneUTCSameWallTime(), LocalTime.of(10, 30, 15, 123_000_000));
     }
 
     @Test
-    public void removeAllGlobalParseFormatsTest() {
-        // remove all custom parse formats should not prevent explicit-format parsing
-        assertNotNull(OATime.valueOf("13:02:03", OATime.Format5));
+    void comparisonAndIntervalMethodsUseInheritedEpochMillisBehavior() {
+        OATime t1 = new OATime(10, 30, 0, 0);
+        OATime t2 = new OATime(10, 30, 0, 0);
+        OATime t3 = new OATime(11, 30, 0, 0);
+
+        assertEquals(t1, t2);
+        assertEquals(t1.hashCode(), t2.hashCode());
+        assertTrue(t1.compareTo(t3) < 0);
+        assertTrue(t1.before(t3));
+        assertTrue(t3.after(t1));
+        assertTrue(t2.betweenOrEqual(t1, t3));
+        assertFalse(t2.betweenNotEqual(t1, t2));
+        assertEquals(0, t1.betweenDays(t3));
+        assertEquals(1, t1.betweenHours(t3));
+        assertEquals(60, t1.betweenMinutes(t3));
+        assertEquals(3600, t1.betweenSeconds(t3));
+        assertEquals(3_600_000, t1.betweenMilliSeconds(t3));
     }
 
     @Test
-    public void getLocalTimeTest() {
-        // converts to java.time LocalTime
-        OATime t = new OATime(13, 2, 3, 4);
-        assertEquals(LocalTime.of(13, 2, 3, 4_000_000), t.getLocalTime());
+    void sameDisplayedTimeResolvedInDifferentZonesCanCompareUnequal() {
+        OATime chicago = new OATime(15, 25, 0, 0);
+        OADateTime.setDefaultZoneId(UTC);
+        OATime utc = new OATime(15, 25, 0, 0);
+
+        assertTimeOnly(chicago, LocalTime.of(15, 25));
+        assertTimeOnly(utc, LocalTime.of(15, 25));
+        assertNotEquals(chicago.getTime(), utc.getTime());
+        assertNotEquals(chicago, utc);
+    }
+
+    private static void assertTimeOnly(OADateTime dt, LocalTime expected) {
+        assertInstanceOf(OATime.class, dt);
+        assertEquals(DateTimeType.Floating, dt.getType());
+        assertEquals(LocalDate.of(1970, 1, 1), dt.getLocalDate());
+        assertEquals(expected, dt.getLocalTime());
+        assertEquals(1970, dt.getYear());
+        assertEquals(1, dt.getMonthValue());
+        assertEquals(1, dt.getDayOfMonth());
     }
 }

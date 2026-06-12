@@ -38,18 +38,6 @@ import com.viaoa.lang.OAStr;
 
 */
 
-/*
- * Comparison invariant:
- * OATime normalizes its date fields to 1970-01-01 and uses Floating semantics,
- * but equality, hashCode, compareTo, and timeline interval methods are inherited
- * from OADateTime and are based on the resolved _time value.
- *
- * Therefore, two OATime instances with the same displayed clock fields can
- * compare unequal if they were resolved using different captured zones. This is
- * intentional. OATime is not a pure LocalTime value; it is an OA date/time value
- * normalized to a fixed date.
- */
-
 /**
  * Time-only OA value.
  * <p>
@@ -280,6 +268,7 @@ public class OATime extends OADateTime {
 	 * @throws IllegalArgumentException if the text cannot be parsed
 	 */
 	public OATime(String strTime, String fmt) {
+		super(false);
 	    OADateTime dt = OATime.valueOf(strTime, fmt);
 	    if (dt == null) {
 	        throw new IllegalArgumentException("OATime cant create time from String \"" + strTime + "\", format=" + fmt);
@@ -308,28 +297,6 @@ public class OATime extends OADateTime {
 	 */
 	public OATime(int hrs, int mins, int secs) {
 		this(hrs, mins, secs, 0);
-	}
-	
-	/**
-	 * Returns a canonical OATime.
-	 * <p>
-	 * OATime always uses {@link DateTimeType#Floating} semantics. Any requested
-	 * type conversion is ignored and the returned value is normalized back to a
-	 * standard OATime instance.
-	 * <p>
-	 * This preserves OATime invariants:
-	 * <ul>
-	 *   <li>Time-of-day semantics</li>
-	 *   <li>Date normalized to {@code 1970-01-01}</li>
-	 *   <li>{@link DateTimeType#Floating}</li>
-	 * </ul>
-	 *
-	 * @param type requested type (ignored)
-	 * @return normalized OATime using Floating semantics
-	 */
-	@Override
-	public OADateTime withType(DateTimeType type) {
-	    return new OATime(this);
 	}
 	
 	/**
@@ -491,8 +458,6 @@ public class OATime extends OADateTime {
 	    return new OATime(lt);
 	}
 	
-	
-	
 	/**
 	 * Sets the global output format used by OATime string formatting.
 	 *
@@ -549,5 +514,91 @@ public class OATime extends OADateTime {
 		}
 		return toStringMain(f);
 	}
-
 }
+
+/* CODEX invariants 20260611
+ * 
+ * OATime implementation invariants
+ * --------------------------------
+ *
+ * Core time-only semantics
+ * - OATime is the OA time-only value type and is an OADateTime subclass.
+ * - OATime always represents a local time of day, not a full date/time.
+ * - Date fields are fixed implementation state and must normalize to
+ *   1970-01-01.
+ * - Time fields are the only business fields retained by OATime-specific
+ *   construction, parsing, and factory paths.
+ * - type must be DateTimeType.Floating for canonical OATime values.
+ * - _time is inherited from OADateTime and is the canonical stored value.
+ * - _time is derived from 1970-01-01 plus the represented local time in the
+ *   captured/effective zone.
+ *
+ * Floating/zone semantics
+ * - OATime uses OADateTime Floating semantics.
+ * - Floating is not zone-free. The local time on 1970-01-01 is resolved into
+ *   _time using the effective zone at creation/deserialization time.
+ * - OATime stores both _time and zoneId after creation.
+ * - Existing OATime instances must not change meaning if
+ *   OADateTime.defaultZoneId changes later.
+ * - OATime values with the same displayed clock fields can have different
+ *   _time values if they were resolved in different zones. That is accepted
+ *   because _time is the inherited comparison value.
+ *
+ * Factory/subclass behavior
+ * - createUtil(...) methods must always return OATime instances.
+ * - createUtil(...) must discard year, month, and day inputs.
+ * - createUtil(ZonedDateTime) retains only the local time from the supplied
+ *   ZonedDateTime and resolves that time on 1970-01-01 as a canonical OATime.
+ * - createUtil(ZoneId, fields...) retains only hour/minute/second/millisecond.
+ * - createUtil(long, ZoneId) maps the instant to a local time in the supplied
+ *   zone, then resolves that time on 1970-01-01 as a canonical OATime.
+ * - Inherited withXxx/plusXxx/minusXxx methods rely on createUtil(...) so
+ *   adjusted OATime values preserve the OATime runtime type and time-only
+ *   invariants.
+ *
+ * Parsing/formatting
+ * - OATime has its own time-only parse path because OADateTime parsing requires
+ *   a date component.
+ * - valueOf(...) must support time-only inputs such as HH:mm, HH:mm:ss, hh:mma,
+ *   and hh:mm:ssa, subject to configured parse formats.
+ * - Parsing must consume the full input and return null on invalid input.
+ * - Any parsed date portion is discarded; only local time fields are retained.
+ * - String constructors throw IllegalArgumentException for invalid non-null
+ *   strings.
+ * - Formatting uses OATime format selection: instance format, then global
+ *   OATime output format, then the built-in fallback format.
+ * - Explicit format strings are allowed to expose the fixed 1970-01-01 date if
+ *   the caller includes date fields.
+ *
+ * Comparison/equality
+ * - OATime inherits equals(Object), hashCode(), compareTo(Object), compare(Object),
+ *   and timeline interval behavior from OADateTime.
+ * - These inherited operations use _time.
+ * - Do not add time-field-only equality or comparison semantics to OATime.
+ * - OATime is an OA legacy value type with time-only normalization, not a pure
+ *   LocalTime replacement.
+ *
+ * Serialization
+ * - OATime inherits OADateTime custom serialization.
+ * - OATime should deserialize as an OATime instance.
+ * - Because canonical OATime values are Floating, serialization writes type,
+ *   _time, and zoneId through OADateTime.
+ * - Floating deserialization re-resolves local fields using the receiving
+ *   JVM/default zone according to OADateTime rules.
+ * - After deserialization, OATime invariants must still hold: runtime type is
+ *   OATime, type is Floating, date is 1970-01-01, and zoneId is captured.
+ */
+
+
+/*
+ * Comparison invariant:
+ * OATime normalizes its date fields to 1970-01-01 and uses Floating semantics,
+ * but equality, hashCode, compareTo, and timeline interval methods are inherited
+ * from OADateTime and are based on the resolved _time value.
+ *
+ * Therefore, two OATime instances with the same displayed clock fields can
+ * compare unequal if they were resolved using different captured zones. This is
+ * intentional. OATime is not a pure LocalTime value; it is an OA date/time value
+ * normalized to a fixed date.
+ */
+
