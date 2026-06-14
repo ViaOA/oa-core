@@ -1,404 +1,66 @@
 package com.viaoa.sync;
 
-import java.util.ArrayList;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import static org.junit.jupiter.api.Assertions.*;
 
-import com.viaoa.config.OAProperties;
-import com.viaoa.datasource.OADataSource;
-import com.viaoa.datasource.clientserver.OADataSourceClient;
-import com.viaoa.datasource.objectcache.OADataSourceObjectCache;
-import com.viaoa.datetime.OATime;
-import com.viaoa.find.OAFinder;
-import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.hub.Hub;
-import com.viaoa.hub.HubEvent;
-import com.viaoa.hub.HubListenerAdapter;
-import com.viaoa.lang.OAString;
-import com.viaoa.log.OALogUtil;
-import com.viaoa.object.OAObject;
-import com.viaoa.queue.OACircularQueue;
-import com.viaoa.runtime.OARuntime;
-import com.viaoa.sync.remote.RemoteBroadcastInterface;
-import com.viaoa.sync.remote.RemoteTestInterface;
-import com.viaoa.sync.remote.RemoteTsamInterface;
+import org.junit.jupiter.api.Test;
 
-import test.xice.tsac.model.oa.propertypath.SitePP;
-import test.xice.tsam.delegate.ModelDelegate;
-import test.xice.tsam.delegate.RemoteDelegate;
-import test.xice.tsam.model.oa.AdminUser;
-import test.xice.tsam.model.oa.Application;
-import test.xice.tsam.model.oa.ApplicationStatus;
-import test.xice.tsam.model.oa.Command;
-import test.xice.tsam.model.oa.HostInfo;
-import test.xice.tsam.model.oa.MRADClient;
-import test.xice.tsam.model.oa.MRADClientCommand;
-import test.xice.tsam.model.oa.MRADServer;
-import test.xice.tsam.model.oa.MRADServerCommand;
-import test.xice.tsam.model.oa.Server;
-import test.xice.tsam.model.oa.Silo;
-import test.xice.tsam.model.oa.Site;
-import test.xice.tsam.model.oa.cs.ClientRoot;
-import test.xice.tsam.model.oa.cs.ServerRoot;
-import test.xice.tsam.remote.RemoteAppImpl;
-import test.xice.tsam.remote.RemoteAppInterface;
-import test.xice.tsam.remote.RemoteModelImpl;
-import test.xice.tsam.remote.RemoteModelInterface;
-import test.xice.tsam.util.DataGenerator;
+import com.viaoa.sync.model.ClientInfo;
+import com.viaoa.sync.model.ServerInfo;
+import com.viaoa.sync.remote.RemoteSyncImpl;
 
-/**
- * Server for Unit Tests -
- *  
- *   ==> Run this manually, Run this manually, Run this manually,  
- *    Run this manually !!!! Run this manually, Run this manually   <==
- *   ...
- *   and then run OASyncClientTest multiple times,
- *   ... 
- *   and then run it as a junit test.
- */
-public class OASyncServerTest {
-	private static Logger LOG = Logger.getLogger(OASyncServerTest.class.getName());
+class OASyncServerTest {
 
-	private OADataSource ds;
-	private OAGraphInternal og;
-	private OADataSourceClient dsClient;
+    @Test
+    void constructorInitializesServerWithoutStartingNetworkServices() {
+        OASyncServer server = new OASyncServer(0);
 
-	public OASyncServer syncServer;
-	private ServerRoot serverRoot;
+        ClientInfo ci = server.getClientInfo();
 
-	private RemoteBroadcastInterface remoteBroadcast;
+        assertEquals(0, ci.getConnectionId());
+        assertNotNull(ci.getCreated());
+        assertSame(ci, server.getClientInfo());
+    }
 
-	private boolean bRunCommand;
-	private final AtomicInteger aiRunCommand = new AtomicInteger();
-	private final Object lock = new Object();
-	
-	public void setup() throws Exception {
-		
-		// for non-DB objects
-		ds = new OADataSourceObjectCache();
-		// ds.setAssignIdOnCreate(true);
-		OARuntime.datasource().register(ds);
+    @Test
+    void getRemoteSyncImplIsLazyAndStable() {
+        OASyncServer server = new OASyncServer(0);
 
-		og = (OAGraphInternal) OARuntime.createGraph(Site.class.getPackage().getName());
-		og.sync().createServer(1102);
-		syncServer = og.syncInternal().getServer();
-		setupRemote();
-		
+        RemoteSyncImpl rs = server.getRemoteSyncImpl();
 
-		DataGenerator dg = new DataGenerator();
-		//was: serverRoot = dg.readSerializeFromFile();
-		serverRoot = dg.createServerRoot();
-		dg.populate(serverRoot);
-		if (serverRoot.getDefaultSilo() == null) {
-			Silo silo = serverRoot.getSites().getAt(0).getEnvironments().getAt(0).getSilos().getAt(0);
-			serverRoot.setDefaultSilo(silo); 
-		}
+        assertNotNull(rs);
+        assertSame(rs, server.getRemoteSyncImpl());
+        assertNull(server.getRemoteSyncInterface());
+    }
 
-		ModelDelegate.initialize(serverRoot, null);
-		
-		setupTestB();
-	}
-	
-	public void start() throws Exception {
-		syncServer.start();
-	}
+    @Test
+    void getServerInfoIsLazyAndStable() {
+        OASyncServer server = new OASyncServer(0);
 
-	public void stop() throws Exception {
-		if (syncServer != null) {
-			syncServer.stop();
-		}
-	}
+        ServerInfo info = server.getServerInfo();
 
-	public void setupRemote() {
-		// setup remote objects
-		RemoteAppInterface remoteApp = new RemoteAppImpl() {
-			@Override
-			public void saveData() {
-			}
+        assertNotNull(info.getCreated());
+        assertSame(info, server.getServerInfo());
+    }
 
-			@Override
-			public AdminUser getUser(int clientId, String userId, String password, String location, String userComputerName) {
-				return null;
-			}
+    @Test
+    void getInvalidConnectionMessageReturnsDefaultMessage() {
+        OASyncServer server = new OASyncServer(0);
 
-			@Override
-			public ServerRoot getServerRoot() {
-				return serverRoot;
-			}
+        assertEquals("default", server.getInvalidConnectionMessage("default"));
+        assertNull(server.getInvalidConnectionMessage(null));
+    }
 
-			@Override
-			public ClientRoot getClientRoot(int clientId) {
-				return null;
-			}
+    @Test
+    void performDgcBeforeRemoteMultiplexerCreationIsSafe() {
+        OASyncServer server = new OASyncServer(0);
 
-			@Override
-			public boolean isRunningAsDemo() {
-				return false;
-			}
+        assertDoesNotThrow(server::performDGC);
+    }
 
-			@Override
-			public boolean disconnectDatabase() {
-				return false;
-			}
+    @Test
+    void getServerFileIsLazyAndStable() {
+        OASyncServer server = new OASyncServer(0);
 
-			@Override
-			public OAProperties getServerProperties() {
-				return null;
-			}
-
-			@Override
-			public boolean writeToClientLogFile(int clientId, ArrayList al) {
-				return false;
-			}
-
-			@Override
-			public MRADServerCommand createMRADServerCommand() {
-				MRADServerCommand msc = new MRADServerCommand();
-				msc.save();
-				return msc;
-			}
-		};
-
-		syncServer.createSyncLookup(RemoteAppInterface.BindName, remoteApp, RemoteAppInterface.class);
-		RemoteDelegate.setRemoteApp(remoteApp);
-
-		RemoteModelImpl remoteModel = new RemoteModelImpl();
-		syncServer.createSyncLookup(RemoteModelInterface.BindName, remoteModel, RemoteModelInterface.class);
-		RemoteDelegate.setRemoteModel(remoteModel);
-
-		RemoteTestInterface remoteTest = new RemoteTestInterface() {
-			@Override
-			public String getName(Server server) {
-				return server.getName();
-			}
-		};
-		syncServer.createLookup(RemoteTestInterface.BindName, remoteTest, RemoteTestInterface.class);
-
-		// TSAM test
-		RemoteTsamInterface remoteTsam = new RemoteTsamInterface() {
-			@Override
-			public MRADServerCommand createMRADServerCommand(AdminUser user, Hub<MRADClient> hub, Command command) {
-				MRADServerCommand msc = new MRADServerCommand();
-				msc.setAdminUser(user);
-				msc.setCommand(command);
-				if (hub != null) {
-					for (MRADClient mcx : hub) {
-						MRADClientCommand ccmd = new MRADClientCommand();
-						ccmd.setMRADClient(mcx);
-						msc.getMRADClientCommands().add(ccmd);
-					}
-				}
-				ModelDelegate.getDefaultSilo().getMRADServer().getMRADServerCommands().add(msc);
-				return msc;
-			}
-
-			@Override
-			public boolean runCommand(MRADServerCommand cmd) {
-				// cause some "noise"
-				OASyncServerTest.this.runCommand(cmd);
-				return true;
-			}
-		};
-		syncServer.createLookup(RemoteTsamInterface.BindName, remoteTsam, RemoteTsamInterface.class, OASyncServer.SyncQueueName, 0);
-
-		remoteBroadcast = new RemoteBroadcastInterface() {
-			@Override
-			public void startTest() {
-			}
-
-			@Override
-			public void stopTest() {
-			}
-
-			@Override
-			public void sendStats() {
-				OAFinder<Site, Server> f = new OAFinder<Site, Server>(SitePP.environments().silos().servers().pp) {
-					@Override
-					protected void onFound(Server server) {
-						respondStats(server, server.getName(), server.getApplications().getSize(), server.getNameChecksum());
-					}
-				};
-				f.find(ModelDelegate.getSites());
-			}
-
-			@Override
-			public void respondStats(Site site, String name) {
-			}
-
-			@Override
-			public void respondStats(Server server, String name, int cntApps, long nameChecksum) {
-			}
-
-			@Override
-			public void respondStats(String msg) {
-			}
-
-			@Override
-			public void onClientTestStarted() {
-			}
-
-			@Override
-			public void onClientTestDone() {
-			}
-
-			@Override
-			public void onClientStatsSent() {
-			}
-
-			@Override
-			public void onClientDone() {
-			}
-		};
-		remoteBroadcast = (RemoteBroadcastInterface) syncServer.createBroadcast(RemoteBroadcastInterface.BindName, remoteBroadcast,
-																				RemoteBroadcastInterface.class, OASyncServer.SyncQueueName,
-																				100);
-		//was, in a separate queue
-		// remoteBroadcast = (RemoteBroadcastInterface) syncServer.createBroadcast(RemoteBroadcastInterface.BindName, remoteBroadcast, RemoteBroadcastInterface.class, "broadcast", 100);
-	}
-
-	public void setupTestB() {
-		serverRoot.getSites().addHubListener(new HubListenerAdapter<Site>() {
-			@Override
-			public void afterPropertyChange(HubEvent<Site> e) {
-				final Site site = e.getObject();
-				if (site == null) {
-					return;
-				}
-				if (!Site.P_Production.equalsIgnoreCase(e.getPropertyName())) {
-					return;
-				}
-
-				if (!site.getProduction()) {
-					return;
-				}
-
-				//was:  OAThreadLocalDelegate.setDefaultSendSyncMessages(true);
-				site.setName("Server running test");
-
-				Thread t = new Thread(new Runnable() {
-					@Override
-					public void run() {
-						System.out.println("TestA start " + ((new OATime()).toString("HH:mm:ss.SSS")));
-						Silo silo = site.getEnvironments().getAt(0).getSilos().getAt(0);
-						Server server = silo.getServers().getAt(0);
-						MRADServer mradServer = silo.getMRADServer();
-						if (mradServer == null) {
-							mradServer = new MRADServer();
-							silo.setMRADServer(mradServer);
-						}
-
-						for (int i = 0; i < 2000; i++) {
-							if ((i + 1) % 250 == 0) {
-								System.out.println((i + 1));
-							}
-
-							site.setAbbrevName("test." + i);
-							server.setName("test." + i);
-
-							MRADServerCommand sc = new MRADServerCommand();
-							for (int j = 0; j < 5; j++) {
-								MRADClientCommand cc = new MRADClientCommand();
-								sc.getMRADClientCommands().add(cc);
-								if (j == 0) {
-									mradServer.getMRADServerCommands().add(sc);
-								}
-							}
-							sc.delete();
-						}
-						site.setProduction(false);
-						System.out.println("TestA done " + ((new OATime()).toString("HH:mm:ss.SSS")));
-					}
-				});
-				t.start();
-			}
-		});
-	}
-	
-	
-
-	protected void runCommand(final MRADServerCommand sc) {
-		synchronized (lock) {
-			aiRunCommand.incrementAndGet();
-			lock.notifyAll();
-		}
-		if (bRunCommand) {
-			return;
-		}
-		bRunCommand = true;
-		for (MRADClientCommand mcz : sc.getMRADClientCommands()) {
-			final MRADClientCommand mcx = mcz;
-			Thread t = new Thread() {
-				int lastCnt;
-
-				@Override
-				public void run() {
-					for (;;) {
-						lastCnt = aiRunCommand.get();
-						update();
-						synchronized (lock) {
-							if (lastCnt == aiRunCommand.get()) {
-								try {
-									lock.wait();
-								} catch (Exception e) {
-								}
-							}
-						}
-					}
-				}
-
-				void update() {
-					MRADClient mc = mcx.getMRADClient();
-					if (mc == null) {
-						return;
-					}
-					Application app = mc.getApplication();
-					if (app == null) {
-						app = new Application();
-						mc.setApplication(app);
-					}
-					HostInfo hi = mc.getHostInfo();
-					if (hi == null) {
-						hi = new HostInfo();
-						mc.setHostInfo(hi);
-					}
-					for (int i = 0; i < 5; i++) {
-						mc.setStartScript(OAString.getRandomString(8, 24));
-						mc.setStopScript(OAString.getRandomString(8, 24));
-						hi.setJarDirectory(OAString.getRandomString(88, 824));
-						mc.setApplicationStatus(OAString.getRandomString(6, 24));
-					}
-					Hub<ApplicationStatus> h = serverRoot.getApplicationStatuses();
-					ApplicationStatus as = h.getAt((int) (Math.random() * h.size()));
-					app.setApplicationStatus(as);
-				}
-			};
-			t.start();
-		}
-	}
-
-	public static void main(String[] args) throws Exception {
-		OAObject.setDebugMode(true);
-		// OALogUtil.consoleOnly(Level.FINE, OACircularQueue.class.getName());//"com.viaoa.util.OACircularQueue");
-		OALogUtil.consoleOnly(Level.FINE);
-
-		Logger logx = Logger.getLogger(OACircularQueue.class.getName());
-
-		OASyncServerTest test = new OASyncServerTest();
-
-		test.setup();
-		test.start();
-		
-		int scnt = -1;
-		for (int i = 1;; i++) {
-			int x;
-			do {
-				x = test.syncServer.getSessionCount();
-				Thread.sleep(1 * 1000);
-			} while (x == scnt);
-			scnt = x;
-			System.out.println(i + ") ServerTest is running " + (new OATime()) + ",  sessionCount=" + x);
-		}
-	}
-
+        assertSame(server.getServerFile(), server.getServerFile());
+    }
 }

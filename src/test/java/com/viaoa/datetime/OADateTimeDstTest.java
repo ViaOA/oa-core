@@ -41,7 +41,7 @@ class OADateTimeDstTest {
         OADateTime actual = new OADateTime(NEW_YORK, 2026, 3, 8, 2, 30, 0, 0);
 
         assertEquals(expected.toInstant().toEpochMilli(), actual.getTime());
-        assertEquals(expected.toLocalDateTime(), actual.getLocalDateTime());
+        assertEquals(expected.toLocalDateTime(), actual.toLocalDateTime());
         assertEquals(NEW_YORK, actual.getZoneId());
     }
 
@@ -53,8 +53,8 @@ class OADateTimeDstTest {
         OADateTime actual = new OADateTime(NEW_YORK, 2026, 11, 1, 1, 30, 0, 0);
 
         assertEquals(expected.toInstant().toEpochMilli(), actual.getTime());
-        assertEquals(expected.toLocalDateTime(), actual.getLocalDateTime());
-        assertEquals(expected.getOffset(), actual.getZonedDateTime().getOffset());
+        assertEquals(expected.toLocalDateTime(), actual.toLocalDateTime());
+        assertEquals(expected.getOffset(), actual.toZonedDateTime().getOffset());
     }
 
     @Test
@@ -65,7 +65,7 @@ class OADateTimeDstTest {
         assertEquals(1, start.betweenDays(end));
         assertEquals(23, start.betweenHours(end));
         assertEquals(Duration.ofHours(23), start.betweenDuration(end));
-        assertEquals(start.getZonedDateTime().plusDays(1).toInstant().toEpochMilli(), start.plusDays(1).getTime());
+        assertEquals(start.toZonedDateTime().plusDays(1).toInstant().toEpochMilli(), start.plusDays(1).getTime());
     }
 
     @Test
@@ -76,7 +76,7 @@ class OADateTimeDstTest {
         assertEquals(1, start.betweenDays(end));
         assertEquals(25, start.betweenHours(end));
         assertEquals(Duration.ofHours(25), start.betweenDuration(end));
-        assertEquals(start.getZonedDateTime().plusDays(1).toInstant().toEpochMilli(), start.plusDays(1).getTime());
+        assertEquals(start.toZonedDateTime().plusDays(1).toInstant().toEpochMilli(), start.plusDays(1).getTime());
     }
 
     @Test
@@ -100,9 +100,9 @@ class OADateTimeDstTest {
         OADateTime sameWall = base.withZoneIdSameWallTime(CHICAGO);
 
         assertEquals(base.getTime(), sameInstant.getTime());
-        assertEquals(base.getZonedDateTime().withZoneSameInstant(CHICAGO).toLocalDateTime(), sameInstant.getLocalDateTime());
-        assertEquals(base.getLocalDateTime(), sameWall.getLocalDateTime());
-        assertEquals(base.getLocalDateTime().atZone(CHICAGO).toInstant().toEpochMilli(), sameWall.getTime());
+        assertEquals(base.toZonedDateTime().withZoneSameInstant(CHICAGO).toLocalDateTime(), sameInstant.toLocalDateTime());
+        assertEquals(base.toLocalDateTime(), sameWall.toLocalDateTime());
+        assertEquals(base.toLocalDateTime().atZone(CHICAGO).toInstant().toEpochMilli(), sameWall.getTime());
         assertNotEquals(base.getTime(), sameWall.getTime());
     }
 }

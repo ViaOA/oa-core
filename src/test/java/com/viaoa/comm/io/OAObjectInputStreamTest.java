@@ -1,48 +1,58 @@
 package com.viaoa.comm.io;
 
-import java.io.*;
-
 import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.*;
 
-import com.viaoa.io.OAFile;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectOutputStream;
 
-import test.xice.tsac.model.oa.Server;
+import org.junit.jupiter.api.Test;
 
-public class OAObjectInputStreamTest {
+class OAObjectInputStreamTest {
 
     @Test
-    public void test() throws Exception {
+    void constructorReadsStandardSerializedObjects() throws Exception {
+        byte[] bytes = serialize("value");
 
-        File file = new File(OAFile.convertFileName("test.bin"));
-        OAFile.mkdirsForFile(file);
-        
-        FileOutputStream out = new FileOutputStream(file);
-        ObjectOutputStream oout = new ObjectOutputStream(out);
-
-        Server server = new Server();
-        server.setName("serverName");
-
-        oout.writeObject(server);
-        oout.flush();
-        oout.close();
-        
-        
-        FileInputStream fis = new FileInputStream(file);
-
-        String s = "com.xice.tsac.model.oa";
-        OAObjectInputStream ois = new OAObjectInputStream(new FileInputStream(file), s, s);
-        ois.replaceClassName("Server", "SiloX");
-        
-
-        // read the object and print the string
-        Object obj = ois.readObject();
-
-        System.out.println("done "+obj);
+        try (OAObjectInputStream in = new OAObjectInputStream(new ByteArrayInputStream(bytes))) {
+            assertEquals("value", in.readObject());
+        }
     }
-    
-    public static void main(String[] args) throws Exception {
-        OAObjectInputStreamTest test = new OAObjectInputStreamTest();
-        test.test();
+
+    @Test
+    void constructorWithOldPackageReadsWhenNoRemapIsNeeded() throws Exception {
+        byte[] bytes = serialize("value");
+
+        try (OAObjectInputStream in = new OAObjectInputStream(new ByteArrayInputStream(bytes), "old.package")) {
+            assertEquals("value", in.readObject());
+        }
     }
+
+    @Test
+    void constructorWithOldAndNewPackageReadsWhenNoRemapIsNeeded() throws Exception {
+        byte[] bytes = serialize("value");
+
+        try (OAObjectInputStream in = new OAObjectInputStream(new ByteArrayInputStream(bytes), "old.package", "new.package")) {
+            assertEquals("value", in.readObject());
+        }
+    }
+
+    @Test
+    void replaceClassNameCanBeRegisteredBeforeReadingUnchangedStream() throws Exception {
+        byte[] bytes = serialize("value");
+
+        try (OAObjectInputStream in = new OAObjectInputStream(new ByteArrayInputStream(bytes), "old.package", "new.package")) {
+            in.replaceClassName("OldName", "NewName");
+            assertEquals("value", in.readObject());
+        }
+    }
+
+    private static byte[] serialize(Object obj) throws Exception {
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        try (ObjectOutputStream out = new ObjectOutputStream(bout)) {
+            out.writeObject(obj);
+        }
+        return bout.toByteArray();
+    }
+
 }

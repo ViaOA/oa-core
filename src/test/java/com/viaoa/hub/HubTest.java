@@ -1,306 +1,232 @@
 package com.viaoa.hub;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.ListIterator;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.viaoa.OAUnitTest;
-import com.viaoa.find.OAFinder;
-import com.viaoa.lang.OAString;
-import com.viaoa.model.oa.VInteger;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import test.hifive.model.oa.*;
-import test.hifive.model.oa.propertypath.ProgramPP;
+import com.test.pos.model.oa.Register;
+import com.test.pos.model.oa.Store;
+import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.runtime.OARuntime;
 
-public class HubTest extends OAUnitTest {
-
-    private final static AtomicInteger aiCount = new AtomicInteger();
-    
-    public static void addEmp(Hub h, boolean b) {
-        for (int i = 0; i < 10; i++) {
-            Employee e = new Employee();
-            aiCount.incrementAndGet();
-            h.add(e);
-            if (b) addEmp(e.getEmployees(), false);
-        }
+class HubTest {
+    @BeforeEach
+    void beforeEach() {
+        clearCache();
     }
 
-    public static void main(String[] args) {
-
-        final Hub<String> comboRegionHubMNSR = new Hub<String>();
-        final Hub<String> comboJobCodeHubMNSR = new Hub<String>();
-        final Hub<String> comboJobNameHubMNSR = new Hub<String>();
-        final Hub<String> comboCompanyCodeHubMNSR = new Hub<String>();
-        final Hub<String> comboCompanyNameHubMNSR = new Hub<String>();
-        final Hub<String> comboCostCenterHubMNSR = new Hub<String>();
-        final Hub<String> comboCostCenterDescHubMNSR = new Hub<String>();
-        comboRegionHubMNSR.sort("");
-        comboJobCodeHubMNSR.sort("");
-        comboJobNameHubMNSR.sort("");
-        comboCompanyCodeHubMNSR.sort("");
-        comboCompanyNameHubMNSR.sort("");
-        comboCostCenterHubMNSR.sort("");
-        comboCostCenterDescHubMNSR.sort("");
-        
-        long ms1 = System.currentTimeMillis();
-
-        Program prog = new Program();
-        for (int i = 0; ; i++) {
-            System.out.println("cnt emps:"+aiCount);
-            if (aiCount.get() > 50000) break;
-            Location loc = new Location();
-            prog.getLocations().add(loc);
-            addEmp(loc.getEmployees(), true);
-            for (int ii = 0; ii<5; ii++) {
-                Location locx = new Location();
-                loc.getLocations().add(locx);
-                addEmp(loc.getEmployees(), true);
-            }
-        }
-
-        long ms2 = System.currentTimeMillis();
-        System.out.println("create time = " + (ms2 - ms1)+", tot emps="+aiCount);
-        aiCount.set(0);
-
-        OAFinder<Program, Employee> finderMNSR = new OAFinder<Program, Employee>(ProgramPP.locations().employees().pp) {
-            protected void onFound(Employee emp) {
-                aiCount.incrementAndGet();
-                
-                String region = OAString.getRandomString(1, 8, true, false, false);
-                
-                String jobName = OAString.createRandomString(6, 12);
-                String jobCode = OAString.getRandomString(4, 4, true, false, false);
-                String companyCode = OAString.createRandomString(3, 4); //emp.getCompanyCode();
-                String companyCodeName = OAString.createRandomString(2, 6); //emp.getCompanyCodeName();
-                String costCenter = OAString.createRandomString(2, 4); // emp.getCostCenter();
-                String costCenterDesc = OAString.createRandomString(6, 22); // emp.getCostCenterDescription();
-                
-                if (!OAString.isEmpty(jobCode)) {
-                    comboJobCodeHubMNSR.add(jobCode);
-                }
-                comboRegionHubMNSR.add(region);
-                
-                if (!OAString.isEmpty(jobName)) {
-                    comboJobNameHubMNSR.add(jobName);
-                }
-                if (!OAString.isEmpty(companyCode)) {
-                    comboCompanyCodeHubMNSR.add(companyCode);
-                }
-                if (!OAString.isEmpty(companyCodeName)) {
-                    comboCompanyNameHubMNSR.add(companyCodeName);
-                }
-                if (!OAString.isEmpty(costCenter)) {
-                    comboCostCenterHubMNSR.add(costCenter);
-                }
-                if (!OAString.isEmpty(costCenterDesc)) {
-                    comboCostCenterDescHubMNSR.add(costCenterDesc);
-                }
-            }
-        };
-        finderMNSR.find(prog);
-
-        long ms3 = System.currentTimeMillis();
-        System.out.println("add time = " + (ms3 - ms2) + "   tot emps=" + aiCount);
-        System.out.println("comboRegionHubMNSR.size="+comboRegionHubMNSR.size());
-        System.out.println("comboJobCodeHubMNSR.size="+comboJobCodeHubMNSR.size());
-        System.out.println("comboJobNameHubMNSR.size="+comboJobNameHubMNSR.size());
-        System.out.println("comboCompanyCodeHubMNSR.size="+comboCompanyCodeHubMNSR.size());
-        System.out.println("comboCompanyNameHubMNSR.size="+comboCompanyNameHubMNSR.size());
-        System.out.println("comboCostCenterHubMNSR.size="+comboCostCenterHubMNSR.size());
-        System.out.println("comboCostCenterDescHubMNSR.size="+comboCostCenterDescHubMNSR.size());
+    @AfterEach
+    void afterEach() {
+        clearCache();
     }
 
-    // 20170608 test hub.sort that was changed to use quicksort
-    public static void mainX(String[] args) {
+    private static void clearCache() {
+        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
+        OAObjectService os = (OAObjectService) og.objectsInternal();
+        os.getOAObjectCacheService().removeAllObjects();
+    }
 
-        long ms1 = System.currentTimeMillis();
-
-        ArrayList<String> al = new ArrayList<>();
-        for (int i = 0;; i++) {
-            String s = OAString.createRandomString(7, 22);
-            if (!al.contains(s)) {
-                al.add(s);
-                if (al.size() > 5000) break;
-            }
-        }
-        long ms2 = System.currentTimeMillis();
-        System.out.println("al time = " + (ms2 - ms1));
-
-        int x = al.size();
-        Hub<String> h = new Hub<>(String.class);
-        for (int i = 0; i < 100000; i++) {
-            String s = al.get(i % x);
-            h.add(s);
-        }
-
-        Hub<Employee> he = new Hub<>(Employee.class);
-        he.sort("lastname");
-        for (int i = 0; i < 15000; i++) {
-            Employee emp = new Employee();
-            emp.setLastName(OAString.createRandomString(3, 14));
-            he.add(emp);
-        }
-
-        long ms3 = System.currentTimeMillis();
-        System.out.println("hub time = " + (ms3 - ms2) + "   hub.size=" + h.size());
-
+    private static Register register(int id, String code) {
+        Register r = new Register();
+        r.setId(id);
+        r.setCode(code);
+        return r;
     }
 
     @Test
-    public void setAO() {
-        reset();
+    void constructorsCreateTypedAndPopulatedHubs() {
+        Hub<Register> hub = new Hub<>(Register.class);
+        assertEquals(Register.class, hub.getObjectClass());
+        assertTrue(hub.isEmpty());
 
-        Hub h = new Hub();
-        h.add("one");
-        h.add("two");
+        Register r = register(1, "R1");
+        Hub<Register> one = new Hub<>(r);
+        assertEquals(Register.class, one.getObjectClass());
+        assertEquals(1, one.size());
+        assertSame(r, one.getAt(0));
+        assertSame(r, one.getAO());
 
-        h.setAO("one");
-
-        assertEquals(h.getAO(), "one");
+        Hub<Register> sized = new Hub<>(Register.class, 2, 1);
+        sized.ensureCapacity(4);
+        sized.resizeToFit();
+        assertEquals(Register.class, sized.getObjectClass());
     }
 
     @Test
-    public void setAO2() {
-        reset();
+    void propertiesAndStringHelpersStoreDynamicValues() {
+        Hub<Register> hub = new Hub<>(Register.class);
+        hub.setProperty("label", "registers");
 
-        Hub h = new Hub();
-        Row r = new Row();
-        h.add(new Row());
-        h.add(new Row());
-        h.add(r);
-        h.add(new Row());
+        assertEquals("registers", hub.getProperty("label"));
+        assertTrue(hub.toString().contains("Register"));
 
-        h.setAO(r);
-
-        assertEquals(h.getAO(), r);
-    }
-
-    class Row {
+        hub.removeProperty("label");
+        assertNull(hub.getProperty("label"));
     }
 
     @Test
-    public void testIterator() {
-        Location loc = new Location();
-        for (int i = 0; i < 50; i++) {
-            Employee emp = new Employee();
-            loc.getEmployees().add(emp);
-        }
-        int cnt = 0;
-        for (Employee emp : loc.getEmployees()) {
-            cnt++;
-        }
-        assertEquals(50, cnt);
+    void addInsertMoveSwapReplaceRemoveAndClearMaintainOrderAndActiveObject() {
+        Hub<Register> hub = new Hub<>(Register.class);
+        Register r1 = register(1, "A");
+        Register r2 = register(2, "B");
+        Register r3 = register(3, "C");
 
-        cnt = 0;
-        for (Employee emp : loc.getEmployees()) {
-            cnt++;
-            emp.delete();
-        }
-        assertEquals(50, cnt);
-        assertEquals(0, loc.getEmployees().size());
+        assertTrue(hub.add(r1));
+        hub.addElement(r3);
+        hub.insert(r2, 1);
+
+        assertEquals(List.of(r1, r2, r3), hub.toList());
+        assertTrue(hub.contains(r2));
+        assertEquals(1, hub.indexOf(r2));
+        assertSame(r3, hub.getLast());
+
+        hub.move(0, 2);
+        assertEquals(List.of(r2, r3, r1), hub.toList());
+
+        hub.swap(0, 1);
+        assertEquals(List.of(r3, r2, r1), hub.toList());
+
+        Register r4 = register(4, "D");
+        hub.replace(1, r4);
+        assertEquals(List.of(r3, r4, r1), hub.toList());
+
+        hub.setPos(1);
+        assertSame(r4, hub.getActiveObject());
+        hub.setAO(r1);
+        assertEquals(2, hub.getPos());
+        hub.resetAO();
+        assertEquals(-1, hub.getPos());
+
+        assertSame(r3, hub.removeAt(0));
+        assertTrue(hub.remove(r4));
+        assertEquals(List.of(r1), hub.toList());
+
+        hub.clear();
+        assertTrue(hub.isEmpty());
     }
+
     @Test
-    public void testIterator2() {
-        Location loc = new Location();
-        int max = 50;
-        for (int i = 0; i < max; i++) {
-            Employee emp = new Employee();
-            loc.getEmployees().add(emp);
-        }
-        
-        ListIterator<Employee> li = loc.getEmployees().listIterator();
-        for (int i = 0; i < max; i++) {
-            Object objx = li.next();
-            assertNotNull(objx);
-        }
-        assertEquals(max, li.nextIndex());
-        assertNull(li.next());
-        
-        assertEquals(max, li.nextIndex());
-        assertEquals(max, li.nextIndex());
-        assertEquals(max, li.nextIndex());
-        assertNull(li.next());
+    void collectionViewsAndArrayMethodsReflectHubContents() {
+        Hub<Register> hub = new Hub<>(Register.class);
+        Register r1 = register(1, "A");
+        Register r2 = register(2, "B");
+        hub.addAll(Arrays.asList(r1, r2));
 
-        assertNotNull(li.previous());
-        assertEquals(max, li.nextIndex());
-        assertEquals(max-2, li.previousIndex());
+        assertArrayEquals(new Object[] { r1, r2 }, hub.toArray());
+        assertArrayEquals(new Register[] { r1, r2 }, hub.toArray(new Register[0]));
 
-        Employee emp = new Employee();
-        li.set(emp);
-        assertEquals(max, li.nextIndex());
-        assertNotNull(li.previous());
-        assertEquals(emp, li.next());
-        
-        
-        
-        
+        Register[] copied = new Register[2];
+        hub.copyInto(copied);
+        assertArrayEquals(new Register[] { r1, r2 }, copied);
+
+        Hub<Register> copy = new Hub<>(Register.class);
+        hub.copyInto(copy);
+        assertEquals(hub.toList(), copy.toList());
+
+        Iterator<Register> iterator = hub.iterator();
+        assertSame(r1, iterator.next());
+        assertEquals(List.of(r1), hub.subList(0, 1));
+        assertEquals(2, hub.stream().count());
+    }
+
+    @Test
+    void sharedHubCanShareOrIsolateActiveObject() {
+        Hub<Register> hub = new Hub<>(Register.class);
+        Register r1 = register(1, "A");
+        Register r2 = register(2, "B");
+        hub.add(r1);
+        hub.add(r2);
+
+        Hub<Register> shared = hub.createSharedHub(true);
+        assertEquals(hub.toList(), shared.toList());
+
+        hub.setAO(r2);
+        assertSame(r2, shared.getAO());
+
+        Hub<Register> isolated = hub.createSharedHub(false);
+        isolated.setAO(r1);
+        assertSame(r2, hub.getAO());
+        assertSame(r1, isolated.getAO());
+    }
+
+    @Test
+    void masterDetailHubFromOaObjectRelationshipTracksOwnerAndReverseLink() {
+        Store store = new Store();
+        Register r1 = register(1, "A");
+        Register r2 = register(2, "B");
+
+        Hub<Register> registers = store.getRegisters();
+        registers.add(r1);
+        registers.add(r2);
+
+        assertSame(store, registers.getMasterObject());
+        assertEquals(Store.class, registers.getMasterClass());
+        assertSame(store, r1.getStore());
+        assertSame(registers, r2.getStore().getRegisters());
+    }
+
+    @Test
+    void listenersAndConvenienceCallbacksFireForHubAndPropertyChanges() {
+        Hub<Register> hub = new Hub<>(Register.class);
+        Register r1 = register(1, "A");
+        AtomicInteger adds = new AtomicInteger();
+        AtomicInteger removes = new AtomicInteger();
+        AtomicInteger aos = new AtomicInteger();
+        AtomicInteger props = new AtomicInteger();
+
+        hub.onAdd(e -> adds.incrementAndGet());
+        hub.onRemove(e -> removes.incrementAndGet());
+        hub.onChangeAO(e -> aos.incrementAndGet());
+        hub.onPropertyChange(e -> props.incrementAndGet(), Register.P_Code);
+
+        hub.add(r1);
+        hub.setAO(r1);
+        r1.setCode("A2");
+        hub.remove(r1);
+
+        assertEquals(1, adds.get());
+        assertEquals(1, removes.get());
+        assertEquals(1, aos.get());
+        assertEquals(1, props.get());
+    }
+
+    @Test
+    void sortFindAndSelectConfigurationUseOaProperties() {
+        Hub<Register> hub = new Hub<>(Register.class);
+        Register r1 = register(1, "B");
+        Register r2 = register(2, "A");
+        hub.add(r1);
+        hub.add(r2);
+
+        hub.sort(Register.P_Code);
+        assertEquals(List.of(r2, r1), hub.toList());
+        assertSame(r1, hub.find(Register.P_Code, "B"));
+
+        hub.setSelectWhere("code = ?");
+        hub.setSelectOrder(Register.P_Code);
+        assertEquals("code = ?", hub.getSelectWhere());
+        assertEquals(Register.P_Code, hub.getSelectOrder(hub));
+        hub.cancelSelect();
+    }
+
+    @Test
+    void stateFlagsAndGraphAccessAreStable() {
+        Hub<Register> hub = new Hub<>(Register.class);
+
+        assertTrue(hub.isValid());
+        assertFalse(hub.isLoading());
+        hub.setLoading(true);
+        assertTrue(hub.isLoading());
+        hub.setLoading(false);
+
+        assertNotNull(hub.getGraph());
     }
 }
-
-/**
- * Observable Collection Class that has similar methods as both ArrayList and HashMap. When used with OAObject, the Hub sends all events for
- * the objects that it contains.
- * <p>
- * Observable means that will notify listeners whenever an event happens. Hub has methods to register listeners and for sending Events.
- * <p>
- * <i>Searching</i><br>
- * Hub has methods to find any object based on a property path and search value.
- * <p>
- * <i>Sorting</i><br>
- * Hub has methods for sorting/ordering of objects within the collection. The collection is kept sorted as objects are added, inserted, or
- * changed. A property path can be used or a customized comparator can be used.
- * <p>
- * <i>Manages OAObjects</i><br>
- * Hub is used by OAObject for sending events and for managing event listeners.
- * <p>
- * <i>Works directly with {@link OADataSource}</i><br>
- * The Hub Class has methods to directly select objects from a DataSource/database using an {@link OASelect}. Hubs are also set up to only
- * pre-fetch a certain number of objects at a time, so that response is faster. Methods to get a total count of objects and to load all
- * objects are also included.
- * <p>
- * <i>Recursive Hubs</i><br>
- * A Hub that is recursive is where each object has children objects of the same class. Each object has a method to get its "parent". A
- * "Root Hub" is the top Hub where all of the objects in it do not have a parent (value is null). Hub and OAObject will automatically put
- * objects in the correct Hub based on the value of the parent. If another Object owns the Hub, then all children under it will have a
- * reference to the owner object.
- * <p>
- * <i>Hub Filtering</i><br>
- * A Hub can be created that filters objects from another Hub. see {@link HubFilter} for more information.
- * <p>
- * <i>XML Support</i><br>
- * Hub has methods to work directly with OAXMLReader/Writer to read/write XML.
- * <p>
- * <i>Serialization</i><br>
- * Works with OAObject to handle serialization of objects to/from a stream.
- * <p>
- * Inside the Hub are the following objects:
- * <ul>
- * <li>Data - a Vector and Hashtable that are used to store the objects. This can be shared/used by other Hubs.
- * <li>Unique - information that is unique to a single Hub. ie: the registered event listeners.
- * <li>Active - keeps track of the object within the Hub that has the current focus. This can be shared/used by other Hubs.
- * <li>Master - Hub/Object that this Hub belongs with. Example: a Hub of Employee objects that belongs to a Department object.
- * </ul>
- * <p>
- * <b>Navigational features</b><br>
- * The Hub Collection has methods that allow it to be <i>navigated</i>. This is primarily used when using Hubs with GUI components, where
- * the Hub acts as the Model in MVC (Model/View/Controller) that is commonly used for building GUI applications.
- * <p>
- * Hubs have an <i>Active Object</i>, which is a reference to the object in the Hub that currently has the <i>focus</i>. Navigational
- * methods in the Hub can be used to change the active object. <br>
- * &nbsp;&nbsp;&nbsp;<img src="doc-files/Hub2.gif" alt="hub">
- * <p>
- * <b>Configuring Hubs to work together (the <i>Wiring</i>)</b><br>
- * Hubs can be configured to form relationships and automatically work together. <br>
- * This includes:
- * <ul>
- * <li>Creating Master/Detail relationships. see {@link DetailHub}
- * <li>Hubs that Share the same data. see {@link SharedHub}
- * <li>Linking/Connecting Hubs together. see {@link HubLink}
- * </ul>
- * &nbsp;&nbsp;&nbsp;<img src="doc-files/Hub1.gif" alt="">
- */
-

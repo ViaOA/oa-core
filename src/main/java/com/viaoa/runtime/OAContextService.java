@@ -37,7 +37,7 @@ public class OAContextService {
 	}
 
 	public void unregister(Object key) {
-		if (key != null)hmContext.remove(key);
+		if (key != null) hmContext.remove(key);
 	}
 	
 	public OAContextUser<?> getDefaultContextUser() {

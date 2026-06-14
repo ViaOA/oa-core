@@ -1,17 +1,35 @@
 package com.viaoa.datasource.autonumber;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import com.viaoa.OAUnitTest;
+import org.junit.jupiter.api.Test;
 
-import test.xice.tsac3.model.oa.*;
-
-public class NextNumberTest extends OAUnitTest {
+class NextNumberTest {
 
     @Test
-    public void test() {
-        
+    void getIdAndSetIdRoundTrip() {
+        NextNumber nn = new NextNumber();
+
+        nn.setId("com.test.Store");
+
+        assertEquals("com.test.Store", nn.getId());
     }
-    
+
+    @Test
+    void getNextAndSetNextRoundTrip() {
+        NextNumber nn = new NextNumber();
+
+        assertEquals(1, nn.getNext());
+        nn.setNext(42);
+        assertEquals(42, nn.getNext());
+    }
+
+    @Test
+    void getPropertyAndSetPropertyRoundTrip() {
+        NextNumber nn = new NextNumber();
+
+        nn.setProperty("id");
+
+        assertEquals("id", nn.getProperty());
+    }
 }

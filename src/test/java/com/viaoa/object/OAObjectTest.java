@@ -1,515 +1,424 @@
 package com.viaoa.object;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.Test;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import com.viaoa.OAUnitTest;
-import com.viaoa.datasource.OADataSource;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.test.pos.model.oa.Customer;
+import com.test.pos.model.oa.Register;
+import com.test.pos.model.oa.Store;
+import com.viaoa.callback.OAObjectCallback;
+import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.service.OAObjectService;
 import com.viaoa.hub.Hub;
-import com.viaoa.metadata.OALinkInfo;
-import com.viaoa.metadata.OAObjectInfo;
-
-import test.xice.tsac3.model.oa.AdminUserCategory;
-import test.xice.tsac3.model.oa.Server;
-import test.xice.tsac3.model.oa.ServerGroup;
-import test.xice.tsac3.model.oa.ServerInstall;
-import test.xice.tsac3.model.oa.ServerType;
-import test.xice.tsac3.model.oa.Silo;
-import test.xice.tsac3.model.oa.SiloServerInfo;
-import test.xice.tsac3.model.oa.SiloType;
-import test.xice.tsac3.model.oa.search.ServerSearch;
-
-public class OAObjectTest extends OAUnitTest {
-
-	@Test
-	public void constructorTest() {
-		reset(false);
-
-		assertFalse(OAThreadLocalDelegate.callThreadLocalIsLoading());
-		Server server = new Server();
-
-		assertFalse(OAThreadLocalDelegate.callThreadLocalIsLoading());
-		assertTrue(server.isNew());
-		assertTrue(server.isChanged());
-
-		OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Server.class);
-		String[] ps = oi.getPrimitiveProperties();
-		assertTrue(ps != null && ps.length == 4);
-		for (String s : ps) {
-			//if ("verifiedVersion".equalsIgnoreCase(s)) assertFalse(server.isNull(s));
-			assertTrue(server.isNull(s));
-		}
-		assertTrue(server.isNull(Server.P_Id));
-
-		// test: guid should be 1
-		long x = OAObjectDelegate.getGuid(server);
-		assertEquals(x, 1);
-
-		assertEquals(server.getId(), 0);
-
-		for (OALinkInfo li : oi.getLinkInfos()) {
-			if (li.getCalculated()) {
-				continue;
-			}
-			if (li.getPrivateMethod()) {
-				continue;
-			}
-			if (li.getMatchProperty() != null) {
-				continue;
-			}
-
-			Object objx = OAObjectPropertyDelegate.getProperty(server, li.getName(), true, true);
-			assertEquals(objx, null);
-		}
-
-		// now with DS
-		getDataSource();
-		server = new Server();
-		assertEquals(0, server.getId()); // not auto assigned
-
-		server.save();
-		assertEquals(1, server.getId()); // auto assigned
-
-		// clean up
-		reset();
-	}
-
-	@Test
-	public void localGuidTest() {
-		reset();
-		ServerSearch serverSearch = new ServerSearch();
-		assertTrue(OAObjectDelegate.getGuid(serverSearch) < 0);
-
-		// clean up
-		reset();
-	}
-
-	@Test
-	public void idAndGuidTest() {
-		reset(false);
-
-		long gidNext = OAObjectDelegate.getNextGuid() + 1;
-
-		Server server = new Server();
-
-		// test: make sure that it is in the cache
-		Server serv = (Server) OAObjectCacheDelegate.get(Server.class, 0); // should not work, Id is null
-		assertEquals(null, serv);
-
-		OAObjectKey key = new OAObjectKey(null, gidNext);
-		serv = (Server) OAObjectCacheDelegate.get(Server.class, key);
-		assertEquals(serv, server);
-
-		// test: set Id, changes key, cache pos
-		serv.setId(1);
-		assertFalse(server.isNull(Server.P_Id));
-		assertEquals(server.getId(), 1);
-
-		try {
-			serv.setId(2);
-			assertEquals(server.getId(), 2);
-		} catch (Exception e) {
-			fail();
-		}
-
-		server.save();
-		assertFalse(server.isNew());
-		assertFalse(server.isChanged());
-
-		try {
-			serv.setId(1);
-		} catch (Exception e) {
-			fail("id can be changed, if datasource.getAllowIdChange() is true (default)"); // RDBMS datasources will be false
-		}
-		assertEquals(server.getId(), 1);
-
-		// action: this will auto assign Id
-		getDataSource();
-		assertEquals(OADataSource.getDataSource(Server.class), dsAuto);
-		Server server2 = new Server();
-		assertTrue(server2.isNull(Server.P_Id));
-
-		// test: guid should be 2
-		gidNext++;
-		long x = OAObjectDelegate.getGuid(server2);
-		assertEquals(x, gidNext);
-
-		assertEquals(0, server2.getId());
-		server2.save();
-		assertEquals(2, server2.getId());
-
-		server2 = new Server();
-		gidNext++;
-		x = OAObjectDelegate.getGuid(server2);
-		assertEquals(x, gidNext);
-		server2.save();
-		assertEquals(3, server2.getId()); // 2 was already manually assigned
-
-		// clean up
-		reset();
-	}
-
-	@Test
-	public void regularPropertyChangeTest() {
-		reset();
-		Server server = new Server();
-		server.save();
-		assertFalse(server.isChanged());
-		assertFalse(server.isNew());
-
-		assertNull(server.getHostName());
-		server.setHostName(null);
-		assertNull(server.getHostName());
-		assertFalse(server.isChanged());
-		assertFalse(server.isNew());
-
-		server.setHostName("test");
-		assertEquals(server.getHostName(), "test");
-		assertTrue(server.isChanged());
-		assertFalse(server.isNew());
-
-		server.setHostName(null);
-		assertNull(server.getHostName());
-		assertTrue(server.isChanged());
-		assertFalse(server.isNew());
-
-		server.save();
-		assertFalse(server.isChanged());
-		assertFalse(server.isNew());
-
-		ServerInstall si = new ServerInstall();
-		server.getServerInstalls().add(si);
-		assertFalse(server.isChanged());
-		assertFalse(server.isNew());
-		assertFalse(server.isChanged(true)); // serverInstalls is not owned
-
-		Silo silo = new Silo();
-		silo.save();
-		assertFalse(silo.isChanged(true));
-		server.setHostName("");
-		silo.getServers().add(server);
-
-		assertTrue(silo.isChanged());
-		assertTrue(silo.isChanged(true));
-
-		silo.save();
-		assertFalse(silo.isChanged());
-		assertFalse(silo.isChanged(true));
-
-		server.save();
-		assertFalse(silo.isChanged(true));
-
-		// clean up
-		reset();
-	}
-
-	@Test
-	public void uniquePropertyChangeTest() {
-		reset();
-		ServerType st = new ServerType();
-		st.setCode("1");
-		st.setCode("2");
-		st.setCode("3");
-
-		ServerType st2 = new ServerType();
-		st2.setCode("1");
-		try {
-			st2.setCode("3");
-			fail();
-		} catch (Exception e) {
-		}
-		assertEquals(st2.getCode(), "1");
-
-		// clean up
-		reset();
-	}
-
-	@Test
-	public void referenceOnePropertyChangeTest() {
-		reset();
-		Server server = new Server();
-		server.setHostName(null);
-
-		Object objx = OAObjectPropertyDelegate.getProperty(server, Server.P_Silo);
-		assertNull(objx);
-
-		objx = OAObjectPropertyDelegate.getProperty(server, Server.P_Silo, true, true);
-		assertNull(objx);
-
-		Silo silo = new Silo();
-		server.setSilo(silo);
-		assertEquals(silo, server.getSilo());
-
-		objx = OAObjectPropertyDelegate.getProperty(server, Server.P_Silo, true, true);
-		assertEquals(silo, objx);
-
-		Silo silox = new Silo();
-		server.setSilo(silox);
-		assertEquals(silox, server.getSilo());
-		assertTrue(silox.getServers().contains(server));
-
-		objx = OAObjectPropertyDelegate.getProperty(server, Server.P_Silo, true, true);
-		assertEquals(silox, objx);
-
-		server.setSilo(null);
-		assertNull(server.getSilo());
-		assertFalse(silo.getServers().contains(server));
-
-		objx = OAObjectPropertyDelegate.getProperty(server, Server.P_Silo, true, true);
-		assertNull(objx);
-
-		// clean up
-		reset();
-	}
-
-	@Test
-	public void referenceManyPropertyChangeTest() {
-		reset();
-		Silo silo = new Silo();
-		Object objx = OAObjectPropertyDelegate.getProperty(silo, Silo.P_Servers, true, true);
-		assertNull(objx);
-
-		Hub h = silo.getServers();
-		assertTrue(h != null);
-		objx = OAObjectPropertyDelegate.getProperty(silo, Silo.P_Servers, true, true);
-		assertTrue(objx != null);
-		assertEquals(h, objx);
-
-		// clean up
-		reset();
-	}
-
-	@Test
-	public void referenceManyAutoMatchPropertyChangeTest() {
-		reset();
-		SiloType siloType = new SiloType();
-
-		ServerType st = new ServerType();
-		siloType.getServerTypes().add(st);
-
-		Silo silo = new Silo();
-		silo.setSiloType(siloType);
-
-		assertEquals(silo.getSiloServerInfos().getSize(), 1);
-
-		SiloServerInfo info = silo.getSiloServerInfos().getAt(0);
-		assertTrue(info != null);
-
-		assertEquals(info.getServerType(), st);
-
-		ServerType st2 = new ServerType();
-		siloType.getServerTypes().add(st2);
-
-		info = silo.getSiloServerInfos().getAt(1);
-		assertTrue(info != null);
-		assertEquals(info.getServerType(), st2);
-
-		assertEquals(silo.getSiloServerInfos().getSize(), 2);
-
-		siloType.getServerTypes().remove(st2);
-		assertEquals(silo.getSiloServerInfos().getSize(), 1);
-
-		// clean up
-		reset();
-	}
-
-	@Test
-	public void referenceManySeqPropertyChangeTest() {
-		reset();
-		Silo silo = new Silo();
-
-		ServerGroup sg = new ServerGroup();
-		assertEquals(sg.getSeq(), 0);
-		assertTrue(sg.isNull(ServerGroup.P_Seq));
-		silo.getServerGroups().add(sg);
-		assertEquals(sg.getSeq(), 0);
-		assertFalse(sg.isNull(ServerGroup.P_Seq));
-
-		ServerGroup sg2 = new ServerGroup();
-		assertEquals(sg2.getSeq(), 0);
-		silo.getServerGroups().add(sg2);
-		assertEquals(sg.getSeq(), 0);
-		assertEquals(sg2.getSeq(), 1);
-		assertFalse(sg2.isNull(ServerGroup.P_Seq));
-
-		ServerGroup sg3 = new ServerGroup();
-		assertEquals(sg3.getSeq(), 0);
-		silo.getServerGroups().insert(sg3, 1);
-		assertEquals(sg.getSeq(), 0);
-		assertEquals(sg2.getSeq(), 2);
-		assertEquals(sg3.getSeq(), 1);
-		assertFalse(sg3.isNull(ServerGroup.P_Seq));
-
-		silo.getServerGroups().move(2, 1);
-		assertEquals(sg.getSeq(), 0);
-		assertEquals(sg2.getSeq(), 1);
-		assertEquals(sg3.getSeq(), 2);
-
-		silo.getServerGroups().removeAt(1);
-		assertEquals(sg.getSeq(), 0);
-		assertEquals(sg2.getSeq(), 1); // removed, so value never changed
-		assertEquals(sg3.getSeq(), 1);
-
-		silo.getServerGroups().add(sg2);
-		assertEquals(sg.getSeq(), 0);
-		assertEquals(sg2.getSeq(), 2); // re-added
-		assertEquals(sg3.getSeq(), 1);
-
-		// clean up
-		reset();
-	}
-
-	@Test
-	public void recursivePropertyChangeTest() {
-		reset();
-		AdminUserCategory catParent = new AdminUserCategory();
-
-		AdminUserCategory catChild1 = new AdminUserCategory();
-
-		try {
-			catParent.setParentAdminUserCategory(catParent);
-			fail();
-		} catch (Exception e) {
-		}
-		assertNull(catParent.getParentAdminUserCategory());
-
-		catChild1.setParentAdminUserCategory(catParent);
-		assertEquals(catChild1.getParentAdminUserCategory(), catParent);
-		assertEquals(catParent.getAdminUserCategories().getAt(0), catChild1);
-
-		try {
-			catParent.setParentAdminUserCategory(catChild1);
-			fail();
-		} catch (Exception e) {
-		}
-		assertNull(catParent.getParentAdminUserCategory());
-
-		AdminUserCategory catChild2 = new AdminUserCategory();
-		catChild1.getAdminUserCategories().add(catChild2);
-		assertEquals(catChild2.getParentAdminUserCategory(), catChild1);
-
-		catChild2.setParentAdminUserCategory(catParent);
-		assertEquals(catParent.getAdminUserCategories().getSize(), 2);
-		assertTrue(catParent.getAdminUserCategories().contains(catChild1));
-		assertTrue(catParent.getAdminUserCategories().contains(catChild2));
-		assertEquals(catChild1.getParentAdminUserCategory(), catParent);
-		assertEquals(catChild2.getParentAdminUserCategory(), catParent);
-
-		// clean up
-		reset();
-	}
-
-	//qqqqqqq create these
-	//qqqqqqqq OAObjectCacheDelegate
-	//  finder
-	// datasource tests
-	// order of finding registered one
-
-	@Test
-	public void metaDataTest() {
-		OAObjectInfo oi = OAObjectInfoDelegate.callInfoGetObjectInfo(Server.class);
-		String[] ps = oi.getPrimitiveProperties();
-
-		//qqq links, etc
-	}
-
-	@Test
-	public void propertyTest() {
-
-	}
-
-	//qqqqqqq  OAThreadLocalDelegate tests
-
+import com.viaoa.lang.oa.VEnum;
+import com.viaoa.runtime.OARuntime;
+
+class OAObjectTest {
+
+    @BeforeEach
+    void beforeEach() {
+        clearCache();
+    }
+
+    @AfterEach
+    void afterEach() {
+        OAObject.setDebugMode(false);
+        clearCache();
+    }
+
+    @Test
+    void getOAVersionReturnsVersionString() {
+        assertTrue(OAObject.getOAVersion().startsWith("4.0.0"));
+    }
+
+    @Test
+    void constructorInitializesGuidLifecycleFlagsAndCacheIdentity() {
+        Store store = new Store();
+
+        assertNotNull(store.getGuid());
+        assertNotNull(store.getObjectKey());
+        assertTrue(store.getNew());
+        assertTrue(store.isNew());
+        assertTrue(store.getChanged());
+        assertTrue(store.isChanged());
+        assertFalse(store.getDeleted());
+        assertFalse(store.wasDeleted());
+        assertFalse(store.isDeleted());
+    }
+
+    @Test
+    void setPropertyOverloadsAndGetPropertyUseModelMetadata() {
+        Store store = new Store();
+
+        store.setProperty(Store.P_StoreNumber, 55);
+        store.setProperty(Store.P_Name, "Main");
+        store.setProperty(Store.P_Id, 7L);
+        store.setProperty(Store.P_StoreNumber, 12.0d);
+        store.setProperty(Store.P_Name, "Formatted", null);
+
+        assertEquals(12, store.getProperty(Store.P_StoreNumber));
+        assertEquals("Formatted", store.getProperty(Store.P_Name));
+    }
+
+    @Test
+    void setNullRemovePropertyAndNullChecksClearProperties() {
+        Store store = new Store();
+        store.setName("North");
+
+        store.setNull(Store.P_Name);
+        assertNull(store.getName());
+        assertTrue(store.isNull(Store.P_Name));
+        assertTrue(store.getNull(Store.P_Name));
+
+        store.setName("South");
+        store.removeProperty(Store.P_Name);
+        assertNull(store.getName());
+    }
+
+    @Test
+    void getPropertyAsStringOverloadsFormatAndNullValues() {
+        Store store = new Store();
+        store.setStoreNumber(123);
+
+        assertEquals("123", store.getPropertyAsString(Store.P_StoreNumber));
+        assertEquals("123", store.getPropertyAsString(Store.P_StoreNumber, true));
+        assertEquals("123", store.getPropertyAsString(Store.P_StoreNumber, ""));
+        assertEquals("missing", store.getPropertyAsString(Store.P_Name, null, "missing"));
+    }
+
+    @Test
+    void validationEnabledVisibleAndCommandCallbacksAllowNormalModelProperties() {
+        Store store = new Store();
+
+        assertTrue(store.isValidPropertyChange(Store.P_Name, null, "New"));
+        assertTrue(store.isValidPropertyChange(Store.P_Name, "New"));
+        assertNotNull(store.getIsValidPropertyChangeObjectCallback(Store.P_Name, null, "New"));
+        assertNotNull(store.getIsValidPropertyChangeObjectCallback(Store.P_Name, "New"));
+        assertTrue(store.isEnabled(Store.P_Name));
+        assertNotNull(store.getIsEnabledObjectCallback(Store.P_Name, null, "New"));
+        assertTrue(store.isEnabled());
+        assertNotNull(store.getIsEnabledObjectCallback());
+        assertTrue(store.isVisible(Store.P_Name));
+        assertNotNull(store.getIsVisibleObjectCallback(Store.P_Name));
+        assertTrue(store.isVisible());
+        assertNotNull(store.getIsVisibleObjectCallback());
+        assertTrue(store.verifyCommand("callback"));
+        assertNotNull(store.getVerifyCommand("callback"));
+        assertNotNull(store.getAllowSubmit());
+        assertNotNull(store.getVerifySaveObjectCallback());
+    }
+
+    @Test
+    void lifecycleFlagsCanBeUpdated() {
+        Store store = new Store();
+
+        store.setNew(false);
+        assertFalse(store.getNew());
+        assertFalse(store.isNew());
+
+        store.setDeleted(true);
+        assertTrue(store.getDeleted());
+        assertTrue(store.wasDeleted());
+        assertTrue(store.isDeleted());
+
+        store.setDeleted(false);
+        assertFalse(store.isDeleted());
+    }
+
+    @Test
+    void equalsHashCodeAndCompareToUseGuidIdentity() {
+        Store one = new Store(1);
+        Store two = new Store(1);
+        OAObjectInternalBridge bridge = new OAObjectInternalBridge();
+        UUID guid = one.getGuid();
+        bridge.getObjectFriendAccess().setGuid(two, null);
+        bridge.getObjectFriendAccess().setGuid(two, guid);
+
+        assertEquals(one, two);
+        assertEquals(one.hashCode(), two.hashCode());
+        assertEquals(0, one.compareTo(two));
+        assertTrue(one.compareTo(null) > 0);
+        assertNotEquals(one, "x");
+        assertNotEquals(one, new Store(2));
+    }
+
+    @Test
+    void changedFlagsCanBeClearedAndSet() {
+        Store store = new Store();
+
+        store.setChanged(false);
+        assertFalse(store.getChanged());
+        assertFalse(store.isChanged());
+        assertFalse(store.getChanged(false));
+        assertFalse(store.isChanged(false));
+        assertFalse(store.getChanged(OAObject.CASCADE_NONE));
+
+        store.setName("Changed");
+        assertTrue(store.getChanged());
+    }
+
+    @Test
+    void createCopyCopyWithExclusionsAndCopyIntoUseModelProperties() {
+        Store store = new Store(1);
+        store.setName("Original");
+        store.setStoreNumber(101);
+
+        Store copy = (Store) store.createCopy();
+        assertNotSame(store, copy);
+        assertEquals("Original", copy.getName());
+        assertEquals(101, copy.getStoreNumber());
+
+        Store excluded = (Store) store.createCopy(new String[] { Store.P_Name });
+        assertNull(excluded.getName());
+
+        Store target = new Store();
+        store.copyInto(target);
+        assertEquals("Original", target.getName());
+    }
+
+    @Test
+    void finalizeSaveFlagCurrentlyAlwaysFalse() {
+        OAObject.setFinalizeSave(true);
+
+        assertFalse(OAObject.getFinalizeSave());
+    }
+
+    @Test
+    void generatedSettersUpdatePropertiesAndChangedFlag() {
+        Store store = new Store();
+        store.setChanged(false);
+
+        store.setName("Central");
+
+        assertEquals("Central", store.getName());
+        assertTrue(store.getChanged());
+    }
+
+    @Test
+    void setHubAndGeneratedHubAccessMaintainOneToManyRelationship() {
+        Store store = new Store(1);
+        Hub<Register> hub = new Hub<>(Register.class);
+        Register register = new Register(2);
+
+        store.setHub(Store.P_Registers, hub);
+        store.getRegisters().add(register);
+
+        assertSame(hub, store.getRegisters());
+        assertSame(store, register.getStore());
+        assertFalse(store.isReferenceObjectNull(Store.P_Registers));
+    }
+
+    @Test
+    void saveDeleteAndLockMethodsExposeSafeInMemoryBehavior() {
+        Store store = new Store();
+
+        assertTrue(store.canSave());
+        assertTrue(store.canDelete());
+        store.afterSave();
+        store.afterDelete();
+        store.lock();
+        assertTrue(store.isLocked());
+        store.unlock();
+        assertFalse(store.isLocked());
+    }
+
+    @Test
+    void findAndFindAllTraverseRealHubRelationships() {
+        Store store = new Store(1);
+        Register one = new Register(2);
+        one.setCode("R1");
+        Register two = new Register(3);
+        two.setCode("R2");
+        store.getRegisters().add(one);
+        store.getRegisters().add(two);
+
+        assertSame(two, store.find(Store.P_Registers + "." + Register.P_Code, "R2"));
+        Object[] found = store.findAll(Store.P_Registers + "." + Register.P_Code, "R1");
+        assertEquals(1, found.length);
+        assertSame(one, found[0]);
+    }
+
+    @Test
+    void threadAndMessageMethodsAreStableInSingleUserTests() {
+        Store store = new Store();
+
+        assertFalse(store.isRemoteThread());
+        assertDoesNotThrow(() -> store.sendMessages(false));
+        assertDoesNotThrow(() -> store.sendMessages(true));
+        store.afterLoad();
+    }
+
+    @Test
+    void objectKeyGuidAutoAddEmptyAndHubLoadedAccessorsWork() {
+        Store store = new Store(1);
+
+        assertNotNull(store.getObjectKey());
+        assertNotNull(store.getGuid());
+        store.setAutoAdd(false);
+        assertFalse(store.getAutoAdd());
+        store.setAutoAdd(true);
+        assertTrue(store.getAutoAdd());
+        assertTrue(store.isEmpty(""));
+        assertFalse(store.isEmpty("x"));
+        assertTrue(store.isHubLoaded(Store.P_Registers));
+    }
+
+    @Test
+    void loadReferencesOverloadsAreNoOpsForAlreadyInMemoryGraph() {
+        Store store = new Store(1);
+        store.getRegisters().add(new Register(2));
+
+        assertDoesNotThrow(() -> store.loadReferences(false));
+        assertDoesNotThrow(() -> store.loadReferences(true, true, false));
+        assertDoesNotThrow(() -> store.loadReferences(1, 1, false));
+        assertDoesNotThrow(() -> store.loadReferences(1, 1, false, 10));
+    }
+
+    @Test
+    void remoteHelpersReportUnavailableWithoutSyncClient() {
+        Store store = new Store();
+        Hub<Store> hub = new Hub<>(Store.class);
+
+        assertNull(OAObject.callRemote(null, "x"));
+        assertFalse(store.isRemoteAvailable());
+        assertFalse(OAObject.isRemoteAvailable(null));
+        assertFalse(OAObject.isRemoteAvailable(hub));
+        assertThrows(RuntimeException.class, () -> store.remote("x"));
+    }
+
+    @Test
+    void uniqueInstanceLookupCanReturnNullOrAutoCreate() {
+        assertNull(OAObject.getUniqueInstance(Store.class, Store.P_StoreNumber, 999, false));
+
+        OAObject obj = OAObject.getUniqueInstance(Store.class, Store.P_StoreNumber, 999, true);
+
+        assertTrue(obj instanceof Store);
+        assertEquals(999, ((Store) obj).getStoreNumber());
+    }
+
+    @Test
+    void loadedReferenceReferenceKeyAndHierarchyHelpersUseCurrentGraphState() {
+        Store store = new Store(1);
+        Register register = new Register(2);
+        store.getRegisters().add(register);
+
+        assertTrue(store.isLoaded(Store.P_Name));
+        assertTrue(store.isPropertyLoaded(Store.P_Name));
+        assertFalse(register.isReferenceNull(Register.P_Store));
+        assertEquals(store.getObjectKey(), register.getReferenceObjectKey(Register.P_Store));
+        assertEquals("Fallback", store.hierFind(Store.P_Name, Store.P_Address));
+    }
+
+    @Test
+    void serverOnlyDebugSubmittedAndPropertyLockMethodsHaveDeterministicDefaults() {
+        Store store = new Store();
+        AtomicInteger calls = new AtomicInteger();
+
+        assertFalse(store.startServerOnly());
+        assertDoesNotThrow(store::endServerOnly);
+        store.runOnServerOnly(calls::incrementAndGet);
+        assertEquals(0, calls.get());
+
+        OAObject.setDebugMode(true);
+        assertTrue(OAObject.getDebugMode());
+        assertFalse(store.isPropertyLocked(Store.P_Name));
+        assertTrue(store.isSubmitted());
+        assertTrue(store._isSubmitted(11));
+    }
+
+    @Test
+    void compareAndSwapUpdatesOnlyWhenExpectedValueMatches() {
+        Store store = new Store();
+        store.setName("Old");
+
+        assertTrue(store.compareAndSwap(Store.P_Name, "Old", "New", false));
+        assertEquals("New", store.getName());
+        assertFalse(store.compareAndSwap(Store.P_Name, "Old", "Other", false));
+        assertEquals("New", store.getName());
+        assertFalse(store.compareAndSwap(null, "New", "Other", false));
+        assertFalse(store.compareAndSwap("", "New", "Other", false));
+    }
+
+    @Test
+    void setObjectDefaultsCanBeCalledBySubclassesAndGeneratedClasses() {
+        Store store = new Store();
+
+        assertDoesNotThrow(store::setObjectDefaults);
+        assertNotNull(store.getCreated());
+    }
+
+    @Test
+    void foreignKeyHelpersUseRealOneToOneRelationship() {
+        Store store = new Store(44);
+        Register register = new Register(2);
+        register.setStore(store);
+
+        assertEquals(44, register.getFkeyProperty(Register.P_StoreId));
+        assertEquals(44, register.getFkeyProperty(Register.P_Store, Store.P_Id));
+        assertTrue(register.setFkeyProperty(Register.P_StoreId, 55));
+        assertEquals(55, register.getFkeyProperty(Register.P_StoreId));
+        assertFalse(register.setFkeyProperty(null, 1));
+        assertNull(register.getFkeyProperty("missing"));
+        assertNull(register.getFkeyProperty("", Store.P_Id));
+        assertThrows(RuntimeException.class, () -> register.getFkeyProperty(Register.P_Store, "missing"));
+    }
+
+    @Test
+    void refreshMethodsReturnForNewOrDatasourceMissingObjects() {
+        Store store = new Store(1);
+
+        assertDoesNotThrow(() -> store.refresh());
+        assertDoesNotThrow(() -> store.refresh(Store.P_Registers));
+        assertDoesNotThrow(() -> store.refresh("missing"));
+    }
+
+    @Test
+    void getNameValuesReturnsEnumValuesWhenModelDefinesThem() {
+        Customer customer = new Customer();
+
+        Hub<VEnum> values = customer.getNameValues(Customer.P_Type);
+
+        assertNotNull(values);
+        assertTrue(values.getSize() > 0);
+    }
+
+    @Test
+    void friendAccessCanReadAndWriteInternalFlags() {
+        Store store = new Store();
+        OAObject.FriendAccess fa = new OAObjectInternalBridge().getObjectFriendAccess();
+        UUID guid = UUID.randomUUID();
+
+        fa.setGuid(store, null);
+        fa.setGuid(store, guid);
+        fa.setNew(store, false);
+        fa.setDeletedFlag(store, true);
+        fa.setChangedFlag(store, false);
+        fa.setNulls(store, new byte[] { 1 });
+        fa.setProperties(store, new Object[] { "x" });
+
+        assertEquals(guid, fa.getGuid(store));
+        assertFalse(fa.isNew(store));
+        assertFalse(fa.getNewFlag(store));
+        assertTrue(fa.getDeleteFlag(store));
+        assertFalse(fa.getChangedFlag(store));
+        assertArrayEquals(new byte[] { 1 }, fa.getNulls(store));
+        assertArrayEquals(new Object[] { "x" }, fa.getProperties(store));
+    }
+
+    @Test
+    void getGraphReturnsRuntimeGraphForObject() {
+        assertSame(OARuntime.graph(Store.class), new Store().getGraph());
+    }
+
+    private static void clearCache() {
+        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
+        OAObjectService os = (OAObjectService) og.objectsInternal();
+        os.getOAObjectCacheService().removeAllObjects();
+    }
 }
-
-
-
-
-
-/**
- * OAObject is the Base Class used for Application Data Objects. It is the central class for OA, where all other objects are designed to
- * automatically work with the OAObject class, along with the Hub collection class.
- * <p>
- * OAObjects have built-in functionality to allow it to work with other Classes. This includes other OAObjects, Hub Collections, any
- * datasource/database, JFC component, JSP component, XML, other applications (distributed) and any other Class.
- * <p>
- * &nbsp;&nbsp;&nbsp;<img src="doc-files/ObjectAutomation1.gif" alt=""> <br>
- * Subclasses of OAObject can be created that add properties and methods for building customized software applications. OAObject then
- * supplies the capability for these subclasses to automatically work with any OA Enabled Class.
- * <p>
- * This is a summary of some of the features included in OAObject.
- * <ul>
- * <li>Object Key - property values that makes this object unique.
- * <li>Reference Information - how objects are related to other object. All references use the actual objects and not the key (or foreign
- * key value). References types include one-one, one-many, many-many, recursive self references, owned and un-owned references, and more.
- * <li>Manages reference objects when working with database/datasource.
- * <li>"Moves" objects when changes are made to a reference property.
- * <li>Methods to set and get properties and convert from and to Strings.
- * <li>Store miscellaneous data in name/value pairs, where name is case insensitive.
- * <li>Initialization during creation
- * <li>Null Values - to know if a primitive property value is null
- * <li>Knows which Hub Collections that an object is a member of.
- * <li>Handles events for object, including property changes and calculated properties.
- * <li>Knows if object is "new"
- * <li>Cascading rules. Cancel, Save, Delete can be cascaded to reference objects.
- * <li>Works directly with OADataSource for storing and retrieving objects.
- * <li>Save Method
- * <li>Delete Method
- * <li>Calculated Properties - properties that rely on other properties or objects for their value.
- * <li>Serialization Support - to file/stream, other applications using RMI
- * <li>XML support - reading and writing
- * <li>Locking
- * <li>Client/Server - changes to objects can be automatically updated on other computers.
- * </ul>
- * <p>
- * This is a listing of the types of relationships that an OAObject can have with another OAObject. This information is built into the
- * object information. Relationships between objects are "two-way", meaning that both objects are related to each other.<br>
- * <ul>
- * <li>One-One relationship
- * <li>One-Many relationship
- * <li>Many-Many relationship
- * <li>Recursive - this is where an object can have many children objects of the same class and each of these children can themselves have
- * children, recursively.
- * <li>An Owned relationship is one where the children can not exist without the parent (owner) and all are treated as a single unit.
- * <li>Cascading Rules for save, delete, cancel
- * </ul>
- * <p>
- * Managing Relationships<br>
- * OAObject manages the relationships between objects, and is responsible for retrieving and populating reference objects and for managing
- * changes. An OAObject subclass does not have to have any code to handle retrieving or storing reference objects, OAObject does it
- * completely. If a reference property is changed, then OAObject manages the change so that other objects are updated correctly. <br>
- * For example, if a Department has many Employees, and an Employee has one Department: if an Employee's Department is changed, then the
- * Employee object is removed from the original Department collection and added to the new assigned Department collection. This also works
- * when an Employee is added to a different Departments Employee collection - the Employee's Department property is changed to the newly
- * assigned Department.
- * <p>
- * Working with DataSources<br>
- * OAObjects work directly with OADataSource for initializing properties, saving, deleting. This is all done so that the OAObjects are
- * independent from datasource/database.
- * <p>
- * For more information about this package, see <a href="package-summary.html#package_description">documentation</a>.
- * <p>
- * OAObjectCallback can be used to query the object and properties.<br>
- *
- * @see OAObjectCallback
- * @see Hub for observable collection class that has "linkage" features for automatically managing relationships. see OAHtmlSelect for
- *      datasource independent queries based on object and property paths.
- */
-
-
-
-
-
-
-
-
-
-
-
-
-

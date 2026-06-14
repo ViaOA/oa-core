@@ -1,100 +1,120 @@
 package com.viaoa.process;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
+import com.test.pos.model.oa.Store;
 import com.viaoa.hub.Hub;
 
-import test.hifive.model.oa.Program;
+class OAChangeRefresherTest {
 
-
-public class OAChangeRefresherTest {
-    
     @Test
-    public void test() throws Exception {
-        final AtomicInteger ai = new AtomicInteger();
-        
-        OAChangeRefresher r = new OAChangeRefresher() {
-            @Override
-            protected void process() throws Exception {
-                ai.incrementAndGet();
-                try {
-                    Thread.sleep(10);
-                }
-                catch (Exception e) {
-                }
-            }
-        };
-        r.start();
-        
-        Thread.sleep(100);
-        assertEquals(0, ai.get());
-        
-        Hub h = new Hub(Program.class);
-        r.addListener(h, Program.P_Code);
-        assertEquals(0, ai.get());
+    void constructorsSetInitialChangedState() {
+        TestChangeRefresher normal = new TestChangeRefresher();
+        TestChangeRefresher initialized = new TestChangeRefresher(true);
 
-        Program p = new Program();
-        h.add(p);
-        assertEquals(0, ai.get());
-        
-        for (int i=0; i<20; i++) {
-            p.setCode(i+"");
-        }
-        
-        Thread.sleep(200);
-        assertTrue(ai.get() > 0);
-        
-        p.setCode("x");
+        assertFalse(normal.hasChanged());
+        assertFalse(normal.isChanged());
+        assertTrue(initialized.hasChanged());
+        assertTrue(initialized.isChanged());
+    }
 
-        Thread.sleep(500);
-
-        assertTrue(ai.get() > 0);
-    }    
-    
     @Test
-    public void test2() throws Exception {
-        final AtomicInteger ai = new AtomicInteger();
-        
-        OAChangeRefresher r = new OAChangeRefresher() {
-            @Override
-            protected void process() throws Exception {
-                ai.incrementAndGet();
-                for (int i=0; i<10; i++) {
-                    try {
-                        Thread.sleep(10);
-                    }
-                    catch (Exception e) {
-                    }
-                    if (hasChanged()) break;
-                }
-            }
-        };
-        r.start();
-        
-        assertEquals(0, ai.get());
-        
-        Hub h = new Hub(Program.class);
-        r.addListener(h, Program.P_Code);
-        assertEquals(0, ai.get());
+    void refreshMarksChangedBeforeProcessing() {
+        TestChangeRefresher refresher = new TestChangeRefresher();
 
-        Program p = new Program();
-        h.add(p);
-        assertEquals(0, ai.get());
-        
-        for (int i=0; i<20; i++) {
-            p.setCode(i+"");
-            try {
-                Thread.sleep(10);
-            }
-            catch (Exception e) {
-            }
+        refresher.refresh();
+
+        assertTrue(refresher.hasChanged());
+        assertTrue(refresher.isChanged());
+    }
+
+    @Test
+    void simplePropertyListenerMarksChanged() {
+        Hub<Store> hub = new Hub<>(Store.class);
+        Store store = new Store();
+        hub.add(store);
+        TestChangeRefresher refresher = new TestChangeRefresher();
+
+        refresher.addListener(hub, Store.P_Name);
+        store.setName("Main");
+
+        assertTrue(refresher.hasChanged());
+    }
+
+    @Test
+    void varargsPropertyListenerMarksChanged() {
+        Hub<Store> hub = new Hub<>(Store.class);
+        Store store = new Store();
+        hub.add(store);
+        TestChangeRefresher refresher = new TestChangeRefresher();
+
+        refresher.addListener(hub, Store.P_Name);
+        store.setName("Main");
+
+        assertTrue(refresher.hasChanged());
+    }
+
+    @Test
+    void hubLevelListenerMarksChangedForCollectionChanges() {
+        Hub<Store> hub = new Hub<>(Store.class);
+        TestChangeRefresher refresher = new TestChangeRefresher();
+
+        refresher.addListener(hub, (String) null);
+        hub.add(new Store());
+
+        assertTrue(refresher.hasChanged());
+    }
+
+    @Test
+    void addListenerNullHubIsNoOp() {
+        TestChangeRefresher refresher = new TestChangeRefresher();
+
+        assertDoesNotThrow(() -> refresher.addListener(null, Store.P_Name));
+        assertDoesNotThrow(() -> refresher.addListener(null, (String) Store.P_Name));
+        assertFalse(refresher.hasChanged());
+    }
+
+    @Test
+    void startProcessesRefreshAndStopSignalsThread() throws Exception {
+        TestChangeRefresher refresher = new TestChangeRefresher();
+        refresher.latch = new CountDownLatch(1);
+        try {
+            refresher.start();
+            assertNotNull(refresher.getThread());
+            assertTrue(refresher.getThread().isDaemon());
+
+            refresher.refresh();
+
+            assertTrue(refresher.latch.await(2, TimeUnit.SECONDS));
+            assertEquals(1, refresher.processCount);
+            assertFalse(refresher.hasChanged());
         }
-        
-        assertTrue(ai.get() > 5);
-    }    
+        finally {
+            refresher.stop();
+        }
+    }
 
+    private static class TestChangeRefresher extends OAChangeRefresher {
+        volatile int processCount;
+        CountDownLatch latch;
+
+        TestChangeRefresher() {
+            super();
+        }
+
+        TestChangeRefresher(boolean initialize) {
+            super(initialize);
+        }
+
+        @Override
+        protected void process() {
+            processCount++;
+            if (latch != null) latch.countDown();
+        }
+    }
 }

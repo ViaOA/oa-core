@@ -1,15 +1,25 @@
 package com.viaoa.comm.multiplexer.io;
 
 import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.*;
 
-import com.viaoa.OAUnitTest;
+import org.junit.jupiter.api.Test;
 
-public class VirtualServerSocketTest extends OAUnitTest {
+class VirtualServerSocketTest {
 
     @Test
-    public void test() {
-        
+    void constructorStoresName() throws Exception {
+        VirtualServerSocket socket = new VirtualServerSocket("service");
+
+        assertEquals("service", socket.getName());
+        socket.close();
     }
-    
+
+    @Test
+    void closeMarksSocketClosed() throws Exception {
+        VirtualServerSocket socket = new VirtualServerSocket("service");
+
+        socket.close();
+
+        assertTrue(socket.isClosed());
+    }
 }

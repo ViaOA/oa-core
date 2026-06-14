@@ -1,17 +1,21 @@
 package com.viaoa.object;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import com.viaoa.OAUnitTest;
+import org.junit.jupiter.api.Test;
 
-import test.xice.tsac3.model.oa.*;
+import com.viaoa.metadata.OAObjectInfo;
 
-public class OAObjectLocalTest extends OAUnitTest {
+class OAObjectLocalTest {
 
     @Test
-    public void test() {
-        
+    void getOAObjectInfoReturnsLocalOnlyTransientMetadata() {
+        OAObjectInfo oi = OAObjectLocal.getOAObjectInfo();
+
+        assertNotNull(oi);
+        assertTrue(oi.getLocalOnly());
+        assertFalse(oi.getUseDataSource());
+        assertFalse(oi.getAddToCache());
+        assertFalse(oi.getInitializeNewObjects());
     }
-    
 }

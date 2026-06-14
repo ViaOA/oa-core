@@ -73,13 +73,13 @@ class OADateTimeParsingRoundTripTest {
         assertEquals(DateTimeType.ZonedInstant, spring.getType());
         assertEquals(NEW_YORK, spring.getZoneId());
         assertEquals(expectedSpring.toInstant().toEpochMilli(), spring.getTime());
-        assertEquals(expectedSpring.toLocalDateTime(), spring.getLocalDateTime());
+        assertEquals(expectedSpring.toLocalDateTime(), spring.toLocalDateTime());
 
         assertNotNull(fall);
         assertEquals(DateTimeType.ZonedInstant, fall.getType());
         assertEquals(NEW_YORK, fall.getZoneId());
         assertEquals(expectedFall.toInstant().toEpochMilli(), fall.getTime());
-        assertEquals(expectedFall.getOffset(), fall.getZonedDateTime().getOffset());
+        assertEquals(expectedFall.getOffset(), fall.toZonedDateTime().getOffset());
     }
 
     @Test

@@ -65,7 +65,7 @@ class OADateTimeSerializationTest {
         assertEquals(DateTimeType.ZonedInstant, copy.getType());
         assertEquals(original.getTime(), copy.getTime());
         assertEquals(NEW_YORK, copy.getZoneId());
-        assertEquals(zdt.toLocalDateTime(), copy.getLocalDateTime());
+        assertEquals(zdt.toLocalDateTime(), copy.toLocalDateTime());
     }
 
     @Test
@@ -81,7 +81,7 @@ class OADateTimeSerializationTest {
         assertEquals(DateTimeType.ZonedInstant, copy.getType());
         assertEquals(expectedTime, copy.getTime());
         assertEquals(NEW_YORK, copy.getZoneId());
-        assertEquals(expectedFields, copy.getLocalDateTime());
+        assertEquals(expectedFields, copy.toLocalDateTime());
     }
 
     @Test
@@ -94,32 +94,32 @@ class OADateTimeSerializationTest {
 
         assertEquals(DateTimeType.Floating, copy.getType());
         assertEquals(UTC, copy.getZoneId());
-        assertEquals(LocalDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000), copy.getLocalDateTime());
+        assertEquals(LocalDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000), copy.toLocalDateTime());
         assertEquals(LocalDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000).atZone(UTC).toInstant().toEpochMilli(), copy.getTime());
         assertNotEquals(original.getTime(), copy.getTime());
 
         OADateTime.setDefaultZoneId(NEW_YORK);
         assertEquals(UTC, copy.getZoneId());
-        assertEquals(LocalDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000), copy.getLocalDateTime());
+        assertEquals(LocalDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000), copy.toLocalDateTime());
     }
 
     @Test
     void floatingRoundTripAtDstTransitionPreservesResolvedWallFieldsAndAdoptsReceivingZone() throws Exception {
         OADateTime.setDefaultZoneId(NEW_YORK);
         OADateTime original = new OADateTime(LocalDateTime.of(2026, 3, 8, 2, 30, 0, 0));
-        LocalDateTime resolvedFields = original.getLocalDateTime();
+        LocalDateTime resolvedFields = original.toLocalDateTime();
 
         OADateTime.setDefaultZoneId(CHICAGO);
         OADateTime copy = roundTrip(original);
 
         assertEquals(DateTimeType.Floating, copy.getType());
         assertEquals(CHICAGO, copy.getZoneId());
-        assertEquals(resolvedFields, copy.getLocalDateTime());
+        assertEquals(resolvedFields, copy.toLocalDateTime());
         assertEquals(resolvedFields.atZone(CHICAGO).toInstant().toEpochMilli(), copy.getTime());
 
         OADateTime.setDefaultZoneId(UTC);
         assertEquals(CHICAGO, copy.getZoneId());
-        assertEquals(resolvedFields, copy.getLocalDateTime());
+        assertEquals(resolvedFields, copy.toLocalDateTime());
     }
 
     @Test

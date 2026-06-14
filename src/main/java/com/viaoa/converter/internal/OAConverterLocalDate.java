@@ -161,7 +161,7 @@ public class OAConverterLocalDate implements OAConverterInterface<LocalDate> {
     public String convertToString(LocalDate fromValue, String fmt) {
         if (fromValue == null) return "";
         OADate d = new OADate(fromValue.getYear(),
-                              fromValue.getMonthValue() - 1,
+                              fromValue.getMonthValue(),
                               fromValue.getDayOfMonth());
         return d.toString(fmt);
     }

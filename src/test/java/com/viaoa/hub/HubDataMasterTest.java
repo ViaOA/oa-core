@@ -1,17 +1,34 @@
 package com.viaoa.hub;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import com.viaoa.OAUnitTest;
+import org.junit.jupiter.api.Test;
 
-import test.xice.tsac3.model.oa.*;
+import com.test.pos.model.oa.Register;
+import com.test.pos.model.oa.Store;
 
-public class HubDataMasterTest extends OAUnitTest {
+class HubDataMasterTest {
+    @Test
+    void masterHubMasterObjectAndLinkInfoRoundTrip() {
+        HubDataMaster data = new HubDataMaster();
+        Hub<Store> stores = new Hub<>(Store.class);
+        Store store = new Store();
+        data.setMasterHub(stores);
+        data.setMasterObject(store);
+        assertSame(stores, data.getMasterHub());
+        assertSame(store, data.getMasterObject());
+        assertNull(data.getDetailToMasterLinkInfo());
+    }
 
     @Test
-    public void test() {
-        
+    void missingLinkInfoProducesSafeDefaults() {
+        HubDataMaster data = new HubDataMaster();
+
+        assertNull(data.getUniqueProperty());
+        assertNull(data.getUniquePropertyGetMethod());
+        assertFalse(data.getTrackChanges());
+        assertNull(data.getSortProperty());
+        assertFalse(data.isSortAsc());
+        assertNull(data.getSeqProperty());
     }
-    
 }

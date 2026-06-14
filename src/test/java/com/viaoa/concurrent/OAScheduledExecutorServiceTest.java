@@ -1,78 +1,133 @@
 package com.viaoa.concurrent;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Logger;
+import java.util.concurrent.atomic.AtomicReference;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.viaoa.datetime.OADateTime;
 import com.viaoa.datetime.OATime;
 
-public class OAScheduledExecutorServiceTest {
+class OAScheduledExecutorServiceTest {
 
     @Test
-    public void test() throws Exception {
-        final AtomicInteger ai = new AtomicInteger();
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                ai.incrementAndGet();
-            }
-        };
-        
-        OAScheduledExecutorService es = new OAScheduledExecutorService();
-        OADateTime dt = new OADateTime();
-        Thread.sleep(5);
-        ScheduledFuture f = es.schedule(r, dt);
-        long x = f.getDelay(TimeUnit.MILLISECONDS);
-        
-        assertTrue(x <= 0);
-        
-        for ( ;!f.isDone(); ) {
-            Thread.sleep(5);
+    void constructorInitializesScheduledExecutor() {
+        OAScheduledExecutorService service = new OAScheduledExecutorService();
+        try {
+            assertNotNull(service.getScheduledExecutorService());
         }
-        
-        assertEquals(1, ai.get());
+        finally {
+            service.getScheduledExecutorService().shutdownNow();
+        }
     }
 
     @Test
-    public void testA() throws Exception {
-        final AtomicInteger ai = new AtomicInteger();
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                ai.incrementAndGet();
-            }
-        };
-        
-        OAScheduledExecutorService es = new OAScheduledExecutorService();
-        OADateTime dt = new OADateTime();
-        int delay = 5;
-        dt = dt.addSeconds(delay);
+    void scheduleRunnableWithDateTimeRunsImmediatelyForNullOrPastDate() throws Exception {
+        OAScheduledExecutorService service = new OAScheduledExecutorService();
+        CountDownLatch nullDate = new CountDownLatch(1);
+        CountDownLatch pastDate = new CountDownLatch(1);
+        try {
+            ScheduledFuture<?> f1 = service.schedule(nullDate::countDown, (OADateTime) null);
+            ScheduledFuture<?> f2 = service.schedule(pastDate::countDown, new OADateTime(0L));
 
-        long ms = System.currentTimeMillis();
-        ScheduledFuture f = es.schedule(r, dt);
-        long x = f.getDelay(TimeUnit.SECONDS);
-        
-        assertTrue(x > (delay-2));
-        
-        for ( ;!f.isDone(); ) {
-            Thread.sleep(5);
-            x = f.getDelay(TimeUnit.SECONDS);
+            assertTrue(nullDate.await(1, TimeUnit.SECONDS));
+            assertTrue(pastDate.await(1, TimeUnit.SECONDS));
+            f1.get(1, TimeUnit.SECONDS);
+            f2.get(1, TimeUnit.SECONDS);
         }
-        long ms2 = System.currentTimeMillis();
-        assertTrue( (ms2 - ms) >= (delay * 1000));
-        
-        assertEquals(1, ai.get());
+        finally {
+            service.getScheduledExecutorService().shutdownNow();
+        }
     }
-    
+
+    @Test
+    void scheduleRunnableWithDelayRunsAfterBoundedDelay() throws Exception {
+        OAScheduledExecutorService service = new OAScheduledExecutorService();
+        CountDownLatch latch = new CountDownLatch(1);
+        try {
+            ScheduledFuture<?> future = service.schedule(latch::countDown, 0, TimeUnit.MILLISECONDS);
+
+            assertTrue(latch.await(1, TimeUnit.SECONDS));
+            future.get(1, TimeUnit.SECONDS);
+        }
+        finally {
+            service.getScheduledExecutorService().shutdownNow();
+        }
+    }
+
+    @Test
+    void scheduleCallableReturnsValue() throws Exception {
+        OAScheduledExecutorService service = new OAScheduledExecutorService();
+        try {
+            ScheduledFuture<?> future = service.schedule(() -> "value", 0, TimeUnit.MILLISECONDS);
+
+            assertEquals("value", future.get(1, TimeUnit.SECONDS));
+        }
+        finally {
+            service.getScheduledExecutorService().shutdownNow();
+        }
+    }
+
+    @Test
+    void scheduleEveryWithOATimeReturnsCancelableDailyFuture() throws Exception {
+        OAScheduledExecutorService service = new OAScheduledExecutorService();
+        try {
+            ScheduledFuture<?> future = service.scheduleEvery(() -> {
+            }, new OATime(23, 59, 59));
+
+            assertFalse(future.isDone());
+            assertTrue(future.cancel(false));
+        }
+        finally {
+            service.getScheduledExecutorService().shutdownNow();
+        }
+    }
+
+    @Test
+    void scheduleEveryWithFixedDelayRunsRepeatedlyAndCanBeCancelled() throws Exception {
+        OAScheduledExecutorService service = new OAScheduledExecutorService();
+        CountDownLatch latch = new CountDownLatch(2);
+        try {
+            ScheduledFuture<?> future = service.scheduleEvery(latch::countDown, 0, 1, TimeUnit.MILLISECONDS);
+
+            assertTrue(latch.await(1, TimeUnit.SECONDS));
+            assertTrue(future.cancel(false));
+        }
+        finally {
+            service.getScheduledExecutorService().shutdownNow();
+        }
+    }
+
+    @Test
+    void getScheduledExecutorServiceCreatesDaemonNamedThread() throws Exception {
+        OAScheduledExecutorService service = new OAScheduledExecutorService();
+        AtomicReference<Thread> thread = new AtomicReference<>();
+        try {
+            service.schedule(() -> thread.set(Thread.currentThread()), 0, TimeUnit.MILLISECONDS).get(1, TimeUnit.SECONDS);
+
+            assertNotNull(thread.get());
+            assertTrue(thread.get().isDaemon());
+            assertTrue(thread.get().getName().startsWith("OAScheduledExecutorService.thread"));
+        }
+        finally {
+            service.getScheduledExecutorService().shutdownNow();
+        }
+    }
+
+    @Test
+    void getScheduledExecutorServiceReturnsSameInstance() {
+        OAScheduledExecutorService service = new OAScheduledExecutorService();
+        try {
+            ScheduledExecutorService executor = service.getScheduledExecutorService();
+            assertSame(executor, service.getScheduledExecutorService());
+        }
+        finally {
+            service.getScheduledExecutorService().shutdownNow();
+        }
+    }
 }

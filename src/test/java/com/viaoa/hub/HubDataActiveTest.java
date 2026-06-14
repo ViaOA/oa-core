@@ -1,17 +1,25 @@
 package com.viaoa.hub;
 
-import org.junit.Test;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import com.viaoa.OAUnitTest;
+import org.junit.jupiter.api.Test;
 
-import test.xice.tsac3.model.oa.*;
+import com.test.pos.model.oa.Register;
 
-public class HubDataActiveTest extends OAUnitTest {
-
+class HubDataActiveTest {
     @Test
-    public void test() {
-        
+    void activeObjectCanBeSetAndCleared() {
+        HubDataActive<Register> data = new HubDataActive<>();
+        Register register = new Register();
+
+        data.setActiveObject(register);
+        assertSame(register, data.getActiveObject());
+
+        data.clear(true);
+        assertNull(data.getActiveObject());
+
+        data.setActiveObject(register);
+        data.clear();
+        assertNull(data.getActiveObject());
     }
-    
 }

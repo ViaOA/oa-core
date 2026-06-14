@@ -1,0 +1,56 @@
+package com.viaoa.comm.multiplexer;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.*;
+
+
+@DisplayName("Multiplexer")
+public class MultiplexerTestOrig {
+	static final int[] Maxes = {
+			1000000, 123000, 15000, 501, 232, 14, 1
+	};
+
+//	@Test
+	@DisplayName("run server and client")
+	public void test() throws Exception {
+
+		MultiplexerServerTestOrig stest = new MultiplexerServerTestOrig();
+		stest.test(Maxes.length);
+
+		MultiplexerClientTestOrig ctest = new MultiplexerClientTestOrig();
+		ctest.test(Maxes);
+
+		Thread.sleep(1600);
+		ctest.stop();
+
+		for (int i = 0; i < 40; i++) {
+			Thread.sleep(250);
+			int x1 = ctest.getCount();
+			int x2 = ctest.getRunningCount();
+			if (x2 == 0) {
+				break;
+			}
+			int x3 = stest.getRunningCount();
+			int xx = 4;
+			xx++;
+		}
+
+		stest.stop();
+
+		int x = ctest.getCount();
+		assertTrue(x > 1000, "x=" + x + ", should be > 1000");
+	}
+
+	public static void main(String[] args) throws Exception {
+		MultiplexerServerTestOrig stest = new MultiplexerServerTestOrig();
+		stest.test(Maxes.length);
+
+		MultiplexerClientTestOrig ctest = new MultiplexerClientTestOrig();
+		ctest.test(Maxes);
+
+		for (;;) {
+			Thread.sleep(10000);
+		}
+	}
+
+}

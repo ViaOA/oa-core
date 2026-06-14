@@ -1,0 +1,297 @@
+package com.test.pos.model.oa;
+ 
+import java.util.*;
+import java.util.logging.*;
+import java.sql.*;
+import com.viaoa.object.*;
+import com.viaoa.hub.*;
+import com.viaoa.annotation.*;
+import com.viaoa.lang.*;
+import com.viaoa.callback.OAObjectCallback;
+import com.viaoa.datetime.OADateTime;
+import com.test.pos.delegate.oa.*;
+import com.test.pos.model.oa.filter.*;
+import com.test.pos.model.oa.propertypath.*;
+ 
+@OAClass(
+    lowerName = "appUserLogin",
+    pluralName = "AppUserLogins",
+    shortName = "aul",
+    displayName = "App User Login",
+    isProcessed = true,
+    displayProperty = "appUser.displayName",
+    filterClasses = {AppUserLoginConnectedFilter.class, AppUserLoginLastDayFilter.class},
+    noPojo = true,
+    rootTreePropertyPaths = {
+        "[AppUser]."+AppUser.P_AppUserLogins
+    }
+)
+@OATable(
+    indexes = {
+        @OAIndex(name = "AppUserLoginAppUser", fkey = true, columns = { @OAIndexColumn(name = "AppUserId") })
+    }
+)
+public class AppUserLogin extends OAObject {
+    private static final long serialVersionUID = 1L;
+    private static Logger LOG = Logger.getLogger(AppUserLogin.class.getName());
+
+    public static final String P_Id = "id";
+    public static final String P_Created = "created";
+    public static final String P_Location = "location";
+    public static final String P_ComputerName = "computerName";
+    public static final String P_Disconnected = "disconnected";
+    public static final String P_ConnectionId = "connectionId";
+    public static final String P_HostName = "hostName";
+    public static final String P_IpAddress = "ipAddress";
+    public static final String P_TotalMemory = "totalMemory";
+    public static final String P_FreeMemory = "freeMemory";
+     
+    public static final String P_AppServers = "appServers";
+    public static final String P_AppUser = "appUser";
+    public static final String P_AppUserId = "appUserId"; // fkey
+    public static final String P_AppUserErrors = "appUserErrors";
+    public static final String P_Reports = "reports";
+    public static final String P_ReportsId = "reportsId"; // fkey
+     
+    protected volatile int id;
+    protected volatile OADateTime created;
+    protected volatile String location;
+    protected volatile String computerName;
+    protected volatile OADateTime disconnected;
+    protected volatile int connectionId;
+    protected volatile String hostName;
+    protected volatile String ipAddress;
+    protected volatile long totalMemory;
+    protected volatile long freeMemory;
+     
+    // Links to other objects.
+    protected volatile transient AppUser appUser;
+    protected transient Hub<AppUserError> hubAppUserErrors;
+    protected transient Hub<Report> hubReports;
+     
+    public AppUserLogin() {
+        if (!isLoading()) setObjectDefaults();
+    }
+    @Override
+    public void setObjectDefaults() {
+        setCreated(new OADateTime());
+    }
+     
+    public AppUserLogin(int id) {
+        this();
+        setId(id);
+    }
+
+    @OAProperty(lowerName = "id", isUnique = true, displayLength = 5)
+    @OAId
+    @OAColumn(name = "Id", sqlType = java.sql.Types.INTEGER)
+    public int getId() {
+        return id;
+    }
+    public void setId(int newValue) {
+        int old = id;
+        fireBeforePropertyChange(P_Id, old, newValue);
+        this.id = newValue;
+        firePropertyChange(P_Id, old, this.id);
+    }
+
+    @OAProperty(lowerName = "created", defaultValue = "new OADateTime()", displayLength = 15, isProcessed = true)
+    @OAColumn(name = "Created", sqlType = java.sql.Types.TIMESTAMP)
+    public OADateTime getCreated() {
+        return created;
+    }
+    public void setCreated(OADateTime newValue) {
+        OADateTime old = created;
+        fireBeforePropertyChange(P_Created, old, newValue);
+        this.created = newValue;
+        firePropertyChange(P_Created, old, this.created);
+    }
+
+    @OAProperty(lowerName = "location", maxLength = 50, displayLength = 18, uiColumnLength = 14, isProcessed = true)
+    @OAColumn(name = "Location", maxLength = 50)
+    public String getLocation() {
+        return location;
+    }
+    public void setLocation(String newValue) {
+        String old = location;
+        fireBeforePropertyChange(P_Location, old, newValue);
+        this.location = newValue;
+        firePropertyChange(P_Location, old, this.location);
+    }
+
+    @OAProperty(lowerName = "computerName", displayName = "Computer Name", maxLength = 50, displayLength = 14, uiColumnLength = 12, isProcessed = true)
+    @OAColumn(name = "ComputerName", maxLength = 50)
+    public String getComputerName() {
+        return computerName;
+    }
+    public void setComputerName(String newValue) {
+        String old = computerName;
+        fireBeforePropertyChange(P_ComputerName, old, newValue);
+        this.computerName = newValue;
+        firePropertyChange(P_ComputerName, old, this.computerName);
+    }
+
+    @OAProperty(lowerName = "disconnected", displayLength = 15, isProcessed = true)
+    @OAColumn(name = "Disconnected", sqlType = java.sql.Types.TIMESTAMP)
+    public OADateTime getDisconnected() {
+        return disconnected;
+    }
+    public void setDisconnected(OADateTime newValue) {
+        OADateTime old = disconnected;
+        fireBeforePropertyChange(P_Disconnected, old, newValue);
+        this.disconnected = newValue;
+        firePropertyChange(P_Disconnected, old, this.disconnected);
+    }
+
+    @OAProperty(lowerName = "connectionId", displayName = "Connection Id", displayLength = 5, isProcessed = true)
+    @OAColumn(name = "ConnectionId", sqlType = java.sql.Types.INTEGER)
+    public int getConnectionId() {
+        return connectionId;
+    }
+    public void setConnectionId(int newValue) {
+        int old = connectionId;
+        fireBeforePropertyChange(P_ConnectionId, old, newValue);
+        this.connectionId = newValue;
+        firePropertyChange(P_ConnectionId, old, this.connectionId);
+    }
+
+    @OAProperty(lowerName = "hostName", displayName = "Host Name", maxLength = 50, displayLength = 14, uiColumnLength = 12, isProcessed = true)
+    @OAColumn(name = "HostName", maxLength = 50)
+    public String getHostName() {
+        return hostName;
+    }
+    public void setHostName(String newValue) {
+        String old = hostName;
+        fireBeforePropertyChange(P_HostName, old, newValue);
+        this.hostName = newValue;
+        firePropertyChange(P_HostName, old, this.hostName);
+    }
+
+    @OAProperty(lowerName = "ipAddress", displayName = "Ip Address", maxLength = 20, displayLength = 15, isProcessed = true)
+    @OAColumn(name = "IpAddress", maxLength = 20)
+    public String getIpAddress() {
+        return ipAddress;
+    }
+    public void setIpAddress(String newValue) {
+        String old = ipAddress;
+        fireBeforePropertyChange(P_IpAddress, old, newValue);
+        this.ipAddress = newValue;
+        firePropertyChange(P_IpAddress, old, this.ipAddress);
+    }
+
+    @OAProperty(lowerName = "totalMemory", displayName = "Total Memory", displayLength = 5, isProcessed = true)
+    @OAColumn(name = "TotalMemory", sqlType = java.sql.Types.BIGINT)
+    public long getTotalMemory() {
+        return totalMemory;
+    }
+    public void setTotalMemory(long newValue) {
+        long old = totalMemory;
+        fireBeforePropertyChange(P_TotalMemory, old, newValue);
+        this.totalMemory = newValue;
+        firePropertyChange(P_TotalMemory, old, this.totalMemory);
+    }
+
+    @OAProperty(lowerName = "freeMemory", displayName = "Free Memory", displayLength = 5, isProcessed = true)
+    @OAColumn(name = "FreeMemory", sqlType = java.sql.Types.BIGINT)
+    public long getFreeMemory() {
+        return freeMemory;
+    }
+    public void setFreeMemory(long newValue) {
+        long old = freeMemory;
+        fireBeforePropertyChange(P_FreeMemory, old, newValue);
+        this.freeMemory = newValue;
+        firePropertyChange(P_FreeMemory, old, this.freeMemory);
+    }
+
+    @OAMany(
+        displayName = "App Servers", 
+        toClass = AppServer.class, 
+        reverseName = AppServer.P_AppUserLogin, 
+        isProcessed = true, 
+        createMethod = false
+    )
+    private Hub<AppServer> getAppServers() {
+        // oamodel has createMethod set to false, this method exists only for annotations.
+        return null;
+    }
+
+    @OAOne(
+        displayName = "App User", 
+        reverseName = AppUser.P_AppUserLogins, 
+        required = true, 
+        allowCreateNew = false, 
+        fkeys = {@OAFkey(fromProperty = P_AppUserId, toProperty = AppUser.P_Id)}
+    )
+    public AppUser getAppUser() {
+        if (appUser == null) {
+            appUser = (AppUser) getObject(P_AppUser);
+        }
+        return appUser;
+    }
+    public void setAppUser(AppUser newValue) {
+        AppUser old = this.appUser;
+        fireBeforePropertyChange(P_AppUser, old, newValue);
+        this.appUser = newValue;
+        firePropertyChange(P_AppUser, old, this.appUser);
+    }
+    @OAProperty(isFkeyOnly = true)
+    @OAColumn(name = "AppUserId")
+    public Integer getAppUserId() {
+        return (Integer) getFkeyProperty(P_AppUserId);
+    }
+    public void setAppUserId(Integer newValue) {
+        this.appUser = null;
+        setFkeyProperty(P_AppUserId, newValue);
+    }
+
+    @OAMany(
+        displayName = "App User Errors", 
+        toClass = AppUserError.class, 
+        owner = true, 
+        reverseName = AppUserError.P_AppUserLogin, 
+        cascadeSave = true, 
+        cascadeDelete = true
+    )
+    public Hub<AppUserError> getAppUserErrors() {
+        if (hubAppUserErrors == null) {
+            hubAppUserErrors = (Hub<AppUserError>) getHub(P_AppUserErrors);
+        }
+        return hubAppUserErrors;
+    }
+
+    @OAMany(
+        toClass = Report.class, 
+        reverseName = Report.P_AppUserLogin
+    )
+    @OALinkTable(name = "AppUserLoginReport", indexName = "ReportAppUserLogin", columns = {"AppUserLoginId"})
+    public Hub<Report> getReports() {
+        if (hubReports == null) {
+            hubReports = (Hub<Report>) getHub(P_Reports);
+        }
+        return hubReports;
+    }
+    public void load(ResultSet rs, int id) throws SQLException {
+        this.id = id;
+        java.sql.Timestamp timestamp;
+        timestamp = rs.getTimestamp(2);
+        if (timestamp != null) this.created = new OADateTime(timestamp);
+        this.location = rs.getString(3);
+        this.computerName = rs.getString(4);
+        timestamp = rs.getTimestamp(5);
+        if (timestamp != null) this.disconnected = new OADateTime(timestamp);
+        this.connectionId = rs.getInt(6);
+        setPrimitiveNull(P_ConnectionId, rs.wasNull());
+        this.hostName = rs.getString(7);
+        this.ipAddress = rs.getString(8);
+        this.totalMemory = rs.getLong(9);
+        setPrimitiveNull(P_TotalMemory, rs.wasNull());
+        this.freeMemory = rs.getLong(10);
+        setPrimitiveNull(P_FreeMemory, rs.wasNull());
+        int appUserFkey = rs.getInt(11);
+        setFkeyProperty(P_AppUser, rs.wasNull() ? null : appUserFkey);
+
+        this.changedFlag = false;
+        this.newFlag = false;
+    }
+}
+ 

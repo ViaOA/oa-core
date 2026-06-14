@@ -16,6 +16,7 @@
 package com.viaoa.datetime;
 
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
@@ -840,6 +841,15 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		}
 		this.type = DateTimeType.Instant;
 	}
+
+	public OADateTime(Timestamp ts) {
+		if (ts == null) {
+			this._time = System.currentTimeMillis();
+		} else {
+			this._time = ts.getTime();
+		}
+		this.type = DateTimeType.Instant;
+	}
 	
 	/**
 	 * Parses a string into an OADateTime using the global parse formats.
@@ -918,7 +928,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 *
 	 * @return local date/time representation
 	 */
-	public LocalDateTime getLocalDateTime() {
+	public LocalDateTime toLocalDateTime() {
 	    return Instant.ofEpochMilli(_time).atZone(getZoneId()).toLocalDateTime();
 	}	
 
@@ -927,7 +937,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 *
 	 * @return zoned date/time representation
 	 */
-	public ZonedDateTime getZonedDateTime() {
+	public ZonedDateTime toZonedDateTime() {
 		return Instant.ofEpochMilli(_time).atZone(getZoneId());
 	}
 
@@ -936,11 +946,36 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 *
 	 * @return instant representation
 	 */
-	public Instant getInstant() {
+	public Instant toInstant() {
 		Instant instant = Instant.ofEpochMilli(_time);
 		return instant;
 	}
 
+	/**
+	 * Converts this value to a JDBC Timestamp.
+	 *
+	 * Instant and ZonedInstant values preserve their instant.
+	 *
+	 * Floating values are not semantically compatible with Timestamp because
+	 * Timestamp represents an instant. For legacy/JDBC interoperability, floating
+	 * values are anchored to UTC while preserving wall-clock fields. This is a
+	 * lossy conversion and should not be used where floating semantics matter.
+	 */
+	public Timestamp toTimestamp() {
+		Instant instant;
+		if (type == DateTimeType.Floating) instant = withTimeZoneUTCSameWallTime().toInstant();
+		else instant = toInstant();
+		
+	    return Timestamp.from(instant);
+	}
+
+	public java.sql.Date toSqlDate() {
+		return new java.sql.Date(toTimestamp().getTime());
+	}
+
+	public java.util.Date toDate() {
+		return new java.util.Date(toTimestamp().getTime());
+	}
 	
 	/**
 	 * Writes the custom serialized representation for this value.
@@ -1031,7 +1066,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return local date
 	 */
 	public LocalDate getLocalDate() {
-	    return getZonedDateTime().toLocalDate();
+	    return toZonedDateTime().toLocalDate();
 	}
 
 	/**
@@ -1040,7 +1075,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return local time
 	 */
 	public LocalTime getLocalTime() {
-	    ZonedDateTime zdt = getZonedDateTime();
+	    ZonedDateTime zdt = toZonedDateTime();
 	    return zdt.toLocalTime().withNano( (zdt.getNano() / 1_000_000) * 1_000_000 );
 	}
 	
@@ -1052,7 +1087,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @throws DateTimeException if the field is not supported by the zoned representation
 	 */
 	public int getField(ChronoField fld) {
-		int x = getInstant().atZone(getZoneId()).get(fld);
+		int x = toInstant().atZone(getZoneId()).get(fld);
 		return x;
 	}
 
@@ -1128,7 +1163,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return new value with the supplied date
 	 */
 	public OADateTime withDate(int year, int month, int day) {
-		ZonedDateTime ldt = getZonedDateTime();
+		ZonedDateTime ldt = toZonedDateTime();
 		OADateTime dt = createUtil(year, month, day, ldt.getHour(), ldt.getMinute(), ldt.getSecond(), ldt.getNano() / 1_000_000);
 		dt.type = this.type;
 		return dt;
@@ -1141,7 +1176,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return new value with the supplied year
 	 */
 	public OADateTime withYear(int year) {
-		ZonedDateTime ldt = getZonedDateTime();
+		ZonedDateTime ldt = toZonedDateTime();
 		OADateTime dt = createUtil(year, ldt.getMonthValue(), ldt.getDayOfMonth(), ldt.getHour(), ldt.getMinute(), ldt.getSecond(), ldt.getNano() / 1_000_000);
 		dt.type = this.type;
 		return dt;
@@ -1154,7 +1189,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return new value with the supplied month
 	 */
 	public OADateTime withMonth(Month month) {
-		ZonedDateTime ldt = getZonedDateTime();
+		ZonedDateTime ldt = toZonedDateTime();
 		OADateTime dt = createUtil(ldt.getYear(), month.getValue(), ldt.getDayOfMonth(), ldt.getHour(), ldt.getMinute(), ldt.getSecond(), ldt.getNano() / 1_000_000);
 		dt.type = this.type;
 		return dt;
@@ -1167,7 +1202,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return new value with the supplied month
 	 */
 	public OADateTime withMonthValue(int month) {
-		ZonedDateTime ldt = getZonedDateTime();
+		ZonedDateTime ldt = toZonedDateTime();
 		OADateTime dt = createUtil(ldt.getYear(), month, ldt.getDayOfMonth(), ldt.getHour(), ldt.getMinute(), ldt.getSecond(), ldt.getNano() / 1_000_000);
 		dt.type = this.type;
 		return dt;
@@ -1180,7 +1215,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return new value with the supplied day of month
 	 */
 	public OADateTime withDayOfMonth(int dom) {
-		ZonedDateTime ldt = getZonedDateTime();
+		ZonedDateTime ldt = toZonedDateTime();
 		OADateTime dt = createUtil(ldt.getYear(), ldt.getMonthValue(), dom, ldt.getHour(), ldt.getMinute(), ldt.getSecond(), ldt.getNano() / 1_000_000);
 		dt.type = this.type;
 		return dt;
@@ -1220,7 +1255,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return new value with the supplied time
 	 */
 	public OADateTime withTime(int hours, int minutes, int seconds, int millisecond) {
-		ZonedDateTime ldt = getZonedDateTime();
+		ZonedDateTime ldt = toZonedDateTime();
 		OADateTime dt = createUtil(ldt.getYear(), ldt.getMonthValue(), ldt.getDayOfMonth(), hours, minutes, seconds, millisecond);
 		dt.type = this.type;
 		return dt;
@@ -1249,7 +1284,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return new value with the supplied hour
 	 */
 	public OADateTime withHours(int hours) {
-		ZonedDateTime ldt = getZonedDateTime();
+		ZonedDateTime ldt = toZonedDateTime();
 		return withTime(hours, ldt.getMinute(), ldt.getSecond(), ldt.getNano() / 1_000_000);
 	}
 
@@ -1260,7 +1295,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return new value with the supplied minute
 	 */
 	public OADateTime withMinutes(int minutes) {
-		ZonedDateTime ldt = getZonedDateTime();
+		ZonedDateTime ldt = toZonedDateTime();
 		return withTime(ldt.getHour(), minutes, ldt.getSecond(), ldt.getNano() / 1_000_000);
 	}
 
@@ -1271,7 +1306,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return new value with the supplied second
 	 */
 	public OADateTime withSeconds(int seconds) {
-		ZonedDateTime ldt = getZonedDateTime();
+		ZonedDateTime ldt = toZonedDateTime();
 		return withTime(ldt.getHour(), ldt.getMinute(), seconds, ldt.getNano() / 1_000_000);
 	}
 
@@ -1282,7 +1317,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return new value with the supplied millisecond
 	 */
 	public OADateTime withMilliSeconds(int ms) {
-		ZonedDateTime ldt = getZonedDateTime();
+		ZonedDateTime ldt = toZonedDateTime();
 		return withTime(ldt.getHour(), ldt.getMinute(), ldt.getSecond(), ms);
 	}
 	
@@ -1326,7 +1361,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return year
 	 */
 	public int getYear() {
-		ZonedDateTime dt = getZonedDateTime();
+		ZonedDateTime dt = toZonedDateTime();
 		return dt.get(ChronoField.YEAR);
 	}
 
@@ -1336,7 +1371,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return month from 1 to 12
 	 */
 	public int getMonthValue() {
-		ZonedDateTime dt = getZonedDateTime();
+		ZonedDateTime dt = toZonedDateTime();
 		return dt.get(ChronoField.MONTH_OF_YEAR);
 	}
 
@@ -1346,7 +1381,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return month enum
 	 */
 	public Month getMonth() {
-		ZonedDateTime dt = getZonedDateTime();
+		ZonedDateTime dt = toZonedDateTime();
 		return dt.getMonth();
 	}
 	
@@ -1356,7 +1391,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return day of month
 	 */
 	public int getDayOfMonth() {
-		ZonedDateTime dt = getZonedDateTime();
+		ZonedDateTime dt = toZonedDateTime();
 		return dt.get(ChronoField.DAY_OF_MONTH);
 	}
 	
@@ -1366,7 +1401,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return hour of day from 0 to 23
 	 */
 	public int getHour() {
-		ZonedDateTime dt = getZonedDateTime();
+		ZonedDateTime dt = toZonedDateTime();
 		return dt.get(ChronoField.HOUR_OF_DAY);
 	}
 
@@ -1376,7 +1411,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return hour of day from 0 to 23
 	 */
 	public int get24Hour() {
-		ZonedDateTime dt = getZonedDateTime();
+		ZonedDateTime dt = toZonedDateTime();
 		return dt.get(ChronoField.HOUR_OF_DAY);
 	}
 
@@ -1386,7 +1421,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return minute of hour
 	 */
 	public int getMinute() {
-		ZonedDateTime dt = getZonedDateTime();
+		ZonedDateTime dt = toZonedDateTime();
 		return dt.get(ChronoField.MINUTE_OF_HOUR);
 	}
 	
@@ -1396,7 +1431,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return second of minute
 	 */
 	public int getSecond() {
-		ZonedDateTime dt = getZonedDateTime();
+		ZonedDateTime dt = toZonedDateTime();
 		return dt.get(ChronoField.SECOND_OF_MINUTE);
 	}
 	
@@ -1406,7 +1441,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return millisecond of second
 	 */
 	public int getMilliSecond() {
-		ZonedDateTime dt = getZonedDateTime();
+		ZonedDateTime dt = toZonedDateTime();
 		return dt.get(ChronoField.NANO_OF_SECOND) / 1_000_000;
 	}
 	
@@ -1431,7 +1466,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	public OADateTime withZoneIdSameWallTime(ZoneId zid) {
 	    if (zid == null) zid = defaultZoneId;
 
-	    LocalDateTime ldt = getLocalDateTime();
+	    LocalDateTime ldt = toLocalDateTime();
 
 	    OADateTime dt = createUtil(
 	        zid,
@@ -1498,7 +1533,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return day-of-week enum
 	 */
 	public DayOfWeek getDayOfWeek() {
-		return getZonedDateTime().getDayOfWeek();
+		return toZonedDateTime().getDayOfWeek();
 	}
 
 	/**
@@ -1507,7 +1542,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return day of year from 1 to 365/366
 	 */
 	public int getDayOfYear() {
-		return getZonedDateTime().getDayOfYear();
+		return toZonedDateTime().getDayOfYear();
 	}
 
 	/**
@@ -1516,7 +1551,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return week of month
 	 */
 	public int getWeekOfMonth() {
-		ZonedDateTime zdt = getZonedDateTime();
+		ZonedDateTime zdt = toZonedDateTime();
 		return zdt.get(WeekFields.of(Locale.getDefault()).weekOfMonth());
 	}
 
@@ -1526,7 +1561,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return week of year
 	 */
 	public int getWeekOfYear() {
-		ZonedDateTime zdt = getZonedDateTime();
+		ZonedDateTime zdt = toZonedDateTime();
 		return zdt.get(WeekFields.of(Locale.getDefault()).weekOfYear());
 	}
 
@@ -1536,7 +1571,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return days in month
 	 */
 	public int getDaysInMonth() {
-		ZonedDateTime zdt = getZonedDateTime();
+		ZonedDateTime zdt = toZonedDateTime();
 		return zdt.toLocalDate().lengthOfMonth();
 	}
 
@@ -1546,7 +1581,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return days in year
 	 */
 	public int getDaysInYear() {
-		ZonedDateTime zdt = getZonedDateTime();
+		ZonedDateTime zdt = toZonedDateTime();
 		return zdt.toLocalDate().lengthOfYear();
 	}
 	
@@ -1719,7 +1754,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return adjusted value
 	 */
 	public OADateTime plusYears(int amount) {
-		ZonedDateTime zdt = getZonedDateTime().plusYears(amount);
+		ZonedDateTime zdt = toZonedDateTime().plusYears(amount);
 		return createUtil(zdt);
 	}
 
@@ -1740,7 +1775,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return adjusted value
 	 */
 	public OADateTime plusMonths(int amount) {
-		ZonedDateTime zdt = getZonedDateTime().plusMonths(amount);
+		ZonedDateTime zdt = toZonedDateTime().plusMonths(amount);
 		return createUtil(zdt);
 	}
 
@@ -1761,7 +1796,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return adjusted value
 	 */
 	public OADateTime plusDays(int amount) {
-		ZonedDateTime zdt = getZonedDateTime().plusDays(amount);
+		ZonedDateTime zdt = toZonedDateTime().plusDays(amount);
 		return createUtil(zdt);
 	}
 
@@ -1808,7 +1843,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return adjusted value
 	 */
 	public OADateTime addWeeks(int amount) {
-		ZonedDateTime zdt = getZonedDateTime().plusWeeks(amount);
+		ZonedDateTime zdt = toZonedDateTime().plusWeeks(amount);
 		return createUtil(zdt);
 	}
 
@@ -1829,7 +1864,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return adjusted value
 	 */
 	public OADateTime plusHours(int amount) {
-		ZonedDateTime zdt = getZonedDateTime().plusHours(amount);
+		ZonedDateTime zdt = toZonedDateTime().plusHours(amount);
 		return createUtil(zdt);
 	}
 
@@ -1850,7 +1885,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return adjusted value
 	 */
 	public OADateTime plusMinutes(int amount) {
-		ZonedDateTime zdt = getZonedDateTime().plusMinutes(amount);
+		ZonedDateTime zdt = toZonedDateTime().plusMinutes(amount);
 		return createUtil(zdt);
 	}
 
@@ -1871,7 +1906,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return adjusted value
 	 */
 	public OADateTime plusSeconds(int amount) {
-		ZonedDateTime zdt = getZonedDateTime().plusSeconds(amount);
+		ZonedDateTime zdt = toZonedDateTime().plusSeconds(amount);
 		return createUtil(zdt);
 	}
 
@@ -1892,7 +1927,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return adjusted value
 	 */
 	public OADateTime plusMilliSeconds(int amount) {
-		ZonedDateTime zdt = getZonedDateTime().plusNanos(amount * 1_000_000L);
+		ZonedDateTime zdt = toZonedDateTime().plusNanos(amount * 1_000_000L);
 		return createUtil(zdt);
 	}
 
@@ -1979,7 +2014,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 */
 	public long betweenHours(OADateTime dt) {
 	    if (dt == null) return 0;
-	    return ChronoUnit.HOURS.between(this.getInstant(), dt.getInstant());	    
+	    return ChronoUnit.HOURS.between(this.toZonedDateTime(), dt.toInstant());	    
 	}
 	
 	/**
@@ -1990,7 +2025,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 */
 	public long betweenMinutes(OADateTime dt) {
 	    if (dt == null) return 0;
-	    return ChronoUnit.MINUTES.between(this.getInstant(), dt.getInstant());	    
+	    return ChronoUnit.MINUTES.between(this.toInstant(), dt.toInstant());	    
 	}
 	
 	/**
@@ -2001,7 +2036,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 */
 	public long betweenSeconds(OADateTime dt) {
 	    if (dt == null) return 0;
-	    return ChronoUnit.SECONDS.between(this.getInstant(), dt.getInstant());	    
+	    return ChronoUnit.SECONDS.between(this.toInstant(), dt.toInstant());	    
 	}
 	
 	/**
@@ -2012,7 +2047,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 */
 	public long betweenMilliSeconds(OADateTime dt) {
 	    if (dt == null) return 0;
-	    return ChronoUnit.MILLIS.between(this.getInstant(), dt.getInstant());	    
+	    return ChronoUnit.MILLIS.between(this.toInstant(), dt.toInstant());	    
 	}
 	
 	/**
@@ -2128,6 +2163,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 					dateTime = parseDateTime(value, fmt);
 				}
 				catch (Exception e) {
+					dateTime = null; 
 				}
 			}
 		}
@@ -2272,7 +2308,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		if (format == null) format = getGlobalOutputFormat();
 		format = normalizeFormat(format);
 	    DateTimeFormatter fmt = DateTimeFormatter.ofPattern(format);
-	    return getZonedDateTime().format(fmt);
+	    return toZonedDateTime().format(fmt);
 	}	
 	
 	/**
@@ -2372,7 +2408,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 * @return last day of month, for example 28, 29, 30, or 31
 	 */
 	public int getLastDayOfMonth() {
-		int lastDay = getZonedDateTime().toLocalDate().lengthOfMonth();
+		int lastDay = toZonedDateTime().toLocalDate().lengthOfMonth();
 		return lastDay;
 	}
 }

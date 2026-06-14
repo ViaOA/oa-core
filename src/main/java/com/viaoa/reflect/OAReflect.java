@@ -25,17 +25,15 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Vector;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.logging.Logger;
 
 import com.viaoa.converter.OAConverter;
 import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.object.OAObjectInfoService;
-import com.viaoa.graph.service.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
@@ -127,12 +125,6 @@ CODEX
     than once, causing duplicate logical OA classes in scanner results.
   - Classification: CODEX/DEFER
 
-
-
-
-
-
-
 */
 
 /**
@@ -167,9 +159,9 @@ public class OAReflect {
 	/**
 	 * Lookup table that maps primitive types to their corresponding wrapper classes.
 	 */
-	static private Hashtable tblPrimitives;
+	static final private Map<Class<?>, Class<?>> tblPrimitives;
 	static {
-		tblPrimitives = new Hashtable(10, 1.0F);
+		tblPrimitives = new HashMap<>();
 		tblPrimitives.put(java.lang.Boolean.TYPE, java.lang.Boolean.class);
 		tblPrimitives.put(java.lang.Byte.TYPE, java.lang.Byte.class);
 		tblPrimitives.put(java.lang.Character.TYPE, java.lang.Character.class);

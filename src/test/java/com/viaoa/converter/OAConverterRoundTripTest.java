@@ -73,7 +73,7 @@ class OAConverterRoundTripTest {
 
         assertEquals(value.getYear(), result.getYear());
         assertEquals(value.getMonth(), result.getMonth());
-        assertEquals(value.getDay(), result.getDay());
+        assertEquals(value.getDayOfMonth(), result.getDayOfMonth());
     }
 
     @Test
@@ -100,7 +100,9 @@ class OAConverterRoundTripTest {
         LocalDate value = LocalDate.of(2024, 5, 6);
         String fmt = "yyyy-MM-dd";
 
-        assertEquals(value, OAConverter.convert(LocalDate.class, OAConverter.toString(value, fmt), fmt));
+        LocalDate ldx = OAConverter.convert(LocalDate.class, OAConverter.toString(value, fmt), fmt);
+        
+        assertEquals(value, ldx);
     }
 
     @Test

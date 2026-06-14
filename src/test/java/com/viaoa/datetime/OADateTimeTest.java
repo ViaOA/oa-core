@@ -241,9 +241,9 @@ class OADateTimeTest {
         assertEquals(30, dt.getLastDayOfMonth());
         assertEquals(LocalDate.of(2026, 6, 9), dt.getLocalDate());
         assertEquals(LocalTime.of(10, 30, 15, 123_000_000), dt.getLocalTime());
-        assertEquals(LocalDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000), dt.getLocalDateTime());
-        assertEquals(ZonedDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000, NEW_YORK), dt.getZonedDateTime());
-        assertEquals(dt.getTime(), dt.getInstant().toEpochMilli());
+        assertEquals(LocalDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000), dt.toLocalDateTime());
+        assertEquals(ZonedDateTime.of(2026, 6, 9, 10, 30, 15, 123_000_000, NEW_YORK), dt.toZonedDateTime());
+        assertEquals(dt.getTime(), dt.toInstant().toEpochMilli());
         assertEquals(2026, dt.getField(ChronoField.YEAR));
         assertEquals(TimeZone.getTimeZone(NEW_YORK), dt.getTimeZone());
         assertEquals(dt.getTime(), dt.getDate().getTime());
@@ -329,24 +329,24 @@ class OADateTimeTest {
     void arithmeticMethodsMatchJavaTimeAndPreserveTypeAndZone() {
         OADateTime base = new OADateTime(ZonedDateTime.of(2024, 2, 29, 10, 30, 15, 123_000_000, NEW_YORK));
 
-        assertAdjusted(base, base.plusYears(1), base.getZonedDateTime().plusYears(1));
-        assertAdjusted(base, base.subtractYears(1), base.getZonedDateTime().plusYears(-1));
-        assertAdjusted(base, base.plusMonths(1), base.getZonedDateTime().plusMonths(1));
-        assertAdjusted(base, base.minusMonths(1), base.getZonedDateTime().plusMonths(-1));
-        assertAdjusted(base, base.plusDays(1), base.getZonedDateTime().plusDays(1));
-        assertAdjusted(base, base.minusDays(1), base.getZonedDateTime().plusDays(-1));
-        assertAdjusted(base, base.plusDay(), base.getZonedDateTime().plusDays(1));
-        assertAdjusted(base, base.minusDay(), base.getZonedDateTime().plusDays(-1));
-        assertAdjusted(base, base.addWeeks(2), base.getZonedDateTime().plusWeeks(2));
-        assertAdjusted(base, base.minusWeeks(2), base.getZonedDateTime().plusDays(-14));
-        assertAdjusted(base, base.plusHours(2), base.getZonedDateTime().plusHours(2));
-        assertAdjusted(base, base.minusHours(2), base.getZonedDateTime().plusHours(-2));
-        assertAdjusted(base, base.plusMinutes(2), base.getZonedDateTime().plusMinutes(2));
-        assertAdjusted(base, base.minusMinutes(2), base.getZonedDateTime().plusMinutes(-2));
-        assertAdjusted(base, base.plusSeconds(2), base.getZonedDateTime().plusSeconds(2));
-        assertAdjusted(base, base.minusSeconds(2), base.getZonedDateTime().plusSeconds(-2));
-        assertAdjusted(base, base.plusMilliSeconds(2), base.getZonedDateTime().plusNanos(2_000_000));
-        assertAdjusted(base, base.minusMilliSeconds(2), base.getZonedDateTime().plusNanos(-2_000_000));
+        assertAdjusted(base, base.plusYears(1), base.toZonedDateTime().plusYears(1));
+        assertAdjusted(base, base.subtractYears(1), base.toZonedDateTime().plusYears(-1));
+        assertAdjusted(base, base.plusMonths(1), base.toZonedDateTime().plusMonths(1));
+        assertAdjusted(base, base.minusMonths(1), base.toZonedDateTime().plusMonths(-1));
+        assertAdjusted(base, base.plusDays(1), base.toZonedDateTime().plusDays(1));
+        assertAdjusted(base, base.minusDays(1), base.toZonedDateTime().plusDays(-1));
+        assertAdjusted(base, base.plusDay(), base.toZonedDateTime().plusDays(1));
+        assertAdjusted(base, base.minusDay(), base.toZonedDateTime().plusDays(-1));
+        assertAdjusted(base, base.addWeeks(2), base.toZonedDateTime().plusWeeks(2));
+        assertAdjusted(base, base.minusWeeks(2), base.toZonedDateTime().plusDays(-14));
+        assertAdjusted(base, base.plusHours(2), base.toZonedDateTime().plusHours(2));
+        assertAdjusted(base, base.minusHours(2), base.toZonedDateTime().plusHours(-2));
+        assertAdjusted(base, base.plusMinutes(2), base.toZonedDateTime().plusMinutes(2));
+        assertAdjusted(base, base.minusMinutes(2), base.toZonedDateTime().plusMinutes(-2));
+        assertAdjusted(base, base.plusSeconds(2), base.toZonedDateTime().plusSeconds(2));
+        assertAdjusted(base, base.minusSeconds(2), base.toZonedDateTime().plusSeconds(-2));
+        assertAdjusted(base, base.plusMilliSeconds(2), base.toZonedDateTime().plusNanos(2_000_000));
+        assertAdjusted(base, base.minusMilliSeconds(2), base.toZonedDateTime().plusNanos(-2_000_000));
     }
 
     @Test
@@ -355,14 +355,14 @@ class OADateTimeTest {
         OADateTime end = new OADateTime(CHICAGO, 2025, 2, 28, 1, 2, 3, 4);
 
         assertEquals(Period.between(start.getLocalDate(), end.getLocalDate()), start.betweenPeriod(end));
-        assertEquals(Duration.between(start.getInstant(), end.getInstant()), start.betweenDuration(end));
+        assertEquals(Duration.between(start.toInstant(), end.toInstant()), start.betweenDuration(end));
         assertEquals(0, start.betweenYears(end));
         assertEquals(11, start.betweenMonths(end));
         assertEquals(365, start.betweenDays(end));
-        assertEquals(Duration.between(start.getInstant(), end.getInstant()).toHours(), start.betweenHours(end));
-        assertEquals(Duration.between(start.getInstant(), end.getInstant()).toMinutes(), start.betweenMinutes(end));
-        assertEquals(Duration.between(start.getInstant(), end.getInstant()).getSeconds(), start.betweenSeconds(end));
-        assertEquals(Duration.between(start.getInstant(), end.getInstant()).toMillis(), start.betweenMilliSeconds(end));
+        assertEquals(Duration.between(start.toInstant(), end.toInstant()).toHours(), start.betweenHours(end));
+        assertEquals(Duration.between(start.toInstant(), end.toInstant()).toMinutes(), start.betweenMinutes(end));
+        assertEquals(Duration.between(start.toInstant(), end.toInstant()).getSeconds(), start.betweenSeconds(end));
+        assertEquals(Duration.between(start.toInstant(), end.toInstant()).toMillis(), start.betweenMilliSeconds(end));
         assertEquals(Period.ZERO, start.betweenPeriod(null));
         assertEquals(Duration.ZERO, start.betweenDuration(null));
         assertEquals(0, start.betweenYears(null));
@@ -424,7 +424,7 @@ class OADateTimeTest {
         assertEquals(base.getType(), actual.getType());
         assertEquals(base.getZoneId(), actual.getZoneId());
         assertEquals(expected.toInstant().toEpochMilli(), actual.getTime());
-        assertEquals(expected.toLocalDateTime(), actual.getLocalDateTime());
+        assertEquals(expected.toLocalDateTime(), actual.toLocalDateTime());
     }
 
     private static void assertFields(OADateTime dt, int year, int month, int day, int hour, int minute, int second, int millisecond) {

@@ -2,74 +2,50 @@ package com.viaoa.path;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.viaoa.hub.Hub;
-import com.viaoa.object.OAObject;
-
 import org.junit.jupiter.api.Test;
+
+import com.test.pos.model.oa.Invoice;
+import com.test.pos.model.oa.InvoiceBasket;
+import com.test.pos.model.oa.Item;
+import com.test.pos.model.oa.LineItem;
+import com.test.pos.model.oa.Product;
+import com.test.pos.model.oa.Register;
+import com.test.pos.model.oa.RegisterSession;
+import com.test.pos.model.oa.Store;
+import com.viaoa.hub.Hub;
 
 class OAPathDelegateTest {
 
-    public static class Root extends OAObject {
-        private Child child;
-        private final Hub<Child> children = new Hub<>(Child.class);
-
-        public Child getChild() {
-            return child;
-        }
-
-        public void setChild(Child child) {
-            this.child = child;
-        }
-
-        public Hub<Child> getChildren() {
-            return children;
-        }
-    }
-
-    public static class Child extends OAObject {
-        private String name;
-
-        public Child() {
-        }
-
-        public Child(String name) {
-            this.name = name;
-        }
-
-        public String getName() {
-            return name;
-        }
-    }
-
     @Test
-    void createRootPropertyPathDelegatesToOAPathConstructor() throws Exception {
-        OAPath pp = OAPathDelegate.createRootPropertyPath("[Root].child.name", Root.class);
-
-        assertNotNull(pp);
-        assertEquals(Root.class, pp.getFromClass());
-        assertArrayEquals(new String[] { "child", "name" }, pp.getProperties());
-    }
-
-    @Test
-    void getPropertyPathForClassesReturnsNullForNullInputs() {
-        assertNull(OAPathDelegate.getPropertyPathforClasses(null, new Class[] { Child.class }));
-        assertNull(OAPathDelegate.getPropertyPathforClasses(new Hub<>(Root.class), null));
-    }
-
-    @Test
-    void getPropertyPathForClassesFindsSingleMatchingLink() {
-        Hub<Root> hub = new Hub<>(Root.class);
-
-        String path = OAPathDelegate.getPropertyPathforClasses(hub, new Class[] { Child.class });
+    void createRootPropertyPathDelegatesToOAPathConstructorAndResolvesLeadingRootClass() throws Exception {
+        OAPath path = OAPathDelegate.createRootPropertyPath("[Invoice]." + Invoice.P_InvoiceBaskets + "."
+                + InvoiceBasket.P_LineItems + "." + LineItem.P_Product + "." + Product.P_Item + "." + Item.P_Name,
+                Store.class);
 
         assertNotNull(path);
-        assertTrue(path.equals("child") || path.equals("children"));
+        assertEquals(Invoice.class, path.getFromClass());
+        assertEquals(Item.P_Name, path.getLastPropertyName());
+        assertArrayEquals(new String[] { Invoice.P_InvoiceBaskets, InvoiceBasket.P_LineItems, LineItem.P_Product,
+                Product.P_Item, Item.P_Name }, path.getProperties());
     }
 
     @Test
-    void getPropertyPathForClassesReturnsNullWhenSegmentCannotBeResolved() {
-        Hub<Child> hub = new Hub<>(Child.class);
+    void getPropertyPathForClassesHandlesNullsSimplePathsAndUnreachableClasses() {
+        Hub<Store> stores = new Hub<>(Store.class);
 
-        assertNull(OAPathDelegate.getPropertyPathforClasses(hub, new Class[] { Root.class }));
+        assertNull(OAPathDelegate.getPropertyPathforClasses(null, new Class[] { Register.class }));
+        assertNull(OAPathDelegate.getPropertyPathforClasses(stores, null));
+
+        assertEquals(Store.P_Registers,
+                OAPathDelegate.getPropertyPathforClasses(stores, new Class[] { Register.class }));
+        assertEquals(Store.P_Registers + "." + Register.P_RegisterSessions,
+                OAPathDelegate.getPropertyPathforClasses(stores, new Class[] { Register.class, RegisterSession.class }));
+        assertEquals(Store.P_Registers + "." + Register.P_RegisterSessions + "." + RegisterSession.P_Invoices + "."
+                + Invoice.P_InvoiceBaskets + "." + InvoiceBasket.P_LineItems + "." + LineItem.P_Product + "."
+                + Product.P_Item,
+                OAPathDelegate.getPropertyPathforClasses(stores, new Class[] { Register.class, RegisterSession.class,
+                        Invoice.class, InvoiceBasket.class, LineItem.class, Product.class, Item.class }));
+
+        assertNull(OAPathDelegate.getPropertyPathforClasses(stores, new Class[] { Item.class }));
     }
 }

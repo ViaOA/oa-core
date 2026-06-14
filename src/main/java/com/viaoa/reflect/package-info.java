@@ -14,8 +14,75 @@
  * limitations under the License.
  */
 /**
- * 
-  * </p>
+ * Reflection utilities used throughout OA for runtime property access,
+ * method discovery, path traversal, type inspection, conversion, and
+ * metadata integration.
+ *
+ * <h2>Overview</h2>
+ *
+ * This package provides the reflection layer used by OA runtime services
+ * to dynamically discover and invoke model properties and methods.
+ * It is a foundational package used by object metadata, property paths,
+ * filters, queries, serialization, graph traversal, bindings, and
+ * generated model code.
+ *
+ * <h2>Primary Responsibilities</h2>
+ * <ul>
+ *   <li>Method discovery and invocation</li>
+ *   <li>Property getter and setter resolution</li>
+ *   <li>Dotted property-path traversal</li>
+ *   <li>Hub navigation and active-object resolution</li>
+ *   <li>Primitive and wrapper type handling</li>
+ *   <li>Runtime type inspection utilities</li>
+ *   <li>String-to-type conversion support</li>
+ *   <li>Classpath and class discovery utilities</li>
+ * </ul>
+ *
+ * <h2>Property Paths</h2>
+ *
+ * Reflection services support OA property paths such as:
+ *
+ * <pre>
+ * employee.department.region.name
+ * invoice.customer.lastName
+ * store.registers.activeObject.invoice.total
+ * </pre>
+ *
+ * Hub properties may be traversed using the active object when
+ * appropriate for OA runtime navigation.
+ *
+ * <h2>OAObject Integration</h2>
+ *
+ * Reflection utilities understand OAObject semantics including:
+ * <ul>
+ *   <li>Primitive-null tracking</li>
+ *   <li>Metadata-driven property access</li>
+ *   <li>Hub link traversal</li>
+ *   <li>Generated model property conventions</li>
+ * </ul>
+ *
+ * <h2>Thread Safety</h2>
+ *
+ * Public utilities in this package are intended to be stateless and
+ * safely reusable across threads. Any cached reflection metadata must
+ * remain deterministic and class-specific.
+ *
+ * <h2>Package Invariants</h2>
+ *
+ * <ul>
+ *   <li>Reflection lookup must be deterministic for identical inputs.</li>
+ *   <li>Property resolution must follow documented OA getter/setter conventions.</li>
+ *   <li>Reflection must not silently invoke an incorrect member.</li>
+ *   <li>Primitive-wrapper compatibility must follow documented OA semantics.</li>
+ *   <li>Property-path traversal must preserve OAObject and Hub semantics.</li>
+ *   <li>Invocation failures must preserve underlying causes.</li>
+ *   <li>Reflection behavior must remain consistent with OA metadata and path services.</li>
+ * </ul>
+ *
+ * @see com.viaoa.reflect.OAReflect
+ * @see com.viaoa.object.OAObject
+ * @see com.viaoa.path
+ * @see com.viaoa.filter
  */
 package com.viaoa.reflect;
 

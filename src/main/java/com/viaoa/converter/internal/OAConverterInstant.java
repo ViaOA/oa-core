@@ -90,22 +90,22 @@ public class OAConverterInstant implements OAConverterInterface<Instant> {
         if (fromValue instanceof Instant) return (Instant) fromValue;
 
         if (fromValue instanceof OADateTime) {
-            return ((OADateTime) fromValue).getInstant();
+            return ((OADateTime) fromValue).toInstant();
         }
 
         if (fromValue instanceof OADate) {
-            return new OADateTime((OADate) fromValue).getInstant();
+            return new OADateTime((OADate) fromValue).toInstant();
         }
 
         if (fromValue instanceof OATime) {
-            return new OADateTime((OATime) fromValue).getInstant();
+            return new OADateTime((OATime) fromValue).toInstant();
         }
 
         if (fromValue instanceof String) {
             try {
                 String s = ((String) fromValue).trim();
                 if (s.isEmpty()) return null;
-                return OADateTime.valueOf(s, fmt).getInstant();
+                return OADateTime.valueOf(s, fmt).toInstant();
             }
             catch (Throwable t) {
                 return null;
@@ -117,7 +117,7 @@ public class OAConverterInstant implements OAConverterInterface<Instant> {
         }
 
         if (fromValue instanceof java.sql.Time) {
-            return new OADateTime((java.sql.Time) fromValue).getInstant();
+            return new OADateTime((java.sql.Time) fromValue).toInstant();
         }
 
         if (fromValue instanceof java.util.Date) {

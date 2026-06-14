@@ -72,20 +72,59 @@ import com.viaoa.datetime.OADateTime;
  */
 public class OAConverterTimestamp implements OAConverterInterface<Timestamp> {
 	
-	
-    /**
-     * Converts a supplied value into a {@link Timestamp}.
-     * <p>
-     * If {@code fmt} is provided and {@code fromValue} is a {@link String},
-     * parsing is delegated to {@link OADateTime#valueOf(String, String)}.
-     * </p>
-     *
-     * @param thisClass the expected result type (always {@code Timestamp.class})
-     * @param fromValue the source value to convert; may be {@code null}
-     * @param fmt optional input format mask when parsing {@link String} values
-     * @return a {@link Timestamp} instance representing the input value,
-     *         or {@code null} when conversion is not possible
-     */
+
+	/**
+	 * Converter for transforming values into {@link java.sql.Timestamp} and
+	 * producing formatted {@link String} values from timestamp instances.
+	 *
+	 * <h3>Conversion Behavior</h3>
+	 * The following input types are supported:
+	 * <ul>
+	 *   <li>{@code null} → {@code null}</li>
+	 *   <li>{@link Timestamp} — returned directly</li>
+	 *   <li>{@link String} — parsed using {@link OADateTime#valueOf(String, String)};
+	 *       if blank, returns {@code null}</li>
+	 *   <li>{@link OADateTime} — converted using
+	 *       {@link OADateTime#toTimestamp()}</li>
+	 *   <li>{@link java.util.Date} — epoch milliseconds preserved</li>
+	 *   <li>{@link Instant} — preserved as an exact instant</li>
+	 *   <li>{@link LocalDate} — interpreted as start-of-day in the system default zone</li>
+	 *   <li>{@link LocalDateTime} — interpreted in the system default zone</li>
+	 *   <li>{@link ZonedDateTime} — exact instant preserved</li>
+	 *   <li>{@code byte[]} — interpreted as a long value containing epoch milliseconds</li>
+	 *   <li>{@link Number} — interpreted as epoch milliseconds</li>
+	 * </ul>
+	 *
+	 * <p><strong>OADateTime Conversion Notes:</strong><br>
+	 * {@link OADateTime} owns all date/time semantic rules.
+	 * Conversion to {@link Timestamp} is delegated to
+	 * {@link OADateTime#toTimestamp()}.
+	 * </p>
+	 *
+	 * <ul>
+	 *   <li>{@code Instant} values preserve the represented instant.</li>
+	 *   <li>{@code ZonedInstant} values preserve the represented instant.</li>
+	 *   <li>{@code Floating} values are not semantically compatible with
+	 *       {@link Timestamp}, because {@code Timestamp} represents an instant.
+	 *       Floating values therefore follow the conversion rules defined by
+	 *       {@code OADateTime.toTimestamp()}.</li>
+	 * </ul>
+	 *
+	 * <p><strong>Zone and Epoch Notes:</strong><br>
+	 * {@link java.sql.Timestamp} represents an instant on the UTC timeline.
+	 * When converting from {@link LocalDate} or {@link LocalDateTime},
+	 * the value is interpreted using {@link ZoneId#systemDefault()} unless
+	 * the source type explicitly supplies zone information.
+	 * </p>
+	 *
+	 * <h3>Formatting Behavior</h3>
+	 * <ul>
+	 *   <li>If {@code fmt} is supplied, formatting is performed via
+	 *       {@link OADateTime#toString(String)}</li>
+	 *   <li>If value is {@code null}, returns {@code ""} for UI-safe output</li>
+	 *   <li>Formatting defaults are governed by global OA date/time settings</li>
+	 * </ul>
+	 */	
 	@Override
 	public Timestamp convert(Class<Timestamp> thisClass, Object fromValue, String fmt) {
 		if (fromValue == null) {
@@ -102,7 +141,8 @@ public class OAConverterTimestamp implements OAConverterInterface<Timestamp> {
 		}
 
 		if (fromValue instanceof OADateTime) {
-			return new Timestamp(((OADateTime) fromValue).getTime());
+			OADateTime dt = (OADateTime) fromValue;
+			return dt.toTimestamp();
 		}
 
 		if (fromValue instanceof java.util.Date) {

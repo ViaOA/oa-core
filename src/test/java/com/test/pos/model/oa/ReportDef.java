@@ -1,0 +1,191 @@
+package com.test.pos.model.oa;
+ 
+import java.util.*;
+import java.util.logging.*;
+import java.sql.*;
+import com.viaoa.object.*;
+import com.viaoa.hub.*;
+import com.viaoa.annotation.*;
+import com.viaoa.lang.*;
+import com.viaoa.callback.OAObjectCallback;
+import com.viaoa.datetime.OADateTime;
+import com.test.pos.delegate.oa.*;
+import com.test.pos.model.oa.filter.*;
+import com.test.pos.model.oa.propertypath.*;
+ 
+@OAClass(
+    lowerName = "reportDef",
+    pluralName = "ReportDefs",
+    shortName = "rpd",
+    displayName = "Report Def",
+    displayProperty = "name",
+    sortProperty = "seq",
+    noPojo = true
+)
+@OATable(
+    indexes = {
+        @OAIndex(name = "ReportDefReportClass", fkey = true, columns = { @OAIndexColumn(name = "ReportClassId") })
+    }
+)
+public class ReportDef extends OAObject {
+    private static final long serialVersionUID = 1L;
+    private static Logger LOG = Logger.getLogger(ReportDef.class.getName());
+
+    public static final String P_Id = "id";
+    public static final String P_Created = "created";
+    public static final String P_Name = "name";
+    public static final String P_Template = "template";
+    public static final String P_Seq = "seq";
+     
+    public static final String P_ReportClass = "reportClass";
+    public static final String P_ReportClassId = "reportClassId"; // fkey
+    public static final String P_Reports = "reports";
+     
+    protected volatile int id;
+    protected volatile OADateTime created;
+    protected volatile String name;
+    protected volatile String template;
+    protected volatile int seq;
+     
+    // Links to other objects.
+    protected volatile transient ReportClass reportClass;
+     
+    public ReportDef() {
+        if (!isLoading()) setObjectDefaults();
+    }
+    @Override
+    public void setObjectDefaults() {
+        setCreated(new OADateTime());
+    }
+     
+    public ReportDef(int id) {
+        this();
+        setId(id);
+    }
+
+    @OAProperty(lowerName = "id", isUnique = true, trackPrimitiveNull = false, displayLength = 6)
+    @OAId
+    @OAColumn(name = "Id", sqlType = java.sql.Types.INTEGER)
+    public int getId() {
+        return id;
+    }
+    public void setId(int newValue) {
+        int old = id;
+        fireBeforePropertyChange(P_Id, old, newValue);
+        this.id = newValue;
+        firePropertyChange(P_Id, old, this.id);
+    }
+
+    @OAProperty(lowerName = "created", defaultValue = "new OADateTime()", displayLength = 15, isProcessed = true, ignoreTimeZone = true)
+    @OAColumn(name = "Created", sqlType = java.sql.Types.TIMESTAMP)
+    public OADateTime getCreated() {
+        return created;
+    }
+    public void setCreated(OADateTime newValue) {
+        OADateTime old = created;
+        fireBeforePropertyChange(P_Created, old, newValue);
+        this.created = newValue;
+        firePropertyChange(P_Created, old, this.created);
+    }
+
+    @OAProperty(lowerName = "name", maxLength = 55, displayLength = 15)
+    @OAColumn(name = "Name", maxLength = 55)
+    public String getName() {
+        return name;
+    }
+    public void setName(String newValue) {
+        String old = name;
+        fireBeforePropertyChange(P_Name, old, newValue);
+        this.name = newValue;
+        firePropertyChange(P_Name, old, this.name);
+    }
+
+    @OAProperty(lowerName = "template", displayLength = 30, uiColumnLength = 20, hasCustomCode = true, isHtml = true)
+    @OAColumn(name = "Template", sqlType = java.sql.Types.CLOB)
+    public String getTemplate() {
+        return template;
+    }
+    public void setTemplate(String newValue) {
+        String old = template;
+        fireBeforePropertyChange(P_Template, old, newValue);
+        this.template = newValue;
+        firePropertyChange(P_Template, old, this.template);
+    }
+    // root class that will be used for inserting data into html template
+    public Class getTemplateTemplateRoot() {
+        Class cz = ReportDefDelegate.getTemplateTemplateRoot(this);
+        if (cz == null) cz = ReportDef.class;
+        return cz;
+    }
+    // custom fields that can be inserted into html template
+    public String[] getTemplateTemplateFields() {
+        return new String[]{};
+    }
+
+    @OAProperty(lowerName = "seq", displayLength = 6, isAutoSeq = true)
+    @OAColumn(name = "Seq", sqlType = java.sql.Types.INTEGER)
+    public int getSeq() {
+        return seq;
+    }
+    public void setSeq(int newValue) {
+        int old = seq;
+        fireBeforePropertyChange(P_Seq, old, newValue);
+        this.seq = newValue;
+        firePropertyChange(P_Seq, old, this.seq);
+    }
+
+    @OAOne(
+        displayName = "Report Class", 
+        reverseName = ReportClass.P_ReportDefs, 
+        required = true, 
+        allowCreateNew = false, 
+        fkeys = {@OAFkey(fromProperty = P_ReportClassId, toProperty = ReportClass.P_Id)}
+    )
+    public ReportClass getReportClass() {
+        if (reportClass == null) {
+            reportClass = (ReportClass) getObject(P_ReportClass);
+        }
+        return reportClass;
+    }
+    public void setReportClass(ReportClass newValue) {
+        ReportClass old = this.reportClass;
+        fireBeforePropertyChange(P_ReportClass, old, newValue);
+        this.reportClass = newValue;
+        firePropertyChange(P_ReportClass, old, this.reportClass);
+    }
+    @OAProperty(isFkeyOnly = true)
+    @OAColumn(name = "ReportClassId")
+    public Integer getReportClassId() {
+        return (Integer) getFkeyProperty(P_ReportClassId);
+    }
+    public void setReportClassId(Integer newValue) {
+        this.reportClass = null;
+        setFkeyProperty(P_ReportClassId, newValue);
+    }
+
+    @OAMany(
+        toClass = Report.class, 
+        reverseName = Report.P_ReportDef, 
+        createMethod = false
+    )
+    private Hub<Report> getReports() {
+        // oamodel has createMethod set to false, this method exists only for annotations.
+        return null;
+    }
+    public void load(ResultSet rs, int id) throws SQLException {
+        this.id = id;
+        java.sql.Timestamp timestamp;
+        timestamp = rs.getTimestamp(2);
+        if (timestamp != null) this.created = new OADateTime(timestamp);
+        this.name = rs.getString(3);
+        this.template = rs.getString(4);
+        this.seq = rs.getInt(5);
+        setPrimitiveNull(P_Seq, rs.wasNull());
+        int reportClassFkey = rs.getInt(6);
+        setFkeyProperty(P_ReportClass, rs.wasNull() ? null : reportClassFkey);
+
+        this.changedFlag = false;
+        this.newFlag = false;
+    }
+}
+ 

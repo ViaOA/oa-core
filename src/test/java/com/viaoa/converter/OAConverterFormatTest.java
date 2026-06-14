@@ -105,7 +105,7 @@ class OAConverterFormatTest {
 
         assertEquals("12.30", OAConverter.toString(new BigDecimal("12.3"), true));
         assertEquals("Y", OAConverter.toString(Boolean.TRUE, true));
-        assertEquals("2024/05/06", OAConverter.toString(new OADate(2024, 4, 6), true));
+        assertEquals("2024/05/06", OAConverter.toString(new OADate(2024, 5, 6), true));
     }
 
     @Test
