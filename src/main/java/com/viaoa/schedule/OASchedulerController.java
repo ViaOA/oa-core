@@ -21,7 +21,7 @@ import com.viaoa.datetime.OADate;
 import com.viaoa.datetime.OADateTime;
 import com.viaoa.datetime.OATime;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OALinkInfo;

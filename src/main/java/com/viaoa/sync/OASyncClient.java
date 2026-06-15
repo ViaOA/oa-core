@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 import com.viaoa.comm.multiplexer.OAMultiplexerClient;
 import com.viaoa.datasource.clientserver.OADataSourceClient;
 import com.viaoa.datetime.OADateTime;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.log.OALogUtil;
 import com.viaoa.metadata.OALinkInfo;

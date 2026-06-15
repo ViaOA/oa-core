@@ -17,7 +17,7 @@ package com.viaoa.cache;
 
 import com.viaoa.datetime.OADateTime;
 import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;

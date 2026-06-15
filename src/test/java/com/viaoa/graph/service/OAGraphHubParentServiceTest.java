@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import com.test.pos.model.oa.Register;
 import com.test.pos.model.oa.Store;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.graph.service.hub.HubStatusService.HubCurrentStateEnum;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
@@ -19,7 +19,7 @@ import com.viaoa.runtime.OARuntime;
 import com.viaoa.select.OASelect;
 
 class OAGraphHubParentServiceTest {
-    private HubService hubs;
+    private HubInternalService hubs;
 
     @BeforeEach
     void beforeEach() {
@@ -32,14 +32,14 @@ class OAGraphHubParentServiceTest {
         clearCache();
     }
 
-    private static HubService hubService() {
+    private static HubInternalService hubService() {
         OAGraphInternal graph = (OAGraphInternal) OARuntime.graph(Register.class);
-        return (HubService) graph.hubsInternal();
+        return (HubInternalService) graph.hubsInternal();
     }
 
     private static void clearCache() {
         OAGraphInternal graph = (OAGraphInternal) OARuntime.graph(Register.class);
-        ((OAObjectService) graph.objectsInternal()).getOAObjectCacheService().removeAllObjects();
+        ((OAObjectInternalService) graph.objectsInternal()).getOAObjectCacheService().removeAllObjects();
     }
 
     @Test

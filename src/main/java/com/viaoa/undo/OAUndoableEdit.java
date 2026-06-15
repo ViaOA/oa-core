@@ -19,7 +19,7 @@ import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoableEdit;
 
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;

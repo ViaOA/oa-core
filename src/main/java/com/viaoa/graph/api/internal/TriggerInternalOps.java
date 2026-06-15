@@ -1,7 +1,10 @@
 package com.viaoa.graph.api.internal;
 
-import com.viaoa.graph.api.TriggerOps;
+import com.viaoa.trigger.OATrigger;
 
-public interface TriggerInternalOps extends TriggerOps {
+public interface TriggerInternalOps {
+	void addTrigger(OATrigger trigger);
+	void addTrigger(OATrigger trigger, boolean bSkipFirstNonManyProperty);
+	boolean removeTrigger(OATrigger trigger);
 	void runTrigger(Runnable r);
 }

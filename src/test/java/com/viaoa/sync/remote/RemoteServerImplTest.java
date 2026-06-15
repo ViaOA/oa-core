@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.*;
 
 import com.test.pos.model.oa.Store;
-import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
@@ -114,7 +114,7 @@ class RemoteServerImplTest {
 
     private void clearCache() {
         OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Store.class);
-        OAObjectService os = (OAObjectService) og.objectsInternal();
+        OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
         os.getOAObjectCacheService().removeAllObjects();
     }
 

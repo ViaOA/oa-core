@@ -1,6 +1,7 @@
 package com.viaoa.graph.service;
 
 import com.viaoa.sync.OASyncServer;
+import com.viaoa.graph.api.ReplicationOps;
 import com.viaoa.graph.api.internal.*;
 import com.viaoa.replication.OAReplicationClient;
 import com.viaoa.replication.OAReplicationMaster;
@@ -31,7 +32,7 @@ CODEX
  * Allows offline support and reconnect with resync support.
  * 
  */
-public abstract class OAReplicationService implements ReplInternalOps {
+public abstract class OAReplicationService implements ReplicationInternalOps, ReplicationOps {
 	private String guid;
     private OASyncServer syncServer;
     private String tLogFileName;

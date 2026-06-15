@@ -19,7 +19,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;

@@ -33,7 +33,7 @@ import com.viaoa.cascade.OACascade;
 import com.viaoa.comm.multiplexer.OAMultiplexerServer;
 import com.viaoa.datetime.OADate;
 import com.viaoa.datetime.OADateTime;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
 import com.viaoa.remote.info.RequestInfo;

@@ -15,7 +15,7 @@
  */
 package com.viaoa.hub.view;
 
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListenerAdapter;

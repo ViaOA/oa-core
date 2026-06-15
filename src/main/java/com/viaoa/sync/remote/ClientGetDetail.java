@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 import com.viaoa.callback.OAObjectSerializerCallback;
 import com.viaoa.compare.match.OAMatchNotExist;
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;

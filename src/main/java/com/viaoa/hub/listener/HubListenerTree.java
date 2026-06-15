@@ -26,7 +26,7 @@ import com.viaoa.annotation.OAMany;
 import com.viaoa.compare.OACompare;
 import com.viaoa.find.OAFinder;
 import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectAnnotationService;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.service.object.OAObjectPropertyService;

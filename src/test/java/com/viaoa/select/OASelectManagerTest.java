@@ -12,8 +12,8 @@ import org.junit.jupiter.api.Test;
 
 import com.test.pos.model.oa.Item;
 import com.test.pos.model.oa.Register;
-import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.runtime.OARuntime;
 
 class OASelectManagerTest {
@@ -21,7 +21,7 @@ class OASelectManagerTest {
     @BeforeEach
     void beforeEach() {
         OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
-        OAObjectService os = (OAObjectService) og.objectsInternal();
+        OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
         os.getOAObjectCacheService().removeAllObjects();
         trackedSelects().clear();
         OASelectManager.setTimeLimit(300);

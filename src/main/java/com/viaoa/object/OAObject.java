@@ -35,8 +35,8 @@ import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.datetime.OADateTime;
 import com.viaoa.find.OAHierFinder;
 import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAString;
 import com.viaoa.log.OALogger;
@@ -1534,13 +1534,13 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 			boolean bOld = changedFlag;
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 
-			og.objectsInternal().callObjectEventFireBeforePropertyChange(	this, OAObjectService.WORD_Changed,
+			og.objectsInternal().callObjectEventFireBeforePropertyChange(	this, OAObjectInternalService.WORD_Changed,
 															bOld ? Boolean.TRUE : Boolean.FALSE,
 															tf ? Boolean.TRUE : Boolean.FALSE,
 															(tf == false), // local only  20150530 was: "false", now only sending if changed=false
 															false);
 			changedFlag = tf;
-			og.objectsInternal().callObjectEventFirePropertyChange(	this, OAObjectService.WORD_Changed,
+			og.objectsInternal().callObjectEventFirePropertyChange(	this, OAObjectInternalService.WORD_Changed,
 														bOld ? Boolean.TRUE : Boolean.FALSE,
 														changedFlag ? Boolean.TRUE : Boolean.FALSE, false, false);
 

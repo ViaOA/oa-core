@@ -24,7 +24,7 @@ import javax.swing.undo.CompoundEdit;
 import javax.swing.undo.UndoManager;
 import javax.swing.undo.UndoableEdit;
 
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;

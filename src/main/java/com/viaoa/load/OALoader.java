@@ -23,7 +23,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.cascade.OACascade;
 import com.viaoa.concurrent.OAExecutorService;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.*;
 import com.viaoa.metadata.OALinkInfo;

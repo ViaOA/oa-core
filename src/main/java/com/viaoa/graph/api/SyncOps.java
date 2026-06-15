@@ -28,7 +28,7 @@ CODEX
  * <p>
  * This represents real-time coordination of the Object Graph. For eventual
  * consistency with offline support and server-to-server convergence, see
- * {@link ReplOps}.
+ * {@link ReplicationOps}.
  */
 public interface SyncOps {
 

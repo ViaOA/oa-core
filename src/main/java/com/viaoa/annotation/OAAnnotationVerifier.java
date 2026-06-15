@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAArray;
 import com.viaoa.metadata.OACalcInfo;

@@ -19,7 +19,7 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;

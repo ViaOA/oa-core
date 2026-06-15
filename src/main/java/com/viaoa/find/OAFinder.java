@@ -21,7 +21,7 @@ import java.util.*;
 import com.viaoa.cascade.OACascade;
 import com.viaoa.compare.OACompare;
 import com.viaoa.filter.*;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.*;
 import com.viaoa.hub.filter.CustomHubFilter;

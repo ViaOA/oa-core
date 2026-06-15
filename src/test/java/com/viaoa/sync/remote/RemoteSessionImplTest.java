@@ -10,8 +10,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.*;
 
 import com.test.pos.model.oa.Register;
-import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.model.ClientInfo;
@@ -165,7 +165,7 @@ class RemoteSessionImplTest {
 
     private void clearCache() {
         OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
-        OAObjectService os = (OAObjectService) og.objectsInternal();
+        OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
         os.getOAObjectCacheService().removeAllObjects();
     }
 

@@ -15,8 +15,9 @@ import com.viaoa.cascade.OACascade;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.service.HubService;
+import com.viaoa.graph.service.HubInternalService;
 import com.viaoa.graph.service.OASyncService;
+import com.viaoa.graph.service.OATriggerService;
 import com.viaoa.graph.service.hub.HubParentService;
 import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.Hub;
@@ -42,6 +43,7 @@ import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.remote.RemoteServerInterface;
 import com.viaoa.sync.remote.RemoteSessionInterface;
 import com.viaoa.sync.remote.RemoteSyncInterface;
+import com.viaoa.trigger.OATrigger;
 
 /*qqqqqqqqqq
 CODEX
@@ -71,11 +73,12 @@ CODEX
 public abstract class OAObjectParentService {
 	private static final Logger LOG = Logger.getLogger(OAObjectParentService.class.getName());
 
-	private HubService srvcHub;
+	private HubInternalService srvcHub;
 	private OASyncService srvcSync;
 	private OAThreadLocalService srvcThreadLocal;
 	private OARemoteThreadService srvcRemoteThread;
 	private final OAObjectInternalBridge faBridge = new OAObjectInternalBridge();
+	private OATriggerService srvcTrigger;
 
     private OAObjectAnnotationService srvcOAObjectAnnotation;
     private OAObjectAutoAddService srvcOAObjectAutoAdd;
@@ -123,17 +126,19 @@ public abstract class OAObjectParentService {
 	public static final String WORD_Deleted = "DELETED";
 	
 
-	public void initialize(HubService srvcHub, OASyncService srvcSync, OAThreadLocalService srvcThreadLocal, OARemoteThreadService srvcRemoteThread) {
+	public void initialize(HubInternalService srvcHub, OASyncService srvcSync, OAThreadLocalService srvcThreadLocal, OARemoteThreadService srvcRemoteThread, OATriggerService srvcTrigger) {
 		if (this.srvcHub != null) throw new IllegalArgumentException("initialize already called");
     	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
     	if (srvcSync == null) throw new IllegalArgumentException("OASyncService can not be null");
     	if (srvcThreadLocal == null) throw new IllegalArgumentException("OAThreadLocalService can not be null");
     	if (srvcRemoteThread == null) throw new IllegalArgumentException("OARemoteThreadService can not be null");
+    	if (srvcTrigger == null) throw new IllegalArgumentException("OATriggerService can not be null");
 
 		this.srvcHub = srvcHub;
 		this.srvcSync = srvcSync;
 		this.srvcThreadLocal = srvcThreadLocal;
 		this.srvcRemoteThread = srvcRemoteThread;
+		this.srvcTrigger = srvcTrigger;
 		
 	    getOAObjectAnnotationService();
 	    getOAObjectAutoAddService();
@@ -166,7 +171,7 @@ public abstract class OAObjectParentService {
 	    getOAObjectUniqueService();
 	}
 	
-	protected HubService getHubService() {
+	protected HubInternalService getHubService() {
 		return this.srvcHub;
 	}
 
@@ -186,6 +191,11 @@ public abstract class OAObjectParentService {
 			@Override
 			public OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String name) {
 				return OAObjectParentService.this.getOAObjectInfoService().getLinkInfo(oi, name);
+			}
+
+			@Override
+			public void callAddTrigger(OATrigger trigger) {
+				srvcTrigger.addTrigger(trigger);
 			}
 		};
     	return srvcOAObjectAnnotation;

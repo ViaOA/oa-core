@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.compare.match.OAMatchNull;
 import com.viaoa.datasource.*;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.hub.auto.HubAutoMatch;
 import com.viaoa.hub.auto.HubAutoSequence;

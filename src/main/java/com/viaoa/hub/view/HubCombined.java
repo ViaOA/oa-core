@@ -18,7 +18,7 @@ package com.viaoa.hub.view;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListener;

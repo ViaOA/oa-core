@@ -29,7 +29,7 @@ import com.viaoa.converter.OAConverter;
 import com.viaoa.datetime.OADate;
 import com.viaoa.datetime.OADateTime;
 import com.viaoa.datetime.OATime;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAStr;
 import com.viaoa.lang.OAString;

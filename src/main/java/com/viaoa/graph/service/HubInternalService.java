@@ -21,8 +21,8 @@ import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.select.OASelect;
 
-public class HubService extends HubParentService implements HubsInternalOps {
-	private final Logger LOG = Logger.getLogger(HubService.class.getName());
+public class HubInternalService extends HubParentService implements HubsInternalOps {
+	private final Logger LOG = Logger.getLogger(HubInternalService.class.getName());
 
 	// AddRemove =========================
 	@Override

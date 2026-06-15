@@ -33,7 +33,7 @@ import java.util.jar.JarFile;
 import java.util.logging.Logger;
 
 import com.viaoa.converter.OAConverter;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;

@@ -79,7 +79,7 @@ CODEX
 */
 
 
-public class OASyncService implements SyncOps, SyncInternalOps {
+public class OASyncService implements SyncInternalOps, SyncOps {
 	private static final Logger LOG = Logger.getLogger(OASyncService.class.getName());
 	
 	private final OAGraph og;

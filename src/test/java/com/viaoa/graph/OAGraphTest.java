@@ -17,7 +17,8 @@ import com.test.pos.model.oa.RegisterSession;
 import com.test.pos.model.oa.Store;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListenerAdapter;
@@ -47,7 +48,7 @@ class OAGraphTest {
 
     private static void clearCache() {
         OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
-        OAObjectService os = (OAObjectService) og.objectsInternal();
+        OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
         os.getOAObjectCacheService().removeAllObjects();
     }
 
@@ -171,35 +172,35 @@ class OAGraphTest {
         stores.add(store);
         stores.setAO(store);
 
-        Hub<?> detail = graph.detail(stores, Store.P_Registers);
+        Hub<?> detail = graph.services().hubs().detail(stores, Store.P_Registers);
         assertNotNull(detail);
         assertEquals(1, detail.size());
         assertSame(register, detail.getAt(0));
-        assertNull(graph.detail(null, Store.P_Registers));
+        assertNull(graph.services().hubs().detail(null, Store.P_Registers));
 
         Hub<Register> source = graph.createHub(Register.class);
         Hub<Register> shared = graph.createHub(Register.class);
         source.add(register);
-        graph.share(shared, source, true);
+        graph.services().hubs().share(shared, source, true);
         assertEquals(source.toList(), shared.toList());
-        graph.share(null, source, true);
+        graph.services().hubs().share(null, source, true);
 
         Hub<Register> copied = graph.createHub(Register.class);
-        HubCopy<Register> copy = graph.copy(source, copied, true);
+        HubCopy<Register> copy = graph.services().hubs().copy(source, copied, true);
         assertNotNull(copy);
         assertEquals(source.toList(), copied.toList());
 
         Hub<Register> filtered = graph.createHub(Register.class);
         OAFilter<Register> keepAll = r -> true;
-        HubFilter<Register> filter = graph.filter(source, filtered, keepAll, Register.P_Code);
+        HubFilter<Register> filter = graph.services().hubs().filter(source, filtered, keepAll, Register.P_Code);
         assertNotNull(filter);
         assertEquals(source.toList(), filtered.toList());
-        assertNull(graph.filter(null, filtered));
+        assertNull(graph.services().hubs().filter(null, filtered));
 
         Hub<Register> combined = graph.createHub(Register.class);
-        graph.combine(combined, source);
+        graph.services().hubs().combine(combined, source);
         assertEquals(source.toList(), combined.toList());
-        graph.combine(null, source);
+        graph.services().hubs().combine(null, source);
     }
 
     @Test
@@ -211,19 +212,19 @@ class OAGraphTest {
         stores.add(store);
 
         Hub<Register> merged = graph.createHub(Register.class);
-        HubMerger<Store, Register> merger = graph.merge(stores, merged, Store.P_Registers);
+        HubMerger<Store, Register> merger = graph.services().hubs().merge(stores, merged, Store.P_Registers);
         assertNotNull(merger);
         assertTrue(merged.contains(register));
 
         Hub<Register> flat = graph.createHub(Register.class);
-        HubFlattened<Register> flattened = graph.flatten(store.getRegisters(), flat);
+        HubFlattened<Register> flattened = graph.services().hubs().flatten(store.getRegisters(), flat);
         assertNotNull(flattened);
         assertEquals(store.getRegisters().toList(), flat.toList());
-        assertNull(graph.flatten(null, flat));
-        assertNull(graph.flatten(store.getRegisters(), null));
-        assertNull(graph.flatten(null));
+        assertNull(graph.services().hubs().flatten(null, flat));
+        assertNull(graph.services().hubs().flatten(store.getRegisters(), null));
+        assertNull(graph.services().hubs().flatten(null));
 
-        Hub<OALeftJoin<Store, Register>> leftJoin = graph.leftJoin(stores, store.getRegisters(), Store.P_Registers, false);
+        Hub<OALeftJoin<Store, Register>> leftJoin = graph.services().hubs().leftJoin(stores, store.getRegisters(), Store.P_Registers, false);
         assertNotNull(leftJoin);
 
         OAObjectInfo infoClass = graph.info(Register.class);
@@ -238,8 +239,8 @@ class OAGraphTest {
     @Test
     void addAndRemoveTriggerAcceptNullSafely() {
         assertDoesNotThrow(() -> {
-            graph.addTrigger(null);
-            graph.removeTrigger(null);
+            graph.services().triggers().addTrigger(null);
+            graph.services().triggers().removeTrigger(null);
         });
     }
 }

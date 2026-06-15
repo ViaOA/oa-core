@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.filter.OAFilter;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.metadata.OAPropertyInfo;

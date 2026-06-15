@@ -18,7 +18,7 @@ package com.viaoa.cache;
 import java.lang.ref.WeakReference;
 
 import com.viaoa.callback.OACallback;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;

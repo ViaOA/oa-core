@@ -19,7 +19,7 @@ import java.util.ArrayList;
 
 import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.filter.OAFilter;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;

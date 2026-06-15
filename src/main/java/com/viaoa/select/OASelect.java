@@ -29,7 +29,7 @@ import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.filter.OAQueryFilter;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAArray;

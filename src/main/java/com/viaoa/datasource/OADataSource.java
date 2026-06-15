@@ -18,7 +18,7 @@ package com.viaoa.datasource;
 import java.util.List;
 
 import com.viaoa.filter.OAFilter;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;

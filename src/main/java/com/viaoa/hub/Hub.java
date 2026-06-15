@@ -55,7 +55,7 @@ import com.viaoa.callback.OAObjectCallback;
 import com.viaoa.cascade.OACascade;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.hub.filter.HubFilter;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OALinkInfo;

@@ -21,7 +21,7 @@ import com.viaoa.filter.OAEmptyFilter;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.filter.OANotEmptyFilter;
 import com.viaoa.filter.OANotNullFilter;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.metadata.OAPropertyInfo;

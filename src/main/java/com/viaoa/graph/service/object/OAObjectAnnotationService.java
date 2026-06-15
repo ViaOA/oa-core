@@ -22,7 +22,7 @@ import com.viaoa.annotation.OAOne;
 import com.viaoa.annotation.OAProperty;
 import com.viaoa.annotation.OATriggerMethod;
 import com.viaoa.callback.OAObjectCallback;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.lang.OAStr;
@@ -1205,8 +1205,7 @@ public abstract class OAObjectAnnotationService {
 			// 20160625
 			OATriggerListener tl = new OATriggerMethodListener(clazz, method, bOnlyUseLoadedData);
 			OATrigger trigger = new OATrigger(method.getName(), clazz, tl, props, bOnlyUseLoadedData, bServerSideOnly, bBackgroundThread, true);
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oi.getForClass());
-	        og.triggerInternal().addTrigger(trigger);
+			callAddTrigger(trigger);
 		}
 	}
 
@@ -1404,4 +1403,5 @@ public abstract class OAObjectAnnotationService {
 	public abstract Class<?> callReflectGetHubObjectClass(Method method);
 	public abstract OACalcInfo callInfoGetCalcInfo(OAObjectInfo thisOI, String name);
 	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
+	public abstract void callAddTrigger(OATrigger trigger);
 }

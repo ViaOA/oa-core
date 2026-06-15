@@ -9,7 +9,7 @@ import java.util.logging.Logger;
 import com.viaoa.callback.OAObjectCallback;
 import com.viaoa.cascade.OACascade;
 import com.viaoa.filter.OAFilter;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.graph.service.OASyncService;
 import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.Hub;
@@ -97,7 +97,7 @@ public abstract class HubParentService {
 	private final HubInternalBridge faBridge = new HubInternalBridge();
 	private final Hub.FriendAccess faHub;
 	
-	private OAObjectService srvcObject;
+	private OAObjectInternalService srvcObject;
 	private OASyncService srvcSync;
 	private OAThreadLocalService srvcThreadLocal;
 	private OARemoteThreadService srvcRemoteThread;
@@ -130,7 +130,7 @@ public abstract class HubParentService {
 	}
 	
 	
-	public void initialize(OAObjectService srvcObject, OASyncService srvcSync, OAThreadLocalService srvcThreadLocal, OARemoteThreadService srvcRemoteThread) {
+	public void initialize(OAObjectInternalService srvcObject, OASyncService srvcSync, OAThreadLocalService srvcThreadLocal, OARemoteThreadService srvcRemoteThread) {
     	if (srvcObject == null) throw new IllegalArgumentException("OAObjectService can not be null");
     	if (srvcSync == null) throw new IllegalArgumentException("OASyncService can not be null");
     	if (srvcThreadLocal == null) throw new IllegalArgumentException("OAThreadLocalService can not be null");

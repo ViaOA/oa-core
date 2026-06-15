@@ -5,30 +5,23 @@ import java.util.logging.Logger;
 
 import com.viaoa.filter.OAFilter;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.api.ReplOps;
+import com.viaoa.graph.api.ReplicationOps;
 import com.viaoa.graph.api.SyncOps;
 import com.viaoa.graph.api.internal.HubsInternalOps;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.graph.api.internal.ObjectsInternalOps;
-import com.viaoa.graph.api.internal.ReplInternalOps;
+import com.viaoa.graph.api.internal.ReplicationInternalOps;
 import com.viaoa.graph.api.internal.SyncInternalOps;
 import com.viaoa.graph.api.internal.TriggerInternalOps;
-import com.viaoa.graph.service.HubService;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.graph.api.services.GraphServicesOps;
+import com.viaoa.graph.service.HubInternalService;
+import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.graph.service.OAReplicationService;
 import com.viaoa.graph.service.OASyncService;
 import com.viaoa.graph.service.OATriggerService;
+import com.viaoa.graph.service.facade.GraphServices;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubListener;
-import com.viaoa.hub.auto.HubAutoMatch;
-import com.viaoa.hub.copy.HubCopy;
-import com.viaoa.hub.filter.HubFilter;
-import com.viaoa.hub.merge.HubMerger;
-import com.viaoa.hub.view.HubCombined;
-import com.viaoa.hub.view.HubFlattened;
-import com.viaoa.hub.view.HubGroupBy;
-import com.viaoa.hub.view.HubLeftJoin;
-import com.viaoa.hub.view.OAGroupBy;
-import com.viaoa.hub.view.OALeftJoin;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
@@ -36,7 +29,6 @@ import com.viaoa.reflect.OAReflect;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadService;
 import com.viaoa.select.OASelect;
-import com.viaoa.trigger.OATrigger;
 
 /*qqqqqqqqqq
 CODEX
@@ -122,17 +114,18 @@ CODEX
 
 
 
-public class OAGraphImpl implements OAGraphInternal {
+public class OAGraphImpl implements OAGraph, OAGraphInternal {
 	private static Logger LOG = Logger.getLogger(OAGraphImpl.class.getName());
 
 	private String packageName;
 	private volatile boolean bInit;
 
-	private OAObjectService srvcOAObject;
-	private HubService srvcHub;
-    private OASyncService srvcOASync;
-    private OAReplicationService srvcOAReplication;
+	private OAObjectInternalService srvcOAObjectInternal;
+	private HubInternalService srvcHubInternal;
+    private OASyncService srvcOASyncInternal;
+    private OAReplicationService srvcOAReplicationInternal;
     private OATriggerService srvcOATrigger;
+    private GraphServicesOps srvcGraphServices;
 
 	public OAGraphImpl(String packageName) {
 		this.packageName = packageName;
@@ -144,32 +137,34 @@ public class OAGraphImpl implements OAGraphInternal {
 		
 	    final OAThreadService srvcThread = OARuntime.thread();
 
-		srvcOAObject = new OAObjectService();
-		srvcHub = new HubService();
-	    srvcOASync = new OASyncService(this);
-	    srvcOAReplication = new OAReplicationService() {
+		srvcOAObjectInternal = new OAObjectInternalService();
+		srvcHubInternal = new HubInternalService();
+	    srvcOASyncInternal = new OASyncService(this);
+	    srvcOAReplicationInternal = new OAReplicationService() {
 			@Override
 			public void createClient(String guid, String tLogFileName, String replicationMasterHostName, int replicationMasterPort) {
-				super.createClient(guid, srvcOASync.getServer(), tLogFileName, replicationMasterHostName, replicationMasterPort);
+				super.createClient(guid, srvcOASyncInternal.getServer(), tLogFileName, replicationMasterHostName, replicationMasterPort);
 			}
 
 			@Override
 			public void createMaster(String guid, String tLogFileName) {
-				super.createMaster(guid, srvcOASync.getServer(), tLogFileName);
+				super.createMaster(guid, srvcOASyncInternal.getServer(), tLogFileName);
 			}
 	    	
 	    };
-	    srvcOATrigger = new OATriggerService();
+	    srvcOATrigger = new OATriggerService(this);
+	    srvcGraphServices = new GraphServices(this);
 
-		srvcOAObject.initialize(srvcHub, srvcOASync, srvcThread.getThreadLocalService(), srvcThread.getRemoteThreadService());
-		srvcHub.initialize(srvcOAObject, srvcOASync, srvcThread.getThreadLocalService(), srvcThread.getRemoteThreadService());
+
+		srvcOAObjectInternal.initialize(srvcHubInternal, srvcOASyncInternal, srvcThread.getThreadLocalService(), srvcThread.getRemoteThreadService(), srvcOATrigger);
+		srvcHubInternal.initialize(srvcOAObjectInternal, srvcOASyncInternal, srvcThread.getThreadLocalService(), srvcThread.getRemoteThreadService());
 
 		if (packageName != null) {
 			String[] classNames = OAReflect.getOAObjectClasses(packageName);
 			for (String cn : classNames) {
 				Class<?> c = Class.forName(packageName + "." + cn);
 				if (OAObject.class.isAssignableFrom(c)) {
-					srvcOAObject.getOAObjectInfoService().getObjectInfo(c);
+					srvcOAObjectInternal.getOAObjectInfoService().getObjectInfo(c);
 				}
 			}
 		}
@@ -185,32 +180,32 @@ public class OAGraphImpl implements OAGraphInternal {
     
 	@Override
     public SyncOps sync() {
-    	return srvcOASync;
+    	return srvcOASyncInternal;
     }
 
 	@Override
-    public ReplOps replication() {
-    	return srvcOAReplication;
+    public ReplicationOps replication() {
+    	return srvcOAReplicationInternal;
     }
 	
 	@Override
 	public ObjectsInternalOps objectsInternal() {
-		return srvcOAObject;
+		return srvcOAObjectInternal;
 	}
 
 	@Override
 	public HubsInternalOps hubsInternal() {
-		return srvcHub;
+		return srvcHubInternal;
 	}
 	
 	@Override
     public SyncInternalOps syncInternal() {
-    	return srvcOASync;
+    	return srvcOASyncInternal;
     }
 	
 	@Override
-    public ReplInternalOps replInternal() {
-    	return srvcOAReplication;
+    public ReplicationInternalOps replInternal() {
+    	return srvcOAReplicationInternal;
     }
 
 	@Override
@@ -224,7 +219,7 @@ public class OAGraphImpl implements OAGraphInternal {
 	
 	@Override
 	public <T extends OAObject> T create(Class<T> type) {
-		T obj = srvcOAObject.callObjectReflectCreateNewObject(type);
+		T obj = srvcOAObjectInternal.callObjectReflectCreateNewObject(type);
 		return obj;
 	}
 
@@ -255,13 +250,13 @@ public class OAGraphImpl implements OAGraphInternal {
 
 	@Override
 	public <T extends OAObject> T get(Class<T> type, Object key) {
-		T obj = srvcOAObject.callObjectReflectGetObject(type, key);
+		T obj = srvcOAObjectInternal.callObjectReflectGetObject(type, key);
 		return obj;
 	}
 
 	@Override
 	public <T extends OAObject> T get(Class<T> type, OAObjectKey key) {
-		T obj = srvcOAObject.callObjectReflectGetObject(type, key);
+		T obj = srvcOAObjectInternal.callObjectReflectGetObject(type, key);
 		return obj;
 	}
 
@@ -304,139 +299,32 @@ public class OAGraphImpl implements OAGraphInternal {
 		hub.addHubListener(hl);
 	}
 
-	@Override
-	public Hub<?> detail(Hub<?> hub, String path) {
-		if (hub == null) return null;
-		return hub.getDetailHub(path);
-	}
 
-	@Override
-	public <T extends OAObject> void share(Hub<T> hub, Hub<T> hubToShare, boolean shareActiveObject) {
-		if (hub == null) return;
-		hub.setSharedHub(hubToShare, shareActiveObject);
-	}
-
-	@Override
-	public void link(Hub<?> hub1, Hub<?> hub2, String referenceName) {
-		if (hub1 == null) return;
-		hub1.setLinkHub(hub2, referenceName);
-	}
-
-	
-	
-
-	@Override
-	public <F extends OAObject, T extends OAObject> HubMerger<F, T> merge(Hub<F> hub, Hub<T> hubCombined, String path) {
-		HubMerger<F, T> merger = new HubMerger<>(hub, hubCombined, path);
-		return merger;
-	}
-
-	@Override
-	public <F extends OAObject, T extends OAObject> HubMerger<F, T> merge(Hub<F> hubRoot, Hub<T> hubCombinedObjects, String path, boolean bShareActiveObject, String selectOrder, boolean bUseAll, boolean bIncludeRootHub, boolean bUseBackgroundThread) {
-		HubMerger<F, T> merger = new HubMerger<F, T>(hubRoot, hubCombinedObjects, path, bShareActiveObject, selectOrder, bUseAll, bIncludeRootHub, bUseBackgroundThread);
-		return merger;
-	}
-	
-	
-	
-	
-	@Override
-	public <T extends OAObject> void combine(Hub<T> hubMaster, Hub<T>... hubs) {
-		if (hubMaster == null) return;
-		HubCombined<T> hc = new HubCombined<>(hubMaster, hubs);
-		
-	}
-
-	@Override
-	public <T extends OAObject> HubFilter<T> filter(Hub<T> hubMaster, Hub<T> hubFiltered) {
-		if (hubMaster == null) return null;
-		HubFilter<T> filter = new HubFilter<T>(hubMaster, hubFiltered);
-		return filter;
-	}
-
-	@Override
-	public <T extends OAObject> HubFilter<T> filter(Hub<T> hubMaster, Hub<T> hubFiltered, OAFilter<T> filter, String... dependentPropertyPaths) {
-		if (hubMaster == null) return null;
-		HubFilter<T> filterx = new HubFilter<T>(hubMaster, hubFiltered, filter, dependentPropertyPaths);
-		return filterx;
-	}
-
-	
-	@Override
-	public <T extends OAObject, T2 extends OAObject> HubAutoMatch<T,T2> match(Hub<T> hub, String property, Hub<T2> hubMaster) {
-		HubAutoMatch<T, T2> ham = new HubAutoMatch<>(hub, property, hubMaster);
-		return ham;
-	}
-
-	@Override
-	public <T extends OAObject> HubCopy<T> copy(Hub<T> hubFrom, Hub<T> hubTo) {
-		HubCopy<T> hc = new HubCopy<>(hubFrom, hubTo, true);
-		return hc;
-	}
-
-	public <T extends OAObject> HubCopy<T> copy(Hub<T> hubFrom, Hub<T> hubTo, boolean shareActiveObject) {
-		HubCopy<T> hc = new HubCopy<>(hubFrom, hubTo, shareActiveObject);
-		return hc;
-	}
-	
-
-	@Override
-	public <F extends OAObject, G extends OAObject> Hub<OAGroupBy<F, G>> groupBy(Hub<F> hubFrom, Hub<G> hubGrpBy, String propertyPath, boolean createNullList) {
-		HubGroupBy<F,G> hgb = new HubGroupBy<F,G>(hubFrom, hubGrpBy, propertyPath, createNullList);
-		Hub<OAGroupBy<F, G>> hx = hgb.getCombinedHub();
-		return hx;
-	}
-
-	@Override
-	public <T extends OAObject> HubFlattened<T> flatten(Hub<T> hubRoot, Hub<T> hubFlat) {
-		if (hubRoot == null || hubFlat == null) return null;
-		HubFlattened<T> hf = new HubFlattened<T>(hubRoot, hubFlat);
-		return hf;
-	}
-
-	@Override
-	public <T extends OAObject> Hub<T> flatten(Hub<T> hubRoot) {
-		if (hubRoot == null) return null;
-		Hub<T> hubFlat = new Hub<>(hubRoot.getObjectClass());
-		HubFlattened<T> hf = new HubFlattened<T>(hubRoot, hubFlat);
-		return hubFlat;
-	}
-
-	@Override
-	public <A extends OAObject, B extends OAObject> Hub<OALeftJoin<A, B>> leftJoin(Hub<A> hubLeft, Hub<B> hub, String propertyPath, boolean shareActiveObject) {
-		HubLeftJoin<A,B> hlj = new HubLeftJoin<A,B>(hubLeft, hub, propertyPath, shareActiveObject);
-		return hlj.getCombinedHub();
-	}
 
 	@Override
 	public OAObjectInfo info(Class<? extends OAObject> type) {
-		OAObjectInfo oi = srvcOAObject.callObjectInfoGetOAObjectInfo(type);
+		OAObjectInfo oi = srvcOAObjectInternal.callObjectInfoGetOAObjectInfo(type);
 		return oi;
 	}
 
 	@Override
 	public OAObjectInfo info(OAObject obj) {
 		Class<?>  c = obj == null ? null : obj.getClass();
-		OAObjectInfo oi = srvcOAObject.callObjectInfoGetOAObjectInfo(c);
+		OAObjectInfo oi = srvcOAObjectInternal.callObjectInfoGetOAObjectInfo(c);
 		return oi;
 	}
 
 	@Override
 	public OAObjectInfo info(Hub<?> hub) {
 		Class<?>  c = hub == null ? null : hub.getObjectClass();
-		OAObjectInfo oi = srvcOAObject.callObjectInfoGetOAObjectInfo(c);
+		OAObjectInfo oi = srvcOAObjectInternal.callObjectInfoGetOAObjectInfo(c);
 		return oi;
 	}
 
 	@Override
-	public void addTrigger(OATrigger trigger) {
-		triggerInternal().addTrigger(trigger);
+	public GraphServicesOps services() {
+		return srvcGraphServices;
 	}
-
-	@Override
-	public void removeTrigger(OATrigger trigger) {
-		triggerInternal().removeTrigger(trigger);
-	}
-
+	
 }
 

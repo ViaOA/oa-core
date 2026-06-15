@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.lang.reflect.*;
 
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListenerAdapter;

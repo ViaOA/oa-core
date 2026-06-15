@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.concurrent.OAThrottle;
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;

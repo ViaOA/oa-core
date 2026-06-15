@@ -15,7 +15,7 @@
  */
 package com.viaoa.hub.link;
 
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectHubService;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.hub.Hub;

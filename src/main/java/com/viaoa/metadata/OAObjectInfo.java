@@ -31,7 +31,7 @@ import java.util.logging.Logger;
 import com.viaoa.compare.OACompare;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.lang.OAArray;
 import com.viaoa.lang.OAStr;

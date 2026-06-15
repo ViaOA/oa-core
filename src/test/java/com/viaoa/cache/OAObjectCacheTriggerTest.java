@@ -10,8 +10,8 @@ import org.junit.jupiter.api.Test;
 
 import com.test.pos.model.oa.Item;
 import com.test.pos.model.oa.Register;
-import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.hub.Hub;
 import com.viaoa.runtime.OARuntime;
 
@@ -41,7 +41,7 @@ class OAObjectCacheTriggerTest {
     @BeforeEach
     void beforeEach() {
         OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
-        OAObjectService os = (OAObjectService) og.objectsInternal();
+        OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
         os.getOAObjectCacheService().removeAllObjects();
     }
 
@@ -130,7 +130,7 @@ class OAObjectCacheTriggerTest {
         Item item = new Item(1);
         item.setCode("Y");
         OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Item.class);
-        OAObjectService os = (OAObjectService) og.objectsInternal();
+        OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
         os.getOAObjectCacheService().add(item);
         try {
             trigger.refresh();

@@ -7,10 +7,12 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.api.TriggerOps;
+import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.graph.api.internal.TriggerInternalOps;
+import com.viaoa.graph.api.services.TriggersOps;
 import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
@@ -152,8 +154,13 @@ CODEX
  * @see OAObjectInfoService
  * @see OATriggerListener
  */
-public class OATriggerService implements TriggerOps, TriggerInternalOps {
+public class OATriggerService implements TriggerInternalOps {
+	private final OAGraph og;
 
+	public OATriggerService(OAGraph og) {
+		this.og = og;
+	}
+	
 	/**
 	 * Registers the given trigger without skipping any initial non-many
 	 * property. This delegates to {@link #createTrigger(OATrigger, boolean)}.
@@ -179,8 +186,7 @@ public class OATriggerService implements TriggerOps, TriggerInternalOps {
 			return;
 		}
 		
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(trigger.getRootClass());
-		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(trigger.getRootClass());
+		OAObjectInfo oi = og.info((Class<? extends OAObject>) trigger.getRootClass());
 		oi.createTrigger(trigger, bSkipFirstNonManyProperty);
 	}
 
@@ -197,8 +203,7 @@ public class OATriggerService implements TriggerOps, TriggerInternalOps {
 			return false;
 		}
 
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(trigger.getRootClass());
-		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(trigger.getRootClass());
+		OAObjectInfo oi = og.info((Class<? extends OAObject>) trigger.getRootClass());
 		oi.removeTrigger(trigger);
 
 		return true;
@@ -257,6 +262,7 @@ public class OATriggerService implements TriggerOps, TriggerInternalOps {
 	 *
 	 * @param r the runnable to execute
 	 */
+	@Override
 	public void runTrigger(Runnable r) {
 		if (r == null) return;
 		Runnable rx = new TriggerRunnable(r);

@@ -21,7 +21,7 @@ import java.util.List;
 
 import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAOne;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.service.object.OAObjectPropertyService;
 import com.viaoa.graph.service.object.OAObjectReflectService;

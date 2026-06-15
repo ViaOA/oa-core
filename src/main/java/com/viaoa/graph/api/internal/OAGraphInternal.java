@@ -1,11 +1,4 @@
-package com.viaoa.graph;
-
-import com.viaoa.graph.api.internal.HubsInternalOps;
-import com.viaoa.graph.api.internal.ObjectsInternalOps;
-import com.viaoa.graph.api.internal.ReplInternalOps;
-import com.viaoa.graph.api.internal.SyncInternalOps;
-import com.viaoa.graph.api.internal.TriggerInternalOps;
-
+package com.viaoa.graph.api.internal;
 
 /*qqqqqqq
 CODEX
@@ -25,7 +18,7 @@ CODEX
 
 */
 
-public interface OAGraphInternal extends OAGraph {
+public interface OAGraphInternal {
 	
 	public ObjectsInternalOps objectsInternal();
 
@@ -33,8 +26,8 @@ public interface OAGraphInternal extends OAGraph {
     
 	public SyncInternalOps syncInternal();
 
-	public ReplInternalOps replInternal();
+	public ReplicationInternalOps replInternal();
 	
 	public TriggerInternalOps triggerInternal();
-
+	
 }

@@ -21,6 +21,7 @@ import com.viaoa.datetime.OADate;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.find.OAFinder;
 import com.viaoa.graph.api.internal.ObjectsInternalOps;
+import com.viaoa.graph.api.services.objects.OAObjectCacheOps;
 import com.viaoa.graph.service.object.*;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.listener.HubChangeListener;
@@ -33,8 +34,8 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.schedule.OAScheduler;
 
-public class OAObjectService extends OAObjectParentService implements ObjectsInternalOps {
-	private static final Logger LOG = Logger.getLogger(OAObjectService.class.getName());
+public class OAObjectInternalService extends OAObjectParentService implements ObjectsInternalOps {
+	private static final Logger LOG = Logger.getLogger(OAObjectInternalService.class.getName());
 
     
 	@Override

@@ -26,7 +26,7 @@ import com.viaoa.annotation.OAProperty;
 import com.viaoa.converter.OAConv;
 import com.viaoa.converter.OAConverter;
 import com.viaoa.filter.OAFilter;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.filter.CustomHubFilter;
 import com.viaoa.lang.OAArray;

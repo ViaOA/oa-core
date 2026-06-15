@@ -18,8 +18,8 @@ import com.test.pos.model.oa.Register;
 import com.test.pos.model.oa.RegisterSession;
 import com.test.pos.model.oa.Store;
 import com.test.pos.model.oa.propertypath.StorePP;
-import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.text.OATextUtil;
@@ -36,7 +36,7 @@ class OATriggerTest {
     @AfterEach
     void afterEach() {
         for (OATrigger trigger : registeredTriggers) {
-            OARuntime.graph(trigger.getRootClass()).removeTrigger(trigger);
+            OARuntime.graph(trigger.getRootClass()).services().triggers().removeTrigger(trigger);
         }
         registeredTriggers.clear();
         clearCache();
@@ -215,7 +215,7 @@ class OATriggerTest {
         store.setName("Main");
         assertEquals(1, count.get());
 
-        OARuntime.graph(Store.class).removeTrigger(trigger);
+        OARuntime.graph(Store.class).services().triggers().removeTrigger(trigger);
         registeredTriggers.remove(trigger);
         store.setName("Removed");
 
@@ -242,13 +242,13 @@ class OATriggerTest {
     }
 
     private void register(OATrigger trigger) {
-        OARuntime.graph(trigger.getRootClass()).addTrigger(trigger);
+        OARuntime.graph(trigger.getRootClass()).services().triggers().addTrigger(trigger);
         registeredTriggers.add(trigger);
     }
 
     private void clearCache() {
         OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
-        OAObjectService os = (OAObjectService) og.objectsInternal();
+        OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
         os.getOAObjectCacheService().removeAllObjects();
     }
 }

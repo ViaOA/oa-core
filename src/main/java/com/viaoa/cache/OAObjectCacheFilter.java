@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import com.viaoa.callback.OACallback;
 import com.viaoa.filter.OAFilter;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.lang.OAArray;

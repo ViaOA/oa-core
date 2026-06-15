@@ -26,8 +26,8 @@ import com.viaoa.compare.match.OAMatchNotNull;
 import com.viaoa.compare.match.OAMatchNull;
 import com.viaoa.converter.OAConv;
 import com.viaoa.filter.OAFilter;
-import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.graph.service.object.OAObjectCallbackService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
@@ -691,7 +691,7 @@ public abstract class HubChangeListener {
 			return null;
 		}
 		addAoNotNull(hub);
-		HubProp hp = add(hub, OAObjectService.WORD_Changed, true);
+		HubProp hp = add(hub, OAObjectInternalService.WORD_Changed, true);
 		return hp;
 	}
 

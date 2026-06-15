@@ -18,7 +18,7 @@ package com.viaoa.hub;
 import java.lang.reflect.Method;
 
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;

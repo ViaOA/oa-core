@@ -17,7 +17,7 @@ package com.viaoa.metadata.pojo;
 
 import java.io.Serializable;
 
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OAFkeyInfo;
 import com.viaoa.metadata.OALinkInfo;

@@ -19,8 +19,8 @@ import com.test.pos.model.oa.RegisterSession;
 import com.test.pos.model.oa.Store;
 import com.test.pos.model.oa.propertypath.InvoicePP;
 import com.test.pos.model.oa.propertypath.StorePP;
-import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.hub.Hub;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -51,7 +51,7 @@ class OAPathTest {
     @BeforeEach
     void beforeEach() {
     	OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
-    	OAObjectService os = (OAObjectService) og.objectsInternal();
+    	OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
     	os.getOAObjectCacheService().removeAllObjects();
     }
 

@@ -33,7 +33,7 @@ import com.viaoa.filter.OALikeFilter;
 import com.viaoa.filter.OANotEqualFilter;
 import com.viaoa.filter.OANotLikeFilter;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubData;
 import com.viaoa.hub.HubEvent;

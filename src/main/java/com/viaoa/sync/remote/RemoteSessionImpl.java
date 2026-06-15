@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import com.viaoa.cascade.OACascade;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.model.ClientInfo;

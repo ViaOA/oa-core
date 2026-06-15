@@ -10,7 +10,7 @@ import com.viaoa.sync.model.ClientInfo;
 import com.viaoa.sync.remote.RemoteClientInterface;
 import com.viaoa.sync.remote.RemoteServerInterface;
 
-public interface SyncInternalOps extends SyncOps {
+public interface SyncInternalOps {
 
 	public OASyncClient getClient();
 	public OASyncServer getServer();

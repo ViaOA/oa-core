@@ -12,8 +12,8 @@ import org.junit.jupiter.api.io.TempDir;
 import com.test.pos.model.oa.Register;
 import com.test.pos.model.oa.Store;
 import com.viaoa.datasource.OADataSourceIterator;
-import com.viaoa.graph.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.hub.Hub;
 import com.viaoa.runtime.OARuntime;
 
@@ -167,7 +167,7 @@ class OADataSourceObjectCacheTest {
 
     private static void clearCache() {
         OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
-        OAObjectService os = (OAObjectService) og.objectsInternal();
+        OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
         os.getOAObjectCacheService().removeAllObjects();
     }
 }

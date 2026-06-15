@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OALinkInfo;

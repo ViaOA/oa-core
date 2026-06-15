@@ -14,7 +14,7 @@ import com.viaoa.concurrent.OAThrottle;
 import com.viaoa.converter.OAConv;
 import com.viaoa.datetime.OADateTime;
 import com.viaoa.filter.OAFilter;
-import com.viaoa.graph.service.OAObjectService;
+import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.lang.OAString;
@@ -182,9 +182,9 @@ public abstract class OAObjectEventService {
 			// 20180617 validate
 			boolean bSkip = false;
 			if (propertyName != null) {
-				bSkip = OAObjectService.WORD_Changed.equalsIgnoreCase(propertyName);
-				bSkip = bSkip || OAObjectService.WORD_New.equalsIgnoreCase(propertyName);
-				bSkip = bSkip || OAObjectService.WORD_Deleted.equalsIgnoreCase(propertyName);
+				bSkip = OAObjectInternalService.WORD_Changed.equalsIgnoreCase(propertyName);
+				bSkip = bSkip || OAObjectInternalService.WORD_New.equalsIgnoreCase(propertyName);
+				bSkip = bSkip || OAObjectInternalService.WORD_Deleted.equalsIgnoreCase(propertyName);
 			}
 
 			if (!bSkip && !bIsLoading) {

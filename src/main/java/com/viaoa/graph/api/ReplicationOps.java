@@ -22,7 +22,7 @@ CODEX
 
 */
 
-public interface ReplOps {
+public interface ReplicationOps {
 
 	public void createMaster(String guid, String tLogFileName);
 	public void createClient(String guid, String logFileName, String masterHostName, int masterPort);

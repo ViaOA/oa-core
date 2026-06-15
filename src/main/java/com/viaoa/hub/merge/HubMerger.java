@@ -28,7 +28,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.cascade.OACascade;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;

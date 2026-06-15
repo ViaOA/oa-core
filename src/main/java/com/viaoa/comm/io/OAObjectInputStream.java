@@ -23,7 +23,7 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 

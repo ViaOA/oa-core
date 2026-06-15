@@ -21,7 +21,7 @@ import java.util.Stack;
 import java.util.Vector;
 
 import com.viaoa.converter.OAConv;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.object.OAObjectKey;
