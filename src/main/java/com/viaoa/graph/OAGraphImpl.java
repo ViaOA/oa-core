@@ -114,7 +114,7 @@ CODEX
 
 
 
-public class OAGraphImpl implements OAGraph, OAGraphInternal {
+public class OAGraphImpl implements OAGraphInternal {
 	private static Logger LOG = Logger.getLogger(OAGraphImpl.class.getName());
 
 	private String packageName;

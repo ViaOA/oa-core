@@ -1,5 +1,7 @@
 package com.viaoa.graph.api.internal;
 
+import com.viaoa.graph.OAGraph;
+
 /*qqqqqqq
 CODEX
 
@@ -18,7 +20,7 @@ CODEX
 
 */
 
-public interface OAGraphInternal {
+public interface OAGraphInternal extends OAGraph {
 	
 	public ObjectsInternalOps objectsInternal();
 

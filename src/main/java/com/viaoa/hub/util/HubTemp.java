@@ -124,7 +124,7 @@ public class HubTemp<TYPE extends OAObject> {
      * @param hubObject the object requiring a temporary Hub
      * @return the associated Hub, or null if {@code hubObject} is null
      */
-    public static Hub createHub(OAObject hubObject) {
+    public static Hub createHub(Object hubObject) {
         if (hubObject == null) return null;
         
         Map<Object, WeakReference<HubTemp>> hm = getMap(hubObject.getClass());
@@ -137,9 +137,9 @@ public class HubTemp<TYPE extends OAObject> {
             else {
                 ht = new HubTemp();
                 ht.hub = new Hub(hubObject.getClass());
-                ht.object = hubObject;
+                ht.object = (OAObject) hubObject;
                 ht.cnt = 1;
-                ht.hub.add(hubObject);
+                ht.hub.add( (OAObject) hubObject);
                 ht.hub.setActiveObject(0);
                 hm.put(hubObject, new WeakReference(ht));
             }
