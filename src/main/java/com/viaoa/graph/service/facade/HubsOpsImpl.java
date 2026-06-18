@@ -1,16 +1,26 @@
 package com.viaoa.graph.service.facade;
 
+import java.util.ArrayList;
+
 import com.viaoa.filter.OAFilter;
 import com.viaoa.graph.api.services.HubsOps;
+import com.viaoa.graph.api.services.hubs.HubAOOps;
 import com.viaoa.graph.api.services.hubs.HubAutoMatchOps;
+import com.viaoa.graph.api.services.hubs.HubCombineOps;
+import com.viaoa.graph.api.services.hubs.HubCopyOps;
+import com.viaoa.graph.api.services.hubs.HubDataOps;
 import com.viaoa.graph.api.services.hubs.HubDetailOps;
 import com.viaoa.graph.api.services.hubs.HubFilterOps;
 import com.viaoa.graph.api.services.hubs.HubLinkOps;
 import com.viaoa.graph.api.services.hubs.HubMergeOps;
+import com.viaoa.graph.api.services.hubs.HubRootOps;
 import com.viaoa.graph.api.services.hubs.HubShareOps;
+import com.viaoa.graph.api.services.hubs.HubStatusOps;
 import com.viaoa.graph.api.services.hubs.HubViewOps;
 import com.viaoa.graph.service.HubInternalService;
+import com.viaoa.graph.service.hub.HubStatusService.HubCurrentStateEnum;
 import com.viaoa.hub.Hub;
+import com.viaoa.hub.HubListenerAdapter;
 import com.viaoa.hub.auto.HubAutoMatch;
 import com.viaoa.hub.copy.HubCopy;
 import com.viaoa.hub.filter.HubFilter;
@@ -34,6 +44,12 @@ public class HubsOpsImpl implements HubsOps {
 	private HubMergeOps opsMerge;
 	private HubShareOps opsShare;
 	private HubViewOps opsView;
+	private HubCopyOps opsCopy;
+	private HubCombineOps opsCombine;
+	private HubAOOps opsAO;
+	private HubDataOps opsData;
+	private HubStatusOps opsStatus;
+	private HubRootOps opsRoot;
 	
 	public HubsOpsImpl(HubInternalService srvc) {
 		this.srvc = srvc;
@@ -62,6 +78,11 @@ public class HubsOpsImpl implements HubsOps {
 				if (hub == null) return null;
 				return hub.getDetailHub(path);
 			}
+
+			@Override
+			public <T extends OAObject> void preloadDetailData(Hub<T> thisHub, int pos) {
+				srvc.getHubDetailService().preloadDetailData(thisHub, pos);
+			}
 		};
 		return opsDetail;
 	}
@@ -83,24 +104,6 @@ public class HubsOpsImpl implements HubsOps {
 				if (hubMaster == null) return null;
 				HubFilter<T> filter = new HubFilter<T>(hubMaster, hubFiltered);
 				return filter;
-			}
-			
-			@Override
-			public <T extends OAObject> HubCopy<T> copy(Hub<T> hubFrom, Hub<T> hubTo) {
-				HubCopy<T> hc = new HubCopy<>(hubFrom, hubTo, true);
-				return hc;
-			}
-
-			public <T extends OAObject> HubCopy<T> copy(Hub<T> hubFrom, Hub<T> hubTo, boolean shareActiveObject) {
-				HubCopy<T> hc = new HubCopy<>(hubFrom, hubTo, shareActiveObject);
-				return hc;
-			}
-			
-			@Override
-			public <T extends OAObject> HubCombined<T> combine(Hub<T> hubMaster, Hub<T>... hubs) {
-				if (hubMaster == null) return null;
-				HubCombined<T> hc = new HubCombined<>(hubMaster, hubs);
-				return hc;
 			}
 		};
 		return opsFilter;
@@ -186,12 +189,117 @@ public class HubsOpsImpl implements HubsOps {
 		};
 		return opsView;
 	}
-	
 
 
+	@Override
+	public HubCopyOps copy() {
+		if (opsCopy != null) return opsCopy;
+		opsCopy = new HubCopyOps() {
+			@Override
+			public <T extends OAObject> HubCopy<T> copy(Hub<T> hubFrom, Hub<T> hubTo) {
+				HubCopy<T> hc = new HubCopy<>(hubFrom, hubTo, true);
+				return hc;
+			}
+
+			@Override
+			public <T extends OAObject> HubCopy<T> copy(Hub<T> hubFrom, Hub<T> hubTo, boolean shareActiveObject) {
+				HubCopy<T> hc = new HubCopy<>(hubFrom, hubTo, shareActiveObject);
+				return hc;
+			}
+		};
+		return opsCopy;
+	}
+
+	@Override
+	public HubCombineOps combine() {
+		if (opsCombine != null) return opsCombine;
+		opsCombine = new HubCombineOps() {
+			@Override
+			public <T extends OAObject> HubCombined<T> combine(Hub<T> hubMaster, Hub<T>... hubs) {
+				if (hubMaster == null) return null;
+				HubCombined<T> hc = new HubCombined<>(hubMaster, hubs);
+				return hc;
+			}
+		};
+		return opsCombine;
+	}
+
+	@Override
+	public HubAOOps ao() {
+		if (opsAO != null) return opsAO;
+		opsAO = new HubAOOps() {
+			@Override
+			public <T extends OAObject> HubListenerAdapter<T> keepActiveObject(final Hub<T> thisHub) {
+				return srvc.getHubAOService().keepActiveObject(thisHub);
+			}
+
+			@Override
+			public <T extends OAObject> void setActiveObject(Hub<T> thisHub, T object, int pos, boolean bUpdateLink, boolean bForce, boolean bCalledByShareHub, boolean bUpdateSharedHubDetail) {
+				srvc.getHubAOService().setActiveObject(thisHub, object, pos, bUpdateLink, bForce, bCalledByShareHub, bUpdateSharedHubDetail);
+			}
+
+			@Override
+			public <T extends OAObject> void updateDetailHubs(Hub<T> thisHub) {
+				srvc.getHubAOService().updateDetailHubs(thisHub);
+			}
+
+			@Override
+			public <T extends OAObject> void setActiveObject(Hub<T> thisHub, T object, boolean adjustMaster, boolean bUpdateLink, boolean bForce) {
+				srvc.getHubAOService().setActiveObject(thisHub, object, adjustMaster, bUpdateLink, bForce);
+			}
+		};
+		return opsAO;
+	}
 
 
+	@Override
+	public HubDataOps data() {
+		if (opsData != null) return opsData;
+		opsData = new HubDataOps() {
+			@Override
+			public <T extends OAObject> int getPos(Hub<T> thisHub, Object object, boolean adjustMaster, boolean bUpdateLink) {
+				return srvc.getHubDataService().getPos(thisHub, object, adjustMaster, bUpdateLink);
+			}
+		};
+		return opsData;
+	}
 
-	
-	
+
+	@Override
+	public HubStatusOps status() {
+		if (opsStatus != null) return opsStatus;
+		opsStatus = new HubStatusOps() {
+			@Override
+			public <T extends OAObject> HubCurrentStateEnum getCurrentState(Hub<T> thisHub, Hub<T> hubNew, ArrayList<T> alNew) {
+				return srvc.getHubStatusService().getCurrentState(thisHub, hubNew, alNew);
+			}
+		}; 
+		return opsStatus;
+	}
+
+
+	@Override
+	public HubRootOps root() {
+		if (opsRoot != null) return opsRoot;
+		opsRoot = new HubRootOps() {
+
+			@Override
+			public <T extends OAObject> Hub<T> getRootHub(Hub<T> thisHub) {
+				return srvc.getHubRootService().getRootHub(thisHub);
+			}
+		}; 
+		return opsRoot;
+	}
 }
+
+
+
+
+
+
+
+
+
+
+
+

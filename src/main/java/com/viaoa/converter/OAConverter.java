@@ -138,7 +138,7 @@ public class OAConverter {
 		addConverter(com.viaoa.datetime.OADate.class, new OAConverterOADate());
 		addConverter(com.viaoa.datetime.OATime.class, new OAConverterOATime());
 		addConverter(Calendar.class, new OAConverterCalendar());
-/* moved to oa-core-ui repo		
+/* moved to oa-jfc 		
 		addConverter(java.awt.Point.class, new OAConverterPoint());
 		addConverter(java.awt.Dimension.class, new OAConverterDimension());
 		addConverter(java.awt.Rectangle.class, new OAConverterRectangle());

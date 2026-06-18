@@ -108,7 +108,7 @@ public abstract class OAObjectEventService {
 	 * Internal reserved property name used to identify change-flag updates
 	 * emitted through the event pipeline.
 	 */
-	private final String WORD_CHANGED = "CHANGED";
+	public final static String WORD_CHANGED = "CHANGED";
 
 	/**
 	 * Counter used to track how many validation or callback-related errors

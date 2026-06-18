@@ -105,6 +105,12 @@ public class HubInternalService extends HubParentService implements HubsInternal
 	    getHubAddRemoveService().refresh(hub, hubNew);
 	}
 
+	@Override
+	public boolean callHubAddRemoveIsAllowAddRemove(Hub<?> thisHub) {
+	    return getHubAddRemoveService().isAllowAddRemove(thisHub);
+	}
+	
+	
 	
 	// AO =========================
 	@Override
@@ -126,6 +132,10 @@ public class HubInternalService extends HubParentService implements HubsInternal
 	public <T extends OAObject> T callHubAOSetActiveObject(Hub<T> hub, Object obj) {
 	    return getHubAOService().setActiveObject(hub, obj);
 	}
+
+	public <T extends OAObject> void setActiveObjectForce(Hub<T> thisHub, T object) {
+	    getHubAOService().setActiveObjectForce(thisHub, object);
+	}
 	
 	
 	// AutoMatch =========================
@@ -138,6 +148,7 @@ public class HubInternalService extends HubParentService implements HubsInternal
 	public void callHubAutoMatchSetAutoMatch(Hub<?> hub, String property, Hub<?> hubMaster, boolean bServerSideOnly, OAObject objStop, String stopProperty) {
 		getHubAutoMatchService().setAutoMatch(hub, property, hubMaster, bServerSideOnly, objStop, stopProperty);
 	}
+	
 	
 	
 	// CS =========================
@@ -410,6 +421,14 @@ public class HubInternalService extends HubParentService implements HubsInternal
 	    getHubEventService().fireCalcPropertyChange(hub, obj, propertyName);
 	}
 
+	@Override
+	public <T extends OAObject> void fireAfterChangeActiveObjectEvent(Hub<T> thisHub, T obj, int pos, boolean bAllShared) {
+		getHubEventService().fireAfterChangeActiveObjectEvent(thisHub, obj, pos, bAllShared);
+	}
+
+	
+	
+	
 	// Find =========================
 
 	@Override
@@ -461,6 +480,16 @@ public class HubInternalService extends HubParentService implements HubsInternal
 	    return getHubLinkService().getLinkToProperty(hub);
 	}
 
+	@Override
+	public String callHubLinkGetLinkFromProperty(Hub<?> thisHub) {
+	    return getHubLinkService().getLinkFromProperty(thisHub);
+	}
+
+	@Override
+	public String callHubLinkGetLinkFromProperty(Hub<?> thisHub, boolean bIncludeCopiedHubs) {
+	    return getHubLinkService().getLinkFromProperty(thisHub, bIncludeCopiedHubs);
+	}
+	
 	// Property =========================
 	@Override
 	public void callHubPropertySetProperty(Hub<?> hub, String name, Object obj) {
@@ -724,4 +753,6 @@ public class HubInternalService extends HubParentService implements HubsInternal
 	public <T extends OAObject> HubCurrentStateEnum callHubStatusGetCurrentState(Hub<T> thisHub, Hub<T> hubNew, ArrayList<T> alNew) {
 	    return getHubStatusService().getCurrentState(thisHub, hubNew, alNew);
 	}
+
+
 }

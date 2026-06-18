@@ -395,11 +395,11 @@ public abstract class HubAOService {
 	 *
 	 * @param thisHub the hub whose active object should always be the first object
 	 */
-	public <T extends OAObject> void keepActiveObject(final Hub<T> thisHub) {
+	public <T extends OAObject> HubListenerAdapter<T> keepActiveObject(final Hub<T> thisHub) {
 		if (thisHub == null) {
-			return;
+			return null;
 		}
-		thisHub.addHubListener(new HubListenerAdapter<T>() {
+		HubListenerAdapter<T> hl = new HubListenerAdapter<T>() {
 			@Override
 			public void afterChangeActiveObject(HubEvent<T> e) {
 				update();
@@ -433,8 +433,10 @@ public abstract class HubAOService {
 			void update() {
 				thisHub.setPos(0);
 			}
-		});
+		};
+		thisHub.addHubListener(hl);
 		thisHub.setPos(0);
+		return hl;
 	}
 
 	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi); 

@@ -1,5 +1,6 @@
 package com.viaoa.graph.service.facade;
 
+import com.viaoa.callback.OACallbackLabel;
 import com.viaoa.graph.api.services.ObjectsOps;
 import com.viaoa.graph.api.services.objects.OAObjectCacheOps;
 import com.viaoa.graph.api.services.objects.OAObjectCallbackOps;
@@ -61,10 +62,22 @@ public class ObjectsOpsImpl implements ObjectsOps {
 			public <T extends OAObject> void addObjectCallbackChangeListeners(Hub<T> hub, Class<T> cz, String prop, String ppPrefix, HubChangeListener changeListener, boolean bEnabled) {
 				srvc.getOAObjectCallbackService().addObjectCallbackChangeListeners(hub, cz, prop, ppPrefix, changeListener, bEnabled);
 			}
+
+			@Override
+			public void updateLabel(OAObject obj, String propertyName, OACallbackLabel label) {
+				srvc.getOAObjectCallbackService().updateLabel(obj, propertyName, label);
+			}
+
+			@Override
+			public void renderLabel(OAObject obj, String propertyName, OACallbackLabel label) {
+				srvc.getOAObjectCallbackService().renderLabel(obj, propertyName, label);
+			}
 		};
 		return opsCallback;
 	}
 
+	
+	
 }
 
 

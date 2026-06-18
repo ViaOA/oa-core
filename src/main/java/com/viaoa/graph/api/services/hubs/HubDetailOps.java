@@ -1,6 +1,7 @@
 package com.viaoa.graph.api.services.hubs;
 
 import com.viaoa.hub.Hub;
+import com.viaoa.object.OAObject;
 
 public interface HubDetailOps {
 
@@ -25,6 +26,6 @@ public interface HubDetailOps {
     Hub<?> detail(Hub<?> hub, String path);
 
     
-	
+    public <T extends OAObject> void preloadDetailData(final Hub<T> thisHub, final int pos);	
 	
 }

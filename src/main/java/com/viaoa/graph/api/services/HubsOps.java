@@ -5,6 +5,10 @@ import com.viaoa.graph.api.services.hubs.*;
 public interface HubsOps {
 	
     public HubAutoMatchOps autoMatch();
+
+    public HubAOOps ao();
+    
+    public HubDataOps data();
     
     public HubDetailOps detail();
     
@@ -17,5 +21,12 @@ public interface HubsOps {
     public HubShareOps share();
     
     public HubViewOps view();
+    
+    public HubCopyOps copy();
+    
+    public HubCombineOps combine();
 
+    public HubStatusOps status();
+    
+    public HubRootOps root();
 }

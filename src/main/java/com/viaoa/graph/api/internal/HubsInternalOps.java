@@ -63,12 +63,15 @@ public interface HubsInternalOps {
 	public <T extends OAObject> void callHubAddRemoveRemove(Hub<T> thisHub, T obj, boolean bForce, boolean bSendEvent, boolean bDeleting, boolean bSetAO, boolean bSetPropToMaster, boolean bIsRemovingAll);
 	public <T extends OAObject> void callHubAddRemoveSortMove(Hub<T> hub, T object);
 	public <T extends OAObject> void callHubAddRemoveRefresh(Hub<T> hub, Hub<T> hubNew);
- 	
+	public boolean callHubAddRemoveIsAllowAddRemove(Hub<?> thisHub);	
+	
+	
 	// AO
 	public <T extends OAObject> T callHubAOSetActiveObject(Hub<T> hub, int pos);
 	public <T extends OAObject> void callHubAOSetActiveObject(Hub<T> hub, T obj);
 	public <T extends OAObject> void callHubAOSetActiveObjectForce(Hub<T> hub, T obj);
 	public <T extends OAObject> T callHubAOSetActiveObject(Hub<T> hub, Object obj);
+	public <T extends OAObject> void setActiveObjectForce(Hub<T> thisHub, T object);
 
 	// AutoMatch	
 	public void callHubAutoMatchSetAutoMatch(Hub<?> hub, String property, Hub<?> hubMaster, boolean bServerSideOnly);
@@ -137,6 +140,7 @@ public interface HubsInternalOps {
 	public <T extends OAObject> void callHubEventAddHubListener(Hub<T> hub, HubListener<T> hl);
 	public <T extends OAObject> void callHubEventRemoveHubListener(Hub<T> hub, HubListener<T> hl);
 	public <T extends OAObject> void callHubEventFireCalcPropertyChange(Hub<T> hub, T obj, String propertyName);
+	public <T extends OAObject> void fireAfterChangeActiveObjectEvent(Hub<T> thisHub, T obj, int pos, boolean bAllShared);
 
 	// Find
 	public <T extends OAObject> T callHubFindFindFirst(Hub<T> hub, String propertyPath, Object findValue, boolean bSetAO, T lastFoundObject);
@@ -150,7 +154,10 @@ public interface HubsInternalOps {
 	public <T extends OAObject, U extends OAObject> Object callHubLinkGetPropertyValueInLinkedToHub(Hub<T> hub, U linkObject); // returns OAOject, null, or int (position)
 	public boolean callHubLinkGetLinkedOnPos(Hub<?> hub);
 	public String callHubLinkGetLinkToProperty(Hub<?> hub);
-
+	public String callHubLinkGetLinkFromProperty(Hub<?> thisHub);
+	public String callHubLinkGetLinkFromProperty(Hub<?> thisHub, boolean bIncludeCopiedHubs);
+	
+	
 	// Property
 	public void callHubPropertySetProperty(Hub<?> hub, String name, Object obj);
 	public Object callHubPropertyGetProperty(Hub<?> hub, String name);
