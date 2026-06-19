@@ -64,7 +64,7 @@ public interface HubsInternalOps {
 	public <T extends OAObject> void callHubAddRemoveSortMove(Hub<T> hub, T object);
 	public <T extends OAObject> void callHubAddRemoveRefresh(Hub<T> hub, Hub<T> hubNew);
 	public boolean callHubAddRemoveIsAllowAddRemove(Hub<?> thisHub);	
-	
+	public boolean callHubAddRemoveIsAllowRemove(Hub<?> thisHub);	
 	
 	// AO
 	public <T extends OAObject> T callHubAOSetActiveObject(Hub<T> hub, int pos);

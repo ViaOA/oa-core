@@ -118,6 +118,11 @@ public class HubsOpsImpl implements HubsOps {
 				if (hub1 == null) return;
 				hub1.setLinkHub(hub2, referenceName);
 			}
+
+			@Override
+			public <T extends OAObject> Hub<T> getHubWithLink(Hub<T> thisHub, boolean bIncludeCopiedHubs) {
+				return srvc.getHubLinkService().getHubWithLink(thisHub, bIncludeCopiedHubs);
+			}
 		};
 		
 		return opsLink;

@@ -1,12 +1,12 @@
-package com.viaoa.graph.service.facade;
+package com.viaoa.graph.internal.facade;
 
 import com.viaoa.callback.OACallbackLabel;
 import com.viaoa.callback.OAObjectCallback;
-import com.viaoa.graph.api.services.ObjectsOps;
-import com.viaoa.graph.api.services.objects.OAObjectCacheOps;
-import com.viaoa.graph.api.services.objects.OAObjectCallbackOps;
-import com.viaoa.graph.api.services.objects.OAObjectDeleteOps;
-import com.viaoa.graph.api.services.objects.OAObjectReflectOps;
+import com.viaoa.graph.api.internal.ObjectsOps;
+import com.viaoa.graph.api.internal.objects.OAObjectCacheOps;
+import com.viaoa.graph.api.internal.objects.OAObjectCallbackOps;
+import com.viaoa.graph.api.internal.objects.OAObjectDeleteOps;
+import com.viaoa.graph.api.internal.objects.OAObjectReflectOps;
 import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.listener.HubChangeListener;

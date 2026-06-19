@@ -9,7 +9,6 @@ import com.viaoa.callback.OAObjectCallback.Type;
 import com.viaoa.cascade.OACascade;
 import com.viaoa.compare.match.OAMatchUnknown;
 import com.viaoa.converter.OAConv;
-import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.context.OAContextAccess;
 import com.viaoa.runtime.context.OAContextUser;
 import com.viaoa.hub.Hub;
@@ -24,6 +23,10 @@ import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.metadata.OAObjectModel;
 import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.object.OAObject;
+
+
+//qqqqqqqqq add:  Severity (INFO / WARNING / ERROR)
+//qqqqqqqq add:  Async/background command support
 
 /**
  * Rule and permission engine for {@link OAObject} interactions.

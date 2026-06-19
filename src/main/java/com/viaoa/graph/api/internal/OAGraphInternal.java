@@ -15,17 +15,18 @@ CODEX
   Suggested invariant: GRAPH_INTERNAL_OPS_ARE_NOT_APP_CONTRACT
   Suggested test coverage: architecture test that app-facing packages do not import com.viaoa.graph.api.internal.
 
-
-
-
 */
 
 public interface OAGraphInternal extends OAGraph {
-	
-	public ObjectsInternalOps objectsInternal();
 
+//removing these 2	
+	public ObjectsInternalOps objectsInternal();
 	public HubsInternalOps hubsInternal();
     
+	
+	public GraphInternalOps internal();
+	
+	
 	public SyncInternalOps syncInternal();
 
 	public ReplicationInternalOps replInternal();

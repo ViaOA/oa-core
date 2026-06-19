@@ -1,4 +1,4 @@
-package com.viaoa.graph.api.services.hubs;
+package com.viaoa.graph.api.internal.hubs;
 
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
@@ -24,6 +24,15 @@ public interface HubLinkOps {
      * @param referenceName the relationship property name on the source object's type
      */
     void link(Hub<?> hub1, Hub<?> hub2, String referenceName);
-
-    public <T extends OAObject> Hub<T> getHubWithLink(final Hub<T> thisHub, boolean bIncludeCopiedHubs);
+	public <T extends OAObject> Hub<T> getHubWithLink(Hub<T> hub, boolean bIncludeCopiedHubs);
+	public void setLinkHub(Hub<?> thisHub, String propertyFrom, Hub<?> linkToHub, String propertyTo, boolean linkPosFlag, boolean bAutoCreate, boolean bAutoCreateAllowDups);
+	public String getLinkHubPath(Hub<?> hub, boolean bIncludeCopiedHubs);
+	public <T extends OAObject> void updateLinkedToHub(Hub<T> hub, Hub<?> linkToHub, T obj);
+	public <T extends OAObject> void updateLinkedToHub(Hub<T> hub, Hub<?> linkToHub, T obj, String changedPropName);
+	public <T extends OAObject, U extends OAObject> Object getPropertyValueInLinkedToHub(Hub<T> hub, U linkObject); // returns OAOject, null, or int (position)
+	public boolean getLinkedOnPos(Hub<?> hub);
+	public String getLinkToProperty(Hub<?> hub);
+	public String getLinkFromProperty(Hub<?> thisHub);
+	public String getLinkFromProperty(Hub<?> thisHub, boolean bIncludeCopiedHubs);
+    
 }

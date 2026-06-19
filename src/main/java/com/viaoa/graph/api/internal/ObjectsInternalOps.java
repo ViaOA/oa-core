@@ -138,7 +138,7 @@ public interface ObjectsInternalOps {
 	public void callObjectEventFirePropertyChange(OAObject oaObj, String propertyName, Object oldObj, Object newObj, boolean bLocalOnly, boolean bSetChanged, boolean bUnknownValues);
 	public void callObjectEventFireAfterLoadEvent(OAObject oaObj);
 	
-	// GUID
+	// Guid
 	public void callObjectGuidSetGuid(OAObject oaObj, UUID iguid);
 	public UUID callObjectGuidGetGuid(OAObject oaObj);
 	

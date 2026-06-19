@@ -7,6 +7,7 @@ import com.viaoa.filter.OAFilter;
 import com.viaoa.find.OAFinder;
 import com.viaoa.graph.api.ReplicationOps;
 import com.viaoa.graph.api.SyncOps;
+import com.viaoa.graph.api.internal.GraphInternalOps;
 import com.viaoa.graph.api.internal.HubsInternalOps;
 import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.graph.api.internal.ObjectsInternalOps;
@@ -14,6 +15,7 @@ import com.viaoa.graph.api.internal.ReplicationInternalOps;
 import com.viaoa.graph.api.internal.SyncInternalOps;
 import com.viaoa.graph.api.internal.TriggerInternalOps;
 import com.viaoa.graph.api.services.GraphServicesOps;
+import com.viaoa.graph.internal.facade.GraphInternal;
 import com.viaoa.graph.service.HubInternalService;
 import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.graph.service.OAReplicationService;
@@ -125,7 +127,8 @@ public class OAGraphImpl implements OAGraphInternal {
     private OASyncService srvcOASyncInternal;
     private OAReplicationService srvcOAReplicationInternal;
     private OATriggerService srvcOATrigger;
-    private GraphServicesOps srvcGraphServices;
+    private GraphServicesOps srvcServices;
+    private GraphInternalOps srvcInternal;
 
 	public OAGraphImpl(String packageName) {
 		this.packageName = packageName;
@@ -153,8 +156,8 @@ public class OAGraphImpl implements OAGraphInternal {
 	    	
 	    };
 	    srvcOATrigger = new OATriggerService(this);
-	    srvcGraphServices = new GraphServices(this);
-
+	    srvcServices = new GraphServices(this);
+	    srvcInternal = new GraphInternal(this); 
 
 		srvcOAObjectInternal.initialize(srvcHubInternal, srvcOASyncInternal, srvcThread.getThreadLocalService(), srvcThread.getRemoteThreadService(), srvcOATrigger);
 		srvcHubInternal.initialize(srvcOAObjectInternal, srvcOASyncInternal, srvcThread.getThreadLocalService(), srvcThread.getRemoteThreadService());
@@ -323,7 +326,12 @@ public class OAGraphImpl implements OAGraphInternal {
 
 	@Override
 	public GraphServicesOps services() {
-		return srvcGraphServices;
+		return srvcServices;
+	}
+
+	@Override
+	public GraphInternalOps internal() {
+		return srvcInternal;
 	}
 	
 }

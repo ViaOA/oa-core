@@ -110,6 +110,10 @@ public class HubInternalService extends HubParentService implements HubsInternal
 	    return getHubAddRemoveService().isAllowAddRemove(thisHub);
 	}
 	
+	@Override
+	public boolean callHubAddRemoveIsAllowRemove(Hub<?> thisHub) {
+	    return getHubAddRemoveService().isAllowRemove(thisHub);
+	}
 	
 	
 	// AO =========================
