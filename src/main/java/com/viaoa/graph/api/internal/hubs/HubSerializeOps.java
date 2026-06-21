@@ -8,7 +8,7 @@ import com.viaoa.hub.Hub;
 
 public interface HubSerializeOps {
 
-	public void writeObject(Hub<?> hub, ObjectOutputStream stream) throws IOException;
-	public Object readResolve(Hub<?> hub) throws ObjectStreamException;
+	public void _writeObject(Hub<?> hub, ObjectOutputStream stream) throws IOException;
+	public Object _readResolve(Hub<?> hub) throws ObjectStreamException;
 
 }

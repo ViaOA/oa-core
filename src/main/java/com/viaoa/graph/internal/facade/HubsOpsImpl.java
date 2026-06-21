@@ -96,20 +96,17 @@ public class HubsOpsImpl implements HubsOps {
 		opsAutomatch = new HubAutoMatchOps() {
 			@Override
 			public <T extends OAObject, T2 extends OAObject> HubAutoMatch<T, T2> match(Hub<T> hub, String property, Hub<T2> hubMaster) {
-				HubAutoMatch<T, T2> ham = new HubAutoMatch<>(hub, property, hubMaster);
-				return ham;
+				return srvc.getHubAutoMatchService().setAutoMatch(hub, property, hubMaster, false);
 			}
 
 			@Override
 			public <T extends OAObject, T2 extends OAObject> HubAutoMatch<T,T2> setAutoMatch(Hub<T> hub, String property, Hub<T2> hubMaster, boolean bServerSideOnly) {
-				HubAutoMatch ham = new HubAutoMatch<>(hub, property, hubMaster, bServerSideOnly);
-				return ham;
+				return srvc.getHubAutoMatchService().setAutoMatch(hub, property, hubMaster, bServerSideOnly);
 			}
 
 			@Override
 			public <T extends OAObject, T2 extends OAObject> HubAutoMatch<T,T2> setAutoMatch(Hub<T> hub, String property, Hub<T2> hubMaster, OAObject objStop, String stopProperty) {
-				HubAutoMatch<T, T2> ham = new HubAutoMatch(hub, property, hubMaster, objStop, stopProperty);
-				return ham;
+				return srvc.getHubAutoMatchService().setAutoMatch(hub, property, hubMaster, false, objStop, stopProperty);
 			}
 		};
 		return opsAutomatch;
@@ -774,7 +771,7 @@ public class HubsOpsImpl implements HubsOps {
 
 			@Override
 			public void fireOnNewListEvent(Hub<?> hub, boolean bAll) {
-				srvc.getHubEventService().fireOnNewListEvent(null, bAll);
+				srvc.getHubEventService().fireOnNewListEvent(hub, bAll);
 			}
 
 			@Override
@@ -886,97 +883,97 @@ public class HubsOpsImpl implements HubsOps {
 
 			@Override
 			public void setSelectWhereHubPropertyPath(Hub<?> hub, String ppFromHub) {
-				srvc.getHubSelectService().
+				srvc.getHubSelectService().setSelectWhereHubPropertyPath(hub, ppFromHub);
 			}
 
 			@Override
 			public <T extends OAObject> void setSelectWhereHub(Hub<T> hub, Hub<T> hubSelect) {
-				srvc.getHubSelectService().
+				srvc.getHubSelectService().setSelectWhereHub(hub, hubSelect);;
 			}
 
 			@Override
 			public void setSelectWhere(Hub<?> hub, String whereClause) {
-				srvc.getHubSelectService().
+				srvc.getHubSelectService().setSelectWhere(hub, whereClause);
 			}
 
 			@Override
 			public void setSelectOrder(Hub<?> hub, String orderClause) {
-				srvc.getHubSelectService().
+				srvc.getHubSelectService().setSelectOrder(hub, orderClause);
 			}
 
 			@Override
 			public void selectPassthru(Hub<?> hub, String whereClause, String orderClause) {
-				srvc.getHubSelectService().
+				srvc.getHubSelectService().selectPassthru(hub, whereClause, orderClause);
 			}
 
 			@Override
 			public <T extends OAObject> void select(Hub<T> hub, OASelect<T> select) {
-				srvc.getHubSelectService().
+				srvc.getHubSelectService().select(hub, select);
 			}
 
 			@Override
 			public <T extends OAObject> void select(Hub<T> hub, OAObject whereObject, String whereClause, Object[] whereParams, String orderBy, boolean bAppendFlag, OAFilter<T> filter) {
-				srvc.getHubSelectService().
+				srvc.getHubSelectService().select(hub, whereObject, whereClause, whereParams, orderBy, bAppendFlag, filter);
 			}
 
 			@Override
 			public void select(Hub<?> hub, boolean bAppendFlag) {
-				srvc.getHubSelectService().
+				srvc.getHubSelectService().select(hub, bAppendFlag);
 			}
 
 			@Override
 			public void select(Hub<?> hub, OAObject whereObject, String whereClause, Object[] whereParams, String orderByClause, boolean bAppendFlag) {
-				srvc.getHubSelectService().
+				srvc.getHubSelectService().select(hub, whereObject, whereClause, whereParams, orderByClause, bAppendFlag);
 			}
 
 			@Override
 			public void refresh(Hub<?> hub) {
-				srvc.getHubSelectService().
+				srvc.getHubSelectService().refresh(hub);
 			}
 
 			@Override
 			public void loadAllData(Hub<?> hub) {
-				srvc.getHubSelectService().
+				srvc.getHubSelectService().loadAllData(hub);
 			}
 
 			@Override
 			public boolean isMoreData(Hub<?> hub) {
-				return srvc.getHubSelectService().
+				return srvc.getHubSelectService().isMoreData(hub);
 			}
 
 			@Override
 			public String getSelectWhereHubPropertyPath(Hub<?> hub) {
-				return srvc.getHubSelectService().
+				return srvc.getHubSelectService().getSelectWhereHubPropertyPath(hub);
 			}
 
 			@Override
 			public <T extends OAObject> Hub<T> getSelectWhereHub(Hub<T> hub) {
-				return srvc.getHubSelectService().
+				return srvc.getHubSelectService().getSelectWhereHub(hub);
 			}
 
 			@Override
 			public String getSelectWhere(Hub<?> hub) {
-				return srvc.getHubSelectService().
+				return srvc.getHubSelectService().getSelectWhere(hub);
 			}
 
 			@Override
 			public String getSelectOrder(Hub<?> hub) {
-				return srvc.getHubSelectService().
+				return srvc.getHubSelectService().getSelectOrder(hub);
 			}
 
 			@Override
 			public <T extends OAObject> OASelect<T> getSelect(Hub<T> hub) {
-				return srvc.getHubSelectService().
+				return srvc.getHubSelectService().getSelect(hub);
 			}
 
 			@Override
 			public <T extends OAObject> OASelect<T> getSelect(Hub<T> hub, boolean bCreateIfNull) {
-				return srvc.getHubSelectService().
+				return srvc.getHubSelectService().getSelect(hub, bCreateIfNull);
 			}
 
 			@Override
 			public void cancelSelect(Hub<?> hub, boolean bRemoveSelect) {
-				srvc.getHubSelectService().
+				srvc.getHubSelectService().cancelSelect(hub, bRemoveSelect);
 			}
 		};
 		return opsSelect;
@@ -988,20 +985,17 @@ public class HubsOpsImpl implements HubsOps {
 		opsSequence = new HubSequenceOps() {
 			@Override
 			public void setAutoSequence(Hub<?> hub, String property, int startNumber, boolean bKeepSeq) {
-				// TODO Auto-generated method stub
-				
+				srvc.getHubSequenceService().setAutoSequence(hub, property, startNumber, bKeepSeq);
 			}
 			
 			@Override
 			public void resequence(Hub<?> hub) {
-				// TODO Auto-generated method stub
-				
+				srvc.getHubSequenceService().resequence(hub);
 			}
 			
 			@Override
 			public HubAutoSequence getAutoSequence(Hub<?> hub) {
-				// TODO Auto-generated method stub
-				return null;
+				return srvc.getHubSequenceService().getAutoSequence(hub);
 			}
 		}; 
 		return opsSequence;
@@ -1011,17 +1005,13 @@ public class HubsOpsImpl implements HubsOps {
 	public HubSerializeOps serialize() {
 		if (opsSerialize != null) return opsSerialize;
 		opsSerialize = new HubSerializeOps() {
-
 			@Override
-			public void writeObject(Hub<?> hub, ObjectOutputStream stream) throws IOException {
-				// TODO Auto-generated method stub
-
+			public void _writeObject(Hub<?> hub, ObjectOutputStream stream) throws IOException {
+				srvc.getHubSerializeService()._writeObject(hub, stream);
 			}
-
 			@Override
-			public Object readResolve(Hub<?> hub) throws ObjectStreamException {
-				// TODO Auto-generated method stub
-				return null;
+			public Object _readResolve(Hub<?> hub) throws ObjectStreamException {
+				return srvc.getHubSerializeService()._readResolve(hub);
 			}
 		};
 		return opsSerialize;
@@ -1034,14 +1024,12 @@ public class HubsOpsImpl implements HubsOps {
 
 			@Override
 			public int getSize(Hub<?> hub) {
-				// TODO Auto-generated method stub
-				return 0;
+				return srvc.getHubSizeService().getSize(hub);
 			}
 
 			@Override
 			public int getLoadedSize(Hub<?> hub) {
-				// TODO Auto-generated method stub
-				return 0;
+				return srvc.getHubSizeService().getLoadedSize(hub);
 			}
 		};
 		return opsSize;
@@ -1054,38 +1042,32 @@ public class HubsOpsImpl implements HubsOps {
 
 			@Override
 			public void sort(Hub<?> hub) {
-				// TODO Auto-generated method stub
-
+				srvc.getHubSortService().sort(hub);
 			}
 
 			@Override
 			public void sort(Hub<?> hub, String propertyPaths, boolean bAscending, Comparator<?> comp) {
-				// TODO Auto-generated method stub
-
+				srvc.getHubSortService().sort(hub, propertyPaths, bAscending, comp);
 			}
 
 			@Override
 			public void resort(Hub<?> hub) {
-				// TODO Auto-generated method stub
-
+				srvc.getHubSortService().resort(hub);
 			}
 
 			@Override
 			public boolean isSorted(Hub<?> hub) {
-				// TODO Auto-generated method stub
-				return false;
+				return srvc.getHubSortService().isSorted(hub);
 			}
 
 			@Override
 			public HubSortListener getSortListener(Hub<?> hub) {
-				// TODO Auto-generated method stub
-				return null;
+				return srvc.getHubSortService().getSortListener(hub);
 			}
 
 			@Override
 			public void cancelSort(Hub<?> hub) {
-				// TODO Auto-generated method stub
-
+				srvc.getHubSortService().cancelSort(hub);
 			}
 		};
 		return opsSort;

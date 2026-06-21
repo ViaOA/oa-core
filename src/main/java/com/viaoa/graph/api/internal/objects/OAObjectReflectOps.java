@@ -17,10 +17,11 @@ public interface OAObjectReflectOps {
 	public byte[] getReferenceBlob(OAObject oaObj, String linkPropertyName);
 	public boolean getPrimitiveNull(OAObject oaObj, String prop);
 	public void setPrimitiveNull(OAObject oaObj, String prop, boolean b);
-	public void loadAllReferences(OAObject oaObj, boolean bIncludeCalc);
-	public void loadAllReferences(OAObject oaObj, boolean bOne, boolean bMany, boolean bIncludeCalc);
-	public void loadAllReferences(OAObject oaObj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc);
+	public int loadAllReferences(OAObject oaObj, boolean bIncludeCalc);
+	public int loadAllReferences(OAObject oaObj, boolean bOne, boolean bMany, boolean bIncludeCalc);
+	public int loadAllReferences(OAObject oaObj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc);
 	public int loadAllReferences(OAObject oaObj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc, int maxRefsToLoad);
+	public int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc, int maxRefsToLoad, long maxEndTime);
 	public <T extends OAObject> T getObject(Class<T> clazz, Object keyValue); //qqqqqqqqq add this to graph.objects().getObject(c, k)
 	public <T extends OAObject> T createNewObject(Class<T> clazz);
 	public boolean areAllReferencesLoaded(OAObject oaObj, boolean bIncludeCalc);
@@ -30,7 +31,4 @@ public interface OAObjectReflectOps {
 	public Object getProperty(Hub<?> hub, String propertyPath);
 	public OAObjectKey getPropertyObjectKey(OAObject oaObj, String propertyName);
 	public Object getRawReference(OAObject oaObj, String name);
-	public void loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc, int maxRefsToLoad, long maxEndTime);
-	
-	
 }

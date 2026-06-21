@@ -1429,8 +1429,8 @@ public abstract class OAObjectReflectService {
 	 *
 	 * @param obj the object whose references will be loaded
 	 */
-	public void loadAllReferences(OAObject obj) {
-		loadAllReferences(obj, false);
+	public int loadAllReferences(OAObject obj) {
+		return loadAllReferences(obj, false);
 	}
 
 	/**
@@ -1472,8 +1472,8 @@ public abstract class OAObjectReflectService {
 	 * @param obj          the object to load
 	 * @param bIncludeCalc include calculated links if true
 	 */
-	public void loadAllReferences(OAObject obj, boolean bIncludeCalc) {
-		loadReferences(obj, bIncludeCalc, 0);
+	public int loadAllReferences(OAObject obj, boolean bIncludeCalc) {
+		return loadReferences(obj, bIncludeCalc, 0);
 	}
 
 	/**
@@ -1485,7 +1485,7 @@ public abstract class OAObjectReflectService {
 	 * @param bIncludeCalc include calculated links if true
 	 * @param max          maximum number of references to load
 	 */
-	public void loadReferences(OAObject obj, boolean bIncludeCalc, int max) {
+	public int loadReferences(OAObject obj, boolean bIncludeCalc, int max) {
 		OAObjectInfo io = getOAObjectInfo(obj.getClass());
 		List<OALinkInfo> al = io.getLinkInfos();
 		int cnt = 0;
@@ -1518,6 +1518,7 @@ public abstract class OAObjectReflectService {
 				break;
 			}
 		}
+		return cnt;
 	}
 
 	/**

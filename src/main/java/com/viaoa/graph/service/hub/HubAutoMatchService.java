@@ -26,8 +26,8 @@ public abstract class HubAutoMatchService {
 	 * @param hubMaster       the hub whose objects must be mirrored
 	 * @param bServerSideOnly whether matching should only be enforced on the server
 	 */
-	public <T extends OAObject, T2 extends OAObject> void setAutoMatch(Hub<T> thisHub, String property, Hub<T2> hubMaster, boolean bServerSideOnly) {
-		if (thisHub == null) return;
+	public <T extends OAObject, T2 extends OAObject> HubAutoMatch<T, T2> setAutoMatch(Hub<T> thisHub, String property, Hub<T2> hubMaster, boolean bServerSideOnly) {
+		if (thisHub == null) return null;
 		final HubData<T> hd = faHub.getHubData(thisHub);
 		if (hd.getAutoMatch() != null) {
 			hd.getAutoMatch().close();
@@ -39,6 +39,7 @@ public abstract class HubAutoMatchService {
 		am.setServerSideOnly(bServerSideOnly);
 		am.init(thisHub, property, hubMaster, null, null);
 		hd.setAutoMatch(am);
+		return am;
 		// }
 	}
 
@@ -54,7 +55,7 @@ public abstract class HubAutoMatchService {
 	 * @param objStop         optional object used to limit matching
 	 * @param stopProperty    the property that defines the stopping condition
 	 */
-	public <T extends OAObject, T2 extends OAObject> void setAutoMatch(Hub<T> thisHub, String property, Hub<T2> hubMaster, boolean bServerSideOnly, OAObject objStop, String stopProperty) {
+	public <T extends OAObject, T2 extends OAObject> HubAutoMatch<T, T2> setAutoMatch(Hub<T> thisHub, String property, Hub<T2> hubMaster, boolean bServerSideOnly, OAObject objStop, String stopProperty) {
 		final HubData<T> hd = faHub.getHubData(thisHub);
 		if (hd.getAutoMatch() != null) {
 			hd.getAutoMatch().close();
@@ -66,6 +67,7 @@ public abstract class HubAutoMatchService {
 		am.setServerSideOnly(bServerSideOnly);
 		am.init(thisHub, property, hubMaster, objStop, stopProperty);
 		hd.setAutoMatch(am);
+		return am;
 		// }
 	}
 

@@ -27,6 +27,6 @@ public interface OAObjectCacheOps {
 	public void refresh(Class<? extends OAObject> clazz);
 	public void removeAllObjects(Class<? extends OAObject> clazz);
 	public <T extends OAObject> T find(T fromObject, Class<T> clazz, OAFilter<T> filter, boolean bSkipNew, boolean bThrowException, int fetchAmount, List<T> alResults);
-	public <T extends OAObject> T fdd(T oaObj, boolean bErrorIfExists, boolean bAddToSelectAll);
+	public <T extends OAObject> T add(T oaObj, boolean bErrorIfExists, boolean bAddToSelectAll);
 	
 }
