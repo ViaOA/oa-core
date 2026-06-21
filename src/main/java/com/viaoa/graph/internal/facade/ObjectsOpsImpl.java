@@ -597,7 +597,7 @@ public class ObjectsOpsImpl implements ObjectsOps {
 			
 			@Override
 			public void fireBeforePropertyChange(OAObject oaObj, String propertyName, Object oldObj, Object newObj, boolean bLocalOnly, boolean bSetChanged) {
-				srvc.getOAObjectEventService().firePropertyChange(oaObj, propertyName, oldObj, newObj, bLocalOnly, bSetChanged);
+				srvc.getOAObjectEventService().fireBeforePropertyChange(oaObj, propertyName, oldObj, newObj, bLocalOnly, bSetChanged);
 			}
 			
 			@Override
@@ -792,7 +792,7 @@ public class ObjectsOpsImpl implements ObjectsOps {
 			
 			@Override
 			public boolean isForSameOAObject(Class<? extends OAObject> clazz, OAObjectKey ok1, OAObjectKey ok2) {
-				return srvc.getOAObjectKeyService().isForSameOAObject(null, ok1, ok2);
+				return srvc.getOAObjectKeyService().isForSameOAObject(clazz, ok1, ok2);
 			}
 			
 			@Override

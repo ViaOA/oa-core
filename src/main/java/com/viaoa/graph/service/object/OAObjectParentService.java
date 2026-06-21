@@ -108,6 +108,7 @@ public abstract class OAObjectParentService {
     private OAObjectSchedulerService srvcOAObjectScheduler;
     private OAObjectSerializeService srvcOAObjectSerialize;
     private OAObjectSiblingService srvcOAObjectSibling;
+    private OAObjectStateService srvcOAObjectState;
     private OAObjectUniqueService srvcOAObjectUnique;
     
 	/**
@@ -573,7 +574,7 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public void callObjectSetNew(OAObject oaObj, boolean b) {
-				OAObjectParentService.this.setNew(oaObj, b);;
+				OAObjectParentService.this.getOAObjectStateService().setNew(oaObj, b);
 			}
 			@Override
 			public <T extends OAObject> void callHubEventFireAfterDeleteEvent(Hub<T> thisHub, T obj) {
@@ -1756,7 +1757,7 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public void callObjectSetNew(OAObject oaObj, boolean b) {
-				OAObjectParentService.this.setNew(oaObj, b);
+				OAObjectParentService.this.getOAObjectStateService().setNew(oaObj, b);
 			}
 			@Override
 			public void callHubSaveAll(Hub<?> hub, int iCascadeRule, OACascade cascade) {
@@ -1976,6 +1977,28 @@ public abstract class OAObjectParentService {
     	return srvcOAObjectSibling;
     }
     
+    public OAObjectStateService getOAObjectStateService() {
+    	if (srvcOAObjectState != null) return srvcOAObjectState;
+    	srvcOAObjectState = new OAObjectStateService() {
+			
+			@Override
+			public void callEventFirePropertyChange(OAObject oaObj, String propertyName, Object oldObj, Object newObj, boolean bLocalOnly, boolean bSetChanged) {
+				OAObjectParentService.this.getOAObjectEventService().firePropertyChange(oaObj, propertyName, oldObj, newObj, bLocalOnly, bSetChanged);
+			}
+			
+			@Override
+			public void callEventFireBeforePropertyChange(OAObject oaObj, String propertyName, Object oldObj, Object newObj, boolean bLocalOnly, boolean bSetChanged) {
+				OAObjectParentService.this.getOAObjectEventService().fireBeforePropertyChange(oaObj, propertyName, oldObj, newObj, bLocalOnly, bSetChanged);
+			}
+			
+			@Override
+			public void callAutoAddSetAutoAdd(OAObject oaObj, boolean bEnabled) {
+				OAObjectParentService.this.getOAObjectAutoAddService().setAutoAdd(oaObj, bEnabled);
+			}
+		};
+    	return srvcOAObjectState;
+    }
+    
     public OAObjectUniqueService getOAObjectUniqueService() {
     	if (srvcOAObjectUnique != null) return srvcOAObjectUnique;
     	srvcOAObjectUnique = new OAObjectUniqueService() {
@@ -2011,44 +2034,6 @@ public abstract class OAObjectParentService {
     	return srvcOAObjectUnique;
     }
     
-	/**
-	 * Updates the {@code newFlag} of the specified {@link OAObject} and fires the
-	 * corresponding before/after property-change events for the reserved property
-	 * name {@code "NEW"}.
-	 *
-	 * <p>This method controls the object's lifecycle state with respect to creation
-	 * and persistence. When the flag transitions from {@code true} to {@code false},
-	 * automatic reverse-link insertion is enabled so that the object can be added to
-	 * owning Hub relationships when applicable.</p>
-	 *
-	 * <h3>Behavior</h3>
-	 * <ul>
-	 *   <li>Ignores the call if the requested value equals the current value.</li>
-	 *   <li>Fires a {@code beforePropertyChange} event with the old and new values.</li>
-	 *   <li>Updates the internal {@code newFlag} field.</li>
-	 *   <li>Fires an {@code afterPropertyChange} event.</li>
-	 *   <li>If switching from new → not-new, invokes {@link #setAutoAdd(OAObject, boolean)}
-	 *       to enable automatic reverse-link population.</li>
-	 * </ul>
-	 *
-	 * @param oaObj the object whose new-state is being modified; may be {@code null}.
-	 * @param b {@code true} to mark the object as newly created,
-	 *          {@code false} to clear the new-state flag.
-	 */
-	public void setNew(final OAObject oaObj, final boolean b) {
-		boolean old = faBridge.getObjectFriendAccess().getNewFlag(oaObj);
-		if (b == old) {
-			return;
-		}
-		getOAObjectEventService().fireBeforePropertyChange(oaObj, WORD_New, old, b, false, false);
-
-		faBridge.getObjectFriendAccess().setNew(oaObj, b);
-		
-		getOAObjectEventService().firePropertyChange(oaObj, WORD_New, old, b, false, false);
-		if (!b) {
-			getOAObjectAutoAddService().setAutoAdd(oaObj, true);
-		}
-	}
     	
 	// flag so that OAObject.finalize should ignore this object.	
 	//qqqqqqqqqqqq make sure other code looks for guid=0, and ignore default cleanup (cached, etc)
