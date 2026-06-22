@@ -40,7 +40,7 @@ public class OAObjectInternalService extends OAObjectParentService implements Ob
     
 	@Override
 	public void callObjectSetNew(OAObject oaObj, boolean bIsNew) {
-	    setNew(oaObj, bIsNew);
+		getOAObjectStateService().setNew(oaObj, bIsNew);
 	}
 
 	@Override

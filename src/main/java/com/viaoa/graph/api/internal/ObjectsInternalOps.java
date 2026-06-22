@@ -174,10 +174,6 @@ public interface ObjectsInternalOps {
 	public boolean callObjectInitializeInitialize(OAObject oaObj);
 	public void callObjectInitializeInitializeAfterLoading(OAObject oaObj);
 	public void callObjectInitializeInitializeAfterLoading(OAObject oaObj, boolean bAssignNewId, boolean bInitializeNulls, boolean bSetChangedToFalse);
-/*qqqqqqq remove	
-	public void callObjectInitializeSetAsNewObject(OAObject oaObj, UUID guid);
-	public void callObjectInitializeSetAsNewObject(OAObject oaObj);
-*/	
 	
 	// Key
 	public OAObjectKey callObjectKeyGetKey(OAObject oaObj);

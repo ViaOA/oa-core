@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.viaoa.annotation.OAMany;
 import com.viaoa.cache.OAObjectCacheListener;
 import com.viaoa.callback.OACallback;
 import com.viaoa.callback.OACopyCallback;
@@ -19,13 +20,17 @@ import com.viaoa.datetime.OADate;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.find.OAFinder;
 import com.viaoa.graph.api.internal.ObjectsOps;
-import com.viaoa.graph.api.internal.objects.OAObjectCSOps;
+import com.viaoa.graph.api.internal.objects.OAObjectAnnotationOps;
+import com.viaoa.graph.api.internal.objects.OAObjectAutoAddOps;
 import com.viaoa.graph.api.internal.objects.OAObjectCacheOps;
 import com.viaoa.graph.api.internal.objects.OAObjectCallbackOps;
+import com.viaoa.graph.api.internal.objects.OAObjectChangeOps;
+import com.viaoa.graph.api.internal.objects.OAObjectCSOps;
 import com.viaoa.graph.api.internal.objects.OAObjectDSOps;
 import com.viaoa.graph.api.internal.objects.OAObjectDeleteOps;
 import com.viaoa.graph.api.internal.objects.OAObjectEnumOps;
 import com.viaoa.graph.api.internal.objects.OAObjectEventOps;
+import com.viaoa.graph.api.internal.objects.OAObjectFindOps;
 import com.viaoa.graph.api.internal.objects.OAObjectGuidOps;
 import com.viaoa.graph.api.internal.objects.OAObjectHubOps;
 import com.viaoa.graph.api.internal.objects.OAObjectInfoOps;
@@ -38,6 +43,7 @@ import com.viaoa.graph.api.internal.objects.OAObjectSaveOps;
 import com.viaoa.graph.api.internal.objects.OAObjectSchedulerOps;
 import com.viaoa.graph.api.internal.objects.OAObjectSerializeOps;
 import com.viaoa.graph.api.internal.objects.OAObjectSiblingOps;
+import com.viaoa.graph.api.internal.objects.OAObjectStateOps;
 import com.viaoa.graph.api.internal.objects.OAObjectUniqueOps;
 import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.hub.Hub;
@@ -54,14 +60,18 @@ import com.viaoa.schedule.OAScheduler;
 public class ObjectsOpsImpl implements ObjectsOps {
 	private final OAObjectInternalService srvc;
 	
+	private OAObjectAnnotationOps opsAnnotation;
+	private OAObjectAutoAddOps opsAutoAdd;
 	private OAObjectCacheOps opsCache;
 	private OAObjectReflectOps opsReflect;
 	private OAObjectCallbackOps opsCallback;
+	private OAObjectChangeOps opsChange;
 	private OAObjectDeleteOps opsDelete;
 	private OAObjectCSOps opsCS;
 	private OAObjectDSOps opsDS;
 	private OAObjectEnumOps opsEnum;
 	private OAObjectEventOps opsEvent;
+	private OAObjectFindOps opsFind;
 	private OAObjectGuidOps opsGuid;
 	private OAObjectHubOps opsHub;
 	private OAObjectInfoOps opsInfo;
@@ -73,12 +83,43 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	private OAObjectSchedulerOps opsScheduler;
 	private OAObjectSerializeOps opsSerialize;
 	private OAObjectSiblingOps opsSibling;
+	private OAObjectStateOps opsState;
 	private OAObjectUniqueOps opsUnique;
 	
 	public ObjectsOpsImpl(OAObjectInternalService srvcObjectInternal) {
 		this.srvc = srvcObjectInternal;
 	}
 
+	@Override
+	public OAObjectAnnotationOps annotation() {
+		if (opsAnnotation != null) return opsAnnotation;
+		opsAnnotation = new OAObjectAnnotationOps() {
+			@Override
+			public Class<? extends OAObject> getHubObjectClass(OAMany annotation, Method method) {
+				return srvc.getOAObjectAnnotationService().getHubObjectClass(annotation, method);
+			}
+		};
+		return opsAnnotation;
+	}
+	
+	
+	@Override
+	public OAObjectAutoAddOps autoAdd() {
+		if (opsAutoAdd != null) return opsAutoAdd;
+		opsAutoAdd = new OAObjectAutoAddOps() {
+			@Override
+			public void setAutoAdd(OAObject oaObj, boolean bAutoAdd) {
+				srvc.getOAObjectAutoAddService().setAutoAdd(oaObj, bAutoAdd);
+			}
+			
+			@Override
+			public boolean getAutoAdd(OAObject oaObj) {
+				return srvc.getOAObjectAutoAddService().getAutoAdd(oaObj);
+			}
+		};
+		return opsAutoAdd;
+	}
+	
 	@Override
 	public OAObjectCacheOps cache() {
 		if (opsCache != null) return opsCache;
@@ -483,6 +524,17 @@ public class ObjectsOpsImpl implements ObjectsOps {
 		return opsCallback;
 	}
 
+	public OAObjectChangeOps change() {
+		if (opsChange != null) return opsChange;
+		opsChange = new OAObjectChangeOps() {
+			@Override
+			public boolean getChanged(OAObject oaObj, int cascadeRule) {
+				return srvc.getOAObjectChangeService().getChanged(oaObj, cascadeRule);
+			}
+		};
+		return opsChange;
+	}
+	
 	@Override
 	public OAObjectDeleteOps delete() {
 		if (opsDelete != null) return opsDelete;
@@ -608,6 +660,19 @@ public class ObjectsOpsImpl implements ObjectsOps {
 		return opsEvent;
 	}
 
+	@Override
+	public OAObjectFindOps find() {
+		if (opsFind != null) return opsFind;
+		opsFind = new OAObjectFindOps() {
+			@Override
+			public OAObject[] find(OAObject base, String propertyPath, Object findValue, boolean bFindAll) {
+				return srvc.getOAObjectFindService().find(base, propertyPath, findValue, bFindAll);
+			}
+		};
+		return opsFind;
+	}
+	
+	
 	@Override
 	public OAObjectGuidOps guid() {
 		if (opsGuid != null) return opsGuid;
@@ -967,6 +1032,18 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	}
 
 	@Override
+	public OAObjectStateOps state() {
+		if (opsState != null) return opsState;
+		opsState = new OAObjectStateOps() {
+			@Override
+			public void callObjectSetNew(OAObject oaObj, boolean bIsNew) {
+				srvc.getOAObjectStateService().setNew(oaObj, bIsNew);
+			}
+		};
+		return opsState;
+	}
+	
+	@Override
 	public OAObjectUniqueOps unique() {
 		if (opsUnique != null) return opsUnique;
 		opsUnique = new OAObjectUniqueOps() {
@@ -978,4 +1055,5 @@ public class ObjectsOpsImpl implements ObjectsOps {
 		};
 		return opsUnique;
 	}
+
 }
