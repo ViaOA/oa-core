@@ -523,7 +523,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
             if (oi != null) return oi;
         }
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objClass);
-        oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(objClass);
+        oi = og.internal().objects().info().getOAObjectInfo(objClass);
         if (objClass != null && hubDatax != null) hubDatax.objectInfo = oi;
         return oi;
     }

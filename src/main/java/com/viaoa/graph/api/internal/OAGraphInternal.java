@@ -19,18 +19,6 @@ CODEX
 
 public interface OAGraphInternal extends OAGraph {
 
-//removing these 2	
-	public ObjectsInternalOps objectsInternal();
-	public HubsInternalOps hubsInternal();
-    
-	
 	public GraphInternalOps internal();
-	
-	
-	public SyncInternalOps syncInternal();
-
-	public ReplicationInternalOps replInternal();
-	
-	public TriggerInternalOps triggerInternal();
 	
 }

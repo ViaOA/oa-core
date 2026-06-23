@@ -157,28 +157,28 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 */
 	public <T extends OAObject> T getObject(Class<T> clazz, String id) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-		OAObjectKey key = og.objectsInternal().callObjectKeyCreateObjectKey(clazz, (Object) id);
+		OAObjectKey key = og.internal().objects().key().createObjectKey(clazz, (Object) id);
 		return getObject(clazz, key);
 	}
 
 	/** Retrieves an object using an int ID value. */
 	public <T extends OAObject> T getObject(Class<T> clazz, int id) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-		OAObjectKey key = og.objectsInternal().callObjectKeyCreateObjectKey(clazz, (Object) id);
+		OAObjectKey key = og.internal().objects().key().createObjectKey(clazz, (Object) id);
 		return getObject(clazz, key);
 	}
 
 	/** Retrieves an object using a long ID value. */
 	public <T extends OAObject> T getObject(Class<T> clazz, long id) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-		OAObjectKey key = og.objectsInternal().callObjectKeyCreateObjectKey(clazz, (Object) id);
+		OAObjectKey key = og.internal().objects().key().createObjectKey(clazz, (Object) id);
 		return getObject(clazz, key);
 	}
 
 	/** Retrieves an object using an arbitrary ID value. */
 	public <T extends OAObject> T getObject(Class<T> clazz, Object id) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-		OAObjectKey key = og.objectsInternal().callObjectKeyCreateObjectKey(clazz, id);
+		OAObjectKey key = og.internal().objects().key().createObjectKey(clazz, id);
 		return getObject(clazz, key);
 	}
 
@@ -203,7 +203,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 			return null;
 		}
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(clazz);
+		OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(clazz);
 		return getObject(oi, clazz, key, false);
 	}
 	

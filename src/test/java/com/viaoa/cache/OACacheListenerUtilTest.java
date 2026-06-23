@@ -4,13 +4,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.lang.reflect.Field;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.test.pos.model.oa.Item;
 import com.test.pos.model.oa.Register;
 import com.viaoa.graph.api.internal.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 
@@ -42,10 +42,13 @@ class OACacheListenerUtilTest {
     @BeforeEach
     void beforeEach() {
         OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
-        OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
-        os.getOAObjectCacheService().removeAllObjects();
     }
-
+    @AfterEach
+    void afterEach() {
+        OAObject.setDebugMode(false);
+        OARuntime.graph(Register.class).close();
+    }
+    
     @Test
     void constructorInitializesListenerAndCloseRemovesIt() throws Exception {
         RecordingUtil util = new RecordingUtil(Item.class, Item.P_Name);

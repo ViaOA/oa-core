@@ -222,7 +222,7 @@ public class HubDetail implements java.io.Serializable {
         if (liMasterToDetail == null) return;
         
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubDetail.getOAObjectInfo().getForClass());
-        final OALinkInfo liRecursive = og.objectsInternal().callObjectInfoGetRecursiveLinkInfo(hubDetail.getOAObjectInfo(), OALinkInfo.ONE);
+        final OALinkInfo liRecursive = og.internal().objects().info().getRecursiveLinkInfo(hubDetail.getOAObjectInfo(), OALinkInfo.ONE);
         if (liRecursive == null) return;
         if (liRecursive == liMasterToDetail) return;
 
@@ -242,7 +242,7 @@ public class HubDetail implements java.io.Serializable {
                 Object parent = null;
                 for (;;) {
             		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj.getClass());
-                    Object objx = og.objectsInternal().callObjectReflectGetProperty((OAObject)obj, liDetailToMaster.getName());
+                    Object objx = og.internal().objects().reflect().getProperty((OAObject)obj, liDetailToMaster.getName());
                     if (objx == null) break;
                     parent = objx;
                     if (!(parent instanceof OAObject)) {

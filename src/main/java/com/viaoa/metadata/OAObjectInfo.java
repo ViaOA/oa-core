@@ -1431,7 +1431,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 */
 	public OALinkInfo getRecursiveLinkInfo(int type) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(thisClass);
-		return og.objectsInternal().callObjectInfoGetRecursiveLinkInfo(this, type);
+		return og.internal().objects().info().getRecursiveLinkInfo(this, type);
 	}
 
 
@@ -1577,7 +1577,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 				revPropPath = li.getReverseName() + revPropPath;
 
 				// todo: reverse path might not work (if it has a private method)
-				oix = og.objectsInternal().callObjectInfoGetOAObjectInfo(li.getToClass());
+				oix = og.internal().objects().info().getOAObjectInfo(li.getToClass());
 			}
 
 			if (pp.getEndLinkInfo() == null) {
@@ -1665,7 +1665,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 				final OATrigger trigger2 = new OATrigger(listenProperty, thisClass, tl, calcProps, trigger.getOnlyUseLoadedData(),
 					trigger.getServerSideOnly(), trigger.getUseBackgroundThread(), true);
 				OAGraphInternal og = (OAGraphInternal) OARuntime.graph(thisClass);
-		        og.triggerInternal().addTrigger(trigger2);
+		        og.internal().triggers().addTrigger(trigger2);
 		        
 		        
 		        OATrigger[] ts = (OATrigger[]) OAArray.add(OATrigger.class, trigger.getDependentTriggers(), trigger2);
@@ -1716,7 +1716,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 			OAObjectInfo oix = this;
 			for (int i = 0; i < pp.getLinkInfos().length; i++) {
 				OALinkInfo li = pp.getLinkInfos()[i];
-				oix = og.objectsInternal().callObjectInfoGetOAObjectInfo(li.getToClass());
+				oix = og.internal().objects().info().getOAObjectInfo(li.getToClass());
 				oix._removeTrigger(trigger);
 			}
 		}
@@ -1726,7 +1726,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 
 		// close any child/calc triggers
 		for (OATrigger t : trigger.getDependentTriggers()) {
-			OAObjectInfo oix = og.objectsInternal().callObjectInfoGetOAObjectInfo(t.getRootClass());
+			OAObjectInfo oix = og.internal().objects().info().getOAObjectInfo(t.getRootClass());
 			oix.removeTrigger(t);
 		}
 	}
@@ -1861,7 +1861,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(fromObject);
 		if (ti.trigger.getServerSideOnly()) {
-			if (og.syncInternal().isClient()) return;
+			if (og.internal().sync().isClient()) return;
 		}
 
 		String s = "";
@@ -1910,7 +1910,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(fromObject);
 
 		if (ti.trigger.getServerSideOnly()) {
-			if (og.syncInternal().isClient()) {
+			if (og.internal().sync().isClient()) {
 				return;
 			}
 		}
@@ -1923,7 +1923,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 			if (ti.bNoReverseFinder) {
 				b = true;
 			} else if (ti.bReverseHasMany) {
-				if (og.syncInternal().isServer()) {
+				if (og.internal().sync().isServer()) {
 					OADataSource ds = OARuntime.datasource().get(thisClass);
 					b = (ds != null && ds.supportsStorage()); // might have to go to ds
 				} else {
@@ -1934,7 +1934,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 
 		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		if ((b || ti.trigger.getUseBackgroundThread()) && !srvcOARemoteThread.isRemoteThread()) {
-			og.triggerInternal().runTrigger(new Runnable() {
+			og.internal().triggers().runTrigger(new Runnable() {
 				@Override
 				public void run() {
 					_runOnChange1(fromObject, prop, ti, hubEvent);
@@ -2011,7 +2011,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 				}
 
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objRoot);
-				UUID g = og.objectsInternal().callObjectKeyGetKey(objRoot).getGuid();
+				UUID g = og.internal().objects().key().getKey(objRoot).getGuid();
 				if (hs.contains(g)) {
 					return;
 				}
@@ -2040,7 +2040,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 			// see if all of the data is already loaded, so that a reverse pp + finder can be used.
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(fromObject);
 			boolean b = false;
-			if (og.syncInternal().isServer()) {
+			if (og.internal().sync().isServer()) {
 				OADataSource ds = OARuntime.datasource().get(thisClass);
 				b = (ds == null || !ds.supportsStorage()); // server must have all data loaded
 			}

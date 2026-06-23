@@ -114,16 +114,16 @@ public class HubRoot {
 
 		Class clazz = hub.getObjectClass();
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(clazz);
+		OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(clazz);
 		OALinkInfo li = oi.getRecursiveLinkInfo(OALinkInfo.MANY);
 		if (li == null) {
 			hubRoot.setSharedHub(hub, true);
 			return;
 		}
 
-		li = og.hubsInternal().callHubDetailGetLinkInfoFromDetailToMaster(hub);
+		li = og.internal().hubs().detail().getLinkInfoFromDetailToMaster(hub);
 		if (li != null) {
-			li = og.objectsInternal().callObjectInfoGetReverseLinkInfo(li);
+			li = og.internal().objects().info().getReverseLinkInfo(li);
 		}
 		if (li == null || !li.getRecursive()) {
 			hubRoot.setSharedHub(hub, false);
@@ -144,7 +144,7 @@ public class HubRoot {
 			return;
 		}
 
-		propertyFromMaster = og.hubsInternal().callHubDetailGetPropertyFromMasterToDetail(hub);
+		propertyFromMaster = og.internal().hubs().detail().getPropertyFromMasterToDetail(hub);
 
 		hubListener = new HubListenerAdapter() {
 			@Override

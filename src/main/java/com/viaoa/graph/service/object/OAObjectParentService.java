@@ -1,21 +1,18 @@
 package com.viaoa.graph.service.object;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
-import com.viaoa.annotation.OAMany;
 import com.viaoa.callback.OACallback;
 import com.viaoa.callback.OAObjectCallback;
 import com.viaoa.cascade.OACascade;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.service.HubInternalService;
 import com.viaoa.graph.service.OASyncService;
 import com.viaoa.graph.service.OATriggerService;
 import com.viaoa.graph.service.hub.HubParentService;
@@ -70,10 +67,10 @@ CODEX
  * qqqqqqqqqqqq Parent that manages all subservices
  * 
  */
-public abstract class OAObjectParentService {
+public class OAObjectParentService {
 	private static final Logger LOG = Logger.getLogger(OAObjectParentService.class.getName());
 
-	private HubInternalService srvcHub;
+	private HubParentService srvcHubParent;
 	private OASyncService srvcSync;
 	private OAThreadLocalService srvcThreadLocal;
 	private OARemoteThreadService srvcRemoteThread;
@@ -127,15 +124,15 @@ public abstract class OAObjectParentService {
 	public static final String WORD_Deleted = "DELETED";
 	
 
-	public void initialize(HubInternalService srvcHub, OASyncService srvcSync, OAThreadLocalService srvcThreadLocal, OARemoteThreadService srvcRemoteThread, OATriggerService srvcTrigger) {
-		if (this.srvcHub != null) throw new IllegalArgumentException("initialize already called");
-    	if (srvcHub == null) throw new IllegalArgumentException("HubService can not be null");
+	public void initialize(HubParentService srvcHubParent, OASyncService srvcSync, OAThreadLocalService srvcThreadLocal, OARemoteThreadService srvcRemoteThread, OATriggerService srvcTrigger) {
+		if (this.srvcHubParent != null) throw new IllegalArgumentException("initialize already called");
+    	if (srvcHubParent == null) throw new IllegalArgumentException("HubParentService can not be null");
     	if (srvcSync == null) throw new IllegalArgumentException("OASyncService can not be null");
     	if (srvcThreadLocal == null) throw new IllegalArgumentException("OAThreadLocalService can not be null");
     	if (srvcRemoteThread == null) throw new IllegalArgumentException("OARemoteThreadService can not be null");
     	if (srvcTrigger == null) throw new IllegalArgumentException("OATriggerService can not be null");
 
-		this.srvcHub = srvcHub;
+		this.srvcHubParent = srvcHubParent;
 		this.srvcSync = srvcSync;
 		this.srvcThreadLocal = srvcThreadLocal;
 		this.srvcRemoteThread = srvcRemoteThread;
@@ -172,8 +169,8 @@ public abstract class OAObjectParentService {
 	    getOAObjectUniqueService();
 	}
 	
-	protected HubInternalService getHubService() {
-		return this.srvcHub;
+	protected HubParentService getHubParentService() {
+		return this.srvcHubParent;
 	}
 
     public OAObjectAnnotationService getOAObjectAnnotationService() {
@@ -264,11 +261,11 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public OALinkInfo callDetailGetLinkInfoFromDetailToMaster(Hub<?> hub) {
-				return OAObjectParentService.this.getHubService().getHubDetailService().getLinkInfoFromDetailToMaster(hub);
+				return OAObjectParentService.this.getHubParentService().getHubDetailService().getLinkInfoFromDetailToMaster(hub);
 			}
 			@Override
 			public boolean callHubSelectRefreshSelect(Hub<?> hub) {
-				return OAObjectParentService.this.getHubService().getHubSelectService().refreshSelect(hub);
+				return OAObjectParentService.this.getHubParentService().getHubSelectService().refreshSelect(hub);
 			}
 			@Override
 			public boolean callSyncIsClient() {
@@ -316,19 +313,19 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public String callHubDetailGetPropertyFromMasterToDetail(Hub<?> hub) {
-				return OAObjectParentService.this.getHubService().getHubDetailService().getPropertyFromMasterToDetail(hub);
+				return OAObjectParentService.this.getHubParentService().getHubDetailService().getPropertyFromMasterToDetail(hub);
 			}
 			@Override
 			public OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub) {
-				return OAObjectParentService.this.getHubService().getHubDetailService().getLinkInfoFromDetailToMaster(hub);
+				return OAObjectParentService.this.getHubParentService().getHubDetailService().getLinkInfoFromDetailToMaster(hub);
 			}
 			@Override
 			public OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub<?> hub) {
-				return OAObjectParentService.this.getHubService().getHubDetailService().getLinkInfoFromMasterHubToDetail(hub);
+				return OAObjectParentService.this.getHubParentService().getHubDetailService().getLinkInfoFromMasterHubToDetail(hub);
 			}
 			@Override
 			public <T extends OAObject> HubListener<T>[] callHubEventGetAllListeners(Hub<T> hub) {
-				return OAObjectParentService.this.getHubService().getHubEventService().getAllListeners(hub);
+				return OAObjectParentService.this.getHubParentService().getHubEventService().getAllListeners(hub);
 			}
 			@Override
 			public boolean callSyncIsClient() {
@@ -356,7 +353,7 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public boolean callHubStatusGetChanged(Hub<?> hub, int type, OACascade cascade) {
-				return OAObjectParentService.this.srvcHub.getHubStatusService().getChanged(hub, type, cascade);
+				return OAObjectParentService.this.srvcHubParent.getHubStatusService().getChanged(hub, type, cascade);
 			}
 			@Override
 			public Object callObjectReflectGetRawReference(OAObject oaObj, String prop) {
@@ -416,7 +413,7 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public <T extends OAObject> void callHubSelectLoadAllData(Hub<T> thisHub, OASelect<T> select) {
-				OAObjectParentService.this.srvcHub.getHubSelectService().loadAllData(thisHub, select);
+				OAObjectParentService.this.srvcHubParent.getHubSelectService().loadAllData(thisHub, select);
 			}
 			@Override
 			public void callSyncClientUpdateObjectsWithoutHubs(OAObject obj) {
@@ -530,7 +527,7 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public <T extends OAObject> void callHubEventFireBeforeDeleteEvent(Hub<T> hub, T obj) {
-				OAObjectParentService.this.getHubService().getHubEventService().fireBeforeDeleteEvent(hub, obj);
+				OAObjectParentService.this.getHubParentService().getHubEventService().fireBeforeDeleteEvent(hub, obj);
 			}
 			@Override
 			public void callLocalThreadSetDeleting(Object obj, boolean b) {
@@ -542,7 +539,7 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public void callHubCSRemoveAllFromHub(Hub<?> thisHub) {
-				OAObjectParentService.this.srvcHub.getHubCSService().removeAllFromHub(thisHub);
+				OAObjectParentService.this.srvcHubParent.getHubCSService().removeAllFromHub(thisHub);
 			}
 			@Override
 			public void callObjectHubDeleteAll(Hub<?> hub, OACascade cascade) {
@@ -550,7 +547,7 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public void callHubDSRemoveMany2ManyLinks(Hub<?> hub) {
-				OAObjectParentService.this.getHubService().getHubDSService().removeMany2ManyLinks(hub);
+				OAObjectParentService.this.getHubParentService().getHubDSService().removeMany2ManyLinks(hub);
 			}
 			@Override
 			public <T extends OAObject> void callCacheCallback(OACallback<T> callback, Class<T> clazz) {
@@ -578,11 +575,11 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public <T extends OAObject> void callHubEventFireAfterDeleteEvent(Hub<T> thisHub, T obj) {
-				OAObjectParentService.this.srvcHub.getHubEventService().fireAfterDeleteEvent(thisHub, obj);
+				OAObjectParentService.this.srvcHubParent.getHubEventService().fireAfterDeleteEvent(thisHub, obj);
 			}
 			
 			public <T extends OAObject> T callHubRemove(Hub<T> thisHub, Object obj, boolean bForce, boolean bSendEvent, boolean bDeleting, boolean bSetAO, boolean bSetPropToMaster, boolean bIsRemovingAll) {
-				return OAObjectParentService.this.srvcHub.getHubAddRemoveService().remove(thisHub, obj, bForce, bSendEvent, bDeleting, bSetAO, bSetPropToMaster, bIsRemovingAll);
+				return OAObjectParentService.this.srvcHubParent.getHubAddRemoveService().remove(thisHub, obj, bForce, bSendEvent, bDeleting, bSetAO, bSetPropToMaster, bIsRemovingAll);
 			}
 			@Override
 			public void callRemoteTheadStartNextThread() {
@@ -594,7 +591,7 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public OAObject callHubMasterGetMasterObject(Hub<?> hub) {
-				return OAObjectParentService.this.getHubService().getHubMasterService().getMasterObject(hub);
+				return OAObjectParentService.this.getHubParentService().getHubMasterService().getMasterObject(hub);
 			}
 			@Override
 			public Object callReflectGetReferenceObject(OAObject oaObj, String linkPropertyName) {
@@ -618,7 +615,7 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public <T extends OAObject> void callHubDataRemoveFromRemovedList(Hub<T> thisHub, T obj) {
-				OAObjectParentService.this.getHubService().getHubDataService().removeFromRemovedList(thisHub, obj);
+				OAObjectParentService.this.getHubParentService().getHubDataService().removeFromRemovedList(thisHub, obj);
 			}
 			@Override
 			public <T extends OAObject> Hub<T> callReflectGetReferenceHub(final OAObject oaObj, final String linkPropertyName, String sortOrder, boolean bSequence, Hub<T> hubMatch) {
@@ -887,7 +884,7 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub<T>> filter) {
-				return OAObjectParentService.this.srvcHub.getHubShareService().getAllSharedHubs(thisHub, filter);
+				return OAObjectParentService.this.srvcHubParent.getHubShareService().getAllSharedHubs(thisHub, filter);
 			}
 			@Override
 			public boolean callHubIsInHub(OAObject oaObj) {
@@ -899,27 +896,27 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public <T extends OAObject> void callHubEventFireBeforePropertyChange(Hub<T> thisHub, T oaObj, String propertyName, Object oldValue, Object newValue) {
-				OAObjectParentService.this.srvcHub.getHubEventService().fireBeforePropertyChange(thisHub, oaObj, propertyName, oldValue, newValue);
+				OAObjectParentService.this.srvcHubParent.getHubEventService().fireBeforePropertyChange(thisHub, oaObj, propertyName, oldValue, newValue);
 			}
 			@Override
 			public <T extends OAObject> void callHubEventFireAfterPropertyChange(Hub<T> thisHub, T oaObj, String propertyName, Object oldValue, Object newValue, OALinkInfo linkInfo) {
-				OAObjectParentService.this.srvcHub.getHubEventService().fireAfterPropertyChange(thisHub, oaObj, propertyName, oldValue, newValue, linkInfo);
+				OAObjectParentService.this.srvcHubParent.getHubEventService().fireAfterPropertyChange(thisHub, oaObj, propertyName, oldValue, newValue, linkInfo);
 			}
 			@Override
 			public <T extends OAObject> void callHubEventFireAfterLoadEvent(Hub<T> thisHub, T oaObj) {
-				OAObjectParentService.this.srvcHub.getHubEventService().fireAfterLoadEvent(thisHub, oaObj);
+				OAObjectParentService.this.srvcHubParent.getHubEventService().fireAfterLoadEvent(thisHub, oaObj);
 			}
 			@Override
 			public <T extends OAObject> Hub<T> callHubDetailGetHubWithMasterHub(Hub<T> thisHub) {
-				return OAObjectParentService.this.srvcHub.getHubDetailService().getHubWithMasterHub(thisHub);
+				return OAObjectParentService.this.srvcHubParent.getHubDetailService().getHubWithMasterHub(thisHub);
 			}
 			@Override
 			public <T extends OAObject> T callHubAddRemoveRemove(Hub<T> thisHub, Object obj, boolean bForce, boolean bSendEvent, boolean bDeleting, boolean bSetAO, boolean bSetPropToMaster, boolean bIsRemovingAll) {
-				return OAObjectParentService.this.srvcHub.getHubAddRemoveService().remove(thisHub, obj, bForce, bSendEvent, bDeleting, bSetAO, bSetPropToMaster, bIsRemovingAll);
+				return OAObjectParentService.this.srvcHubParent.getHubAddRemoveService().remove(thisHub, obj, bForce, bSendEvent, bDeleting, bSetAO, bSetPropToMaster, bIsRemovingAll);
 			}
 			@Override
 			public <T extends OAObject> void callHubAOSetActiveObject(Hub<T> thisHub, T object, boolean adjustMaster, boolean bUpdateLink, boolean bForce) {
-				OAObjectParentService.this.srvcHub.getHubAOService().setActiveObject(thisHub, object, adjustMaster, bUpdateLink, bForce);
+				OAObjectParentService.this.srvcHubParent.getHubAOService().setActiveObject(thisHub, object, adjustMaster, bUpdateLink, bForce);
 			}
 			@Override
 			public boolean callObjectGetAutoAdd(OAObject oaObj) {
@@ -1014,40 +1011,40 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public void callHubSaveSaveAll(Hub<?> thisHub, int iCascadeRule, OACascade cascade) {
-				OAObjectParentService.this.srvcHub.getHubSaveService().saveAll(thisHub, iCascadeRule, cascade);
+				OAObjectParentService.this.srvcHubParent.getHubSaveService().saveAll(thisHub, iCascadeRule, cascade);
 			}
 			@Override
 			public OAObject callHubMasterGetMasterObject(Hub<?> hub) {
-				return OAObjectParentService.this.srvcHub.getHubMasterService().getMasterObject(hub);
+				return OAObjectParentService.this.srvcHubParent.getHubMasterService().getMasterObject(hub);
 			}
 			@Override
 			public boolean callHubStatusGetChanged(Hub<?> thisHub, int iCascadeRule, OACascade cascade) {
-				return OAObjectParentService.this.srvcHub.getHubStatusService().getChanged(thisHub, iCascadeRule, cascade);
+				return OAObjectParentService.this.srvcHubParent.getHubStatusService().getChanged(thisHub, iCascadeRule, cascade);
 			}
 			@Override
 			public void callHubDetailSetMasterObject(Hub<?> thisHub, OAObject masterObject, OALinkInfo liDetailToMaster) {
 				// TODO Auto-generated method stub
-				OAObjectParentService.this.srvcHub.getHubDetailService().setMasterObject(thisHub, masterObject, liDetailToMaster);
+				OAObjectParentService.this.srvcHubParent.getHubDetailService().setMasterObject(thisHub, masterObject, liDetailToMaster);
 			}
 			@Override
 			public String callHubDetailGetPropertyFromMasterToDetail(Hub<?> thisHub) {
-				return OAObjectParentService.this.srvcHub.getHubDetailService().getPropertyFromMasterToDetail(thisHub);
+				return OAObjectParentService.this.srvcHubParent.getHubDetailService().getPropertyFromMasterToDetail(thisHub);
 			}
 			@Override
 			public OAObject callHubDetailGetMasterObject(Hub<?> thisHub) {
-				return OAObjectParentService.this.srvcHub.getHubDetailService().getMasterObject(thisHub);
+				return OAObjectParentService.this.srvcHubParent.getHubDetailService().getMasterObject(thisHub);
 			}
 			@Override
 			public OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub) {
-				return OAObjectParentService.this.srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(hub);
+				return OAObjectParentService.this.srvcHubParent.getHubDetailService().getLinkInfoFromDetailToMaster(hub);
 			}
 			@Override
 			public void callHubDeleteDeleteAll(Hub<?> thisHub, OACascade cascade) {
-				OAObjectParentService.this.srvcHub.getHubDeleteService().deleteAll(thisHub, cascade);
+				OAObjectParentService.this.srvcHubParent.getHubDeleteService().deleteAll(thisHub, cascade);
 			}
 			@Override
 			public boolean callHubDataContainsDirect(Hub<?> hub, Object obj) {
-				return OAObjectParentService.this.srvcHub.getHubDataService().containsDirect(hub, obj);
+				return OAObjectParentService.this.srvcHubParent.getHubDataService().containsDirect(hub, obj);
 			}
 			@Override
 			public void callEventSendHubPropertyChange(OAObject oaObj, String propertyName, Object oldObj, Object newObj, OALinkInfo linkInfo) {
@@ -1558,59 +1555,59 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public void callHubSortSort(Hub<?> thisHub, String propertyPaths, boolean bAscending, Comparator comp, boolean bAlreadySortedAndLocalOnly) {
-				OAObjectParentService.this.srvcHub.getHubSortService().sort(thisHub, propertyPaths, bAscending, comp, bAlreadySortedAndLocalOnly);				
+				OAObjectParentService.this.srvcHubParent.getHubSortService().sort(thisHub, propertyPaths, bAscending, comp, bAlreadySortedAndLocalOnly);				
 			}
 			@Override
 			public boolean callHubSortIsSorted(Hub<?> thisHub) {
-				return OAObjectParentService.this.srvcHub.getHubSortService().isSorted(thisHub);
+				return OAObjectParentService.this.srvcHubParent.getHubSortService().isSorted(thisHub);
 			}
 			@Override
 			public String callHubSortGetSortProperty(Hub<?> thisHub) {
-				return OAObjectParentService.this.srvcHub.getHubSortService().getSortProperty(thisHub);
+				return OAObjectParentService.this.srvcHubParent.getHubSortService().getSortProperty(thisHub);
 			}
 			@Override
 			public HubSortListener callHubSortGetSortListener(Hub<?> thisHub) {
-				return OAObjectParentService.this.srvcHub.getHubSortService().getSortListener(thisHub);
+				return OAObjectParentService.this.srvcHubParent.getHubSortService().getSortListener(thisHub);
 			}
 			@Override
 			public boolean callHubSortGetSortAsc(Hub<?> thisHub) {
-				return OAObjectParentService.this.srvcHub.getHubSortService().getSortAsc(thisHub);
+				return OAObjectParentService.this.srvcHubParent.getHubSortService().getSortAsc(thisHub);
 			}
 			@Override
 			public boolean callHubShareIsUsingSameSharedHub(Hub<?> hub1, Hub<?> hub2) {
-				return OAObjectParentService.this.srvcHub.getHubShareService().isUsingSameSharedHub(hub1, hub2);
+				return OAObjectParentService.this.srvcHubParent.getHubShareService().isUsingSameSharedHub(hub1, hub2);
 			}
 			@Override
 			public boolean callHubShareIsUsingSameSharedAO(Hub<?> hub1, Hub<?> hub2, boolean bIncludeFilteredHubs) {
-				return OAObjectParentService.this.srvcHub.getHubShareService().isUsingSameSharedAO(hub1, hub2, bIncludeFilteredHubs);
+				return OAObjectParentService.this.srvcHubParent.getHubShareService().isUsingSameSharedAO(hub1, hub2, bIncludeFilteredHubs);
 			}
 			@Override
 			public void callHubSelectLoadAllData(Hub<?> thisHub, OASelect select) {
-				OAObjectParentService.this.srvcHub.getHubSelectService().loadAllData(thisHub, select);				
+				OAObjectParentService.this.srvcHubParent.getHubSelectService().loadAllData(thisHub, select);				
 			}
 			@Override
 			public boolean callHubLinkGetLinkedOnPos(Hub<?> thisHub, boolean bIncludeCopiedHubs) {
-				return OAObjectParentService.this.srvcHub.getHubLinkService().getLinkedOnPos(thisHub, bIncludeCopiedHubs);
+				return OAObjectParentService.this.srvcHubParent.getHubLinkService().getLinkedOnPos(thisHub, bIncludeCopiedHubs);
 			}
 			@Override
 			public String callHubLinkGetLinkToProperty(Hub<?> thisHub) {
-				return OAObjectParentService.this.srvcHub.getHubLinkService().getLinkToProperty(thisHub);
+				return OAObjectParentService.this.srvcHubParent.getHubLinkService().getLinkToProperty(thisHub);
 			}
 			@Override
 			public Hub<?> callHubLinkGetLinkToHub(Hub<?> thisHub, boolean bIncludeCopiedHubs) {
-				return OAObjectParentService.this.srvcHub.getHubLinkService().getLinkToHub(thisHub, bIncludeCopiedHubs);
+				return OAObjectParentService.this.srvcHubParent.getHubLinkService().getLinkToHub(thisHub, bIncludeCopiedHubs);
 			}
 			@Override
 			public String callHubLinkGetLinkHubPath(Hub<?> thisHub, boolean bIncludeCopiedHubs) {
-				return OAObjectParentService.this.srvcHub.getHubLinkService().getLinkHubPath(thisHub, bIncludeCopiedHubs);
+				return OAObjectParentService.this.srvcHubParent.getHubLinkService().getLinkHubPath(thisHub, bIncludeCopiedHubs);
 			}
 			@Override
 			public String callHubLinkGetLinkFromProperty(Hub<?> thisHub, boolean bIncludeCopiedHubs) {
-				return OAObjectParentService.this.srvcHub.getHubLinkService().getLinkFromProperty(thisHub, bIncludeCopiedHubs);
+				return OAObjectParentService.this.srvcHubParent.getHubLinkService().getLinkFromProperty(thisHub, bIncludeCopiedHubs);
 			}
 			@Override
 			public OAObject callHubMasterGetMasterObject(Hub<?> hub) {
-				return OAObjectParentService.this.srvcHub.getHubMasterService().getMasterObject(hub);
+				return OAObjectParentService.this.srvcHubParent.getHubMasterService().getMasterObject(hub);
 			}
 			@Override
 			public Hub[] callHubGetHubReferences(OAObject oaObj) {
@@ -1622,27 +1619,27 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public HubAutoSequence callHubGetAutoSequence(Hub<?> thisHub) {
-				return OAObjectParentService.this.srvcHub.getHubSequenceService().getAutoSequence(thisHub);
+				return OAObjectParentService.this.srvcHubParent.getHubSequenceService().getAutoSequence(thisHub);
 			}
 			@Override
 			public HubAutoMatch callHubGetAutoMatch(Hub<?> thisHub) {
-				return OAObjectParentService.this.srvcHub.getHubAutoMatchService().getAutoMatch(thisHub);
+				return OAObjectParentService.this.srvcHubParent.getHubAutoMatchService().getAutoMatch(thisHub);
 			}
 			@Override
 			public String callHubDetailGetPropertyFromMasterToDetail(Hub<?> thisHub) {
-				return OAObjectParentService.this.srvcHub.getHubDetailService().getPropertyFromMasterToDetail(thisHub);
+				return OAObjectParentService.this.srvcHubParent.getHubDetailService().getPropertyFromMasterToDetail(thisHub);
 			}
 			@Override
 			public String callHubDetailGetPropertyFromDetailToMaster(Hub<?> thisHub) {
-				return OAObjectParentService.this.srvcHub.getHubDetailService().getPropertyFromDetailToMaster(thisHub);
+				return OAObjectParentService.this.srvcHubParent.getHubDetailService().getPropertyFromDetailToMaster(thisHub);
 			}
 			@Override
 			public OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub) {
-				return OAObjectParentService.this.srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(hub);
+				return OAObjectParentService.this.srvcHubParent.getHubDetailService().getLinkInfoFromDetailToMaster(hub);
 			}
 			@Override
 			public void callHubDataResizeToFit(Hub<?> thisHub) {
-				OAObjectParentService.this.srvcHub.getHubDataService().resizeToFit(thisHub);				
+				OAObjectParentService.this.srvcHubParent.getHubDataService().resizeToFit(thisHub);				
 			}
 			@Override
 			public UUID callGuidGetGuid(OAObject oaObj) {
@@ -1779,11 +1776,11 @@ public abstract class OAObjectParentService {
 */			
 			@Override
 			public <T extends OAObject> void callHubEventFireBeforeSaveEvent(Hub<T> thisHub, T obj) {
-				OAObjectParentService.this.srvcHub.getHubEventService().fireBeforeSaveEvent(thisHub, obj);
+				OAObjectParentService.this.srvcHubParent.getHubEventService().fireBeforeSaveEvent(thisHub, obj);
 			}
 			@Override
 			public <T extends OAObject> void callHubEventFireAfterSaveEvent(Hub<T> thisHub, T obj) {
-				OAObjectParentService.this.srvcHub.getHubEventService().fireAfterSaveEvent(thisHub, obj);
+				OAObjectParentService.this.srvcHubParent.getHubEventService().fireAfterSaveEvent(thisHub, obj);
 			}
 			@Override
 			public boolean callThreadLocalIsDeleting() {
@@ -1895,15 +1892,15 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public boolean callHubSerializeIsResolved(Hub<?> thisHub) {
-				return OAObjectParentService.this.srvcHub.getHubSerializeService().isResolved(thisHub);
+				return OAObjectParentService.this.srvcHubParent.getHubSerializeService().isResolved(thisHub);
 			}
 			@Override
 			public <T extends OAObject> void callHubSerializeReplaceMasterObject(Hub<T> thisHub, T objFrom, T objTo) {
-				OAObjectParentService.this.srvcHub.getHubSerializeService().replaceMasterObject(thisHub, objFrom, objTo);				
+				OAObjectParentService.this.srvcHubParent.getHubSerializeService().replaceMasterObject(thisHub, objFrom, objTo);				
 			}
 			@Override
 			public HubAutoMatch callHubGetAutoMatch(Hub<?> thisHub) {
-				return OAObjectParentService.this.srvcHub.getHubAutoMatchService().getAutoMatch(thisHub);
+				return OAObjectParentService.this.srvcHubParent.getHubAutoMatchService().getAutoMatch(thisHub);
 			}
 			@Override
 			public boolean callSyncClientIsObjectOnServer(OAObject obj) {
@@ -1959,15 +1956,15 @@ public abstract class OAObjectParentService {
 			}
 			@Override
 			public OALinkInfo callHubDetailGetLinkInfoFromMasterToDetail(Hub<?> thisDetailHub) {
-				return OAObjectParentService.this.srvcHub.getHubDetailService().getLinkInfoFromMasterToDetail(thisDetailHub);
+				return OAObjectParentService.this.srvcHubParent.getHubDetailService().getLinkInfoFromMasterToDetail(thisDetailHub);
 			}
 			@Override
 			public OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub<?> thisDetailHub) {
-				return OAObjectParentService.this.srvcHub.getHubDetailService().getLinkInfoFromMasterHubToDetail(thisDetailHub);
+				return OAObjectParentService.this.srvcHubParent.getHubDetailService().getLinkInfoFromMasterHubToDetail(thisDetailHub);
 			}
 			@Override
 			public OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub) {
-				return OAObjectParentService.this.srvcHub.getHubDetailService().getLinkInfoFromDetailToMaster(hub);
+				return OAObjectParentService.this.srvcHubParent.getHubDetailService().getLinkInfoFromDetailToMaster(hub);
 			}
 			@Override
 			public <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok) {

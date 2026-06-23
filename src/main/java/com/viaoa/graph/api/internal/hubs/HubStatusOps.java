@@ -1,10 +1,9 @@
 package com.viaoa.graph.api.internal.hubs;
 
 import java.util.ArrayList;
-
 import com.viaoa.cascade.OACascade;
-import com.viaoa.graph.service.hub.HubStatusService.HubCurrentStateEnum;
 import com.viaoa.hub.Hub;
+import com.viaoa.hub.Hub.HubCurrentStateEnum;
 import com.viaoa.object.OAObject;
 
 public interface HubStatusOps {

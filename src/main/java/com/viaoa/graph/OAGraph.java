@@ -517,5 +517,8 @@ public interface OAGraph {
      * @return the advanced public service facade for this graph
      */
     GraphServicesOps services();
+    
+    
+    void close();
 }
 

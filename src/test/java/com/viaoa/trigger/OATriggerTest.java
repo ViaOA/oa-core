@@ -19,7 +19,6 @@ import com.test.pos.model.oa.RegisterSession;
 import com.test.pos.model.oa.Store;
 import com.test.pos.model.oa.propertypath.StorePP;
 import com.viaoa.graph.api.internal.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.text.OATextUtil;
@@ -30,7 +29,7 @@ class OATriggerTest {
 
     @BeforeEach
     void beforeEach() {
-        clearCache();
+        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
     }
 
     @AfterEach
@@ -39,9 +38,9 @@ class OATriggerTest {
             OARuntime.graph(trigger.getRootClass()).services().triggers().removeTrigger(trigger);
         }
         registeredTriggers.clear();
-        clearCache();
+        OARuntime.graph(Register.class).close();
     }
-
+    
     @Test
     void constructorWithPropertyPathArrayBindsRootClassListenerPathsAndFlags() {
         OATriggerListener<Store> listener = (objRoot, hubEvent, propertyPathFromRoot) -> {
@@ -246,9 +245,4 @@ class OATriggerTest {
         registeredTriggers.add(trigger);
     }
 
-    private void clearCache() {
-        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
-        OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
-        os.getOAObjectCacheService().removeAllObjects();
-    }
 }

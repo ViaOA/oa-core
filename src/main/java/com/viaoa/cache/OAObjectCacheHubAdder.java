@@ -72,10 +72,10 @@ public class OAObjectCacheHubAdder<T extends OAObject> implements OAObjectCacheL
 
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
                 
-		og.objectsInternal().callObjectCacheAddListener(clazz, this);
+		og.internal().objects().cache().addListener(clazz, this);
         
         // need to get objects that are already loaded 
-		og.objectsInternal().callObjectCacheCallback(clazz, new OACallback() {
+		og.internal().objects().cache().callback(clazz, new OACallback() {
             @Override
             public boolean updateObject(Object obj) {
                 Hub<T> h = wfHub.get();
@@ -105,7 +105,7 @@ public class OAObjectCacheHubAdder<T extends OAObject> implements OAObjectCacheL
     	if (bClosed) return;
     	bClosed = true;
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-		og.objectsInternal().callObjectCacheRemoveListener(clazz, this);
+		og.internal().objects().cache().removeListener(clazz, this);
     }
 
     /**

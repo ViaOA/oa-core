@@ -94,9 +94,9 @@ public class HubLinkEventListener extends HubListenerAdapter implements java.io.
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(fromHub);
 	    
 	    // 20130708
-        OALinkInfo li = og.hubsInternal().callHubDetailGetLinkInfoFromDetailToMaster(linkToHub);
+        OALinkInfo li = og.internal().hubs().detail().getLinkInfoFromDetailToMaster(linkToHub);
         if (li != null && li.getPrivateMethod()) {
-            if (og.objectsInternal().callObjectInfoIsMany2Many(li)) {
+            if (og.internal().objects().info().isMany2Many(li)) {
                 bUpdateWeakHub = true;
             }
         }
@@ -111,7 +111,7 @@ public class HubLinkEventListener extends HubListenerAdapter implements java.io.
 	 */
 	public @Override void afterChangeActiveObject(HubEvent hubEvent) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(fromHub);
-		og.hubsInternal().callHubLinkUpdateLinkedToHub(fromHub, linkToHub, hubEvent.getObject(), null);
+		og.internal().hubs().link().updateLinkedToHub(fromHub, linkToHub, hubEvent.getObject(), null);
 	}
 	
 	/**
@@ -126,7 +126,7 @@ public class HubLinkEventListener extends HubListenerAdapter implements java.io.
 	    	String prop = hubEvent.getPropertyName(); 
             if (prop != null && prop.equalsIgnoreCase(faHub.getHubDataUnique(fromHub).getLinkToPropertyName())) {
         		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(fromHub);
-            	og.hubsInternal().callHubLinkUpdateLinkedToHub(fromHub, linkToHub, hubEvent.getObject(), prop);
+            	og.internal().hubs().link().updateLinkedToHub(fromHub, linkToHub, hubEvent.getObject(), prop);
             }
 	    }
 	}
@@ -146,13 +146,13 @@ public class HubLinkEventListener extends HubListenerAdapter implements java.io.
     	    for (Object objx : linkToHub) {
     	        OAObject oaObj = (OAObject) objx;
         		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
-    	        if (!og.objectsInternal().callObjectHubAddHub(oaObj, linkToHub, true)) {
+    	        if (!og.internal().objects().hub().addHub(oaObj, linkToHub, true)) {
     	            break;
     	        }
             }
 	    }
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(fromHub);
-        og.hubsInternal().callHubLinkUpdateLinkedToHub(fromHub, linkToHub, linkToHub.getAO(), null);
+        og.internal().hubs().link().updateLinkedToHub(fromHub, linkToHub, linkToHub.getAO(), null);
 	}
 }
 

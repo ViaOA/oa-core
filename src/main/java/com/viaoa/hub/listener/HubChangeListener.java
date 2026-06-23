@@ -27,8 +27,8 @@ import com.viaoa.compare.match.OAMatchNull;
 import com.viaoa.converter.OAConv;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.graph.api.internal.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.graph.service.object.OAObjectCallbackService;
+import com.viaoa.graph.service.object.OAObjectParentService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListener;
@@ -524,7 +524,7 @@ public abstract class HubChangeListener {
 		OAFilter filter = new OAFilter() {
 			@Override
 			public boolean isUsed(Object obj) {
-				OAObjectCallback eq = og.objectsInternal().callObjectCallbackGetAllowAddObjectCallback(hub, null, OAObjectCallback.CHECK_ALL);
+				OAObjectCallback eq = og.internal().objects().callbacks().getAllowAddObjectCallback(hub, null, OAObjectCallback.CHECK_ALL);
 				boolean b = eq.getAllowed();
 				if (!b) {
 					failureReason = eq.getDisplayResponse();
@@ -534,13 +534,13 @@ public abstract class HubChangeListener {
 		};
 		HubProp hp = add(hub, null, false, null, filter, false, "ObjectCallback.AllowAdd");
 
-		og.objectsInternal().callObjectCallbackAddObjectCallbackChangeListeners(hub, hub.getObjectClass(), null, null, this, true);
+		og.internal().objects().callbacks().addObjectCallbackChangeListeners(hub, hub.getObjectClass(), null, null, this, true);
 
 		Hub hx = hub.getMasterHub();
 		if (hx != null) {
 			add(hx, Type.AoNotNull);
-			String propx = og.hubsInternal().callHubDetailGetPropertyFromMasterToDetail(hub);
-			og.objectsInternal().callObjectCallbackAddObjectCallbackChangeListeners(hx, hx.getObjectClass(), propx, null, this, true);
+			String propx = og.internal().hubs().detail().getPropertyFromMasterToDetail(hub);
+			og.internal().objects().callbacks().addObjectCallbackChangeListeners(hx, hx.getObjectClass(), propx, null, this, true);
 		}
 		return hp;
 	}
@@ -562,7 +562,7 @@ public abstract class HubChangeListener {
 		OAFilter filter = new OAFilter() {
 			@Override
 			public boolean isUsed(Object obj) {
-				OAObjectCallback eq = og.objectsInternal().callObjectCallbackGetAllowNewObjectCallback(hub);
+				OAObjectCallback eq = og.internal().objects().callbacks().getAllowNewObjectCallback(hub);
 				boolean b = eq.getAllowed();
 				if (!b) {
 					failureReason = eq.getDisplayResponse();
@@ -574,13 +574,13 @@ public abstract class HubChangeListener {
 
 		Hub<OAObject> hubX = (Hub) hub;
 		Class classX = hubX.getObjectClass();
-		og.objectsInternal().callObjectCallbackAddObjectCallbackChangeListeners(hubX, classX, null, null, this, true);
+		og.internal().objects().callbacks().addObjectCallbackChangeListeners(hubX, classX, null, null, this, true);
 
 		Hub hx = hub.getMasterHub();
 		if (hx != null) {
 			add(hx, Type.AoNotNull);
-			String propx = og.hubsInternal().callHubDetailGetPropertyFromMasterToDetail(hub);
-			og.objectsInternal().callObjectCallbackAddObjectCallbackChangeListeners(hx, hx.getObjectClass(), propx, null, this, true);
+			String propx = og.internal().hubs().detail().getPropertyFromMasterToDetail(hub);
+			og.internal().objects().callbacks().addObjectCallbackChangeListeners(hx, hx.getObjectClass(), propx, null, this, true);
 		}
 		return hp;
 	}
@@ -609,7 +609,7 @@ public abstract class HubChangeListener {
 
 				Hub<OAObject> hubX = (Hub) hub;
 				
-				OAObjectCallback eq = og.objectsInternal().callObjectCallbackGetAllowDeleteObjectCallback(hubX, (OAObject) obj);
+				OAObjectCallback eq = og.internal().objects().callbacks().getAllowDeleteObjectCallback(hubX, (OAObject) obj);
 				boolean b = eq.getAllowed();
 				if (!b) {
 					failureReason = eq.getDisplayResponse();
@@ -625,15 +625,15 @@ public abstract class HubChangeListener {
 		Hub<OAObject> hubX = (Hub) hub;
 		Class classX = hubX.getObjectClass();
 		
-		og.objectsInternal().callObjectCallbackAddObjectCallbackChangeListeners(hubX, classX, null, null, this, true);
+		og.internal().objects().callbacks().addObjectCallbackChangeListeners(hubX, classX, null, null, this, true);
 
 		Hub<?> hx = hub.getMasterHub();
 		if (hx != null) {
 			add(hx, Type.AoNotNull);
-			String propx = og.hubsInternal().callHubDetailGetPropertyFromMasterToDetail(hub);
+			String propx = og.internal().hubs().detail().getPropertyFromMasterToDetail(hub);
 			hubX = (Hub) hx;
 			classX = hubX.getObjectClass();
-			og.objectsInternal().callObjectCallbackAddObjectCallbackChangeListeners(hubX, classX, propx, null, this, true);
+			og.internal().objects().callbacks().addObjectCallbackChangeListeners(hubX, classX, propx, null, this, true);
 		}
 
 		return hp;
@@ -673,8 +673,8 @@ public abstract class HubChangeListener {
 		if (hx != null) {
 			add(hx, Type.AoNotNull);
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-			String propx = og.hubsInternal().callHubDetailGetPropertyFromMasterToDetail(hub);
-			og.objectsInternal().callObjectCallbackAddObjectCallbackChangeListeners(hx, hx.getObjectClass(), propx, null, this, true);
+			String propx = og.internal().hubs().detail().getPropertyFromMasterToDetail(hub);
+			og.internal().objects().callbacks().addObjectCallbackChangeListeners(hx, hx.getObjectClass(), propx, null, this, true);
 		}
 		return hp;
 	}
@@ -691,7 +691,7 @@ public abstract class HubChangeListener {
 			return null;
 		}
 		addAoNotNull(hub);
-		HubProp hp = add(hub, OAObjectInternalService.WORD_Changed, true);
+		HubProp hp = add(hub, OAObjectParentService.WORD_Changed, true);
 		return hp;
 	}
 
@@ -713,7 +713,7 @@ public abstract class HubChangeListener {
 			@Override
 			public boolean isUsed(Object obj) {
 				if (!(obj instanceof OAObject)) return false;
-				OAObjectCallback eq = og.objectsInternal().callObjectCallbackGetAllowCopyObjectCallback((OAObject) obj);
+				OAObjectCallback eq = og.internal().objects().callbacks().getAllowCopyObjectCallback((OAObject) obj);
 				boolean b = eq.getAllowed();
 				if (!b) {
 					failureReason = eq.getDisplayResponse();
@@ -741,7 +741,7 @@ public abstract class HubChangeListener {
 		OAFilter filter = new OAFilter() {
 			@Override
 			public boolean isUsed(Object obj) {
-				OAObjectCallback eq = og.objectsInternal().callObjectCallbackGetAllowEnabledObjectCallback(hub);
+				OAObjectCallback eq = og.internal().objects().callbacks().getAllowEnabledObjectCallback(hub);
 				boolean b = eq.getAllowed();
 				if (!b) {
 					failureReason = eq.getDisplayResponse();
@@ -777,14 +777,14 @@ public abstract class HubChangeListener {
 	 */
 	public HubProp addObjectCallbackEnabled(Hub hub, String prop, boolean bAoOnly) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-		og.objectsInternal().callObjectCallbackAddObjectCallbackChangeListeners(hub, hub.getObjectClass(), prop, null, this, true);
+		og.internal().objects().callbacks().addObjectCallbackChangeListeners(hub, hub.getObjectClass(), prop, null, this, true);
 		// include master
 		Hub hx = hub.getMasterHub();
 		if (hx != null) {
-			OALinkInfo li = og.hubsInternal().callHubDetailGetLinkInfoFromMasterObjectToDetail(hub);
+			OALinkInfo li = og.internal().hubs().detail().getLinkInfoFromMasterObjectToDetail(hub);
 			if (li != null && li.getOwner()) {
-				String propx = og.hubsInternal().callHubDetailGetPropertyFromMasterToDetail(hub);
-				og.objectsInternal().callObjectCallbackAddObjectCallbackChangeListeners(hx, hx.getObjectClass(), propx, null, this, true);
+				String propx = og.internal().hubs().detail().getPropertyFromMasterToDetail(hub);
+				og.internal().objects().callbacks().addObjectCallbackChangeListeners(hx, hx.getObjectClass(), propx, null, this, true);
 			}
 		}
 
@@ -806,7 +806,7 @@ public abstract class HubChangeListener {
 	public HubProp addObjectCallbackEnabled(Hub hub, Class cz, String prop, String ppPrefix) {
 		// ?? not used
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-		og.objectsInternal().callObjectCallbackAddObjectCallbackChangeListeners(hub, cz, prop, ppPrefix, this, true);
+		og.internal().objects().callbacks().addObjectCallbackChangeListeners(hub, cz, prop, ppPrefix, this, true);
 		return add(hub, prop, true, Type.ObjectCallbackEnabled);
 	}
 
@@ -820,7 +820,7 @@ public abstract class HubChangeListener {
 	 */
 	public HubProp addObjectCallbackVisible(Hub hub, String prop) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-		og.objectsInternal().callObjectCallbackAddObjectCallbackChangeListeners(hub, hub.getObjectClass(), prop, null, this, false);
+		og.internal().objects().callbacks().addObjectCallbackChangeListeners(hub, hub.getObjectClass(), prop, null, this, false);
 		return add(hub, prop, true, Type.ObjectCallbackVisible);
 	}
 
@@ -836,15 +836,15 @@ public abstract class HubChangeListener {
 	 */
 	public HubProp addObjectCallbackVisible(Hub hub, Class cz, String prop, String ppPrefix) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-		og.objectsInternal().callObjectCallbackAddObjectCallbackChangeListeners(hub, cz, prop, ppPrefix, this, false);
+		og.internal().objects().callbacks().addObjectCallbackChangeListeners(hub, cz, prop, ppPrefix, this, false);
 
 		// include master
 		Hub hx = hub.getMasterHub();
 		if (hx != null) {
-			OALinkInfo li = og.hubsInternal().callHubDetailGetLinkInfoFromMasterObjectToDetail(hub);
+			OALinkInfo li = og.internal().hubs().detail().getLinkInfoFromMasterObjectToDetail(hub);
 			if (li != null && li.getOwner()) {
-				String propx = og.hubsInternal().callHubDetailGetPropertyFromMasterToDetail(hub);
-				og.objectsInternal().callObjectCallbackAddObjectCallbackChangeListeners(hx, hx.getObjectClass(), propx, null, this, false);
+				String propx = og.internal().hubs().detail().getPropertyFromMasterToDetail(hub);
+				og.internal().objects().callbacks().addObjectCallbackChangeListeners(hx, hx.getObjectClass(), propx, null, this, false);
 			}
 		}
 
@@ -1055,7 +1055,7 @@ public abstract class HubChangeListener {
 			}
 			if (hp.hub != hub) {
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-				if (!og.hubsInternal().callHubShareIsUsingSameSharedHub(hp.hub, hub)) {
+				if (!og.internal().hubs().share().isUsingSameSharedHub(hp.hub, hub)) {
 					continue;
 				}
 			}
@@ -1572,7 +1572,7 @@ public abstract class HubChangeListener {
 					Hub<OAObject> hubx = (Hub) hub;
 				    OAObject valuex = (OAObject) value;
 					
-					OAObjectCallback eq = og.objectsInternal().callObjectCallbackGetAllowEnabledObjectCallback(	OAObjectCallback.CHECK_ALL, hubx, valuex, propertyPath);
+					OAObjectCallback eq = og.internal().objects().callbacks().getAllowEnabledObjectCallback(	OAObjectCallback.CHECK_ALL, hubx, valuex, propertyPath);
 					b = eq.getAllowed();
 					if (!b) {
 						failureReason = eq.getDisplayResponse();
@@ -1620,7 +1620,7 @@ public abstract class HubChangeListener {
 				Hub<OAObject> hubx = (Hub) hub;
 			    OAObject valuex = (OAObject) value;
 
-				OAObjectCallback eq = og.objectsInternal().callObjectCallbackGetAllowVisibleObjectCallback(hubx, valuex, propertyPath);
+				OAObjectCallback eq = og.internal().objects().callbacks().getAllowVisibleObjectCallback(hubx, valuex, propertyPath);
 				boolean b = eq.getAllowed();
 				if (!b) {
 					failureReason = eq.getDisplayResponse();

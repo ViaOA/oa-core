@@ -35,5 +35,6 @@ public interface HubAutoMatchOps {
 
     public <T extends OAObject, T2 extends OAObject> HubAutoMatch<T,T2> setAutoMatch(Hub<T> hub, String property, Hub<T2> hubMaster, OAObject objStop, String stopProperty);
     
+    public <T extends OAObject, T2 extends OAObject> HubAutoMatch<T,T2> setAutoMatch(Hub<T> hub, String property, Hub<T2> hubMaster, boolean bServerSideOnly, OAObject objStop, String stopProperty);
     
 }

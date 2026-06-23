@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -20,7 +21,6 @@ import com.test.pos.model.oa.Store;
 import com.test.pos.model.oa.propertypath.InvoicePP;
 import com.test.pos.model.oa.propertypath.StorePP;
 import com.viaoa.graph.api.internal.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.hub.Hub;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -50,9 +50,11 @@ class OAPathTest {
 
     @BeforeEach
     void beforeEach() {
-    	OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
-    	OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
-    	os.getOAObjectCacheService().removeAllObjects();
+        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
+    }
+    @AfterEach
+    void afterEach() {
+        OARuntime.graph(Register.class).close();
     }
 
     @Test

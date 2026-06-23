@@ -11,7 +11,6 @@ import org.junit.jupiter.api.*;
 
 import com.test.pos.model.oa.Register;
 import com.viaoa.graph.api.internal.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.model.ClientInfo;
@@ -20,12 +19,11 @@ class RemoteSessionImplTest {
 
     @BeforeEach
     void beforeEach() {
-        clearCache();
+        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
     }
-
     @AfterEach
     void afterEach() {
-        clearCache();
+        OARuntime.graph(Register.class).close();
     }
 
     @Test
@@ -161,12 +159,6 @@ class RemoteSessionImplTest {
         assertEquals("msg", session.lastExceptionMessage.get());
         assertSame(ex, session.lastException.get());
         assertSame(ci, session.lastClientInfo.get());
-    }
-
-    private void clearCache() {
-        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
-        OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
-        os.getOAObjectCacheService().removeAllObjects();
     }
 
     private static class TestRemoteSession extends RemoteSessionImpl {

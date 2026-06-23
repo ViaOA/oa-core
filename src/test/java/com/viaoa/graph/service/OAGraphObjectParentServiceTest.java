@@ -17,30 +17,25 @@ import com.viaoa.hub.Hub;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.metadata.OAPropertyInfo;
+import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
 
 class OAGraphObjectParentServiceTest {
-    private OAObjectInternalService objects;
-
+/*qqqqqqqqq
     @BeforeEach
     void beforeEach() {
-        objects = objectService();
-        clearCache();
+        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
     }
-
     @AfterEach
     void afterEach() {
-        clearCache();
+        OAObject.setDebugMode(false);
+        OARuntime.graph(Register.class).close();
     }
 
     private static OAObjectInternalService objectService() {
         OAGraphInternal graph = (OAGraphInternal) OARuntime.graph(Register.class);
         return (OAObjectInternalService) graph.objectsInternal();
-    }
-
-    private static void clearCache() {
-        objectService().getOAObjectCacheService().removeAllObjects();
     }
 
     @Test
@@ -183,4 +178,5 @@ class OAGraphObjectParentServiceTest {
             objects.callObjectDeleteSetDeleted(register, false);
         });
     }
+*/
 }

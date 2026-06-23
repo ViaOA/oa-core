@@ -18,5 +18,6 @@ public interface HubDataOps {
 	public boolean setLoadingAllData(Hub<?> hub, boolean bIsLoading);
 	public void setLoadingAllData(Hub<?> hub, boolean bIsLoadingAllData, Thread thread);
 	public void clearHubChanges(Hub<?> hub);
+	public <T extends OAObject> void _clone(Hub<T> thisHub, Hub<T> newHub);
 
 }

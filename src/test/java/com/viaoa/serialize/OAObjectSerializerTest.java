@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -18,7 +19,6 @@ import com.test.pos.model.oa.Product;
 import com.test.pos.model.oa.Register;
 import com.viaoa.callback.OAObjectSerializerCallback;
 import com.viaoa.graph.api.internal.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.hub.Hub;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;
@@ -30,8 +30,10 @@ class OAObjectSerializerTest {
     @BeforeEach
     void beforeEach() {
         OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
-        OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
-        os.getOAObjectCacheService().removeAllObjects();
+    }
+    @AfterEach
+    void afterEach() {
+        OARuntime.graph(Register.class).close();
     }
 
     @Test

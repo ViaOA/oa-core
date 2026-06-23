@@ -56,6 +56,7 @@ import com.viaoa.cascade.OACascade;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.hub.auto.HubAutoMatch;
 import com.viaoa.hub.filter.HubFilter;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OALinkInfo;
@@ -219,7 +220,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		this(masterHub == null ? (Class) null : masterHub.getObjectClass(), 5);
 		if (masterHub != null) {
 			OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-			og.hubsInternal().callHubShareSetSharedHub(this, masterHub, false);
+			og.internal().hubs().share().setSharedHub(this, masterHub, false);
 		}
 	}
 
@@ -237,15 +238,15 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		this(clazz, 5);
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		if (linkInfo == null) {
-			og.hubsInternal().callHubDetailSetMasterObject(this, masterObject);
+			og.internal().hubs().detail().setMasterObject(this, masterObject);
 		} else {
-			og.hubsInternal().callHubDetailSetMasterObject(this, masterObject, linkInfo);
+			og.internal().hubs().detail().setMasterObject(this, masterObject, linkInfo);
 
 			if (bCreateSelect) {
 				// create select, but dont call select.select(), since it could be
 				// coming from server. See: OAObjectReflectDelegate.getReferenceHub(..)
 				
-				OASelect sel = og.hubsInternal().callHubSelectGetSelect( (Hub<? extends OAObject>) this, true);
+				OASelect sel = og.internal().hubs().select().getSelect( (Hub<? extends OAObject>) this, true);
 				if (masterObject != null) {
 					sel.setWhereObject(masterObject);
 					sel.setPropertyFromWhereObject(linkInfo.getReverseName());
@@ -273,7 +274,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void ensureCapacity(int size) {
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubDataEnsureCapacity(this, size);
+		og.internal().hubs().data().ensureCapacity(this, size);
 	}
 
 	/**
@@ -282,7 +283,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void resizeToFit() {
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubDataResizeToFit(this);
+		og.internal().hubs().data().resizeToFit(this);
 	}
 
 	/**
@@ -294,7 +295,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSerializeWriteObject(this, stream);
+		og.internal().hubs().serialize()._writeObject(this, stream);
 	}
 
 	/**
@@ -305,7 +306,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	protected Object readResolve() throws ObjectStreamException {
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubSerializeReadResolve(this);
+		return og.internal().hubs().serialize()._readResolve(this);
 	}
 
 	/**
@@ -316,7 +317,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setProperty(String name, Object obj) {
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubPropertySetProperty(this, name, obj);
+		og.internal().hubs().property().setProperty(this, name, obj);
 	}
 
 	/**
@@ -327,7 +328,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public Object getProperty(String name) {
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubPropertyGetProperty(this, name);
+		return og.internal().hubs().property().getProperty(this, name);
 	}
 
 	/**
@@ -337,7 +338,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void removeProperty(String name) {
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubPropertyRemoveProperty(this, name);
+		og.internal().hubs().property().removeProperty(this, name);
 	}
 
 	/**
@@ -414,7 +415,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 			
-			HubDataMaster dm = og.hubsInternal().callHubDetailGetDataMaster(this);
+			HubDataMaster dm = og.internal().hubs().detail().getDataMaster(this);
 			if (dm.getMasterHub() != null) {
 				if (cnt > 5) {
 					if (alHub == null) {
@@ -461,7 +462,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		}
 		OACascade cascade = new OACascade();
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubStatusGetChanged(this, cascadeRule, cascade);
+		return og.internal().hubs().status().getChanged(this, cascadeRule, cascade);
 	}
 
 	/**
@@ -473,7 +474,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setChanged(boolean b) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubStatusSetChanged(this, b);
+		og.internal().hubs().status().setChanged(this, b);
 	}
 
 	/**
@@ -484,8 +485,8 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void copyInto(TYPE[] anArray) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSelectLoadAllData(this);
-		og.hubsInternal().callHubDataCopyInto(this, anArray);
+		og.internal().hubs().select().loadAllData(this);
+		og.internal().hubs().data().copyInto(this, anArray);
 	}
 
 	/**
@@ -496,8 +497,8 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public TYPE[] toArray() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSelectLoadAllData(this);
-		return (TYPE[]) og.hubsInternal().callHubDataToArray(this);
+		og.internal().hubs().select().loadAllData(this);
+		return (TYPE[]) og.internal().hubs().data().toArray(this);
 	}
 
 	/**
@@ -511,7 +512,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	@Override
 	public <TYPE> TYPE[] toArray(TYPE[] anArray) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSelectLoadAllData(this);
+		og.internal().hubs().select().loadAllData(this);
 		int x1 = anArray.length;
 		int x2 = getSize();
 		if (x1 != x2) {
@@ -535,7 +536,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
     public List<TYPE> toList() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-        og.hubsInternal().callHubSelectLoadAllData(this);
+        og.internal().hubs().select().loadAllData(this);
         List<TYPE> al = new ArrayList<>();
         for (TYPE obj : this) {
             al.add(obj);
@@ -592,9 +593,9 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		if (hx != null) {
-			og.hubsInternal().callHubShareRemoveSharedHub(hx, this);
+			og.internal().hubs().share().removeSharedHub(hx, this);
 		} else {
-			og.hubsInternal().callHubSelectCancelSelect(this, true);
+			og.internal().hubs().select().cancelSelect(this, true);
 			Vector vec = data.vector;
 			if (vec != null) {
 				try {
@@ -603,7 +604,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 						Object obj = vec.get(i);
 						if (obj instanceof OAObject) {
 							OAGraphInternal ogi = (OAGraphInternal) OARuntime.graph(this);
-							ogi.objectsInternal().callObjectHubRemoveHub((OAObject) obj, (Hub<OAObject>) this, true);
+							ogi.internal().objects().hub().removeHub((OAObject) obj, (Hub<OAObject>) this, true);
 						}
 					}
 				} catch (Exception e) {
@@ -622,7 +623,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public boolean isMoreData() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubSelectIsMoreData(this);
+		return og.internal().hubs().select().isMoreData(this);
 	}
 
 	/**
@@ -630,7 +631,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void loadAllData() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSelectLoadAllData(this);
+		og.internal().hubs().select().loadAllData(this);
 	}
 
 	/**
@@ -641,7 +642,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public int getCurrentSize() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubDataGetCurrentSize(this);
+		return og.internal().hubs().data().getCurrentSize(this);
 	}
 
 	/**
@@ -652,7 +653,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public int getSize() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubSizeGetSize(this);
+		return og.internal().hubs().size().getSize(this);
 	}
 
 	/**
@@ -672,7 +673,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public int getLoadedSize() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubSizeGetLoadedSize(this);
+		return og.internal().hubs().size().getLoadedSize(this);
 	}
 
 	/**
@@ -684,7 +685,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		boolean b = srvcOAThreadLocal.setAdmin(true);
 		try {
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-			og.hubsInternal().callHubSaveSaveAll(this, OAObject.CASCADE_LINK_RULES);
+			og.internal().hubs().save().saveAll(this, OAObject.CASCADE_LINK_RULES);
 		} finally {
 			if (!b) srvcOAThreadLocal.setAdmin(b);
 		}
@@ -692,7 +693,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 
 	public void saveAll(int iCascadeRule) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSaveSaveAll(this, iCascadeRule);
+		og.internal().hubs().save().saveAll(this, iCascadeRule);
 	}
 
 	/**
@@ -701,7 +702,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void deleteAll() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubDeleteDeleteAll(this);
+		og.internal().hubs().delete().deleteAll(this);
 	}
 
 	/**
@@ -711,7 +712,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public boolean isDeletingAll() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubDeleteIsDeletingAll(this);
+		return og.internal().hubs().delete().isDeletingAll(this);
 	}
 
 	/**
@@ -725,9 +726,9 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	public Object clone() throws CloneNotSupportedException {
 		super.clone();
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSelectLoadAllData(this);
+		og.internal().hubs().select().loadAllData(this);
 		Hub h = new Hub(this.getObjectClass());
-		og.hubsInternal().callHubDataClone(this, h);
+		og.internal().hubs().data()._clone(this, h);
 		return h;
 	}
 
@@ -748,7 +749,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public TYPE getObject(Object key) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return (TYPE) og.hubsInternal().callHubDataGetObject(this, key);
+		return (TYPE) og.internal().hubs().data().getObject(this, key);
 	}
 
 	/**
@@ -760,7 +761,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public TYPE getObjectAt(int pos) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return (TYPE) og.hubsInternal().callHubDataGetObjectAt(this, pos);
+		return (TYPE) og.internal().hubs().data().getObjectAt(this, pos);
 	}
 
 	/**
@@ -771,7 +772,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public TYPE getAt(int pos) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return (TYPE) og.hubsInternal().callHubDataGetObjectAt(this, pos);
+		return (TYPE) og.internal().hubs().data().getObjectAt(this, pos);
 	}
 
 	/**
@@ -785,7 +786,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		if (pos < 0) {
 			return null;
 		}
-		return (TYPE) og.hubsInternal().callHubDataGetObjectAt(this, pos);
+		return (TYPE) og.internal().hubs().data().getObjectAt(this, pos);
 	}
 
 	/**
@@ -797,7 +798,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	@Override
 	public boolean contains(Object obj) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubDataContains(this, obj);
+		return og.internal().hubs().data().contains(this, obj);
 	}
 
 	/**
@@ -810,7 +811,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	@Override
 	public int indexOf(Object obj) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubDataGetPos(this, obj, false, false);
+		return og.internal().hubs().data().getPos(this, obj, false, false);
 	}
 
 	/**
@@ -821,7 +822,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public TYPE elementAt(int pos) { // mimic Vector
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return (TYPE) og.hubsInternal().callHubDataGetObjectAt(this, pos);
+		return (TYPE) og.internal().hubs().data().getObjectAt(this, pos);
 	}
 
 	/**
@@ -851,12 +852,12 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public TYPE setActiveObject(int pos) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return (TYPE) og.hubsInternal().callHubAOSetActiveObject(this, pos);
+		return (TYPE) og.internal().hubs().ao().setActiveObject(this, pos);
 	}
 
 	public TYPE setActiveObject(Object obj) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubAOSetActiveObject(this, obj);
+		return og.internal().hubs().ao().setActiveObject(this, obj);
 	}
 
 	/**
@@ -867,7 +868,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setActiveObject(TYPE object) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubAOSetActiveObject(this, object);
+		og.internal().hubs().ao().setActiveObject(this, object);
 	}
 	
 	/**
@@ -878,12 +879,12 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public Object setAO(int pos) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubAOSetActiveObject(this, pos);
+		return og.internal().hubs().ao().setActiveObject(this, pos);
 	}
 
 	public TYPE setAO(Object obj) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubAOSetActiveObject(this, obj);
+		return og.internal().hubs().ao().setActiveObject(this, obj);
 	}
 	
 	
@@ -894,7 +895,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setAO(TYPE object) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubAOSetActiveObject(this, object);
+		og.internal().hubs().ao().setActiveObject(this, object);
 	}
 
 	/**
@@ -902,7 +903,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void resetAO() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubAOSetActiveObjectForce(this, getAO());
+		og.internal().hubs().ao().setActiveObjectForce(this, getAO());
 	}
 
 	/**
@@ -913,7 +914,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public Hub getRootHub() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubRootGetRootHub(this);
+		return og.internal().hubs().root().getRootHub(this);
 	}
 
 	/**
@@ -921,7 +922,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setRootHub() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubRootSetRootHub(this, true);
+		og.internal().hubs().root().setRootHub(this, true);
 	}
 
 	/**
@@ -969,7 +970,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public boolean isOwned() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubDetailIsOwned(this);
+		return og.internal().hubs().detail().isOwned(this);
 	}
 
 	/**
@@ -980,7 +981,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setUniqueProperty(String propertyName) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubPropertySetUniqueProperty(this, propertyName);
+		og.internal().hubs().property().setUniqueProperty(this, propertyName);
 	}
 
 	/**
@@ -1035,8 +1036,8 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	public int getPos(Object object) {
 		// 20150203 changed to not update master/detail if object is not in this hub
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubDataGetPos(this, object, false, false);
-		//was: return og.hubsInternal().callHubDataGetPos(this, object, true, true);
+		return og.internal().hubs().data().getPos(this, object, false, false);
+		//was: return og.internal().hubs().data().GetPos(this, object, true, true);
 	}
 
 	/**
@@ -1049,7 +1050,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public int getPos(Object object, boolean bAdjustMaster) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubDataGetPos(this, object, bAdjustMaster, false);
+		return og.internal().hubs().data().getPos(this, object, bAdjustMaster, false);
 	}
 
 	/**
@@ -1067,7 +1068,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			data.setObjClass(c);
 		}
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
-		return og.hubsInternal().callHubAddRemoveAdd(this, obj);
+		return og.internal().hubs().addRemove().add(this, obj);
 	}
 
 	/**
@@ -1085,7 +1086,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		}
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
 		for (TYPE obj : list) {
-			og.hubsInternal().callHubAddRemoveAdd(this, obj);
+			og.internal().hubs().addRemove().add(this, obj);
 		}
 	}
 
@@ -1115,13 +1116,13 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
 		try {
 			for (TYPE obj : hub) {
-				og.hubsInternal().callHubAddRemoveAdd(this, obj);
+				og.internal().hubs().addRemove().add(this, obj);
 			}
 		} finally {
 			/*
 			if (b) {
 				OARuntime.threadLocals().setLoading(false);
-				og.hubsInternal().callHubEventFireOnNewListEvent(this, true);
+				og.internal().hubs().events().FireOnNewListEvent(this, true);
 			}
 			*/
 		}
@@ -1138,7 +1139,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			return false;
 		}
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.objectsInternal().callObjectCallbackGetAllowEnabled(OAObjectCallback.CHECK_CallbackMethod, (Hub<OAObject>) this, null, null);
+		return og.internal().objects().callbacks().getAllowEnabled(OAObjectCallback.CHECK_CallbackMethod, (Hub<OAObject>) this, null, null);
 	}
 
 	/**
@@ -1171,7 +1172,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		Class c = this.getObjectClass();
 		if (c == null) return;
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
-		og.hubsInternal().callHubAddRemoveSwap(this, pos1, pos2);
+		og.internal().hubs().addRemove().swap(this, pos1, pos2);
 	}
 
 	/**
@@ -1183,7 +1184,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void move(int posFrom, int posTo) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubAddRemoveMove(this, posFrom, posTo);
+		og.internal().hubs().addRemove().move(this, posFrom, posTo);
 	}
 
 	/**
@@ -1201,7 +1202,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			data.setObjClass(c);
 		}
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
-		return og.hubsInternal().callHubAddRemoveInsert(this, obj, pos);
+		return og.internal().hubs().addRemove().insert(this, obj, pos);
 	}
 
 	
@@ -1216,20 +1217,20 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	public TYPE remove(int pos) {
 		if (pos < 0) return null;
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.getObjectClass());
-		return og.hubsInternal().callHubAddRemoveRemove(this, pos);
+		return og.internal().hubs().addRemove().remove(this, pos);
 	}
 
 	@Override
 	public boolean remove(Object obj) {
 		if (obj == null) return false;
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.getObjectClass());
-		return og.hubsInternal().callHubAddRemoveRemove(this, obj);
+		return og.internal().hubs().addRemove().remove(this, obj);
 	}
 	
 	public boolean remove(TYPE obj) {
 		if (obj == null) return false;
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj.getClass());
-		return og.hubsInternal().callHubAddRemoveRemove(this, obj);
+		return og.internal().hubs().addRemove().remove(this, obj);
 	}
 
 	
@@ -1294,7 +1295,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void clear() {
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.getObjectClass());
-		og.hubsInternal().callHubAddRemoveClear(this);
+		og.internal().hubs().addRemove().clear(this);
 	}
 
 	/**
@@ -1313,7 +1314,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public Hub<TYPE> createSharedHub() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubShareCreateSharedHub(this, false);
+		return og.internal().hubs().share().createSharedHub(this, false);
 	}
 
 	/**
@@ -1325,7 +1326,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public Hub<TYPE> createSharedHub(boolean bShareAO) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubShareCreateSharedHub(this, bShareAO);
+		return og.internal().hubs().share().createSharedHub(this, bShareAO);
 	}
 
 	/**
@@ -1337,7 +1338,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setSharedHub(Hub<TYPE> masterHub, boolean bShareAO) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubShareSetSharedHub(this, masterHub, bShareAO);
+		og.internal().hubs().share().setSharedHub(this, masterHub, bShareAO);
 	}
 
 	/**
@@ -1348,7 +1349,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setSharedHub(Hub<TYPE> masterHub) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubShareSetSharedHub(this, masterHub, false);
+		og.internal().hubs().share().setSharedHub(this, masterHub, false);
 	}
 
 	/**
@@ -1373,7 +1374,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public Hub getDetailHub(String path, boolean bShareActive, String selectOrder) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubDetailGetDetailHub(this, path, bShareActive, selectOrder);
+		return og.internal().hubs().detail().getDetailHub(this, path, bShareActive, selectOrder);
 	}
 
 	/**
@@ -1386,7 +1387,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public Hub getDetailHub(String path, boolean bShareActive) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubDetailGetDetailHub(this, path, bShareActive);
+		return og.internal().hubs().detail().getDetailHub(this, path, bShareActive);
 	}
 
 	/**
@@ -1399,7 +1400,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public Hub getDetailHub(String path, String selectOrder) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubDetailGetDetailHub(this, path, selectOrder);
+		return og.internal().hubs().detail().getDetailHub(this, path, selectOrder);
 	}
 
 	/**
@@ -1411,7 +1412,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public Hub getDetailHub(String path) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		Hub h = og.hubsInternal().callHubDetailGetDetailHub(this, path);
+		Hub h = og.internal().hubs().detail().getDetailHub(this, path);
 		return h;
 	}
 
@@ -1426,7 +1427,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public Hub getDetailHub(String path, Class objectClass, boolean bShareActive) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubDetailGetDetailHub(this, path, objectClass, bShareActive);
+		return og.internal().hubs().detail().getDetailHub(this, path, objectClass, bShareActive);
 	}
 
 	/**
@@ -1439,7 +1440,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public Hub getDetailHub(String path, Class objectClass) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubDetailGetDetailHub(this, path, objectClass, false);
+		return og.internal().hubs().detail().getDetailHub(this, path, objectClass, false);
 	}
 
 	/**
@@ -1453,7 +1454,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public Hub getDetailHub(Class clazz, boolean bShareActive, String selectOrder) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubDetailGetDetailHub(this, clazz, bShareActive, selectOrder);
+		return og.internal().hubs().detail().getDetailHub(this, clazz, bShareActive, selectOrder);
 	}
 
 	/**
@@ -1466,7 +1467,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public Hub getDetailHub(Class clazz, boolean bShareActive) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubDetailGetDetailHub(this, clazz, bShareActive, null);
+		return og.internal().hubs().detail().getDetailHub(this, clazz, bShareActive, null);
 	}
 
 	/**
@@ -1479,7 +1480,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public Hub getDetailHub(Class clazz, String selectOrder) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubDetailGetDetailHub(this, clazz, false, selectOrder);
+		return og.internal().hubs().detail().getDetailHub(this, clazz, false, selectOrder);
 	}
 
 	/**
@@ -1490,7 +1491,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public Hub getDetailHub(Class clazz) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubDetailGetDetailHub(this, clazz, false, null);
+		return og.internal().hubs().detail().getDetailHub(this, clazz, false, null);
 	}
 
 	/**
@@ -1502,7 +1503,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public Hub getDetailHub(Class[] classes) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubDetailGetDetailHub(this, classes);
+		return og.internal().hubs().detail().getDetailHub(this, classes);
 	}
 
 	/**
@@ -1513,7 +1514,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setMasterHub(Hub masterHub) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubDetailSetMasterHub(this, masterHub, null, false, null);
+		og.internal().hubs().detail().setMasterHub(this, masterHub, null, false, null);
 	}
 
 	/**
@@ -1525,7 +1526,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setMasterHub(Hub masterHub, boolean bShared) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubDetailSetMasterHub(this, masterHub, null, bShared, null);
+		og.internal().hubs().detail().setMasterHub(this, masterHub, null, bShared, null);
 	}
 
 	/**
@@ -1537,7 +1538,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setMasterHub(Hub masterHub, String path) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubDetailSetMasterHub(this, masterHub, path, false, null);
+		og.internal().hubs().detail().setMasterHub(this, masterHub, path, false, null);
 	}
 
 	/**
@@ -1550,7 +1551,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setMasterHub(Hub masterHub, String path, boolean bShared) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubDetailSetMasterHub(this, masterHub, path, bShared, null);
+		og.internal().hubs().detail().setMasterHub(this, masterHub, path, bShared, null);
 	}
 
 	/**
@@ -1565,7 +1566,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setMasterHub(Hub masterHub, Class clazz, String path, boolean bShared, String selectOrder) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubDetailSetMasterHub(this, masterHub, path, bShared, selectOrder);
+		og.internal().hubs().detail().setMasterHub(this, masterHub, path, bShared, selectOrder);
 	}
 
 	/**
@@ -1580,7 +1581,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		//  use datam.masterHub to get thisHub's value
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		
-		return og.hubsInternal().callHubDetailGetMasterHub(this);
+		return og.internal().hubs().detail().getMasterHub(this);
 	}
 
 	/**
@@ -1595,7 +1596,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
   	//  use datam.masterHub to get thisHub's value
 				
 		
-		return og.hubsInternal().callHubDetailGetMasterObject(this);
+		return og.internal().hubs().detail().getMasterObject(this);
 	}
 
 	/**
@@ -1605,7 +1606,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public Class getMasterClass() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubDetailGetMasterClass(this);
+		return og.internal().hubs().detail().getMasterClass(this);
 	}
 
 	/**
@@ -1626,7 +1627,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public boolean removeDetailHub(Hub hub) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubDetailRemoveDetailHub(this, hub);
+		return og.internal().hubs().detail().removeDetailHub(this, hub);
 	}
 
 	/**
@@ -1638,7 +1639,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void addHubListener(HubListener<TYPE> hl, String property) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubEventAddHubListener(this, hl, property);
+		og.internal().hubs().events().addHubListener(this, hl, property);
 	}
 
 	/**
@@ -1651,7 +1652,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void addHubListener(HubListener<TYPE> hl, String property, boolean bActiveObjectOnly) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubEventAddHubListener(this, hl, property, bActiveObjectOnly);
+		og.internal().hubs().events().addHubListener(this, hl, property, bActiveObjectOnly);
 	}
 
 	/**
@@ -1663,7 +1664,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void addHubListener(HubListener<TYPE> hl, boolean bActiveObjectOnly) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubEventAddHubListener(this, hl, bActiveObjectOnly);
+		og.internal().hubs().events().addHubListener(this, hl, bActiveObjectOnly);
 	}
 
 	/**
@@ -1676,7 +1677,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void addHubListener(HubListener<TYPE> hl, String property, String[] dependentPropertyPaths) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubEventAddHubListener(this, hl, property, dependentPropertyPaths);
+		og.internal().hubs().events().addHubListener(this, hl, property, dependentPropertyPaths);
 	}
 
 	/**
@@ -1694,7 +1695,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		} else {
 			ss = null;
 		}
-		og.hubsInternal().callHubEventAddHubListener(this, hl, property, ss);
+		og.internal().hubs().events().addHubListener(this, hl, property, ss);
 	}
 
 	/**
@@ -1714,7 +1715,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		} else {
 			ss = null;
 		}
-		og.hubsInternal().callHubEventAddHubListener(this, hl, property, ss, bActiveObjectOnly);
+		og.internal().hubs().events().addHubListener(this, hl, property, ss, bActiveObjectOnly);
 	}
 
 	/**
@@ -1729,7 +1730,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void addHubListener(HubListener<TYPE> hl, String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubEventAddHubListener(this, hl, property, dependentPropertyPaths, bActiveObjectOnly);
+		og.internal().hubs().events().addHubListener(this, hl, property, dependentPropertyPaths, bActiveObjectOnly);
 	}
 
 	/**
@@ -1745,7 +1746,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	public void addHubListener(HubListener<TYPE> hl, String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly,
 			boolean bUseBackgroundThread) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubEventAddHubListener(this, hl, property, dependentPropertyPaths, bActiveObjectOnly, bUseBackgroundThread);
+		og.internal().hubs().events().addHubListener(this, hl, property, dependentPropertyPaths, bActiveObjectOnly, bUseBackgroundThread);
 	}
 
 	/**
@@ -1761,13 +1762,13 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			@Override
 			public void onTrigger(TYPE obj, HubEvent hubEvent, String propertyPath) throws Exception {
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Hub.this);
-				og.hubsInternal().callHubEventFireCalcPropertyChange(Hub.this, obj, property);
+				og.internal().hubs().events().fireCalcPropertyChange(Hub.this, obj, property);
 				if (hl != null) hl.afterPropertyChange(hubEvent);
 			}
 		};
 		OATrigger trigger = new OATrigger(property, getObjectClass(), tl, new String[] { propertyPath }, true, false, false, true);
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(getObjectClass());
-        og.triggerInternal().addTrigger(trigger);
+        og.internal().triggers().addTrigger(trigger);
 	}
 
 	/**
@@ -1784,13 +1785,13 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			@Override
 			public void onTrigger(TYPE obj, HubEvent hubEvent, String propertyPath) throws Exception {
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Hub.this);
-				og.hubsInternal().callHubEventFireCalcPropertyChange(Hub.this, obj, property);
+				og.internal().hubs().events().fireCalcPropertyChange(Hub.this, obj, property);
 				if (hl != null) hl.afterPropertyChange(hubEvent);
 			}
 		};
 		OATrigger trigger = new OATrigger(property, getObjectClass(), tl, new String[] { propertyPath }, true, false, useBackgroundThread, true);
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(getObjectClass());
-        og.triggerInternal().addTrigger(trigger);
+        og.internal().triggers().addTrigger(trigger);
 	}
 
 	/**
@@ -1800,7 +1801,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void addHubListener(HubListener<TYPE> hl) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubEventAddHubListener(this, hl);
+		og.internal().hubs().events().addHubListener(this, hl);
 	}
 
 	/**
@@ -1810,7 +1811,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void addListener(HubListener<TYPE> hl) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubEventAddHubListener(this, hl);
+		og.internal().hubs().events().addHubListener(this, hl);
 	}
 
 	/**
@@ -1820,7 +1821,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void removeHubListener(HubListener<TYPE> hl) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubEventRemoveHubListener(this, hl);
+		og.internal().hubs().events().removeHubListener(this, hl);
 	}
 
 	/**
@@ -1830,7 +1831,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void removeListener(HubListener<TYPE> hl) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubEventRemoveHubListener(this, hl);
+		og.internal().hubs().events().removeHubListener(this, hl);
 	}
 
 	/**
@@ -1852,7 +1853,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setAutoSequence(String property, int startNumber) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSequenceSetAutoSequence(this, property, startNumber, true);
+		og.internal().hubs().sequence().setAutoSequence(this, property, startNumber, true);
 	}
 
 	/**
@@ -1861,7 +1862,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void resequence() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSequenceResequence(this);
+		og.internal().hubs().sequence().resequence(this);
 	}
 
 	/**
@@ -1874,7 +1875,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setAutoSequence(String property, int startNumber, boolean bKeepSeq) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSequenceSetAutoSequence(this, property, startNumber, bKeepSeq);
+		og.internal().hubs().sequence().setAutoSequence(this, property, startNumber, bKeepSeq);
 	}
 
 	/**
@@ -1886,7 +1887,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setAutoMatch(String property, Hub hubMaster) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubAutoMatchSetAutoMatch(this, property, hubMaster, false);
+		og.internal().hubs().autoMatch().setAutoMatch(this, property, hubMaster, false);
 	}
 
 	/**
@@ -1899,7 +1900,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setAutoMatch(String property, Hub hubMaster, boolean bServerSideOnly) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubAutoMatchSetAutoMatch(this, property, hubMaster, bServerSideOnly);
+		og.internal().hubs().autoMatch().setAutoMatch(this, property, hubMaster, bServerSideOnly);
 	}
 
 	/**
@@ -1914,7 +1915,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setAutoMatch(String property, Hub<TYPE> hubMaster, boolean bServerSideOnly, OAObject objStop, String stopProperty) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubAutoMatchSetAutoMatch(this, property, hubMaster, bServerSideOnly, objStop, stopProperty);
+		og.internal().hubs().autoMatch().setAutoMatch(this, property, hubMaster, bServerSideOnly, objStop, stopProperty);
 	}
 	
 	/**
@@ -1925,7 +1926,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setAutoMatch(Hub hubMaster) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubAutoMatchSetAutoMatch(this, null, hubMaster, false);
+		og.internal().hubs().autoMatch().setAutoMatch(this, null, hubMaster, false);
 	}
 
 	/**
@@ -1937,7 +1938,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setAutoMatch(Hub hubMaster, boolean bServerSideonly) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubAutoMatchSetAutoMatch(this, null, hubMaster, bServerSideonly);
+		og.internal().hubs().autoMatch().setAutoMatch(this, null, hubMaster, bServerSideonly);
 	}
 
 	/**
@@ -1948,7 +1949,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void sort(Comparator comp) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSortSort(this, null, true, comp);
+		og.internal().hubs().sort().sort(this, null, true, comp);
 	}
 
 	/**
@@ -1969,7 +1970,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			}
 			s += propertyPaths[i];
 		}
-		og.hubsInternal().callHubSortSort(this, s, true, null);
+		og.internal().hubs().sort().sort(this, s, true, null);
 	}
 
 	/**
@@ -1981,7 +1982,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void sort(String propertyPaths, boolean bAscending) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSortSort(this, propertyPaths, bAscending, null);
+		og.internal().hubs().sort().sort(this, propertyPaths, bAscending, null);
 	}
 
 	/**
@@ -1994,7 +1995,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void sort(String propertyPaths, boolean bAscending, Comparator comp) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSortSort(this, propertyPaths, bAscending, comp);
+		og.internal().hubs().sort().sort(this, propertyPaths, bAscending, comp);
 	}
 
 	/**
@@ -2005,7 +2006,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public boolean isSorted() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubSortIsSorted(this);
+		return og.internal().hubs().sort().isSorted(this);
 	}
 
 	/**
@@ -2014,7 +2015,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void cancelSort() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSortCancelSort(this);
+		og.internal().hubs().sort().cancelSort(this);
 	}
 
 	/**
@@ -2023,7 +2024,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void sort() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSortSort(this);
+		og.internal().hubs().sort().sort(this);
 	}
 
 	/**
@@ -2032,7 +2033,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void resort() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSortSort(this);
+		og.internal().hubs().sort().sort(this);
 	}
 
 	/**
@@ -2045,7 +2046,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public TYPE find(String propertyPath, Object findValue) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return (TYPE) og.hubsInternal().callHubFindFindFirst(this, propertyPath, findValue, false, null);
+		return (TYPE) og.internal().hubs().find().findFirst(this, propertyPath, findValue, false, null);
 	}
 
 	/**
@@ -2059,7 +2060,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public TYPE find(String propertyPath, Object findValue, boolean bSetAO) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return (TYPE) og.hubsInternal().callHubFindFindFirst(this, propertyPath, findValue, bSetAO, null);
+		return (TYPE) og.internal().hubs().find().findFirst(this, propertyPath, findValue, bSetAO, null);
 	}
 
 	/**
@@ -2074,7 +2075,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public TYPE find(TYPE fromObject, String propertyPath, Object findValue) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return (TYPE) og.hubsInternal().callHubFindFindFirst(this, propertyPath, findValue, false, fromObject);
+		return (TYPE) og.internal().hubs().find().findFirst(this, propertyPath, findValue, false, fromObject);
 	}
 
 	/**
@@ -2089,7 +2090,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public TYPE find(TYPE fromObject, String propertyPath, Object findValue, boolean bSetAO) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return (TYPE) og.hubsInternal().callHubFindFindFirst(this, propertyPath, findValue, bSetAO, fromObject);
+		return (TYPE) og.internal().hubs().find().findFirst(this, propertyPath, findValue, bSetAO, fromObject);
 	}
 
 	/**
@@ -2103,7 +2104,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public TYPE findNext(TYPE fromObject, String propertyPath, Object findValue) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return (TYPE) og.hubsInternal().callHubFindFindFirst(this, propertyPath, findValue, false, fromObject);
+		return (TYPE) og.internal().hubs().find().findFirst(this, propertyPath, findValue, false, fromObject);
 	}
 
 	/**
@@ -2118,7 +2119,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public TYPE findNext(TYPE fromObject, String propertyPath, Object findValue, boolean bSetAO) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return (TYPE) og.hubsInternal().callHubFindFindFirst(this, propertyPath, findValue, bSetAO, fromObject);
+		return (TYPE) og.internal().hubs().find().findFirst(this, propertyPath, findValue, bSetAO, fromObject);
 	}
 
 	/**
@@ -2128,7 +2129,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setSelectWhere(String s) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSelectSetSelectWhere(this, s);
+		og.internal().hubs().select().setSelectWhere(this, s);
 	}
 
 	/**
@@ -2138,7 +2139,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public String getSelectWhere() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubSelectGetSelectWhere(this);
+		return og.internal().hubs().select().getSelectWhere(this);
 	}
 
 	/**
@@ -2148,7 +2149,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setSelectOrder(String s) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSelectSetSelectOrder(this, s);
+		og.internal().hubs().select().setSelectOrder(this, s);
 	}
 
 	/**
@@ -2161,8 +2162,8 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void setSelectWhereHub(Hub fromHub, String ppFromHub) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSelectSetSelectWhereHub(this, fromHub);
-		og.hubsInternal().callHubSelectSetSelectWhereHubPropertyPath(this, ppFromHub);
+		og.internal().hubs().select().setSelectWhereHub(this, fromHub);
+		og.internal().hubs().select().setSelectWhereHubPropertyPath(this, ppFromHub);
 	}
 
 	/**
@@ -2173,7 +2174,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public String getSelectOrder(Hub thisHub) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubSelectGetSelectOrder(this);
+		return og.internal().hubs().select().getSelectOrder(this);
 	}
 
 	/**
@@ -2186,7 +2187,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void select(OAObject whereObject, String orderByClause) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSelectSelect(this, whereObject, null, null, orderByClause, false);
+		og.internal().hubs().select().select(this, whereObject, null, null, orderByClause, false);
 	}
 
 	/**
@@ -2195,7 +2196,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void select() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSelectSelect(this, false);
+		og.internal().hubs().select().select(this, false);
 	}
 
 	/**
@@ -2206,7 +2207,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void select(String whereClause) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSelectSelect(this, null, whereClause, null, null, false);
+		og.internal().hubs().select().select(this, null, whereClause, null, null, false);
 	}
 
 	/**
@@ -2217,7 +2218,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void select(String whereClause, Object[] params) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSelectSelect(this, null, whereClause, params, null, false);
+		og.internal().hubs().select().select(this, null, whereClause, params, null, false);
 	}
 
 	/**
@@ -2228,7 +2229,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void select(String whereClause, String orderBy) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSelectSelect(this, null, whereClause, null, orderBy, false);
+		og.internal().hubs().select().select(this, null, whereClause, null, orderBy, false);
 	}
 
 	/**
@@ -2241,7 +2242,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void select(String whereClause, String orderBy, OAFilter filter) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSelectSelect(this, null, whereClause, null, orderBy, false, filter);
+		og.internal().hubs().select().select(this, null, whereClause, null, orderBy, false, filter);
 	}
 
 	/**
@@ -2255,7 +2256,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void select(String whereClause, Object[] whereParams, String orderBy, OAFilter filter) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSelectSelect(this, null, whereClause, whereParams, orderBy, false, filter);
+		og.internal().hubs().select().select(this, null, whereClause, whereParams, orderBy, false, filter);
 	}
 
 	/**
@@ -2267,7 +2268,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void select(String whereClause, Object[] whereParams, String orderBy) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSelectSelect(this, null, whereClause, whereParams, orderBy, false);
+		og.internal().hubs().select().select(this, null, whereClause, whereParams, orderBy, false);
 	}
 
 	/**
@@ -2284,7 +2285,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		if (whereParam != null) {
 			params = new Object[] { whereParam };
 		}
-		og.hubsInternal().callHubSelectSelect(this, null, whereClause, params, orderBy, false);
+		og.internal().hubs().select().select(this, null, whereClause, params, orderBy, false);
 	}
 
 	/**
@@ -2302,7 +2303,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		if (whereParam != null) {
 			params = new Object[] { whereParam };
 		}
-		og.hubsInternal().callHubSelectSelect(this, null, whereClause, params, orderBy, false, filter);
+		og.internal().hubs().select().select(this, null, whereClause, params, orderBy, false, filter);
 	}
 
 	/**
@@ -2317,7 +2318,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		Hub<OAObject> hubX = (Hub) this;
 	    OASelect selX = (OASelect) select;
 		
-		og.hubsInternal().callHubSelectSelect(hubX, selX);
+		og.internal().hubs().select().select(hubX, selX);
 	}
 
 	/**
@@ -2329,7 +2330,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void selectPassthru(String whereClause, String orderClause) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSelectSelectPassthru(this, whereClause, orderClause);
+		og.internal().hubs().select().selectPassthru(this, whereClause, orderClause);
 	}
 
 	/**
@@ -2340,7 +2341,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public OASelect<TYPE> getSelect() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubSelectGetSelect(this);
+		return og.internal().hubs().select().getSelect(this);
 	}
 
 	/**
@@ -2352,7 +2353,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public OASelect<? extends OAObject> getSelect(boolean bCreateIfNull) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		OASelect sel = og.hubsInternal().callHubSelectGetSelect((Hub<? extends OAObject>) this, true);
+		OASelect sel = og.internal().hubs().select().getSelect((Hub<? extends OAObject>) this, true);
 		return sel;
 	}
 
@@ -2365,7 +2366,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		boolean bRemoveSelectFromHub;
 		if (getMasterObject() != null) {
-			OALinkInfo li = og.hubsInternal().callHubDetailGetLinkInfoFromDetailToMaster(this);
+			OALinkInfo li = og.internal().hubs().detail().getLinkInfoFromDetailToMaster(this);
 			if (li != null && li.getType() == OALinkInfo.ONE && li.getPrivateMethod()) {
 				bRemoveSelectFromHub = false;
 			} else {
@@ -2374,7 +2375,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		} else {
 			bRemoveSelectFromHub = false; // dont remove, so that it can be refreshed
 		}
-		og.hubsInternal().callHubSelectCancelSelect(this, bRemoveSelectFromHub);
+		og.internal().hubs().select().cancelSelect(this, bRemoveSelectFromHub);
 	}
 
 	/**
@@ -2389,7 +2390,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		if (!bSearchOtherHubs) {
 			return this.datau.getLinkToHub();
 		}
-		Hub hx = og.hubsInternal().callHubLinkGetHubWithLink(this, true);
+		Hub hx = og.internal().hubs().link().getHubWithLink(this, true);
 		if (hx == null) {
 			return null;
 		}
@@ -2418,7 +2419,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		// setLinkHub(Hub thisHub, String propertyFrom, Hub linkHub, String
 		// propertyTo, boolean linkPosFlag, boolean bAutoCreate) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubLinkSetLinkHub(this, null, linkHub, property, false, false, false);
+		og.internal().hubs().link().setLinkHub(this, null, linkHub, property, false, false, false);
 	}
 
 	/**
@@ -2431,7 +2432,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		// setLinkHub(Hub thisHub, String propertyFrom, Hub linkHub, String
 		// propertyTo, boolean linkPosFlag, boolean bAutoCreate) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubLinkSetLinkHub(this, null, linkHub, null, false, false, false);
+		og.internal().hubs().link().setLinkHub(this, null, linkHub, null, false, false, false);
 	}
 
 	/**
@@ -2446,7 +2447,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		// setLinkHub(Hub thisHub, String propertyFrom, Hub linkHub, String
 		// propertyTo, boolean linkPosFlag, boolean bAutoCreate) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubLinkSetLinkHub(this, fromProperty, linkHub, toProperty, false, false, false);
+		og.internal().hubs().link().setLinkHub(this, fromProperty, linkHub, toProperty, false, false, false);
 	}
 
 	/**
@@ -2456,7 +2457,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		// setLinkHub(Hub thisHub, String propertyFrom, Hub linkHub, String
 		// propertyTo, boolean linkPosFlag, boolean bAutoCreate) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubLinkSetLinkHub(this, null, null, null, false, false, false);
+		og.internal().hubs().link().setLinkHub(this, null, null, null, false, false, false);
 	}
 
 	/**
@@ -2471,7 +2472,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		// setLinkHub(Hub thisHub, String propertyFrom, Hub linkHub, String
 		// propertyTo, boolean linkPosFlag, boolean bAutoCreate) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubLinkSetLinkHub(this, null, linkHub, null, false, bAutoCreate, bAutoCreateAllowDups);
+		og.internal().hubs().link().setLinkHub(this, null, linkHub, null, false, bAutoCreate, bAutoCreateAllowDups);
 	}
 
 	/**
@@ -2485,21 +2486,21 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		// setLinkHub(Hub thisHub, String propertyFrom, Hub linkHub, String
 		// propertyTo, boolean linkPosFlag, boolean bAutoCreate) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubLinkSetLinkHub(this, null, linkHub, null, false, bAutoCreate, false);
+		og.internal().hubs().link().setLinkHub(this, null, linkHub, null, false, bAutoCreate, false);
 	}
 
 	public void setLinkHub(Hub linkHub, String property, boolean bAutoCreate, boolean bAutoCreateAllowDups) {
 		// setLinkHub(Hub thisHub, String propertyFrom, Hub linkHub, String
 		// propertyTo, boolean linkPosFlag, boolean bAutoCreate) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubLinkSetLinkHub(this, null, linkHub, property, false, bAutoCreate, bAutoCreateAllowDups);
+		og.internal().hubs().link().setLinkHub(this, null, linkHub, property, false, bAutoCreate, bAutoCreateAllowDups);
 	}
 
 	public void setLinkHub(Hub linkHub, String property, boolean bAutoCreate) {
 		// setLinkHub(Hub thisHub, String propertyFrom, Hub linkHub, String
 		// propertyTo, boolean linkPosFlag, boolean bAutoCreate) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubLinkSetLinkHub(this, null, linkHub, property, false, bAutoCreate, false);
+		og.internal().hubs().link().setLinkHub(this, null, linkHub, property, false, bAutoCreate, false);
 	}
 
 	
@@ -2517,7 +2518,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		// setLinkHub(Hub thisHub, String propertyFrom, Hub linkHub, String
 		// propertyTo, boolean linkPosFlag, boolean bAutoCreate) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubLinkSetLinkHub(this, propertyFrom, linkHub, propertyTo, linkPosFlag, false, false);
+		og.internal().hubs().link().setLinkHub(this, propertyFrom, linkHub, propertyTo, linkPosFlag, false, false);
 	}
 
 	/**
@@ -2528,7 +2529,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public boolean isValid() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubStatusIsValid(this);
+		return og.internal().hubs().status().isValid(this);
 	}
 
 	/**
@@ -2540,7 +2541,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public String getLinkPath(boolean bSearchOtherHubs) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.hubsInternal().callHubLinkGetLinkHubPath(this, bSearchOtherHubs);
+		return og.internal().hubs().link().getLinkHubPath(this, bSearchOtherHubs);
 	}
 
 	/**
@@ -2552,7 +2553,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public static OAObjectInfo getOAObjectInfo(Class c) {
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
-		return og.objectsInternal().callObjectInfoGetOAObjectInfo(c);
+		return og.internal().objects().info().getOAObjectInfo(c);
 	}
 
 	/**
@@ -2595,11 +2596,11 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 /*qqqqq 20260220 not sure this is being used, LinkToHub has wrong arg values	
 	public void updateLinkProperty(Object obj, Object value) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		Hub<TYPE> h = og.hubsInternal().callHubLinkGetHubWithLink(this, true);
+		Hub<TYPE> h = og.internal().hubs().link().getHubWithLink(this, true);
 		if (h == null) {
 			return;
 		}
-		og.hubsInternal().callHubLinkUpdateLinkedToHub(h, h.getLinkHub(false), value);
+		og.internal().hubs().callHubLinkUpdateLinkedToHub(h, h.getLinkHub(false), value);
 	}
 */	
 
@@ -2612,11 +2613,11 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 /*qqqqqqqqqq remove	
 	public boolean isServer() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.syncInternal().isServer();
+		return og.internal().sync().isServer();
 	}
 	public boolean isclient() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		return og.syncInternal().isClient();
+		return og.internal().sync().isClient();
 	}
 */
 	/**
@@ -2627,7 +2628,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public boolean canAdd() {
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.getObjectClass());
-		return og.hubsInternal().callHubAddRemoveCanAdd(this, null);
+		return og.internal().hubs().addRemove().canAdd(this, null);
 	}
 
 	/**
@@ -2640,7 +2641,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	public boolean canAdd(TYPE obj) {
 		if (obj == null) return false;
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.getObjectClass());
-		return og.hubsInternal().callHubAddRemoveCanAdd(this, obj);
+		return og.internal().hubs().addRemove().canAdd(this, obj);
 	}
 
 	/**
@@ -2653,23 +2654,23 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	public String getCanAddMessage(TYPE obj) {
 		if (obj == null) return null;
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.getObjectClass());
-		return og.hubsInternal().callHubAddRemoveCanAddMsg(this, obj);
+		return og.internal().hubs().addRemove().canAddMsg(this, obj);
 	}
 
 	/**
 	 * Returns whether adding is allowed by delegating to
-	 * og.hubsInternal().callHubAddRemoveCanAdd(this, null).
+	 * og.internal().hubs().addRemove().CanAdd(this, null).
 	 *
 	 * @return true if adding is allowed
 	 */
 	public boolean getAllowAdd() {
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.getObjectClass());
-		return og.hubsInternal().callHubAddRemoveCanAdd(this, null);
+		return og.internal().hubs().addRemove().canAdd(this, null);
 	}
 
 	/**
 	 * Returns whether the specified object can be added by delegating to
-	 * og.hubsInternal().callHubAddRemoveCanAdd(this, obj).
+	 * og.internal().hubs().addRemove().CanAdd(this, obj).
 	 *
 	 * @param obj the object to evaluate
 	 * @return true if the object can be added
@@ -2677,7 +2678,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	public boolean getAllowAdd(TYPE obj) {
 		if (obj == null) return false;
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.getObjectClass());
-		return og.hubsInternal().callHubAddRemoveCanAdd(this, obj);
+		return og.internal().hubs().addRemove().canAdd(this, obj);
 	}
 
 	/**
@@ -2698,7 +2699,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		Hub<OAObject> hub = (Hub) this;
 	    OAObject oaObj = (OAObject) obj;
 	    
-		return og.objectsInternal().callObjectCallbackGetAllowAdd(hub, oaObj, checkType);
+		return og.internal().objects().callbacks().getAllowAdd(hub, oaObj, checkType);
 	}
 
 	/**
@@ -2718,7 +2719,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		Hub<OAObject> hub = (Hub) this;
 	    OAObject oaObj = (OAObject) obj;
 		
-		return og.objectsInternal().callObjectCallbackGetAllowRemove(hub, oaObj, checkType);
+		return og.internal().objects().callbacks().getAllowRemove(hub, oaObj, checkType);
 	}
 
 	/**
@@ -2736,12 +2737,12 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
 		Hub<OAObject> hub = (Hub) this;
 	    OAObject oaObj = (OAObject) obj;
-		return og.objectsInternal().callObjectCallbackGetVerifyRemove(hub, oaObj, checkType);
+		return og.internal().objects().callbacks().getVerifyRemove(hub, oaObj, checkType);
 	}
 
 	/**
 	 * Determines whether all objects can be removed by checking for a
-	 * non-null message from og.hubsInternal().callHubAddRemoveGetCantRemoveAllMessage.
+	 * non-null message from og.internal().hubs().addRemove().GetCantRemoveAllMessage.
 	 *
 	 * @param bCheckObjectCallback flag indicating whether to check callbacks
 	 * @param checkType            callback check type
@@ -2749,7 +2750,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public boolean getAllowRemoveAll(final boolean bCheckObjectCallback, final int checkType) {
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		String s = og.hubsInternal().callHubAddRemoveGetCantRemoveAllMessage(this, checkType);
+		String s = og.internal().hubs().addRemove().getCantRemoveAllMessage(this, checkType);
 		return s == null;
 	}
 	
@@ -2780,7 +2781,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 */
 	public void sendRefresh() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubCSSendRefresh(this);
+		og.internal().hubs().cs().sendRefresh(this);
 	}
 
 	/**
@@ -3291,11 +3292,11 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 
 	/**
 	 * Refreshes this Hub by reselecting its data from the data source.
-	 * Delegates the operation to og.hubsInternal().callHubSelectRefresh(this).
+	 * Delegates the operation to og.internal().hubs().select().Refresh(this).
 	 */
 	public void refresh() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this);
-		og.hubsInternal().callHubSelectRefresh(this);
+		og.internal().hubs().select().refresh(this);
 	}
 
 
@@ -3334,6 +3335,27 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 
 	public OAGraph getGraph() {
 		return OARuntime.graph(this);
+	}
+
+	/**
+	 * Enumeration describing the synchronization state of a hub during updates.
+	 *
+	 * <ul>
+	 *   <li>{@code InSync} – the hub is correctly aligned with its master or linked
+	 *       state.</li>
+	 *   <li>{@code DetailDisconnectedFromMaster} – the detail hub does not match its
+	 *       expected master state.</li>
+	 *   <li>{@code DetailHubNotSameAsMasterObject} – the detail hub contains a
+	 *       different object than the master hub’s active object.</li>
+	 *   <li>{@code HubMergerNotUpdated} – a hub merger is not in sync with its
+	 *       source hubs.</li>
+	 * </ul>
+	 */
+	public static enum HubCurrentStateEnum {
+		InSync,
+		DetailDisconnectedFromMaster,
+		DetailHubNotSameAsMasterObject, // caused when object/hubs are in flux (hub event that is calling listeners and changing linkages)
+		HubMergerNotUpdated
 	}
 
 }

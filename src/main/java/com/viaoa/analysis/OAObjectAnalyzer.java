@@ -36,7 +36,7 @@ CODEX
   cache. load() does:
 
   - line 62: OARuntime.graph() to get only the default graph
-  - line 64: ogx.objectsInternal().callObjectCacheGetClasses()
+  - line 64: ogx.internal().objects().cache().GetClasses()
   - line 65: resolves each class back to its routed graph
 
   Classes that exist only in non-default graph caches are never visited, and the analysis completes without saying it
@@ -113,16 +113,16 @@ public class OAObjectAnalyzer {
     public void load() {
 		OAGraphInternal ogx = (OAGraphInternal) OARuntime.graph();
     	
-        for (Class cs : ogx.objectsInternal().callObjectCacheGetClasses()) {
+        for (Class cs : ogx.internal().objects().cache().getClasses()) {
         	OAGraphInternal og = (OAGraphInternal) OARuntime.graph(cs);
 
-    		System.out.println("Starting class="+cs.getSimpleName()+", total="+og.objectsInternal().callObjectCacheGetTotal(cs));
+    		System.out.println("Starting class="+cs.getSimpleName()+", total="+og.internal().objects().cache().getTotal(cs));
             
             OACallback cb = new OACallback() {
                 @Override
                 public boolean updateObject(Object object) {
                     OAObject obj = (OAObject) object;
-                    Hub[] hubs = og.objectsInternal().callObjectHubGetHubReferences(obj);
+                    Hub[] hubs = og.internal().objects().hub().getHubReferences(obj);
                     if (hubs == null) return true;
                     int cnt = 0;
                     for (Hub h : hubs) {
@@ -136,7 +136,7 @@ public class OAObjectAnalyzer {
                     return true;
                 }
             };
-            og.objectsInternal().callObjectCacheCallback(cs, cb);
+            og.internal().objects().cache().callback(cs, cb);
         }    
         int xx = hsHub.size();
         xx++;

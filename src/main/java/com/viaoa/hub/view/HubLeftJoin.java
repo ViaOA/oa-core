@@ -271,7 +271,7 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 			public void onNewList(HubEvent e) {
 				
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubCombined);
-				og.hubsInternal().callHubAddRemoveClear(hubCombined, false, false); // 20240403 dont send newList event
+				og.internal().hubs().addRemove().clear(hubCombined, false, false); // 20240403 dont send newList event
 				
 				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 				boolean bWasLoading = srvcOAThreadLocal.setLoading(true);
@@ -286,7 +286,7 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 				finally {
 	                srvcOAThreadLocal.setLoading(bWasLoading);
                     hubCombined.setActiveObject(null);
-	                og.hubsInternal().callHubEventFireOnNewListEvent(hubCombined, true);
+	                og.internal().hubs().events().fireOnNewListEvent(hubCombined, true);
 				}
 			}
 

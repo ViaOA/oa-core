@@ -173,7 +173,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
         if (whereObject != null && OAStr.isNotEmpty(propertyFromWhereObject)) {
             // 20240123
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(whereObject);
-            OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(whereObject.getClass());
+            OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(whereObject.getClass());
             OALinkInfo li = oi.getLinkInfo(propertyFromWhereObject);
 
             if (li == null) {
@@ -227,7 +227,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             
             // 20250407 use reference object from oaobj.properties[]
 			//final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(whereObject);
-            Object objx = og.objectsInternal().callObjectPropertyGetProperty(whereObject, propertyFromWhereObject);
+            Object objx = og.internal().objects().property().getProperty(whereObject, propertyFromWhereObject);
             if (objx != null) {
 	            final List al = new ArrayList();
 	            if (!(objx instanceof Hub)) {
@@ -279,7 +279,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
                 final OAFilter filterz = filterx;
                 OAFinder f = new OAFinder(spp) {
                     protected boolean isUsed(OAObject obj) {
-                        Object objx = og.objectsInternal().callObjectPropertyGetProperty(obj, liRev.getName(), false, true);
+                        Object objx = og.internal().objects().property().getProperty(obj, liRev.getName(), false, true);
                         if (objx instanceof OAObjectKey) {
                             return objx.equals(whereObjectx.getObjectKey());
                         }
@@ -305,7 +305,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
                 public boolean isUsed(Object obj) {
                     boolean b;
                     if (obj instanceof OAObject) {
-                        Object objx = og.objectsInternal().callObjectPropertyGetProperty((OAObject) obj, liRev.getName());
+                        Object objx = og.internal().objects().property().getProperty((OAObject) obj, liRev.getName());
                         b = (whereObjectx == objx);
                         b = b || OACompare.isEqual(objx, whereObjectx);
                     }
@@ -494,7 +494,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
 				}
 			}; 
 			
-            og.objectsInternal().callObjectCacheVisit(cx, (OACallback) callback);
+            og.internal().objects().cache().visit(cx, (OACallback) callback);
             
             OAObjectSerializer wrap = new OAObjectSerializer(hs, false, true);
             wrap.setIncludeBlobs(true);

@@ -99,7 +99,7 @@ Rationale:
 Analysis is useful only when it describes the graph shape and relationships that OA runtime services actually
 observe.
 Source scope:
-OAObjectAnalyzer.load(); OAGraphInternal.objectsInternal().callObjectHubGetHubReferences; OAObject; Hub.
+OAObjectAnalyzer.load(); OAGraphInternal.internal().objects().hub().GetHubReferences; OAObject; Hub.
 Related CODEX findings:
 none observed beyond graph-scope completeness.
 Suggested unit tests:

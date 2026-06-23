@@ -114,7 +114,7 @@ public class HubDataMaster implements java.io.Serializable {
 			return null;
 		}
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(liDetailToMaster.getToClass());
-		OALinkInfo rli = og.objectsInternal().callObjectInfoGetReverseLinkInfo(liDetailToMaster);
+		OALinkInfo rli = og.internal().objects().info().getReverseLinkInfo(liDetailToMaster);
 		if (rli == null) {
 			return null;
 		}
@@ -132,7 +132,7 @@ public class HubDataMaster implements java.io.Serializable {
 			return null;
 		}
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(liDetailToMaster.getToClass());
-		OALinkInfo rli = og.objectsInternal().callObjectInfoGetReverseLinkInfo(liDetailToMaster);
+		OALinkInfo rli = og.internal().objects().info().getReverseLinkInfo(liDetailToMaster);
 		if (rli == null) {
 			return null;
 		}
@@ -192,7 +192,7 @@ public class HubDataMaster implements java.io.Serializable {
 			return null;
 		}
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(liDetailToMaster.getToClass());
-		OALinkInfo rli = og.objectsInternal().callObjectInfoGetReverseLinkInfo(liDetailToMaster);
+		OALinkInfo rli = og.internal().objects().info().getReverseLinkInfo(liDetailToMaster);
 		if (rli == null) {
 			return null;
 		}
@@ -209,7 +209,7 @@ public class HubDataMaster implements java.io.Serializable {
 			return false;
 		}
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(liDetailToMaster.getToClass());
-		OALinkInfo rli = og.objectsInternal().callObjectInfoGetReverseLinkInfo(liDetailToMaster);
+		OALinkInfo rli = og.internal().objects().info().getReverseLinkInfo(liDetailToMaster);
 		if (rli == null) {
 			return false;
 		}
@@ -227,7 +227,7 @@ public class HubDataMaster implements java.io.Serializable {
 			return null;
 		}
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(liDetailToMaster.getToClass());
-		OALinkInfo rli = og.objectsInternal().callObjectInfoGetReverseLinkInfo(liDetailToMaster);
+		OALinkInfo rli = og.internal().objects().info().getReverseLinkInfo(liDetailToMaster);
 		if (rli == null) {
 			return null;
 		}

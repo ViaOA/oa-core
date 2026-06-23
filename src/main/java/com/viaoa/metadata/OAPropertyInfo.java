@@ -1122,7 +1122,7 @@ public class OAPropertyInfo implements java.io.Serializable {
 	public Object getValue(Object obj) {
 		if (!(obj instanceof OAObject)) return null;
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) obj);
-		return og.objectsInternal().callObjectReflectGetProperty((OAObject) obj, name);
+		return og.internal().objects().reflect().getProperty((OAObject) obj, name);
 	}
 
 	/**

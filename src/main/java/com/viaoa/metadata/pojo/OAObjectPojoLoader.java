@@ -477,7 +477,7 @@ public class OAObjectPojoLoader implements Serializable {
 			}
 
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(li.getToClass());
-			if (!og.objectsInternal().callObjectInfoIsPojoSingleton(li.getToObjectInfo())) {
+			if (!og.internal().objects().info().isPojoSingleton(li.getToObjectInfo())) {
 				continue;
 			}
 

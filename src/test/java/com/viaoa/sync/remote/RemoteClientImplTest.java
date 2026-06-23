@@ -13,7 +13,6 @@ import com.test.pos.model.oa.Register;
 import com.test.pos.model.oa.Store;
 import com.viaoa.datasource.clientserver.OADataSourceClient;
 import com.viaoa.graph.api.internal.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 
@@ -21,12 +20,11 @@ class RemoteClientImplTest {
 
     @BeforeEach
     void beforeEach() {
-        clearCache();
+        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
     }
-
     @AfterEach
     void afterEach() {
-        clearCache();
+        OARuntime.graph(Register.class).close();
     }
 
     @Test
@@ -116,12 +114,6 @@ class RemoteClientImplTest {
 
         assertDoesNotThrow(() -> client.refresh(Store.class, new com.viaoa.object.OAObjectKey(new Object[] { 999 })));
         assertDoesNotThrow(() -> client.refresh(Store.class, new com.viaoa.object.OAObjectKey(new Object[] { 999 }), Store.P_Name));
-    }
-
-    private void clearCache() {
-        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
-        OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
-        os.getOAObjectCacheService().removeAllObjects();
     }
 
     private static class TestRemoteClient extends RemoteClientImpl {

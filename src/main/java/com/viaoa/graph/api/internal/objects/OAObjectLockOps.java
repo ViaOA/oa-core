@@ -7,5 +7,6 @@ public interface OAObjectLockOps {
 	public void lock(OAObject oaObj);
 	public void unlock(OAObject oaObj);
 	public boolean isLocked(OAObject oaObj);
+	public boolean isPropertyLocked(OAObject oaObj, String name);
 	
 }

@@ -1123,7 +1123,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 		if (hubSearch != null && finder == null) {
 			finder = new OAFinder(hubSearch, null);
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-			OALinkInfo li = og.hubsInternal().callHubDetailGetLinkInfoFromMasterObjectToDetail(hubSearch);
+			OALinkInfo li = og.internal().hubs().detail().getLinkInfoFromMasterObjectToDetail(hubSearch);
 			if (li != null && !li.getRecursive()) {
 				finder.setAllowRecursiveRoot(false);
 			}

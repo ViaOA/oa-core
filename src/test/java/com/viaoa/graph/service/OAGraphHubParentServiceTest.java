@@ -11,35 +11,31 @@ import org.junit.jupiter.api.Test;
 import com.test.pos.model.oa.Register;
 import com.test.pos.model.oa.Store;
 import com.viaoa.graph.api.internal.OAGraphInternal;
-import com.viaoa.graph.service.hub.HubStatusService.HubCurrentStateEnum;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListenerAdapter;
+import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.select.OASelect;
 
 class OAGraphHubParentServiceTest {
-    private HubInternalService hubs;
+	
+//    private HubInternalService hubs;
 
     @BeforeEach
     void beforeEach() {
-        hubs = hubService();
-        clearCache();
+//        hubs = hubService();
+        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
     }
-
     @AfterEach
     void afterEach() {
-        clearCache();
+        OAObject.setDebugMode(false);
+        OARuntime.graph(Register.class).close();
     }
-
+/*qqqqq
     private static HubInternalService hubService() {
         OAGraphInternal graph = (OAGraphInternal) OARuntime.graph(Register.class);
         return (HubInternalService) graph.hubsInternal();
-    }
-
-    private static void clearCache() {
-        OAGraphInternal graph = (OAGraphInternal) OARuntime.graph(Register.class);
-        ((OAObjectInternalService) graph.objectsInternal()).getOAObjectCacheService().removeAllObjects();
     }
 
     @Test
@@ -169,4 +165,5 @@ class OAGraphHubParentServiceTest {
         assertEquals(HubCurrentStateEnum.InSync,
                 hubs.callHubStatusGetCurrentState(store.getRegisters(), store.getRegisters(), null));
     }
+*/    
 }

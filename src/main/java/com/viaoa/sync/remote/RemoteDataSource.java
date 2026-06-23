@@ -479,7 +479,7 @@ public abstract class RemoteDataSource {
 				OAObject oa = (OAObject) whereObject;
 				ds.insertWithoutReferences((OAObject) oa);
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-				og.objectsInternal().callObjectSetNew(oa, false);
+				og.internal().objects().state().setNew(oa, false);
 			}
 			break;
 		case OADataSourceClient.GET_PROPERTY:
@@ -517,9 +517,9 @@ public abstract class RemoteDataSource {
 
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
 		
-		OAObjectKey key = og.objectsInternal().callObjectKeyCreateObjectKey(objectClass, obj);
+		OAObjectKey key = og.internal().objects().key().createObjectKey(objectClass, obj);
 
-		OAObject objNew = (OAObject) og.objectsInternal().callObjectCacheGet(objectClass, key);
+		OAObject objNew = (OAObject) og.internal().objects().cache().get(objectClass, key);
 		if (objNew == null) {
 			OADataSource ds = OARuntime.datasource().get(objectClass);
 			if (ds != null) objNew = ds.getObject(objectClass, key);

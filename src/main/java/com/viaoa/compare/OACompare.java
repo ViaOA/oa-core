@@ -980,14 +980,14 @@ public class OACompare {
         	
     		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
         	
-        	OAObjectKey ka = og.objectsInternal().callObjectKeyCreateObjectKey(value);
-    	    OAObjectKey kb = og.objectsInternal().callObjectKeyCreateObjectKey(matchValue);
+        	OAObjectKey ka = og.internal().objects().key().createObjectKey(value);
+    	    OAObjectKey kb = og.internal().objects().key().createObjectKey(matchValue);
     	  
     	    if (ka == kb) return 0;
     	    if (ka == null) return -1;
     	    if (kb == null) return 1;
     	    
-    	    if (og.objectsInternal().callObjectKeyIsForSameOAObject(null, ka, kb)) return 0;
+    	    if (og.internal().objects().key().isForSameOAObject(null, ka, kb)) return 0;
     	    return ka.compareTo(kb);
     	}        
         

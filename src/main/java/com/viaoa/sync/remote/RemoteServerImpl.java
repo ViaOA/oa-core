@@ -186,7 +186,7 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 		final boolean bWas = srvcOAThreadLocal.getSendSyncMessages();
 		try {
 			srvcOAThreadLocal.setSendSyncMessages(true);
-			OAObject obj = (OAObject) og.objectsInternal().callObjectCacheGetObject(objectClass, objectKey);
+			OAObject obj = (OAObject) og.internal().objects().cache().getObject(objectClass, objectKey);
 			if (obj != null) {
 				obj.save(iCascadeRule);
 				bResult = true;
@@ -222,9 +222,9 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 	@Override
 	public OAObject getObject(Class objectClass, OAObjectKey objectKey) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
-		OAObject obj = (OAObject) og.objectsInternal().callObjectCacheGetObject(objectClass, objectKey);
+		OAObject obj = (OAObject) og.internal().objects().cache().getObject(objectClass, objectKey);
 		if (obj == null) {
-			if (og.syncInternal().isServer()) {
+			if (og.internal().sync().isServer()) {
 				OADataSource ds = OARuntime.datasource().get(objectClass);
 				if (ds != null) obj = ds.getObject(objectClass, objectKey);
 			}
@@ -235,9 +235,9 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 	@Override
 	public OAObject getObjectUsingPkey(Class objectClass, OAObjectKey objectKey) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
-		OAObject obj = (OAObject) og.objectsInternal().callObjectCacheGetObject(objectClass, objectKey.getObjectIds());
+		OAObject obj = (OAObject) og.internal().objects().cache().getObject(objectClass, objectKey.getObjectIds());
 		if (obj == null) {
-			if (og.syncInternal().isServer()) {
+			if (og.internal().sync().isServer()) {
 				OADataSource ds = OARuntime.datasource().get(objectClass);
 				if (ds != null) obj = (OAObject) ds.getObject(objectClass, objectKey);
 			}
@@ -262,13 +262,13 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 			throw new RuntimeException("Object could not be found, class=" + clazz + ", objKey=" + objKey);
 		}
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetObjectInfo(clazz);
+		OAObjectInfo oi = og.internal().objects().info().getObjectInfo(clazz);
 
 		int x = 0;
 		if (args != null && args.length > 0) {
 			x += args.length;
 		}
-		Method method = og.objectsInternal().callObjectInfoGetMethod(oi, methodName, x);
+		Method method = og.internal().objects().info().getMethod(oi, methodName, x);
 
 		if (method == null) {
 			throw new RuntimeException("method " + methodName + " not found in class " + clazz.getSimpleName());
@@ -297,13 +297,13 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
     public Object runRemoteMethod2(OAObject obj, String methodName, Object[] args) {
         Class clazz = obj.getClass();
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-        OAObjectInfo oi = og.objectsInternal().callObjectInfoGetObjectInfo(clazz);
+        OAObjectInfo oi = og.internal().objects().info().getObjectInfo(clazz);
 
         int x = 0;
         if (args != null && args.length > 0) {
             x += args.length;
         }
-        Method method = og.objectsInternal().callObjectInfoGetMethod(oi, methodName, x);
+        Method method = og.internal().objects().info().getMethod(oi, methodName, x);
 
         if (method == null) {
             throw new RuntimeException("method " + methodName + " not found in class " + clazz.getSimpleName());
@@ -334,13 +334,13 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 		}
 		Class clazz = hub.getObjectClass();
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetObjectInfo(clazz);
+		OAObjectInfo oi = og.internal().objects().info().getObjectInfo(clazz);
 
 		int x = 1;
 		if (args != null && args.length > 0) {
 			x += args.length;
 		}
-		Method method = og.objectsInternal().callObjectInfoGetMethod(oi, methodName, x);
+		Method method = og.internal().objects().info().getMethod(oi, methodName, x);
 
 		if (method == null) {
 			throw new RuntimeException("method " + methodName + " not found in class " + clazz.getSimpleName());

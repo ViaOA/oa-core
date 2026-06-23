@@ -205,8 +205,8 @@ public class HubListenerTree {
 				if (tn.liReverse == null) {
 					Class c = tn.parent.hub.getObjectClass();
 	        		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
-					OALinkInfo li = og.objectsInternal().callObjectInfoGetLinkInfo(c, tn.property);
-					tn.liReverse = og.objectsInternal().callObjectInfoGetReverseLinkInfo(li);
+					OALinkInfo li = og.internal().objects().info().getLinkInfo(c, tn.property);
+					tn.liReverse = og.internal().objects().info().getReverseLinkInfo(li);
 				}
 				if (tn.liReverse == null || tn.liReverse.getReverseLinkInfo() == null) {
 					spp = null;
@@ -262,7 +262,7 @@ public class HubListenerTree {
 								objz = lis[0].getValue((OAObject) obja);
 							} else {
 				        		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) obja);
-								objz = og.objectsInternal().callObjectPropertyGetProperty((OAObject) obja, lis[0].getName());
+								objz = og.internal().objects().property().getProperty((OAObject) obja, lis[0].getName());
 							}
 							if (OACompare.isEqual(obj, objz)) {
 								al.add(obja);
@@ -359,8 +359,8 @@ public class HubListenerTree {
 			if (liReverse == null) {
 				Class c = parent.hub.getObjectClass();
         		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
-				OALinkInfo li = og.objectsInternal().callObjectInfoGetLinkInfo(c, property);
-				liReverse = og.objectsInternal().callObjectInfoGetReverseLinkInfo(li);
+				OALinkInfo li = og.internal().objects().info().getLinkInfo(c, property);
+				liReverse = og.internal().objects().info().getReverseLinkInfo(li);
 			}
 
 			ArrayList<Object> alNewObjects = new ArrayList<Object>();
@@ -373,8 +373,8 @@ public class HubListenerTree {
 				if (liReverse != null) {
 					propName = liReverse.getName();
 	        		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
-					OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(oaObj);
-					m = og.objectsInternal().callObjectInfoGetMethod(oi, "get" + propName, 0);
+					OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(oaObj);
+					m = og.internal().objects().info().getMethod(oi, "get" + propName, 0);
 				}
 
 				if (oaObj == lastRemoveObject && lastRemoveMasterObject != null) {
@@ -390,7 +390,7 @@ public class HubListenerTree {
 
 					for (Object objx : parent.hub) {
 		        		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) objx);
-						Object objz = og.objectsInternal().callObjectReflectGetProperty((OAObject) objx, this.property);
+						Object objz = og.internal().objects().reflect().getProperty((OAObject) objx, this.property);
 						if (objz == obj || lastRemoveObject == obj) {
 							// found a parent object that has a reference to child
 							if (alNewObjects.indexOf(objx) < 0) {
@@ -517,7 +517,7 @@ public class HubListenerTree {
 			return;
 		}
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(root.hub);
-		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetObjectInfo(root.hub.getObjectClass());
+		OAObjectInfo oi = og.internal().objects().info().getObjectInfo(root.hub.getObjectClass());
 		String[] calcProps = null;
 		for (OACalcInfo ci : oi.getCalcInfos()) {
 			if (ci.getName().equalsIgnoreCase(property)) {
@@ -722,7 +722,7 @@ public class HubListenerTree {
 						OAMany om = m.getAnnotation(OAMany.class);
 						if (om != null) {
 			        		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubClass);
-							hubClass = og.objectsInternal().callObjectAnnotationGetHubObjectClass(om, m);
+							hubClass = og.internal().objects().annotation().getHubObjectClass(om, m);
 						} else {
 							String s = ("getAnnotation OAMany=null for prop method=get" + property + ", hub=" + hub + ", prop="
 									+ origPropertyName + ", dependendProp=" + dependentPropertyNames[i]);
@@ -840,7 +840,7 @@ public class HubListenerTree {
 									final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(root.hub);
 									if (nodeThis == root) {
 										for (String s : newTreeNode.getCalcPropertyNames()) {
-											og.hubsInternal().callHubEventFireCalcPropertyChange(root.hub, e.getHub().getMasterObject(), s);
+											og.internal().hubs().events().fireCalcPropertyChange(root.hub, e.getHub().getMasterObject(), s);
 										}
 									} else {
 										if (bUseAll) {
@@ -848,7 +848,7 @@ public class HubListenerTree {
 											if (rootObjects != null && rootObjects.length > 0) {
 												for (Object obj : rootObjects) {
 													for (String s : newTreeNode.getCalcPropertyNames()) {
-														og.hubsInternal().callHubEventFireCalcPropertyChange((Hub<OAObject>) root.hub, (OAObject) obj, s);
+														og.internal().hubs().events().fireCalcPropertyChange((Hub<OAObject>) root.hub, (OAObject) obj, s);
 													}
 												}
 											}
@@ -858,7 +858,7 @@ public class HubListenerTree {
 												Object[] rootObjects = nodeThis.getRootValues(e.getHub().getMasterObject());
 												if (rootObjects != null && OAArray.containsExact(rootObjects, aObj)) {
 													for (String s : newTreeNode.getCalcPropertyNames()) {
-														og.hubsInternal().callHubEventFireCalcPropertyChange((Hub<OAObject>) root.hub, (OAObject)aObj, s);
+														og.internal().hubs().events().fireCalcPropertyChange((Hub<OAObject>) root.hub, (OAObject)aObj, s);
 													}
 												}
 											}
@@ -882,7 +882,7 @@ public class HubListenerTree {
 												final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(rootObjects[0].getClass());
 												for (Object obj : rootObjects) {
 													for (String s : newTreeNode.getCalcPropertyNames()) {
-														og.hubsInternal().callHubEventFireCalcPropertyChange((Hub<OAObject>)root.hub, (OAObject)obj, s);
+														og.internal().hubs().events().fireCalcPropertyChange((Hub<OAObject>)root.hub, (OAObject)obj, s);
 													}
 												}
 											}
@@ -893,7 +893,7 @@ public class HubListenerTree {
 												Object[] rootObjects = newTreeNode.parent.getRootValues(e.getObject());
 												if (rootObjects != null && OAArray.containsExact(rootObjects, aObj)) {
 													for (String s : newTreeNode.getCalcPropertyNames()) {
-														og.hubsInternal().callHubEventFireCalcPropertyChange((Hub<OAObject>)root.hub, (OAObject)aObj, s);
+														og.internal().hubs().events().fireCalcPropertyChange((Hub<OAObject>)root.hub, (OAObject)aObj, s);
 													}
 												}
 											}
@@ -1018,7 +1018,7 @@ public class HubListenerTree {
 							public void afterRemoveAll(HubEvent e) {
 								if (!srvcOAThreadLocal.isHubMergerChanging()) {
 									final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(root.hub);
-									og.hubsInternal().callHubEventFireCalcPropertyChange(root.hub, null, origPropertyName);
+									og.internal().hubs().events().fireCalcPropertyChange(root.hub, null, origPropertyName);
 								}
 							}
 
@@ -1029,7 +1029,7 @@ public class HubListenerTree {
 								final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(root.hub);
 								for (Object obj : rootObjects) {
 									if (obj != null) {
-										og.hubsInternal().callHubEventFireCalcPropertyChange((Hub<OAObject>)root.hub, (OAObject)obj, origPropertyName);
+										og.internal().hubs().events().fireCalcPropertyChange((Hub<OAObject>)root.hub, (OAObject)obj, origPropertyName);
 									}
 								}
 							}
@@ -1071,7 +1071,7 @@ public class HubListenerTree {
 									if (rootObjects != null) {
 										final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(root.hub);
 										for (Object obj : rootObjects) {
-											og.hubsInternal().callHubEventFireCalcPropertyChange((Hub<OAObject>)root.hub, (OAObject)obj, origPropertyName);
+											og.internal().hubs().events().fireCalcPropertyChange((Hub<OAObject>)root.hub, (OAObject)obj, origPropertyName);
 										}
 									}
 								} else {
@@ -1080,7 +1080,7 @@ public class HubListenerTree {
 										Object[] rootObjects = nodeThis.getRootValues(e.getObject());
 										final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(root.hub);
 										if (rootObjects != null && OAArray.containsExact(rootObjects, aObj)) {
-											og.hubsInternal().callHubEventFireCalcPropertyChange((Hub<OAObject>)root.hub, (OAObject)aObj, origPropertyName);
+											og.internal().hubs().events().fireCalcPropertyChange((Hub<OAObject>)root.hub, (OAObject)aObj, origPropertyName);
 										}
 									}
 								}

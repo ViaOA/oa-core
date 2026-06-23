@@ -124,7 +124,14 @@ public final class OARuntime {
 			RuntimeException exRt = hmPackageNameException.get(pkgName);
 			if (exRt != null) throw exRt;
 			
-			og = new OAGraphImpl(pkgName);
+			og = new OAGraphImpl(pkgName) {
+				@Override
+				public void close() {
+					super.close();
+					hmPackageNameGraphHelper.clear();
+					hmPackageNameGraph.remove(pkgName);
+				}
+			};
 			try {
 				((OAGraphImpl) og).initialize();
 				hmPackageNameGraphHelper.clear();

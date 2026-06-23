@@ -217,7 +217,7 @@ public class OAEqualPathFilter implements OAFilter {
 					if (objFrom != null) {
 						break;
 					}
-					OALinkInfo li = og.hubsInternal().callHubDetailGetLinkInfoFromDetailToMaster(hubx);
+					OALinkInfo li = og.internal().hubs().detail().getLinkInfoFromDetailToMaster(hubx);
 					if (li == null) {
 						break;
 					}

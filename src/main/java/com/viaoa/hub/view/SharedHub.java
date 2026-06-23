@@ -86,8 +86,8 @@ public class SharedHub<TYPE extends OAObject> extends Hub<TYPE> {
     public SharedHub(Hub<TYPE> hub, boolean bShareActiveObject) {
         if (hub != null) {
     		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-            og.hubsInternal().callHubDataSetObjectClass(this, hub.getObjectClass());
-            og.hubsInternal().callHubShareSetSharedHub(this, hub, bShareActiveObject);
+            og.internal().hubs().data().setObjectClass(this, hub.getObjectClass());
+            og.internal().hubs().share().setSharedHub(this, hub, bShareActiveObject);
         }
     }
 

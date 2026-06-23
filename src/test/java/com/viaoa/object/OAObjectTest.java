@@ -14,7 +14,6 @@ import com.test.pos.model.oa.Register;
 import com.test.pos.model.oa.Store;
 import com.viaoa.callback.OAObjectCallback;
 import com.viaoa.graph.api.internal.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.oa.VEnum;
 import com.viaoa.runtime.OARuntime;
@@ -23,15 +22,14 @@ class OAObjectTest {
 
     @BeforeEach
     void beforeEach() {
-        clearCache();
+        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
     }
-
     @AfterEach
     void afterEach() {
         OAObject.setDebugMode(false);
-        clearCache();
+        OARuntime.graph(Register.class).close();
     }
-
+	
     @Test
     void getOAVersionReturnsVersionString() {
         assertTrue(OAObject.getOAVersion().startsWith("4.0.0"));
@@ -416,9 +414,4 @@ class OAObjectTest {
         assertSame(OARuntime.graph(Store.class), new Store().getGraph());
     }
 
-    private static void clearCache() {
-        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
-        OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
-        os.getOAObjectCacheService().removeAllObjects();
-    }
 }

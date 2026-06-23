@@ -6,8 +6,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import com.test.pos.model.oa.Register;
+import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.runtime.OARuntime;
 
 class RemoteBufferedOutputStreamTest {
 
@@ -16,8 +21,15 @@ class RemoteBufferedOutputStreamTest {
         synchronized (RemoteBufferedOutputStream.Lock) {
             Arrays.fill(RemoteBufferedOutputStream.isUsed, false);
         }
+        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
     }
 
+    @AfterEach
+    void afterEach() {
+        OARuntime.graph(Register.class).close();
+    }
+    
+    
     @Test
     void constructorDoesNotWriteUntilDataIsFlushed() throws Exception {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();

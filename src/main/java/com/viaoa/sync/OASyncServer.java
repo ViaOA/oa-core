@@ -475,7 +475,7 @@ public class OASyncServer {
 				@Override
 				public void refreshCache(Class clazz) {
 					final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-			    	og.objectsInternal().callObjectCacheRefresh(clazz);
+			    	og.internal().objects().cache().refresh(clazz);
 				}
 
 				@Override
@@ -483,7 +483,7 @@ public class OASyncServer {
 					
 					final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
 					
-					OAObject oaObj = og.objectsInternal().callObjectUniqueGetUnique(clazz, propertyName, uniqueKey, bAutoCreate);
+					OAObject oaObj = og.internal().objects().unique().getUnique(clazz, propertyName, uniqueKey, bAutoCreate);
 					return oaObj;
 				}
 
@@ -695,7 +695,7 @@ public class OASyncServer {
 			@Override
 			public void updateObjectCache(OAObject obj) {
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
-				cx.remoteSession.updateObjectsWithoutHubs( obj.getClass(), obj.getObjectKey(), og.objectsInternal().callObjectHubIsInHubWithMaster(obj) );
+				cx.remoteSession.updateObjectsWithoutHubs( obj.getClass(), obj.getObjectKey(), og.internal().objects().hub().isInHubWithMaster(obj) );
 			}
 
 			@Override
@@ -1004,8 +1004,8 @@ public class OASyncServer {
 			            //see if this client has the hub loaded by looking at an object in it
 			            Class c = (Class) ri.args[0];
 						final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
-			            OAObject obj = (OAObject) og.objectsInternal().callObjectCacheGet(c, ok);
-			            Object objx = og.objectsInternal().callObjectPropertyGetProperty(obj, (String) ri.args[2]);
+			            OAObject obj = (OAObject) og.internal().objects().cache().get(c, ok);
+			            Object objx = og.internal().objects().property().getProperty(obj, (String) ri.args[2]);
 			            if (objx instanceof Hub) {
 			                Hub hub = (Hub) objx;
 			                if (hub.size() > 1) {
@@ -1035,8 +1035,8 @@ public class OASyncServer {
 			            //see if this client has the hub loaded by looking at an object in it
 			            Class c = (Class) ri.args[0];
 						final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
-			            OAObject obj = (OAObject) og.objectsInternal().callObjectCacheGet(c, ok);
-			            Object objx = og.objectsInternal().callObjectPropertyGetProperty(obj, (String) ri.args[2]);
+			            OAObject obj = (OAObject) og.internal().objects().cache().get(c, ok);
+			            Object objx = og.internal().objects().property().getProperty(obj, (String) ri.args[2]);
 			            if (objx instanceof Hub) {
 			                Hub hub = (Hub) objx;
 			                if (hub.size() > 1) {
@@ -1533,11 +1533,11 @@ public class OASyncServer {
 				LOG.finer("loading obj=" + ls.obj.getClass().getSimpleName() + ", prop=" + ls.property);
 
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(ls.obj);
-				if (og.objectsInternal().callObjectPropertyIsPropertyLocked(ls.obj, ls.property)) {
+				if (og.internal().objects().lock().isPropertyLocked(ls.obj, ls.property)) {
 					continue;
 				}
 
-				og.objectsInternal().callObjectReflectGetProperty(ls.obj, ls.property); // load from DS
+				og.internal().objects().reflect().getProperty(ls.obj, ls.property); // load from DS
 			} catch (Exception e) {
 				if (msNow > (msLastError + 5000)) {
 					LOG.log(Level.WARNING, "Exception in LoadSibling thread", e);

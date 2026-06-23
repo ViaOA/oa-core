@@ -39,6 +39,6 @@ class OAAnnotationVerifierTest {
     @SuppressWarnings({ "rawtypes", "unchecked" })
     private static OAObjectInfo objectInfo(Class clazz) {
         OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-        return og.objectsInternal().callObjectInfoGetOAObjectInfo(clazz);
+        return og.internal().objects().info().getOAObjectInfo(clazz);
     }
 }

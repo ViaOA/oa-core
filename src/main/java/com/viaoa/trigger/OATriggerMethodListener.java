@@ -160,7 +160,7 @@ public class OATriggerMethodListener implements OATriggerListener {
         this.method = method;
         this.bOnlyUseLoadedData = bOnlyUseLoadedData;
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-        oi =  og.objectsInternal().callObjectInfoGetOAObjectInfo(clazz);
+        oi =  og.internal().objects().info().getOAObjectInfo(clazz);
     }
     
     /**
@@ -197,7 +197,7 @@ public class OATriggerMethodListener implements OATriggerListener {
 
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
         
-        Hub h = og.objectsInternal().callObjectCacheGetSelectAllHub(clazz);
+        Hub h = og.internal().objects().cache().getSelectAllHub(clazz);
         if (h != null && bOnlyUseLoadedData) {
             for (Object objx : h) {
                 if (finder.findFirst((OAObject) objx) == null) continue;
@@ -210,7 +210,7 @@ public class OATriggerMethodListener implements OATriggerListener {
 		OADataSource ds = OARuntime.datasource().get(clazz);
         
         if (bOnlyUseLoadedData || ds == null || !ds.supportsStorage()) {
-        	og.objectsInternal().callObjectCacheVisit(clazz, new OACallback() {
+        	og.internal().objects().cache().visit(clazz, new OACallback() {
                 @Override
                 public boolean updateObject(Object obj) {
                     if (finder.findFirst((OAObject) obj) == null) return true;

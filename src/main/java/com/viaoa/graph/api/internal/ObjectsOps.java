@@ -2,7 +2,6 @@ package com.viaoa.graph.api.internal;
 
 import java.lang.reflect.Method;
 
-import com.viaoa.annotation.OAMany;
 import com.viaoa.graph.api.internal.objects.OAObjectAnnotationOps;
 import com.viaoa.graph.api.internal.objects.OAObjectAutoAddOps;
 import com.viaoa.graph.api.internal.objects.OAObjectCacheOps;
@@ -28,7 +27,6 @@ import com.viaoa.graph.api.internal.objects.OAObjectSerializeOps;
 import com.viaoa.graph.api.internal.objects.OAObjectSiblingOps;
 import com.viaoa.graph.api.internal.objects.OAObjectStateOps;
 import com.viaoa.graph.api.internal.objects.OAObjectUniqueOps;
-import com.viaoa.object.OAObject;
 
 public interface ObjectsOps {
 

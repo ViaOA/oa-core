@@ -7,13 +7,13 @@ import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.test.pos.model.oa.Product;
 import com.test.pos.model.oa.Register;
 import com.viaoa.graph.api.internal.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.runtime.OARuntime;
 
@@ -22,9 +22,13 @@ class OATriggerMethodListenerTest {
     @BeforeEach
     void beforeEach() {
         RecordingProduct.reset();
-        clearCache();
+        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
     }
-
+    @AfterEach
+    void afterEach() {
+        OARuntime.graph(Register.class).close();
+    }
+    
     @Test
     void constructorAcceptsRootClassMethodAndLoadedDataFlag() throws Exception {
         Method method = RecordingProduct.class.getDeclaredMethod("recordTrigger", HubEvent.class);
@@ -76,12 +80,6 @@ class OATriggerMethodListenerTest {
         assertEquals(1, RecordingProduct.count.get());
         assertSame(product, RecordingProduct.lastProduct.get());
         assertSame(event, RecordingProduct.lastEvent.get());
-    }
-
-    private static void clearCache() {
-        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
-        OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
-        os.getOAObjectCacheService().removeAllObjects();
     }
 
     private static class RecordingProduct extends Product {

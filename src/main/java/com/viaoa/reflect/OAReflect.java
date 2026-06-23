@@ -373,7 +373,7 @@ public class OAReflect {
 			if (clazz != null && clazz.equals(Hub.class)) {
 				// try to find the ObjectClass for Hub
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(classLast);
-				Class c = og.objectsInternal().callObjectInfoGetHubPropertyClass(classLast, name.substring(3));
+				Class c = og.internal().objects().info().getHubPropertyClass(classLast, name.substring(3));
 				if (c != null) {
 					// this needs to then get the activeObject out of the Hub object
 					method = OAReflect.getMethod(clazz, "getActiveObject", 0);
@@ -658,7 +658,7 @@ public class OAReflect {
 					s = s.substring(2);
 				}
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) object);
-				if (og.objectsInternal().callObjectReflectGetPrimitiveNull((OAObject) object, s)) {
+				if (og.internal().objects().reflect().getPrimitiveNull((OAObject) object, s)) {
 					return null;
 				}
 			}

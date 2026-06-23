@@ -298,7 +298,7 @@ public class OADataSourceAuto extends OADataSource {
 				nn.setId(clazz.getName());
 	
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-				final OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(clazz);
+				final OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(clazz);
 				final String[] props = oi.getIdProperties();
 				if (props != null) {
 					for (String s : props) {
@@ -351,7 +351,7 @@ public class OADataSourceAuto extends OADataSource {
 			}
 			// 20141201
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
-			Object test = og.objectsInternal().callObjectCacheGetObject(oaObj.getClass(), id);
+			Object test = og.internal().objects().cache().getObject(oaObj.getClass(), id);
 			//was: Object test = OAObjectReflectDelegate.getObject(oaObj.getClass(), id);
 			if (test == null) {
 				break;
@@ -360,10 +360,10 @@ public class OADataSourceAuto extends OADataSource {
 
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
 		try {
-			og.objectsInternal().callObjectDSSetAssigningId(oaObj, true);
+			og.internal().objects().ds().setAssigningId(oaObj, true);
 			oaObj.setProperty(prop, id);
 		} finally {
-			og.objectsInternal().callObjectDSSetAssigningId(oaObj, false);
+			og.internal().objects().ds().setAssigningId(oaObj, false);
 		}
 	}
 

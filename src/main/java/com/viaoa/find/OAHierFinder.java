@@ -257,7 +257,7 @@ public class OAHierFinder<F extends OAObject> {
                 b = false;
             }
             else {
-                OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(obj.getClass());
+                OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(obj.getClass());
                 OAPropertyInfo pi = oi.getPropertyInfo(property);
                 if (pi == null) {
                     OALinkInfo li = oi.getLinkInfo(property);
@@ -281,8 +281,8 @@ public class OAHierFinder<F extends OAObject> {
         }        
 
         // check recursive parent 
-        OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(obj.getClass());
-        OALinkInfo liRecursive = og.objectsInternal().callObjectInfoGetRecursiveLinkInfo(oi, OALinkInfo.ONE);
+        OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(obj.getClass());
+        OALinkInfo liRecursive = og.internal().objects().info().getRecursiveLinkInfo(oi, OALinkInfo.ONE);
         
         if (liRecursive != null) {
             OALinkInfo[] lis  = propertyPath.getLinkInfos();

@@ -13,8 +13,8 @@ import com.test.pos.model.oa.Register;
 import com.test.pos.model.oa.Store;
 import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.graph.api.internal.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.hub.Hub;
+import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 
 class OADataSourceObjectCacheTest {
@@ -24,12 +24,12 @@ class OADataSourceObjectCacheTest {
 
     @BeforeEach
     void beforeEach() {
-        clearCache();
+        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
     }
-
     @AfterEach
     void afterEach() {
-        clearCache();
+        OAObject.setDebugMode(false);
+        OARuntime.graph(Register.class).close();
     }
 
     @Test
@@ -154,7 +154,7 @@ class OADataSourceObjectCacheTest {
         ds.insert(store);
         File file = new File(tempDir, "cache.bin");
         ds.saveToStorageFile(file, null);
-        clearCache();
+        // clearCache();
         OADataSourceObjectCache loaded = new OADataSourceObjectCache(false);
 
         assertTrue(loaded.loadFromStorageFile(file));
@@ -163,11 +163,5 @@ class OADataSourceObjectCacheTest {
 
         assertTrue(it.hasNext());
         assertEquals("RoundTrip", it.next().getName());
-    }
-
-    private static void clearCache() {
-        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
-        OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
-        os.getOAObjectCacheService().removeAllObjects();
     }
 }

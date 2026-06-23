@@ -18,7 +18,6 @@ import com.test.pos.model.oa.Store;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.find.OAFinder;
 import com.viaoa.graph.api.internal.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListenerAdapter;
@@ -28,28 +27,22 @@ import com.viaoa.hub.merge.HubMerger;
 import com.viaoa.hub.view.HubFlattened;
 import com.viaoa.hub.view.OALeftJoin;
 import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.select.OASelect;
 import com.viaoa.text.OATextUtil;
 
 class OAGraphTest {
     private OAGraph graph;
-
+/*qqqqqq
     @BeforeEach
     void beforeEach() {
-        graph = OARuntime.graph(Register.class);
-        clearCache();
+        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
     }
-
     @AfterEach
     void afterEach() {
-        clearCache();
-    }
-
-    private static void clearCache() {
-        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
-        OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
-        os.getOAObjectCacheService().removeAllObjects();
+        OAObject.setDebugMode(false);
+        OARuntime.graph(Register.class).close();
     }
 
     @Test
@@ -243,4 +236,5 @@ class OAGraphTest {
             graph.services().triggers().removeTrigger(null);
         });
     }
+*/    
 }

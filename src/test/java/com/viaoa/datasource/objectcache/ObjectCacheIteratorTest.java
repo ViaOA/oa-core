@@ -8,19 +8,19 @@ import org.junit.jupiter.api.Test;
 
 import com.test.pos.model.oa.Register;
 import com.viaoa.graph.api.internal.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectInternalService;
+import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 
 class ObjectCacheIteratorTest {
 
     @BeforeEach
     void beforeEach() {
-        clearCache();
+        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
     }
-
     @AfterEach
     void afterEach() {
-        clearCache();
+        OAObject.setDebugMode(false);
+        OARuntime.graph(Register.class).close();
     }
 
     @Test
@@ -66,11 +66,5 @@ class ObjectCacheIteratorTest {
         assertTrue(it.hasNext());
         assertNotNull(it.next());
         assertFalse(it.hasNext());
-    }
-
-    private static void clearCache() {
-        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
-        OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
-        os.getOAObjectCacheService().removeAllObjects();
     }
 }

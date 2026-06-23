@@ -7,7 +7,6 @@ import com.viaoa.callback.OACallback;
 import com.viaoa.cascade.OACascade;
 import com.viaoa.compare.match.OAMatchNotExist;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAArray;
 import com.viaoa.lang.OAStr;
@@ -155,12 +154,12 @@ public abstract class OAObjectDeleteService {
 	public void setDeleted(OAObject oaObj, final boolean tf) {
 		final boolean bOld = faObject.getDeleteFlag(oaObj);
 		if (bOld != tf) {
-			callEventFireBeforePropertyChange(	oaObj, OAObjectInternalService.WORD_Deleted,
+			callEventFireBeforePropertyChange(	oaObj, "Deleted",
 															bOld ? Boolean.TRUE : Boolean.FALSE,
 															tf ? Boolean.TRUE : Boolean.FALSE, false, true);
 			faObject.setDeletedFlag(oaObj, tf);
 
-			callEventFirePropertyChange(	oaObj, OAObjectInternalService.WORD_Deleted,
+			callEventFirePropertyChange(	oaObj, "Deleted",
 														bOld ? Boolean.TRUE : Boolean.FALSE,
 														tf ? Boolean.TRUE : Boolean.FALSE, false, false);
 

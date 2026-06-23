@@ -219,7 +219,7 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	    }
 	    else {
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
-    	    OAObject obj = (OAObject) og.objectsInternal().callObjectCacheGet(c, ok);
+    	    OAObject obj = (OAObject) og.internal().objects().cache().get(c, ok);
     	    if (obj != null) {
                 UUID guid = ok.getGuid();
                 hmObjectsWithoutHubs.put(guid, obj);
@@ -243,7 +243,7 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 			OAObject obj = entry.getValue();
 			if (!obj.wasDeleted()) {
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
-				og.objectsInternal().callObjectSaveSave(obj, iCascadeRule, cascade);
+				og.internal().objects().save().save(obj, iCascadeRule, cascade);
 			}
 		}
 	}
@@ -269,7 +269,7 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	@Override
 	public boolean setLock(Class objectClass, OAObjectKey objectKey, boolean bLock) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
-		OAObject obj = (OAObject) og.objectsInternal().callObjectCacheGet(objectClass, objectKey);
+		OAObject obj = (OAObject) og.internal().objects().cache().get(objectClass, objectKey);
 		if (obj == null) {
 			return false;
 		}
@@ -313,7 +313,7 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	 */
 	public OAObject createNewObject(Class clazz) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-		OAObject obj = (OAObject) og.objectsInternal().callObjectReflectCreateNewObject(clazz);
+		OAObject obj = (OAObject) og.internal().objects().reflect().createNewObject(clazz);
         objectCreated(obj.getGuid());
 		updateObjectsWithoutHubs(clazz, obj.getObjectKey(),  false);
 		return obj;
@@ -329,7 +329,7 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	@Override
 	public boolean isLockedByThisClient(Class objectClass, OAObjectKey objectKey) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
-		Object obj = og.objectsInternal().callObjectCacheGet(objectClass, objectKey);
+		Object obj = og.internal().objects().cache().get(objectClass, objectKey);
 		if (obj == null) {
 			return false;
 		}

@@ -686,7 +686,7 @@ public class OALoader<F extends OAObject, T extends OAObject> {
 	        }
 
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
-	        OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(c);
+	        OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(c);
 	        liRecursiveRoot = oi.getRecursiveLinkInfo(OALinkInfo.MANY);
         }
 

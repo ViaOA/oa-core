@@ -771,7 +771,7 @@ public class OAQueryFilter<TYPE> implements OAFilter<TYPE> {
 		ArrayList<OAFilter> alFilter = null;
 
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-		final OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(clazz);
+		final OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(clazz);
 
 		for (int i = 0;; i++) {
 			nextToken = nextToken();

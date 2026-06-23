@@ -310,7 +310,7 @@ public class OADataSourceClient extends OADataSource {
 	public RemoteClientInterface getRemoteClient() {
 		if (remoteClientSync == null) {
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(packageName);
-			remoteClientSync = og.syncInternal().getRemoteClient();
+			remoteClientSync = og.internal().sync().getRemoteClient();
 		}
 		return remoteClientSync;
 	}
@@ -462,7 +462,7 @@ public class OADataSourceClient extends OADataSource {
 
 		if (filter != null) {
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-        	if (og.objectsInternal().callObjectCacheGetSelectAllHub(clazz) != null) {
+        	if (og.internal().objects().cache().getSelectAllHub(clazz) != null) {
 				return true;
 			}
 		}
@@ -583,7 +583,7 @@ public class OADataSourceClient extends OADataSource {
 		if (whereObject != null) {
 			whereClass = whereObject.getClass();
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(whereObject);
-			whereKey = og.objectsInternal().callObjectKeyGetKey(whereObject);
+			whereKey = og.internal().objects().key().getKey(whereObject);
 		}
 
 		Object[] objs = new Object[] { selectClass, queryWhere, params, whereClass, whereKey, propertyFromWhereObject, extraWhere, max };
@@ -676,7 +676,7 @@ public class OADataSourceClient extends OADataSource {
 		if (filter != null) {
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(selectClass);
 			
-			if (og.objectsInternal().callObjectCacheGetSelectAllHub(selectClass) != null) {
+			if (og.internal().objects().cache().getSelectAllHub(selectClass) != null) {
 				ObjectCacheIterator it = new ObjectCacheIterator(selectClass, filter);
 				it.setMax(max);
 				return it;
@@ -688,7 +688,7 @@ public class OADataSourceClient extends OADataSource {
 		if (whereObject != null) {
 			whereClass = whereObject.getClass();
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(whereClass);
-			whereKey = og.objectsInternal().callObjectKeyGetKey(whereObject);
+			whereKey = og.internal().objects().key().getKey(whereObject);
 		}
 
 		Object[] objs = new Object[] {
@@ -728,7 +728,7 @@ public class OADataSourceClient extends OADataSource {
 			
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(selectClass);
 			
-			if (og.objectsInternal().callObjectCacheGetSelectAllHub(selectClass) != null) {
+			if (og.internal().objects().cache().getSelectAllHub(selectClass) != null) {
 				ObjectCacheIterator it = new ObjectCacheIterator(selectClass, filter);
 				it.setMax(max);
 				return it;
@@ -930,7 +930,7 @@ public class OADataSourceClient extends OADataSource {
 				if (objx == null) continue;
 				OAObject obj = (OAObject) objx;
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj.getClass());
-				og.objectsInternal().callObjectCSUpdateObjectsWithoutHubs(obj);
+				og.internal().objects().cs().updateObjectsWithoutHubs(obj);
                 hubReadAhead.add(obj);
 			}
 		}
@@ -954,10 +954,10 @@ public class OADataSourceClient extends OADataSource {
 			Object obj = null;
 			if (key != null) {
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-				obj = og.objectsInternal().callObjectCacheGet(clazz, key);
+				obj = og.internal().objects().cache().get(clazz, key);
 				if (obj == null) {
 					// not on this system, need to get from server
-					og.syncInternal().getRemoteServer().getObject(clazz, key);
+					og.internal().sync().getRemoteServer().getObject(clazz, key);
 				}
 				bKey = false;
 				return obj;
@@ -1037,7 +1037,7 @@ public class OADataSourceClient extends OADataSource {
 	public @Override void updateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propertyNameFromMaster) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(masterObject);
 		getRemoteClient().datasource(UPDATE_MANY2MANY_LINKS, new Object[] { masterObject.getClass(),
-				og.objectsInternal().callObjectKeyGetKey(masterObject), adds, removes, propertyNameFromMaster });
+				og.internal().objects().key().getKey(masterObject), adds, removes, propertyNameFromMaster });
 	}
 
 	/**
@@ -1052,7 +1052,7 @@ public class OADataSourceClient extends OADataSource {
 	public byte[] getPropertyBlobValue(OAObject obj, String propertyName) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
 		Object objx = getRemoteClient().datasource(	GET_PROPERTY,
-													new Object[] { obj.getClass(), og.objectsInternal().callObjectKeyGetKey(obj), propertyName });
+													new Object[] { obj.getClass(), og.internal().objects().key().getKey(obj), propertyName });
 		if (objx instanceof byte[]) {
 			return (byte[]) objx;
 		}

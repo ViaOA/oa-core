@@ -3,25 +3,19 @@ package com.viaoa.graph;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-import com.viaoa.filter.OAFilter;
 import com.viaoa.find.OAFinder;
 import com.viaoa.graph.api.ReplicationOps;
 import com.viaoa.graph.api.SyncOps;
 import com.viaoa.graph.api.internal.GraphInternalOps;
-import com.viaoa.graph.api.internal.HubsInternalOps;
 import com.viaoa.graph.api.internal.OAGraphInternal;
-import com.viaoa.graph.api.internal.ObjectsInternalOps;
-import com.viaoa.graph.api.internal.ReplicationInternalOps;
-import com.viaoa.graph.api.internal.SyncInternalOps;
-import com.viaoa.graph.api.internal.TriggerInternalOps;
 import com.viaoa.graph.api.services.GraphServicesOps;
-import com.viaoa.graph.internal.facade.GraphInternal;
-import com.viaoa.graph.service.HubInternalService;
-import com.viaoa.graph.service.OAObjectInternalService;
+import com.viaoa.graph.internal.facade.GraphInternalOpsImpl;
 import com.viaoa.graph.service.OAReplicationService;
 import com.viaoa.graph.service.OASyncService;
 import com.viaoa.graph.service.OATriggerService;
-import com.viaoa.graph.service.facade.GraphServices;
+import com.viaoa.graph.service.facade.GraphServicesOpsImpl;
+import com.viaoa.graph.service.hub.HubParentService;
+import com.viaoa.graph.service.object.OAObjectParentService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubListener;
 import com.viaoa.metadata.OAObjectInfo;
@@ -29,7 +23,6 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.reflect.OAReflect;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.OAThreadService;
 import com.viaoa.select.OASelect;
 
 /*qqqqqqqqqq
@@ -115,34 +108,40 @@ CODEX
 */
 
 
-
 public class OAGraphImpl implements OAGraphInternal {
 	private static Logger LOG = Logger.getLogger(OAGraphImpl.class.getName());
 
 	private String packageName;
 	private volatile boolean bInit;
 
-	private OAObjectInternalService srvcOAObjectInternal;
-	private HubInternalService srvcHubInternal;
+    private GraphServicesOps srvcServices;
+    private GraphInternalOps srvcInternal;
+	
     private OASyncService srvcOASyncInternal;
     private OAReplicationService srvcOAReplicationInternal;
     private OATriggerService srvcOATrigger;
-    private GraphServicesOps srvcServices;
-    private GraphInternalOps srvcInternal;
 
+	private OAObjectParentService srvcObjectParent;
+	private HubParentService srvcHubParent;
+
+    
 	public OAGraphImpl(String packageName) {
 		this.packageName = packageName;
 	}
 
 	public void initialize() throws ClassNotFoundException, IOException {
 		if (bInit) return;
+		_initialize();
 		bInit = true;
+	}
+	
+	protected void _initialize() throws ClassNotFoundException, IOException {
+		srvcObjectParent = new OAObjectParentService();
+		srvcHubParent = new HubParentService();
 		
-	    final OAThreadService srvcThread = OARuntime.thread();
-
-		srvcOAObjectInternal = new OAObjectInternalService();
-		srvcHubInternal = new HubInternalService();
+		
 	    srvcOASyncInternal = new OASyncService(this);
+
 	    srvcOAReplicationInternal = new OAReplicationService() {
 			@Override
 			public void createClient(String guid, String tLogFileName, String replicationMasterHostName, int replicationMasterPort) {
@@ -153,21 +152,34 @@ public class OAGraphImpl implements OAGraphInternal {
 			public void createMaster(String guid, String tLogFileName) {
 				super.createMaster(guid, srvcOASyncInternal.getServer(), tLogFileName);
 			}
-	    	
 	    };
 	    srvcOATrigger = new OATriggerService(this);
-	    srvcServices = new GraphServices(this);
-	    srvcInternal = new GraphInternal(this); 
 
-		srvcOAObjectInternal.initialize(srvcHubInternal, srvcOASyncInternal, srvcThread.getThreadLocalService(), srvcThread.getRemoteThreadService(), srvcOATrigger);
-		srvcHubInternal.initialize(srvcOAObjectInternal, srvcOASyncInternal, srvcThread.getThreadLocalService(), srvcThread.getRemoteThreadService());
+		srvcObjectParent.initialize(srvcHubParent, srvcOASyncInternal, OARuntime.thread().getThreadLocalService(), OARuntime.thread().getRemoteThreadService(), srvcOATrigger);
+		srvcHubParent.initialize(srvcObjectParent, srvcOASyncInternal, OARuntime.thread().getThreadLocalService(), OARuntime.thread().getRemoteThreadService());
+	    
+		
+	    srvcServices = new GraphServicesOpsImpl(
+			new com.viaoa.graph.service.facade.HubsOpsImpl(srvcHubParent),
+			new com.viaoa.graph.service.facade.ObjectsOpsImpl(srvcObjectParent),
+			new com.viaoa.graph.service.facade.TriggersOpsImpl(srvcOATrigger)
+		);
 
+	    srvcInternal = new GraphInternalOpsImpl(
+			new com.viaoa.graph.internal.facade.HubsOpsImpl(srvcHubParent),
+			new com.viaoa.graph.internal.facade.ObjectsOpsImpl(srvcObjectParent),
+			new com.viaoa.graph.internal.facade.TriggersOpsImpl(srvcOATrigger), 
+			srvcOASyncInternal,
+			srvcOAReplicationInternal
+		);
+	    
+	    
 		if (packageName != null) {
 			String[] classNames = OAReflect.getOAObjectClasses(packageName);
 			for (String cn : classNames) {
 				Class<?> c = Class.forName(packageName + "." + cn);
 				if (OAObject.class.isAssignableFrom(c)) {
-					srvcOAObjectInternal.getOAObjectInfoService().getObjectInfo(c);
+					internal().objects().info().getObjectInfo(c);
 				}
 			}
 		}
@@ -192,37 +204,8 @@ public class OAGraphImpl implements OAGraphInternal {
     }
 	
 	@Override
-	public ObjectsInternalOps objectsInternal() {
-		return srvcOAObjectInternal;
-	}
-
-	@Override
-	public HubsInternalOps hubsInternal() {
-		return srvcHubInternal;
-	}
-	
-	@Override
-    public SyncInternalOps syncInternal() {
-    	return srvcOASyncInternal;
-    }
-	
-	@Override
-    public ReplicationInternalOps replInternal() {
-    	return srvcOAReplicationInternal;
-    }
-
-	@Override
-	public TriggerInternalOps triggerInternal() {
-		return srvcOATrigger;
-	}
-	
-	
-//qqqqqqqqqqqqqqqqqq OAGraph verbs	
-	
-	
-	@Override
 	public <T extends OAObject> T create(Class<T> type) {
-		T obj = srvcOAObjectInternal.callObjectReflectCreateNewObject(type);
+		T obj = internal().objects().reflect().createNewObject(type);
 		return obj;
 	}
 
@@ -253,13 +236,13 @@ public class OAGraphImpl implements OAGraphInternal {
 
 	@Override
 	public <T extends OAObject> T get(Class<T> type, Object key) {
-		T obj = srvcOAObjectInternal.callObjectReflectGetObject(type, key);
+		T obj = internal().objects().reflect().getObject(type, key);
 		return obj;
 	}
 
 	@Override
 	public <T extends OAObject> T get(Class<T> type, OAObjectKey key) {
-		T obj = srvcOAObjectInternal.callObjectReflectGetObject(type, key);
+		T obj = internal().objects().reflect().getObject(type, key);
 		return obj;
 	}
 
@@ -306,21 +289,21 @@ public class OAGraphImpl implements OAGraphInternal {
 
 	@Override
 	public OAObjectInfo info(Class<? extends OAObject> type) {
-		OAObjectInfo oi = srvcOAObjectInternal.callObjectInfoGetOAObjectInfo(type);
+		OAObjectInfo oi = internal().objects().info().getOAObjectInfo(type);
 		return oi;
 	}
 
 	@Override
 	public OAObjectInfo info(OAObject obj) {
 		Class<?>  c = obj == null ? null : obj.getClass();
-		OAObjectInfo oi = srvcOAObjectInternal.callObjectInfoGetOAObjectInfo(c);
+		OAObjectInfo oi = internal().objects().info().getOAObjectInfo(c);
 		return oi;
 	}
 
 	@Override
 	public OAObjectInfo info(Hub<?> hub) {
 		Class<?>  c = hub == null ? null : hub.getObjectClass();
-		OAObjectInfo oi = srvcOAObjectInternal.callObjectInfoGetOAObjectInfo(c);
+		OAObjectInfo oi = internal().objects().info().getOAObjectInfo(c);
 		return oi;
 	}
 
@@ -332,6 +315,16 @@ public class OAGraphImpl implements OAGraphInternal {
 	@Override
 	public GraphInternalOps internal() {
 		return srvcInternal;
+	}
+
+	private boolean bClosed;
+	
+	@Override
+	public void close() {
+		if (bClosed) return;
+		bClosed = true;
+		// srvcObjectParent.getOAObjectCacheService().close();
+		// todo: might need to create & call close on child services		
 	}
 	
 }

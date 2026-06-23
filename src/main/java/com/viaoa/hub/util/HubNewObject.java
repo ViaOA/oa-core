@@ -151,8 +151,8 @@ public class HubNewObject<F extends OAObject> {
 		}
 
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubMain);
-		hubNewObject.setSelectWhereHub(	og.hubsInternal().callHubSelectGetSelectWhereHub(hubMain),
-				og.hubsInternal().callHubSelectGetSelectWhereHubPropertyPath(hubMain));
+		hubNewObject.setSelectWhereHub(	og.internal().hubs().select().getSelectWhereHub(hubMain),
+				og.internal().hubs().select().getSelectWhereHubPropertyPath(hubMain));
 
 		// need to set up a filtered hub, so that hubNewObject can be associated with hubMain and it's masterObject/Hub, etc
 		Hub hubEmptyFiltered = new Hub(hubMain.getObjectClass());
@@ -203,8 +203,8 @@ public class HubNewObject<F extends OAObject> {
 			if (obj.isNew() && !ok.hasValidObjectIds()) {
 				// obj.setObjectDefaults(); // 20240507 this should be called when object is created. 
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
-				if (og.objectsInternal().callObjectDSGetAssignIdOnCreate(obj)) {
-					og.objectsInternal().callObjectDSAssignId(obj);
+				if (og.internal().objects().ds().getAssignIdOnCreate(obj)) {
+					og.internal().objects().ds().assignId(obj);
 				}
 			}
 		}
@@ -258,12 +258,12 @@ public class HubNewObject<F extends OAObject> {
 		try {
 			Class<F> clazz = hubMain.getObjectClass();
     		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-			obj = (F) og.objectsInternal().callObjectReflectCreateNewObject(clazz);
+			obj = (F) og.internal().objects().reflect().createNewObject(clazz);
 		} finally {
 			srvcOAThreadLocal.setLoading(bWasLoading);
 		}
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
-		og.objectsInternal().callObjectInitializeInitializeAfterLoading((OAObject) obj);
+		og.internal().objects().initialize().initializeAfterLoading((OAObject) obj);
 		return obj;
 	}
 

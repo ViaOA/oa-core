@@ -320,7 +320,7 @@ public class HubCombined<TYPE extends OAObject> {
 					srvcOAThreadLocal.setLoading(bWasLoading);
 				}
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-				og.hubsInternal().callHubEventFireOnNewListEvent(hubMaster, true);
+				og.internal().hubs().events().fireOnNewListEvent(hubMaster, true);
 			}
 		};
 		hub.addHubListener(hl);

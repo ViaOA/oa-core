@@ -287,7 +287,7 @@ public class HubSortListener<TYPE extends OAObject> extends HubListenerAdapter<T
             // 20101009 another thread could be making Hub changes, so this could fail - adding try..catch
             for (int i=0; i<3; i++) {
                 try {
-                    og.hubsInternal().callHubSortResort(hub);
+                    og.internal().hubs().sort().resort(hub);
                     break;
                 }
                 catch (Exception ex) {
@@ -320,7 +320,7 @@ public class HubSortListener<TYPE extends OAObject> extends HubListenerAdapter<T
                 bCallingSortMove = true;
                 srvcOAThreadLocal.setSendSyncMessages(false);  // each client will handle it's own sorting
         		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-                og.hubsInternal().callHubAddRemoveSortMove(hub, e.getObject());
+                og.internal().hubs().addRemove().sortMove(hub, e.getObject());
             }
             finally {
                 bCallingSortMove = false;

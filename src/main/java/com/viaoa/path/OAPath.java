@@ -350,7 +350,7 @@ public class OAPath<TYPE extends OAObject> {
 		for (int i = 0; i < linkInfos.length; i++) {
 			OALinkInfo li = linkInfos[i];
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(li.getToClass());
-			OALinkInfo liRev = og.objectsInternal().callObjectInfoGetReverseLinkInfo(li);
+			OALinkInfo liRev = og.internal().objects().info().getReverseLinkInfo(li);
 			if (liRev == null) return null;
 			if (!bAllowPrivateLinks && liRev.getPrivateMethod()) {
 				return null;
@@ -1042,19 +1042,19 @@ Severity: critical
 			}
 
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-			OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(clazz);
-			final OALinkInfo li = og.objectsInternal().callObjectInfoGetLinkInfo(oi, propertyName);
+			OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(clazz);
+			final OALinkInfo li = og.internal().objects().info().getLinkInfo(oi, propertyName);
 			if (li != null) {
 				endLinkInfo = li;
 				endPropertyInfo = null;
 				endCalcInfo = null;
 				linkInfos = (OALinkInfo[]) OAArray.add(OALinkInfo.class, linkInfos, li);
 			} else {
-				endPropertyInfo = og.objectsInternal().callObjectInfoGetPropertyInfo(oi, propertyName);
+				endPropertyInfo = og.internal().objects().info().getPropertyInfo(oi, propertyName);
 				
 				if (endPropertyInfo != null) endCalcInfo = null;
 				else {
-					endCalcInfo = og.objectsInternal().callObjectInfoGetCalcInfo(oi, propertyName);
+					endCalcInfo = og.internal().objects().info().getCalcInfo(oi, propertyName);
 				}
 				//was: endCalcInfo = endPropertyInfo != null ? null : OAObjectInfoDelegate.getOACalcInfo(oi, propertyName);
 				endLinkInfo = null;
@@ -1072,7 +1072,7 @@ Severity: critical
 			this.properties = (String[]) OAArray.add(String.class, this.properties, propertyName);
 
 			// 20240131
-            Method method = og.objectsInternal().callObjectInfoGetMethod(oi, mname, 0);
+            Method method = og.internal().objects().info().getMethod(oi, mname, 0);
             //was: Method method = OAReflect.getMethod(clazz, mname, 0);
 			
 			bLastMethodHasHubParam = false;
@@ -1117,7 +1117,7 @@ Severity: critical
 
 			if (clazz != null && clazz.equals(Hub.class) && castName == null) {
 				// try to find the ObjectClass for Hub
-				Class c = og.objectsInternal().callObjectInfoGetHubPropertyClass(classLast, propertyName);
+				Class c = og.internal().objects().info().getHubPropertyClass(classLast, propertyName);
 				if (c != null) {
 					clazz = c;
 				}
@@ -1304,13 +1304,13 @@ Severity: critical
 					continue;
 				}
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(li.getToClass());
-				OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(li.getToClass());
+				OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(li.getToClass());
 
 				OALinkInfo lix;
 				if (li.getType() == OALinkInfo.MANY) {
-					lix = og.objectsInternal().callObjectInfoGetRecursiveLinkInfo(oi, OALinkInfo.MANY);
+					lix = og.internal().objects().info().getRecursiveLinkInfo(oi, OALinkInfo.MANY);
 				} else {
-					lix = og.objectsInternal().callObjectInfoGetRecursiveLinkInfo(oi, OALinkInfo.ONE);
+					lix = og.internal().objects().info().getRecursiveLinkInfo(oi, OALinkInfo.ONE);
 				}
 				recursiveLinkInfos[j - 1] = lix;
 			}

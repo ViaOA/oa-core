@@ -4,9 +4,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.*;
 
+import com.test.pos.model.oa.Register;
 import com.test.pos.model.oa.Store;
 import com.viaoa.graph.api.internal.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
@@ -17,12 +17,11 @@ class RemoteServerImplTest {
 
     @BeforeEach
     void beforeEach() {
-        clearCache();
+        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
     }
-
     @AfterEach
     void afterEach() {
-        clearCache();
+        OARuntime.graph(Register.class).close();
     }
 
     @Test
@@ -110,12 +109,6 @@ class RemoteServerImplTest {
 
         assertNotNull(text);
         assertFalse(text.isBlank());
-    }
-
-    private void clearCache() {
-        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Store.class);
-        OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
-        os.getOAObjectCacheService().removeAllObjects();
     }
 
     private static class TestRemoteServer extends RemoteServerImpl {

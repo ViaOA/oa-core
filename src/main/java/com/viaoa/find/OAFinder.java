@@ -660,7 +660,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		if (!bEnableRecursiveRootWasCalled) {
 			if (hubRoot != null) {
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubRoot);
-				OALinkInfo li = og.hubsInternal().callHubDetailGetLinkInfoFromMasterObjectToDetail(hubRoot);
+				OALinkInfo li = og.internal().hubs().detail().getLinkInfoFromMasterObjectToDetail(hubRoot);
 				if (li != null && li.getRecursive()) {
 					bEnableRecursiveRoot = true;
 				}
@@ -1207,7 +1207,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		}
 
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
-		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(c);
+		OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(c);
 		liRecursiveRoot = oi.getRecursiveLinkInfo(OALinkInfo.MANY);
 
 		if (liRecursiveRoot != null && linkInfos != null && linkInfos.length > 0) {
@@ -1386,11 +1386,11 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 						if (linkInfos[pos].getCalculated()) {
 							objx = linkInfos[pos].getValue((OAObject) obj);
 						} else {
-							objx = og.objectsInternal().callObjectPropertyGetProperty((OAObject) obj, linkInfos[pos].getName());
+							objx = og.internal().objects().property().getProperty((OAObject) obj, linkInfos[pos].getName());
 						}
 						if (objx instanceof Hub) {
 							Hub h = (Hub) objx;
-							if (og.hubsInternal().callHubSortGetSortListener(h) == null && og.hubsInternal().callHubSequenceGetAutoSequence(h) == null) {
+							if (og.internal().hubs().sort().getSortListener(h) == null && og.internal().hubs().sequence().getAutoSequence(h) == null) {
 								final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 								OAThreadLocal tl = srvcOAThreadLocal.getThreadLocal(true);
 								if (tl.cntGetSiblingCalled > 1) {
@@ -1436,9 +1436,9 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		if (li.getCalculated()) {
 			hx = (Hub) li.getValue((OAObject) obj);
 		} else {
-			hx = (Hub) og.objectsInternal(). callObjectPropertyGetProperty((OAObject) obj, li.getName(), false, true);
+			hx = (Hub) og.internal().objects().property().getProperty((OAObject) obj, li.getName(), false, true);
 		}
-		if (hx == null || (og.hubsInternal().callHubSortGetSortListener(hx) == null && og.hubsInternal().callHubSequenceGetAutoSequence(hx) == null)) {
+		if (hx == null || (og.internal().hubs().sort().getSortListener(hx) == null && og.internal().hubs().sequence().getAutoSequence(hx) == null)) {
 			return true;
 		}
 		return false;

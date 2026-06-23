@@ -269,12 +269,12 @@ public class HubEvent<TYPE extends OAObject> {
 		boolean bError = false;
 		if (oldObj instanceof OAObjectKey && object instanceof OAObject) {
 			OAGraphInternal og = (OAGraphInternal) OARuntime.graph(object);
-			OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(object);
+			OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(object);
 			if (oi != null) {
-				OALinkInfo li = og.objectsInternal().callObjectInfoGetLinkInfo(oi, getPropertyName());
+				OALinkInfo li = og.internal().objects().info().getLinkInfo(oi, getPropertyName());
 				if (li != null) {
 					og = (OAGraphInternal) OARuntime.graph(li.getToClass());
-					oldObj = og.objectsInternal().callObjectReflectGetObject((Class<TYPE>) li.getToClass(), (OAObjectKey) oldObj);
+					oldObj = og.internal().objects().reflect().getObject((Class<TYPE>) li.getToClass(), (OAObjectKey) oldObj);
 					oldValue2 = oldObj;
 				} else {
 					bError = true;

@@ -14,24 +14,18 @@ import org.junit.jupiter.api.Test;
 import com.test.pos.model.oa.Register;
 import com.test.pos.model.oa.Store;
 import com.viaoa.graph.api.internal.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectInternalService;
+import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 
 class HubTest {
     @BeforeEach
     void beforeEach() {
-        clearCache();
+        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
     }
-
     @AfterEach
     void afterEach() {
-        clearCache();
-    }
-
-    private static void clearCache() {
-        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
-        OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
-        os.getOAObjectCacheService().removeAllObjects();
+        OAObject.setDebugMode(false);
+        OARuntime.graph(Register.class).close();
     }
 
     private static Register register(int id, String code) {

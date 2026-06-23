@@ -171,7 +171,7 @@ public class ObjectCacheIterator<T extends OAObject> implements OADataSourceIter
 			}
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
 			
-			lastFetchObject = (T) og.objectsInternal().callObjectCacheFind(lastFetchObject, clazz, filter, false, false, 100, (ArrayList) alFetchObjects);
+			lastFetchObject = (T) og.internal().objects().cache().find(lastFetchObject, clazz, filter, false, false, 100, (ArrayList) alFetchObjects);
 			if (lastFetchObject == null) {
 				bFetchIsDone = true;
 				if (alFetchObjects.size() == 0) {

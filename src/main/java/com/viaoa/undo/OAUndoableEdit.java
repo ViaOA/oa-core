@@ -454,7 +454,7 @@ public class OAUndoableEdit implements UndoableEdit {
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
 				c = h2.getObjectClass();
 				s = OAString.convertToHungarian(c.getSimpleName());
-				String s2 = og.hubsInternal().callHubLinkGetLinkToProperty(hub);
+				String s2 = og.internal().hubs().link().getLinkToProperty(hub);
 				presentationName = "change to " + s + " " + s2;
 			} else {
 				presentationName = "change selected " + s;

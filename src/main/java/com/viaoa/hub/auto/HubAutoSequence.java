@@ -197,7 +197,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
      */
     public HubAutoSequence(Hub hub, String propertyName, int startNumber, boolean bKeepSeq, boolean bServerSideOnly) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-        if (bServerSideOnly && og.hubsInternal().callHubCSIsClient(hub)) {
+        if (bServerSideOnly && og.internal().hubs().cs().isClient(hub)) {
             LOG.warning("bServerSideOnly should be false, since this is not the server");
         }
         this.startNumber = startNumber;
@@ -304,7 +304,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
         if (c == null) return;
         
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
-        Method met = og.objectsInternal().callObjectInfoGetMethod(c, "set" + propertyName);
+        Method met = og.internal().objects().info().getMethod(c, "set" + propertyName);
         //was: Method met = OAReflect.getMethod(c, "set"+propertyName);
         if (met == null) {
             throw new RuntimeException("setter method not found for property "+propertyName+", class="+c);

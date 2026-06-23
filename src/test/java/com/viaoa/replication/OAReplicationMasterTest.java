@@ -11,7 +11,6 @@ import org.junit.jupiter.api.io.TempDir;
 import com.test.pos.model.oa.Register;
 import com.viaoa.datetime.OADateTime;
 import com.viaoa.graph.api.internal.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.runtime.OARuntime;
 
@@ -22,12 +21,11 @@ class OAReplicationMasterTest {
 
     @BeforeEach
     void beforeEach() {
-        clearCache();
+        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
     }
-
     @AfterEach
     void afterEach() {
-        clearCache();
+        OARuntime.graph(Register.class).close();
     }
 
     @Test
@@ -121,12 +119,6 @@ class OAReplicationMasterTest {
 
     private static OAReplTLog tlog(String source, long masterSeq, long clientSeq, String methodName, Object... args) {
         return new OAReplTLog(source, new OADateTime(10_000L + masterSeq), masterSeq, clientSeq, methodName, args);
-    }
-
-    private static void clearCache() {
-        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
-        OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
-        os.getOAObjectCacheService().removeAllObjects();
     }
 
     private static class TestMaster extends OAReplicationMaster {

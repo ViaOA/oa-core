@@ -45,7 +45,7 @@ import com.viaoa.graph.api.internal.objects.OAObjectSerializeOps;
 import com.viaoa.graph.api.internal.objects.OAObjectSiblingOps;
 import com.viaoa.graph.api.internal.objects.OAObjectStateOps;
 import com.viaoa.graph.api.internal.objects.OAObjectUniqueOps;
-import com.viaoa.graph.service.OAObjectInternalService;
+import com.viaoa.graph.service.object.OAObjectParentService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.listener.HubChangeListener;
 import com.viaoa.lang.oa.VEnum;
@@ -58,7 +58,8 @@ import com.viaoa.object.OAObjectKey;
 import com.viaoa.schedule.OAScheduler;
 
 public class ObjectsOpsImpl implements ObjectsOps {
-	private final OAObjectInternalService srvc;
+
+	private OAObjectParentService srvc;
 	
 	private OAObjectAnnotationOps opsAnnotation;
 	private OAObjectAutoAddOps opsAutoAdd;
@@ -86,7 +87,8 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	private OAObjectStateOps opsState;
 	private OAObjectUniqueOps opsUnique;
 	
-	public ObjectsOpsImpl(OAObjectInternalService srvcObjectInternal) {
+	
+	public ObjectsOpsImpl(OAObjectParentService srvcObjectInternal) {
 		this.srvc = srvcObjectInternal;
 	}
 
@@ -902,6 +904,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 			public boolean isLocked(OAObject oaObj) {
 				return srvc.getOAObjectLockService().isLocked(oaObj);
 			}
+
+			@Override
+			public boolean isPropertyLocked(OAObject oaObj, String name) {
+				return srvc.getOAObjectLockService().isPropertyLocked(oaObj, name);
+			}
 		}; 
 				
 		return opsLock;
@@ -1036,7 +1043,7 @@ public class ObjectsOpsImpl implements ObjectsOps {
 		if (opsState != null) return opsState;
 		opsState = new OAObjectStateOps() {
 			@Override
-			public void callObjectSetNew(OAObject oaObj, boolean bIsNew) {
+			public void setNew(OAObject oaObj, boolean bIsNew) {
 				srvc.getOAObjectStateService().setNew(oaObj, bIsNew);
 			}
 		};

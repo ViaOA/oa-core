@@ -339,7 +339,7 @@ public class OASchedulerController<F extends OAObject, T extends OAObject> {
         
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
         
-        OAScheduler sch = og.objectsInternal().callObjectSchedulerGetScheduler(obj, ppSchedule, date);
+        OAScheduler sch = og.internal().objects().scheduler().getScheduler(obj, ppSchedule, date);
         return sch;
     }
     
@@ -415,7 +415,7 @@ public class OASchedulerController<F extends OAObject, T extends OAObject> {
                     if (ppTimeTo != null) finder.addEqualFilter(ppTimeTo, new OATime(dtTo));
                 }
         		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubDetail.getObjectClass());
-                objSchedule = (OAObject) og.objectsInternal().callObjectCacheFind(hubDetail.getObjectClass(), finder);
+                objSchedule = (OAObject) og.internal().objects().cache().find(hubDetail.getObjectClass(), finder);
                 
                 if (objSchedule == null) {
                     // need to check datasource
@@ -465,7 +465,7 @@ public class OASchedulerController<F extends OAObject, T extends OAObject> {
         boolean bNew = false;
         if (objSchedule == null) {
     		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubDetail);
-            objSchedule = (OAObject) og.objectsInternal().callObjectReflectCreateNewObject(hubDetail.getObjectClass());
+            objSchedule = (OAObject) og.internal().objects().reflect().createNewObject(hubDetail.getObjectClass());
             bNew = true;
         }
         
@@ -494,7 +494,7 @@ public class OASchedulerController<F extends OAObject, T extends OAObject> {
             OAPath pp = new OAPath(hubFrom.getObjectClass(), ppSchedule);
             Hub hubx = (Hub) obj.getProperty(pp.getProperties()[0]);
     		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubx);
-            objx = (OAObject) og.objectsInternal().callObjectReflectCreateNewObject(hubx.getObjectClass());
+            objx = (OAObject) og.internal().objects().reflect().createNewObject(hubx.getObjectClass());
             objx.setProperty(pp.getProperties()[1], objSchedule);
             hubx.add(objx);
             if (hubLink != null) hubLink.setAO(objx);

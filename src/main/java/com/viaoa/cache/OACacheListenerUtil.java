@@ -117,7 +117,7 @@ public class OACacheListenerUtil {
         };
 
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-		og.objectsInternal().callObjectCacheAddListener(clazz, listener);
+		og.internal().objects().cache().addListener(clazz, listener);
     }
     
     /**
@@ -129,7 +129,7 @@ public class OACacheListenerUtil {
      */
     public void close() {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-		og.objectsInternal().callObjectCacheRemoveListener(clazz, listener);
+		og.internal().objects().cache().removeListener(clazz, listener);
         listener = null;
     }
 

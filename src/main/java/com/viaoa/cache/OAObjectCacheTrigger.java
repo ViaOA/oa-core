@@ -195,7 +195,7 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
         };        
 
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-		og.objectsInternal().callObjectCacheAddListener(clazz, cacheListener);
+		og.internal().objects().cache().addListener(clazz, cacheListener);
         refresh();
     }
 
@@ -288,7 +288,7 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
             if (bServerSideOnly) { 
                 srvcOAThreadLocal.setSendSyncMessages(true);
             }
-			og.objectsInternal().callObjectCacheVisit(clazz, new OACallback() {
+			og.internal().objects().cache().visit(clazz, new OACallback() {
 	            @SuppressWarnings("unchecked")
 	            @Override
 	            public boolean updateObject(Object obj) {
@@ -332,7 +332,7 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
     protected void setupTrigger() {
         if (trigger != null) {
     		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-            og.triggerInternal().removeTrigger(trigger);
+            og.internal().triggers().removeTrigger(trigger);
     		trigger = null;
         }
 
@@ -356,7 +356,7 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
 
             		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
                     
-            		og.objectsInternal().callObjectCacheVisit(clazz, new OACallback() {
+            		og.internal().objects().cache().visit(clazz, new OACallback() {
                         @SuppressWarnings("unchecked")
                         @Override
                         public boolean updateObject(Object obj) {
@@ -383,7 +383,7 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
         
         trigger = new OATrigger(name, clazz, triggerListener, dependentPropertyPaths, true, false, false, true);
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-        og.triggerInternal().addTrigger(trigger);
+        og.internal().triggers().addTrigger(trigger);
     }
     
     
@@ -394,12 +394,12 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
     public void close() {
         if (trigger != null) {
     		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-	        og.triggerInternal().removeTrigger(trigger);
+	        og.internal().triggers().removeTrigger(trigger);
             trigger = null;
         }
         if (cacheListener != null) {
     		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-    		og.objectsInternal().callObjectCacheRemoveListener(clazz, cacheListener);
+    		og.internal().objects().cache().removeListener(clazz, cacheListener);
             cacheListener = null;
         }
     }

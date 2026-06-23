@@ -7,19 +7,17 @@ import org.junit.jupiter.api.*;
 import com.test.pos.model.oa.Register;
 import com.test.pos.model.oa.Store;
 import com.viaoa.graph.api.internal.OAGraphInternal;
-import com.viaoa.graph.service.OAObjectInternalService;
 import com.viaoa.runtime.OARuntime;
 
 class RemoteSyncImplTest {
 
     @BeforeEach
     void beforeEach() {
-        clearCache();
+        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
     }
-
     @AfterEach
     void afterEach() {
-        clearCache();
+        OARuntime.graph(Register.class).close();
     }
 
     @Test
@@ -142,9 +140,4 @@ class RemoteSyncImplTest {
         assertDoesNotThrow(() -> sync.serverDelete(Store.class, new com.viaoa.object.OAObjectKey(new Object[] { 999 })));
     }
 
-    private void clearCache() {
-        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
-        OAObjectInternalService os = (OAObjectInternalService) og.objectsInternal();
-        os.getOAObjectCacheService().removeAllObjects();
-    }
 }

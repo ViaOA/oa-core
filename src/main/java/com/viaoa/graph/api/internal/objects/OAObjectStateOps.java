@@ -4,7 +4,7 @@ import com.viaoa.object.OAObject;
 
 public interface OAObjectStateOps {
 
-	public void callObjectSetNew(OAObject oaObj, boolean bIsNew);
+	public void setNew(OAObject oaObj, boolean bIsNew);
 	
 	/**
 	 * Updates the {@code newFlag} of the specified {@link OAObject} and fires the

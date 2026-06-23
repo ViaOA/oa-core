@@ -313,12 +313,12 @@ public class OAPreLoader {
 
 			Hub hub;
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) objOne);
-			Object objOneHub = og.objectsInternal().callObjectPropertyGetProperty((OAObject) objOne, liMany.getName(), false, true);
+			Object objOneHub = og.internal().objects().property().getProperty((OAObject) objOne, liMany.getName(), false, true);
 			if (objOneHub instanceof Hub) {
 				hub = (Hub) objOneHub;
 			} else {
 				hub = new Hub(liMany.getToClass());
-				og.objectsInternal().callObjectPropertySetProperty((OAObject) objOne, liMany.getName(), hub);
+				og.internal().objects().property().setProperty((OAObject) objOne, liMany.getName(), hub);
 			}
 			hub.add((OAObject) objFromMany);
 		}
@@ -367,8 +367,8 @@ public class OAPreLoader {
 	protected List load(Class clazz, final OALinkInfo linkInfo) {
 		OASelect sel = new OASelect<>(clazz);
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
-		OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(clazz);
-		OALinkInfo liRecursive = og.objectsInternal().callObjectInfoGetRecursiveLinkInfo(oi, OALinkInfo.MANY);
+		OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(clazz);
+		OALinkInfo liRecursive = og.internal().objects().info().getRecursiveLinkInfo(oi, OALinkInfo.MANY);
 
 		String sortOrder = null;
 		if (liRecursive != null) {
@@ -452,12 +452,12 @@ public class OAPreLoader {
 
 			Hub hub;
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) fParent);
-			Object objx = og.objectsInternal().callObjectPropertyGetProperty((OAObject) fParent, liMany.getName(), false, true);
+			Object objx = og.internal().objects().property().getProperty((OAObject) fParent, liMany.getName(), false, true);
 			if (objx instanceof Hub) {
 				hub = (Hub) objx;
 			} else {
 				hub = new Hub(clazz);
-				og.objectsInternal().callObjectPropertySetProperty((OAObject) fParent, liMany.getName(), hub);
+				og.internal().objects().property().setProperty((OAObject) fParent, liMany.getName(), hub);
 			}
 			hub.add((OAObject) f);
 		}

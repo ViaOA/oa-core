@@ -454,11 +454,11 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	@Override
 	public OAObject createCopy(Class objectClass, OAObjectKey objectKey, String[] excludeProperties) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
-		OAObject obj = (OAObject) og.objectsInternal().callObjectCacheGetObject(objectClass, objectKey);
+		OAObject obj = (OAObject) og.internal().objects().cache().getObject(objectClass, objectKey);
 		if (obj == null) {
 			return null;
 		}
-		OAObject objx = og.objectsInternal().callObjectReflectCreateCopy(obj, excludeProperties);
+		OAObject objx = og.internal().objects().reflect().createCopy(obj, excludeProperties);
 		return objx;
 	}
 
@@ -493,8 +493,8 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		if (h == null) {
 			// store null so that it can be an empty hub if needed (and wont have to get from server)
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
-			if (!og.syncInternal().isServer()) {
-				og.objectsInternal().callObjectPropertySetPropertyCAS(obj, hubPropertyName, null, null, true, false);
+			if (!og.internal().sync().isServer()) {
+				og.internal().objects().property().setPropertyCAS(obj, hubPropertyName, null, null, true, false);
 			}
 			return false;
 		}
@@ -516,8 +516,8 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	 */
 	private OAObject getObject(Class objectClass, OAObjectKey origKey) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
-		OAObject obj = (OAObject) og.objectsInternal().callObjectCacheGet(objectClass, origKey);
-		if (obj == null && og.syncInternal().isServer()) {
+		OAObject obj = (OAObject) og.internal().objects().cache().get(objectClass, origKey);
+		if (obj == null && og.internal().sync().isServer()) {
 			
 			OADataSource ds = OARuntime.datasource().get(objectClass);
 			if (ds != null) {
@@ -548,11 +548,11 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 			return null;
 		}
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
-		boolean bWasLoaded = og.objectsInternal().callObjectReflectIsReferenceHubLoaded(obj, hubPropertyName);
-		if (!bWasLoaded && !og.syncInternal().isServer()) {
+		boolean bWasLoaded = og.internal().objects().reflect().isReferenceHubLoaded(obj, hubPropertyName);
+		if (!bWasLoaded && !og.internal().sync().isServer()) {
 			return null;
 		}
-		Object objx = og.objectsInternal().callObjectReflectGetProperty(obj, hubPropertyName);
+		Object objx = og.internal().objects().reflect().getProperty(obj, hubPropertyName);
 		if (!(objx instanceof Hub)) {
 			return null;
 		}
@@ -582,7 +582,7 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	@Override
 	public void refresh(Class objectClass, OAObjectKey objectKey) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
-		OAObject obj = (OAObject) og.objectsInternal().callObjectCacheGet(objectClass, objectKey);
+		OAObject obj = (OAObject) og.internal().objects().cache().get(objectClass, objectKey);
 		if (obj != null) {
 			obj.refresh();
 		}
@@ -598,7 +598,7 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	@Override
 	public void refresh(Class objectClass, OAObjectKey objectKey, String propertyName) {
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
-		OAObject obj = (OAObject) og.objectsInternal().callObjectCacheGet(objectClass, objectKey);
+		OAObject obj = (OAObject) og.internal().objects().cache().get(objectClass, objectKey);
 		if (obj != null) {
 			obj.refresh(propertyName);
 		}

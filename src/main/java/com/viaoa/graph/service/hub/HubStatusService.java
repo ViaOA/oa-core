@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 import com.viaoa.cascade.OACascade;
 import com.viaoa.find.OAFinder;
 import com.viaoa.hub.*;
+import com.viaoa.hub.Hub.HubCurrentStateEnum;
 import com.viaoa.hub.filter.HubFilter;
 import com.viaoa.hub.merge.HubMerger;
 import com.viaoa.hub.view.HubCombined;
@@ -108,31 +109,6 @@ public abstract class HubStatusService {
     }
 	
 
-	
-	
-	
-	/**
-	 * Enumeration describing the synchronization state of a hub during updates.
-	 *
-	 * <ul>
-	 *   <li>{@code InSync} – the hub is correctly aligned with its master or linked
-	 *       state.</li>
-	 *   <li>{@code DetailDisconnectedFromMaster} – the detail hub does not match its
-	 *       expected master state.</li>
-	 *   <li>{@code DetailHubNotSameAsMasterObject} – the detail hub contains a
-	 *       different object than the master hub’s active object.</li>
-	 *   <li>{@code HubMergerNotUpdated} – a hub merger is not in sync with its
-	 *       source hubs.</li>
-	 * </ul>
-	 */
-	public static enum HubCurrentStateEnum {
-		InSync,
-		DetailDisconnectedFromMaster,
-		DetailHubNotSameAsMasterObject, // caused when object/hubs are in flux (hub event that is calling listeners and changing linkages)
-		HubMergerNotUpdated
-	}
-	
-	
 	public HubStatusService(Hub.FriendAccess faHub) {
 		if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
 		this.faHub = faHub;

@@ -251,7 +251,7 @@ public abstract class OAReplicationBase {
 	                    		if (OAObject.class.isAssignableFrom(c)) {
 	                    			bFound = true;
 									final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
-									OAObjectInfo oi = og.objectsInternal().callObjectInfoGetOAObjectInfo(c);
+									OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(c);
 	                    			bUse |= (oi.getUseDataSource() && !oi.getLocalOnly());
 	                    		}
 	                    	}

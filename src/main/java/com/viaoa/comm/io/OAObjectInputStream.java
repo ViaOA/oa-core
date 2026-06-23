@@ -22,6 +22,7 @@ import java.io.ObjectStreamClass;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import com.viaoa.graph.api.internal.OAGraphInternal;
 import com.viaoa.object.OAObject;
@@ -159,7 +160,7 @@ public class OAObjectInputStream extends ObjectInputStream {
         obj = super.resolveObject(obj);
         if (obj instanceof IODummy) {
     		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) obj);
-    		og.objectsInternal().callObjectPropertyClearProperties((OAObject) obj);
+    		og.internal().objects().property().clearProperties((OAObject) obj);
         }
         return obj;
     }

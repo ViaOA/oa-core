@@ -204,7 +204,7 @@ import com.viaoa.runtime.OARuntime;
 	public <T extends OAObject> boolean updateObject(final T obj) {
 		if (obj == null) return false;
 		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
-		final OAObjectKey ok = og.objectsInternal().callObjectKeyCreateObjectKey((OAObject) obj);
+		final OAObjectKey ok = og.internal().objects().key().createObjectKey((OAObject) obj);
 		@SuppressWarnings("unchecked")		
 		final Class<T> clazz = (Class<T>) obj.getClass();
 		return updateObject(obj, ok, clazz);
@@ -266,7 +266,7 @@ import com.viaoa.runtime.OARuntime;
 	public <T extends OAObject> boolean removeObject(final T obj) {
 		if (obj == null) return false;
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
-		final OAObjectKey ok = og.objectsInternal().callObjectKeyCreateObjectKey((OAObject) obj);
+		final OAObjectKey ok = og.internal().objects().key().createObjectKey((OAObject) obj);
 		
 		@SuppressWarnings("unchecked")
 		final Class<T> clazz = (Class<T>) obj.getClass();
@@ -305,8 +305,8 @@ import com.viaoa.runtime.OARuntime;
 			objectIndex.removeFromIndex(wr.clazz, wr.key);
 			
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(wr.clazz);
-	        if (og != null && !og.objectsInternal().callObjectInfoGetOAObjectInfo(wr.clazz).getLocalOnly()) {
-	        	og.objectsInternal().callObjectCSObjectFinalized(wr.key.getGuid());
+	        if (og != null && !og.internal().objects().info().getOAObjectInfo(wr.clazz).getLocalOnly()) {
+	        	og.internal().objects().cs().objectFinalized(wr.key.getGuid());
 	        }
 		}
 	}

@@ -8,9 +8,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.api.internal.OAGraphInternal;
-import com.viaoa.graph.api.internal.TriggerInternalOps;
-import com.viaoa.graph.api.services.TriggersOps;
+import com.viaoa.graph.api.internal.TriggersOps;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
@@ -154,7 +152,7 @@ CODEX
  * @see OAObjectInfoService
  * @see OATriggerListener
  */
-public class OATriggerService implements TriggerInternalOps {
+public class OATriggerService implements TriggersOps {
 	private final OAGraph og;
 
 	public OATriggerService(OAGraph og) {

@@ -17,9 +17,9 @@ import com.viaoa.graph.api.services.hubs.HubRootOps;
 import com.viaoa.graph.api.services.hubs.HubShareOps;
 import com.viaoa.graph.api.services.hubs.HubStatusOps;
 import com.viaoa.graph.api.services.hubs.HubViewOps;
-import com.viaoa.graph.service.HubInternalService;
-import com.viaoa.graph.service.hub.HubStatusService.HubCurrentStateEnum;
+import com.viaoa.graph.service.hub.HubParentService;
 import com.viaoa.hub.Hub;
+import com.viaoa.hub.Hub.HubCurrentStateEnum;
 import com.viaoa.hub.HubListenerAdapter;
 import com.viaoa.hub.auto.HubAutoMatch;
 import com.viaoa.hub.copy.HubCopy;
@@ -35,7 +35,7 @@ import com.viaoa.object.OAObject;
 
 public class HubsOpsImpl implements HubsOps {
 
-	private final HubInternalService srvc;
+	private final HubParentService srvc;
 	
 	private HubAutoMatchOps opsAutomatch;
 	private HubDetailOps opsDetail;
@@ -51,7 +51,7 @@ public class HubsOpsImpl implements HubsOps {
 	private HubStatusOps opsStatus;
 	private HubRootOps opsRoot;
 	
-	public HubsOpsImpl(HubInternalService srvc) {
+	public HubsOpsImpl(HubParentService srvc) {
 		this.srvc = srvc;
 	}
 

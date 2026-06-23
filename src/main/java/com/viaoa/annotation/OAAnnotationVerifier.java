@@ -279,7 +279,7 @@ public class OAAnnotationVerifier {
 
 			String name = OATextCode.getPropertyName(m.getName());
 
-			OACalcInfo ci = og.objectsInternal().callObjectInfoGetCalcInfo(oi, name);
+			OACalcInfo ci = og.internal().objects().info().getCalcInfo(oi, name);
 
 			if (ci == null) {
 				p("calcinfo not in objectInfo");
@@ -344,7 +344,7 @@ public class OAAnnotationVerifier {
 
 			String name = OATextCode.getPropertyName(m.getName());
 
-			OALinkInfo li = og.objectsInternal().callObjectInfoGetLinkInfo(oi, name);
+			OALinkInfo li = og.internal().objects().info().getLinkInfo(oi, name);
 			if (li == null) {
 				p("link does not exist");
 				bResult = false;
@@ -401,7 +401,7 @@ public class OAAnnotationVerifier {
 			}
 
 			String name = OATextCode.getPropertyName(m.getName());
-			OALinkInfo li = og.objectsInternal().callObjectInfoGetLinkInfo(oi, name);
+			OALinkInfo li = og.internal().objects().info().getLinkInfo(oi, name);
 			if (li == null) {
 				p("link does not exist");
 				bResult = false;

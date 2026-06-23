@@ -656,7 +656,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 			boolean b = (prop.indexOf(".") >= 0);
 			if (!b) {
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubMaster.getObjectClass());
-				OAObjectInfo oi = og.objectsInternal().callObjectInfoGetObjectInfo(hubMaster.getObjectClass());
+				OAObjectInfo oi = og.internal().objects().info().getObjectInfo(hubMaster.getObjectClass());
 				String[] calcProps = null;
 				for (OACalcInfo ci : oi.getCalcInfos()) {
 					if (ci.getName().equalsIgnoreCase(prop)) {
@@ -912,7 +912,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 					OAObject objx = hubLink.getAO();
 					if (objx != null) {
 						final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-						objx = (TYPE) og.hubsInternal().callHubLinkGetPropertyValueInLinkedToHub(hub, objx);
+						objx = (TYPE) og.internal().hubs().link().getPropertyValueInLinkedToHub(hub, objx);
 					}
 					if (objx != objTemp) {
 						objTemp = getObject((TYPE) objTemp);
@@ -933,7 +933,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 				Object obj = hubLink.getAO();
 				if (objTemp == null && obj != null) {
 					final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-					obj = og.hubsInternal().callHubLinkGetPropertyValueInLinkedToHub(hub, (OAObject) obj);
+					obj = og.internal().hubs().link().getPropertyValueInLinkedToHub(hub, (OAObject) obj);
 					if (obj instanceof OAObject) {
 						if (!hub.contains(obj)) {
 							try {
@@ -1007,7 +1007,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 							OAObject objx = hubLink.getAO();
 							if (objx != null) {
 								final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-								objx = (TYPE) og.hubsInternal().callHubLinkGetPropertyValueInLinkedToHub(hub, objx);
+								objx = (TYPE) og.internal().hubs().link().getPropertyValueInLinkedToHub(hub, objx);
 								objx = getObject((TYPE) objx);
 								if (obj == objx) {
 									if (obj != objTemp) {
@@ -1110,7 +1110,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 					bIgnoreSettingAO = true;
 
 					final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-					og.hubsInternal().callHubAddRemoveClear(hub, false, false); // false:dont set AO to null,  false: dont send newList event
+					og.internal().hubs().addRemove().clear(hub, false, false); // false:dont set AO to null,  false: dont send newList event
 
 					objTemp = null;
 				} finally {
@@ -1139,7 +1139,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 					bNewListFlag = true;
 					if (!bServerSideOnly) {
 						final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-						og.hubsInternal().callHubEventFireOnNewListEvent(hub, true);
+						og.internal().hubs().events().fireOnNewListEvent(hub, true);
 					}
 				}
 			} finally {
@@ -1192,7 +1192,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 			OAObject objx = hubLink.getAO();
 			if (objx != null) {
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-				objx = (TYPE) og.hubsInternal().callHubLinkGetPropertyValueInLinkedToHub(hub, objx);
+				objx = (TYPE) og.internal().hubs().link().getPropertyValueInLinkedToHub(hub, objx);
 				if (objx != null) {
 					objx = getObject((TYPE) objx);
 					if (objx != null && !hub.contains(objx)) {
@@ -1248,7 +1248,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	    
 		// 20231109 faster way to add with calling contains
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-		og.hubsInternal().callHubAddRemoveAdd(hub, obj, bIsInitialzing);
+		og.internal().hubs().addRemove().add(hub, obj, bIsInitialzing);
 		// was:  hub.add(obj);
 		
 		if (bShareAO && hubMaster != null) {
@@ -1276,7 +1276,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 			OAObject objx = hubLink.getAO();
 			if (objx != null) {
 				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-				objx = (TYPE) og.hubsInternal().callHubLinkGetPropertyValueInLinkedToHub(hub, objx);
+				objx = (TYPE) og.internal().hubs().link().getPropertyValueInLinkedToHub(hub, objx);
 				if (objx == obj) {
 					objTemp = obj; // dont remove yet
 					return;
@@ -1335,7 +1335,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 		Object objMaster = hubMaster.getMasterObject();
 		if (objMaster != null) {
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj.getClass());
-			OALinkInfo li = og.hubsInternal().callHubDetailGetLinkInfoFromDetailToMaster(hubMaster);
+			OALinkInfo li = og.internal().hubs().detail().getLinkInfoFromDetailToMaster(hubMaster);
 			if (li != null) {
 				OALinkInfo rli = li.getReverseLinkInfo();
 				if (li != null) {

@@ -2327,7 +2327,7 @@ public class OAThreadLocalService {
 			return;
 		}
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-		hub = og.hubsInternal().callHubShareGetMainSharedHub(hub);
+		hub = og.internal().hubs().share().getMainSharedHub(hub);
 		OAThreadLocal ti = getThreadLocal(true);
 		ti.dontAdjustHubs = (Hub[]) OAArray.add(Hub.class, ti.dontAdjustHubs, hub);
 		aiTotalDontAdjustHub.incrementAndGet();
@@ -2354,7 +2354,7 @@ public class OAThreadLocalService {
 			return;
 		}
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-		hub = og.hubsInternal().callHubShareGetMainSharedHub(hub);
+		hub = og.internal().hubs().share().getMainSharedHub(hub);
 		ti.dontAdjustHubs = (Hub[]) OAArray.removeValue(Hub.class, ti.dontAdjustHubs, hub);
 		aiTotalDontAdjustHub.decrementAndGet();
 	}
@@ -2368,7 +2368,7 @@ public class OAThreadLocalService {
 		}
 
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
-		hub = og.hubsInternal().callHubShareGetMainSharedHub(hub);
+		hub = og.internal().hubs().share().getMainSharedHub(hub);
 
 		OAThreadLocal ti = getThreadLocal(false);
 		if (ti == null) {
@@ -2382,7 +2382,7 @@ public class OAThreadLocalService {
 		for (Hub hubx : ti.dontAdjustHubs) {
 			Hub hubm = hubx.getMasterHub();
 			for (int i = 0; hubm != null && i < 10; i++, hubm = hubm.getMasterHub()) {
-				if (og.hubsInternal().callHubShareGetMainSharedHub(hubm) == hub) {
+				if (og.internal().hubs().share().getMainSharedHub(hubm) == hub) {
 					return false;
 				}
 			}
@@ -2499,7 +2499,7 @@ public class OAThreadLocalService {
 		if (hx == null) return false;
 		if (h == hx) return true;
 		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(h);
-		return og.hubsInternal().callHubShareIsUsingSameSharedHub(h, hx);
+		return og.internal().hubs().share().isUsingSameSharedHub(h, hx);
 	}
 	
 	/**
@@ -2525,7 +2525,7 @@ public class OAThreadLocalService {
 		}
 		if (ti.fastLoadingHub != null) {
 			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(ti.fastLoadingHub);
-			og.hubsInternal().callHubEventFireOnNewListEvent(ti.fastLoadingHub, true);
+			og.internal().hubs().events().fireOnNewListEvent(ti.fastLoadingHub, true);
 		}
 		ti.fastLoadingHub = hub;
 	}

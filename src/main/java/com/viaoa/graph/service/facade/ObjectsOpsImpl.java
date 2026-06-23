@@ -7,22 +7,22 @@ import com.viaoa.graph.api.services.objects.OAObjectCacheOps;
 import com.viaoa.graph.api.services.objects.OAObjectCallbackOps;
 import com.viaoa.graph.api.services.objects.OAObjectDeleteOps;
 import com.viaoa.graph.api.services.objects.OAObjectReflectOps;
-import com.viaoa.graph.service.OAObjectInternalService;
+import com.viaoa.graph.service.object.OAObjectParentService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.listener.HubChangeListener;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;
 
 public class ObjectsOpsImpl implements ObjectsOps {
-	private final OAObjectInternalService srvc;
+	private final OAObjectParentService srvc;
 	
 	private OAObjectCacheOps opsCache;
 	private OAObjectReflectOps opsReflect;
 	private OAObjectCallbackOps opsCallback;
 	private OAObjectDeleteOps opsDelete;
 	
-	public ObjectsOpsImpl(OAObjectInternalService srvcObjectInternal) {
-		this.srvc = srvcObjectInternal;
+	public ObjectsOpsImpl(OAObjectParentService srvcObjectParent) {
+		this.srvc = srvcObjectParent;
 	}
 
 	@Override

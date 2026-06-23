@@ -34,9 +34,9 @@ import com.viaoa.graph.api.internal.hubs.HubSizeOps;
 import com.viaoa.graph.api.internal.hubs.HubSortOps;
 import com.viaoa.graph.api.internal.hubs.HubStatusOps;
 import com.viaoa.graph.api.internal.hubs.HubViewOps;
-import com.viaoa.graph.service.HubInternalService;
-import com.viaoa.graph.service.hub.HubStatusService.HubCurrentStateEnum;
+import com.viaoa.graph.service.hub.HubParentService;
 import com.viaoa.hub.Hub;
+import com.viaoa.hub.Hub.HubCurrentStateEnum;
 import com.viaoa.hub.HubDataMaster;
 import com.viaoa.hub.HubListener;
 import com.viaoa.hub.HubListenerAdapter;
@@ -58,7 +58,7 @@ import com.viaoa.select.OASelect;
 
 public class HubsOpsImpl implements HubsOps {
 
-	private final HubInternalService srvc;
+	private final HubParentService srvc;
 
 	private HubAddRemoveOps opsAddRemove;
 	private HubAOOps opsAO;
@@ -86,7 +86,7 @@ public class HubsOpsImpl implements HubsOps {
 	private HubStatusOps opsStatus;
 	private HubViewOps opsView;
 
-	public HubsOpsImpl(HubInternalService srvc) {
+	public HubsOpsImpl(HubParentService srvc) {
 		this.srvc = srvc;
 	}
 
@@ -107,6 +107,11 @@ public class HubsOpsImpl implements HubsOps {
 			@Override
 			public <T extends OAObject, T2 extends OAObject> HubAutoMatch<T,T2> setAutoMatch(Hub<T> hub, String property, Hub<T2> hubMaster, OAObject objStop, String stopProperty) {
 				return srvc.getHubAutoMatchService().setAutoMatch(hub, property, hubMaster, false, objStop, stopProperty);
+			}
+
+			@Override
+			public <T extends OAObject, T2 extends OAObject> HubAutoMatch<T, T2> setAutoMatch(Hub<T> hub, String property, Hub<T2> hubMaster, boolean bServerSideOnly, OAObject objStop, String stopProperty) {
+				return srvc.getHubAutoMatchService().setAutoMatch(hub, property, hubMaster, bServerSideOnly, objStop, stopProperty);
 			}
 		};
 		return opsAutomatch;
@@ -571,6 +576,12 @@ public class HubsOpsImpl implements HubsOps {
 			@Override
 			public void clearHubChanges(Hub<?> hub) {
 				srvc.getHubDataService().clearHubChanges(hub);
+			}
+
+			@Override
+			public <T extends OAObject> void _clone(Hub<T> thisHub, Hub<T> newHub) {
+				srvc.getHubDataService()._clone(thisHub, newHub);
+				
 			}
 		};
 		return opsData;
