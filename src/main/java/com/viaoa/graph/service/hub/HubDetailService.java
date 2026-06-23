@@ -1318,16 +1318,6 @@ public abstract class HubDetailService {
 		return null;
 	}
 
-	/**
-	 * Returns the link information from a master hub to this detail hub.
-	 * Delegates to {@link #getLinkInfoFromMasterToDetail(Hub)}.
-	 *
-	 * @param thisDetailHub the detail hub
-	 * @return the link info from master to detail, or null if not found
-	 */
-	public OALinkInfo getLinkInfoFromMasterHubToDetail(Hub<?> thisDetailHub) {
-		return getLinkInfoFromMasterToDetail(thisDetailHub);
-	}
 
 	/**
 	 * Determines whether a recursive one-to-many relationship is valid for

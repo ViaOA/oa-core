@@ -138,8 +138,8 @@ public class HubsOpsImpl implements HubsOps {
 			}
 
 			@Override
-			public OALinkInfo getLinkInfoFromMasterHubToDetail(Hub<?> hub) {
-				return srvc.getHubDetailService().getLinkInfoFromMasterHubToDetail(hub);
+			public OALinkInfo getLinkInfoFromMasterToDetail(Hub<?> hub) {
+				return srvc.getHubDetailService().getLinkInfoFromMasterToDetail(hub);
 			}
 
 			@Override
@@ -311,6 +311,11 @@ public class HubsOpsImpl implements HubsOps {
 				return srvc.getHubLinkService().getLinkedOnPos(hub);
 			}
 
+			@Override
+			public <T extends OAObject> boolean getLinkedOnPos(final Hub<T> thisHub, boolean bIncludeCopiedHubs) {
+				return srvc.getHubLinkService().getLinkedOnPos(thisHub, bIncludeCopiedHubs);
+			}
+			
 			@Override
 			public String getLinkToProperty(Hub<?> hub) {
 				return srvc.getHubLinkService().getLinkToProperty(hub);

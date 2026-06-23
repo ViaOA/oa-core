@@ -321,7 +321,7 @@ public class OAObjectParentService {
 			}
 			@Override
 			public OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub<?> hub) {
-				return OAObjectParentService.this.getHubParentService().getHubDetailService().getLinkInfoFromMasterHubToDetail(hub);
+				return OAObjectParentService.this.getHubParentService().getHubDetailService().getLinkInfoFromMasterToDetail(hub);
 			}
 			@Override
 			public <T extends OAObject> HubListener<T>[] callHubEventGetAllListeners(Hub<T> hub) {
@@ -1960,7 +1960,7 @@ public class OAObjectParentService {
 			}
 			@Override
 			public OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub<?> thisDetailHub) {
-				return OAObjectParentService.this.srvcHubParent.getHubDetailService().getLinkInfoFromMasterHubToDetail(thisDetailHub);
+				return OAObjectParentService.this.srvcHubParent.getHubDetailService().getLinkInfoFromMasterToDetail(thisDetailHub);
 			}
 			@Override
 			public OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub) {

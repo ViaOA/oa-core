@@ -31,4 +31,5 @@ public interface OAObjectReflectOps {
 	public Object getProperty(Hub<?> hub, String propertyPath);
 	public OAObjectKey getPropertyObjectKey(OAObject oaObj, String propertyName);
 	public Object getRawReference(OAObject oaObj, String name);
+	public String getPropertyPathBetweenHubs(final Hub<?> hubParent, final Hub<?> hubChild);
 }

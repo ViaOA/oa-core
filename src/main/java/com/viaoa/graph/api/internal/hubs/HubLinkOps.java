@@ -31,6 +31,7 @@ public interface HubLinkOps {
 	public <T extends OAObject> void updateLinkedToHub(Hub<T> hub, Hub<?> linkToHub, T obj, String changedPropName);
 	public <T extends OAObject, U extends OAObject> Object getPropertyValueInLinkedToHub(Hub<T> hub, U linkObject); // returns OAOject, null, or int (position)
 	public boolean getLinkedOnPos(Hub<?> hub);
+	public <T extends OAObject> boolean getLinkedOnPos(final Hub<T> thisHub, boolean bIncludeCopiedHubs);
 	public String getLinkToProperty(Hub<?> hub);
 	public String getLinkFromProperty(Hub<?> thisHub);
 	public String getLinkFromProperty(Hub<?> thisHub, boolean bIncludeCopiedHubs);

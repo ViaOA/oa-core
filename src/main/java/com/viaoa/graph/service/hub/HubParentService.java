@@ -1488,7 +1488,7 @@ public class HubParentService {
 			}
 			@Override
 			public OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub<?> thisDetailHub) {
-				return HubParentService.this.getHubDetailService().getLinkInfoFromMasterHubToDetail(thisDetailHub);
+				return HubParentService.this.getHubDetailService().getLinkInfoFromMasterToDetail(thisDetailHub);
 			}
 			@Override
 			public void callHubDataIncChangeCount(Hub<?> thisHub) {
@@ -1642,7 +1642,7 @@ public class HubParentService {
 			}
 			@Override
 			public OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub<?> thisDetailHub) {
-				return HubParentService.this.getHubDetailService().getLinkInfoFromMasterHubToDetail(thisDetailHub);
+				return HubParentService.this.getHubDetailService().getLinkInfoFromMasterToDetail(thisDetailHub);
 			}
 		};
 		return srvcHubStatus;

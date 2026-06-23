@@ -207,6 +207,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 				return srvc.getOAObjectCacheService().add(oaObj, bErrorIfExists, bAddToSelectAll);
 			}
 
+			@Override
+			public <T extends OAObject> T find(T fromObject, Class<T> clazz, int fetchAmount, List<T> alResults) {
+				return srvc.getOAObjectCacheService().find(fromObject, clazz, fetchAmount, alResults);
+			}
+
 		};
 		return opsCache;
 	}
@@ -334,6 +339,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 			@Override
 			public int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc, int maxRefsToLoad, long maxEndTime) {
 				return srvc.getOAObjectReflectService().loadAllReferences(obj, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, maxRefsToLoad, maxEndTime);
+			}
+
+			@Override
+			public String getPropertyPathBetweenHubs(Hub<?> hubParent, Hub<?> hubChild) {
+				return srvc.getOAObjectReflectService().getPropertyPathBetweenHubs(hubParent, hubChild);
 			}
 		};
 		return opsReflect;

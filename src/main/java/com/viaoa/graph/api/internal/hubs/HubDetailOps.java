@@ -32,7 +32,7 @@ public interface HubDetailOps {
 
     
 	public OALinkInfo getLinkInfoFromMasterObjectToDetail(Hub<?> hub);	
-	public OALinkInfo getLinkInfoFromMasterHubToDetail(Hub<?> hub);
+	public OALinkInfo getLinkInfoFromMasterToDetail(Hub<?> hub);
 	public void setMasterObject(Hub<?> hub, OAObject masterObject);
 	public void setMasterObject(Hub<?> hub, OAObject masterObject, OALinkInfo liDetailToMaster);
 	public HubDataMaster getDataMaster(Hub<?> hub);

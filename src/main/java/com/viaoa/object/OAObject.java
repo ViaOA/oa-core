@@ -1570,7 +1570,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 
 						OAObject obj = hx.getMasterObject();
 						if (obj != null) {
-							OALinkInfo li = og.internal().hubs().detail().getLinkInfoFromMasterHubToDetail(hx);
+							OALinkInfo li = og.internal().hubs().detail().getLinkInfoFromMasterToDetail(hx);
 							if (li != null && (li.getCascadeSave() || li.getOwner())) {
 								obj.setChanged(true);
 							}

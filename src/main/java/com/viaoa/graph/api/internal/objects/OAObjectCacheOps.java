@@ -20,13 +20,16 @@ public interface OAObjectCacheOps {
 	public <T extends OAObject> void visit(Class<T> clazz, OACallback<T> callback);
 	public <T extends OAObject> void removeListener(Class<T> clazz, OAObjectCacheListener<T> cacheListener);
 	public <T extends OAObject> Hub<T> getSelectAllHub(Class<T> clazz);
-	public <T extends OAObject> T find(Class<T> clazz, OAFinder<T, T> finder);
 	public <T extends OAObject> T get(Class<T> clazz, OAObjectKey objectKey);
 	public <T extends OAObject> T getObject(Class<T> clazz, Object object);
 	public void removeObject(OAObject oaObj);
 	public void refresh(Class<? extends OAObject> clazz);
 	public void removeAllObjects(Class<? extends OAObject> clazz);
+
+	public <T extends OAObject> T find(Class<T> clazz, OAFinder<T, T> finder);
+	public <T extends OAObject> T find(T fromObject, Class<T> clazz, int fetchAmount, List<T> alResults);
 	public <T extends OAObject> T find(T fromObject, Class<T> clazz, OAFilter<T> filter, boolean bSkipNew, boolean bThrowException, int fetchAmount, List<T> alResults);
+	
 	public <T extends OAObject> T add(T oaObj, boolean bErrorIfExists, boolean bAddToSelectAll);
 	
 }
