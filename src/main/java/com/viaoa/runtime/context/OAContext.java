@@ -88,7 +88,7 @@ public class OAContext<KEYTYPE, OBJTYPE extends OAObject> {
 	private String allowEditProcessedPath = "EditProcessed";
 
 	
-	public OAContext(KEYTYPE key, OAContextAccess contextAccess) {
+	public OAContext(Object key, OAContextAccess contextAccess) {
 		this.key = key;
 		this.contextAccess = contextAccess;
 	}
