@@ -21,10 +21,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.filter.OAFilter;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.metadata.OAPropertyInfo;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 
@@ -297,8 +297,8 @@ public class OADataSourceAuto extends OADataSource {
 				nn = new NextNumber();
 				nn.setId(clazz.getName());
 	
-				final OAGraph og = OARuntime.graph(clazz);
-				final OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(clazz);
+				final OA oa = OARuntime.oa(clazz);
+				final OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(clazz);
 				final String[] props = oi.getIdProperties();
 				if (props != null) {
 					for (String s : props) {
@@ -350,20 +350,20 @@ public class OADataSourceAuto extends OADataSource {
 				nn.setNext(id + 1);
 			}
 			// 20141201
-			final OAGraph og = OARuntime.graph(oaObj);
-			Object test = og.internal().objects().cache().getObject(oaObj.getClass(), id);
+			final OA oa = OARuntime.oa(oaObj);
+			Object test = oa.internal().objects().cache().getObject(oaObj.getClass(), id);
 			//was: Object test = OAObjectReflectDelegate.getObject(oaObj.getClass(), id);
 			if (test == null) {
 				break;
 			}
 		}
 
-		final OAGraph og = OARuntime.graph(oaObj);
+		final OA oa = OARuntime.oa(oaObj);
 		try {
-			og.internal().objects().ds().setAssigningId(oaObj, true);
+			oa.internal().objects().ds().setAssigningId(oaObj, true);
 			oaObj.setProperty(prop, id);
 		} finally {
-			og.internal().objects().ds().setAssigningId(oaObj, false);
+			oa.internal().objects().ds().setAssigningId(oaObj, false);
 		}
 	}
 

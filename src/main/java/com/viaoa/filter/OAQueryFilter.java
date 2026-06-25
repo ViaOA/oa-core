@@ -21,9 +21,9 @@ import java.util.Stack;
 import java.util.Vector;
 
 import com.viaoa.converter.OAConv;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.metadata.OAPropertyInfo;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.path.OAPath;
 import com.viaoa.query.OAQueryToken;
@@ -770,8 +770,8 @@ public class OAQueryFilter<TYPE> implements OAFilter<TYPE> {
 		OAFilter f = null;
 		ArrayList<OAFilter> alFilter = null;
 
-		final OAGraph og = OARuntime.graph(clazz);
-		final OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(clazz);
+		final OA oa = OARuntime.oa(clazz);
+		final OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(clazz);
 
 		for (int i = 0;; i++) {
 			nextToken = nextToken();

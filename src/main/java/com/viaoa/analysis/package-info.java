@@ -45,7 +45,7 @@ Rationale:
 Object Graph correctness depends on graph authority; mixing default and package-owned graph state can produce
 incorrect dependency, cache, Hub, or lifecycle reports.
 Source scope:
-OAObjectAnalyzer.load(); OARuntime.graph(); OARuntime.graph(Class<?>); OAGraph.objectsInternal(); OAObject
+OAObjectAnalyzer.load(); OARuntime.graph(); OARuntime.graph(Class<?>); OA.objectsInternal(); OAObject
 cache traversal.
 Related CODEX findings:
 default graph class enumeration skips classes cached only in package graphs.
@@ -99,7 +99,7 @@ Rationale:
 Analysis is useful only when it describes the graph shape and relationships that OA runtime services actually
 observe.
 Source scope:
-OAObjectAnalyzer.load(); OAGraph.internal().objects().hub().GetHubReferences; OAObject; Hub.
+OAObjectAnalyzer.load(); OA.internal().objects().hub().GetHubReferences; OAObject; Hub.
 Related CODEX findings:
 none observed beyond graph-scope completeness.
 Suggested unit tests:
@@ -237,7 +237,7 @@ Rationale:
 Analysis should describe OA runtime truth, not change it; mutation during inspection can create production
 correctness drift.
 Source scope:
-OAObjectAnalyzer.load(); OARuntime; OAGraph; OAObject; Hub; cache traversal APIs.
+OAObjectAnalyzer.load(); OARuntime; OA; OAObject; Hub; cache traversal APIs.
 Related CODEX findings:
 none observed for mutation; current code reads Hub references and cache contents.
 Suggested unit tests:

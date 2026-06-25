@@ -50,7 +50,7 @@ package com.viaoa.object;
 /* CODEX Invariants
 
 OBJ-IDENTITY-001 — OAObject Runtime Identity Is Graph-Scoped
-Contract statement: An OAObject instance represents one runtime identity within its owning OAGraph and must not be
+Contract statement: An OAObject instance represents one runtime identity within its owning OA and must not be
 treated as interchangeable with another instance unless graph identity/cache resolution defines that relationship.
 Rationale: Hubs, references, cache, sync, replication, serialization, datasource merging, and equality behavior
 depend on stable graph-scoped identity.

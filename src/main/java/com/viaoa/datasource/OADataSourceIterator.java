@@ -17,7 +17,7 @@ package com.viaoa.datasource;
 
 import java.util.Iterator;
 
-import com.viaoa.graph.sibling.OASiblingHelper;
+import com.viaoa.oa.sibling.OASiblingHelper;
 import com.viaoa.select.OASelect;
 
 /**

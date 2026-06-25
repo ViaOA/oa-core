@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.clientserver.OADataSourceClient;
 import com.viaoa.filter.OAFilter;
-import com.viaoa.graph.OAGraph;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
@@ -476,10 +476,10 @@ public abstract class RemoteDataSource {
 			clazz = whereObject.getClass();
 			ds = getDataSource(clazz);
 			if (ds != null) {
-				OAObject oa = (OAObject) whereObject;
-				ds.insertWithoutReferences((OAObject) oa);
-				final OAGraph og = OARuntime.graph(clazz);
-				og.internal().objects().state().setNew(oa, false);
+				OAObject oax = (OAObject) whereObject;
+				ds.insertWithoutReferences((OAObject) oax);
+				final OA oa = OARuntime.oa(clazz);
+				oa.internal().objects().state().setNew(oax, false);
 			}
 			break;
 		case OADataSourceClient.GET_PROPERTY:
@@ -515,11 +515,11 @@ public abstract class RemoteDataSource {
 			return (OAObject) obj;
 		}
 
-		final OAGraph og = OARuntime.graph(objectClass);
+		final OA oa = OARuntime.oa(objectClass);
 		
-		OAObjectKey key = og.internal().objects().key().createObjectKey(objectClass, obj);
+		OAObjectKey key = oa.internal().objects().key().createObjectKey(objectClass, obj);
 
-		OAObject objNew = (OAObject) og.internal().objects().cache().get(objectClass, key);
+		OAObject objNew = (OAObject) oa.internal().objects().cache().get(objectClass, key);
 		if (objNew == null) {
 			OADataSource ds = OARuntime.datasource().get(objectClass);
 			if (ds != null) objNew = ds.getObject(objectClass, key);

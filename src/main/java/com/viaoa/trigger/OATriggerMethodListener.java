@@ -22,12 +22,12 @@ import java.util.logging.Logger;
 import com.viaoa.callback.OACallback;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.lang.OAString;
 import com.viaoa.log.OALogger;
 import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.select.OASelect;
@@ -159,8 +159,8 @@ public class OATriggerMethodListener implements OATriggerListener {
         this.clazz = clazz;
         this.method = method;
         this.bOnlyUseLoadedData = bOnlyUseLoadedData;
-		final OAGraph og = OARuntime.graph(clazz);
-        oi =  og.internal().objects().info().getOAObjectInfo(clazz);
+		final OA oa = OARuntime.oa(clazz);
+        oi =  oa.internal().objects().info().getOAObjectInfo(clazz);
     }
     
     /**
@@ -195,9 +195,9 @@ public class OATriggerMethodListener implements OATriggerListener {
         };
         finder.setUseOnlyLoadedData(bOnlyUseLoadedData);
 
-		final OAGraph og = OARuntime.graph(clazz);
+		final OA oa = OARuntime.oa(clazz);
         
-        Hub h = og.internal().objects().cache().getSelectAllHub(clazz);
+        Hub h = oa.internal().objects().cache().getSelectAllHub(clazz);
         if (h != null && bOnlyUseLoadedData) {
             for (Object objx : h) {
                 if (finder.findFirst((OAObject) objx) == null) continue;
@@ -210,7 +210,7 @@ public class OATriggerMethodListener implements OATriggerListener {
 		OADataSource ds = OARuntime.datasource().get(clazz);
         
         if (bOnlyUseLoadedData || ds == null || !ds.supportsStorage()) {
-        	og.internal().objects().cache().visit(clazz, new OACallback() {
+        	oa.internal().objects().cache().visit(clazz, new OACallback() {
                 @Override
                 public boolean updateObject(Object obj) {
                     if (finder.findFirst((OAObject) obj) == null) return true;

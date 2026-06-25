@@ -18,13 +18,13 @@ package com.viaoa.hub.view;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListener;
 import com.viaoa.hub.HubListenerAdapter;
 import com.viaoa.hub.merge.HubMerger;
 import com.viaoa.lang.OAString;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
@@ -319,8 +319,8 @@ public class HubCombined<TYPE extends OAObject> {
 					bUpdatingMasterHub = false;
 					srvcOAThreadLocal.setLoading(bWasLoading);
 				}
-				final OAGraph og = OARuntime.graph(hub);
-				og.internal().hubs().events().fireOnNewListEvent(hubMaster, true);
+				final OA oa = OARuntime.oa(hub);
+				oa.internal().hubs().events().fireOnNewListEvent(hubMaster, true);
 			}
 		};
 		hub.addHubListener(hl);

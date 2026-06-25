@@ -29,10 +29,10 @@ import com.viaoa.converter.OAConverter;
 import com.viaoa.datetime.OADate;
 import com.viaoa.datetime.OADateTime;
 import com.viaoa.datetime.OATime;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAStr;
 import com.viaoa.lang.OAString;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.reflect.OAReflect;
@@ -978,16 +978,16 @@ public class OACompare {
         	else if (matchValue instanceof OAObject) c = matchValue.getClass();
         	else c = null;
         	
-    		final OAGraph og = OARuntime.graph(c);
+    		final OA oa = OARuntime.oa(c);
         	
-        	OAObjectKey ka = og.internal().objects().key().createObjectKey(value);
-    	    OAObjectKey kb = og.internal().objects().key().createObjectKey(matchValue);
+        	OAObjectKey ka = oa.internal().objects().key().createObjectKey(value);
+    	    OAObjectKey kb = oa.internal().objects().key().createObjectKey(matchValue);
     	  
     	    if (ka == kb) return 0;
     	    if (ka == null) return -1;
     	    if (kb == null) return 1;
     	    
-    	    if (og.internal().objects().key().isForSameOAObject(null, ka, kb)) return 0;
+    	    if (oa.internal().objects().key().isForSameOAObject(null, ka, kb)) return 0;
     	    return ka.compareTo(kb);
     	}        
         

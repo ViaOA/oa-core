@@ -17,10 +17,10 @@ package com.viaoa.path;
 
 import java.util.List;
 
-import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.oa.OA;
 import com.viaoa.runtime.OARuntime;
 
 /**

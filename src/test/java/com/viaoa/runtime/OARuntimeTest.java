@@ -6,33 +6,33 @@ import org.junit.jupiter.api.Test;
 
 import com.test.pos.model.oa.Register;
 import com.test.pos.model.oa.Store;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
+import com.viaoa.oa.OA;
 
 class OARuntimeTest {
     @Test
     void singletonAndGraphLookupsAreDeterministic() {
         assertSame(OARuntime.get(), OARuntime.get());
 
-        OAGraph defaultGraph = OARuntime.defaultGraph();
-        assertSame(defaultGraph, OARuntime.graph());
-        assertSame(defaultGraph, OARuntime.graph((Class<?>) null));
-        assertSame(defaultGraph, OARuntime.graph((String) null));
+        OA defaultGraph = OARuntime.defaultOA();
+        assertSame(defaultGraph, OARuntime.oa());
+        assertSame(defaultGraph, OARuntime.oa((Class<?>) null));
+        assertSame(defaultGraph, OARuntime.oa((String) null));
 
-        OAGraph posGraph = OARuntime.graph(Register.class);
-        assertSame(posGraph, OARuntime.graph(Register.class));
-        assertSame(posGraph, OARuntime.graph(Store.class));
-        assertSame(posGraph, OARuntime.graph(new Hub<>(Register.class)));
-        assertSame(posGraph, OARuntime.graph(Register.class.getPackage()));
+        OA posGraph = OARuntime.oa(Register.class);
+        assertSame(posGraph, OARuntime.oa(Register.class));
+        assertSame(posGraph, OARuntime.oa(Store.class));
+        assertSame(posGraph, OARuntime.oa(new Hub<>(Register.class)));
+        assertSame(posGraph, OARuntime.oa(Register.class.getPackage()));
     }
 
     @Test
     void createGraphHandlesNullAndCachesPackageGraph() {
-        assertNull(OARuntime.createGraph((String) null));
-        assertNull(OARuntime.createGraph((Package) null));
+        assertNull(OARuntime.createOA((String) null));
+        assertNull(OARuntime.createOA((Package) null));
 
-        OAGraph graph = OARuntime.createGraph(Register.class.getPackage());
-        assertSame(graph, OARuntime.createGraph(Register.class.getPackage().getName()));
+        OA graph = OARuntime.createOA(Register.class.getPackage());
+        assertSame(graph, OARuntime.createOA(Register.class.getPackage().getName()));
     }
 
     @Test

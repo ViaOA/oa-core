@@ -19,8 +19,8 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
@@ -453,12 +453,12 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	 */
 	@Override
 	public OAObject createCopy(Class objectClass, OAObjectKey objectKey, String[] excludeProperties) {
-		final OAGraph og = OARuntime.graph(objectClass);
-		OAObject obj = (OAObject) og.internal().objects().cache().getObject(objectClass, objectKey);
+		final OA oa = OARuntime.oa(objectClass);
+		OAObject obj = (OAObject) oa.internal().objects().cache().getObject(objectClass, objectKey);
 		if (obj == null) {
 			return null;
 		}
-		OAObject objx = og.internal().objects().reflect().createCopy(obj, excludeProperties);
+		OAObject objx = oa.internal().objects().reflect().createCopy(obj, excludeProperties);
 		return objx;
 	}
 
@@ -492,9 +492,9 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		Hub h = getHub(obj, hubPropertyName);
 		if (h == null) {
 			// store null so that it can be an empty hub if needed (and wont have to get from server)
-			final OAGraph og = OARuntime.graph(objectClass);
-			if (!og.internal().sync().isServer()) {
-				og.internal().objects().property().setPropertyCAS(obj, hubPropertyName, null, null, true, false);
+			final OA oa = OARuntime.oa(objectClass);
+			if (!oa.internal().sync().isServer()) {
+				oa.internal().objects().property().setPropertyCAS(obj, hubPropertyName, null, null, true, false);
 			}
 			return false;
 		}
@@ -515,9 +515,9 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	 * @return the resolved object, or {@code null} if not found
 	 */
 	private OAObject getObject(Class objectClass, OAObjectKey origKey) {
-		final OAGraph og = OARuntime.graph(objectClass);
-		OAObject obj = (OAObject) og.internal().objects().cache().get(objectClass, origKey);
-		if (obj == null && og.internal().sync().isServer()) {
+		final OA oa = OARuntime.oa(objectClass);
+		OAObject obj = (OAObject) oa.internal().objects().cache().get(objectClass, origKey);
+		if (obj == null && oa.internal().sync().isServer()) {
 			
 			OADataSource ds = OARuntime.datasource().get(objectClass);
 			if (ds != null) {
@@ -547,12 +547,12 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		if (obj == null) {
 			return null;
 		}
-		final OAGraph og = OARuntime.graph(obj);
-		boolean bWasLoaded = og.internal().objects().reflect().isReferenceHubLoaded(obj, hubPropertyName);
-		if (!bWasLoaded && !og.internal().sync().isServer()) {
+		final OA oa = OARuntime.oa(obj);
+		boolean bWasLoaded = oa.internal().objects().reflect().isReferenceHubLoaded(obj, hubPropertyName);
+		if (!bWasLoaded && !oa.internal().sync().isServer()) {
 			return null;
 		}
-		Object objx = og.internal().objects().reflect().getProperty(obj, hubPropertyName);
+		Object objx = oa.internal().objects().reflect().getProperty(obj, hubPropertyName);
 		if (!(objx instanceof Hub)) {
 			return null;
 		}
@@ -581,8 +581,8 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	 */
 	@Override
 	public void refresh(Class objectClass, OAObjectKey objectKey) {
-		final OAGraph og = OARuntime.graph(objectClass);
-		OAObject obj = (OAObject) og.internal().objects().cache().get(objectClass, objectKey);
+		final OA oa = OARuntime.oa(objectClass);
+		OAObject obj = (OAObject) oa.internal().objects().cache().get(objectClass, objectKey);
 		if (obj != null) {
 			obj.refresh();
 		}
@@ -597,8 +597,8 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	 */
 	@Override
 	public void refresh(Class objectClass, OAObjectKey objectKey, String propertyName) {
-		final OAGraph og = OARuntime.graph(objectClass);
-		OAObject obj = (OAObject) og.internal().objects().cache().get(objectClass, objectKey);
+		final OA oa = OARuntime.oa(objectClass);
+		OAObject obj = (OAObject) oa.internal().objects().cache().get(objectClass, objectKey);
 		if (obj != null) {
 			obj.refresh(propertyName);
 		}

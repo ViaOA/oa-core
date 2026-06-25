@@ -11,7 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.test.pos.model.oa.Register;
-import com.viaoa.graph.OAGraph;
+import com.viaoa.oa.OA;
 import com.viaoa.runtime.OARuntime;
 
 class RemoteBufferedOutputStreamTest {
@@ -21,12 +21,12 @@ class RemoteBufferedOutputStreamTest {
         synchronized (RemoteBufferedOutputStream.Lock) {
             Arrays.fill(RemoteBufferedOutputStream.isUsed, false);
         }
-        OAGraph og = OARuntime.graph(Register.class);
+        OA oa = OARuntime.oa(Register.class);
     }
 
     @AfterEach
     void afterEach() {
-        OARuntime.graph(Register.class).close();
+        OARuntime.oa(Register.class).close();
     }
     
     

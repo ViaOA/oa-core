@@ -10,7 +10,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import com.test.pos.model.oa.Register;
 import com.viaoa.datetime.OADateTime;
-import com.viaoa.graph.OAGraph;
+import com.viaoa.oa.OA;
 import com.viaoa.remote.info.RequestInfo;
 import com.viaoa.runtime.OARuntime;
 
@@ -21,11 +21,11 @@ class OAReplicationMasterTest {
 
     @BeforeEach
     void beforeEach() {
-        OAGraph og = OARuntime.graph(Register.class);
+        OA oa = OARuntime.oa(Register.class);
     }
     @AfterEach
     void afterEach() {
-        OARuntime.graph(Register.class).close();
+        OARuntime.oa(Register.class).close();
     }
 
     @Test

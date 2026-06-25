@@ -29,12 +29,12 @@ import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.filter.OAQueryFilter;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAArray;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.oa.OA;
+import com.viaoa.oa.sibling.OASiblingHelper;
 import com.viaoa.object.OAObject;
 import com.viaoa.performance.OAPerformance;
 import com.viaoa.runtime.OARuntime;
@@ -1122,8 +1122,8 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 
 		if (hubSearch != null && finder == null) {
 			finder = new OAFinder(hubSearch, null);
-			final OAGraph og = OARuntime.graph(clazz);
-			OALinkInfo li = og.internal().hubs().detail().getLinkInfoFromMasterObjectToDetail(hubSearch);
+			final OA oa = OARuntime.oa(clazz);
+			OALinkInfo li = oa.internal().hubs().detail().getLinkInfoFromMasterObjectToDetail(hubSearch);
 			if (li != null && !li.getRecursive()) {
 				finder.setAllowRecursiveRoot(false);
 			}

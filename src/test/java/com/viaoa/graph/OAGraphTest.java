@@ -27,17 +27,18 @@ import com.viaoa.hub.merge.HubMerger;
 import com.viaoa.hub.view.HubFlattened;
 import com.viaoa.hub.view.OALeftJoin;
 import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.select.OASelect;
 import com.viaoa.text.OATextUtil;
 
-class OAGraphTest {
-    private OAGraph graph;
+class OATest {
+    private OA graph;
 /*qqqqqq
     @BeforeEach
     void beforeEach() {
-        OAGraph og = OARuntime.graph(Register.class);
+        OA oa = OARuntime.graph(Register.class);
     }
     @AfterEach
     void afterEach() {
@@ -52,7 +53,7 @@ class OAGraphTest {
         assertNotNull(graph.sync());
         assertNotNull(graph.replication());
 
-        OAGraph internal = graph;
+        OA internal = graph;
         assertNotNull(internal.objectsInternal());
         assertNotNull(internal.hubsInternal());
         assertNotNull(internal.syncInternal());

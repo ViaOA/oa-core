@@ -26,7 +26,6 @@ import com.viaoa.annotation.OAProperty;
 import com.viaoa.converter.OAConv;
 import com.viaoa.converter.OAConverter;
 import com.viaoa.filter.OAFilter;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.filter.CustomHubFilter;
 import com.viaoa.lang.OAArray;
@@ -35,6 +34,7 @@ import com.viaoa.metadata.OACalcInfo;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.metadata.OAPropertyInfo;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.reflect.OAReflect;
 import com.viaoa.runtime.OARuntime;
@@ -349,8 +349,8 @@ public class OAPath<TYPE extends OAObject> {
 		String pp = "";
 		for (int i = 0; i < linkInfos.length; i++) {
 			OALinkInfo li = linkInfos[i];
-			final OAGraph og = OARuntime.graph(li.getToClass());
-			OALinkInfo liRev = og.internal().objects().info().getReverseLinkInfo(li);
+			final OA oa = OARuntime.oa(li.getToClass());
+			OALinkInfo liRev = oa.internal().objects().info().getReverseLinkInfo(li);
 			if (liRev == null) return null;
 			if (!bAllowPrivateLinks && liRev.getPrivateMethod()) {
 				return null;
@@ -1041,20 +1041,20 @@ Severity: critical
 				clazz = substituteClass;
 			}
 
-			final OAGraph og = OARuntime.graph(clazz);
-			OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(clazz);
-			final OALinkInfo li = og.internal().objects().info().getLinkInfo(oi, propertyName);
+			final OA oa = OARuntime.oa(clazz);
+			OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(clazz);
+			final OALinkInfo li = oa.internal().objects().info().getLinkInfo(oi, propertyName);
 			if (li != null) {
 				endLinkInfo = li;
 				endPropertyInfo = null;
 				endCalcInfo = null;
 				linkInfos = (OALinkInfo[]) OAArray.add(OALinkInfo.class, linkInfos, li);
 			} else {
-				endPropertyInfo = og.internal().objects().info().getPropertyInfo(oi, propertyName);
+				endPropertyInfo = oa.internal().objects().info().getPropertyInfo(oi, propertyName);
 				
 				if (endPropertyInfo != null) endCalcInfo = null;
 				else {
-					endCalcInfo = og.internal().objects().info().getCalcInfo(oi, propertyName);
+					endCalcInfo = oa.internal().objects().info().getCalcInfo(oi, propertyName);
 				}
 				//was: endCalcInfo = endPropertyInfo != null ? null : OAObjectInfoDelegate.getOACalcInfo(oi, propertyName);
 				endLinkInfo = null;
@@ -1072,7 +1072,7 @@ Severity: critical
 			this.properties = (String[]) OAArray.add(String.class, this.properties, propertyName);
 
 			// 20240131
-            Method method = og.internal().objects().info().getMethod(oi, mname, 0);
+            Method method = oa.internal().objects().info().getMethod(oi, mname, 0);
             //was: Method method = OAReflect.getMethod(clazz, mname, 0);
 			
 			bLastMethodHasHubParam = false;
@@ -1117,7 +1117,7 @@ Severity: critical
 
 			if (clazz != null && clazz.equals(Hub.class) && castName == null) {
 				// try to find the ObjectClass for Hub
-				Class c = og.internal().objects().info().getHubPropertyClass(classLast, propertyName);
+				Class c = oa.internal().objects().info().getHubPropertyClass(classLast, propertyName);
 				if (c != null) {
 					clazz = c;
 				}
@@ -1303,14 +1303,14 @@ Severity: critical
 				if (li == null || !li.getRecursive()) {
 					continue;
 				}
-				final OAGraph og = OARuntime.graph(li.getToClass());
-				OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(li.getToClass());
+				final OA oa = OARuntime.oa(li.getToClass());
+				OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(li.getToClass());
 
 				OALinkInfo lix;
 				if (li.getType() == OALinkInfo.MANY) {
-					lix = og.internal().objects().info().getRecursiveLinkInfo(oi, OALinkInfo.MANY);
+					lix = oa.internal().objects().info().getRecursiveLinkInfo(oi, OALinkInfo.MANY);
 				} else {
-					lix = og.internal().objects().info().getRecursiveLinkInfo(oi, OALinkInfo.ONE);
+					lix = oa.internal().objects().info().getRecursiveLinkInfo(oi, OALinkInfo.ONE);
 				}
 				recursiveLinkInfos[j - 1] = lix;
 			}

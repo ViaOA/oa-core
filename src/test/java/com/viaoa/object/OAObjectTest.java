@@ -13,21 +13,21 @@ import com.test.pos.model.oa.Customer;
 import com.test.pos.model.oa.Register;
 import com.test.pos.model.oa.Store;
 import com.viaoa.callback.OAObjectCallback;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.oa.VEnum;
+import com.viaoa.oa.OA;
 import com.viaoa.runtime.OARuntime;
 
 class OAObjectTest {
 
     @BeforeEach
     void beforeEach() {
-        OAGraph og = OARuntime.graph(Register.class);
+        OA oa = OARuntime.oa(Register.class);
     }
     @AfterEach
     void afterEach() {
         OAObject.setDebugMode(false);
-        OARuntime.graph(Register.class).close();
+        OARuntime.oa(Register.class).close();
     }
 	
     @Test
@@ -411,7 +411,7 @@ class OAObjectTest {
 
     @Test
     void getGraphReturnsRuntimeGraphForObject() {
-        assertSame(OARuntime.graph(Store.class), new Store().getGraph());
+        assertSame(OARuntime.oa(Store.class), new Store().getOA());
     }
 
 }

@@ -21,14 +21,14 @@ import java.util.*;
 import com.viaoa.cascade.OACascade;
 import com.viaoa.compare.OACompare;
 import com.viaoa.filter.*;
-import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.*;
 import com.viaoa.hub.filter.CustomHubFilter;
 import com.viaoa.hub.filter.HubFilter;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.oa.OA;
+import com.viaoa.oa.sibling.OASiblingHelper;
 import com.viaoa.object.OAObject;
 import com.viaoa.path.OAPath;
 import com.viaoa.runtime.OARuntime;
@@ -659,8 +659,8 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		final boolean bEnableRecursiveRootHold = bEnableRecursiveRoot; 
 		if (!bEnableRecursiveRootWasCalled) {
 			if (hubRoot != null) {
-				final OAGraph og = OARuntime.graph(hubRoot);
-				OALinkInfo li = og.internal().hubs().detail().getLinkInfoFromMasterObjectToDetail(hubRoot);
+				final OA oa = OARuntime.oa(hubRoot);
+				OALinkInfo li = oa.internal().hubs().detail().getLinkInfoFromMasterObjectToDetail(hubRoot);
 				if (li != null && li.getRecursive()) {
 					bEnableRecursiveRoot = true;
 				}
@@ -1206,8 +1206,8 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 			cascades[i] = new OACascade();
 		}
 
-		final OAGraph og = OARuntime.graph(c);
-		OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(c);
+		final OA oa = OARuntime.oa(c);
+		OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(c);
 		liRecursiveRoot = oi.getRecursiveLinkInfo(OALinkInfo.MANY);
 
 		if (liRecursiveRoot != null && linkInfos != null && linkInfos.length > 0) {
@@ -1381,16 +1381,16 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 				boolean b = linkInfos[pos].isLoaded(obj);
 				if (b && linkInfos[pos].getType() == OALinkInfo.TYPE_MANY) {
 					if (OAString.isNotEmpty(linkInfos[pos].getSortProperty())) {
-						final OAGraph og = OARuntime.graph((OAObject) obj);
+						final OA oa = OARuntime.oa((OAObject) obj);
 						Object objx;
 						if (linkInfos[pos].getCalculated()) {
 							objx = linkInfos[pos].getValue((OAObject) obj);
 						} else {
-							objx = og.internal().objects().property().getProperty((OAObject) obj, linkInfos[pos].getName());
+							objx = oa.internal().objects().property().getProperty((OAObject) obj, linkInfos[pos].getName());
 						}
 						if (objx instanceof Hub) {
 							Hub h = (Hub) objx;
-							if (og.internal().hubs().sort().getSortListener(h) == null && og.internal().hubs().sequence().getAutoSequence(h) == null) {
+							if (oa.internal().hubs().sort().getSortListener(h) == null && oa.internal().hubs().sequence().getAutoSequence(h) == null) {
 								final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 								OAThreadLocal tl = srvcOAThreadLocal.getThreadLocal(true);
 								if (tl.cntGetSiblingCalled > 1) {
@@ -1431,14 +1431,14 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 			return false;
 		}
 
-		final OAGraph og = OARuntime.graph((OAObject) obj);
+		final OA oa = OARuntime.oa((OAObject) obj);
 		Hub hx;
 		if (li.getCalculated()) {
 			hx = (Hub) li.getValue((OAObject) obj);
 		} else {
-			hx = (Hub) og.internal().objects().property().getProperty((OAObject) obj, li.getName(), false, true);
+			hx = (Hub) oa.internal().objects().property().getProperty((OAObject) obj, li.getName(), false, true);
 		}
-		if (hx == null || (og.internal().hubs().sort().getSortListener(hx) == null && og.internal().hubs().sequence().getAutoSequence(hx) == null)) {
+		if (hx == null || (oa.internal().hubs().sort().getSortListener(hx) == null && oa.internal().hubs().sequence().getAutoSequence(hx) == null)) {
 			return true;
 		}
 		return false;

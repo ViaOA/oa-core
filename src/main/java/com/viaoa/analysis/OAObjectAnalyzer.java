@@ -18,8 +18,8 @@ package com.viaoa.analysis;
 import java.util.HashSet;
 
 import com.viaoa.callback.OACallback;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 
@@ -46,7 +46,7 @@ CODEX
   OG/OA 4.0, graph ownership and package routing are semantic boundaries. A diagnostic analysis that silently skips
   non-default graph caches can produce false-negative architecture/cache reports and misleading tooling guidance.
 
-  Minimal fix direction: either make OAObjectAnalyzer graph-scoped and document/require the target OAGraph, or
+  Minimal fix direction: either make OAObjectAnalyzer graph-scoped and document/require the target OA, or
   enumerate all registered runtime graphs and scan each graph’s object cache directly. Do not claim global
   completeness unless all relevant graphs were visited.
 
@@ -111,18 +111,18 @@ public class OAObjectAnalyzer {
      * maintained for summary inspection.</p>
      */
     public void load() {
-		OAGraph ogx = OARuntime.graph();
+		OA ogx = OARuntime.oa();
     	
         for (Class cs : ogx.internal().objects().cache().getClasses()) {
-        	OAGraph og = OARuntime.graph(cs);
+        	OA oa = OARuntime.oa(cs);
 
-    		System.out.println("Starting class="+cs.getSimpleName()+", total="+og.internal().objects().cache().getTotal(cs));
+    		System.out.println("Starting class="+cs.getSimpleName()+", total="+oa.internal().objects().cache().getTotal(cs));
             
             OACallback cb = new OACallback() {
                 @Override
                 public boolean updateObject(Object object) {
                     OAObject obj = (OAObject) object;
-                    Hub[] hubs = og.internal().objects().hub().getHubReferences(obj);
+                    Hub[] hubs = oa.internal().objects().hub().getHubReferences(obj);
                     if (hubs == null) return true;
                     int cnt = 0;
                     for (Hub h : hubs) {
@@ -136,7 +136,7 @@ public class OAObjectAnalyzer {
                     return true;
                 }
             };
-            og.internal().objects().cache().callback(cs, cb);
+            oa.internal().objects().cache().callback(cs, cb);
         }    
         int xx = hsHub.size();
         xx++;

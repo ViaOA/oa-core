@@ -21,11 +21,11 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
 
-class OAGraphObjectParentServiceTest {
+class OAObjectParentServiceTest {
 /*qqqqqqqqq
     @BeforeEach
     void beforeEach() {
-        OAGraph og = OARuntime.graph(Register.class);
+        OA oa = OARuntime.graph(Register.class);
     }
     @AfterEach
     void afterEach() {
@@ -34,7 +34,7 @@ class OAGraphObjectParentServiceTest {
     }
 
     private static OAObjectInternalService objectService() {
-        OAGraph graph = OARuntime.graph(Register.class);
+        OA graph = OARuntime.graph(Register.class);
         return (OAObjectInternalService) graph.objectsInternal();
     }
 

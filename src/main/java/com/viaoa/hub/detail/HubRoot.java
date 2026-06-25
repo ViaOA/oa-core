@@ -19,8 +19,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListener;
@@ -29,6 +27,8 @@ import com.viaoa.hub.copy.HubCopy;
 import com.viaoa.log.OALogger;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.oa.OA;
+import com.viaoa.oa.service.object.OAObjectInfoService;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 
@@ -113,17 +113,17 @@ public class HubRoot {
 		}
 
 		Class clazz = hub.getObjectClass();
-		final OAGraph og = OARuntime.graph(clazz);
-		OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(clazz);
+		final OA oa = OARuntime.oa(clazz);
+		OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(clazz);
 		OALinkInfo li = oi.getRecursiveLinkInfo(OALinkInfo.MANY);
 		if (li == null) {
 			hubRoot.setSharedHub(hub, true);
 			return;
 		}
 
-		li = og.internal().hubs().detail().getLinkInfoFromDetailToMaster(hub);
+		li = oa.internal().hubs().detail().getLinkInfoFromDetailToMaster(hub);
 		if (li != null) {
-			li = og.internal().objects().info().getReverseLinkInfo(li);
+			li = oa.internal().objects().info().getReverseLinkInfo(li);
 		}
 		if (li == null || !li.getRecursive()) {
 			hubRoot.setSharedHub(hub, false);
@@ -144,7 +144,7 @@ public class HubRoot {
 			return;
 		}
 
-		propertyFromMaster = og.internal().hubs().detail().getPropertyFromMasterToDetail(hub);
+		propertyFromMaster = oa.internal().hubs().detail().getPropertyFromMasterToDetail(hub);
 
 		hubListener = new HubListenerAdapter() {
 			@Override

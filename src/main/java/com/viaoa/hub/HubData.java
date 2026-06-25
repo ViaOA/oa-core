@@ -22,12 +22,12 @@ import java.util.logging.Logger;
 
 import com.viaoa.compare.match.OAMatchNull;
 import com.viaoa.datasource.*;
-import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.hub.auto.HubAutoMatch;
 import com.viaoa.hub.auto.HubAutoSequence;
 import com.viaoa.hub.sort.HubSortListener;
 import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.oa.OA;
+import com.viaoa.oa.service.object.OAObjectInfoService;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.select.OASelect;
@@ -522,8 +522,8 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
             oi = hdx.objectInfo;
             if (oi != null) return oi;
         }
-		final OAGraph og = OARuntime.graph(objClass);
-        oi = og.internal().objects().info().getOAObjectInfo(objClass);
+		final OA oa = OARuntime.oa(objClass);
+        oi = oa.internal().objects().info().getOAObjectInfo(objClass);
         if (objClass != null && hubDatax != null) hubDatax.objectInfo = oi;
         return oi;
     }

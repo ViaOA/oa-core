@@ -15,8 +15,8 @@ import com.test.pos.model.oa.Register;
 import com.test.pos.model.oa.RegisterSession;
 import com.test.pos.model.oa.Store;
 import com.test.pos.model.oa.propertypath.StorePP;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.text.OATextUtil;
@@ -35,12 +35,12 @@ class OAFunctionTest {
 
     @BeforeEach
     void beforeEach() {
-        OAGraph og = OARuntime.graph(Register.class);
+        OA oa = OARuntime.oa(Register.class);
     }
     @AfterEach
     void afterEach() {
         OAObject.setDebugMode(false);
-        OARuntime.graph(Register.class).close();
+        OARuntime.oa(Register.class).close();
     }
 
     @Test

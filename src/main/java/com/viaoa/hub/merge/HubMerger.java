@@ -28,8 +28,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.cascade.OACascade;
-import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListener;
@@ -38,6 +36,8 @@ import com.viaoa.hub.filter.CustomHubFilter;
 import com.viaoa.hub.filter.HubFilter;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.oa.OA;
+import com.viaoa.oa.sibling.OASiblingHelper;
 import com.viaoa.object.OAObject;
 import com.viaoa.path.OAPath;
 import com.viaoa.performance.OAPerformance;
@@ -67,7 +67,7 @@ import com.viaoa.runtime.thread.OAThreadLocal;
  *   <li>Parses and validates {@link OAPath} to build a linked chain of {@code Node} objects.</li>
  *   <li>Maintains membership through {@code Data} trees that react to Hub events.</li>
  *   <li>Uses {@link java.util.concurrent.locks.ReentrantReadWriteLock} for atomic membership updates.</li>
- *   <li>Supports background initialization and sibling tracking via {@link com.viaoa.graph.sibling.OASiblingHelper}.</li>
+ *   <li>Supports background initialization and sibling tracking via {@link com.viaoa.oa.sibling.OASiblingHelper}.</li>
  * </ul>
  *
  * <p>Subclasses may override {@code beforeRemoveRealHub}, {@code afterAddRealHub}, etc.,
@@ -817,7 +817,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
     protected void createNodes() {
         bShareEndHub = !bUseAll;
         Class clazz = hubRoot.getObjectClass();
-		final OAGraph og = OARuntime.graph(clazz);
+		final OA oa = OARuntime.oa(clazz);
 
         // 20120809 using new OAPropertyPath
         OAPath oaPropPath = new OAPath(propertyPath);
@@ -861,8 +861,8 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         OALinkInfo lastLinkInfo = null; // 20131009
 
         for (int i = 0;; i++) {
-            OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(clazz);
-            OALinkInfo recursiveLinkInfo = og.internal().objects().info().getRecursiveLinkInfo(oi, OALinkInfo.MANY);
+            OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(clazz);
+            OALinkInfo recursiveLinkInfo = oa.internal().objects().info().getRecursiveLinkInfo(oi, OALinkInfo.MANY);
             Node recursiveNode = null;
 
             // 20131009 check to see if link is recursive
@@ -883,7 +883,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
             String prop = pps[i];
 
-            OALinkInfo linkInfo = og.internal().objects().info().getLinkInfo(oi, prop);
+            OALinkInfo linkInfo = oa.internal().objects().info().getLinkInfo(oi, prop);
             if (linkInfo == null) {
                 throw new IllegalArgumentException("Cant find " + prop + " for PropertyPath \"" + propertyPath + "\" starting with Class "
                         + hubRoot.getObjectClass().getName());
@@ -923,7 +923,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         }
         // verify that last property is same class as hubCombined
         if (hubCombined != null && hubCombined.getObjectClass() == null) {
-            og.internal().hubs().data().setObjectClass(hubCombined, clazz);
+            oa.internal().hubs().data().setObjectClass(hubCombined, clazz);
         }
         if (hubCombined != null && !hubCombined.getObjectClass().equals(clazz)) {
             if (!clazz.equals(Hub.class)) {
@@ -1168,7 +1168,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
          * when verification is enabled. Logs structural mismatches and unexpected states.
          */
         void verify() {
-    		final OAGraph og = OARuntime.graph(hub);
+    		final OA oa = OARuntime.oa(hub);
             // todo: test when data is recursive
             if (!bVERIFY) {
                 return;
@@ -1223,7 +1223,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                         int x = (hubRoot.getAO() == null) ? 0 : 1;
 
                         if (x == 0 && node.child.liFromParentToChild.getType() == OALinkInfo.ONE) {
-                            if (og.internal().hubs().detail().getLinkInfoFromDetailToMaster(hubRoot) == node.child.liFromParentToChild) {
+                            if (oa.internal().hubs().detail().getLinkInfoFromDetailToMaster(hubRoot) == node.child.liFromParentToChild) {
                                 if (hubRoot.getMasterObject() != null) {
                                     x = 1;
                                 }
@@ -1429,14 +1429,14 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 }
             }
 
-    		final OAGraph og = OARuntime.graph(HubMerger.this.getRootHub());
+    		final OA oa = OARuntime.oa(HubMerger.this.getRootHub());
             if (node.child == null) {
                 if (bShareEndHub) {
                     if (hubCombined != null) {
                         hubCombined.setSharedHub(hub, bShareActiveObject);
                     }
                 } else {
-                    if (og.internal().sync().isClient()) {
+                    if (oa.internal().sync().isClient()) {
                         // preload, so that any getDetail will be more efficient
                         for (int i = 0;; i++) {
                             OAObject obj = (OAObject) hub.elementAt(i);
@@ -1471,7 +1471,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                     Hub hubx = null;
                     //if (!bCreatedFromOneObject) hubx = srvcOAThreadLocal.setGetDetailHub(hub);
                     try {
-                        if (og.internal().sync().isClient()) {
+                        if (oa.internal().sync().isClient()) {
                             // preload, so that any getDetail will be more efficient
                             for (int i = 0;; i++) {
                                 OAObject obj = (OAObject) hub.elementAt(i);
@@ -1551,8 +1551,8 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 return;
             }
 
-    		final OAGraph og = OARuntime.graph(HubMerger.this.getRootHub());
-            String s = og.internal().hubs().detail().getPropertyFromDetailToMaster(hub);
+    		final OA oa = OARuntime.oa(HubMerger.this.getRootHub());
+            String s = oa.internal().hubs().detail().getPropertyFromDetailToMaster(hub);
             if (s == null || !s.equalsIgnoreCase(node.child.property)) {
                 return;
             }
@@ -1913,8 +1913,8 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                     if (srvcOAThreadLocal.isHubMergerChanging()) { // 20120102
                         // 20120612 dont send event, unless there is a recursive prop, which needs to
                         // have recursives nodes updated
-                		final OAGraph og = OARuntime.graph(hubCombined);
-                		og.internal().hubs().addRemove().remove((Hub<OAObject>)hubCombined, (OAObject)obj, false, bIsRecusive, false, false, false, false);
+                		final OA oa = OARuntime.oa(hubCombined);
+                		oa.internal().hubs().addRemove().remove((Hub<OAObject>)hubCombined, (OAObject)obj, false, bIsRecusive, false, false, false, false);
                     } else {
                         if (hubCombined != null) {
                             hubCombined.remove(obj);
@@ -1934,8 +1934,8 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 if (!isUsed(obj)) {
         			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
                     if (srvcOAThreadLocal.isHubMergerChanging()) {
-                		final OAGraph og = OARuntime.graph(hubCombined);
-                		og.internal().hubs().addRemove().remove((Hub<OAObject>)hubCombined, (OAObject)obj, false, bIsRecusive, false, false, false, false);
+                		final OA oa = OARuntime.oa(hubCombined);
+                		oa.internal().hubs().addRemove().remove((Hub<OAObject>)hubCombined, (OAObject)obj, false, bIsRecusive, false, false, false, false);
                     } else {
                         if (hubCombined != null) {
                             hubCombined.remove(obj);
@@ -1989,8 +1989,8 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                         if (!isUsed(ref, child.node)) {
                 			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
                             if (srvcOAThreadLocal.isHubMergerChanging()) { // 20120102
-                        		final OAGraph og = OARuntime.graph(child.hub);
-                        		og.internal().hubs().addRemove().remove((Hub<OAObject>)child.hub, (OAObject)ref, false, false, false, false, false, false);
+                        		final OA oa = OARuntime.oa(child.hub);
+                        		oa.internal().hubs().addRemove().remove((Hub<OAObject>)child.hub, (OAObject)ref, false, false, false, false, false, false);
                             } else {
                                 child.hub.remove(ref);
                             }
@@ -2178,8 +2178,8 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 return;
             }
 
-    		final OAGraph og = OARuntime.graph(HubMerger.this.getRootHub());
-            if (og.internal().sync().isServer()) {
+    		final OA oa = OARuntime.oa(HubMerger.this.getRootHub());
+            if (oa.internal().sync().isServer()) {
                 _onNewList();
                 return;
             }
@@ -2254,8 +2254,8 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 if (!b) {
                     aiLoadingCombinedHub.decrementAndGet();
                     if (!shouldQuit()) {
-                		final OAGraph og = OARuntime.graph(HubMerger.this.getRootHub());
-                        og.internal().hubs().events().fireOnNewListEvent(hubCombined, false);
+                		final OA oa = OARuntime.oa(HubMerger.this.getRootHub());
+                        oa.internal().hubs().events().fireOnNewListEvent(hubCombined, false);
                     }
                 }
             }
@@ -2307,8 +2307,8 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
             if (hubCombined != null) {
                 if (!bShareEndHub) {
-            		final OAGraph og = OARuntime.graph(HubMerger.this.getRootHub());
-                    og.internal().hubs().events().fireOnNewListEvent(hubCombined, true);
+            		final OA oa = OARuntime.oa(HubMerger.this.getRootHub());
+                    oa.internal().hubs().events().fireOnNewListEvent(hubCombined, true);
                 }
             }
         }
@@ -2417,8 +2417,8 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
          */
         @Override
         public void afterNewList(HubEvent hubEvent) {
-    		final OAGraph og = OARuntime.graph(HubMerger.this.getRootHub());
-            if ((hub != hubRoot) || og.internal().sync().isServer()) {
+    		final OA oa = OARuntime.oa(HubMerger.this.getRootHub());
+            if ((hub != hubRoot) || oa.internal().sync().isServer()) {
                 return;
             }
 

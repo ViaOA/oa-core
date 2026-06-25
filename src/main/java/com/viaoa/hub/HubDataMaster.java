@@ -18,9 +18,9 @@ package com.viaoa.hub;
 import java.lang.reflect.Method;
 
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.oa.OA;
+import com.viaoa.oa.service.object.OAObjectInfoService;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 
@@ -113,8 +113,8 @@ public class HubDataMaster implements java.io.Serializable {
 		if (liDetailToMaster == null) {
 			return null;
 		}
-		final OAGraph og = OARuntime.graph(liDetailToMaster.getToClass());
-		OALinkInfo rli = og.internal().objects().info().getReverseLinkInfo(liDetailToMaster);
+		final OA oa = OARuntime.oa(liDetailToMaster.getToClass());
+		OALinkInfo rli = oa.internal().objects().info().getReverseLinkInfo(liDetailToMaster);
 		if (rli == null) {
 			return null;
 		}
@@ -131,8 +131,8 @@ public class HubDataMaster implements java.io.Serializable {
 		if (liDetailToMaster == null) {
 			return null;
 		}
-		final OAGraph og = OARuntime.graph(liDetailToMaster.getToClass());
-		OALinkInfo rli = og.internal().objects().info().getReverseLinkInfo(liDetailToMaster);
+		final OA oa = OARuntime.oa(liDetailToMaster.getToClass());
+		OALinkInfo rli = oa.internal().objects().info().getReverseLinkInfo(liDetailToMaster);
 		if (rli == null) {
 			return null;
 		}
@@ -191,8 +191,8 @@ public class HubDataMaster implements java.io.Serializable {
 		if (liDetailToMaster == null) {
 			return null;
 		}
-		final OAGraph og = OARuntime.graph(liDetailToMaster.getToClass());
-		OALinkInfo rli = og.internal().objects().info().getReverseLinkInfo(liDetailToMaster);
+		final OA oa = OARuntime.oa(liDetailToMaster.getToClass());
+		OALinkInfo rli = oa.internal().objects().info().getReverseLinkInfo(liDetailToMaster);
 		if (rli == null) {
 			return null;
 		}
@@ -208,8 +208,8 @@ public class HubDataMaster implements java.io.Serializable {
 		if (liDetailToMaster == null) {
 			return false;
 		}
-		final OAGraph og = OARuntime.graph(liDetailToMaster.getToClass());
-		OALinkInfo rli = og.internal().objects().info().getReverseLinkInfo(liDetailToMaster);
+		final OA oa = OARuntime.oa(liDetailToMaster.getToClass());
+		OALinkInfo rli = oa.internal().objects().info().getReverseLinkInfo(liDetailToMaster);
 		if (rli == null) {
 			return false;
 		}
@@ -226,8 +226,8 @@ public class HubDataMaster implements java.io.Serializable {
 		if (liDetailToMaster == null) {
 			return null;
 		}
-		final OAGraph og = OARuntime.graph(liDetailToMaster.getToClass());
-		OALinkInfo rli = og.internal().objects().info().getReverseLinkInfo(liDetailToMaster);
+		final OA oa = OARuntime.oa(liDetailToMaster.getToClass());
+		OALinkInfo rli = oa.internal().objects().info().getReverseLinkInfo(liDetailToMaster);
 		if (rli == null) {
 			return null;
 		}

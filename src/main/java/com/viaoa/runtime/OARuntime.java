@@ -6,10 +6,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphImpl;
-
 import com.viaoa.hub.Hub;
+import com.viaoa.oa.OA;
+import com.viaoa.oa.OAImpl;
 import com.viaoa.object.OAObject;
 
 /* qqqqqqqqqqqqq
@@ -74,13 +73,13 @@ public final class OARuntime {
 
 	private static OARuntime runtime = new OARuntime();
 	
-	private final Map<String, OAGraph> hmPackageNameGraph = new ConcurrentHashMap<>();
-	private final Map<String, OAGraph> hmPackageNameGraphHelper = new ConcurrentHashMap<>();
+	private final Map<String, OA> hmPackageNameOA = new ConcurrentHashMap<>();
+	private final Map<String, OA> hmPackageNameOAHelper = new ConcurrentHashMap<>();
 	private final Map<String, RuntimeException> hmPackageNameException = new ConcurrentHashMap<>();
 	private final Map<Class<?>, Class<?>> hmClassHelper = new ConcurrentHashMap<>();
 	
-	private OAGraph graphCatchAll;
-	private OAGraph graphDefault;
+	private OA oaCatchAll;
+	private OA oaDefault;
 
 	private final OADataSourceService srvcDataSource = new OADataSourceService();
 	private final OAThreadService srvcThread = new OAThreadService();
@@ -90,105 +89,105 @@ public final class OARuntime {
 	}
 	
 	static {
-		runtime.graphCatchAll = (OAGraphImpl) runtime.createGraphInternal("");
+		runtime.oaCatchAll = (OAImpl) runtime.createOAInternal("");
 	}
 	
 	public static OARuntime get() {
 		return runtime;
 	}
 
-	public static OAGraph createGraph(final Package pkg) {
-		return runtime.createGraphInternal(pkg);
+	public static OA createOA(final Package pkg) {
+		return runtime.createOAInternal(pkg);
 	}
 
-	public static OAGraph createDefaultGraph(final Package pkg) {
-		OAGraph og = runtime.createGraphInternal(pkg);
-		runtime.defaultGraph(og);
-		return og;
+	public static OA createDefaultOA(final Package pkg) {
+		OA oa = runtime.createOAInternal(pkg);
+		runtime.defaultOA(oa);
+		return oa;
 	}
 	
-	private OAGraph createGraphInternal(final Package pkg) {
+	private OA createOAInternal(final Package pkg) {
 		String pn;
 		if (pkg != null) pn = pkg.getName();
 		else pn = null;
-		return createGraphInternal(pn);
+		return createOAInternal(pn);
 	}	
 	
-	public static OAGraph createGraph(final String pkgName) {
-		return runtime.createGraphInternal(pkgName);
+	public static OA createOA(final String pkgName) {
+		return runtime.createOAInternal(pkgName);
 	}
 	
-	private OAGraph createGraphInternal(final String pkgName) {
+	private OA createOAInternal(final String pkgName) {
 		if (pkgName == null) return null;
 
-		OAGraph og = hmPackageNameGraph.get(pkgName);
-		if (og != null) return og;
+		OA oa = hmPackageNameOA.get(pkgName);
+		if (oa != null) return oa;
 
-		synchronized (hmPackageNameGraph) {
-			og = hmPackageNameGraph.get(pkgName);
-			if (og != null) return og;
+		synchronized (hmPackageNameOA) {
+			oa = hmPackageNameOA.get(pkgName);
+			if (oa != null) return oa;
 		
 			RuntimeException exRt = hmPackageNameException.get(pkgName);
 			if (exRt != null) throw exRt;
 			
-			og = new OAGraphImpl(pkgName) {
+			oa = new OAImpl(pkgName) {
 				@Override
 				public void close() {
 					super.close();
-					hmPackageNameGraphHelper.clear();
-					hmPackageNameGraph.remove(pkgName);
+					hmPackageNameOAHelper.clear();
+					hmPackageNameOA.remove(pkgName);
 				}
 			};
 			try {
-				((OAGraphImpl) og).initialize();
-				hmPackageNameGraphHelper.clear();
-				hmPackageNameGraph.put(pkgName, og);
+				((OAImpl) oa).initialize();
+				hmPackageNameOAHelper.clear();
+				hmPackageNameOA.put(pkgName, oa);
 			} catch (ClassNotFoundException | IOException e) {
-				RuntimeException ex = new RuntimeException("Could not initialize OAGraph, package name is " + pkgName, e);
-				hmPackageNameGraph.remove(pkgName);
-				hmPackageNameGraphHelper.clear();
+				RuntimeException ex = new RuntimeException("Could not initialize OA, package name is " + pkgName, e);
+				hmPackageNameOA.remove(pkgName);
+				hmPackageNameOAHelper.clear();
 				hmPackageNameException.put(pkgName, ex);
 				throw ex;
 			}
 		}
-		return og;
+		return oa;
 	}
 
-	public static OAGraph graph(final OAObject obj) {
-		return runtime.graphInternal(obj);
+	public static OA oa(final OAObject obj) {
+		return runtime.oaInternal(obj);
 	}	
 	
-	private OAGraph graphInternal(final OAObject obj) {
+	private OA oaInternal(final OAObject obj) {
 		Class<?> c = obj == null ? null : obj.getClass();
-		return graphInternal(c);
+		return oaInternal(c);
 	}
 
-	public static OAGraph graph(final Hub hub) {
-		return runtime.graphInternal(hub);
+	public static OA oa(final Hub hub) {
+		return runtime.oaInternal(hub);
 	}
 	
-	private OAGraph graphInternal(final Hub hub) {
+	private OA oaInternal(final Hub hub) {
 		Class<?> c = hub == null ? null : hub.getObjectClass();
-		return graphInternal(c);
+		return oaInternal(c);
 	}
 
-	public static OAGraph graph(final Hub hub, final OAObject obj) {
-		return runtime.graphInternal(hub, obj);
+	public static OA oa(final Hub hub, final OAObject obj) {
+		return runtime.oaInternal(hub, obj);
 	}
 	
-	private OAGraph graphInternal(final Hub hub, final OAObject obj) {
+	private OA oaInternal(final Hub hub, final OAObject obj) {
 		Class<?> c = hub == null ? null : hub.getObjectClass();
 		if (c == null && obj != null) {
 			c = obj.getClass();
 		}
-		return graphInternal(c);
+		return oaInternal(c);
 	}
 	
-	public static OAGraph graph(final Class<?> clazz) {
-		return runtime.graphInternal(clazz);
+	public static OA oa(final Class<?> clazz) {
+		return runtime.oaInternal(clazz);
 	}
 	
-	private OAGraph graphInternal(final Class<?> clazz) {
+	private OA oaInternal(final Class<?> clazz) {
 	    Class<?> classFound = clazz;
 
 	    Class<?> classSuper = (classFound == null) ? null : classFound.getSuperclass();
@@ -215,67 +214,67 @@ public final class OARuntime {
 	    }
 
 	    String pn = (classFound == null) ? "" : classFound.getPackage().getName();
-	    return graphInternal(pn);
+	    return oaInternal(pn);
 	}
 	
-	public static OAGraph graph(final Package pkg) {
-		return runtime.graphInternal(pkg);
+	public static OA oa(final Package pkg) {
+		return runtime.oaInternal(pkg);
 	}
 	
-	private OAGraph graphInternal(final Package pkg) {
+	private OA oaInternal(final Package pkg) {
 		String pn = pkg == null ? null : pkg.getName();
-		return graphInternal(pn);
+		return oaInternal(pn);
 	}	
 
-	public static OAGraph graph(String pkgName) {
-		return runtime.graphInternal(pkgName);
+	public static OA oa(String pkgName) {
+		return runtime.oaInternal(pkgName);
 	}
 	
-	private OAGraph graphInternal(String pkgName) {
+	private OA oaInternal(String pkgName) {
 		if (pkgName == null) pkgName = "";
 
-		OAGraph og = hmPackageNameGraph.get(pkgName);
-		if (og != null) return og;
+		OA oa = hmPackageNameOA.get(pkgName);
+		if (oa != null) return oa;
 		
-		og = hmPackageNameGraphHelper.get(pkgName);
-		if (og != null) return og;
+		oa = hmPackageNameOAHelper.get(pkgName);
+		if (oa != null) return oa;
 		
 		RuntimeException exRt = hmPackageNameException.get(pkgName);
 		if (exRt != null) throw exRt;
 		
 		String fnd = null;
-		for (String s : hmPackageNameGraph.keySet()) {
+		for (String s : hmPackageNameOA.keySet()) {
 			if (pkgName.equals(s) || pkgName.startsWith(s + ".")) {
 				if (fnd == null || s.length() > fnd.length()) fnd = s;
 			}
 		}
 		if (fnd != null) {
-			og = hmPackageNameGraph.get(fnd);
-			hmPackageNameGraphHelper.put(pkgName, og);
-			return og;
+			oa = hmPackageNameOA.get(fnd);
+			hmPackageNameOAHelper.put(pkgName, oa);
+			return oa;
 		}
-		hmPackageNameGraphHelper.put(pkgName, graphCatchAll);
-		return graphCatchAll;
+		hmPackageNameOAHelper.put(pkgName, oaCatchAll);
+		return oaCatchAll;
 	}	
 
 
 	/**
 	 */
-	public static OAGraph graph() {
-		if (runtime.graphDefault != null) return runtime.graphDefault;
-		return runtime.graphInternal("");
+	public static OA oa() {
+		if (runtime.oaDefault != null) return runtime.oaDefault;
+		return runtime.oaInternal("");
 	}
 
-	public static OAGraph defaultGraph() {
-		return runtime.graphDefault;
+	public static OA defaultOA() {
+		return runtime.oaDefault;
 	}
 
-	public static void defaultGraph(OAGraph og) {
-		runtime.graphDefault = og;
+	public static void defaultOA(OA og) {
+		runtime.oaDefault = og;
 	}
 	
-	public static OAGraph catchAllGraph() {
-		return runtime.graphInternal("");
+	public static OA catchAllOA() {
+		return runtime.oaInternal("");
 	}
 
 	

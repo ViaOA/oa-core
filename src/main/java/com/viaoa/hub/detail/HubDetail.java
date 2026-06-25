@@ -16,15 +16,15 @@
 package com.viaoa.hub.detail;
 
 
-import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.service.object.OAObjectInfoService;
-import com.viaoa.graph.service.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubInternalBridge;
 import com.viaoa.hub.HubListenerAdapter;
 import com.viaoa.hub.merge.HubMerger;
 import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.oa.OA;
+import com.viaoa.oa.service.object.OAObjectInfoService;
+import com.viaoa.oa.service.object.OAObjectReflectService;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
 
@@ -222,8 +222,8 @@ public class HubDetail implements java.io.Serializable {
         if (hubDetail == null) return;
         if (liMasterToDetail == null) return;
         
-		final OAGraph og = OARuntime.graph(hubDetail.getOAObjectInfo().getForClass());
-        final OALinkInfo liRecursive = og.internal().objects().info().getRecursiveLinkInfo(hubDetail.getOAObjectInfo(), OALinkInfo.ONE);
+		final OA oa = OARuntime.oa(hubDetail.getOAObjectInfo().getForClass());
+        final OALinkInfo liRecursive = oa.internal().objects().info().getRecursiveLinkInfo(hubDetail.getOAObjectInfo(), OALinkInfo.ONE);
         if (liRecursive == null) return;
         if (liRecursive == liMasterToDetail) return;
 
@@ -242,8 +242,8 @@ public class HubDetail implements java.io.Serializable {
 
                 Object parent = null;
                 for (;;) {
-            		final OAGraph og = OARuntime.graph(obj.getClass());
-                    Object objx = og.internal().objects().reflect().getProperty((OAObject)obj, liDetailToMaster.getName());
+            		final OA oa = OARuntime.oa(obj.getClass());
+                    Object objx = oa.internal().objects().reflect().getProperty((OAObject)obj, liDetailToMaster.getName());
                     if (objx == null) break;
                     parent = objx;
                     if (!(parent instanceof OAObject)) {

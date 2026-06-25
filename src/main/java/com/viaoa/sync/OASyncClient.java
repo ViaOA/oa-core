@@ -33,10 +33,10 @@ import java.util.logging.Logger;
 import com.viaoa.comm.multiplexer.OAMultiplexerClient;
 import com.viaoa.datasource.clientserver.OADataSourceClient;
 import com.viaoa.datetime.OADateTime;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.log.OALogUtil;
 import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.oa.OA;
 import com.viaoa.object.*;
 import com.viaoa.performance.OAPerformance;
 import com.viaoa.remote.info.RequestInfo;
@@ -543,8 +543,8 @@ public abstract class OASyncClient {
 				// this will "ask" for additional data "around" the requested property
 				bGetSibs = true;
 				// send siblings to return back with same prop
-				final OAGraph og = OARuntime.graph(masterObject);
-				li = og.internal().objects().info().getLinkInfo(masterObject.getClass(), propertyName);
+				final OA oa = OARuntime.oa(masterObject);
+				li = oa.internal().objects().info().getLinkInfo(masterObject.getClass(), propertyName);
 
 				int max;
 				if (li == null) {
@@ -563,7 +563,7 @@ public abstract class OASyncClient {
 					max *= 3;
 				}
 
-				siblingKeys = og.internal().objects().sibling().getSiblings(masterObject, propertyName, max, hmIgnoreSibling);
+				siblingKeys = oa.internal().objects().sibling().getSiblings(masterObject, propertyName, max, hmIgnoreSibling);
 
 				/* testing
 				if (siblingKeys == null || siblingKeys.length == 0) {
@@ -573,7 +573,7 @@ public abstract class OASyncClient {
 				}
 				*/
 
-				additionalMasterProperties = og.internal().objects().reflect().getUnloadedReferences(masterObject, false, propertyName, false);
+				additionalMasterProperties = oa.internal().objects().reflect().getUnloadedReferences(masterObject, false, propertyName, false);
 
 				try {
 					//qqqqq cntDup = OAObjectSerializeDelegate.cntDup;
@@ -618,8 +618,8 @@ public abstract class OASyncClient {
 						continue;
 					}
 
-					final OAGraph og = OARuntime.graph(masterObject);
-					OAObject obj = og.internal().objects().cache().getObject(masterObject.getClass(), entry.getKey());
+					final OA oa = OARuntime.oa(masterObject);
+					OAObject obj = oa.internal().objects().cache().getObject(masterObject.getClass(), entry.getKey());
 					if (obj == null) {
 						continue;
 					}
@@ -627,15 +627,15 @@ public abstract class OASyncClient {
 					if (value instanceof Hub) {
 						Hub hub = (Hub) value;
 						if (li == null) {
-							li = og.internal().objects().info().getLinkInfo(masterObject.getClass(), propertyName);
+							li = oa.internal().objects().info().getLinkInfo(masterObject.getClass(), propertyName);
 						}
 						if (li != null) {
-							if (og.internal().objects().info().cacheHub(li, hub)) {
+							if (oa.internal().objects().info().cacheHub(li, hub)) {
 								value = new WeakReference(hub);
 							}
 						}
 					}
-					og.internal().objects().property().setProperty(obj, propertyName, value); // this will also set the hub.masterObj+li
+					oa.internal().objects().property().setProperty(obj, propertyName, value); // this will also set the hub.masterObj+li
 				}
 			}
 		} else {
@@ -646,14 +646,14 @@ public abstract class OASyncClient {
 		if (result instanceof Hub) {
 			Hub hub = (Hub) result;
 			
-			final OAGraph og = OARuntime.graph(masterObject);
+			final OA oa = OARuntime.oa(masterObject);
 			if (li == null) {
-				li = og.internal().objects().info().getLinkInfo(masterObject.getClass(), propertyName);
+				li = oa.internal().objects().info().getLinkInfo(masterObject.getClass(), propertyName);
 			}
-			if (og.internal().objects().info().cacheHub(li, hub)) {
-				og.internal().objects().property().setProperty(masterObject, propertyName, new WeakReference(hub));
+			if (oa.internal().objects().info().cacheHub(li, hub)) {
+				oa.internal().objects().property().setProperty(masterObject, propertyName, new WeakReference(hub));
 			} else {
-				og.internal().objects().property().setProperty(masterObject, propertyName, hub); // this will also set the hub.masterObj+li
+				oa.internal().objects().property().setProperty(masterObject, propertyName, hub); // this will also set the hub.masterObj+li
 			}
 		}
 
@@ -1126,8 +1126,8 @@ public abstract class OASyncClient {
     public void objectCreated(OAObject obj) {
         if (obj == null) return;
         UUID guid = obj.getGuid();
-		final OAGraph og = OARuntime.graph(obj);
-        if (og.internal().objects().info().getOAObjectInfo(obj).getLocalOnly()) return;
+		final OA oa = OARuntime.oa(obj);
+        if (oa.internal().objects().info().getOAObjectInfo(obj).getLocalOnly()) return;
         
         hmNewObjectsNotYetSent.put(guid, 0L);
         try {
@@ -1259,10 +1259,10 @@ public abstract class OASyncClient {
 		if (obj == null) return;
         final UUID guid = obj.getGuid();
         
-		final OAGraph og = OARuntime.graph(obj);
-        if (og.internal().objects().info().getOAObjectInfo(obj).getLocalOnly()) return;
+		final OA oa = OARuntime.oa(obj);
+        if (oa.internal().objects().info().getOAObjectInfo(obj).getLocalOnly()) return;
 	    
-        final boolean b = og.internal().objects().hub().isInHubWithMaster(obj);
+        final boolean b = oa.internal().objects().hub().isInHubWithMaster(obj);
         if (b) {
             if (hmObjectsWithoutHubs.get(guid) == null) return;
             hmObjectsWithoutHubs.remove(guid);
@@ -1307,8 +1307,8 @@ public abstract class OASyncClient {
 							rsi = OASyncClient.this.getRemoteSession();
 						}
 						if (rsi != null) {
-							final OAGraph og = OARuntime.graph(obj);
-						    boolean b = og.internal().objects().hub().isInHubWithMaster(obj);
+							final OA oa = OARuntime.oa(obj);
+						    boolean b = oa.internal().objects().hub().isInHubWithMaster(obj);
 						    rsi.updateObjectsWithoutHubs(obj.getClass(), obj.getObjectKey(), b);
 						}
 					} catch (Exception e) {

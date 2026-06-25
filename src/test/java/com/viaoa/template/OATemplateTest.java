@@ -18,8 +18,8 @@ import com.test.pos.model.oa.RegisterSession;
 import com.test.pos.model.oa.Store;
 import com.test.pos.model.oa.propertypath.StorePP;
 import com.viaoa.config.OAProperties;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
+import com.viaoa.oa.OA;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.text.OATextUtil;
 
@@ -87,11 +87,11 @@ class OATemplateTest {
 
     @BeforeEach
     void beforeEach() {
-        OAGraph og = OARuntime.graph(Register.class);
+        OA oa = OARuntime.oa(Register.class);
     }
     @AfterEach
     void afterEach() {
-        OARuntime.graph(Register.class).close();
+        OARuntime.oa(Register.class).close();
     }
     
     @Test

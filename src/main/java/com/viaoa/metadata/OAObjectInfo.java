@@ -31,7 +31,6 @@ import java.util.logging.Logger;
 import com.viaoa.compare.OACompare;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.lang.OAArray;
 import com.viaoa.lang.OAStr;
@@ -41,6 +40,7 @@ import com.viaoa.path.OAPath;
 import com.viaoa.performance.OAPerformance;
 import com.viaoa.metadata.pojo.OAObjectPojoLoader;
 import com.viaoa.metadata.pojo.Pojo;
+import com.viaoa.oa.OA;
 import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
@@ -1430,8 +1430,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 * @return recursive link definition, or null.
 	 */
 	public OALinkInfo getRecursiveLinkInfo(int type) {
-		final OAGraph og = OARuntime.graph(thisClass);
-		return og.internal().objects().info().getRecursiveLinkInfo(this, type);
+		final OA oa = OARuntime.oa(thisClass);
+		return oa.internal().objects().info().getRecursiveLinkInfo(this, type);
 	}
 
 
@@ -1539,7 +1539,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 			OAPerformance.LOG.fine(s);
 		}
 
-		final OAGraph og = OARuntime.graph(thisClass);
+		final OA oa = OARuntime.oa(thisClass);
 		for (String triggerPropPath : trigger.getPropertyPaths()) {
 			if (OAString.isEmpty(triggerPropPath)) {
 				continue;
@@ -1577,7 +1577,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 				revPropPath = li.getReverseName() + revPropPath;
 
 				// todo: reverse path might not work (if it has a private method)
-				oix = og.internal().objects().info().getOAObjectInfo(li.getToClass());
+				oix = oa.internal().objects().info().getOAObjectInfo(li.getToClass());
 			}
 
 			if (pp.getEndLinkInfo() == null) {
@@ -1664,8 +1664,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 				};
 				final OATrigger trigger2 = new OATrigger(listenProperty, thisClass, tl, calcProps, trigger.getOnlyUseLoadedData(),
 					trigger.getServerSideOnly(), trigger.getUseBackgroundThread(), true);
-				OAGraph og = OARuntime.graph(thisClass);
-		        og.internal().triggers().addTrigger(trigger2);
+				OA oa = OARuntime.oa(thisClass);
+		        oa.internal().triggers().addTrigger(trigger2);
 		        
 		        
 		        OATrigger[] ts = (OATrigger[]) OAArray.add(OATrigger.class, trigger.getDependentTriggers(), trigger2);
@@ -1709,14 +1709,14 @@ public class OAObjectInfo { //implements java.io.Serializable {
 			return;
 		}
 
-		final OAGraph og = OARuntime.graph(thisClass);
+		final OA oa = OARuntime.oa(thisClass);
 		for (String spp : trigger.getPropertyPaths()) {
 			OAPath pp = new OAPath(thisClass, spp);
 
 			OAObjectInfo oix = this;
 			for (int i = 0; i < pp.getLinkInfos().length; i++) {
 				OALinkInfo li = pp.getLinkInfos()[i];
-				oix = og.internal().objects().info().getOAObjectInfo(li.getToClass());
+				oix = oa.internal().objects().info().getOAObjectInfo(li.getToClass());
 				oix._removeTrigger(trigger);
 			}
 		}
@@ -1726,7 +1726,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 
 		// close any child/calc triggers
 		for (OATrigger t : trigger.getDependentTriggers()) {
-			OAObjectInfo oix = og.internal().objects().info().getOAObjectInfo(t.getRootClass());
+			OAObjectInfo oix = oa.internal().objects().info().getOAObjectInfo(t.getRootClass());
 			oix.removeTrigger(t);
 		}
 	}
@@ -1859,9 +1859,9 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 */
 	private void _onChange(final OAObject fromObject, final String prop, final TriggerInfo ti, final HubEvent hubEvent) {
 
-		final OAGraph og = OARuntime.graph(fromObject);
+		final OA oa = OARuntime.oa(fromObject);
 		if (ti.trigger.getServerSideOnly()) {
-			if (og.internal().sync().isClient()) return;
+			if (oa.internal().sync().isClient()) return;
 		}
 
 		String s = "";
@@ -1907,10 +1907,10 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 * @param hubEvent   event context.
 	 */
 	private void _onChange2(final OAObject fromObject, final String prop, final TriggerInfo ti, final HubEvent hubEvent) {
-		final OAGraph og = OARuntime.graph(fromObject);
+		final OA oa = OARuntime.oa(fromObject);
 
 		if (ti.trigger.getServerSideOnly()) {
-			if (og.internal().sync().isClient()) {
+			if (oa.internal().sync().isClient()) {
 				return;
 			}
 		}
@@ -1923,7 +1923,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 			if (ti.bNoReverseFinder) {
 				b = true;
 			} else if (ti.bReverseHasMany) {
-				if (og.internal().sync().isServer()) {
+				if (oa.internal().sync().isServer()) {
 					OADataSource ds = OARuntime.datasource().get(thisClass);
 					b = (ds != null && ds.supportsStorage()); // might have to go to ds
 				} else {
@@ -1934,7 +1934,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 
 		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		if ((b || ti.trigger.getUseBackgroundThread()) && !srvcOARemoteThread.isRemoteThread()) {
-			og.internal().triggers().runTrigger(new Runnable() {
+			oa.internal().triggers().runTrigger(new Runnable() {
 				@Override
 				public void run() {
 					_runOnChange1(fromObject, prop, ti, hubEvent);
@@ -2010,8 +2010,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 					return;
 				}
 
-				final OAGraph og = OARuntime.graph(objRoot);
-				UUID g = og.internal().objects().key().getKey(objRoot).getGuid();
+				final OA oa = OARuntime.oa(objRoot);
+				UUID g = oa.internal().objects().key().getKey(objRoot).getGuid();
 				if (hs.contains(g)) {
 					return;
 				}
@@ -2038,9 +2038,9 @@ public class OAObjectInfo { //implements java.io.Serializable {
 
 		if (ti.bReverseHasMany) {
 			// see if all of the data is already loaded, so that a reverse pp + finder can be used.
-			final OAGraph og = OARuntime.graph(fromObject);
+			final OA oa = OARuntime.oa(fromObject);
 			boolean b = false;
-			if (og.internal().sync().isServer()) {
+			if (oa.internal().sync().isServer()) {
 				OADataSource ds = OARuntime.datasource().get(thisClass);
 				b = (ds == null || !ds.supportsStorage()); // server must have all data loaded
 			}

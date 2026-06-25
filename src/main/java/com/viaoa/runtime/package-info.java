@@ -58,7 +58,7 @@ Contract statement: The default graph must be lazily created once and reused for
 explicit runtime reset/lifecycle rules replace it.
 Rationale: Default graph instability splits object identity, datasource ownership, Hub state, metadata, and sync
 routing.
-Source scope: OARuntime.graph(), graph fields/registry, OAGraphImpl creation boundary.
+Source scope: OARuntime.graph(), graph fields/registry, OAImpl creation boundary.
 Related CODEX findings: Default graph lifecycle and reset findings.
 Suggested unit tests: testDefaultGraphIsSameInstanceAcrossCalls(),
 testDefaultGraphRecreatedOnlyAfterExplicitRuntimeReset(), testDefaultGraphDoesNotChangeDuringPackageLookup()
@@ -80,7 +80,7 @@ Contract statement: Runtime must not create multiple independent authoritative g
 unless explicitly requested and documented.
 Rationale: Two authoritative graphs for the same model package split object identity, metadata, cache, datasource,
 and sync services.
-Source scope: OARuntime graph registry/lookup/create paths, OAGraphImpl creation boundary.
+Source scope: OARuntime graph registry/lookup/create paths, OAImpl creation boundary.
 Related CODEX findings: Repeated package lookup and default graph split risks.
 Suggested unit tests: testRepeatedPackageLookupDoesNotCreateDuplicateGraph(),
 testExplicitNamedGraphCreationDoesNotHijackDefaultGraph(), testPackageGraphRegistryKeepsSingleAuthority()
@@ -103,7 +103,7 @@ RT-GRAPH-005 — Runtime And Graph Ownership Must Not Become Cyclic
 Contract statement: OARuntime may own graph and runtime services, and graphs may use runtime services, but graph
 services must not create alternate runtime roots or redefine runtime ownership.
 Rationale: Cyclic or duplicate ownership creates hidden service duplication and split lifecycle state.
-Source scope: OARuntime, OAGraphImpl, runtime service accessors, graph service integration.
+Source scope: OARuntime, OAImpl, runtime service accessors, graph service integration.
 Related CODEX findings: Graph/runtime ownership risks.
 Suggested unit tests: testGraphUsesRuntimeServicesFromOwningRuntime(),
 testRuntimeAndGraphDoNotCreateAlternateServiceInstances(), testRuntimeServiceIdentityStableFromGraphAccess()

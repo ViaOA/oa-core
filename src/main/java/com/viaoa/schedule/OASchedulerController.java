@@ -21,10 +21,10 @@ import com.viaoa.datetime.OADate;
 import com.viaoa.datetime.OADateTime;
 import com.viaoa.datetime.OATime;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.path.OAPath;
 import com.viaoa.runtime.OARuntime;
@@ -337,9 +337,9 @@ public class OASchedulerController<F extends OAObject, T extends OAObject> {
     public OAScheduler getSchedulerCallback(OADate date) {
         F obj = hubFrom.getAO();
         
-		final OAGraph og = OARuntime.graph(obj);
+		final OA oa = OARuntime.oa(obj);
         
-        OAScheduler sch = og.internal().objects().scheduler().getScheduler(obj, ppSchedule, date);
+        OAScheduler sch = oa.internal().objects().scheduler().getScheduler(obj, ppSchedule, date);
         return sch;
     }
     
@@ -414,8 +414,8 @@ public class OASchedulerController<F extends OAObject, T extends OAObject> {
                     if (ppDateTo != null) finder.addEqualFilter(ppDateTo, new OADate(dtTo));
                     if (ppTimeTo != null) finder.addEqualFilter(ppTimeTo, new OATime(dtTo));
                 }
-        		final OAGraph og = OARuntime.graph(hubDetail.getObjectClass());
-                objSchedule = (OAObject) og.internal().objects().cache().find(hubDetail.getObjectClass(), finder);
+        		final OA oa = OARuntime.oa(hubDetail.getObjectClass());
+                objSchedule = (OAObject) oa.internal().objects().cache().find(hubDetail.getObjectClass(), finder);
                 
                 if (objSchedule == null) {
                     // need to check datasource
@@ -464,8 +464,8 @@ public class OASchedulerController<F extends OAObject, T extends OAObject> {
         
         boolean bNew = false;
         if (objSchedule == null) {
-    		final OAGraph og = OARuntime.graph(hubDetail);
-            objSchedule = (OAObject) og.internal().objects().reflect().createNewObject(hubDetail.getObjectClass());
+    		final OA oa = OARuntime.oa(hubDetail);
+            objSchedule = (OAObject) oa.internal().objects().reflect().createNewObject(hubDetail.getObjectClass());
             bNew = true;
         }
         
@@ -493,8 +493,8 @@ public class OASchedulerController<F extends OAObject, T extends OAObject> {
         else if (type == 3 || type == 4) {
             OAPath pp = new OAPath(hubFrom.getObjectClass(), ppSchedule);
             Hub hubx = (Hub) obj.getProperty(pp.getProperties()[0]);
-    		final OAGraph og = OARuntime.graph(hubx);
-            objx = (OAObject) og.internal().objects().reflect().createNewObject(hubx.getObjectClass());
+    		final OA oa = OARuntime.oa(hubx);
+            objx = (OAObject) oa.internal().objects().reflect().createNewObject(hubx.getObjectClass());
             objx.setProperty(pp.getProperties()[1], objSchedule);
             hubx.add(objx);
             if (hubLink != null) hubLink.setAO(objx);

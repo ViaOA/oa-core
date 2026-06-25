@@ -19,8 +19,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListener;
@@ -30,6 +28,8 @@ import com.viaoa.hub.merge.HubMerger;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.oa.OA;
+import com.viaoa.oa.sibling.OASiblingHelper;
 import com.viaoa.object.OAObject;
 import com.viaoa.path.OAPath;
 import com.viaoa.runtime.OARuntime;
@@ -354,8 +354,8 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		if (hubDetail == null) {
 			String pp = "(" + classFrom.getName() + ") " + OAGroupBy.P_Hub;
 			hubDetail = getCombinedHub().getDetailHub(pp);
-			final OAGraph og = OARuntime.graph(hubFrom);
-			og.internal().hubs().data().setObjectClass(hubDetail, classFrom);
+			final OA oa = OARuntime.oa(hubFrom);
+			oa.internal().hubs().data().setObjectClass(hubDetail, classFrom);
 			hubDetail.addHubListener(new HubListenerAdapter() {
 				@Override
 				public void afterChangeActiveObject(HubEvent e) {
@@ -1485,8 +1485,8 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			b = true;
 		} else if (propertyPath.indexOf('.') < 0) {
 			// propertyPath could be a hub
-			final OAGraph og = OARuntime.graph(classFrom);
-			OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(classFrom);
+			final OA oa = OARuntime.oa(classFrom);
+			OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(classFrom);
 			OALinkInfo li = oi.getLinkInfo(propertyPath);
 			if (li == null || li.getType() == li.ONE) {
 				b = true;
@@ -2082,8 +2082,8 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		if (grpBy != null) {
 			gb.setGroupBy(grpBy);
 		}
-		final OAGraph og = OARuntime.graph(hubFrom);
-		og.internal().hubs().data().setObjectClass(gb.getHub(), classFrom);
+		final OA oa = OARuntime.oa(hubFrom);
+		oa.internal().hubs().data().setObjectClass(gb.getHub(), classFrom);
 
 		// 20190418 if hubPropertyName!=null, then use a HubCopy
 		if (OAString.isNotEmpty(hubPropertyName)) {

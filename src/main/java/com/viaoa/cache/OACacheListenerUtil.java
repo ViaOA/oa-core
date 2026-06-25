@@ -16,10 +16,9 @@
 package com.viaoa.cache;
 
 import com.viaoa.datetime.OADateTime;
-import com.viaoa.graph.OAGraph;
-
-import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.hub.Hub;
+import com.viaoa.oa.OA;
+import com.viaoa.oa.service.object.OAObjectCacheService;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 
@@ -116,8 +115,8 @@ public class OACacheListenerUtil {
             }
         };
 
-		final OAGraph og = OARuntime.graph(clazz);
-		og.internal().objects().cache().addListener(clazz, listener);
+		final OA oa = OARuntime.oa(clazz);
+		oa.internal().objects().cache().addListener(clazz, listener);
     }
     
     /**
@@ -128,8 +127,8 @@ public class OACacheListenerUtil {
      * preventing further cache events from being received.
      */
     public void close() {
-		final OAGraph og = OARuntime.graph(clazz);
-		og.internal().objects().cache().removeListener(clazz, listener);
+		final OA oa = OARuntime.oa(clazz);
+		oa.internal().objects().cache().removeListener(clazz, listener);
         listener = null;
     }
 

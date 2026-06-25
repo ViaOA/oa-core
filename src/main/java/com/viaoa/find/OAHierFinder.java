@@ -21,10 +21,10 @@ import com.viaoa.filter.OAEmptyFilter;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.filter.OANotEmptyFilter;
 import com.viaoa.filter.OANotNullFilter;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.metadata.OAPropertyInfo;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.path.OAPath;
 import com.viaoa.runtime.OARuntime;
@@ -249,7 +249,7 @@ public class OAHierFinder<F extends OAObject> {
     private boolean findFirstValue(final OAObject obj, OAFilter filter, final int pos, final boolean bRecursiveCheckOnly, final int cntRecursive) {
         if (obj == null) return false;
         
-		final OAGraph og = OARuntime.graph(obj);
+		final OA oa = OARuntime.oa(obj);
         boolean b = true;
         if (pos == 0) {
             if (!bIncludeFromObject) {
@@ -257,7 +257,7 @@ public class OAHierFinder<F extends OAObject> {
                 b = false;
             }
             else {
-                OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(obj.getClass());
+                OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(obj.getClass());
                 OAPropertyInfo pi = oi.getPropertyInfo(property);
                 if (pi == null) {
                     OALinkInfo li = oi.getLinkInfo(property);
@@ -281,8 +281,8 @@ public class OAHierFinder<F extends OAObject> {
         }        
 
         // check recursive parent 
-        OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(obj.getClass());
-        OALinkInfo liRecursive = og.internal().objects().info().getRecursiveLinkInfo(oi, OALinkInfo.ONE);
+        OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(obj.getClass());
+        OALinkInfo liRecursive = oa.internal().objects().info().getRecursiveLinkInfo(oi, OALinkInfo.ONE);
         
         if (liRecursive != null) {
             OALinkInfo[] lis  = propertyPath.getLinkInfos();

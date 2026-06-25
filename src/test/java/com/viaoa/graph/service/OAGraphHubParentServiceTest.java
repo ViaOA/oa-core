@@ -10,31 +10,31 @@ import org.junit.jupiter.api.Test;
 
 import com.test.pos.model.oa.Register;
 import com.test.pos.model.oa.Store;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListenerAdapter;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.select.OASelect;
 
-class OAGraphHubParentServiceTest {
+class OAHubParentServiceTest {
 	
 //    private HubInternalService hubs;
 
     @BeforeEach
     void beforeEach() {
 //        hubs = hubService();
-        OAGraph og = OARuntime.graph(Register.class);
+        OA oa = OARuntime.oa(Register.class);
     }
     @AfterEach
     void afterEach() {
         OAObject.setDebugMode(false);
-        OARuntime.graph(Register.class).close();
+        OARuntime.oa(Register.class).close();
     }
 /*qqqqq
     private static HubInternalService hubService() {
-        OAGraph graph = OARuntime.graph(Register.class);
+        OA graph = OARuntime.graph(Register.class);
         return (HubInternalService) graph.hubsInternal();
     }
 

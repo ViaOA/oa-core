@@ -21,9 +21,9 @@ import java.util.logging.Logger;
 import com.viaoa.callback.OAObjectSerializerCallback;
 import com.viaoa.compare.match.OAMatchNotExist;
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.Hub;
+import com.viaoa.oa.OA;
+import com.viaoa.oa.sibling.OASiblingHelper;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.performance.OAPerformance;
@@ -225,8 +225,8 @@ public class ClientGetDetail {
 		}
 		final long msStart = System.currentTimeMillis();
 
-		final OAGraph og = OARuntime.graph(masterClass);
-		OAObject masterObject = og.internal().objects().reflect().getObject(masterClass, masterObjectKey);
+		final OA oa = OARuntime.oa(masterClass);
+		OAObject masterObject = oa.internal().objects().reflect().getObject(masterClass, masterObjectKey);
 		if (masterObject == null) {
 			// get from datasource
 			
@@ -248,9 +248,9 @@ public class ClientGetDetail {
 		Hub hubHold = new Hub(masterClass);
 		hubHold.add(masterObject);
 		if (siblingKeys != null) {
-	    	//final OAGraph og = OARuntime.graph(masterClass);
+	    	//final OA oa = OARuntime.graph(masterClass);
 			for (OAObjectKey key : siblingKeys) {
-				OAObject obj = (OAObject) og.internal().objects().cache().get(masterClass, key);
+				OAObject obj = (OAObject) oa.internal().objects().cache().get(masterClass, key);
 				if (obj != null) {
 					hubHold.add(obj);
 				}
@@ -262,7 +262,7 @@ public class ClientGetDetail {
 		srvcOAThreadLocal.addSiblingHelper(siblingHelper);
 		Object detailValue = null;
 		try {
-			detailValue = og.internal().objects().reflect().getProperty((OAObject) masterObject, property);
+			detailValue = oa.internal().objects().reflect().getProperty((OAObject) masterObject, property);
 		} finally {
 			srvcOAThreadLocal.removeSiblingHelper(siblingHelper);
 		}
@@ -377,15 +377,15 @@ public class ClientGetDetail {
 				if (wasFullySentToClient(obj)) {
 					continue;
 				}
-				final OAGraph og = OARuntime.graph((OAObject) obj);
-				if (og.internal().objects().reflect().areAllReferencesLoaded((OAObject) obj, false)) {
+				final OA oa = OARuntime.oa((OAObject) obj);
+				if (oa.internal().objects().reflect().areAllReferencesLoaded((OAObject) obj, false)) {
 					continue;
 				}
-				og.internal().objects().reflect().loadAllReferences((OAObject) obj, 1, 0, false, 2, msStart + 40);
+				oa.internal().objects().reflect().loadAllReferences((OAObject) obj, 1, 0, false, 2, msStart + 40);
 			}
 		} else if ((detailObject instanceof OAObject) && !wasFullySentToClient(detailObject)) {
-			final OAGraph og = OARuntime.graph((OAObject) detailObject);
-			og.internal().objects().reflect().loadAllReferences((OAObject) detailObject, 1, 0, false, 5, msStart + 40);
+			final OA oa = OARuntime.oa((OAObject) detailObject);
+			oa.internal().objects().reflect().loadAllReferences((OAObject) detailObject, 1, 0, false, 5, msStart + 40);
 		}
 
 		HashMap<OAObjectKey, Object> hmExtraData = null;
@@ -395,15 +395,15 @@ public class ClientGetDetail {
 			Class clazz = masterObject.getClass();
 			boolean bLoad = true;
 			
-			final OAGraph og = OARuntime.graph(clazz);
+			final OA oa = OARuntime.oa(clazz);
 
 			for (OAObjectKey key : siblingKeys) {
-				OAObject obj = (OAObject) og.internal().objects().cache().get(clazz, key);
+				OAObject obj = (OAObject) oa.internal().objects().cache().get(clazz, key);
 				if (obj == null) {
 					continue;
 				}
 				
-				Object value = og.internal().objects().property().getProperty(obj, propFromMaster, true, true);
+				Object value = oa.internal().objects().property().getProperty(obj, propFromMaster, true, true);
 				if (value instanceof OAMatchNotExist || value instanceof OAObjectKey) { // not loaded from ds
 					if (bLoad) {
 						bLoad = ((System.currentTimeMillis() - msStart) < (bForHubMerger ? 225 : 85));
@@ -415,8 +415,8 @@ public class ClientGetDetail {
 				}
 
 				if (bLoad) {
-					// final OAGraph og2 = OARuntime.graph(obj);
-					value = og.internal().objects().reflect().getProperty(obj, propFromMaster); // load from DS
+					// final OA og2 = OARuntime.graph(obj);
+					value = oa.internal().objects().reflect().getProperty(obj, propFromMaster); // load from DS
 				} else if (value instanceof OAObjectKey) {
 					continue;
 				}
@@ -509,8 +509,8 @@ public class ClientGetDetail {
 
 			@Override
 			public void afterSerialize(OAObject obj) {
-				final OAGraph og = OARuntime.graph(obj);
-				UUID guid = og.internal().objects().key().getKey(obj).getGuid();
+				final OA oa = OARuntime.oa(obj);
+				UUID guid = oa.internal().objects().key().getKey(obj).getGuid();
 				boolean bx = hsSendingGuid.remove(guid);
 				// update tree of sent objects
                 hmGuid.put(guid, bx);
@@ -533,8 +533,8 @@ public class ClientGetDetail {
 
 					if (masterProperties == null || masterProperties.length == 0) {
 						if (!os.hasReachedMax()) {
-							final OAGraph og = OARuntime.graph(obj);
-							hsSendingGuid.add(og.internal().objects().key().getKey(obj).getGuid()); // flag that all masterObject props have been sent to client
+							final OA oa = OARuntime.oa(obj);
+							hsSendingGuid.add(oa.internal().objects().key().getKey(obj).getGuid()); // flag that all masterObject props have been sent to client
 						}
 						includeAllProperties();
 					} else {
@@ -552,8 +552,8 @@ public class ClientGetDetail {
 					} else if (wasFullySentToClient(obj)) {
 						excludeAllProperties(); // already sent
 					} else {
-						final OAGraph og = OARuntime.graph(obj);
-						boolean b = og.internal().objects().reflect().areAllReferencesLoaded(obj, false);
+						final OA oa = OARuntime.oa(obj);
+						boolean b = oa.internal().objects().reflect().areAllReferencesLoaded(obj, false);
 						if (b) {
 							if (!os.hasReachedMax()) {
 								hsSendingGuid.add(obj.getObjectKey().getGuid());
@@ -580,16 +580,16 @@ public class ClientGetDetail {
 						// this Object is a Hub - will send all references (all that are been loaded)
 						if (wasFullySentToClient(obj)) {
 							if (!os.hasReachedMax()) {
-								final OAGraph og = OARuntime.graph(obj);
-								hsSendingGuid.add(og.internal().objects().key().getKey(obj).getGuid());
+								final OA oa = OARuntime.oa(obj);
+								hsSendingGuid.add(oa.internal().objects().key().getKey(obj).getGuid());
 							}
 							excludeAllProperties(); // client has it all
 						} else {
-							final OAGraph og = OARuntime.graph(obj);
-							b = og.internal().objects().reflect().areAllReferencesLoaded(obj, false);
+							final OA oa = OARuntime.oa(obj);
+							b = oa.internal().objects().reflect().areAllReferencesLoaded(obj, false);
 							if (b) {
 								if (!os.hasReachedMax()) {
-									hsSendingGuid.add(og.internal().objects().key().getKey(obj).getGuid());
+									hsSendingGuid.add(oa.internal().objects().key().getKey(obj).getGuid());
 								}
 							}
 							includeAllProperties();
@@ -620,11 +620,11 @@ public class ClientGetDetail {
 						excludeAllProperties(); // client already has it, might not be all of it
 					} else {
 						// client does not have it, send whatever is loaded
-						final OAGraph og = OARuntime.graph(obj);
-						b = og.internal().objects().reflect().areAllReferencesLoaded(obj, false);
+						final OA oa = OARuntime.oa(obj);
+						b = oa.internal().objects().reflect().areAllReferencesLoaded(obj, false);
 						if (b) {
 							if (!os.hasReachedMax()) {
-								hsSendingGuid.add(og.internal().objects().key().getKey(obj).getGuid());
+								hsSendingGuid.add(oa.internal().objects().key().getKey(obj).getGuid());
 							}
 						}
 						includeAllProperties(); // will send whatever is loaded
@@ -696,8 +696,8 @@ public class ClientGetDetail {
 					return !wasFullySentToClient(referenceValue);
 				}
 
-				final OAGraph og = OARuntime.graph(oaObj);
-				OAObjectKey key = og.internal().objects().key().getKey(oaObj);
+				final OA oa = OARuntime.oa(oaObj);
+				OAObjectKey key = oa.internal().objects().key().getKey(oaObj);
 				if (hmExtraData != null) {
 					if (oaObj.getClass().equals(masterObject.getClass())) {
 						if (hmExtraData.get(key) != null) {

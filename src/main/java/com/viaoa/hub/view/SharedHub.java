@@ -16,9 +16,9 @@
 package com.viaoa.hub.view;
 
 
-import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubData;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 
@@ -86,9 +86,9 @@ public class SharedHub<TYPE extends OAObject> extends Hub<TYPE> {
      */
     public SharedHub(Hub<TYPE> hub, boolean bShareActiveObject) {
         if (hub != null) {
-    		final OAGraph og = OARuntime.graph(hub);
-            og.internal().hubs().data().setObjectClass(this, hub.getObjectClass());
-            og.internal().hubs().share().setSharedHub(this, hub, bShareActiveObject);
+    		final OA oa = OARuntime.oa(hub);
+            oa.internal().hubs().data().setObjectClass(this, hub.getObjectClass());
+            oa.internal().hubs().share().setSharedHub(this, hub, bShareActiveObject);
         }
     }
 

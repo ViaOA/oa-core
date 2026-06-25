@@ -24,7 +24,7 @@ import javax.swing.undo.CompoundEdit;
 import javax.swing.undo.UndoManager;
 import javax.swing.undo.UndoableEdit;
 
-import com.viaoa.graph.OAGraph;
+import com.viaoa.oa.OA;
 import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
@@ -642,8 +642,8 @@ public class OAUndoManager extends UndoManager {
 			return true;
 		}
 
-		final OAGraph og = OARuntime.graph();
-		if (!og.internal().sync().isSingleUser()) {
+		final OA oa = OARuntime.oa();
+		if (!oa.internal().sync().isSingleUser()) {
 			final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 			if (srvcOARemoteThread.isRemoteThread()) {
 				return true;

@@ -7,8 +7,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.OAGraph;
 import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.queue.OACircularQueue;
 import com.viaoa.remote.info.RequestInfo;
@@ -250,8 +250,8 @@ public abstract class OAReplicationBase {
 	                    		Class<?> c = (Class<?>) arg;
 	                    		if (OAObject.class.isAssignableFrom(c)) {
 	                    			bFound = true;
-									final OAGraph og = OARuntime.graph(c);
-									OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(c);
+									final OA oa = OARuntime.oa(c);
+									OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(c);
 	                    			bUse |= (oi.getUseDataSource() && !oi.getLocalOnly());
 	                    		}
 	                    	}

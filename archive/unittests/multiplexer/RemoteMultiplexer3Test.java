@@ -6,7 +6,7 @@ import org.junit.jupiter.api.*;
 import com.viaoa.OAUnitTest;
 import com.viaoa.comm.multiplexer.OAMultiplexerClient;
 import com.viaoa.comm.multiplexer.OAMultiplexerServer;
-import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
@@ -230,7 +230,7 @@ public class RemoteMultiplexer3Test extends OAUnitTest {
 
 		Server server = (Server) remoteServerQ.getObject(Server.class, new OAObjectKey(1));
 		if (server == null) {
-			OAGraph og = OARuntime.graph(Server.class);
+			OA oa = OARuntime.graph(Server.class);
 			OAObject objx = (OAObject) og.get(Server.class, new OAObjectKey(1));
 
 			Server server2 = (Server) remoteServerQ.getObject(Server.class, new OAObjectKey(1));

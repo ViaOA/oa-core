@@ -327,7 +327,7 @@ Spec target section: Compare Runtime / Deterministic Comparison Semantics
    Unknown is opaque. It should not be swallowed by broad tokens like Any/NotNull/NotEmpty.
 
 9. OAObject/OAObjectKey
-   Object identity comparison goes through OAGraph/ObjectKey semantics.
+   Object identity comparison goes through OA/ObjectKey semantics.
 
 10. Fallback
    If values remain Comparable, use compareTo.

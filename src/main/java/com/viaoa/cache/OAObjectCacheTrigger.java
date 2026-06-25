@@ -21,10 +21,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import com.viaoa.callback.OACallback;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.lang.OAArray;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
@@ -194,8 +194,8 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
             }
         };        
 
-		final OAGraph og = OARuntime.graph(clazz);
-		og.internal().objects().cache().addListener(clazz, cacheListener);
+		final OA oa = OARuntime.oa(clazz);
+		oa.internal().objects().cache().addListener(clazz, cacheListener);
         refresh();
     }
 
@@ -280,7 +280,7 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
     public void refresh() {
         // need to check loaded objects 
 
-    	final OAGraph og = OARuntime.graph(clazz);
+    	final OA oa = OARuntime.oa(clazz);
 
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
 		boolean bWas = srvcOAThreadLocal.getSendSyncMessages();
@@ -288,7 +288,7 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
             if (bServerSideOnly) { 
                 srvcOAThreadLocal.setSendSyncMessages(true);
             }
-			og.internal().objects().cache().visit(clazz, new OACallback() {
+			oa.internal().objects().cache().visit(clazz, new OACallback() {
 	            @SuppressWarnings("unchecked")
 	            @Override
 	            public boolean updateObject(Object obj) {
@@ -331,8 +331,8 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
      */
     protected void setupTrigger() {
         if (trigger != null) {
-    		final OAGraph og = OARuntime.graph(clazz);
-            og.internal().triggers().removeTrigger(trigger);
+    		final OA oa = OARuntime.oa(clazz);
+            oa.internal().triggers().removeTrigger(trigger);
     		trigger = null;
         }
 
@@ -354,9 +354,9 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
                     };
                     finder.setUseOnlyLoadedData(false);
 
-            		final OAGraph og = OARuntime.graph(clazz);
+            		final OA oa = OARuntime.oa(clazz);
                     
-            		og.internal().objects().cache().visit(clazz, new OACallback() {
+            		oa.internal().objects().cache().visit(clazz, new OACallback() {
                         @SuppressWarnings("unchecked")
                         @Override
                         public boolean updateObject(Object obj) {
@@ -382,8 +382,8 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
         }
         
         trigger = new OATrigger(name, clazz, triggerListener, dependentPropertyPaths, true, false, false, true);
-		final OAGraph og = OARuntime.graph(clazz);
-        og.internal().triggers().addTrigger(trigger);
+		final OA oa = OARuntime.oa(clazz);
+        oa.internal().triggers().addTrigger(trigger);
     }
     
     
@@ -393,13 +393,13 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
      */
     public void close() {
         if (trigger != null) {
-    		final OAGraph og = OARuntime.graph(clazz);
-	        og.internal().triggers().removeTrigger(trigger);
+    		final OA oa = OARuntime.oa(clazz);
+	        oa.internal().triggers().removeTrigger(trigger);
             trigger = null;
         }
         if (cacheListener != null) {
-    		final OAGraph og = OARuntime.graph(clazz);
-    		og.internal().objects().cache().removeListener(clazz, cacheListener);
+    		final OA oa = OARuntime.oa(clazz);
+    		oa.internal().objects().cache().removeListener(clazz, cacheListener);
             cacheListener = null;
         }
     }

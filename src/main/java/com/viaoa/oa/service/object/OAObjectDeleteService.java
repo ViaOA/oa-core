@@ -1,0 +1,764 @@
+package com.viaoa.oa.service.object;
+
+import java.util.List;
+import java.util.logging.Logger;
+
+import com.viaoa.callback.OACallback;
+import com.viaoa.cascade.OACascade;
+import com.viaoa.compare.match.OAMatchNotExist;
+import com.viaoa.find.OAFinder;
+import com.viaoa.hub.Hub;
+import com.viaoa.lang.OAArray;
+import com.viaoa.lang.OAStr;
+import com.viaoa.metadata.OALinkInfo;
+import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.object.OAObject;
+import com.viaoa.object.OAObjectKey;
+import com.viaoa.path.OAPath;
+
+
+/*qqqqqqqqqqqqqq
+CODEX
+
+ #5 — New Concrete Bug
+  File/Class/Method: src/main/java/com/viaoa/graph/service/object/OAObjectDeleteService.java, delete(...)
+
+  Exact execution path: delete(...) deletes children first via deleteChildren(...), then calls onDelete(oaObj) for
+  the parent. If parent datasource delete fails after children have been deleted, the child deletes have already
+  committed but the parent remains.
+
+  Why it is a correctness bug: delete cascade can leave the object graph and datasource in a partially deleted
+  state: children gone, parent still present. This is a concrete cascade failure path outside Hub.deleteAll.
+
+  Minimal fix: define transactional requirements. Minimal hardening is to delete parent first when safe, or require
+  datasource transaction wrapping for parent/child cascade and fail without mutating in-memory graph when no
+  transaction boundary exists.
+
+  Suggested test: parent with children; child deletes succeed; parent datasource delete throws; assert either the
+  whole cascade rolls back or the in-memory graph clearly preserves/marks partial failure instead of silently losing
+  children.
+
+
+#1
+  File/Class/Method: src/main/java/com/viaoa/graph/service/object/OAObjectDeleteService.java, setDeleted(...)
+
+  Exact execution path: setDeleted(obj, false) fires before-change, sets deleted flag false, fires after-change,
+  then verifies key uniqueness and re-adds to cache. If callKeyVerifyKeyChange(...) fails, the object remains
+  undeleted and listeners/sync already saw the undelete transition.
+
+  Why it is a correctness bug: invalid undelete can become visible even though identity/cache validation rejected
+  it.
+
+  Semantic/invariant violated: lifecycle transitions must validate identity before publishing authoritative state/
+  events.
+
+  Minimal fix: when tf == false, verify key and cache-add viability before changing the deleted flag or firing
+  events; or rollback flag and emit compensating semantics on failure.
+
+  Suggested test: deleted object with conflicting key; call setDeleted(false); assert exception leaves deleted=true
+  and no deleted-property event is observed.
+
+
+
+
+
+
+
+
+
+> *** change to match ... default: partial deletes can happen if exceptin.  If OATransaction is true, then "work" with it to be atomic
+	//Default delete cascade semantics allow partial progress if an exception occurs.
+	//Successfully completed child/reference/hub/datasource deletes are not automatically
+	//rolled back by OG.
+	//
+	//If an OATransaction is active, delete cascade must cooperate with it so the caller
+	//can get atomic/all-or-nothing persistence behavior.
+	//
+	//Even with partial progress, the object whose delete fails must remain retryable:
+	//do not mark it deleted, remove it from hubs, fire after-delete events, or emit
+	//sync delete messages unless its datasource delete completed successfully.
+
+*/
+
+
+
+
+public abstract class OAObjectDeleteService {
+	private static final Logger LOG = Logger.getLogger(OAObjectDeleteService.class.getName());
+
+	private final OAObject.FriendAccess faObject;
+
+	public OAObjectDeleteService(OAObject.FriendAccess oaObjectFriendAccess) {
+		if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
+		this.faObject = oaObjectFriendAccess;
+	}
+
+	/**
+	 * Deletes the specified object using full delete lifecycle processing.
+	 * <p>
+	 * If client/server routing allows the delete to run locally, an
+	 * {@link OACascade} instance is created and the internal delete
+	 * method is invoked.
+	 *
+	 * @param oaObj the object to delete; ignored if {@code null}
+	 */
+	public void delete(OAObject oaObj) {
+		if (oaObj == null) {
+			return;
+		}
+		boolean b = callCSDelete(oaObj);
+		if (b) {
+			return;
+		}
+		OACascade cascade = new OACascade();
+		delete(oaObj, cascade);
+	}
+
+	/**
+	 * Performs a server-side delete for the specified object. A new
+	 * {@link OACascade} instance is created and passed to the internal
+	 * delete method.
+	 *
+	 * @param oaObj the object to delete
+	 */
+    public void syncServerDelete(OAObject oaObj) {
+    	if (oaObj == null) return;
+        OACascade cascade = new OACascade();
+        delete(oaObj, cascade);
+    }
+
+    /**
+     * Performs a client-side delete for objects that exist only within
+     * the client's cache. A new {@link OACascade} instance is created
+     * and passed to the internal delete method.
+     *
+     * @param oaObj the object to delete
+     */
+	public void syncClientDelete(OAObject oaObj) {
+    	if (oaObj == null) return;
+        OACascade cascade = new OACascade();
+        delete(oaObj, cascade);
+	}
+
+	/**
+	 * Updates the deleted flag on the specified object and fires the
+	 * appropriate before/after property-change events. If the object
+	 * is being restored (deleted flag set to {@code false}), its key
+	 * integrity is reverified and it is re-added to the cache.
+	 *
+	 * @param oaObj the object whose deleted flag is updated
+	 * @param tf the new deleted flag value
+	 * @throws RuntimeException if key verification fails when
+	 *                          clearing the deleted flag
+	 */
+	public void setDeleted(OAObject oaObj, final boolean tf) {
+		final boolean bOld = faObject.getDeleteFlag(oaObj);
+		if (bOld != tf) {
+			callEventFireBeforePropertyChange(	oaObj, "Deleted",
+															bOld ? Boolean.TRUE : Boolean.FALSE,
+															tf ? Boolean.TRUE : Boolean.FALSE, false, true);
+			faObject.setDeletedFlag(oaObj, tf);
+
+			callEventFirePropertyChange(	oaObj, "Deleted",
+														bOld ? Boolean.TRUE : Boolean.FALSE,
+														tf ? Boolean.TRUE : Boolean.FALSE, false, false);
+
+			// need to reverify the key to make sure that another one was not created with the same Id
+			if (!tf) {
+				String s = callKeyVerifyKeyChange(oaObj, oaObj.getObjectKey());
+				if (s != null) {
+					throw new RuntimeException(s);
+				} else {
+					// make sure it is in the ObjectCache
+					callCacheAdd(oaObj, false, false);
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Performs the full internal delete lifecycle, including event
+	 * dispatch, cascade delete processing, reference cleanup, DataSource
+	 * delete, hub removal, and distributed client notification.
+	 *
+	 * @param oaObj the object to delete
+	 * @param cascade the cascade-tracking object used to prevent
+	 *                re-entrant deletions
+	 */
+	public <T extends OAObject> void delete(final T oaObj, OACascade cascade) {
+		if (oaObj == null) {
+			return;
+		}
+		if (cascade.wasCascaded(oaObj, true)) {
+			return;
+		}
+		
+		final boolean bIsSyncClient = callSyncIsClient();
+
+		final Hub<T>[] hubs = callObjectHubGetHubReferences(oaObj);
+		if (!bIsSyncClient && hubs != null) {
+			for (Hub<T> h : hubs) {
+				if (h == null) {
+					continue;
+				}
+				callHubEventFireBeforeDeleteEvent(h, oaObj);
+			}
+		}
+		
+		try {
+			callLocalThreadSetDeleting(oaObj, true);
+
+			if (!bIsSyncClient) {
+			    deleteChildren(oaObj, cascade); // delete children first
+			}
+			
+			if (!oaObj.getNew()) {
+				try {
+					onDelete(oaObj); // this will delete from OADataSource
+				} catch (Exception e) {
+					String msg = "error calling delete, class=" + oaObj.getClass().getName() + ", key=" + oaObj.getObjectKey();
+					// LOG.log(Level.WARNING, msg, e);
+					throw new RuntimeException(msg, e);
+				}
+			}
+
+			oaObj.setDeleted(true);
+			// 20120702 if m2m and private, then need to find any hub that is not in oaobj.getHubs()
+			OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
+			
+	        // doesn't store hub if M2M&Private: reverse linkInfo does not have a method.
+	        //   since this could have a lot of references (ex: VetJobs JobCategory has m2m Jobs)
+			if (!bIsSyncClient) {
+    			for (OALinkInfo li : oi.getLinkInfos()) {
+    				if (!li.getPrivateMethod()) {
+    					continue;
+    				}
+    				if (!li.getUsed()) {
+    					continue;
+    				}
+    				if (li.getType() != OALinkInfo.TYPE_MANY) {
+    					continue;
+    				}
+    
+    				final OALinkInfo liRev = li.getReverseLinkInfo();
+    				if (liRev == null) {
+    					continue;
+    				}
+    				if (liRev.getType() != OALinkInfo.TYPE_MANY) {
+    					continue;
+    				}
+    
+                    String spp = liRev.getSelectFromPropertyPath();
+                    if (OAStr.isNotEmpty(spp)) {
+                        OAPath pp = new OAPath(li.getToClass(), spp);
+                        pp = pp.getReversePath();
+                        if (pp == null) spp = null;
+                        else spp = pp.getPropertyPath();
+                    }
+                    else {
+                        spp = li.getEqualPropertyPath();
+                        if (OAStr.isNotEmpty(spp)) {
+                            String s = liRev.getEqualPropertyPath();
+                            if (OAStr.isNotEmpty(s)) {
+                                OAPath pp = new OAPath(li.getToClass(), s);
+                                pp = pp.getReversePath();
+                                if (pp == null) spp = null;
+                                else {
+                                    s = pp.getPropertyPath();
+                                    spp += "." + s;
+                                }
+                            }
+                            else spp = null;
+                        }
+                    }
+    				
+                    if (OAStr.isNotEmpty(spp)) {
+                        OAFinder f = new OAFinder(spp) {
+                            protected boolean isUsed(OAObject obj) {
+                                Object objx = liRev.getValue(obj);
+                                if (objx instanceof Hub) {
+                                    Hub<?> hx = (Hub<?>) objx;
+                                    hx.remove(oaObj);
+                                }
+                                return false;
+                            }
+                        };
+                        f.setUseOnlyLoadedData(true);
+                        f.find(oaObj);
+                    }
+                    else {
+                    	callCacheCallback(new OACallback() {
+        					@Override
+        					public boolean updateObject(Object obj) {
+        						if (callReflectIsReferenceNullOrNotLoadedOrEmptyHub((OAObject) obj, liRev.getName())) {
+        							return true;
+        						}
+        						Object objx = liRev.getValue(obj);
+        						if (!(objx instanceof Hub)) {
+        							return true;
+        						}
+        						Hub<?> hx = (Hub<?>) objx;
+        						hx.remove(oaObj);
+        						return true;
+        					}
+        				}, li.getToClass());
+                    }
+    			}
+
+    			// M2M with revLink.private needs to clear Hub
+                for (OALinkInfo li : oi.getLinkInfos()) {
+                    if (li.getPrivateMethod()) {
+                        continue;
+                    }
+                    if (!li.getUsed()) {
+                        continue;
+                    }
+                    if (li.getType() != OALinkInfo.TYPE_MANY) {
+                        continue;
+                    }
+    
+                    final OALinkInfo liRev = li.getReverseLinkInfo();
+                    if (liRev == null) {
+                        continue;
+                    }
+                    if (liRev.getType() != OALinkInfo.TYPE_MANY) {
+                        continue;
+                    }
+                    if (liRev.getPrivateMethod()) {
+                        Hub<?> hubx = (Hub<?>) li.getValue(oaObj);
+                        if (hubx != null) hubx.clear();
+                    }
+                }
+    			
+    			// 20180130
+    			// M2O where M is private
+    			for (final OALinkInfo li : oi.getLinkInfos()) {
+    				if (!li.getPrivateMethod()) {
+    					continue;
+    				}
+    				if (!li.getUsed()) {
+    					continue;
+    				}
+    				if (li.getType() != OALinkInfo.TYPE_MANY) {
+    					continue;
+    				}
+    				final OALinkInfo liRev = li.getReverseLinkInfo();
+    				if (liRev == null) {
+    					continue;
+    				}
+    				if (liRev.getType() != OALinkInfo.TYPE_ONE) {
+    					continue;
+    				}
+    
+    				//  use find ... but dont want it to load reference (short curcuit on pp)
+    				String spp = liRev.getSelectFromPropertyPath();
+    				if (OAStr.isNotEmpty(spp)) {
+                        OAPath pp = new OAPath(li.getToClass(), spp);
+    				    pp = pp.getReversePath();
+    				    if (pp == null) spp = null;
+    				    else spp = pp.getPropertyPath();
+    				}
+    				else {
+    				    spp = li.getEqualPropertyPath();
+    				    if (OAStr.isNotEmpty(spp)) {
+    				        String s = liRev.getEqualPropertyPath();
+    	                    if (OAStr.isNotEmpty(s)) {
+    	                        OAPath pp = new OAPath(li.getToClass(), s);
+    	                        pp = pp.getReversePath();
+    	                        if (pp == null) spp = null;
+    	                        else {
+    	                            s = pp.getPropertyPath();
+    	                            spp += "." + s;
+    	                        }
+    	                    }
+    	                    else spp = null;
+    				    }
+    				}
+    				
+                    if (OAStr.isNotEmpty(spp)) {
+                        OAFinder<T,?> f = new OAFinder(spp) {
+                            protected boolean isUsed(OAObject obj) {
+                            	Object objx = liRev.getValue(obj);
+                                if (objx instanceof OAObjectKey) { //qqqqq wont happen, it will resolve to oaobj if objkey
+                                    if (!callKeyIsForSameOAObject(null, (OAObjectKey) objx, oaObj.getObjectKey())) {
+                                        return false;
+                                    }
+                                    callPropertyRemoveProperty((OAObject) obj, liRev.getName(), false);
+                                    return false;
+                                } else {
+                                    if (objx != oaObj) {
+                                        return false;
+                                    }
+                                }
+                                ((OAObject) obj).setProperty(liRev.getName(), null);
+                                return false;
+                            }
+                        };
+                        f.setUseOnlyLoadedData(true);
+                        f.find(oaObj);
+                    }
+                    else {
+                    	callCacheCallback(new OACallback() {
+        					@Override
+        					public boolean updateObject(Object obj) {
+        						Object objx = callPropertyGetProperty((OAObject) obj, liRev.getName(), false, false);
+        						if (objx instanceof OAObjectKey) {
+        							if (!objx.equals(oaObj.getObjectKey())) {
+        								return true;
+        							}
+        							callPropertyRemoveProperty((OAObject) obj, liRev.getName(), false);
+        							return true;
+        						} else {
+        							if (objx != oaObj) {
+        								return true;
+        							}
+        						}
+        						((OAObject) obj).setProperty(liRev.getName(), null);
+        						return true;
+        					}
+        				}, li.getToClass());
+                    }
+    			}
+			} 
+			
+            // remove from all hubs (needs to be after above code)
+            if (hubs != null) {
+                for (Hub<T> h : hubs) {
+                    if (h != null) {
+                    	callHubRemove(h, oaObj, true, true, true, true, true, false); // force, send, deleting, setAO
+                    }
+                }
+            }
+			
+			oaObj.setChanged(false);
+			callObjectSetNew(oaObj, true);
+		} finally {
+			callLocalThreadSetDeleting(oaObj, false);
+		}
+
+        if (!bIsSyncClient) callCSSendDeleteToClients(oaObj);
+		
+		if (!bIsSyncClient && hubs != null) {
+			for (Hub<T> h : hubs) {
+				if (h != null) {
+					callHubEventFireAfterDeleteEvent(h, oaObj);
+				}
+			}
+		}
+		callRemoteTheadStartNextThread();
+	}
+
+	/**
+	 * Determines whether the specified object can be deleted by checking
+	 * all link definitions that require the related collection or reference
+	 * to be empty prior to deletion.
+	 *
+	 * @param oaObj the object being evaluated
+	 * @return {@code true} if all required links are empty; otherwise {@code false}
+	 */
+	public boolean canDelete(OAObject oaObj) {
+		if (oaObj == null) return false;
+		OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
+		List al = oi.getLinkInfos();
+		for (int i = 0; i < al.size(); i++) {
+			OALinkInfo li = (OALinkInfo) al.get(i);
+			if (!li.getMustBeEmptyForDelete()) {
+				continue;
+			}
+			// if (li.getCalculated()) continue;
+			if (li.getPrivateMethod()) {
+				continue;
+			}
+			if (!li.getUsed()) {
+				continue;
+			}
+
+			String prop = li.getName();
+			if (prop == null || prop.length() < 1) {
+				continue;
+			}
+			
+			Object obj = callReflectGetProperty(oaObj, prop);
+			if (obj == null) {
+				continue;
+			}
+
+			if (li.getType() == OALinkInfo.ONE) {
+				return false;
+			} else {
+				if (((Hub) obj).getSize() > 0) {
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Returns an array of link definitions that must be empty before the
+	 * specified object can be deleted. Only links marked as requiring empty
+	 * state and containing non-empty values are included.
+	 *
+	 * @param oaObj the object being evaluated
+	 * @return an array of required-empty link definitions, or {@code null}
+	 *         if none exist
+	 */
+	public OALinkInfo[] getMustBeEmptyBeforeDelete(OAObject oaObj) {
+		if (oaObj == null) return null;
+		OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
+		List al = oi.getLinkInfos();
+		OALinkInfo[] lis = null;
+		for (int i = 0; i < al.size(); i++) {
+			OALinkInfo li = (OALinkInfo) al.get(i);
+			if (!li.getMustBeEmptyForDelete()) {
+				continue;
+			}
+			if (!li.getUsed()) {
+				continue;
+			}
+			if (li.getPrivateMethod()) {
+			    continue;
+			}
+
+			String prop = li.getName();
+			if (prop == null || prop.length() < 1) {
+				continue;
+			}
+			Object obj = callReflectGetProperty(oaObj, prop);
+			if (obj == null) {
+				continue;
+			}
+
+			if (li.getType() == OALinkInfo.ONE) {
+				lis = (OALinkInfo[]) OAArray.add(OALinkInfo.class, lis, li);
+			} else {
+				if (((Hub) obj).getSize() > 0) {
+					lis = (OALinkInfo[]) OAArray.add(OALinkInfo.class, lis, li);
+				}
+			}
+		}
+		return lis;
+	}
+	
+	/**
+	 * Performs cascade-delete processing for all child link relationships
+	 * of the specified object. Handles one-to-one, one-to-many, and
+	 * many-to-many relationships according to cascade and ownership rules.
+	 *
+	 * @param oaObj the parent object whose children may be deleted
+	 * @param cascade the cascade tracker used to prevent reprocessing
+	 */
+	private void deleteChildren(OAObject oaObj, OACascade cascade) {
+		if (oaObj == null) return;
+		OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
+		List<OALinkInfo> al = oi.getLinkInfos();
+		boolean bIsNew = oaObj.isNew();
+		for (int i = 0; i < al.size(); i++) {
+			final OALinkInfo li = al.get(i);
+			if (li.getCalculated()) {
+				continue;
+			}
+			if (!li.getUsed()) {
+				continue;
+			}
+
+			String prop = li.getName();
+			if (prop == null || prop.length() < 1) {
+				continue;
+			}
+
+			// 20160120
+			if (bIsNew && callPropertyGetProperty(oaObj, prop, true, false) == OAMatchNotExist.instance) {
+				continue;
+			}
+
+			final OALinkInfo liRev = callInfoGetReverseLinkInfo(li);
+			if (liRev == null || !liRev.getUsed()) {
+				continue;
+			}
+
+			if (li.getType() == OALinkInfo.ONE) {
+				if ((li.getOwner() || li.getCascadeDelete()) && !li.getPrivateMethod()) {
+					Object obj = callReflectGetProperty(oaObj, prop);
+					if (obj instanceof OAObject) {
+						delete((OAObject) obj, cascade);
+					}
+					continue;
+				}
+
+				if (liRev.getType() == OALinkInfo.ONE) { // 1to1
+					Object obj;
+					if (li.getPrivateMethod()) {
+						obj = callReflectGetReferenceObject(oaObj, li.getName());
+					} else {
+						obj = callReflectGetProperty(oaObj, prop);
+					}
+					if (obj == null) {
+						continue;
+					}
+
+					// this object is being deleted, remove its reference from reference object
+					if (obj instanceof OAObject) {
+						callReflectSetProperty((OAObject) obj, liRev.getName(), null, null);
+						callDSRemoveReference((OAObject) obj, liRev);
+						oaObj.removeProperty(li.getName());
+					}
+					continue;
+				}
+				// else liRev=Many ..
+				if (!li.getPrivateMethod()) {
+					continue;
+				}
+
+				//  it uses a LinkTable. Need to remove from liRev Hub and remove from link table
+
+				OAObject masterObj;
+				Hub<?> hubx = callHubGetHub(oaObj, li);
+				if (hubx != null) {
+					masterObj = callHubMasterGetMasterObject(hubx);
+				} else {
+					Object objx = callReflectGetReferenceObject(oaObj, li.getName());
+					if (objx instanceof OAObject) {
+						masterObj = (OAObject) objx;
+						objx = callPropertyGetProperty(masterObj, liRev.getName());
+						if (objx instanceof Hub) {
+							hubx = (Hub) objx;
+						}
+					} else {
+						masterObj = null;
+					}
+				}
+
+				if (masterObj != null) {
+					if (callDSSupportsStorage(masterObj)) {
+						callDSUpdateMany2ManyLinks(masterObj, null, new OAObject[] { oaObj }, liRev.getName());
+					}
+				}
+				if (hubx != null) {
+					hubx.remove(oaObj);
+					callHubDataRemoveFromRemovedList( (Hub<OAObject>) hubx, oaObj);
+				}
+				oaObj.removeProperty(li.getName());
+				continue;
+			}
+
+			// Many
+			Object obj;
+			if (!li.getPrivateMethod()) {
+				obj = callReflectGetProperty(oaObj, prop);
+			} else {
+				//  need to get Hub directly.  Ex: a one2many where the one is used as a lookup and does not have a reference to the many.
+				obj = callReflectGetReferenceHub(oaObj, prop, null, false, null);
+			}
+
+			if (!(obj instanceof Hub)) {
+				continue;
+			}
+			Hub<?> hub = (Hub<?>) obj;
+			hub.loadAllData();
+
+			// 20120612 need to remove link table records
+			boolean bIsM2m = callInfoIsMany2Many(li);
+
+			//20180615
+			if (hub.getMasterObject() != oaObj) {
+				continue; // ex: hier or calc hub
+			}
+
+			if (!li.getCascadeDelete() && !li.getOwner()) { // remove reference in any object to this object
+				if (hub.getSize() > 0) {
+					boolean b;
+					if (liRev.getPrivateMethod()) {
+						// might have a link table
+						b = callDSSupportsStorage(oaObj);
+					} else {
+						b = true;
+					}
+
+					if (b) {
+						int x = hub.getSize();
+						for (--x; x >= 0; x--) {
+							obj = hub.elementAt(x);
+							hub.remove(x); // hub will set property for references master to null.
+							if (!bIsM2m) {
+								callDSRemoveReference((OAObject) obj, liRev); // update DB so that fkey violation is not thrown
+							}
+						}
+					} else {
+						if (callSyncIsServer()) {
+							callHubCSRemoveAllFromHub(hub);
+						}
+					}
+				}
+			} else {
+				callObjectHubDeleteAll(hub, cascade);
+			}
+			if (bIsM2m) {
+				// 20120612 need to remove link table records
+				callHubDSRemoveMany2ManyLinks(hub);
+			}
+		}
+	}
+
+	/**
+	 * Performs the final delete operations for the specified object. If
+	 * running on the server, the object's delete action is passed to the
+	 * DataSource and logged. The object's {@code afterDelete()} callback
+	 * is then invoked.
+	 *
+	 * @param oaObj the object being deleted
+	 */
+	private void onDelete(OAObject oaObj) {
+		if (oaObj == null) {
+			return;
+		}
+		if (callSyncIsServer()) {
+			callDSDelete(oaObj);
+		}
+		oaObj.afterDelete();
+	}
+	
+	public abstract void callObjectSetNew(final OAObject oaObj, final boolean b);
+	public abstract OAObject callCacheAdd(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll);
+	public abstract <T extends OAObject> void callCacheCallback(OACallback<T> callback, Class<T> clazz);
+	public abstract boolean callCSDelete(OAObject obj);	
+	public abstract void callCSSendDeleteToClients(OAObject obj);	
+	public abstract void callDSUpdateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propFromMaster);
+	public abstract boolean callDSSupportsStorage(OAObject obj);
+	public abstract void callDSDelete(OAObject obj);
+	public abstract void callDSRemoveReference(OAObject oaObj, OALinkInfo li);	
+	public abstract void callEventFireBeforePropertyChange(final OAObject oaObj, final String propertyName,
+			Object oldObj, final Object newObj, final boolean bLocalOnly, final boolean bSetChanged);	
+	public abstract void callEventFirePropertyChange(final OAObject oaObj, final String propertyName, Object oldObj, Object newObj,
+			boolean bLocalOnly, boolean bSetChanged);
+	public abstract <T extends OAObject> Hub<T>[] callObjectHubGetHubReferences(T oaObj);
+	public abstract void callObjectHubDeleteAll(Hub<?> hub, OACascade cascade);
+	public abstract Hub<?> callHubGetHub(OAObject oaObj, OALinkInfo li);
+	public abstract OAObjectInfo getOAObjectInfo(Class<?> clazz);	
+	public abstract boolean callInfoIsMany2Many(OALinkInfo li);
+	public abstract OALinkInfo callInfoGetReverseLinkInfo(OALinkInfo thisLi);
+	public abstract String callKeyVerifyKeyChange(final OAObject oaObj, final OAObjectKey newObjectKey);
+	public abstract boolean callKeyIsForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey ok1, final OAObjectKey ok2);
+	public abstract boolean callReflectIsReferenceNullOrNotLoadedOrEmptyHub(OAObject oaObj, String propertyName);
+	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath);
+	public abstract <T extends OAObject> Hub<T> callReflectGetReferenceHub(final OAObject oaObj, final String linkPropertyName, String sortOrder, boolean bSequence, Hub<T> hubMatch);
+	public abstract Object callReflectGetReferenceObject(final OAObject oaObj, final String linkPropertyName);	
+	public abstract void callReflectSetProperty(final OAObject oaObj, String propName, Object value, final String fmt);
+	public abstract void callPropertyRemoveProperty(OAObject oaObj, String name, boolean bFirePropertyChange);	
+	public abstract Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef);	
+	public abstract Object callPropertyGetProperty(OAObject oaObj, String name);
+	public abstract <T extends OAObject> T callHubRemove(final Hub<T> thisHub, Object obj, final boolean bForce,
+			final boolean bSendEvent, final boolean bDeleting, final boolean bSetAO,
+			final boolean bSetPropToMaster, final boolean bIsRemovingAll);
+	public abstract void callHubCSRemoveAllFromHub(Hub<?> thisHub);	
+	public abstract <T extends OAObject> void callHubDataRemoveFromRemovedList(Hub<T> thisHub, T obj);
+	public abstract void callHubDSRemoveMany2ManyLinks(Hub<?> hub);
+	public abstract <T extends OAObject> void callHubEventFireBeforeDeleteEvent(Hub<T> hub, T obj);
+	public abstract <T extends OAObject> void callHubEventFireAfterDeleteEvent(Hub<T> thisHub, T obj);
+	public abstract OAObject callHubMasterGetMasterObject(Hub<?> hub);
+	public abstract boolean callSyncIsServer();
+	public abstract boolean callSyncIsClient();
+	public abstract void callLocalThreadSetDeleting(Object obj, boolean b);
+	public abstract void callRemoteTheadStartNextThread();
+
+}

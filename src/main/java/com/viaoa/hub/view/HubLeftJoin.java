@@ -18,14 +18,13 @@ package com.viaoa.hub.view;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.viaoa.compare.OACompare;
-import com.viaoa.graph.OAGraph;
-
-import com.viaoa.graph.service.hub.HubAddRemoveService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListener;
 import com.viaoa.hub.HubListenerAdapter;
 import com.viaoa.lang.OAString;
+import com.viaoa.oa.OA;
+import com.viaoa.oa.service.hub.HubAddRemoveService;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
@@ -270,8 +269,8 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 			@Override
 			public void onNewList(HubEvent e) {
 				
-				final OAGraph og = OARuntime.graph(hubCombined);
-				og.internal().hubs().addRemove().clear(hubCombined, false, false); // 20240403 dont send newList event
+				final OA oa = OARuntime.oa(hubCombined);
+				oa.internal().hubs().addRemove().clear(hubCombined, false, false); // 20240403 dont send newList event
 				
 				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 				boolean bWasLoading = srvcOAThreadLocal.setLoading(true);
@@ -286,7 +285,7 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 				finally {
 	                srvcOAThreadLocal.setLoading(bWasLoading);
                     hubCombined.setActiveObject(null);
-	                og.internal().hubs().events().fireOnNewListEvent(hubCombined, true);
+	                oa.internal().hubs().events().fireOnNewListEvent(hubCombined, true);
 				}
 			}
 

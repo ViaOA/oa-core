@@ -16,13 +16,13 @@
 package com.viaoa.hub.util;
 
 
-import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.service.hub.HubSelectService;
-import com.viaoa.graph.service.object.OAObjectDSService;
-import com.viaoa.graph.service.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.filter.HubFilter;
 import com.viaoa.hub.view.HubCombined;
+import com.viaoa.oa.OA;
+import com.viaoa.oa.service.hub.HubSelectService;
+import com.viaoa.oa.service.object.OAObjectDSService;
+import com.viaoa.oa.service.object.OAObjectReflectService;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
@@ -151,9 +151,9 @@ public class HubNewObject<F extends OAObject> {
 			hubNewObject = new Hub(hubMain.getObjectClass());
 		}
 
-		final OAGraph og = OARuntime.graph(hubMain);
-		hubNewObject.setSelectWhereHub(	og.internal().hubs().select().getSelectWhereHub(hubMain),
-				og.internal().hubs().select().getSelectWhereHubPropertyPath(hubMain));
+		final OA oa = OARuntime.oa(hubMain);
+		hubNewObject.setSelectWhereHub(	oa.internal().hubs().select().getSelectWhereHub(hubMain),
+				oa.internal().hubs().select().getSelectWhereHubPropertyPath(hubMain));
 
 		// need to set up a filtered hub, so that hubNewObject can be associated with hubMain and it's masterObject/Hub, etc
 		Hub hubEmptyFiltered = new Hub(hubMain.getObjectClass());
@@ -203,9 +203,9 @@ public class HubNewObject<F extends OAObject> {
 			OAObjectKey ok = obj.getObjectKey();
 			if (obj.isNew() && !ok.hasValidObjectIds()) {
 				// obj.setObjectDefaults(); // 20240507 this should be called when object is created. 
-				final OAGraph og = OARuntime.graph(obj);
-				if (og.internal().objects().ds().getAssignIdOnCreate(obj)) {
-					og.internal().objects().ds().assignId(obj);
+				final OA oa = OARuntime.oa(obj);
+				if (oa.internal().objects().ds().getAssignIdOnCreate(obj)) {
+					oa.internal().objects().ds().assignId(obj);
 				}
 			}
 		}
@@ -258,13 +258,13 @@ public class HubNewObject<F extends OAObject> {
 		boolean bWasLoading = srvcOAThreadLocal.setLoading(true);
 		try {
 			Class<F> clazz = hubMain.getObjectClass();
-    		final OAGraph og = OARuntime.graph(clazz);
-			obj = (F) og.internal().objects().reflect().createNewObject(clazz);
+    		final OA oa = OARuntime.oa(clazz);
+			obj = (F) oa.internal().objects().reflect().createNewObject(clazz);
 		} finally {
 			srvcOAThreadLocal.setLoading(bWasLoading);
 		}
-		final OAGraph og = OARuntime.graph(obj);
-		og.internal().objects().initialize().initializeAfterLoading((OAObject) obj);
+		final OA oa = OARuntime.oa(obj);
+		oa.internal().objects().initialize().initializeAfterLoading((OAObject) obj);
 		return obj;
 	}
 

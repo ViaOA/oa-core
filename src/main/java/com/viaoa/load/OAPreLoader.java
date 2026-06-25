@@ -20,11 +20,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.path.OAPath;
 import com.viaoa.runtime.OARuntime;
@@ -312,13 +312,13 @@ public class OAPreLoader {
 			}
 
 			Hub hub;
-			final OAGraph og = OARuntime.graph((OAObject) objOne);
-			Object objOneHub = og.internal().objects().property().getProperty((OAObject) objOne, liMany.getName(), false, true);
+			final OA oa = OARuntime.oa((OAObject) objOne);
+			Object objOneHub = oa.internal().objects().property().getProperty((OAObject) objOne, liMany.getName(), false, true);
 			if (objOneHub instanceof Hub) {
 				hub = (Hub) objOneHub;
 			} else {
 				hub = new Hub(liMany.getToClass());
-				og.internal().objects().property().setProperty((OAObject) objOne, liMany.getName(), hub);
+				oa.internal().objects().property().setProperty((OAObject) objOne, liMany.getName(), hub);
 			}
 			hub.add((OAObject) objFromMany);
 		}
@@ -366,9 +366,9 @@ public class OAPreLoader {
 	 */
 	protected List load(Class clazz, final OALinkInfo linkInfo) {
 		OASelect sel = new OASelect<>(clazz);
-		final OAGraph og = OARuntime.graph(clazz);
-		OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(clazz);
-		OALinkInfo liRecursive = og.internal().objects().info().getRecursiveLinkInfo(oi, OALinkInfo.MANY);
+		final OA oa = OARuntime.oa(clazz);
+		OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(clazz);
+		OALinkInfo liRecursive = oa.internal().objects().info().getRecursiveLinkInfo(oi, OALinkInfo.MANY);
 
 		String sortOrder = null;
 		if (liRecursive != null) {
@@ -451,13 +451,13 @@ public class OAPreLoader {
 			}
 
 			Hub hub;
-			final OAGraph og = OARuntime.graph((OAObject) fParent);
-			Object objx = og.internal().objects().property().getProperty((OAObject) fParent, liMany.getName(), false, true);
+			final OA oa = OARuntime.oa((OAObject) fParent);
+			Object objx = oa.internal().objects().property().getProperty((OAObject) fParent, liMany.getName(), false, true);
 			if (objx instanceof Hub) {
 				hub = (Hub) objx;
 			} else {
 				hub = new Hub(clazz);
-				og.internal().objects().property().setProperty((OAObject) fParent, liMany.getName(), hub);
+				oa.internal().objects().property().setProperty((OAObject) fParent, liMany.getName(), hub);
 			}
 			hub.add((OAObject) f);
 		}

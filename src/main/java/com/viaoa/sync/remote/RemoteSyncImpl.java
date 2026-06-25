@@ -20,8 +20,8 @@ import java.util.logging.Logger;
 
 import com.viaoa.concurrent.OAThrottle;
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
+import com.viaoa.oa.OA;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.serialize.OAObjectSerializer;
@@ -128,16 +128,16 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 	@Override
 	public boolean propertyChange(Class objectClass, OAObjectKey origKey, String propertyName, Object newValue, boolean bIsBlob) {
 		OAObject obj = getObject(objectClass, origKey, true);
-		final OAGraph og = OARuntime.graph(objectClass);
+		final OA oa = OARuntime.oa(objectClass);
 		if (obj == null) {
-			if (og.internal().sync().isServer()) {
+			if (oa.internal().sync().isServer()) {
 				if (throttlePropertyChangeError.check()) {
 					LOG.warning("Object not found, class=" + objectClass + ", key=" + origKey + ", propName=" + propertyName);
 				}
 			}
 			return false;
 		}
-		og.internal().objects().reflect().setProperty((OAObject) obj, propertyName, newValue, null);
+		oa.internal().objects().reflect().setProperty((OAObject) obj, propertyName, newValue, null);
 
 		// blob value does not get sent, so clear the property so that a getXxx will retrieve it from server
 		if (bIsBlob && newValue == null) {
@@ -267,12 +267,12 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		if (obj == null) {
 			return false;
 		}
-		final OAGraph og = OARuntime.graph(objectClass);
+		final OA oa = OARuntime.oa(objectClass);
 
 		Hub h = getHub(obj, hubPropertyName);
 		if (h == null) {
-			if (!og.internal().sync().isServer()) {
-                og.internal().objects().property().setProperty(obj, hubPropertyName, null);
+			if (!oa.internal().sync().isServer()) {
+                oa.internal().objects().property().setProperty(obj, hubPropertyName, null);
 			}
 			return false;
 		}
@@ -354,10 +354,10 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		if (origKey == null) {
 			return null;
 		}
-		final OAGraph og = OARuntime.graph(objectClass);
-		OAObject obj = (OAObject) og.internal().objects().cache().get(objectClass, origKey);
+		final OA oa = OARuntime.oa(objectClass);
+		OAObject obj = (OAObject) oa.internal().objects().cache().get(objectClass, origKey);
 
-		if (obj == null && og.internal().sync().isServer()) {
+		if (obj == null && oa.internal().sync().isServer()) {
 			OADataSource ds = OARuntime.datasource().get(objectClass);
 			if (ds != null) obj = (OAObject) ds.getObject(objectClass, origKey);
 			if (obj != null) {
@@ -381,12 +381,12 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		if (obj == null) {
 			return null;
 		}
-		final OAGraph og = OARuntime.graph((OAObject) obj);
-		boolean bWasLoaded = og.internal().objects().reflect().isReferenceHubLoaded(obj, hubPropertyName);
-		if (!bWasLoaded && !og.internal().sync().isServer()) {
+		final OA oa = OARuntime.oa((OAObject) obj);
+		boolean bWasLoaded = oa.internal().objects().reflect().isReferenceHubLoaded(obj, hubPropertyName);
+		if (!bWasLoaded && !oa.internal().sync().isServer()) {
 			return null;
 		}
-		Object objx = og.internal().objects().reflect().getProperty(obj, hubPropertyName);
+		Object objx = oa.internal().objects().reflect().getProperty(obj, hubPropertyName);
 		if (!(objx instanceof Hub)) {
 			return null;
 		}
@@ -414,8 +414,8 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 			return;
 		}
 
-		final OAGraph og = OARuntime.graph(h);
-		og.internal().hubs().data().clearHubChanges(h);
+		final OA oa = OARuntime.oa(h);
+		oa.internal().hubs().data().clearHubChanges(h);
 	}
 
 	/**
@@ -427,8 +427,8 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 	 */
 	@Override
 	public void refresh(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName) {
-		final OAGraph og = OARuntime.graph(masterObjectClass);
-		if (og.internal().sync().isServer()) {
+		final OA oa = OARuntime.oa(masterObjectClass);
+		if (oa.internal().sync().isServer()) {
 			return;
 		}
 
@@ -442,9 +442,9 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 			return;
 		}
 
-		Hub<OAObject> hubNew = og.internal().objects().cs().getServerReferenceHub(obj, hubPropertyName);
+		Hub<OAObject> hubNew = oa.internal().objects().cs().getServerReferenceHub(obj, hubPropertyName);
 
-		og.internal().hubs().addRemove().refresh(hub, hubNew);
+		oa.internal().hubs().addRemove().refresh(hub, hubNew);
 	}
 
 	/**
@@ -459,9 +459,9 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
         if (obj == null) {
             return;
         }
-		final OAGraph og = OARuntime.graph(objectClass);
-        if (!og.internal().sync().isServer()) return;
-        og.internal().objects().delete().syncServerDelete(obj);
+		final OA oa = OARuntime.oa(objectClass);
+        if (!oa.internal().sync().isServer()) return;
+        oa.internal().objects().delete().syncServerDelete(obj);
     }
 	
 	
@@ -477,9 +477,9 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
         if (obj == null) {
             return;
         }
-		final OAGraph og = OARuntime.graph(objectClass);
-        if (!og.internal().sync().isClient()) return;
-        og.internal().objects().delete().syncClientDelete(obj);
+		final OA oa = OARuntime.oa(objectClass);
+        if (!oa.internal().sync().isClient()) return;
+        oa.internal().objects().delete().syncClientDelete(obj);
     }
 
     

@@ -6,18 +6,18 @@ import org.junit.jupiter.api.*;
 
 import com.test.pos.model.oa.Register;
 import com.test.pos.model.oa.Store;
-import com.viaoa.graph.OAGraph;
+import com.viaoa.oa.OA;
 import com.viaoa.runtime.OARuntime;
 
 class RemoteSyncImplTest {
 
     @BeforeEach
     void beforeEach() {
-        OAGraph og = OARuntime.graph(Register.class);
+        OA oa = OARuntime.oa(Register.class);
     }
     @AfterEach
     void afterEach() {
-        OARuntime.graph(Register.class).close();
+        OARuntime.oa(Register.class).close();
     }
 
     @Test

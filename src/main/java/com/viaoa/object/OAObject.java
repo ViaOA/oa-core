@@ -34,9 +34,6 @@ import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.datetime.OADateTime;
 import com.viaoa.find.OAHierFinder;
-import com.viaoa.graph.OAGraph;
-
-import com.viaoa.graph.service.object.OAObjectParentService;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAString;
 import com.viaoa.log.OALogger;
@@ -44,6 +41,8 @@ import com.viaoa.metadata.OAFkeyInfo;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.metadata.OAPropertyInfo;
+import com.viaoa.oa.OA;
+import com.viaoa.oa.service.object.OAObjectParentService;
 import com.viaoa.lang.oa.VEnum;
 import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
@@ -358,8 +357,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * explicitly saved or committed by the application or datasource layer.
 	 */
 	public OAObject() {
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().initialize().initialize(this);
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().initialize().initialize(this);
 
 		cntNew.incrementAndGet();
 
@@ -387,8 +386,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * No application code should call this method directly.
 	 */
 	private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
-        OAGraph og = OARuntime.graph(this);
-        og.internal().objects().serialize().readObject(this, in);
+        OA oa = OARuntime.oa(this);
+        oa.internal().objects().serialize().readObject(this, in);
 	}
 
 	/**
@@ -410,8 +409,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return the canonical {@code OAObject} instance for this GUID
 	 */
 	protected Object readResolve() throws ObjectStreamException {
-        OAGraph og = OARuntime.graph(this);
-		Object obj = og.internal().objects().serialize().readResolve(this);
+        OA oa = OARuntime.oa(this);
+		Object obj = oa.internal().objects().serialize().readResolve(this);
 		return obj;
 	}
 
@@ -434,8 +433,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * Java serialization workflow.
 	 */
 	private void writeObject(java.io.ObjectOutputStream stream) throws IOException {
-        OAGraph og = OARuntime.graph(this);
-        og.internal().objects().serialize().writeObject(this, stream);
+        OA oa = OARuntime.oa(this);
+        oa.internal().objects().serialize().writeObject(this, stream);
 	}
 
 	/**
@@ -457,8 +456,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param value    the new boolean value to assign
 	 */
 	public void setProperty(String propName, boolean value) {
-		final OAGraph og = OARuntime.graph(this);
-		og.internal().objects().reflect().setProperty(this, propName, value ? Boolean.TRUE : Boolean.FALSE, null);
+		final OA oa = OARuntime.oa(this);
+		oa.internal().objects().reflect().setProperty(this, propName, value ? Boolean.TRUE : Boolean.FALSE, null);
 	}
 
 	/**
@@ -479,8 +478,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param value    the new integer value to assign
 	 */
 	public void setProperty(String propName, int value) {
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().reflect().setProperty(this, propName, Integer.valueOf(value), null);
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().reflect().setProperty(this, propName, Integer.valueOf(value), null);
 	}
 
 	/**
@@ -501,8 +500,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param value    the new long value to assign
 	 */
 	public void setProperty(String propName, long value) {
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().reflect().setProperty(this, propName, Long.valueOf(value), null);
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().reflect().setProperty(this, propName, Long.valueOf(value), null);
 	}
 
 	/**
@@ -523,8 +522,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param value    the new double value to assign
 	 */
 	public void setProperty(String propName, double value) {
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().reflect().setProperty(this, propName, Double.valueOf(value), null);
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().reflect().setProperty(this, propName, Double.valueOf(value), null);
 	}
 
 	/**
@@ -546,8 +545,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param value    the new value to assign; may be {@code null}
 	 */
 	public void setProperty(String propName, Object value) {
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().reflect().setProperty(this, propName, value, null);
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().reflect().setProperty(this, propName, value, null);
 	}
 
 	/**
@@ -566,8 +565,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param propName the name of the property to clear
 	 */
 	public void setNull(String propName) {
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().reflect().setProperty(this, propName, null, null);
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().reflect().setProperty(this, propName, null, null);
 	}
 
 	/**
@@ -577,8 +576,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param b true or false
 	 */
 	protected void setPrimitiveNull(String propName, boolean b) {
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().reflect().setPrimitiveNull(this, propName, b);
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().reflect().setPrimitiveNull(this, propName, b);
 	}
 	
 	
@@ -603,8 +602,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param fmt      optional format string used for type conversion; may be {@code null}
 	 */
 	public void setProperty(String propName, Object value, String fmt) {
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().reflect().setProperty(this, propName, value, fmt);
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().reflect().setProperty(this, propName, value, fmt);
 	}
 
 	/**
@@ -626,8 +625,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return the current value of the property, or {@code null} if no value is set
 	 */
 	public Object getProperty(String propName) {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().reflect().getProperty(this, propName);
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().reflect().getProperty(this, propName);
 	}
 
 	/**
@@ -759,8 +758,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param name the name of the property to remove
 	 */
 	public void removeProperty(String name) {
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().property().removeProperty(this, name, true);
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().property().removeProperty(this, name, true);
 	}
 
 	/**
@@ -786,8 +785,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *         cancel the update
 	 */
 	public boolean isValidPropertyChange(String propertyName, Object oldValue, Object newValue) {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().callbacks().getVerifyPropertyChange(OAObjectCallback.CHECK_CallbackMethod, 
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().callbacks().getVerifyPropertyChange(OAObjectCallback.CHECK_CallbackMethod, 
 				this, propertyName, oldValue, newValue);
 	}
 
@@ -812,9 +811,9 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return {@code true} if the change is allowed; {@code false} otherwise
 	 */
     public boolean isValidPropertyChange(String propertyName, Object newValue) {
-		OAGraph og = OARuntime.graph(this);
+		OA oa = OARuntime.oa(this);
         Object oldValue = getProperty(propertyName);
-        return og.internal().objects().callbacks().getVerifyPropertyChange(OAObjectCallback.CHECK_CallbackMethod, 
+        return oa.internal().objects().callbacks().getVerifyPropertyChange(OAObjectCallback.CHECK_CallbackMethod, 
        		this, propertyName, oldValue, newValue);
     }
 
@@ -842,8 +841,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
      * @return the callback result describing the validation outcome
      */
 	public OAObjectCallback getIsValidPropertyChangeObjectCallback(String propertyName, Object oldValue, Object newValue) {
-		OAGraph og = OARuntime.graph(this);
-		OAObjectCallback eq = og.internal().objects().callbacks().getVerifyPropertyChangeObjectCallback(	
+		OA oa = OARuntime.oa(this);
+		OAObjectCallback eq = oa.internal().objects().callbacks().getVerifyPropertyChangeObjectCallback(	
 				OAObjectCallback.CHECK_CallbackMethod, this,
 				propertyName, oldValue, newValue);
 		return eq;
@@ -874,8 +873,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
     public OAObjectCallback getIsValidPropertyChangeObjectCallback(String propertyName, Object newValue) {
         Object oldValue = getProperty(propertyName);
-		OAGraph og = OARuntime.graph(this);
-        OAObjectCallback eq = og.internal().objects().callbacks().getVerifyPropertyChangeObjectCallback(   
+		OA oa = OARuntime.oa(this);
+        OAObjectCallback eq = oa.internal().objects().callbacks().getVerifyPropertyChangeObjectCallback(   
         	OAObjectCallback.CHECK_CallbackMethod, this,
             propertyName, oldValue, newValue);
         return eq;
@@ -903,8 +902,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
      * @return {@code true} if the property is enabled; {@code false} otherwise
      */
 	public boolean isEnabled(String propertyName) {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().callbacks().getAllowEnabled(OAObjectCallback.CHECK_ALL, null, this, propertyName);
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().callbacks().getAllowEnabled(OAObjectCallback.CHECK_ALL, null, this, propertyName);
 	}
 
 	/**
@@ -930,8 +929,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return the callback object describing the enablement decision
 	 */
 	public OAObjectCallback getIsEnabledObjectCallback(String propertyName, Object oldValue, Object newValue) {
-		OAGraph og = OARuntime.graph(this);
-		OAObjectCallback eq = og.internal().objects().callbacks().getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, this, propertyName);
+		OA oa = OARuntime.oa(this);
+		OAObjectCallback eq = oa.internal().objects().callbacks().getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, this, propertyName);
 		return eq;
 	}
 
@@ -957,8 +956,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *         disabled for the current context
 	 */
 	public boolean isEnabled() {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().callbacks().getAllowEnabled(OAObjectCallback.CHECK_ALL, null, this, null);
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().callbacks().getAllowEnabled(OAObjectCallback.CHECK_ALL, null, this, null);
 	}
 
 	/**
@@ -982,8 +981,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return a callback object describing the enablement result for this object
 	 */
 	public OAObjectCallback getIsEnabledObjectCallback() {
-		OAGraph og = OARuntime.graph(this);
-		OAObjectCallback eq = og.internal().objects().callbacks().getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, this, null);
+		OA oa = OARuntime.oa(this);
+		OAObjectCallback eq = oa.internal().objects().callbacks().getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, this, null);
 		return eq;
 	}
 
@@ -1008,8 +1007,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return {@code true} if the property is visible; {@code false} otherwise
 	 */
 	public boolean isVisible(String propertyName) {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().callbacks().getAllowVisible(null, this, propertyName);
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().callbacks().getAllowVisible(null, this, propertyName);
 	}
 
 	/**
@@ -1033,8 +1032,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return the callback object describing the visibility result
 	 */
 	public OAObjectCallback getIsVisibleObjectCallback(String propertyName) {
-		OAGraph og = OARuntime.graph(this);
-		OAObjectCallback eq = og.internal().objects().callbacks().getAllowVisibleObjectCallback(null, this, propertyName);
+		OA oa = OARuntime.oa(this);
+		OAObjectCallback eq = oa.internal().objects().callbacks().getAllowVisibleObjectCallback(null, this, propertyName);
 		return eq;
 	}
 
@@ -1057,8 +1056,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return {@code true} if the object is visible; {@code false} otherwise
 	 */
 	public boolean isVisible() {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().callbacks().getAllowVisible(null, this, null);
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().callbacks().getAllowVisible(null, this, null);
 	}
 
 	/**
@@ -1081,8 +1080,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return an {@link OAObjectCallback} describing the object's visibility state
 	 */
 	public OAObjectCallback getIsVisibleObjectCallback() {
-		OAGraph og = OARuntime.graph(this);
-		OAObjectCallback eq = og.internal().objects().callbacks().getAllowVisibleObjectCallback(null, this, null);
+		OA oa = OARuntime.oa(this);
+		OAObjectCallback eq = oa.internal().objects().callbacks().getAllowVisibleObjectCallback(null, this, null);
 		return eq;
 	}
 
@@ -1107,8 +1106,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return {@code true} if execution is allowed; {@code false} otherwise
 	 */
 	public boolean verifyCommand(String methodName) {
-		OAGraph og = OARuntime.graph(this);
-		OAObjectCallback eq = og.internal().objects().callbacks().getVerifyCommandObjectCallback(this, methodName, OAObjectCallback.CHECK_ALL);
+		OA oa = OARuntime.oa(this);
+		OAObjectCallback eq = oa.internal().objects().callbacks().getVerifyCommandObjectCallback(this, methodName, OAObjectCallback.CHECK_ALL);
 		return eq.getAllowed();
 	}
 
@@ -1134,8 +1133,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return an {@link OAObjectCallback} describing the command authorization result
 	 */
 	public OAObjectCallback getVerifyCommand(String methodName) {
-		OAGraph og = OARuntime.graph(this);
-		OAObjectCallback eq = og.internal().objects().callbacks().getVerifyCommandObjectCallback(this, methodName, OAObjectCallback.CHECK_ALL);
+		OA oa = OARuntime.oa(this);
+		OAObjectCallback eq = oa.internal().objects().callbacks().getVerifyCommandObjectCallback(this, methodName, OAObjectCallback.CHECK_ALL);
 		return eq;
 	}
 
@@ -1159,8 +1158,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return an {@link OAObjectCallback} describing whether submission is allowed
 	 */
 	public OAObjectCallback getAllowSubmit() {
-		OAGraph og = OARuntime.graph(this);
-		OAObjectCallback eq = og.internal().objects().callbacks().getAllowSubmitObjectCallback(this);
+		OA oa = OARuntime.oa(this);
+		OAObjectCallback eq = oa.internal().objects().callbacks().getAllowSubmitObjectCallback(this);
 		return eq;
 	}
 
@@ -1184,8 +1183,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return an {@link OAObjectCallback} describing the save-validation result
 	 */
     public OAObjectCallback getVerifySaveObjectCallback() {
-		OAGraph og = OARuntime.graph(this);
-        OAObjectCallback eq = og.internal().objects().callbacks().getVerifySaveObjectCallback(this, OAObjectCallback.CHECK_ALL);
+		OA oa = OARuntime.oa(this);
+        OAObjectCallback eq = oa.internal().objects().callbacks().getVerifySaveObjectCallback(this, OAObjectCallback.CHECK_ALL);
         return eq;
     }
 	
@@ -1238,8 +1237,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param b the new-state value to assign
 	 */
 	public void setNew(boolean b) {
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().state().setNew(this, b);
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().state().setNew(this, b);
 	}
 
 	/**
@@ -1302,8 +1301,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param tf {@code true} to mark the object as deleted; {@code false} to clear the deleted state
 	 */
 	public void setDeleted(boolean tf) {
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().delete().setDeleted(this, tf);
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().delete().setDeleted(this, tf);
 	}
 
 	/**
@@ -1482,8 +1481,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *         unsaved changes; {@code false} otherwise
 	 */
 	public boolean getChanged(int relationshipType) {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().change().getChanged(this, relationshipType);
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().change().getChanged(this, relationshipType);
 	}
 
 	
@@ -1532,32 +1531,32 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	public void setChanged(boolean tf) {
 		if (changedFlag != tf) {
 			boolean bOld = changedFlag;
-			final OAGraph og = OARuntime.graph(this);
+			final OA oa = OARuntime.oa(this);
 
-			og.internal().objects().event().fireBeforePropertyChange(	this, OAObjectParentService.WORD_Changed,
+			oa.internal().objects().event().fireBeforePropertyChange(	this, OAObjectParentService.WORD_Changed,
 															bOld ? Boolean.TRUE : Boolean.FALSE,
 															tf ? Boolean.TRUE : Boolean.FALSE,
 															(tf == false), // local only  20150530 was: "false", now only sending if changed=false
 															false);
 			changedFlag = tf;
-			og.internal().objects().event().firePropertyChange(	this, OAObjectParentService.WORD_Changed,
+			oa.internal().objects().event().firePropertyChange(	this, OAObjectParentService.WORD_Changed,
 														bOld ? Boolean.TRUE : Boolean.FALSE,
 														changedFlag ? Boolean.TRUE : Boolean.FALSE, false, false);
 
 			if (changedFlag) {
 				// 20190307
 				if (!isRemoteThread()) {
-					OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(this.getClass());
+					OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(this.getClass());
 					OAPropertyInfo pi = oi.getTimestampProperty();
 					if (pi != null) {
 						this.setProperty(pi.getName(), new OADateTime());
 					}
 				}
 
-				og.internal().objects().property().setReferenceable(this, true);
+				oa.internal().objects().property().setReferenceable(this, true);
 
 				// 20180520 notify owner
-				WeakReference<Hub<?>>[] refs = og.internal().objects().hub().getHubReferencesNoCopy(this);
+				WeakReference<Hub<?>>[] refs = oa.internal().objects().hub().getHubReferencesNoCopy(this);
 				if (refs != null) {
 					for (WeakReference wr : refs) {
 						if (wr == null) {
@@ -1570,7 +1569,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 
 						OAObject obj = hx.getMasterObject();
 						if (obj != null) {
-							OALinkInfo li = og.internal().hubs().detail().getLinkInfoFromMasterToDetail(hx);
+							OALinkInfo li = oa.internal().hubs().detail().getLinkInfoFromMasterToDetail(hx);
 							if (li != null && (li.getCascadeSave() || li.getOwner())) {
 								obj.setChanged(true);
 							}
@@ -1601,8 +1600,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return a newly created {@code OAObject} that is a copy of this object
 	 */
 	public OAObject createCopy() {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().reflect().createCopy(this, null);
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().reflect().createCopy(this, null);
 	}
 
 	/**
@@ -1629,8 +1628,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *         excluded from the copy operation
 	 */
 	public Object createCopy(String[] excludePropertyNames) {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().reflect().createCopy(this, excludePropertyNames);
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().reflect().createCopy(this, excludePropertyNames);
 	}
 
 	/**
@@ -1660,8 +1659,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *                 must not be {@code null}
 	 */
 	public void copyInto(OAObject toObject) {
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().reflect().copyInto(this, toObject, (String[]) null, null);
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().reflect().copyInto(this, toObject, (String[]) null, null);
 	}
 
 	/**
@@ -1743,8 +1742,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *                     {@code false} to include remote or global listeners
 	 */
 	protected void fireBeforePropertyChange(String propertyName, Object oldObj, Object newObj, boolean bLocalOnly) {
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().event().fireBeforePropertyChange(this, propertyName, oldObj, newObj, bLocalOnly, true);
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().event().fireBeforePropertyChange(this, propertyName, oldObj, newObj, bLocalOnly, true);
 	}
 
 	/**
@@ -1769,9 +1768,9 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param newObj       the proposed new value
 	 */
 	protected void fireBeforePropertyChange(String propertyName, Object oldObj, Object newObj) {
-		OAGraph og = OARuntime.graph(this);
-		OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(this.getClass());
-		og.internal().objects().event().fireBeforePropertyChange(this, propertyName, oldObj, newObj, oi.getLocalOnly(), true);
+		OA oa = OARuntime.oa(this);
+		OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(this.getClass());
+		oa.internal().objects().event().fireBeforePropertyChange(this, propertyName, oldObj, newObj, oi.getLocalOnly(), true);
 	}
 
 	/**
@@ -1894,8 +1893,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *                     listeners and is not sent to remote subscribers
 	 */
 	protected void firePropertyChange(String propertyName, Object oldObj, Object newObj, boolean bLocalOnly) {
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().event().firePropertyChange(this, propertyName, oldObj, newObj, bLocalOnly, true);
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().event().firePropertyChange(this, propertyName, oldObj, newObj, bLocalOnly, true);
 	}
 
 	/**
@@ -1919,8 +1918,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param newObj       the new value; may be {@code null}
 	 */
 	protected void firePropertyChange(String propertyName, Object oldObj, Object newObj) {
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().event().firePropertyChange(this, propertyName, oldObj, newObj, false, true);
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().event().firePropertyChange(this, propertyName, oldObj, newObj, false, true);
 	}
 
 	/**
@@ -1947,8 +1946,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param propertyName the name of the property whose change should be signaled
 	 */
 	protected void firePropertyChange(String propertyName) {
-		final OAGraph og = OARuntime.graph(this);
-		og.internal().objects().event().firePropertyChange(this, propertyName, null, null, false, true, true);
+		final OA oa = OARuntime.oa(this);
+		oa.internal().objects().event().firePropertyChange(this, propertyName, null, null, false, true, true);
 	}
 
 	/**
@@ -1977,8 +1976,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		if (h == null) {
 			return;
 		}
-		final OAGraph og = OARuntime.graph(h);
-		og.internal().hubs().events().fireOnNewListEvent(h, true);
+		final OA oa = OARuntime.oa(h);
+		oa.internal().hubs().events().fireOnNewListEvent(h, true);
 	}
 
 	/**
@@ -2120,8 +2119,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param property the name of the property whose change should be signaled
 	 */
 	protected void fireLocalPropertyChange(String property) {
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().event().firePropertyChange(this, property, null, null, true, true, true);
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().event().firePropertyChange(this, property, null, null, true, true, true);
 	}
 
 	/**
@@ -2168,8 +2167,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *         represent a Hub reference or the Hub has not been initialized
 	 */
 	protected Hub<?> getHub(String linkPropertyName) {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().reflect().getReferenceHub(this, linkPropertyName, null, false, null);
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().reflect().getReferenceHub(this, linkPropertyName, null, false, null);
 	}
 
 	/**
@@ -2189,14 +2188,14 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param hub the Hub instance to associate with the property (may be {@code null})
 	 */
 	public void setHub(String linkPropertyName, Hub hub) {
-		OAGraph og = OARuntime.graph(this);
-		OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(this);
-		OALinkInfo linkInfo = og.internal().objects().info().getLinkInfo(oi, linkPropertyName);
+		OA oa = OARuntime.oa(this);
+		OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(this);
+		OALinkInfo linkInfo = oa.internal().objects().info().getLinkInfo(oi, linkPropertyName);
 
-		if (og.internal().objects().info().cacheHub(linkInfo, hub)) {
-			og.internal().objects().property().setProperty(this, linkPropertyName, new WeakReference(hub));
+		if (oa.internal().objects().info().cacheHub(linkInfo, hub)) {
+			oa.internal().objects().property().setProperty(this, linkPropertyName, new WeakReference(hub));
 		} else {
-			og.internal().objects().property().setProperty(this, linkPropertyName, hub);
+			oa.internal().objects().property().setProperty(this, linkPropertyName, hub);
 		}
 	}
 
@@ -2221,8 +2220,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return the resolved {@link Hub}, or {@code null} if unavailable
 	 */
 	protected Hub getHub(String linkPropertyName, String sortOrder) {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().reflect().getReferenceHub(this, linkPropertyName, sortOrder, false, null);
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().reflect().getReferenceHub(this, linkPropertyName, sortOrder, false, null);
 	}
 
 	/**
@@ -2248,8 +2247,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return the resolved Hub, or {@code null} if no such Hub exists or is not initialized
 	 */
 	protected Hub getHub(String linkPropertyName, String sortOrder, boolean bSequence) {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().reflect().getReferenceHub(this, linkPropertyName, sortOrder, bSequence, null);
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().reflect().getReferenceHub(this, linkPropertyName, sortOrder, bSequence, null);
 	}
 
 	/**
@@ -2277,8 +2276,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return the resolved Hub, or {@code null} if no such Hub exists or is not initialized
 	 */
 	protected Hub getHub(String linkPropertyName, String sortOrder, boolean bSequence, Hub hubMatch) {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().reflect().getReferenceHub(this, linkPropertyName, sortOrder, bSequence, hubMatch);
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().reflect().getReferenceHub(this, linkPropertyName, sortOrder, bSequence, hubMatch);
 	}
 
 	/**
@@ -2304,8 +2303,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return the resolved and optionally matched {@link Hub}, or {@code null} if unavailable
 	 */
 	protected Hub getHub(String linkPropertyName, String sortOrder, Hub hubMatch) {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().reflect().getReferenceHub(this, linkPropertyName, sortOrder, false, hubMatch);
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().reflect().getReferenceHub(this, linkPropertyName, sortOrder, false, hubMatch);
 	}
 
 	/**
@@ -2330,8 +2329,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return the resolved Hub, or {@code null} if unavailable
 	 */
 	protected Hub getHub(String linkPropertyName, Hub hubMatch) {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().reflect().getReferenceHub(this, linkPropertyName, null, false, hubMatch);
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().reflect().getReferenceHub(this, linkPropertyName, null, false, hubMatch);
 	}
 
 	/**
@@ -2353,8 +2352,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *         or cannot be resolved
 	 */
 	protected Object getObject(String linkPropertyName) {
-		OAGraph og = OARuntime.graph(this);
-		Object obj = og.internal().objects().reflect().getReferenceObject(this, linkPropertyName);
+		OA oa = OARuntime.oa(this);
+		Object obj = oa.internal().objects().reflect().getReferenceObject(this, linkPropertyName);
 		return obj;
 	}
 
@@ -2377,8 +2376,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *         {@code false} otherwise
 	 */
 	public boolean isReferenceObjectNull(String name) {
-		OAGraph og = OARuntime.graph(this);
-		boolean b = og.internal().objects().reflect().isReferenceObjectNullOrEmpty(this, name);
+		OA oa = OARuntime.oa(this);
+		boolean b = oa.internal().objects().reflect().isReferenceObjectNullOrEmpty(this, name);
 		return b;
 	}
 
@@ -2399,8 +2398,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return the blob {@code byte[]} value, or {@code null} if not present or not resolved
 	 */
 	protected byte[] getBlob(String linkPropertyName) {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().reflect().getReferenceBlob(this, linkPropertyName);
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().reflect().getReferenceBlob(this, linkPropertyName);
 	}
 
 	/**
@@ -2448,8 +2447,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 			throw new RuntimeException("can Save returned false for " + getClass().getSimpleName());
 		}
 
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().save().save(this, iCascadeRule); // this will save on server if using OAClient
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().save().save(this, iCascadeRule); // this will save on server if using OAClient
 	}
 
 	/**
@@ -2468,8 +2467,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return {@code true} if the object may be saved, {@code false} otherwise
 	 */
 	public boolean canSave() {
-		OAGraph og = OARuntime.graph(this);
-		boolean flag = og.internal().objects().callbacks().getAllowSave(this, OAObjectCallback.CHECK_ALL);
+		OA oa = OARuntime.oa(this);
+		boolean flag = oa.internal().objects().callbacks().getAllowSave(this, OAObjectCallback.CHECK_ALL);
 		return flag;
 	}
 
@@ -2495,8 +2494,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * the save methods provided by the OA framework at the delegate level.
 	 */
 	public void saveAll() {
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().save().save(this, OAObject.CASCADE_ALL_LINKS);
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().save().save(this, OAObject.CASCADE_ALL_LINKS);
 	}
 
 	/**
@@ -2530,10 +2529,10 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 	public void delete() {
 		// verify with objectCallback
-		OAGraph og = OARuntime.graph(this);
+		OA oa = OARuntime.oa(this);
 		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		if (!srvcOARemoteThread.isRemoteThread()) {
-			OAObjectCallback em = og.internal().objects().callbacks().getVerifyDeleteObjectCallback(null, this, OAObjectCallback.CHECK_CallbackMethod);
+			OAObjectCallback em = oa.internal().objects().callbacks().getVerifyDeleteObjectCallback(null, this, OAObjectCallback.CHECK_CallbackMethod);
 			if (!em.getAllowed()) {
 				String s = em.getResponse();
 				if (OAString.isEmpty(s)) {
@@ -2542,7 +2541,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 				throw new RuntimeException(s, em.getThrowable());
 			}
 		}
-		og.internal().objects().delete().delete(this);
+		oa.internal().objects().delete().delete(this);
 	}
 
 	/**
@@ -2558,8 +2557,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *         {@code false} otherwise
 	 */
 	public boolean canDelete() {
-		OAGraph og = OARuntime.graph(this);
-		boolean b = og.internal().objects().callbacks().getAllowDelete(null, this);
+		OA oa = OARuntime.oa(this);
+		boolean b = oa.internal().objects().callbacks().getAllowDelete(null, this);
 		return b;
 	}
 
@@ -2588,8 +2587,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * from modifying the object while it is in a protected state.
 	 */
 	public void lock() {
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().lock().lock(this);
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().lock().lock(this);
 	}
 
 	/**
@@ -2604,8 +2603,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * modifications to the object after it leaves a protected state.
 	 */
 	public void unlock() {
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().lock().unlock(this);
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().lock().unlock(this);
 	}
 
 	/**
@@ -2618,8 +2617,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return {@code true} if the object is locked; {@code false} otherwise
 	 */
 	public boolean isLocked() {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().lock().isLocked(this);
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().lock().isLocked(this);
 	}
 
 	/**
@@ -2636,8 +2635,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return the first matching object, or {@code null} if none are found
 	 */
 	public Object find(String propertyPath, Object value) {
-		OAGraph og = OARuntime.graph(this);
-		Object[] objs = og.internal().objects().find().find(this, propertyPath, value, false);
+		OA oa = OARuntime.oa(this);
+		Object[] objs = oa.internal().objects().find().find(this, propertyPath, value, false);
 		if (objs != null && objs.length > 0) {
 			return objs[0];
 		}
@@ -2658,8 +2657,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return an array of all matching objects; never {@code null}, but may be empty
 	 */
 	public Object[] findAll(String propertyPath, Object value) {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().find().find(this, propertyPath, value, true);
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().find().find(this, propertyPath, value, true);
 	}
 
 	/**
@@ -2698,10 +2697,10 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return {@code true} if the property is null; {@code false} otherwise
 	 */
 	public boolean isNull(String prop) {
-		OAGraph og = OARuntime.graph(this);
-		boolean b = og.internal().objects().reflect().getPrimitiveNull(this, prop);
+		OA oa = OARuntime.oa(this);
+		boolean b = oa.internal().objects().reflect().getPrimitiveNull(this, prop);
 		if (!b) {
-			Object objx = og.internal().objects().property().getProperty(this, prop, true, false);
+			Object objx = oa.internal().objects().property().getProperty(this, prop, true, false);
 			if (objx == null) {
 				b = true;
 			} else if (!(objx instanceof OAMatchNotExist)) {
@@ -2726,13 +2725,13 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 /*qqqqqq remove	
 	public boolean isServer() {
-		final OAGraph og = OARuntime.graph(this);
-		return og.internal().sync().isServer();
+		final OA oa = OARuntime.graph(this);
+		return oa.internal().sync().isServer();
 	}
 
 	public boolean isSingleUser() {
-		final OAGraph og = OARuntime.graph(this);
-		return og.internal().sync().isSingleUser();
+		final OA oa = OARuntime.graph(this);
+		return oa.internal().sync().isSingleUser();
 	}
 */	
 	/**
@@ -2746,8 +2745,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 /*qqqqqqq remove	
 	public boolean isClient() {
-		final OAGraph og = OARuntime.graph(this);
-		return og.internal().sync().isClient();
+		final OA oa = OARuntime.graph(this);
+		return oa.internal().sync().isClient();
 	}
 */
 	/**
@@ -2819,10 +2818,10 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * initialization or custom logic.
 	 */
 	public void afterLoad() {
-		OAGraph og = OARuntime.graph(this);
-		//qqqqqqq og.internal().objects().callObjectEmptyHubInitialize(this);
-		og.internal().objects().event().fireAfterLoadEvent(this);
-		og.internal().objects().cache().fireAfterLoadEvent(this);
+		OA oa = OARuntime.oa(this);
+		//qqqqqqq oa.internal().objects().callObjectEmptyHubInitialize(this);
+		oa.internal().objects().event().fireAfterLoadEvent(this);
+		oa.internal().objects().cache().fireAfterLoadEvent(this);
 	}
 
 	/**
@@ -2837,8 +2836,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *         once the object has been initialized
 	 */
 	public OAObjectKey getObjectKey() {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().key().getKey(this);
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().key().getKey(this);
 	}
 
 	/**
@@ -2867,8 +2866,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *          {@code false} to defer insertion until explicitly added or saved
 	 */
 	public void setAutoAdd(boolean b) {
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().autoAdd().setAutoAdd(this, b);
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().autoAdd().setAutoAdd(this, b);
 	}
 
 	/**
@@ -2885,8 +2884,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *         {@code false} otherwise
 	 */
 	public boolean getAutoAdd() {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().autoAdd().getAutoAdd(this);
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().autoAdd().getAutoAdd(this);
 	}
 
 	/**
@@ -2924,8 +2923,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return {@code true} if the hub is loaded; {@code false} otherwise
 	 */
 	public boolean isHubLoaded(String name) {
-		OAGraph og = OARuntime.graph(this);
-		Object objx = og.internal().objects().property().getProperty(this, name, true, true);
+		OA oa = OARuntime.oa(this);
+		Object objx = oa.internal().objects().property().getProperty(this, name, true, true);
 		if (objx == OAMatchNotExist.instance) {
 			return false;
 		}
@@ -2958,8 +2957,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param bIncludeCalc  whether to include calculated references
 	 */
 	public void loadReferences(boolean bIncludeCalc) {
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().reflect().loadAllReferences(this, bIncludeCalc);
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().reflect().loadAllReferences(this, bIncludeCalc);
 	}
 
 	/**
@@ -2980,8 +2979,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param bIncludeCalc  whether to include calculated references
 	 */
 	public void loadReferences(boolean bOne, boolean bMany, boolean bIncludeCalc) {
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().reflect().loadAllReferences(this, bOne, bMany, bIncludeCalc);
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().reflect().loadAllReferences(this, bOne, bMany, bIncludeCalc);
 	}
 
 	
@@ -3002,8 +3001,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param bIncludeCalc                 whether to include calculated references
 	 */
 	public void loadReferences(int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc) {
-		OAGraph og = OARuntime.graph(this);
-		og.internal().objects().reflect().loadAllReferences(this, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc);
+		OA oa = OARuntime.oa(this);
+		oa.internal().objects().reflect().loadAllReferences(this, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc);
 	}
 
 	/**
@@ -3022,8 +3021,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param maxRefsToLoad                maximum number of references to load before stopping
 	 */
 	public void loadReferences(int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc, int maxRefsToLoad) {
-		OAGraph og = OARuntime.graph(this);
-		int x = og.internal().objects().reflect().loadAllReferences(this, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, maxRefsToLoad);
+		OA oa = OARuntime.oa(this);
+		int x = oa.internal().objects().reflect().loadAllReferences(this, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, maxRefsToLoad);
 	}
 
 	/**
@@ -3056,14 +3055,14 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 
 		final Class clazz = hub.getObjectClass();
 
-		final OAGraph og = OARuntime.graph(hub);
+		final OA oa = OARuntime.oa(hub);
 		
 		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
-		if (!og.internal().sync().isClient() || srvcOARemoteThread.isRemoteThread()) {
+		if (!oa.internal().sync().isClient() || srvcOARemoteThread.isRemoteThread()) {
 			throw new RuntimeException("method " + mname + ", isRemoable=false, thread=" + Thread.currentThread());
 		}
 
-		final OASyncClient sc = og.internal().sync().getClient();
+		final OASyncClient sc = oa.internal().sync().getClient();
 		if (sc == null) {
 			throw new RuntimeException("method " + mname + ", OASyncClient=null, thread=" + Thread.currentThread());
 		}
@@ -3116,8 +3115,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 			throw new RuntimeException("method " + mname + ", isRemoable=false, thread=" + Thread.currentThread());
 		}
 
-		final OAGraph og = OARuntime.graph(this);
-		final OASyncClient sc = og.internal().sync().getClient();
+		final OA oa = OARuntime.oa(this);
+		final OASyncClient sc = oa.internal().sync().getClient();
 		if (sc == null) {
 			throw new RuntimeException("method " + mname + ", OASyncClient=null, thread=" + Thread.currentThread());
 		}
@@ -3137,7 +3136,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		Object val;
 		if (!sc.isObjectOnServer(this)) val = rs.runRemoteMethod2(this, mname, args); 		
 		else {
-			val = rs.runRemoteMethod(getClass(), og.internal().objects().key().getKey(this), mname, args);
+			val = rs.runRemoteMethod(getClass(), oa.internal().objects().key().getKey(this), mname, args);
 		}
 
 		return val;
@@ -3158,8 +3157,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *         {@code false} otherwise
 	 */
 	public boolean isUnique(String property, Object value) {
-        OAGraph og = OARuntime.graph(this);
-		OAObject obj = og.internal().objects().unique().getUnique(getClass(), property, value, false);
+        OA oa = OARuntime.oa(this);
+		OAObject obj = oa.internal().objects().unique().getUnique(getClass(), property, value, false);
 		return (obj != null);
 	}
 
@@ -3182,7 +3181,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 	public static OAObject getUniqueInstance(final Class<? extends OAObject> clazz, final String propertyName, final Object uniqueKey,
 			final boolean bAutoCreate) {
-        OAGraph g = OARuntime.graph(clazz);
+        OA g = OARuntime.oa(clazz);
 		OAObject obj = g.internal().objects().unique().getUnique(clazz, propertyName, uniqueKey, bAutoCreate);
 		return obj;
 	}
@@ -3208,8 +3207,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		if (srvcOARemoteThread.isRemoteThread()) {
 			return false;
 		}
-		final OAGraph og = OARuntime.graph(this);
-		return og.internal().sync().isClient();
+		final OA oa = OARuntime.oa(this);
+		return oa.internal().sync().isClient();
 	}
 
 
@@ -3233,8 +3232,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 			return false;
 		}
 		final Class clazz = hub.getObjectClass();
-		final OAGraph og = OARuntime.graph(clazz);
-		if (!og.internal().sync().isClient()) {
+		final OA oa = OARuntime.oa(clazz);
+		if (!oa.internal().sync().isClient()) {
 			return false;
 		}
 		return true;
@@ -3252,8 +3251,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return {@code true} if the property is loaded; {@code false} otherwise
 	 */
 	public boolean isLoaded(String prop) {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().property().isPropertyLoaded(this, prop);
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().property().isPropertyLoaded(this, prop);
 	}
 
 	/**
@@ -3268,8 +3267,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return {@code true} if the property is loaded; {@code false} otherwise
 	 */
 	public boolean isPropertyLoaded(String prop) {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().property().isPropertyLoaded(this, prop);
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().property().isPropertyLoaded(this, prop);
 	}
 
 	/**
@@ -3284,8 +3283,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return {@code true} if the reference is explicitly null; {@code false} otherwise
 	 */
 	public boolean isReferenceNull(String prop) {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().property().isReferenceNull(this, prop);
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().property().isReferenceNull(this, prop);
 	}
 
 	/**
@@ -3323,8 +3322,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *         {@code null} if the reference is not set or not an OA object
 	 */
 	public OAObjectKey getReferenceObjectKey(String prop) {
-		OAGraph og = OARuntime.graph(this);
-		Object obj = og.internal().objects().property().getProperty(this, prop);
+		OA oa = OARuntime.oa(this);
+		Object obj = oa.internal().objects().property().getProperty(this, prop);
 		if (obj instanceof OAObject) {
 			obj = ((OAObject) obj).getObjectKey();
 		}
@@ -3356,8 +3355,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		if (isLoading()) {
 			return false;
 		}
-		final OAGraph og = OARuntime.graph(this);
-		if (!og.internal().sync().isServer()) {
+		final OA oa = OARuntime.oa(this);
+		if (!oa.internal().sync().isServer()) {
 			return false;
 		}
 
@@ -3384,8 +3383,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		if (isLoading()) {
 			return;
 		}
-		final OAGraph og = OARuntime.graph(this);
-		if (!og.internal().sync().isServer()) {
+		final OA oa = OARuntime.oa(this);
+		if (!oa.internal().sync().isServer()) {
 			return;
 		}
 
@@ -3456,8 +3455,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return {@code true} if the property is locked; {@code false} otherwise
 	 */
 	public boolean isPropertyLocked(String prop) {
-		OAGraph og = OARuntime.graph(this);
-		boolean b = og.internal().objects().lock().isPropertyLocked(this, prop);
+		OA oa = OARuntime.oa(this);
+		boolean b = oa.internal().objects().lock().isPropertyLocked(this, prop);
 		return b;
 	}
 
@@ -3506,8 +3505,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 			LOG.log(Level.WARNING, "recursive, obj=" + this, new Exception(s));
 			return true;
 		}
-		OAGraph og = OARuntime.graph(this);
-		OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(this.getClass());
+		OA oa = OARuntime.oa(this);
+		OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(this.getClass());
 		OAPropertyInfo pi = oi.getSubmitProperty();
 		if (pi == null) {
 			// check owner (recursive)
@@ -3632,8 +3631,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 			return false;
 		}
 
-		OAGraph og = OARuntime.graph(this);
-		OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(this.getClass());
+		OA oa = OARuntime.oa(this);
+		OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(this.getClass());
 		final OAPropertyInfo pi = oi.getPropertyInfo(fkeyPropertyName);
 		if (pi != null) {
 			for (OALinkInfo li : oi.getLinkInfos()) {
@@ -3680,8 +3679,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	    final String linkName = linkInfo.getName();
 	    String linkToPropertyName = fi.getToPropertyInfo().getName();
 
-		OAGraph og = OARuntime.graph(this);
-        final Object oldValue = og.internal().objects().property().getProperty(this, linkName, false, true);
+		OA oa = OARuntime.oa(this);
+        final Object oldValue = oa.internal().objects().property().getProperty(this, linkName, false, true);
 		
 		if (newValue == null) {
 			if (oldValue == null) return false;
@@ -3747,11 +3746,11 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		}
 
 		if (isLoading()) {
-			og.internal().objects().property().setProperty(this, linkName, okNew);
+			oa.internal().objects().property().setProperty(this, linkName, okNew);
 	        return true;
 		}
 		
-		og.internal().objects().reflect().setProperty(this, linkName, okNew, null);
+		oa.internal().objects().reflect().setProperty(this, linkName, okNew, null);
 		return true;
 	}
 
@@ -3777,8 +3776,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *         metadata or link is found
 	 */
 	public Object getFkeyProperty(final String fkeyPropertyName) {
-		OAGraph og = OARuntime.graph(this);
-		OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(this.getClass());
+		OA oa = OARuntime.oa(this);
+		OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(this.getClass());
 		OAPropertyInfo pi = oi.getPropertyInfo(fkeyPropertyName);
 
 		if (pi != null) {
@@ -3832,9 +3831,9 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		    return null;
 		}
 
-		OAGraph og = OARuntime.graph(this);
-		OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(this.getClass());
-		OALinkInfo linkInfo = og.internal().objects().info().getLinkInfo(oi, linkName);
+		OA oa = OARuntime.oa(this);
+		OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(this.getClass());
+		OALinkInfo linkInfo = oa.internal().objects().info().getLinkInfo(oi, linkName);
 		if (linkInfo == null) {
 			// throw new RuntimeException("linkName not found, link=" + linkName);
             return null;
@@ -3866,7 +3865,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 			}
 		}
 
-		Object obj = og.internal().objects().property().getProperty(this, linkName);
+		Object obj = oa.internal().objects().property().getProperty(this, linkName);
 
 		if (obj instanceof OAObject) {
 			obj = ((OAObject) obj).getObjectKey();
@@ -3900,10 +3899,10 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	public void refresh() {
 		if (isNew()) return;
 
-		final OAGraph og = OARuntime.graph(this);
-		OASyncClient sc = og.internal().sync().getClient();
+		final OA oa = OARuntime.oa(this);
+		OASyncClient sc = oa.internal().sync().getClient();
 		if (sc != null) {
-			og.internal().sync().callRemoteClientRefresh(getClass(), getObjectKey());
+			oa.internal().sync().callRemoteClientRefresh(getClass(), getObjectKey());
 			return;
 		}
 		
@@ -3912,7 +3911,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 			return;
 		}
 
-		OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(this.getClass());
+		OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(this.getClass());
 		Object objx = ds.getObject(oi, getClass(), getObjectKey(), true);
 
 		if (objx == null) {
@@ -3936,20 +3935,20 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 	public void refresh(String linkPropertyName) {
 
-		final OAGraph og = OARuntime.graph(this);
-		OASyncClient sc = og.internal().sync().getClient();
+		final OA oa = OARuntime.oa(this);
+		OASyncClient sc = oa.internal().sync().getClient();
 		if (sc != null) {
-			og.internal().sync().callRemoteClientRefresh(getClass(), getObjectKey(), linkPropertyName);
+			oa.internal().sync().callRemoteClientRefresh(getClass(), getObjectKey(), linkPropertyName);
 			return;
 		}
 
-		OAObjectInfo oi =  og.internal().objects().info().getOAObjectInfo(this.getClass());
+		OAObjectInfo oi =  oa.internal().objects().info().getOAObjectInfo(this.getClass());
 		OALinkInfo li = oi.getLinkInfo(linkPropertyName);
 		if (li == null) {
 			return;
 		}
 
-		Object objx = og.internal().objects().property().getProperty(this, linkPropertyName);
+		Object objx = oa.internal().objects().property().getProperty(this, linkPropertyName);
 		if (li.getType() == li.TYPE_ONE) {
 			if (objx instanceof OAObject) {
 				((OAObject) objx).refresh();
@@ -4019,8 +4018,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return a Hub of enumeration values, or {@code null} if the property has no enum metadata
 	 */
 	public Hub<VEnum> getNameValues(String propertyName) {
-		OAGraph og = OARuntime.graph(this);
-		return og.internal().objects().enumx().getVEnums(this.getClass(), propertyName);
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().enumx().getVEnums(this.getClass(), propertyName);
 	}
 
 	
@@ -4100,8 +4099,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		return friendAccess;
 	}
 
-	public OAGraph getGraph() {
-		return OARuntime.graph(this);
+	public OA getOA() {
+		return OARuntime.oa(this);
 	}
 	
 }

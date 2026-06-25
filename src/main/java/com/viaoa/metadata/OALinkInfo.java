@@ -21,11 +21,11 @@ import java.util.List;
 
 import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAOne;
-import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.service.object.OAObjectInfoService;
-import com.viaoa.graph.service.object.OAObjectPropertyService;
-import com.viaoa.graph.service.object.OAObjectReflectService;
 import com.viaoa.lang.OAString;
+import com.viaoa.oa.OA;
+import com.viaoa.oa.service.object.OAObjectInfoService;
+import com.viaoa.oa.service.object.OAObjectPropertyService;
+import com.viaoa.oa.service.object.OAObjectReflectService;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 
@@ -891,8 +891,8 @@ public class OALinkInfo { //implements java.io.Serializable {
 	 */
 	public Object getValue(Object obj) {
 		if (!(obj instanceof OAObject)) return null;
-		final OAGraph og = OARuntime.graph((OAObject) obj);
-		return og.internal().objects().reflect().getProperty((OAObject) obj, name);
+		final OA oa = OARuntime.oa((OAObject) obj);
+		return oa.internal().objects().reflect().getProperty((OAObject) obj, name);
 	}
 
 	/**
@@ -908,8 +908,8 @@ public class OALinkInfo { //implements java.io.Serializable {
 			return true;
 		}
 		OAObject oaObj = (OAObject) obj;
-		final OAGraph og = OARuntime.graph(oaObj);
-		return og.internal().objects().property().isPropertyLoaded(oaObj, name);
+		final OA oa = OARuntime.oa(oaObj);
+		return oa.internal().objects().property().isPropertyLoaded(oaObj, name);
 	}
 
 	/**
@@ -925,8 +925,8 @@ public class OALinkInfo { //implements java.io.Serializable {
 			return false;
 		}
 		OAObject oaObj = (OAObject) obj;
-		final OAGraph og = OARuntime.graph(oaObj);
-		return og.internal().objects().lock().isPropertyLocked(oaObj, name);
+		final OA oa = OARuntime.oa(oaObj);
+		return oa.internal().objects().lock().isPropertyLocked(oaObj, name);
 	}
 
 	/**
@@ -1054,8 +1054,8 @@ public class OALinkInfo { //implements java.io.Serializable {
 			return null;
 		}
 
-		final OAGraph og = OARuntime.graph(toClass);
-		uniquePropertyGetMethod = og.internal().objects().info().getMethod(getToObjectInfo(), "get" + uniqueProperty);
+		final OA oa = OARuntime.oa(toClass);
+		uniquePropertyGetMethod = oa.internal().objects().info().getMethod(getToObjectInfo(), "get" + uniqueProperty);
 		return uniquePropertyGetMethod;
 	}
 
@@ -1117,8 +1117,8 @@ public class OALinkInfo { //implements java.io.Serializable {
 	 */
 	public OAObjectInfo getToObjectInfo() {
 		if (oiTo == null) {
-			final OAGraph og = OARuntime.graph(toClass);
-			oiTo = og.internal().objects().info().getOAObjectInfo(toClass);
+			final OA oa = OARuntime.oa(toClass);
+			oiTo = oa.internal().objects().info().getOAObjectInfo(toClass);
 		}
 		return oiTo;
 	}

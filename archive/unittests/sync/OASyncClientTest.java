@@ -20,8 +20,8 @@ import com.viaoa.datasource.clientserver.OADataSourceClient;
 import com.viaoa.datetime.OATime;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraph;
+import com.viaoa.graph.OA;
+import com.viaoa.graph.OA;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListenerAdapter;
@@ -577,7 +577,7 @@ public class OASyncClientTest extends OAUnitTest {
 		}
 	}
 	
-	private OAGraph og;
+	private OA og;
 	private OADataSourceClient dsClient;
 
 	

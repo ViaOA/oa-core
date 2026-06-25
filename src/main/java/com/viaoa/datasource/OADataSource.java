@@ -18,8 +18,8 @@ package com.viaoa.datasource;
 import java.util.List;
 
 import com.viaoa.filter.OAFilter;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
@@ -156,29 +156,29 @@ public abstract class OADataSource implements OADataSourceInterface {
 	 * @return matching object or null
 	 */
 	public <T extends OAObject> T getObject(Class<T> clazz, String id) {
-		final OAGraph og = OARuntime.graph(clazz);
-		OAObjectKey key = og.internal().objects().key().createObjectKey(clazz, (Object) id);
+		final OA oa = OARuntime.oa(clazz);
+		OAObjectKey key = oa.internal().objects().key().createObjectKey(clazz, (Object) id);
 		return getObject(clazz, key);
 	}
 
 	/** Retrieves an object using an int ID value. */
 	public <T extends OAObject> T getObject(Class<T> clazz, int id) {
-		final OAGraph og = OARuntime.graph(clazz);
-		OAObjectKey key = og.internal().objects().key().createObjectKey(clazz, (Object) id);
+		final OA oa = OARuntime.oa(clazz);
+		OAObjectKey key = oa.internal().objects().key().createObjectKey(clazz, (Object) id);
 		return getObject(clazz, key);
 	}
 
 	/** Retrieves an object using a long ID value. */
 	public <T extends OAObject> T getObject(Class<T> clazz, long id) {
-		final OAGraph og = OARuntime.graph(clazz);
-		OAObjectKey key = og.internal().objects().key().createObjectKey(clazz, (Object) id);
+		final OA oa = OARuntime.oa(clazz);
+		OAObjectKey key = oa.internal().objects().key().createObjectKey(clazz, (Object) id);
 		return getObject(clazz, key);
 	}
 
 	/** Retrieves an object using an arbitrary ID value. */
 	public <T extends OAObject> T getObject(Class<T> clazz, Object id) {
-		final OAGraph og = OARuntime.graph(clazz);
-		OAObjectKey key = og.internal().objects().key().createObjectKey(clazz, id);
+		final OA oa = OARuntime.oa(clazz);
+		OAObjectKey key = oa.internal().objects().key().createObjectKey(clazz, id);
 		return getObject(clazz, key);
 	}
 
@@ -202,8 +202,8 @@ public abstract class OADataSource implements OADataSourceInterface {
 		if (clazz == null || key == null) {
 			return null;
 		}
-		final OAGraph og = OARuntime.graph(clazz);
-		OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(clazz);
+		final OA oa = OARuntime.oa(clazz);
+		OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(clazz);
 		return getObject(oi, clazz, key, false);
 	}
 	

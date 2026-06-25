@@ -6,9 +6,9 @@ import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.template.OATemplate;
 import com.viaoa.datetime.OADateTime;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.oa.OA;
 
 public class ReportDelegate {
 
@@ -17,10 +17,10 @@ public class ReportDelegate {
      */
     public static ReportClass getCalcReportClass(Report report) {
         if (report == null) return null;
-    	OAGraph og = OARuntime.graph(Report.class);
+    	OA oa = OARuntime.oa(Report.class);
         
         ReportClass rc = null; 
-        final OAObjectInfo oi = og.info(Report.class);
+        final OAObjectInfo oi = oa.info(Report.class);
         for (OALinkInfo li : oi.getLinkInfos()) {
             if (li.getType() != OALinkInfo.TYPE_ONE) continue;
             if (!li.getOneAndOnlyOne()) continue;
@@ -34,7 +34,7 @@ public class ReportDelegate {
 
     public static void generate(Report report) throws Exception {
         if (report == null) return;
-    	OAGraph og = OARuntime.graph(Report.class);
+    	OA oa = OARuntime.oa(Report.class);
         
         ReportDef rd = report.getReportDef();
         if (rd == null) return;
@@ -44,7 +44,7 @@ public class ReportDelegate {
         ot.setTemplate(oapos);
         
         OAObject ref = null;
-        final OAObjectInfo oi = og.info(Report.class);
+        final OAObjectInfo oi = oa.info(Report.class);
         for (OALinkInfo li : oi.getLinkInfos()) {
             if (li.getType() != OALinkInfo.TYPE_ONE) continue;
             if (!li.getOneAndOnlyOne()) continue;

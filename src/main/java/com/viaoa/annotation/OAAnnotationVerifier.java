@@ -21,13 +21,13 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAArray;
 import com.viaoa.metadata.OACalcInfo;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.metadata.OAPropertyInfo;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.text.OATextCode;
@@ -152,7 +152,7 @@ public class OAAnnotationVerifier {
 	 */
 	public boolean verify(OAObjectInfo oi) throws Exception {
 		final Class clazz = oi.getForClass();
-		final OAGraph og = OARuntime.graph(clazz);
+		final OA oa = OARuntime.oa(clazz);
 
 		String s;
 
@@ -279,7 +279,7 @@ public class OAAnnotationVerifier {
 
 			String name = OATextCode.getPropertyName(m.getName());
 
-			OACalcInfo ci = og.internal().objects().info().getCalcInfo(oi, name);
+			OACalcInfo ci = oa.internal().objects().info().getCalcInfo(oi, name);
 
 			if (ci == null) {
 				p("calcinfo not in objectInfo");
@@ -344,7 +344,7 @@ public class OAAnnotationVerifier {
 
 			String name = OATextCode.getPropertyName(m.getName());
 
-			OALinkInfo li = og.internal().objects().info().getLinkInfo(oi, name);
+			OALinkInfo li = oa.internal().objects().info().getLinkInfo(oi, name);
 			if (li == null) {
 				p("link does not exist");
 				bResult = false;
@@ -401,7 +401,7 @@ public class OAAnnotationVerifier {
 			}
 
 			String name = OATextCode.getPropertyName(m.getName());
-			OALinkInfo li = og.internal().objects().info().getLinkInfo(oi, name);
+			OALinkInfo li = oa.internal().objects().info().getLinkInfo(oi, name);
 			if (li == null) {
 				p("link does not exist");
 				bResult = false;

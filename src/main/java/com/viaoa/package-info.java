@@ -148,7 +148,7 @@ Contract statement:
 The root com.viaoa package defines OA as a metadata-driven executable Object Graph runtime platform; child packages
 own subsystem-specific mechanics, but their public behavior must remain consistent with the root platform contract.
 Rationale:
-The root package is the top-level semantic boundary for OA 4.0/OAGraph and should describe platform-wide authority
+The root package is the top-level semantic boundary for OA 4.0/OA and should describe platform-wide authority
 without duplicating object, hub, graph, datasource, sync, or other subsystem invariants.
 Source scope:
 com.viaoa package-info.java.

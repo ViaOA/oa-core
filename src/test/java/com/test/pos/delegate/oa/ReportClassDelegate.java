@@ -5,10 +5,10 @@ import java.util.*;
 
 import com.test.pos.delegate.ModelDelegate;
 import com.test.pos.model.oa.*;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.oa.OA;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
 
@@ -18,9 +18,9 @@ public class ReportClassDelegate {
     private static final Map<Class, ReportClass> hmClassReport = new HashMap<>();
     
     public static void createReportClasses() {
-    	OAGraph og = OARuntime.graph(Report.class);
+    	OA oa = OARuntime.oa(Report.class);
     	
-        final OAObjectInfo oi = og.info(Report.class);
+        final OAObjectInfo oi = oa.info(Report.class);
         
         final Hub<ReportClass> hub = ModelDelegate.getReportClasses();
         
@@ -34,7 +34,7 @@ public class ReportClassDelegate {
             
             ReportClass rc = hub.find(ReportClass.P_ClassName, cn);
             if (rc == null) {
-                OAObjectInfo oiz = og.info(cz);
+                OAObjectInfo oiz = oa.info(cz);
                 rc = new ReportClass();
                 rc.setName(oiz.getDisplayName());
                 rc.setClassName(cn);

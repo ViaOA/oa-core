@@ -18,8 +18,8 @@ package com.viaoa.cache;
 import java.lang.ref.WeakReference;
 
 import com.viaoa.callback.OACallback;
-import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 
@@ -70,12 +70,12 @@ public class OAObjectCacheHubAdder<T extends OAObject> implements OAObjectCacheL
         clazz = hub.getObjectClass();
         wfHub = new WeakReference(hub);
 
-		final OAGraph og = OARuntime.graph(clazz);
+		final OA oa = OARuntime.oa(clazz);
                 
-		og.internal().objects().cache().addListener(clazz, this);
+		oa.internal().objects().cache().addListener(clazz, this);
         
         // need to get objects that are already loaded 
-		og.internal().objects().cache().callback(clazz, new OACallback() {
+		oa.internal().objects().cache().callback(clazz, new OACallback() {
             @Override
             public boolean updateObject(Object obj) {
                 Hub<T> h = wfHub.get();
@@ -104,8 +104,8 @@ public class OAObjectCacheHubAdder<T extends OAObject> implements OAObjectCacheL
     public void close() {
     	if (bClosed) return;
     	bClosed = true;
-		final OAGraph og = OARuntime.graph(clazz);
-		og.internal().objects().cache().removeListener(clazz, this);
+		final OA oa = OARuntime.oa(clazz);
+		oa.internal().objects().cache().removeListener(clazz, this);
     }
 
     /**

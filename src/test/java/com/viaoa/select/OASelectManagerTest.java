@@ -13,20 +13,20 @@ import org.junit.jupiter.api.Test;
 
 import com.test.pos.model.oa.Item;
 import com.test.pos.model.oa.Register;
-import com.viaoa.graph.OAGraph;
+import com.viaoa.oa.OA;
 import com.viaoa.runtime.OARuntime;
 
 class OASelectManagerTest {
 
     @BeforeEach
     void beforeEach() {
-        OAGraph og = OARuntime.graph(Register.class);
+        OA oa = OARuntime.oa(Register.class);
         trackedSelects().clear();
         OASelectManager.setTimeLimit(300);
     }
     @AfterEach
     void afterEach() {
-        OARuntime.graph(Register.class).close();
+        OARuntime.oa(Register.class).close();
     }
    
     

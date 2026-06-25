@@ -9,6 +9,7 @@ import com.test.pos.model.oa.Register;
 import com.test.pos.model.oa.RegisterSession;
 import com.test.pos.model.oa.Store;
 import com.viaoa.hub.Hub;
+import com.viaoa.oa.sibling.OASiblingHelper;
 
 class OASiblingHelperTest {
     @Test
