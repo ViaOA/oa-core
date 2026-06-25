@@ -1,7 +1,7 @@
 package com.viaoa.oa.api.internal;
 
 
-public interface GraphInternalOps {
+public interface InternalOps {
 
 	public ObjectsOps objects();
 

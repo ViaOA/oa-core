@@ -5,8 +5,8 @@ import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubListener;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.oa.api.*;
-import com.viaoa.oa.api.internal.GraphInternalOps;
-import com.viaoa.oa.api.services.GraphServicesOps;
+import com.viaoa.oa.api.internal.InternalOps;
+import com.viaoa.oa.api.services.ServicesOps;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.select.OASelect;
@@ -517,9 +517,9 @@ public interface OA {
      *
      * @return the advanced public service facade for this graph
      */
-    GraphServicesOps services();
+    ServicesOps services();
 
-	GraphInternalOps internal();
+	InternalOps internal();
     
     void close();
 }

@@ -1,6 +1,6 @@
 package com.viaoa.oa.api.services;
 
-public interface GraphServicesOps {
+public interface ServicesOps {
 
 	public ObjectsOps objects();
 

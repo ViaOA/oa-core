@@ -9,13 +9,13 @@ import com.viaoa.hub.HubListener;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.oa.api.ReplicationOps;
 import com.viaoa.oa.api.SyncOps;
-import com.viaoa.oa.api.internal.GraphInternalOps;
-import com.viaoa.oa.api.services.GraphServicesOps;
-import com.viaoa.oa.internal.facade.GraphInternalOpsImpl;
+import com.viaoa.oa.api.internal.InternalOps;
+import com.viaoa.oa.api.services.ServicesOps;
+import com.viaoa.oa.internal.facade.InternalOpsImpl;
 import com.viaoa.oa.service.OAReplicationService;
 import com.viaoa.oa.service.OASyncService;
 import com.viaoa.oa.service.OATriggerService;
-import com.viaoa.oa.service.facade.GraphServicesOpsImpl;
+import com.viaoa.oa.service.facade.ServicesOpsImpl;
 import com.viaoa.oa.service.hub.HubParentService;
 import com.viaoa.oa.service.object.OAObjectParentService;
 import com.viaoa.object.OAObject;
@@ -113,8 +113,8 @@ public class OAImpl implements OA {
 	private String packageName;
 	private volatile boolean bInit;
 
-    private GraphServicesOps srvcServices;
-    private GraphInternalOps srvcInternal;
+    private ServicesOps srvcServices;
+    private InternalOps srvcInternal;
 	
     private OASyncService srvcOASyncInternal;
     private OAReplicationService srvcOAReplicationInternal;
@@ -158,13 +158,13 @@ public class OAImpl implements OA {
 		srvcHubParent.initialize(srvcObjectParent, srvcOASyncInternal, OARuntime.thread().getThreadLocalService(), OARuntime.thread().getRemoteThreadService());
 	    
 		
-	    srvcServices = new GraphServicesOpsImpl(
+	    srvcServices = new ServicesOpsImpl(
 			new com.viaoa.oa.service.facade.HubsOpsImpl(srvcHubParent),
 			new com.viaoa.oa.service.facade.ObjectsOpsImpl(srvcObjectParent),
 			new com.viaoa.oa.service.facade.TriggersOpsImpl(srvcOATrigger)
 		);
 
-	    srvcInternal = new GraphInternalOpsImpl(
+	    srvcInternal = new InternalOpsImpl(
 			new com.viaoa.oa.internal.facade.HubsOpsImpl(srvcHubParent),
 			new com.viaoa.oa.internal.facade.ObjectsOpsImpl(srvcObjectParent),
 			new com.viaoa.oa.internal.facade.TriggersOpsImpl(srvcOATrigger), 
@@ -307,12 +307,12 @@ public class OAImpl implements OA {
 	}
 
 	@Override
-	public GraphServicesOps services() {
+	public ServicesOps services() {
 		return srvcServices;
 	}
 
 	@Override
-	public GraphInternalOps internal() {
+	public InternalOps internal() {
 		return srvcInternal;
 	}
 
