@@ -241,6 +241,11 @@ public class HubsOpsImpl implements HubsOps {
 			public String getPropertyFromDetailToMaster(Hub<?> hub) {
 				return srvc.getHubDetailService().getPropertyFromDetailToMaster(hub);
 			}
+
+			@Override
+			public boolean getIsFromSameMasterHub(Hub<?> hub1, Hub<?> hub2) {
+				return srvc.getHubDetailService().getIsFromSameMasterHub(hub1, hub2);
+			}
 		};
 		return opsDetail;
 	}
@@ -886,6 +891,11 @@ public class HubsOpsImpl implements HubsOps {
 			public void saveAll(Hub<?> hub, int cascadeRule) {
 				srvc.getHubSaveService().saveAll(hub, cascadeRule);
 			}
+
+			@Override
+			public void saveAll(Hub<?> thisHub, int iCascadeRule, OACascade cascade) {
+				srvc.getHubSaveService().saveAll(thisHub, iCascadeRule, cascade);
+			}
 		};
 		return opsSave;
 	}
@@ -990,6 +1000,11 @@ public class HubsOpsImpl implements HubsOps {
 			@Override
 			public void cancelSelect(Hub<?> hub, boolean bRemoveSelect) {
 				srvc.getHubSelectService().cancelSelect(hub, bRemoveSelect);
+			}
+
+			@Override
+			public boolean adoptWhereHub(Hub<?> thisHub, String propName, Hub<?> hubFrom) {
+				return srvc.getHubSelectService().adoptWhereHub(thisHub, propName, hubFrom);
 			}
 		};
 		return opsSelect;

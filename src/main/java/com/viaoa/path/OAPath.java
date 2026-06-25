@@ -26,7 +26,7 @@ import com.viaoa.annotation.OAProperty;
 import com.viaoa.converter.OAConv;
 import com.viaoa.converter.OAConverter;
 import com.viaoa.filter.OAFilter;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.filter.CustomHubFilter;
 import com.viaoa.lang.OAArray;
@@ -349,7 +349,7 @@ public class OAPath<TYPE extends OAObject> {
 		String pp = "";
 		for (int i = 0; i < linkInfos.length; i++) {
 			OALinkInfo li = linkInfos[i];
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(li.getToClass());
+			final OAGraph og = OARuntime.graph(li.getToClass());
 			OALinkInfo liRev = og.internal().objects().info().getReverseLinkInfo(li);
 			if (liRev == null) return null;
 			if (!bAllowPrivateLinks && liRev.getPrivateMethod()) {
@@ -1041,7 +1041,7 @@ Severity: critical
 				clazz = substituteClass;
 			}
 
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+			final OAGraph og = OARuntime.graph(clazz);
 			OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(clazz);
 			final OALinkInfo li = og.internal().objects().info().getLinkInfo(oi, propertyName);
 			if (li != null) {
@@ -1303,7 +1303,7 @@ Severity: critical
 				if (li == null || !li.getRecursive()) {
 					continue;
 				}
-				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(li.getToClass());
+				final OAGraph og = OARuntime.graph(li.getToClass());
 				OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(li.getToClass());
 
 				OALinkInfo lix;

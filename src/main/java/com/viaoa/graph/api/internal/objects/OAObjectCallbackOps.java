@@ -3,6 +3,7 @@ package com.viaoa.graph.api.internal.objects;
 import com.viaoa.callback.OAObjectCallback;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.listener.HubChangeListener;
+import com.viaoa.metadata.OAObjectModel;
 import com.viaoa.object.OAObject;
 
 public interface OAObjectCallbackOps {
@@ -44,6 +45,7 @@ public interface OAObjectCallbackOps {
 	public <T extends OAObject> boolean getAllowAdd(Hub<T> hub, T obj, int checkType);
 	public <T extends OAObject> boolean getAllowRemove(Hub<T> hub, T obj, int checkType);
 	public <T extends OAObject> boolean getVerifyRemove(Hub<T> hub, T obj, int checkType);
+	public void onObjectCallbackModel(Class<? extends OAObject> clazz, String property, OAObjectModel model);
 }
 
 

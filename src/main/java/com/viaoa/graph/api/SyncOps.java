@@ -1,6 +1,7 @@
 package com.viaoa.graph.api;
 
-
+import com.viaoa.sync.OASyncClient;
+import com.viaoa.sync.OASyncServer;
 
 /*qqqqqqq
 CODEX
@@ -49,6 +50,8 @@ public interface SyncOps {
 	  */
 	 void createServer(int port);
 
+	 void createServer(OASyncServer ss);
+	 
 	 /**
 	  * Configures this graph to operate as a synchronization client.
 	  * <p>
@@ -66,6 +69,8 @@ public interface SyncOps {
 	  * @param serverPort the server port to connect to
 	  */
 	void createClient(String hostName, int serverPort);
+	
+	void createClient(OASyncClient sc);
 	
 	/**
 	 * Starts real-time synchronization for the configured role.
@@ -134,5 +139,7 @@ public interface SyncOps {
 	 * @return {@code true} if synchronization is running; otherwise {@code false}
 	 */
 	boolean isRunning();
+	
+	public int getConnectionId();
 }
 

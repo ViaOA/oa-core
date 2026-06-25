@@ -26,5 +26,5 @@ public interface HubSelectOps {
 	public void refresh(Hub<?> hub);
 	public <T extends OAObject> Hub<T> getSelectWhereHub(Hub<T> hub);
 	public String getSelectWhereHubPropertyPath(Hub<?> hub);
-
+	public boolean adoptWhereHub(final Hub<?> thisHub, final String propName, final Hub<?> hubFrom);
 }

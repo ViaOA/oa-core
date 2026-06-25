@@ -54,6 +54,7 @@ public interface HubDetailOps {
 	public <T extends OAObject> Hub<T> getRealHub(Hub<T> hub);
 	public String getPropertyFromMasterToDetail(Hub<?> hub);
 	public String getPropertyFromDetailToMaster(Hub<?> hub);
+	public boolean getIsFromSameMasterHub(Hub<?> hub1, Hub<?> hub2);
 //remove, in Link.	public OALinkInfo getLinkInfoFromMasterToDetail(Hub<?> hub);
 
 }

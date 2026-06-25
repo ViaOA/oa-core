@@ -21,7 +21,7 @@ import com.viaoa.filter.OAEmptyFilter;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.filter.OANotEmptyFilter;
 import com.viaoa.filter.OANotNullFilter;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.metadata.OAPropertyInfo;
@@ -249,7 +249,7 @@ public class OAHierFinder<F extends OAObject> {
     private boolean findFirstValue(final OAObject obj, OAFilter filter, final int pos, final boolean bRecursiveCheckOnly, final int cntRecursive) {
         if (obj == null) return false;
         
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
+		final OAGraph og = OARuntime.graph(obj);
         boolean b = true;
         if (pos == 0) {
             if (!bIncludeFromObject) {

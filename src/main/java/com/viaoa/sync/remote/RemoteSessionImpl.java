@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import com.viaoa.cascade.OACascade;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.model.ClientInfo;
@@ -218,7 +218,7 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	        hmObjectsWithoutHubs.remove(ok.getGuid());
 	    }
 	    else {
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
+			final OAGraph og = OARuntime.graph(c);
     	    OAObject obj = (OAObject) og.internal().objects().cache().get(c, ok);
     	    if (obj != null) {
                 UUID guid = ok.getGuid();
@@ -242,7 +242,7 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 		for (Map.Entry<UUID, OAObject> entry : hmObjectsWithoutHubs.entrySet()) {
 			OAObject obj = entry.getValue();
 			if (!obj.wasDeleted()) {
-				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
+				final OAGraph og = OARuntime.graph(obj);
 				og.internal().objects().save().save(obj, iCascadeRule, cascade);
 			}
 		}
@@ -268,7 +268,7 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	 */
 	@Override
 	public boolean setLock(Class objectClass, OAObjectKey objectKey, boolean bLock) {
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
+		final OAGraph og = OARuntime.graph(objectClass);
 		OAObject obj = (OAObject) og.internal().objects().cache().get(objectClass, objectKey);
 		if (obj == null) {
 			return false;
@@ -312,7 +312,7 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	 * @return the newly created object
 	 */
 	public OAObject createNewObject(Class clazz) {
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+		final OAGraph og = OARuntime.graph(clazz);
 		OAObject obj = (OAObject) og.internal().objects().reflect().createNewObject(clazz);
         objectCreated(obj.getGuid());
 		updateObjectsWithoutHubs(clazz, obj.getObjectKey(),  false);
@@ -328,7 +328,7 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	 */
 	@Override
 	public boolean isLockedByThisClient(Class objectClass, OAObjectKey objectKey) {
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
+		final OAGraph og = OARuntime.graph(objectClass);
 		Object obj = og.internal().objects().cache().get(objectClass, objectKey);
 		if (obj == null) {
 			return false;

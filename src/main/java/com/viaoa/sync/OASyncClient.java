@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 import com.viaoa.comm.multiplexer.OAMultiplexerClient;
 import com.viaoa.datasource.clientserver.OADataSourceClient;
 import com.viaoa.datetime.OADateTime;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.log.OALogUtil;
 import com.viaoa.metadata.OALinkInfo;
@@ -543,7 +543,7 @@ public abstract class OASyncClient {
 				// this will "ask" for additional data "around" the requested property
 				bGetSibs = true;
 				// send siblings to return back with same prop
-				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(masterObject);
+				final OAGraph og = OARuntime.graph(masterObject);
 				li = og.internal().objects().info().getLinkInfo(masterObject.getClass(), propertyName);
 
 				int max;
@@ -618,7 +618,7 @@ public abstract class OASyncClient {
 						continue;
 					}
 
-					final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(masterObject);
+					final OAGraph og = OARuntime.graph(masterObject);
 					OAObject obj = og.internal().objects().cache().getObject(masterObject.getClass(), entry.getKey());
 					if (obj == null) {
 						continue;
@@ -646,7 +646,7 @@ public abstract class OASyncClient {
 		if (result instanceof Hub) {
 			Hub hub = (Hub) result;
 			
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(masterObject);
+			final OAGraph og = OARuntime.graph(masterObject);
 			if (li == null) {
 				li = og.internal().objects().info().getLinkInfo(masterObject.getClass(), propertyName);
 			}
@@ -1126,7 +1126,7 @@ public abstract class OASyncClient {
     public void objectCreated(OAObject obj) {
         if (obj == null) return;
         UUID guid = obj.getGuid();
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
+		final OAGraph og = OARuntime.graph(obj);
         if (og.internal().objects().info().getOAObjectInfo(obj).getLocalOnly()) return;
         
         hmNewObjectsNotYetSent.put(guid, 0L);
@@ -1259,7 +1259,7 @@ public abstract class OASyncClient {
 		if (obj == null) return;
         final UUID guid = obj.getGuid();
         
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
+		final OAGraph og = OARuntime.graph(obj);
         if (og.internal().objects().info().getOAObjectInfo(obj).getLocalOnly()) return;
 	    
         final boolean b = og.internal().objects().hub().isInHubWithMaster(obj);
@@ -1307,7 +1307,7 @@ public abstract class OASyncClient {
 							rsi = OASyncClient.this.getRemoteSession();
 						}
 						if (rsi != null) {
-							final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
+							final OAGraph og = OARuntime.graph(obj);
 						    boolean b = og.internal().objects().hub().isInHubWithMaster(obj);
 						    rsi.updateObjectsWithoutHubs(obj.getClass(), obj.getObjectKey(), b);
 						}

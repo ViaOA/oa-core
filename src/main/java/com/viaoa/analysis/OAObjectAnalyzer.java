@@ -18,7 +18,7 @@ package com.viaoa.analysis;
 import java.util.HashSet;
 
 import com.viaoa.callback.OACallback;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
@@ -111,10 +111,10 @@ public class OAObjectAnalyzer {
      * maintained for summary inspection.</p>
      */
     public void load() {
-		OAGraphInternal ogx = (OAGraphInternal) OARuntime.graph();
+		OAGraph ogx = OARuntime.graph();
     	
         for (Class cs : ogx.internal().objects().cache().getClasses()) {
-        	OAGraphInternal og = (OAGraphInternal) OARuntime.graph(cs);
+        	OAGraph og = OARuntime.graph(cs);
 
     		System.out.println("Starting class="+cs.getSimpleName()+", total="+og.internal().objects().cache().getTotal(cs));
             

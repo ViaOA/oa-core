@@ -15,7 +15,8 @@
  */
 package com.viaoa.hub.detail;
 
-import com.viaoa.graph.api.internal.OAGraphInternal;
+
+import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.service.object.OAObjectReflectService;
 import com.viaoa.hub.Hub;
@@ -221,7 +222,7 @@ public class HubDetail implements java.io.Serializable {
         if (hubDetail == null) return;
         if (liMasterToDetail == null) return;
         
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubDetail.getOAObjectInfo().getForClass());
+		final OAGraph og = OARuntime.graph(hubDetail.getOAObjectInfo().getForClass());
         final OALinkInfo liRecursive = og.internal().objects().info().getRecursiveLinkInfo(hubDetail.getOAObjectInfo(), OALinkInfo.ONE);
         if (liRecursive == null) return;
         if (liRecursive == liMasterToDetail) return;
@@ -241,7 +242,7 @@ public class HubDetail implements java.io.Serializable {
 
                 Object parent = null;
                 for (;;) {
-            		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj.getClass());
+            		final OAGraph og = OARuntime.graph(obj.getClass());
                     Object objx = og.internal().objects().reflect().getProperty((OAObject)obj, liDetailToMaster.getName());
                     if (objx == null) break;
                     parent = objx;

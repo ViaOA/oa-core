@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.datasource.clientserver.OADataSourceClient;
 import com.viaoa.filter.OAFilter;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
@@ -478,7 +478,7 @@ public abstract class RemoteDataSource {
 			if (ds != null) {
 				OAObject oa = (OAObject) whereObject;
 				ds.insertWithoutReferences((OAObject) oa);
-				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+				final OAGraph og = OARuntime.graph(clazz);
 				og.internal().objects().state().setNew(oa, false);
 			}
 			break;
@@ -515,7 +515,7 @@ public abstract class RemoteDataSource {
 			return (OAObject) obj;
 		}
 
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objectClass);
+		final OAGraph og = OARuntime.graph(objectClass);
 		
 		OAObjectKey key = og.internal().objects().key().createObjectKey(objectClass, obj);
 

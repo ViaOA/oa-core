@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 import com.viaoa.callback.OAObjectSerializerCallback;
 import com.viaoa.compare.match.OAMatchNotExist;
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
@@ -225,7 +225,7 @@ public class ClientGetDetail {
 		}
 		final long msStart = System.currentTimeMillis();
 
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(masterClass);
+		final OAGraph og = OARuntime.graph(masterClass);
 		OAObject masterObject = og.internal().objects().reflect().getObject(masterClass, masterObjectKey);
 		if (masterObject == null) {
 			// get from datasource
@@ -377,14 +377,14 @@ public class ClientGetDetail {
 				if (wasFullySentToClient(obj)) {
 					continue;
 				}
-				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) obj);
+				final OAGraph og = OARuntime.graph((OAObject) obj);
 				if (og.internal().objects().reflect().areAllReferencesLoaded((OAObject) obj, false)) {
 					continue;
 				}
 				og.internal().objects().reflect().loadAllReferences((OAObject) obj, 1, 0, false, 2, msStart + 40);
 			}
 		} else if ((detailObject instanceof OAObject) && !wasFullySentToClient(detailObject)) {
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) detailObject);
+			final OAGraph og = OARuntime.graph((OAObject) detailObject);
 			og.internal().objects().reflect().loadAllReferences((OAObject) detailObject, 1, 0, false, 5, msStart + 40);
 		}
 
@@ -395,7 +395,7 @@ public class ClientGetDetail {
 			Class clazz = masterObject.getClass();
 			boolean bLoad = true;
 			
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+			final OAGraph og = OARuntime.graph(clazz);
 
 			for (OAObjectKey key : siblingKeys) {
 				OAObject obj = (OAObject) og.internal().objects().cache().get(clazz, key);
@@ -415,7 +415,7 @@ public class ClientGetDetail {
 				}
 
 				if (bLoad) {
-					// final OAGraphInternal og2 = (OAGraphInternal) OARuntime.graph(obj);
+					// final OAGraph og2 = OARuntime.graph(obj);
 					value = og.internal().objects().reflect().getProperty(obj, propFromMaster); // load from DS
 				} else if (value instanceof OAObjectKey) {
 					continue;
@@ -509,7 +509,7 @@ public class ClientGetDetail {
 
 			@Override
 			public void afterSerialize(OAObject obj) {
-				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
+				final OAGraph og = OARuntime.graph(obj);
 				UUID guid = og.internal().objects().key().getKey(obj).getGuid();
 				boolean bx = hsSendingGuid.remove(guid);
 				// update tree of sent objects
@@ -533,7 +533,7 @@ public class ClientGetDetail {
 
 					if (masterProperties == null || masterProperties.length == 0) {
 						if (!os.hasReachedMax()) {
-							final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
+							final OAGraph og = OARuntime.graph(obj);
 							hsSendingGuid.add(og.internal().objects().key().getKey(obj).getGuid()); // flag that all masterObject props have been sent to client
 						}
 						includeAllProperties();
@@ -552,7 +552,7 @@ public class ClientGetDetail {
 					} else if (wasFullySentToClient(obj)) {
 						excludeAllProperties(); // already sent
 					} else {
-						final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
+						final OAGraph og = OARuntime.graph(obj);
 						boolean b = og.internal().objects().reflect().areAllReferencesLoaded(obj, false);
 						if (b) {
 							if (!os.hasReachedMax()) {
@@ -580,12 +580,12 @@ public class ClientGetDetail {
 						// this Object is a Hub - will send all references (all that are been loaded)
 						if (wasFullySentToClient(obj)) {
 							if (!os.hasReachedMax()) {
-								final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
+								final OAGraph og = OARuntime.graph(obj);
 								hsSendingGuid.add(og.internal().objects().key().getKey(obj).getGuid());
 							}
 							excludeAllProperties(); // client has it all
 						} else {
-							final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
+							final OAGraph og = OARuntime.graph(obj);
 							b = og.internal().objects().reflect().areAllReferencesLoaded(obj, false);
 							if (b) {
 								if (!os.hasReachedMax()) {
@@ -620,7 +620,7 @@ public class ClientGetDetail {
 						excludeAllProperties(); // client already has it, might not be all of it
 					} else {
 						// client does not have it, send whatever is loaded
-						final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
+						final OAGraph og = OARuntime.graph(obj);
 						b = og.internal().objects().reflect().areAllReferencesLoaded(obj, false);
 						if (b) {
 							if (!os.hasReachedMax()) {
@@ -696,7 +696,7 @@ public class ClientGetDetail {
 					return !wasFullySentToClient(referenceValue);
 				}
 
-				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
+				final OAGraph og = OARuntime.graph(oaObj);
 				OAObjectKey key = og.internal().objects().key().getKey(oaObj);
 				if (hmExtraData != null) {
 					if (oaObj.getClass().equals(masterObject.getClass())) {

@@ -19,7 +19,7 @@ import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoableEdit;
 
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
@@ -451,7 +451,7 @@ public class OAUndoableEdit implements UndoableEdit {
 
 			Hub h2 = hub.getLinkHub(true);
 			if (h2 != null) {
-				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+				final OAGraph og = OARuntime.graph(hub);
 				c = h2.getObjectClass();
 				s = OAString.convertToHungarian(c.getSimpleName());
 				String s2 = og.internal().hubs().link().getLinkToProperty(hub);

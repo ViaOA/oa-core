@@ -578,6 +578,7 @@ public abstract class OAObjectCacheService {
 	}
 	*/
 	
+//qqqqqqqqqqq duplicate, use visit(class, oacallback)...remove	
 	/**
 	 * Invokes the specified {@link OACallback} for every cached object of
 	 * the given class. This is a convenience wrapper that delegates to
@@ -602,6 +603,7 @@ public abstract class OAObjectCacheService {
 		objectCache.visit(clazz, callback);
 	}
 	
+//qqqqqqqqqqq duplicate, use visit(class, oacallback)...remove	
 	/**
 	 * Convenience wrapper that invokes the specified {@link OACallback} for
 	 * every cached object of the given class. This delegates directly to
@@ -614,6 +616,7 @@ public abstract class OAObjectCacheService {
 		objectCache.visit(clazz, callback);
 	}
 	
+//qqqqqqqqqqq duplicate, use visit(class, oacallback)...remove	
 	/**
 	 * Convenience wrapper that visits all cached objects of the specified
 	 * class by delegating to {@link #visit(Class, OACallback)}. Each object

@@ -36,7 +36,7 @@ import com.viaoa.filter.OAEqualFilter;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.filter.OAQueryFilter;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAArray;
 import com.viaoa.lang.OAStr;
@@ -172,7 +172,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
 
         if (whereObject != null && OAStr.isNotEmpty(propertyFromWhereObject)) {
             // 20240123
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(whereObject);
+			final OAGraph og = OARuntime.graph(whereObject);
             OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(whereObject.getClass());
             OALinkInfo li = oi.getLinkInfo(propertyFromWhereObject);
 
@@ -226,7 +226,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             
             
             // 20250407 use reference object from oaobj.properties[]
-			//final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(whereObject);
+			//final OAGraph og = OARuntime.graph(whereObject);
             Object objx = og.internal().objects().property().getProperty(whereObject, propertyFromWhereObject);
             if (objx != null) {
 	            final List al = new ArrayList();
@@ -482,11 +482,11 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             oos.writeBoolean(true);
             oos.writeObject(cx);
 
-            OAGraphInternal og = (OAGraphInternal) OARuntime.graph(cx);
+            OAGraph og = OARuntime.graph(cx);
             
             final Set<OAObject> hs = new HashSet<>();
             
-            OACallback<OAObject> callback = new OACallback<>() {
+            OACallback<OAObject> callback = new OACallback<OAObject>() {
 				@Override
 				public boolean updateObject(OAObject obj) {
 					hs.add(obj);

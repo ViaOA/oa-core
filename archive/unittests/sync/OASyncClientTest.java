@@ -21,7 +21,7 @@ import com.viaoa.datetime.OATime;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.find.OAFinder;
 import com.viaoa.graph.OAGraph;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListenerAdapter;
@@ -577,7 +577,7 @@ public class OASyncClientTest extends OAUnitTest {
 		}
 	}
 	
-	private OAGraphInternal og;
+	private OAGraph og;
 	private OADataSourceClient dsClient;
 
 	
@@ -585,7 +585,7 @@ public class OASyncClientTest extends OAUnitTest {
 	@BeforeEach
 	public void setup() throws Exception {
 	    
-		og = (OAGraphInternal) OARuntime.createGraph(Site.class.getPackage().getName());
+		og = OARuntime.createGraph(Site.class.getPackage().getName());
 		og.sync().createClient("localhost", port);
 		og.sync().start();
 		syncClient = og.syncInternal().getClient();

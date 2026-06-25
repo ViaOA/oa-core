@@ -124,7 +124,7 @@
  * <p>
  * - Advanced public access must flow through {@code graph.services()} and
  * curated - service interfaces under {@code com.viaoa.graph.api.services.*},
- * not through - casts to {@code OAGraphInternal}, implementation services, or
+ * not through - casts to {@code OAGraph}, implementation services, or
  * child services.
  * <h3>PUBLIC_OPS_DO_NOT_DEPEND_ON_INTERNAL_OPS</h3>
  * <p>
@@ -177,7 +177,7 @@
  * inside controlled OA/OG runtime implementation code. Application and -
  * developer code should not cast to known implementation classes to access -
  * behavior. - @see com.viaoa.graph.OAGraph - @see
- * com.viaoa.graph.OAGraphInternal - @see com.viaoa.graph.api.services - @see
+ * com.viaoa.graph.OAGraph - @see com.viaoa.graph.api.services - @see
  * com.viaoa.graph.service.facade - @see com.viaoa.graph.service
  */
 package com.viaoa.graph.api.internal;

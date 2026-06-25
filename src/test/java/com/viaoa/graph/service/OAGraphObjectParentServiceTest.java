@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import com.test.pos.model.oa.Product;
 import com.test.pos.model.oa.Register;
 import com.test.pos.model.oa.Store;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+
 import com.viaoa.hub.Hub;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
@@ -25,7 +25,7 @@ class OAGraphObjectParentServiceTest {
 /*qqqqqqqqq
     @BeforeEach
     void beforeEach() {
-        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
+        OAGraph og = OARuntime.graph(Register.class);
     }
     @AfterEach
     void afterEach() {
@@ -34,7 +34,7 @@ class OAGraphObjectParentServiceTest {
     }
 
     private static OAObjectInternalService objectService() {
-        OAGraphInternal graph = (OAGraphInternal) OARuntime.graph(Register.class);
+        OAGraph graph = OARuntime.graph(Register.class);
         return (OAObjectInternalService) graph.objectsInternal();
     }
 

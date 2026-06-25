@@ -21,7 +21,7 @@ import java.util.List;
 
 import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAOne;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.graph.service.object.OAObjectPropertyService;
 import com.viaoa.graph.service.object.OAObjectReflectService;
@@ -891,7 +891,7 @@ public class OALinkInfo { //implements java.io.Serializable {
 	 */
 	public Object getValue(Object obj) {
 		if (!(obj instanceof OAObject)) return null;
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) obj);
+		final OAGraph og = OARuntime.graph((OAObject) obj);
 		return og.internal().objects().reflect().getProperty((OAObject) obj, name);
 	}
 
@@ -908,7 +908,7 @@ public class OALinkInfo { //implements java.io.Serializable {
 			return true;
 		}
 		OAObject oaObj = (OAObject) obj;
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
+		final OAGraph og = OARuntime.graph(oaObj);
 		return og.internal().objects().property().isPropertyLoaded(oaObj, name);
 	}
 
@@ -925,7 +925,7 @@ public class OALinkInfo { //implements java.io.Serializable {
 			return false;
 		}
 		OAObject oaObj = (OAObject) obj;
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(oaObj);
+		final OAGraph og = OARuntime.graph(oaObj);
 		return og.internal().objects().lock().isPropertyLocked(oaObj, name);
 	}
 
@@ -1054,7 +1054,7 @@ public class OALinkInfo { //implements java.io.Serializable {
 			return null;
 		}
 
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(toClass);
+		final OAGraph og = OARuntime.graph(toClass);
 		uniquePropertyGetMethod = og.internal().objects().info().getMethod(getToObjectInfo(), "get" + uniqueProperty);
 		return uniquePropertyGetMethod;
 	}
@@ -1117,7 +1117,7 @@ public class OALinkInfo { //implements java.io.Serializable {
 	 */
 	public OAObjectInfo getToObjectInfo() {
 		if (oiTo == null) {
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(toClass);
+			final OAGraph og = OARuntime.graph(toClass);
 			oiTo = og.internal().objects().info().getOAObjectInfo(toClass);
 		}
 		return oiTo;

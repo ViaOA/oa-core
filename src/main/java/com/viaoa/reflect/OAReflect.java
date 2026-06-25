@@ -33,7 +33,7 @@ import java.util.jar.JarFile;
 import java.util.logging.Logger;
 
 import com.viaoa.converter.OAConverter;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
@@ -372,7 +372,7 @@ public class OAReflect {
 			clazz = method.getReturnType();
 			if (clazz != null && clazz.equals(Hub.class)) {
 				// try to find the ObjectClass for Hub
-				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(classLast);
+				final OAGraph og = OARuntime.graph(classLast);
 				Class c = og.internal().objects().info().getHubPropertyClass(classLast, name.substring(3));
 				if (c != null) {
 					// this needs to then get the activeObject out of the Hub object
@@ -657,7 +657,7 @@ public class OAReflect {
 				} else if (s.startsWith("is")) {
 					s = s.substring(2);
 				}
-				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) object);
+				final OAGraph og = OARuntime.graph((OAObject) object);
 				if (og.internal().objects().reflect().getPrimitiveNull((OAObject) object, s)) {
 					return null;
 				}

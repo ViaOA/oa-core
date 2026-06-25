@@ -48,7 +48,7 @@ import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
 import com.viaoa.runtime.thread.OAThreadLocalHubMergerCallback;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.service.hub.HubStatusService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
@@ -296,7 +296,7 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 			c = hub.getObjectClass();
 			if (!hubMaster.getObjectClass().equals(c)) {
 				// find property to use
-				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
+				final OAGraph og = OARuntime.graph(c);
 				OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(c);
 				List al = oi.getLinkInfos();
 				for (int i = 0; i < al.size(); i++) {
@@ -311,7 +311,7 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 			}
 		}
 		if (property != null) {
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+			final OAGraph og = OARuntime.graph(hub);
 		    getMethod = og.internal().objects().info().getMethod(hub.getObjectClass(), "get" + property);
 			//was: getMethod = OAReflect.getMethod(hub.getObjectClass(), "get" + property);
 			if (getMethod == null) {
@@ -374,7 +374,7 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
                 srvcOAThreadLocal.setSendSyncMessages(true);
             }
             if (bCheckInSync) {
-        		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.hub);
+        		final OAGraph og = OARuntime.graph(this.hub);
     			if (og.internal().hubs().status().getCurrentState(hub, null, null) != Hub.HubCurrentStateEnum.InSync) {
     				return;
     			}
@@ -415,7 +415,7 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 			}
 		}
 
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(this.hub);
+		final OAGraph og = OARuntime.graph(this.hub);
 		// Step 1: verify that both hubs are using the correct hub
 		//         (in case AO of master hub has been changed, and one of these hubs has not yet been adjusted).
 		final Hub<TYPE2> hubMasterx = og.internal().hubs().detail().getRealHub(hubMaster);
@@ -517,7 +517,7 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 
 		Class<? extends OAObject> cz = hub.getObjectClass();
 
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(cz);
+		final OAGraph og = OARuntime.graph(cz);
 		Hub<VEnum> hubEnums = og.internal().objects().enumx().getVEnums(cz, property);
 		int max = hubEnums.size();
 		

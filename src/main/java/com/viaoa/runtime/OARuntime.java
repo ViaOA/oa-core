@@ -8,7 +8,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.OAGraphImpl;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 
@@ -79,7 +79,8 @@ public final class OARuntime {
 	private final Map<String, RuntimeException> hmPackageNameException = new ConcurrentHashMap<>();
 	private final Map<Class<?>, Class<?>> hmClassHelper = new ConcurrentHashMap<>();
 	
-	private OAGraphImpl graphDefault;
+	private OAGraph graphCatchAll;
+	private OAGraph graphDefault;
 
 	private final OADataSourceService srvcDataSource = new OADataSourceService();
 	private final OAThreadService srvcThread = new OAThreadService();
@@ -89,7 +90,7 @@ public final class OARuntime {
 	}
 	
 	static {
-		runtime.graphDefault = (OAGraphImpl) runtime.createGraphInternal("");
+		runtime.graphCatchAll = (OAGraphImpl) runtime.createGraphInternal("");
 	}
 	
 	public static OARuntime get() {
@@ -100,6 +101,12 @@ public final class OARuntime {
 		return runtime.createGraphInternal(pkg);
 	}
 
+	public static OAGraph createDefaultGraph(final Package pkg) {
+		OAGraph og = runtime.createGraphInternal(pkg);
+		runtime.defaultGraph(og);
+		return og;
+	}
+	
 	private OAGraph createGraphInternal(final Package pkg) {
 		String pn;
 		if (pkg != null) pn = pkg.getName();
@@ -247,22 +254,32 @@ public final class OARuntime {
 			hmPackageNameGraphHelper.put(pkgName, og);
 			return og;
 		}
-		hmPackageNameGraphHelper.put(pkgName, graphDefault);
-		return graphDefault;
+		hmPackageNameGraphHelper.put(pkgName, graphCatchAll);
+		return graphCatchAll;
 	}	
 
 
 	/**
-	 * same as default graph
 	 */
 	public static OAGraph graph() {
+		if (runtime.graphDefault != null) return runtime.graphDefault;
 		return runtime.graphInternal("");
 	}
 
 	public static OAGraph defaultGraph() {
+		return runtime.graphDefault;
+	}
+
+	public static void defaultGraph(OAGraph og) {
+		runtime.graphDefault = og;
+	}
+	
+	public static OAGraph catchAllGraph() {
 		return runtime.graphInternal("");
 	}
 
+	
+	
 	public static OAThreadService thread() {
 		return runtime.srvcThread;
 	}

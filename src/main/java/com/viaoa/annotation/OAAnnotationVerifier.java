@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import com.viaoa.datasource.OADataSource;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAArray;
 import com.viaoa.metadata.OACalcInfo;
@@ -152,7 +152,7 @@ public class OAAnnotationVerifier {
 	 */
 	public boolean verify(OAObjectInfo oi) throws Exception {
 		final Class clazz = oi.getForClass();
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+		final OAGraph og = OARuntime.graph(clazz);
 
 		String s;
 

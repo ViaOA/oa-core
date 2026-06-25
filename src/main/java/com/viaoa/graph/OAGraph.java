@@ -2,6 +2,8 @@ package com.viaoa.graph;
 
 import com.viaoa.find.OAFinder;
 import com.viaoa.graph.api.*;
+import com.viaoa.graph.api.internal.GraphInternalOps;
+
 import com.viaoa.graph.api.services.GraphServicesOps;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubListener;
@@ -517,7 +519,8 @@ public interface OAGraph {
      * @return the advanced public service facade for this graph
      */
     GraphServicesOps services();
-    
+
+	GraphInternalOps internal();
     
     void close();
 }

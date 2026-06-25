@@ -18,7 +18,7 @@ package com.viaoa.cache;
 import java.lang.ref.WeakReference;
 
 import com.viaoa.callback.OACallback;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
@@ -70,7 +70,7 @@ public class OAObjectCacheHubAdder<T extends OAObject> implements OAObjectCacheL
         clazz = hub.getObjectClass();
         wfHub = new WeakReference(hub);
 
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+		final OAGraph og = OARuntime.graph(clazz);
                 
 		og.internal().objects().cache().addListener(clazz, this);
         
@@ -104,7 +104,7 @@ public class OAObjectCacheHubAdder<T extends OAObject> implements OAObjectCacheL
     public void close() {
     	if (bClosed) return;
     	bClosed = true;
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+		final OAGraph og = OARuntime.graph(clazz);
 		og.internal().objects().cache().removeListener(clazz, this);
     }
 

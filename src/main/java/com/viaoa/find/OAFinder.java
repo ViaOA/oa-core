@@ -21,7 +21,7 @@ import java.util.*;
 import com.viaoa.cascade.OACascade;
 import com.viaoa.compare.OACompare;
 import com.viaoa.filter.*;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.*;
 import com.viaoa.hub.filter.CustomHubFilter;
@@ -659,7 +659,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		final boolean bEnableRecursiveRootHold = bEnableRecursiveRoot; 
 		if (!bEnableRecursiveRootWasCalled) {
 			if (hubRoot != null) {
-				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubRoot);
+				final OAGraph og = OARuntime.graph(hubRoot);
 				OALinkInfo li = og.internal().hubs().detail().getLinkInfoFromMasterObjectToDetail(hubRoot);
 				if (li != null && li.getRecursive()) {
 					bEnableRecursiveRoot = true;
@@ -1206,7 +1206,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 			cascades[i] = new OACascade();
 		}
 
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
+		final OAGraph og = OARuntime.graph(c);
 		OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(c);
 		liRecursiveRoot = oi.getRecursiveLinkInfo(OALinkInfo.MANY);
 
@@ -1381,7 +1381,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 				boolean b = linkInfos[pos].isLoaded(obj);
 				if (b && linkInfos[pos].getType() == OALinkInfo.TYPE_MANY) {
 					if (OAString.isNotEmpty(linkInfos[pos].getSortProperty())) {
-						final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) obj);
+						final OAGraph og = OARuntime.graph((OAObject) obj);
 						Object objx;
 						if (linkInfos[pos].getCalculated()) {
 							objx = linkInfos[pos].getValue((OAObject) obj);
@@ -1431,7 +1431,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 			return false;
 		}
 
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) obj);
+		final OAGraph og = OARuntime.graph((OAObject) obj);
 		Hub hx;
 		if (li.getCalculated()) {
 			hx = (Hub) li.getValue((OAObject) obj);

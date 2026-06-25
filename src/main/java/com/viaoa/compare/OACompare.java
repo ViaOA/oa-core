@@ -29,7 +29,7 @@ import com.viaoa.converter.OAConverter;
 import com.viaoa.datetime.OADate;
 import com.viaoa.datetime.OADateTime;
 import com.viaoa.datetime.OATime;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAStr;
 import com.viaoa.lang.OAString;
@@ -978,7 +978,7 @@ public class OACompare {
         	else if (matchValue instanceof OAObject) c = matchValue.getClass();
         	else c = null;
         	
-    		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
+    		final OAGraph og = OARuntime.graph(c);
         	
         	OAObjectKey ka = og.internal().objects().key().createObjectKey(value);
     	    OAObjectKey kb = og.internal().objects().key().createObjectKey(matchValue);

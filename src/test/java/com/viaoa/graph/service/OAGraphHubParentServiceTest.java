@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import com.test.pos.model.oa.Register;
 import com.test.pos.model.oa.Store;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListenerAdapter;
@@ -25,7 +25,7 @@ class OAGraphHubParentServiceTest {
     @BeforeEach
     void beforeEach() {
 //        hubs = hubService();
-        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
+        OAGraph og = OARuntime.graph(Register.class);
     }
     @AfterEach
     void afterEach() {
@@ -34,7 +34,7 @@ class OAGraphHubParentServiceTest {
     }
 /*qqqqq
     private static HubInternalService hubService() {
-        OAGraphInternal graph = (OAGraphInternal) OARuntime.graph(Register.class);
+        OAGraph graph = OARuntime.graph(Register.class);
         return (HubInternalService) graph.hubsInternal();
     }
 

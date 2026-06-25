@@ -19,7 +19,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
@@ -354,7 +354,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		if (hubDetail == null) {
 			String pp = "(" + classFrom.getName() + ") " + OAGroupBy.P_Hub;
 			hubDetail = getCombinedHub().getDetailHub(pp);
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubFrom);
+			final OAGraph og = OARuntime.graph(hubFrom);
 			og.internal().hubs().data().setObjectClass(hubDetail, classFrom);
 			hubDetail.addHubListener(new HubListenerAdapter() {
 				@Override
@@ -1485,7 +1485,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			b = true;
 		} else if (propertyPath.indexOf('.') < 0) {
 			// propertyPath could be a hub
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(classFrom);
+			final OAGraph og = OARuntime.graph(classFrom);
 			OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(classFrom);
 			OALinkInfo li = oi.getLinkInfo(propertyPath);
 			if (li == null || li.getType() == li.ONE) {
@@ -2082,7 +2082,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		if (grpBy != null) {
 			gb.setGroupBy(grpBy);
 		}
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubFrom);
+		final OAGraph og = OARuntime.graph(hubFrom);
 		og.internal().hubs().data().setObjectClass(gb.getHub(), classFrom);
 
 		// 20190418 if hubPropertyName!=null, then use a HubCopy

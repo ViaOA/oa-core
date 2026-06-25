@@ -17,7 +17,7 @@ import com.test.pos.model.oa.RegisterSession;
 import com.test.pos.model.oa.Store;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListenerAdapter;
@@ -37,7 +37,7 @@ class OAGraphTest {
 /*qqqqqq
     @BeforeEach
     void beforeEach() {
-        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
+        OAGraph og = OARuntime.graph(Register.class);
     }
     @AfterEach
     void afterEach() {
@@ -52,7 +52,7 @@ class OAGraphTest {
         assertNotNull(graph.sync());
         assertNotNull(graph.replication());
 
-        OAGraphInternal internal = (OAGraphInternal) graph;
+        OAGraph internal = graph;
         assertNotNull(internal.objectsInternal());
         assertNotNull(internal.hubsInternal());
         assertNotNull(internal.syncInternal());

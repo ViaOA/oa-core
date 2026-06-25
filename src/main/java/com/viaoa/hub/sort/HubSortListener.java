@@ -20,7 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.compare.OAComparator;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListenerAdapter;
@@ -283,7 +283,7 @@ public class HubSortListener<TYPE extends OAObject> extends HubListenerAdapter<T
     public @Override void onNewList(HubEvent<TYPE> e) {
         Hub h = e.getHub();
         if (h == hub) {
-    		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+    		final OAGraph og = OARuntime.graph(hub);
             // 20101009 another thread could be making Hub changes, so this could fail - adding try..catch
             for (int i=0; i<3; i++) {
                 try {
@@ -319,7 +319,7 @@ public class HubSortListener<TYPE extends OAObject> extends HubListenerAdapter<T
             try {
                 bCallingSortMove = true;
                 srvcOAThreadLocal.setSendSyncMessages(false);  // each client will handle it's own sorting
-        		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+        		final OAGraph og = OARuntime.graph(hub);
                 og.internal().hubs().addRemove().sortMove(hub, e.getObject());
             }
             finally {

@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import com.test.pos.model.oa.Item;
 import com.test.pos.model.oa.Register;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 
@@ -41,7 +41,7 @@ class OACacheListenerUtilTest {
 
     @BeforeEach
     void beforeEach() {
-        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
+        OAGraph og = OARuntime.graph(Register.class);
     }
     @AfterEach
     void afterEach() {

@@ -68,6 +68,7 @@ public class OAContext<KEYTYPE, OBJTYPE extends OAObject> {
     private final Map<KEYTYPE, WeakReference<OAContextUser<OBJTYPE>>> hmContextUser = new ConcurrentHashMap<>();
 	
 	// by default, these property names are in AppUser
+	public static final Object NullKey = new Object();
 
 	/**
 	 * Property path used to determine whether the context user has admin rights.
@@ -87,8 +88,16 @@ public class OAContext<KEYTYPE, OBJTYPE extends OAObject> {
 	 */
 	private String allowEditProcessedPath = "EditProcessed";
 
+	public OAContext() {
+		this(null, null);
+	}
+	
+	public OAContext(OAContextAccess contextAccess) {
+		this(null, contextAccess);
+	}
 	
 	public OAContext(Object key, OAContextAccess contextAccess) {
+		if (key == null) key = NullKey;
 		this.key = key;
 		this.contextAccess = contextAccess;
 	}

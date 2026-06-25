@@ -12,7 +12,7 @@ import org.junit.jupiter.api.io.TempDir;
 import com.test.pos.model.oa.Register;
 import com.test.pos.model.oa.Store;
 import com.viaoa.datasource.OADataSourceIterator;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
@@ -24,7 +24,7 @@ class OADataSourceObjectCacheTest {
 
     @BeforeEach
     void beforeEach() {
-        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
+        OAGraph og = OARuntime.graph(Register.class);
     }
     @AfterEach
     void afterEach() {

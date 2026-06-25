@@ -11,7 +11,7 @@ import com.viaoa.datasource.clientserver.OADataSourceClient;
 import com.viaoa.datasource.objectcache.OADataSourceObjectCache;
 import com.viaoa.datetime.OATime;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListenerAdapter;
@@ -61,7 +61,7 @@ public class OASyncServerTest {
 	private static Logger LOG = Logger.getLogger(OASyncServerTest.class.getName());
 
 	private OADataSource ds;
-	private OAGraphInternal og;
+	private OAGraph og;
 	private OADataSourceClient dsClient;
 
 	public OASyncServer syncServer;
@@ -80,7 +80,7 @@ public class OASyncServerTest {
 		// ds.setAssignIdOnCreate(true);
 		OARuntime.datasource().register(ds);
 
-		og = (OAGraphInternal) OARuntime.createGraph(Site.class.getPackage().getName());
+		og = OARuntime.createGraph(Site.class.getPackage().getName());
 		og.sync().createServer(1102);
 		syncServer = og.syncInternal().getServer();
 		setupRemote();

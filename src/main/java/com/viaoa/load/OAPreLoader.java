@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OALinkInfo;
@@ -312,7 +312,7 @@ public class OAPreLoader {
 			}
 
 			Hub hub;
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) objOne);
+			final OAGraph og = OARuntime.graph((OAObject) objOne);
 			Object objOneHub = og.internal().objects().property().getProperty((OAObject) objOne, liMany.getName(), false, true);
 			if (objOneHub instanceof Hub) {
 				hub = (Hub) objOneHub;
@@ -366,7 +366,7 @@ public class OAPreLoader {
 	 */
 	protected List load(Class clazz, final OALinkInfo linkInfo) {
 		OASelect sel = new OASelect<>(clazz);
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+		final OAGraph og = OARuntime.graph(clazz);
 		OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(clazz);
 		OALinkInfo liRecursive = og.internal().objects().info().getRecursiveLinkInfo(oi, OALinkInfo.MANY);
 
@@ -451,7 +451,7 @@ public class OAPreLoader {
 			}
 
 			Hub hub;
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) fParent);
+			final OAGraph og = OARuntime.graph((OAObject) fParent);
 			Object objx = og.internal().objects().property().getProperty((OAObject) fParent, liMany.getName(), false, true);
 			if (objx instanceof Hub) {
 				hub = (Hub) objx;

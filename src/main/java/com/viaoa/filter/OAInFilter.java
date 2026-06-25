@@ -19,7 +19,7 @@ import java.lang.reflect.Constructor;
 import java.util.logging.Logger;
 
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OALinkInfo;
@@ -191,7 +191,7 @@ public class OAInFilter implements OAFilter {
 		}
 
 		final Class clazz = hubFrom != null ? hubFrom.getObjectClass() : objFrom != null ? objFrom.getClass() : null;
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+		final OAGraph og = OARuntime.graph(clazz);
 
 		this.pp = new OAPath(clazz, strPropPath);
 

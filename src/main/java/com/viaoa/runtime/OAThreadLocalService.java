@@ -11,7 +11,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
 import com.viaoa.datetime.OADateTime;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.sibling.OASiblingHelper;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
@@ -2326,7 +2326,7 @@ public class OAThreadLocalService {
 		if (hub == null) {
 			return;
 		}
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+		final OAGraph og = OARuntime.graph(hub);
 		hub = og.internal().hubs().share().getMainSharedHub(hub);
 		OAThreadLocal ti = getThreadLocal(true);
 		ti.dontAdjustHubs = (Hub[]) OAArray.add(Hub.class, ti.dontAdjustHubs, hub);
@@ -2353,7 +2353,7 @@ public class OAThreadLocalService {
 		if (ti == null) {
 			return;
 		}
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+		final OAGraph og = OARuntime.graph(hub);
 		hub = og.internal().hubs().share().getMainSharedHub(hub);
 		ti.dontAdjustHubs = (Hub[]) OAArray.removeValue(Hub.class, ti.dontAdjustHubs, hub);
 		aiTotalDontAdjustHub.decrementAndGet();
@@ -2367,7 +2367,7 @@ public class OAThreadLocalService {
 			return true;
 		}
 
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+		final OAGraph og = OARuntime.graph(hub);
 		hub = og.internal().hubs().share().getMainSharedHub(hub);
 
 		OAThreadLocal ti = getThreadLocal(false);
@@ -2498,7 +2498,7 @@ public class OAThreadLocalService {
 		Hub hx = getFastLoadingHub();
 		if (hx == null) return false;
 		if (h == hx) return true;
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(h);
+		final OAGraph og = OARuntime.graph(h);
 		return og.internal().hubs().share().isUsingSameSharedHub(h, hx);
 	}
 	
@@ -2524,7 +2524,7 @@ public class OAThreadLocalService {
 			return ;
 		}
 		if (ti.fastLoadingHub != null) {
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(ti.fastLoadingHub);
+			final OAGraph og = OARuntime.graph(ti.fastLoadingHub);
 			og.internal().hubs().events().fireOnNewListEvent(ti.fastLoadingHub, true);
 		}
 		ti.fastLoadingHub = hub;

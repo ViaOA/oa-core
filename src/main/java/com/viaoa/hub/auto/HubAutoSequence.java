@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.lang.reflect.*;
 
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListenerAdapter;
@@ -196,7 +196,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
      * @param bServerSideOnly whether sequence updates are controlled exclusively by the server
      */
     public HubAutoSequence(Hub hub, String propertyName, int startNumber, boolean bKeepSeq, boolean bServerSideOnly) {
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+		final OAGraph og = OARuntime.graph(hub);
         if (bServerSideOnly && og.internal().hubs().cs().isClient(hub)) {
             LOG.warning("bServerSideOnly should be false, since this is not the server");
         }
@@ -303,7 +303,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
         Class c = hub.getObjectClass();
         if (c == null) return;
         
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(c);
+		final OAGraph og = OARuntime.graph(c);
         Method met = og.internal().objects().info().getMethod(c, "set" + propertyName);
         //was: Method met = OAReflect.getMethod(c, "set"+propertyName);
         if (met == null) {

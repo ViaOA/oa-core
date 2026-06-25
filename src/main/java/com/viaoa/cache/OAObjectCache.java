@@ -24,7 +24,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.callback.OACallback;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
@@ -203,7 +203,7 @@ import com.viaoa.runtime.OARuntime;
 	 */
 	public <T extends OAObject> boolean updateObject(final T obj) {
 		if (obj == null) return false;
-		OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
+		OAGraph og = OARuntime.graph(obj);
 		final OAObjectKey ok = og.internal().objects().key().createObjectKey((OAObject) obj);
 		@SuppressWarnings("unchecked")		
 		final Class<T> clazz = (Class<T>) obj.getClass();
@@ -265,7 +265,7 @@ import com.viaoa.runtime.OARuntime;
 	 */
 	public <T extends OAObject> boolean removeObject(final T obj) {
 		if (obj == null) return false;
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
+		final OAGraph og = OARuntime.graph(obj);
 		final OAObjectKey ok = og.internal().objects().key().createObjectKey((OAObject) obj);
 		
 		@SuppressWarnings("unchecked")
@@ -304,7 +304,7 @@ import com.viaoa.runtime.OARuntime;
 			
 			objectIndex.removeFromIndex(wr.clazz, wr.key);
 			
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(wr.clazz);
+			final OAGraph og = OARuntime.graph(wr.clazz);
 	        if (og != null && !og.internal().objects().info().getOAObjectInfo(wr.clazz).getLocalOnly()) {
 	        	og.internal().objects().cs().objectFinalized(wr.key.getGuid());
 	        }

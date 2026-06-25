@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.service.object.OAObjectInfoService;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
@@ -113,7 +113,7 @@ public class HubRoot {
 		}
 
 		Class clazz = hub.getObjectClass();
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+		final OAGraph og = OARuntime.graph(clazz);
 		OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(clazz);
 		OALinkInfo li = oi.getRecursiveLinkInfo(OALinkInfo.MANY);
 		if (li == null) {

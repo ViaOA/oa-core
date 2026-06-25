@@ -19,7 +19,7 @@ import java.lang.reflect.Method;
 
 import com.viaoa.annotation.OAColumn;
 import com.viaoa.annotation.OAProperty;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAString;
 import com.viaoa.lang.oa.VEnum;
@@ -1121,7 +1121,7 @@ public class OAPropertyInfo implements java.io.Serializable {
 	 */
 	public Object getValue(Object obj) {
 		if (!(obj instanceof OAObject)) return null;
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph((OAObject) obj);
+		final OAGraph og = OARuntime.graph((OAObject) obj);
 		return og.internal().objects().reflect().getProperty((OAObject) obj, name);
 	}
 

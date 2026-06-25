@@ -11,7 +11,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import com.test.pos.model.oa.Register;
 import com.viaoa.datetime.OADateTime;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.runtime.OARuntime;
 
 class OAReplicationClientTest {
@@ -21,7 +21,7 @@ class OAReplicationClientTest {
 
     @BeforeEach
     void beforeEach() {
-        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
+        OAGraph og = OARuntime.graph(Register.class);
     }
     @AfterEach
     void afterEach() {

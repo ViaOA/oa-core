@@ -19,7 +19,7 @@ import java.util.ArrayList;
 
 import com.viaoa.datasource.OADataSourceIterator;
 import com.viaoa.filter.OAFilter;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.service.object.OAObjectCacheService;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
@@ -169,7 +169,7 @@ public class ObjectCacheIterator<T extends OAObject> implements OADataSourceIter
 			if (bFetchIsDone) {
 				return null;
 			}
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+			final OAGraph og = OARuntime.graph(clazz);
 			
 			lastFetchObject = (T) og.internal().objects().cache().find(lastFetchObject, clazz, filter, false, false, 100, (ArrayList) alFetchObjects);
 			if (lastFetchObject == null) {

@@ -17,7 +17,7 @@ package com.viaoa.hub;
 
 import java.util.logging.Logger;
 
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.log.OALogger;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
@@ -268,12 +268,12 @@ public class HubEvent<TYPE extends OAObject> {
 		Object oldObj = oldValue;
 		boolean bError = false;
 		if (oldObj instanceof OAObjectKey && object instanceof OAObject) {
-			OAGraphInternal og = (OAGraphInternal) OARuntime.graph(object);
+			OAGraph og = OARuntime.graph(object);
 			OAObjectInfo oi = og.internal().objects().info().getOAObjectInfo(object);
 			if (oi != null) {
 				OALinkInfo li = og.internal().objects().info().getLinkInfo(oi, getPropertyName());
 				if (li != null) {
-					og = (OAGraphInternal) OARuntime.graph(li.getToClass());
+					og = OARuntime.graph(li.getToClass());
 					oldObj = og.internal().objects().reflect().getObject((Class<TYPE>) li.getToClass(), (OAObjectKey) oldObj);
 					oldValue2 = oldObj;
 				} else {

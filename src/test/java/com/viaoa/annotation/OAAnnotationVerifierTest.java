@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
 import com.test.pos.model.oa.Store;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.runtime.OARuntime;
 
@@ -38,7 +38,7 @@ class OAAnnotationVerifierTest {
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
     private static OAObjectInfo objectInfo(Class clazz) {
-        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+        OAGraph og = OARuntime.graph(clazz);
         return og.internal().objects().info().getOAObjectInfo(clazz);
     }
 }

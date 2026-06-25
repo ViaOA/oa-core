@@ -17,7 +17,7 @@ package com.viaoa.metadata.pojo;
 
 import java.io.Serializable;
 
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OAFkeyInfo;
 import com.viaoa.metadata.OALinkInfo;
@@ -476,7 +476,7 @@ public class OAObjectPojoLoader implements Serializable {
 				continue;
 			}
 
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(li.getToClass());
+			final OAGraph og = OARuntime.graph(li.getToClass());
 			if (!og.internal().objects().info().isPojoSingleton(li.getToObjectInfo())) {
 				continue;
 			}

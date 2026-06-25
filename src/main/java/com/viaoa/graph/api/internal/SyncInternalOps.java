@@ -37,6 +37,6 @@ public interface SyncInternalOps {
 
 	public RemoteServerInterface getRemoteServer();
 	
-	
+	public int getRequestConnectionId();
 	
 }

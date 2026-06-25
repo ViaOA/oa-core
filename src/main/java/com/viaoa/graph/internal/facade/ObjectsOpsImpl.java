@@ -52,6 +52,7 @@ import com.viaoa.lang.oa.VEnum;
 import com.viaoa.metadata.OACalcInfo;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAObjectModel;
 import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
@@ -212,6 +213,25 @@ public class ObjectsOpsImpl implements ObjectsOps {
 				return srvc.getOAObjectCacheService().find(fromObject, clazz, fetchAmount, alResults);
 			}
 
+			@Override
+			public <T extends OAObject> void setSelectAllHub(Hub<T> hub) {
+				srvc.getOAObjectCacheService().setSelectAllHub(hub);
+			}
+
+			@Override
+			public <T extends OAObject> void removeSelectAllHub(Hub<T> hub) {
+				srvc.getOAObjectCacheService().removeSelectAllHub(hub);
+			}
+
+			@Override
+			public void getInfo(List<String> al) {
+				srvc.getOAObjectCacheService().getInfo(al);
+			}
+
+			@Override
+			public OAObject getRandom(Class<? extends OAObject> clazz, int max) {
+				return srvc.getOAObjectCacheService().getRandom(clazz, max);
+			}
 		};
 		return opsCache;
 	}
@@ -344,6 +364,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 			@Override
 			public String getPropertyPathBetweenHubs(Hub<?> hubParent, Hub<?> hubChild) {
 				return srvc.getOAObjectReflectService().getPropertyPathBetweenHubs(hubParent, hubChild);
+			}
+
+			@Override
+			public int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc, OACascade cascade, int maxRefsToLoad) {
+				return srvc.getOAObjectReflectService().loadAllReferences(obj, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, cascade, maxRefsToLoad);
 			}
 		};
 		return opsReflect;
@@ -531,6 +556,12 @@ public class ObjectsOpsImpl implements ObjectsOps {
 			@Override
 			public <T extends OAObject> boolean getVerifyRemove(Hub<T> hub, T obj, int checkType) {
 				return srvc.getOAObjectCallbackService().getVerifyRemove(hub, obj, checkType);
+			}
+
+			@Override
+			public void onObjectCallbackModel(Class<? extends OAObject> clazz, String property, OAObjectModel model) {
+				srvc.getOAObjectCallbackService().onObjectCallbackModel(clazz, property, model);
+				
 			}
 		};
 		return opsCallback;

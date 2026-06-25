@@ -18,7 +18,7 @@ package com.viaoa.hub.view;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListener;
@@ -319,7 +319,7 @@ public class HubCombined<TYPE extends OAObject> {
 					bUpdatingMasterHub = false;
 					srvcOAThreadLocal.setLoading(bWasLoading);
 				}
-				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hub);
+				final OAGraph og = OARuntime.graph(hub);
 				og.internal().hubs().events().fireOnNewListEvent(hubMaster, true);
 			}
 		};

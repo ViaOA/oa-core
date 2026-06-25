@@ -223,7 +223,7 @@ public class OATextTokenizer {
 	 *
 	 * @param str String to parse
 	 * @param sep seperator wihin str
-	 * @param beg field to find, where first field is <b>1</b>
+	 * @param beg field to find, where first field is <b>1</b> based
 	 * @param amt number of fields to return, -1 for all after the beg
 	 * @return string value of field if begin position exists, else null if not found
 	 */

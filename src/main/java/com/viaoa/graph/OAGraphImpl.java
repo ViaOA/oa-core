@@ -7,7 +7,7 @@ import com.viaoa.find.OAFinder;
 import com.viaoa.graph.api.ReplicationOps;
 import com.viaoa.graph.api.SyncOps;
 import com.viaoa.graph.api.internal.GraphInternalOps;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+
 import com.viaoa.graph.api.services.GraphServicesOps;
 import com.viaoa.graph.internal.facade.GraphInternalOpsImpl;
 import com.viaoa.graph.service.OAReplicationService;
@@ -108,7 +108,7 @@ CODEX
 */
 
 
-public class OAGraphImpl implements OAGraphInternal {
+public class OAGraphImpl implements OAGraph {
 	private static Logger LOG = Logger.getLogger(OAGraphImpl.class.getName());
 
 	private String packageName;

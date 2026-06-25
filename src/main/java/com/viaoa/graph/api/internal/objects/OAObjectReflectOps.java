@@ -1,6 +1,7 @@
 package com.viaoa.graph.api.internal.objects;
 
 import com.viaoa.callback.OACopyCallback;
+import com.viaoa.cascade.OACascade;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
@@ -17,11 +18,14 @@ public interface OAObjectReflectOps {
 	public byte[] getReferenceBlob(OAObject oaObj, String linkPropertyName);
 	public boolean getPrimitiveNull(OAObject oaObj, String prop);
 	public void setPrimitiveNull(OAObject oaObj, String prop, boolean b);
+	
 	public int loadAllReferences(OAObject oaObj, boolean bIncludeCalc);
 	public int loadAllReferences(OAObject oaObj, boolean bOne, boolean bMany, boolean bIncludeCalc);
 	public int loadAllReferences(OAObject oaObj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc);
 	public int loadAllReferences(OAObject oaObj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc, int maxRefsToLoad);
-	public int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc, int maxRefsToLoad, long maxEndTime);
+	public int loadAllReferences(OAObject oaObj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc, int maxRefsToLoad, long maxEndTime);
+	public int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc, OACascade cascade, int maxRefsToLoad);
+	
 	public <T extends OAObject> T getObject(Class<T> clazz, Object keyValue); //qqqqqqqqq add this to graph.objects().getObject(c, k)
 	public <T extends OAObject> T createNewObject(Class<T> clazz);
 	public boolean areAllReferencesLoaded(OAObject oaObj, boolean bIncludeCalc);

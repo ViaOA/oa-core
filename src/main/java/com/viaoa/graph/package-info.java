@@ -25,7 +25,7 @@ trigger registration, and serialization boundary that belongs to a graph must re
 authority.
 Rationale: OA/OG runtime correctness depends on graph-scoped identity, lifecycle, Hub membership, cache, metadata,
 datasource, sync, replication, and event semantics.
-Source scope: OAGraph, OAGraphImpl, OAGraphInternal, direct graph facade methods, parent service access points.
+Source scope: OAGraph, OAGraphImpl, OAGraph, direct graph facade methods, parent service access points.
 Related CODEX findings: Graph ownership/routing findings; foreign class/object/Hub operation findings.
 Suggested unit tests: testObjectOperationUsesOwningGraph(), testHubOperationUsesOwningGraph(),
 testForeignGraphStateDoesNotUseWrongGraphAuthority()
@@ -47,18 +47,18 @@ Contract statement: Application-facing graph operations must be exposed through 
 service surfaces are not application contracts.
 Rationale: The public graph API must remain stable while internal orchestration and service implementation details
 can evolve.
-Source scope: OAGraph, OAGraphImpl, OAGraphInternal, graph.api., graph.api.internal..
-Related CODEX findings: OAGraph trigger public surface completeness; OAGraphInternal internal API boundary findings.
+Source scope: OAGraph, OAGraphImpl, OAGraph, graph.api., graph.api.internal..
+Related CODEX findings: OAGraph trigger public surface completeness; OAGraph internal API boundary findings.
 Suggested unit tests: testPublicGraphApiExposesIntendedRuntimeVerbs(),
 testPublicTriggerOperationsReachableThroughOAGraph(), testApplicationCodeDoesNotDependOnInternalGraphApis()
 Spec target section: OG Runtime / Public API Boundary
 
 GRAPH-INTERNAL-001 — Internal Graph APIs Are Runtime-Only
-Contract statement: OAGraphInternal and com.viaoa.graph.api.internal APIs may be used by graph/runtime services but
+Contract statement: OAGraph and com.viaoa.graph.api.internal APIs may be used by graph/runtime services but
 must not define public application semantics.
 Rationale: Internal APIs can expose staging, service, or lifecycle hooks that are unsafe as external contracts.
-Source scope: OAGraphInternal, graph.api.internal.*, OAGraphImpl internal delegation.
-Related CODEX findings: OAGraphInternal internal ops are not app contract; internal API import-boundary findings.
+Source scope: OAGraph, graph.api.internal.*, OAGraphImpl internal delegation.
+Related CODEX findings: OAGraph internal ops are not app contract; internal API import-boundary findings.
 Suggested unit tests: testAppFacingPackagesDoNotImportGraphApiInternal(), testInternalGraphApisRemainRuntimeScoped()
 Spec target section: OG Runtime / Internal API Boundary
 
@@ -316,7 +316,7 @@ callback outcomes, graph APIs must produce deterministic routing, lifecycle stat
 and service side effects.
 Rationale: Deterministic graph behavior is required for debugging, generated application semantics, sync/replication
 correctness, and unit/stress testing.
-Source scope: OAGraph, OAGraphImpl, OAGraphInternal boundaries, parent service delegation.
+Source scope: OAGraph, OAGraphImpl, OAGraph boundaries, parent service delegation.
 Related CODEX findings: Package-wide routing, initialization, role, context, service orchestration, and failure
 findings.
 Suggested unit tests: testSameGraphInputsProduceSameRouting(),

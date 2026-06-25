@@ -31,7 +31,7 @@ import java.util.logging.Logger;
 import com.viaoa.compare.OACompare;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.lang.OAArray;
 import com.viaoa.lang.OAStr;
@@ -1430,7 +1430,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 * @return recursive link definition, or null.
 	 */
 	public OALinkInfo getRecursiveLinkInfo(int type) {
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(thisClass);
+		final OAGraph og = OARuntime.graph(thisClass);
 		return og.internal().objects().info().getRecursiveLinkInfo(this, type);
 	}
 
@@ -1539,7 +1539,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 			OAPerformance.LOG.fine(s);
 		}
 
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(thisClass);
+		final OAGraph og = OARuntime.graph(thisClass);
 		for (String triggerPropPath : trigger.getPropertyPaths()) {
 			if (OAString.isEmpty(triggerPropPath)) {
 				continue;
@@ -1664,7 +1664,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 				};
 				final OATrigger trigger2 = new OATrigger(listenProperty, thisClass, tl, calcProps, trigger.getOnlyUseLoadedData(),
 					trigger.getServerSideOnly(), trigger.getUseBackgroundThread(), true);
-				OAGraphInternal og = (OAGraphInternal) OARuntime.graph(thisClass);
+				OAGraph og = OARuntime.graph(thisClass);
 		        og.internal().triggers().addTrigger(trigger2);
 		        
 		        
@@ -1709,7 +1709,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 			return;
 		}
 
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(thisClass);
+		final OAGraph og = OARuntime.graph(thisClass);
 		for (String spp : trigger.getPropertyPaths()) {
 			OAPath pp = new OAPath(thisClass, spp);
 
@@ -1859,7 +1859,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 */
 	private void _onChange(final OAObject fromObject, final String prop, final TriggerInfo ti, final HubEvent hubEvent) {
 
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(fromObject);
+		final OAGraph og = OARuntime.graph(fromObject);
 		if (ti.trigger.getServerSideOnly()) {
 			if (og.internal().sync().isClient()) return;
 		}
@@ -1907,7 +1907,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 * @param hubEvent   event context.
 	 */
 	private void _onChange2(final OAObject fromObject, final String prop, final TriggerInfo ti, final HubEvent hubEvent) {
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(fromObject);
+		final OAGraph og = OARuntime.graph(fromObject);
 
 		if (ti.trigger.getServerSideOnly()) {
 			if (og.internal().sync().isClient()) {
@@ -2010,7 +2010,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 					return;
 				}
 
-				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(objRoot);
+				final OAGraph og = OARuntime.graph(objRoot);
 				UUID g = og.internal().objects().key().getKey(objRoot).getGuid();
 				if (hs.contains(g)) {
 					return;
@@ -2038,7 +2038,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 
 		if (ti.bReverseHasMany) {
 			// see if all of the data is already loaded, so that a reverse pp + finder can be used.
-			final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(fromObject);
+			final OAGraph og = OARuntime.graph(fromObject);
 			boolean b = false;
 			if (og.internal().sync().isServer()) {
 				OADataSource ds = OARuntime.datasource().get(thisClass);

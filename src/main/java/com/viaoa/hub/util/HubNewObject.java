@@ -15,7 +15,8 @@
  */
 package com.viaoa.hub.util;
 
-import com.viaoa.graph.api.internal.OAGraphInternal;
+
+import com.viaoa.graph.OAGraph;
 import com.viaoa.graph.service.hub.HubSelectService;
 import com.viaoa.graph.service.object.OAObjectDSService;
 import com.viaoa.graph.service.object.OAObjectReflectService;
@@ -150,7 +151,7 @@ public class HubNewObject<F extends OAObject> {
 			hubNewObject = new Hub(hubMain.getObjectClass());
 		}
 
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(hubMain);
+		final OAGraph og = OARuntime.graph(hubMain);
 		hubNewObject.setSelectWhereHub(	og.internal().hubs().select().getSelectWhereHub(hubMain),
 				og.internal().hubs().select().getSelectWhereHubPropertyPath(hubMain));
 
@@ -202,7 +203,7 @@ public class HubNewObject<F extends OAObject> {
 			OAObjectKey ok = obj.getObjectKey();
 			if (obj.isNew() && !ok.hasValidObjectIds()) {
 				// obj.setObjectDefaults(); // 20240507 this should be called when object is created. 
-				final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
+				final OAGraph og = OARuntime.graph(obj);
 				if (og.internal().objects().ds().getAssignIdOnCreate(obj)) {
 					og.internal().objects().ds().assignId(obj);
 				}
@@ -257,12 +258,12 @@ public class HubNewObject<F extends OAObject> {
 		boolean bWasLoading = srvcOAThreadLocal.setLoading(true);
 		try {
 			Class<F> clazz = hubMain.getObjectClass();
-    		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+    		final OAGraph og = OARuntime.graph(clazz);
 			obj = (F) og.internal().objects().reflect().createNewObject(clazz);
 		} finally {
 			srvcOAThreadLocal.setLoading(bWasLoading);
 		}
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(obj);
+		final OAGraph og = OARuntime.graph(obj);
 		og.internal().objects().initialize().initializeAfterLoading((OAObject) obj);
 		return obj;
 	}

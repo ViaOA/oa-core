@@ -13,7 +13,7 @@ import com.test.pos.model.oa.Customer;
 import com.test.pos.model.oa.Register;
 import com.test.pos.model.oa.Store;
 import com.viaoa.callback.OAObjectCallback;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.oa.VEnum;
 import com.viaoa.runtime.OARuntime;
@@ -22,7 +22,7 @@ class OAObjectTest {
 
     @BeforeEach
     void beforeEach() {
-        OAGraphInternal og = (OAGraphInternal) OARuntime.graph(Register.class);
+        OAGraph og = OARuntime.graph(Register.class);
     }
     @AfterEach
     void afterEach() {

@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 import com.viaoa.callback.OACallback;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.find.OAFinder;
-import com.viaoa.graph.api.internal.OAGraphInternal;
+import com.viaoa.graph.OAGraph;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.lang.OAString;
@@ -159,7 +159,7 @@ public class OATriggerMethodListener implements OATriggerListener {
         this.clazz = clazz;
         this.method = method;
         this.bOnlyUseLoadedData = bOnlyUseLoadedData;
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+		final OAGraph og = OARuntime.graph(clazz);
         oi =  og.internal().objects().info().getOAObjectInfo(clazz);
     }
     
@@ -195,7 +195,7 @@ public class OATriggerMethodListener implements OATriggerListener {
         };
         finder.setUseOnlyLoadedData(bOnlyUseLoadedData);
 
-		final OAGraphInternal og = (OAGraphInternal) OARuntime.graph(clazz);
+		final OAGraph og = OARuntime.graph(clazz);
         
         Hub h = og.internal().objects().cache().getSelectAllHub(clazz);
         if (h != null && bOnlyUseLoadedData) {

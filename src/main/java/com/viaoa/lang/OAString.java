@@ -798,7 +798,7 @@ public class OAString {
 	 *
 	 * @param str the source string
 	 * @param sep the field separator character
-	 * @param beg the starting field index
+	 * @param beg the starting field index, one-based
 	 * @param amt the number of fields to extract
 	 * @return the extracted fields
 	 * @deprecated use {@link #fieldAt(String,char,int,int)}
@@ -813,7 +813,7 @@ public class OAString {
 	 *
 	 * @param str the source string
 	 * @param sep the field separator
-	 * @param beg the starting field index
+	 * @param beg the starting field index, zero-based
 	 * @return the extracted field
 	 */
 	public static String fieldAt(String str, String sep, int beg) {
@@ -825,7 +825,7 @@ public class OAString {
 	 *
 	 * @param str the source string
 	 * @param sep the field separator
-	 * @param beg the starting field index
+	 * @param beg the starting field index, zero-based
 	 * @param amt the number of fields to extract
 	 * @return the extracted fields
 	 */

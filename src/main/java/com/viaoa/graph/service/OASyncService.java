@@ -336,6 +336,7 @@ public class OASyncService implements SyncInternalOps, SyncOps {
 	 *
 	 * @return the current request's connection ID, or -1 if unavailable
 	 */
+	@Override
 	public int getRequestConnectionId() {
 		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		RequestInfo ri = srvcOARemoteThread.getRequestInfo();
@@ -428,6 +429,16 @@ public class OASyncService implements SyncInternalOps, SyncOps {
 		catch (Exception e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	@Override
+	public void createServer(OASyncServer ss) {
+		syncServer = ss;
+	}
+
+	@Override
+	public void createClient(OASyncClient sc) {
+		syncClient = sc;
 	}
 
 }
