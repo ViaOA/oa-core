@@ -223,7 +223,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		// oaversion
 	    
 	    // pom version: 4.0.0
-		String ver = "4.0.0.202603090";
+		String ver = "4.0.0.202606260";
 		
 		/*
 		 *  previous:

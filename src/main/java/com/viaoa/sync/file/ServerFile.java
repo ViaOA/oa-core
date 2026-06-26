@@ -248,17 +248,20 @@ public class ServerFile {
         LOG.fine("Starting");
         ssDownload = ms.createServerSocket(FileDownload);
         for ( ; abStart.get(); ) {
-            final Socket socket = ssDownload.accept();
-            new Thread(new Runnable() {
-                public void run() {
-                    try {
-                        downloadFile(socket);
-                    }
-                    catch (Exception e) {
-                        LOG.log(Level.WARNING, "ServerFile.fileDownload exception", e);
-                    }
-                }
-            }, "DownloadFileSocket").start();
+        	try {
+	            final Socket socket = ssDownload.accept();
+	            new Thread(new Runnable() {
+	                public void run() {
+	                    try {
+	                        downloadFile(socket);
+	                    }
+	                    catch (Exception e) {
+	                        LOG.log(Level.WARNING, "ServerFile.fileDownload exception", e);
+	                    }
+	                }
+	            }, "DownloadFileSocket").start();
+        	}
+        	catch (Exception e) {}
         }
     }
 
@@ -273,6 +276,7 @@ public class ServerFile {
      * @throws Exception if an I/O or protocol error occurs
      */
     public void downloadFile(Socket socket) throws Exception {
+    	if (socket == null) return;
         DataInputStream dis = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
         DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
         
@@ -330,18 +334,21 @@ public class ServerFile {
         LOG.fine("Starting");
         ssUpload = ms.createServerSocket(FileUpload);
         for ( ; abStart.get(); ) {
-            final Socket socket = ssUpload.accept();
-            new Thread(new Runnable() {
-                public void run() {
-                    try {
-                        uploadFile(socket);
-                    }
-                    catch (Exception e) {
-                        // TODO: handle exception
-                        LOG.log(Level.WARNING, "ServerFile.fileUpload exception", e);
-                    }
-                }
-            }, "UploadFileSocket").start();
+        	try {
+	            final Socket socket = ssUpload.accept();
+	            new Thread(new Runnable() {
+	                public void run() {
+	                    try {
+	                        uploadFile(socket);
+	                    }
+	                    catch (Exception e) {
+	                        // TODO: handle exception
+	                        LOG.log(Level.WARNING, "ServerFile.fileUpload exception", e);
+	                    }
+	                }
+	            }, "UploadFileSocket").start();
+        	}
+        	catch (Exception e) {}
         }
     }
 
@@ -356,6 +363,7 @@ public class ServerFile {
      * @throws Exception if an I/O or protocol error occurs
      */
     public void uploadFile(Socket socket) throws Exception {
+    	if (socket == null) return;
         DataInputStream dis = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
         DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
 

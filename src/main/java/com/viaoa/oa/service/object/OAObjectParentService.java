@@ -465,6 +465,10 @@ public class OAObjectParentService {
 				rsi.clientDelete(clazz, key);
 				return true;
 			}
+			@Override
+			protected boolean callSyncIsRunning() {
+				return OAObjectParentService.this.srvcSync.isRunning();
+			}
     	};
     	
     	return srvcOAObjectCS;
@@ -1725,7 +1729,7 @@ public class OAObjectParentService {
 				return OAObjectParentService.this.getOAObjectCSService().isClient(obj);
 			}
 			@Override
-			public boolean callCSSave(OAObject oaObj, int iCascadeRule) {
+			public boolean callCSServerSave(OAObject oaObj, int iCascadeRule) {
 				return OAObjectParentService.this.getOAObjectCSService().save(oaObj, iCascadeRule);
 			}
 			@Override
@@ -1793,6 +1797,10 @@ public class OAObjectParentService {
 			@Override
 			protected void callRemoteSyncAddNewToCache(OAObjectSerializer<? extends OAObject> oos) {
 				OAObjectParentService.this.srvcSync.getRemoteSync().addNewToCache(oos);
+			}
+			@Override
+			protected boolean callCSSyncIsRunning() {
+				return OAObjectParentService.this.getOAObjectCSService().callSyncIsRunning();
 			}
     	};
     	return srvcOAObjectSave;

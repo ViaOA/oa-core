@@ -231,7 +231,9 @@ public class MultiplexerServerSocketController {
                 onAcceptRealClientConnection(socket);
             }
             catch (Exception e) {
-            	throw new RuntimeException("MultiplexerServerSocketController: exception while accepting new connections", e);
+            	if (!_bStopAccepting) {
+            		throw new RuntimeException("MultiplexerServerSocketController: exception while accepting new connections", e);
+            	}
             }
         }
     }

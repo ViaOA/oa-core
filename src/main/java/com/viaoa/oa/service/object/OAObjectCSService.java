@@ -366,5 +366,7 @@ public abstract class OAObjectCSService {
 	public abstract <T extends OAObject> T callSyncServerGetObject(Class<T> clazz, OAObjectKey key);
 	public abstract boolean callSyncSyncServerDelete(Class<? extends OAObject> clazz, OAObjectKey key);
 	public abstract boolean callSyncSyncClientDelete(Class<? extends OAObject> clazz, OAObjectKey key);
+	protected abstract boolean callSyncIsRunning();
+
 }
 

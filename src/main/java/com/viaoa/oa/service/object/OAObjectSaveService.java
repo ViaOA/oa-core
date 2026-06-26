@@ -114,7 +114,9 @@ public abstract class OAObjectSaveService {
 		// 20260401 same code that is in OAObjectCSDelegate.save(..)
 		final OAObject thisObj = oaObj;		
 
-		if (thisObj.isNew() && !callHubIsInHubWithMaster(thisObj)) {
+		final boolean bSync = callCSSyncIsRunning();
+		
+		if (thisObj.isNew() && !callHubIsInHubWithMaster(thisObj) && bSync) {
             OAObjectSerializer<OAObject> oos = new OAObjectSerializer<>(thisObj, false, new OAObjectSerializerCallback() {
                 @Override
                 public void beforeSerialize(OAObject obj) {
@@ -141,8 +143,8 @@ public abstract class OAObjectSaveService {
     	}
 		
 		
-		if (callCSIsClient(oaObj)) {
-			callCSSave(oaObj, iCascadeRule);
+		if (bSync && callCSIsClient(oaObj)) {
+			callCSServerSave(oaObj, iCascadeRule);
 			return;
 		}
 
@@ -449,7 +451,7 @@ public abstract class OAObjectSaveService {
 	}
 
 	public abstract boolean callCSIsClient(OAObject oaOjb); 
-	public abstract boolean callCSSave(OAObject oaObj, int iCascadeRule);
+	public abstract boolean callCSServerSave(OAObject oaObj, int iCascadeRule);
 	public abstract <T extends OAObject> Hub<T>[] callHubGetHubReferences(T oaObj); 
 	public abstract OAObjectInfo callInfoGetObjectInfo(OAObject obj); 
 	public abstract boolean callReflectIsReferenceNullOrNotLoaded(OAObject oaObj, String propertyName);
@@ -467,5 +469,5 @@ public abstract class OAObjectSaveService {
 
 	protected abstract boolean callHubIsInHubWithMaster(OAObject thisObj);
 	protected abstract void callRemoteSyncAddNewToCache(OAObjectSerializer<? extends OAObject> oos);
-
+	protected abstract boolean callCSSyncIsRunning();
 }
