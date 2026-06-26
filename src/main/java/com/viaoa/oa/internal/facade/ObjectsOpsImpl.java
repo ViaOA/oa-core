@@ -454,6 +454,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 			}
 
 			@Override
+			public <T extends OAObject> boolean getAllowDelete(T obj) {
+				return srvc.getOAObjectCallbackService().getAllowDelete(obj);
+			}
+			
+			@Override
 			public <T extends OAObject> boolean getAllowAdd(Hub<T> hub, T obj, int checkType) {
 				return srvc.getOAObjectCallbackService().getAllowAdd(hub, obj, checkType);
 			}

@@ -17,7 +17,7 @@ class OAUndoableEditTest {
 
     @BeforeEach
     void beforeEach() {
-        OA oa = OARuntime.oa(Register.class);
+        OA oa = OARuntime.createDefaultOA(Register.class);
     }
     @AfterEach
     void afterEach() {

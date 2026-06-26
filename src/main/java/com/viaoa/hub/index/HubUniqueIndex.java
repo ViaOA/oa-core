@@ -183,6 +183,9 @@ public class HubUniqueIndex<TYPE extends OAObject> {
                 hm.clear();
             }
         };
+        for (TYPE obj : hub) {
+        	add(obj);
+        }
         hub.addHubListener(listener);
     }
 

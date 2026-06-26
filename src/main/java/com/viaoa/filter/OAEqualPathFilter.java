@@ -199,7 +199,12 @@ public class OAEqualPathFilter implements OAFilter {
 			}
 		}
 
-		if (hubFrom != null) {
+		
+		
+		if (objFrom != null) {
+			objFromPPValue = ppFrom.getValue(objFrom);
+		}
+		else if (hubFrom != null) {
 			OALinkInfo[] lis = ppFrom.getLinkInfos();
 
 			// use hubFrom.AO, if it is null, then check if pp uses it's masterObject(s), and if so then use objFrom=masterObj and shorten the pp.

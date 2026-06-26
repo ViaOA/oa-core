@@ -50,7 +50,7 @@ class OAPathTest {
 
     @BeforeEach
     void beforeEach() {
-        OA oa = OARuntime.oa(Register.class);
+        OA oa = OARuntime.createDefaultOA(Register.class);
     }
     @AfterEach
     void afterEach() {
@@ -96,7 +96,9 @@ class OAPathTest {
         OAPath<Invoice> path = new OAPath<>(Invoice.class, "  " + RAW_ITEM_NAME_PATH + "  ");
 
         assertEquals("  " + RAW_ITEM_NAME_PATH + "  ", path.getPropertyPath());
-        assertEquals("Brake Pad", path.getValue(createInvoiceGraph().invoice));
+        Invoice inv = createInvoiceGraph().invoice;
+        Object obj = path.getValue(inv);
+        assertEquals("Brake Pad", obj);
     }
 
     @Test

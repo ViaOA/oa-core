@@ -2558,7 +2558,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 	public boolean canDelete() {
 		OA oa = OARuntime.oa(this);
-		boolean b = oa.internal().objects().callbacks().getAllowDelete(null, this);
+		boolean b = oa.internal().objects().callbacks().getAllowDelete(this);
 		return b;
 	}
 

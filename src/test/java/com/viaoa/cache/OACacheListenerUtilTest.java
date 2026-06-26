@@ -41,7 +41,7 @@ class OACacheListenerUtilTest {
 
     @BeforeEach
     void beforeEach() {
-        OA oa = OARuntime.oa(Register.class);
+        OA oa = OARuntime.createDefaultOA(Register.class);
     }
     @AfterEach
     void afterEach() {
@@ -109,6 +109,7 @@ class OACacheListenerUtilTest {
     void nullPropertyListensForAllPropertyChanges() throws Exception {
         RecordingUtil util = new RecordingUtil(Item.class, null);
         Item item = new Item(1);
+        assertEquals(2, util.count);
         try {
             @SuppressWarnings("unchecked")
             OAObjectCacheListener<Item> listener = (OAObjectCacheListener<Item>) listener(util);
@@ -116,7 +117,7 @@ class OACacheListenerUtilTest {
             listener.afterPropertyChange(item, Item.P_Code, "oldCode", "newCode");
             listener.afterPropertyChange(item, Item.P_Name, "oldName", "newName");
 
-            assertEquals(2, util.count);
+            assertEquals(4, util.count);
         }
         finally {
             util.close();

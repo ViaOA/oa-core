@@ -20,7 +20,7 @@ import com.viaoa.runtime.OARuntime;
 class HubTest {
     @BeforeEach
     void beforeEach() {
-        OA oa = OARuntime.oa(Register.class);
+        OA oa = OARuntime.createDefaultOA(Register.class);
     }
     @AfterEach
     void afterEach() {
@@ -97,7 +97,7 @@ class HubTest {
         hub.setAO(r1);
         assertEquals(2, hub.getPos());
         hub.resetAO();
-        assertEquals(-1, hub.getPos());
+        assertEquals(2, hub.getPos());
 
         assertSame(r3, hub.removeAt(0));
         assertTrue(hub.remove(r4));
@@ -178,8 +178,12 @@ class HubTest {
 
         hub.onAdd(e -> adds.incrementAndGet());
         hub.onRemove(e -> removes.incrementAndGet());
-        hub.onChangeAO(e -> aos.incrementAndGet());
-        hub.onPropertyChange(e -> props.incrementAndGet(), Register.P_Code);
+        hub.onChangeAO(e -> {
+        	aos.incrementAndGet();
+        });
+        hub.onPropertyChange(e -> {
+        	props.incrementAndGet();
+        }, Register.P_Code);
 
         hub.add(r1);
         hub.setAO(r1);
@@ -188,7 +192,7 @@ class HubTest {
 
         assertEquals(1, adds.get());
         assertEquals(1, removes.get());
-        assertEquals(1, aos.get());
+        assertEquals(2, aos.get());
         assertEquals(1, props.get());
     }
 

@@ -20,7 +20,7 @@ class OASelectManagerTest {
 
     @BeforeEach
     void beforeEach() {
-        OA oa = OARuntime.oa(Register.class);
+        OA oa = OARuntime.createDefaultOA(Register.class);
         trackedSelects().clear();
         OASelectManager.setTimeLimit(300);
     }

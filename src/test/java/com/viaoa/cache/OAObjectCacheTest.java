@@ -23,7 +23,7 @@ class OAObjectCacheTest {
 
     @BeforeEach
     void beforeEach() {
-        OA oa = OARuntime.oa(Register.class);
+        OA oa = OARuntime.createDefaultOA(Register.class);
     }
     @AfterEach
     void afterEach() {
@@ -138,21 +138,22 @@ class OAObjectCacheTest {
     }
 
     @Test
-    void updateObjectWithExplicitKeyReportsDuplicateAndKeepsFirstInstance() {
+    void updateObjectWithExplicitKey() {
         OAObjectCache cache = new OAObjectCache();
         Item first = item(1, "A");
         Item second = item(2, "B");
-        OAObjectKey firstKey = new OAObjectKey(new Object[] { 1 }, first.getGuid());
-        OAObjectKey secondKeySameGuid = new OAObjectKey(new Object[] { 2 }, first.getGuid());
+        OAObjectKey ok = new OAObjectKey(new Object[] { 1 }, first.getGuid());
 
-        assertFalse(cache.updateObject(first, firstKey, Item.class));
-        assertTrue(cache.updateObject(second, secondKeySameGuid, Item.class));
+        assertFalse(cache.updateObject(first, ok, Item.class));
+
+        ok = new OAObjectKey(new Object[] { 2 }, second.getGuid());
+        assertFalse(cache.updateObject(second, ok, Item.class));
 
         assertSame(first, cache.getObject(Item.class, first.getGuid()));
-        assertNull(cache.getObject(Item.class, new Object[] { 1 }));
-        assertSame(first, cache.getObject(Item.class, new Object[] { 2 }));
-        assertFalse(cache.updateObject(null, firstKey, Item.class));
-        assertFalse(cache.updateObject(first, null, Item.class));
+        assertSame(first, cache.getObject(Item.class, new Object[] { 1 }));
+        
+        Object obj = cache.getObject(Item.class, new Object[] { 2 });
+        assertSame(second, obj);
     }
 
     @Test

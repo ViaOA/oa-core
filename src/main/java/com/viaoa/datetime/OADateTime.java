@@ -2014,7 +2014,7 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	 */
 	public long betweenHours(OADateTime dt) {
 	    if (dt == null) return 0;
-	    return ChronoUnit.HOURS.between(this.toZonedDateTime(), dt.toInstant());	    
+	    return ChronoUnit.HOURS.between(this.toInstant(), dt.toInstant());	    
 	}
 	
 	/**

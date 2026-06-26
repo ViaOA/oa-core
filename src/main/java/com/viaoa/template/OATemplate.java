@@ -1040,7 +1040,7 @@ public class OATemplate<F extends OAObject> {
 				ppSample = s;
 			}
 			String fmt = OAString.field(tok.data, ",", 2, 99);
-			if (!OAString.isEmpty(fmt)) {
+			if (OAString.isNotEmpty(fmt)) {
 				fmt = fmt.trim();
 				fmt = OAString.convert(fmt, '\'', "");
 				fmt = OAString.convert(fmt, '\"', "");
@@ -1722,7 +1722,11 @@ public class OATemplate<F extends OAObject> {
             if (cn.tagType != TagType.GetProp) {
                 if (cn.tagType != TagType.ForEach) continue;
             }
-        
+  
+            String s = cn.arg1;
+            if (OAStr.isEmpty(s)) continue;
+            if (s.charAt(0) == '$') continue;
+            
             // make columns for pp
             OAPath pp = new OAPath(hub.getObjectClass(), cn.arg1);
             OALinkInfo[] lis = pp.getLinkInfos();

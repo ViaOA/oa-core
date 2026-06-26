@@ -424,7 +424,7 @@ public class OAMatrix {
      */
     public Object getObject(int row, int col) {
         final List<Object[]> al = getGrid();
-        if (row < 0 || al == null || row >= al.size() || col >= alColumn.size()) return null;
+        if (row < 0 || al == null || row >= al.size() || col < 0 || col >= alColumn.size()) return null;
         Column column = alColumn.get(col);
         Object obj = getObject(row, column, al, false);
         return obj;

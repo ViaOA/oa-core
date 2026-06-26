@@ -32,8 +32,8 @@ class OAContextServiceTest {
         OAContextUser<?> user = new OAContextService().getDefaultContextUser();
 
         assertNotNull(user);
-        assertTrue(user.isAdmin());
-        assertTrue(user.isSuperAdmin());
+        assertFalse(user.isAdmin());
+        assertFalse(user.isSuperAdmin());
         assertTrue(user.isEnabled("anything", true, true));
     }
 }

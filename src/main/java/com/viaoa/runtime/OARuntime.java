@@ -105,6 +105,10 @@ public final class OARuntime {
 		runtime.defaultOA(oa);
 		return oa;
 	}
+
+	public static OA createDefaultOA(final Class clazz) {
+		return createDefaultOA(clazz.getPackage());
+	}
 	
 	private OA createOAInternal(final Package pkg) {
 		String pn;

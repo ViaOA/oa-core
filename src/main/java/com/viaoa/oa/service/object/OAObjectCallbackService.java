@@ -253,8 +253,15 @@ public abstract class OAObjectCallbackService {
 	 * @return {@code true} if deletion is allowed; otherwise {@code false}
 	 */
 	public <T extends OAObject> boolean getAllowDelete(Hub<T> hub, T obj) {
-		return getAllowDeleteObjectCallback(hub, obj).getAllowed();
+		OAObjectCallback cb = getAllowDeleteObjectCallback(hub, obj);
+		return cb == null ? false : cb.getAllowed();
 	}
+
+	public <T extends OAObject> boolean getAllowDelete(T obj) {
+		OAObjectCallback cb = getAllowDeleteObjectCallback(obj);
+		return cb == null ? false : cb.getAllowed();
+	}
+	
 	/**
 	 * Returns whether deleting the specified object passes verification by
 	 * evaluating the associated {@link OAObjectCallback}.
@@ -265,7 +272,8 @@ public abstract class OAObjectCallbackService {
 	 * @return {@code true} if verification succeeds; otherwise {@code false}
 	 */
 	public <T extends OAObject> boolean getVerifyDelete(Hub<T> hub, T obj, int checkType) {
-		return getVerifyDeleteObjectCallback(hub, obj, checkType).getAllowed();
+		OAObjectCallback cb = getVerifyDeleteObjectCallback(hub, obj, checkType);
+		return cb == null ? false : cb.getAllowed();
 	}
 
 	/**

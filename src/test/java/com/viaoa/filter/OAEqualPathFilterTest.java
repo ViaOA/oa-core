@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
+import com.viaoa.select.OASelect;
+
 class OAEqualPathFilterTest {
 
 
@@ -27,8 +29,7 @@ class OAEqualPathFilterTest {
     @Test
     void objectConstructorComparesSourcePathToCandidatePathByValue() {
         FilterTestSupport.PosGraph graph = FilterTestSupport.graph();
-        OAEqualPathFilter filter = new OAEqualPathFilter(graph.item, com.test.pos.model.oa.Item.P_Name,
-                com.test.pos.model.oa.Item.P_Name);
+        OAEqualPathFilter filter = new OAEqualPathFilter(graph.item, com.test.pos.model.oa.Item.P_Name, com.test.pos.model.oa.Item.P_Name);
 
         assertNotNull(filter.getPropertyPath());
         boolean b = filter.isUsed(graph.item);
@@ -41,6 +42,6 @@ class OAEqualPathFilterTest {
         OAEqualPathFilter filter = new OAEqualPathFilter(graph.item, com.test.pos.model.oa.Item.P_Name,
                 com.test.pos.model.oa.Item.P_Name);
 
-        assertTrue(filter.updateSelect(new com.viaoa.select.OASelect(com.test.pos.model.oa.Item.class)));
+        assertTrue(filter.updateSelect(new OASelect(com.test.pos.model.oa.Item.class)));
     }
 }

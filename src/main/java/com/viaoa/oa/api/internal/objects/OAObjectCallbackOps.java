@@ -46,6 +46,7 @@ public interface OAObjectCallbackOps {
 	public <T extends OAObject> boolean getAllowRemove(Hub<T> hub, T obj, int checkType);
 	public <T extends OAObject> boolean getVerifyRemove(Hub<T> hub, T obj, int checkType);
 	public void onObjectCallbackModel(Class<? extends OAObject> clazz, String property, OAObjectModel model);
+	public <T extends OAObject> boolean getAllowDelete(T obj);
 }
 
 

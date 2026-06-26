@@ -22,7 +22,7 @@ class OATriggerMethodListenerTest {
     @BeforeEach
     void beforeEach() {
         RecordingProduct.reset();
-        OA oa = OARuntime.oa(Register.class);
+        OA oa = OARuntime.createDefaultOA(Register.class);
     }
     @AfterEach
     void afterEach() {

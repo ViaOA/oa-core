@@ -20,7 +20,7 @@ class OAUndoManagerTest {
     @BeforeEach
     void beforeEach() {
         resetUndoManager();
-        OA oa = OARuntime.oa(Register.class);
+        OA oa = OARuntime.createDefaultOA(Register.class);
     }
 
     @AfterEach

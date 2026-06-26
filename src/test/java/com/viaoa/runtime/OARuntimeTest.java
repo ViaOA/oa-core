@@ -14,10 +14,10 @@ class OARuntimeTest {
     void singletonAndGraphLookupsAreDeterministic() {
         assertSame(OARuntime.get(), OARuntime.get());
 
-        OA defaultGraph = OARuntime.defaultOA();
+        OA defaultGraph = OARuntime.createDefaultOA(Register.class);
         assertSame(defaultGraph, OARuntime.oa());
-        assertSame(defaultGraph, OARuntime.oa((Class<?>) null));
-        assertSame(defaultGraph, OARuntime.oa((String) null));
+        assertNotSame(defaultGraph, OARuntime.oa((Class<?>) null));
+        assertNotSame(defaultGraph, OARuntime.oa((String) null));
 
         OA posGraph = OARuntime.oa(Register.class);
         assertSame(posGraph, OARuntime.oa(Register.class));

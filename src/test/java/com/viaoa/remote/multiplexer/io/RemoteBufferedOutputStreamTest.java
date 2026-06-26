@@ -21,7 +21,7 @@ class RemoteBufferedOutputStreamTest {
         synchronized (RemoteBufferedOutputStream.Lock) {
             Arrays.fill(RemoteBufferedOutputStream.isUsed, false);
         }
-        OA oa = OARuntime.oa(Register.class);
+        OA oa = OARuntime.createDefaultOA(Register.class);
     }
 
     @AfterEach

@@ -542,9 +542,14 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	 * @param hub the Hub to use as the search root
 	 */
 	public void setRoot(Hub<F> hub) {
-		this.fromHub = hub;
+		this.setRoot(hub, true);
 	}
 
+	public void setRoot(Hub<F> hub, boolean bUseAll) {
+		this.fromHub = hub;
+		this.bUseAll = bUseAll;
+	}
+	
 	/**
 	 * Performs a search beginning at the specified Hub using the configured
 	 * property path.
@@ -553,10 +558,15 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	 * @return the list of matching objects
 	 */
 	public List<T> find(Hub<F> hubRoot) {
+		return find(hubRoot, true);
+	}
+
+	public List<T> find(Hub<F> hubRoot, boolean bUseAll) {
+		this.bUseAll = bUseAll;
 		List<T> al = find(hubRoot, null);
 		return al;
 	}
-
+	
 	/**
 	 * Performs a search beginning from each object in the supplied list
 	 * using the configured property path.
@@ -1559,11 +1569,13 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		addFilter(new OANotEmptyFilter(pp));
 	}
 
-	public void addQueryFilter(Class<F> c, String pp) {
+	//20260625  was: <F>	
+	
+	public void addQueryFilter(Class<T> c, String pp) {
 		addFilter(new OAQueryFilter(c, pp));
 	}
 
-	public void addQueryFilter(Class<F> c, String query, Object[] args) {
+	public void addQueryFilter(Class<T> c, String query, Object[] args) {
 		addFilter(new OAQueryFilter(c, query, args));
 	}
 

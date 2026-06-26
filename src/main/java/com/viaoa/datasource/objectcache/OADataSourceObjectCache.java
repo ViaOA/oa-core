@@ -432,27 +432,35 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             return;
         }
         
-        FileOutputStream fos = new FileOutputStream(file);
-        BufferedOutputStream bos = new BufferedOutputStream(fos, 64 * 1024); 
-
-        Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION);
-        DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(bos, deflater, 32 * 1024);
-
-        ObjectOutputStream oos = new ObjectOutputStream(deflaterOutputStream);
-
+        FileOutputStream fos = null;
+        BufferedOutputStream bos = null;
+        Deflater deflater = null;
+        DeflaterOutputStream dos = null;
+        ObjectOutputStream oos = null;
+        
+        lock.writeLock().lock();
         try {
-            lock.writeLock().lock();
+            fos = new FileOutputStream(file);
+            bos = new BufferedOutputStream(fos, 64 * 1024); 
+
+            deflater = new Deflater(Deflater.BEST_COMPRESSION);
+            dos = new DeflaterOutputStream(bos, deflater, 32 * 1024);
+
+            oos = new ObjectOutputStream(dos);
+
             _saveToStorageFile(file, oos, extraObject);
+            
+            oos.flush();
         }
         finally {
         	try {
-		        deflaterOutputStream.finish();
-		        deflaterOutputStream.close();
-		        bos.close();
-		        fos.close();
+		        if (oos != null) oos.close();
+		        if (dos != null) dos.close();
+		        if (bos != null) bos.close();
+		        if (fos != null) fos.close();
         	}
         	finally {
-		        deflater.end();
+		        if (deflater != null) deflater.end();
         		lock.writeLock().unlock();
         	}
         }

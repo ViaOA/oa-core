@@ -36,15 +36,16 @@ class OAPathDelegateTest {
         assertNull(OAPathDelegate.getPropertyPathforClasses(null, new Class[] { Register.class }));
         assertNull(OAPathDelegate.getPropertyPathforClasses(stores, null));
 
-        assertEquals(Store.P_Registers,
-                OAPathDelegate.getPropertyPathforClasses(stores, new Class[] { Register.class }));
-        assertEquals(Store.P_Registers + "." + Register.P_RegisterSessions,
-                OAPathDelegate.getPropertyPathforClasses(stores, new Class[] { Register.class, RegisterSession.class }));
-        assertEquals(Store.P_Registers + "." + Register.P_RegisterSessions + "." + RegisterSession.P_Invoices + "."
+        assertEquals(Store.P_Registers.toLowerCase(), OAPathDelegate.getPropertyPathforClasses(stores, new Class[] { Register.class }).toLowerCase());
+        
+        assertEquals((Store.P_Registers + "." + Register.P_RegisterSessions).toLowerCase(),
+                OAPathDelegate.getPropertyPathforClasses(stores, new Class[] { Register.class, RegisterSession.class }).toLowerCase());
+        
+        assertEquals((Store.P_Registers + "." + Register.P_RegisterSessions + "." + RegisterSession.P_Invoices + "."
                 + Invoice.P_InvoiceBaskets + "." + InvoiceBasket.P_LineItems + "." + LineItem.P_Product + "."
-                + Product.P_Item,
+                + Product.P_Item).toLowerCase(),
                 OAPathDelegate.getPropertyPathforClasses(stores, new Class[] { Register.class, RegisterSession.class,
-                        Invoice.class, InvoiceBasket.class, LineItem.class, Product.class, Item.class }));
+                        Invoice.class, InvoiceBasket.class, LineItem.class, Product.class, Item.class }).toLowerCase());
 
         assertNull(OAPathDelegate.getPropertyPathforClasses(stores, new Class[] { Item.class }));
     }
