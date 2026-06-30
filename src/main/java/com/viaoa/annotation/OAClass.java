@@ -131,6 +131,13 @@ public @interface OAClass {
 	boolean noPojo() default false;
 	
 	boolean jsonUsesCapital() default false;  // JSON names use a capital letter (titled case)
+	
+	
+	/**
+	 * Used to flag the single class in a model that represents runtime User.
+	 */
+	boolean isModelUserClass() default false;
+	
 }
 
 /* used by OAObjectInfo

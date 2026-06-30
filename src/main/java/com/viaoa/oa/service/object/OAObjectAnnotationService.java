@@ -265,6 +265,7 @@ public abstract class OAObjectAnnotationService {
 				oi.setRootTreePropertyPaths(pps);
 				oi.setLookup(oaclass.isLookup());
 				oi.setProcessed(oaclass.isProcessed());
+				oi.setModeUserClass(oaclass.isModelUserClass());
 				
 				s = oaclass.pluralName();
 				if (OAStr.isNotEmpty(s))  oi.setPluralName(s);

@@ -153,16 +153,16 @@ Used by OAContext<p>
 public class OAContextAccess {
 
 	/** Path-based rules granting “enabled” access. */
-	private final List<UserAccess> alEnabledUserAccess = new ArrayList<>();
+	private final List<ContextAccess> alEnabledUserAccess = new ArrayList<>();
 
 	/** Path-based rules denying “enabled” access. */
-	private final List<UserAccess> alNotEnabledUserAccess = new ArrayList<>();
+	private final List<ContextAccess> alNotEnabledUserAccess = new ArrayList<>();
 
 	/** Path-based rules granting “visible” access. */
-	private final List<UserAccess> alVisibleUserAccess = new ArrayList<>();
+	private final List<ContextAccess> alVisibleUserAccess = new ArrayList<>();
 
 	/** Path-based rules denying “visible” access. */
-	private final List<UserAccess> alNotVisibleUserAccess = new ArrayList<>();
+	private final List<ContextAccess> alNotVisibleUserAccess = new ArrayList<>();
 
 	/** Classes that are explicitly marked as enabled. */
 	private final Set<Class<? extends OAObject>> hsEnabledClass = new HashSet<>();
@@ -270,7 +270,7 @@ public class OAContextAccess {
 	 * visibility or enabled rule. Includes both forward and reverse property
 	 * paths to determine reachability and common ancestors.
 	 */
-	protected static class UserAccess {
+	protected static class ContextAccess {
 		/** Optional root hub for path evaluation. */
 		Hub hub;
 
@@ -299,7 +299,7 @@ public class OAContextAccess {
 		 * @param pp property path string
 		 * @param bOnlyEndProperty whether only the final path segment applies
 		 */
-		public UserAccess(OAObject obj, String pp, boolean bOnlyEndProperty) {
+		public ContextAccess(OAObject obj, String pp, boolean bOnlyEndProperty) {
 			this.obj = obj;
 			this.pp = new OAPath(obj.getClass(), pp);
 			this.ppReverse = this.pp.getReversePath();
@@ -313,7 +313,7 @@ public class OAContextAccess {
 		 * @param pp property path string
 		 * @param bOnlyEndProperty whether only the final segment applies
 		 */
-		public UserAccess(Hub hub, String pp, boolean bOnlyEndProperty) {
+		public ContextAccess(Hub hub, String pp, boolean bOnlyEndProperty) {
 			this.hub = hub;
 			this.pp = new OAPath(hub.getObjectClass(), pp);
 			this.ppReverse = this.pp.getReversePath();
@@ -408,7 +408,7 @@ public class OAContextAccess {
 		if (obj == null) {
 			return;
 		}
-		UserAccess ua = new UserAccess(obj, pp, bOnlyEndProperty);
+		ContextAccess ua = new ContextAccess(obj, pp, bOnlyEndProperty);
 		if (OAString.isNotEmpty(propertyName)) {
 			ua.props = new String[] { propertyName };
 		}
@@ -430,7 +430,7 @@ public class OAContextAccess {
 		if (hub.getObjectClass() == null) {
 			throw new RuntimeException("hub getObjectClass can not be null");
 		}
-		UserAccess ua = new UserAccess(hub, pp, bOnlyEndProperty);
+		ContextAccess ua = new ContextAccess(hub, pp, bOnlyEndProperty);
 		if (OAString.isNotEmpty(propertyName)) {
 			ua.props = new String[] { propertyName };
 		}
@@ -449,7 +449,7 @@ public class OAContextAccess {
 		if (obj == null) {
 			return;
 		}
-		UserAccess ua = new UserAccess(obj, pp, bOnlyEndProperty);
+		ContextAccess ua = new ContextAccess(obj, pp, bOnlyEndProperty);
 		if (OAString.isNotEmpty(propertyName)) {
 			ua.props = new String[] { propertyName };
 		}
@@ -467,7 +467,7 @@ public class OAContextAccess {
 		if (hub.getObjectClass() == null) {
 			throw new RuntimeException("hub getObjectClass can not be null");
 		}
-		UserAccess ua = new UserAccess(hub, pp, bOnlyEndProperty);
+		ContextAccess ua = new ContextAccess(hub, pp, bOnlyEndProperty);
 		if (OAString.isNotEmpty(propertyName)) {
 			ua.props = new String[] { propertyName };
 		}
@@ -486,7 +486,7 @@ public class OAContextAccess {
 		if (obj == null) {
 			return;
 		}
-		UserAccess ua = new UserAccess(obj, pp, bOnlyEndProperty);
+		ContextAccess ua = new ContextAccess(obj, pp, bOnlyEndProperty);
 		if (OAString.isNotEmpty(propertyName)) {
 			ua.props = new String[] { propertyName };
 		}
@@ -514,7 +514,7 @@ public class OAContextAccess {
 		if (hub.getObjectClass() == null) {
 			throw new RuntimeException("hub getObjectClass can not be null");
 		}
-		UserAccess ua = new UserAccess(hub, pp, bOnlyEndProperty);
+		ContextAccess ua = new ContextAccess(hub, pp, bOnlyEndProperty);
 		if (OAString.isNotEmpty(propertyName)) {
 			ua.props = new String[] { propertyName };
 		}
@@ -533,7 +533,7 @@ public class OAContextAccess {
 		if (obj == null) {
 			return;
 		}
-		UserAccess ua = new UserAccess(obj, pp, bOnlyEndProperty);
+		ContextAccess ua = new ContextAccess(obj, pp, bOnlyEndProperty);
 		if (OAString.isNotEmpty(propertyName)) {
 			ua.props = new String[] { propertyName };
 		}
@@ -551,7 +551,7 @@ public class OAContextAccess {
 		if (hub.getObjectClass() == null) {
 			throw new RuntimeException("hub getObjectClass can not be null");
 		}
-		UserAccess ua = new UserAccess(hub, pp, bOnlyEndProperty);
+		ContextAccess ua = new ContextAccess(hub, pp, bOnlyEndProperty);
 		if (OAString.isNotEmpty(propertyName)) {
 			ua.props = new String[] { propertyName };
 		}
@@ -785,13 +785,13 @@ public class OAContextAccess {
 	 * @return true if object matches rule; false otherwise
 	 */
 	protected boolean getIsInSamePath(final OAObject objSearch, final String propertyName,
-			final List<UserAccess> alUserAccess) {
+			final List<ContextAccess> alUserAccess) {
 		if (objSearch == null || alUserAccess == null) {
 			return false;
 		}
 		final Class cz = objSearch.getClass();
 
-		for (final UserAccess ua : alUserAccess) {
+		for (final ContextAccess ua : alUserAccess) {
 			if (propertyName != null) {
 				if (ua.props == null) {
 					continue;

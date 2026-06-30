@@ -585,6 +585,13 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	private volatile Map<String, OAMethodInfo> hmMethodInfo;
 	
 	/**
+	 * Used to flag the OA Model Objet that is used for Permissions (one per model).
+	 * This class is assumed to have the following properties:  admin, superAdmin, editProcessed.
+	 */
+	private volatile boolean bIsModelUserClass; 
+	
+	
+	/**
 	 * Default constructor that initializes the metadata instance with
 	 * an empty identifier property list.
 	 */
@@ -605,6 +612,18 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		thisClass = c;
 	}
 
+	public boolean isModelUserClass() {
+		return bIsModelUserClass;
+	}
+	public boolean getModelUserClass() {
+		return bIsModelUserClass;
+	}
+	public void setModeUserClass(boolean b) {
+		this.bIsModelUserClass = b;
+	}
+	
+	
+	
 	/**
 	 * Initializes the metadata with a single identifier property.
 	 *
