@@ -433,8 +433,7 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 			// see if object is in hubx
 			if (getMethod == null) {
 				if (hubx.getObject(obj) == null) {
-//qqqqqqqqqqqqq needs VEnum support					
-					if (hubx.getAllowAdd(OAObjectCallback.CHECK_AllButProcessed, (TYPE) obj)) {
+					if (hubx.getAllowAdd((TYPE) obj, true)) {
 						hubx.add((TYPE) obj);
 					}
 				}
@@ -443,8 +442,7 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 				for (int j = 0;; j++) {
 					Object o = hubx.elementAt(j);
 					if (o == null) {
-//qqqqqqqqqqqqq needs VEnum support						
-						if (hubx.getAllowAdd(OAObjectCallback.CHECK_AllButProcessed, (TYPE) obj)) {
+						if (hubx.getAllowAdd((TYPE) obj, true)) {
 							createNewObject((TYPE2) obj);
 						}
 						break;
@@ -485,7 +483,7 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 				throw new RuntimeException(e);
 			}
 			if (hubMasterx.getObject(value) == null) {
-				if (hubx.getAllowRemove(OAObjectCallback.CHECK_AllButProcessed, obj)) {
+				if (hubx.getAllowRemove(obj, false, true)) {
 					if (okToRemove(obj, value)) {
 						hubx.remove(i);
 						if (obj instanceof OAObject) {

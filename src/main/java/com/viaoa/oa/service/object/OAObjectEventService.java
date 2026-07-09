@@ -187,9 +187,7 @@ public abstract class OAObjectEventService {
 			}
 
 			if (!bSkip && !bIsLoading) {
-				OAObjectCallback em = callCallbackGetVerifyPropertyChangeObjectCallback(
-					OAObjectCallback.CHECK_CallbackMethod,
-					oaObj, propertyName, oldObj, newObj
+				OAObjectCallback em = callRulesGetVerifyPropertyChangeCallbackOnlyObjectCallback(oaObj, propertyName, oldObj, newObj
 				);
 				if (!em.getAllowed() || em.getThrowable() != null) {
 					String msg = em.getResponse();
@@ -337,7 +335,7 @@ public abstract class OAObjectEventService {
 			OAPropertyInfo propInfo = callInfoGetPropertyInfo(oi, propertyU);
 			if (!bIsLoading && propInfo != null && propInfo.getIsSubmit() && newObj != null) {
 				if (OAConv.toBoolean(newObj)) {
-					OAObjectCallback eq = callCallbackGetAllowSubmitObjectCallback(oaObj);
+					OAObjectCallback eq = callRulesGetAllowSubmitObjectCallback(oaObj);
 					if (!eq.getAllowed()) {
 						throw new RuntimeException("submit failed, Class="
 								+ oaObj.getClass().getSimpleName() + ", message=" + eq.getResponse(), eq.getThrowable());
@@ -1224,8 +1222,8 @@ public abstract class OAObjectEventService {
 	public abstract void callObjectSetAutoAdd(final OAObject oaObj, boolean bEnabled);
 	public abstract <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok);
 	public abstract void callCacheFireAfterPropertyChange(OAObject obj, OAObjectKey origKey, String propertyName, Object oldValue, Object newValue, boolean bLocalOnly, boolean bSendEvent);
-	public abstract OAObjectCallback callCallbackGetAllowSubmitObjectCallback(OAObject obj);
-	public abstract OAObjectCallback callCallbackGetVerifyPropertyChangeObjectCallback(final int checkType, final OAObject oaObj, final String propertyName, final Object oldValue, final Object newValue);
+	public abstract OAObjectCallback callRulesGetAllowSubmitObjectCallback(OAObject obj);
+	public abstract OAObjectCallback callRulesGetVerifyPropertyChangeCallbackOnlyObjectCallback(final OAObject oaObj, final String propertyName, final Object oldValue, final Object newValue);
 	public abstract void callCSFireBeforePropertyChange(OAObject obj, String propertyName, Object oldValue, Object newValue);
 	public abstract boolean callCSIsServer(OAObject obj);
 	public abstract boolean callDSIsAssigningId(OAObject obj);

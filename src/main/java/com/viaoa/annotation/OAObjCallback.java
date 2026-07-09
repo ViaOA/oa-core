@@ -86,25 +86,25 @@ public @interface OAObjCallback {
 	 * Property evaluated on the surrounding context object to determine
 	 * whether the annotated method or class should be enabled.
 	 */
-	String contextEnabledProperty() default "";
+	String modelUserEnabledProperty() default "";
 
 	/**
 	 * Specifies the value of {@code contextEnabledProperty} that results
 	 * in the method or class being considered enabled within context.
 	 */
-	boolean contextEnabledValue() default true;
+	boolean modelUserEnabledValue() default true;
 
 	/**
 	 * Property evaluated on the surrounding context object to determine
 	 * whether the annotated method or class should be visible.
 	 */
-	String contextVisibleProperty() default "";
+	String modelUserVisibleProperty() default "";
 
 	/**
 	 * Specifies the value of {@code contextVisibleProperty} that results
 	 * in the method or class being considered visible within context.
 	 */
-	boolean contextVisibleValue() default true;
+	boolean modelUserVisibleValue() default true;
 
 	/**
 	 * Lists property paths whose changes should trigger reevaluation of
@@ -116,7 +116,7 @@ public @interface OAObjCallback {
 	 * Lists context-level properties whose changes should trigger
 	 * reevaluation of UI state for the annotated element.
 	 */
-	String[] contextDependentProperties() default {};
+	String[] modelUserDependentProperties() default {};
 
 	/**
 	 * Declares the callback types that the annotated method expects,

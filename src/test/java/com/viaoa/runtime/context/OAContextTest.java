@@ -5,11 +5,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
 import com.test.pos.model.oa.Register;
+import com.viaoa.session.OAContext;
+import com.viaoa.session.OASessionAccess;
+import com.viaoa.session.OASessionUser;
 
 class OAContextTest {
     @Test
     void constructorAndAccessorsExposeKeyAccessAndDefaultPaths() {
-        OAContextAccess access = new OAContextAccess();
+        OASessionAccess access = new OASessionAccess();
         OAContext<String, Register> context = new OAContext<>("register", access);
 
         assertEquals("register", context.getKey());
@@ -21,8 +24,8 @@ class OAContextTest {
 
     @Test
     void contextUserMapIgnoresNullKeysAndRemovesNullUsers() {
-        OAContext<String, Register> context = new OAContext<>("register", new OAContextAccess());
-        OAContextUser<Register> user = new OAContextUser<>(context, new Register());
+        OAContext<String, Register> context = new OAContext<>("register", new OASessionAccess());
+        OASessionUser<Register> user = new OASessionUser<>(context, new Register());
 
         context.addContextUser(null, user);
         assertNull(context.getContextUser(null));
@@ -36,7 +39,7 @@ class OAContextTest {
 
     @Test
     void permissionPathNamesCanBeChanged() {
-        OAContext<String, Register> context = new OAContext<>("register", new OAContextAccess());
+        OAContext<String, Register> context = new OAContext<>("register", new OASessionAccess());
 
         context.setAdminPath("isAdmin");
         context.setSuperAdminPath("isSuper");

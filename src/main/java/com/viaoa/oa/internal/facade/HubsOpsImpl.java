@@ -6,6 +6,7 @@ import java.io.ObjectStreamException;
 import java.util.ArrayList;
 import java.util.Comparator;
 
+import com.viaoa.callback.OAObjectCallback;
 import com.viaoa.cascade.OACascade;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.hub.Hub;
@@ -682,8 +683,8 @@ public class HubsOpsImpl implements HubsOps {
 			}
 
 			@Override
-			public String getCantRemoveAllMessage(Hub<?> hub, int checkType) {
-				return srvc.getHubAddRemoveService().getCantRemoveAllMessage(hub, checkType);
+			public String getCantRemoveAllMessage(Hub<?> hub, OAObjectCallback.CheckType[] onlyCheckTypes) {
+				return srvc.getHubAddRemoveService().getCantRemoveAllMessage(hub, onlyCheckTypes);
 			}
 
 			@Override

@@ -1863,6 +1863,11 @@ public abstract class OAObjectInfoService {
     protected Map<Class, OAObjectInfo> getObjectInfoMap() {
     	return hmObjectInfo;
     }
+
+    public Class<? extends OAObject>[] getAllClasses() {
+    	return (Class<? extends OAObject>[]) hmObjectInfo.keySet().toArray();
+    }
+    
     
 	public abstract void callAnnotationUpdate2(OAObjectInfo oi, Class<?> clazz);
 	public abstract void callAnnotationUpdateImportMatches(OAObjectInfo oi); 

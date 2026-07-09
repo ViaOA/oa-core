@@ -26,6 +26,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.viaoa.callback.OAObjectCallback;
+import com.viaoa.callback.OAObjectCallback.Type;
 import com.viaoa.compare.OACompare;
 import com.viaoa.compare.match.OAMatchNotExist;
 import com.viaoa.converter.OAConv;
@@ -786,8 +787,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 	public boolean isValidPropertyChange(String propertyName, Object oldValue, Object newValue) {
 		OA oa = OARuntime.oa(this);
-		return oa.internal().objects().callbacks().getVerifyPropertyChange(OAObjectCallback.CHECK_CallbackMethod, 
-				this, propertyName, oldValue, newValue);
+		return oa.internal().objects().rules().getVerifyPropertyChangeCallbackOnly(this, propertyName, oldValue, newValue);
 	}
 
 	/**
@@ -813,8 +813,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
     public boolean isValidPropertyChange(String propertyName, Object newValue) {
 		OA oa = OARuntime.oa(this);
         Object oldValue = getProperty(propertyName);
-        return oa.internal().objects().callbacks().getVerifyPropertyChange(OAObjectCallback.CHECK_CallbackMethod, 
-       		this, propertyName, oldValue, newValue);
+        return oa.internal().objects().rules().getVerifyPropertyChangeCallbackOnly(this, propertyName, oldValue, newValue);
     }
 
     /**
@@ -842,9 +841,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
      */
 	public OAObjectCallback getIsValidPropertyChangeObjectCallback(String propertyName, Object oldValue, Object newValue) {
 		OA oa = OARuntime.oa(this);
-		OAObjectCallback eq = oa.internal().objects().callbacks().getVerifyPropertyChangeObjectCallback(	
-				OAObjectCallback.CHECK_CallbackMethod, this,
-				propertyName, oldValue, newValue);
+		OAObjectCallback eq = oa.internal().objects().rules().getVerifyPropertyChangeCallbackOnlyObjectCallback(this, propertyName, oldValue, newValue);
 		return eq;
 	}
 	
@@ -874,9 +871,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
     public OAObjectCallback getIsValidPropertyChangeObjectCallback(String propertyName, Object newValue) {
         Object oldValue = getProperty(propertyName);
 		OA oa = OARuntime.oa(this);
-        OAObjectCallback eq = oa.internal().objects().callbacks().getVerifyPropertyChangeObjectCallback(   
-        	OAObjectCallback.CHECK_CallbackMethod, this,
-            propertyName, oldValue, newValue);
+        OAObjectCallback eq = oa.internal().objects().rules().getVerifyPropertyChangeCallbackOnlyObjectCallback(this, propertyName, oldValue, newValue);
         return eq;
     }
 
@@ -903,7 +898,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
      */
 	public boolean isEnabled(String propertyName) {
 		OA oa = OARuntime.oa(this);
-		return oa.internal().objects().callbacks().getAllowEnabled(OAObjectCallback.CHECK_ALL, null, this, propertyName);
+		return oa.internal().objects().rules().getAllowEnabled(null, this, propertyName);
 	}
 
 	/**
@@ -911,7 +906,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * property is enabled, including detailed callback metadata.
 	 * <p>
 	 * This method delegates to
-	 * {@link OAObjectCallbackService#getAllowEnabledObjectCallback(int, OAObjectCallback, OAObject, String)}
+	 * {@link OAObjectCallbackService#getAllowEnabledObjectCallback(Hub, OAObject, String)}
 	 * using {@link OAObjectCallback#CHECK_ALL} as the evaluation mode. The
 	 * returned callback object provides:
 	 * <ul>
@@ -930,7 +925,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 	public OAObjectCallback getIsEnabledObjectCallback(String propertyName, Object oldValue, Object newValue) {
 		OA oa = OARuntime.oa(this);
-		OAObjectCallback eq = oa.internal().objects().callbacks().getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, this, propertyName);
+		OAObjectCallback eq = oa.internal().objects().rules().getAllowEnabledObjectCallback(null, this, propertyName);
 		return eq;
 	}
 
@@ -957,7 +952,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 	public boolean isEnabled() {
 		OA oa = OARuntime.oa(this);
-		return oa.internal().objects().callbacks().getAllowEnabled(OAObjectCallback.CHECK_ALL, null, this, null);
+		return oa.internal().objects().rules().getAllowEnabled(null, this, null);
 	}
 
 	/**
@@ -965,7 +960,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * as a whole, is enabled for interaction.
 	 * <p>
 	 * This method delegates to
-	 * {@link OAObjectCallbackServicee#getAllowEnabledObjectCallback(int, OAObjectCallback, OAObject, String)}
+	 * {@link OAObjectCallbackServicee#getAllowEnabledObjectCallback(Hub, OAObject, String)}
 	 * using {@link OAObjectCallback#CHECK_ALL} as the evaluation mode and a
 	 * {@code null} property name. This instructs the delegate to evaluate
 	 * object-level enablement rules instead of property-specific rules.
@@ -982,7 +977,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 	public OAObjectCallback getIsEnabledObjectCallback() {
 		OA oa = OARuntime.oa(this);
-		OAObjectCallback eq = oa.internal().objects().callbacks().getAllowEnabledObjectCallback(OAObjectCallback.CHECK_ALL, null, this, null);
+		OAObjectCallback eq = oa.internal().objects().rules().getAllowEnabledObjectCallback(null, this, null);
 		return eq;
 	}
 
@@ -1008,7 +1003,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 	public boolean isVisible(String propertyName) {
 		OA oa = OARuntime.oa(this);
-		return oa.internal().objects().callbacks().getAllowVisible(null, this, propertyName);
+		return oa.internal().objects().rules().getAllowVisible(null, this, propertyName);
 	}
 
 	/**
@@ -1033,7 +1028,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 	public OAObjectCallback getIsVisibleObjectCallback(String propertyName) {
 		OA oa = OARuntime.oa(this);
-		OAObjectCallback eq = oa.internal().objects().callbacks().getAllowVisibleObjectCallback(null, this, propertyName);
+		OAObjectCallback eq = oa.internal().objects().rules().getAllowVisibleObjectCallback(null, this, propertyName);
 		return eq;
 	}
 
@@ -1057,7 +1052,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 	public boolean isVisible() {
 		OA oa = OARuntime.oa(this);
-		return oa.internal().objects().callbacks().getAllowVisible(null, this, null);
+		return oa.internal().objects().rules().getAllowVisible(null, this, null);
 	}
 
 	/**
@@ -1081,7 +1076,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 	public OAObjectCallback getIsVisibleObjectCallback() {
 		OA oa = OARuntime.oa(this);
-		OAObjectCallback eq = oa.internal().objects().callbacks().getAllowVisibleObjectCallback(null, this, null);
+		OAObjectCallback eq = oa.internal().objects().rules().getAllowVisibleObjectCallback(null, this, null);
 		return eq;
 	}
 
@@ -1090,7 +1085,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * according to OA's command-validation callback rules.
 	 * <p>
 	 * This method delegates to
-	 * {@link OAObjectCallbackService#getVerifyCommandObjectCallback(OAObject, String, int)}
+	 * {@link OAObjectCallbackService#getVerifyCommandObjectCallback(OAObject, String)}
 	 * using {@link OAObjectCallback#CHECK_ALL} as the evaluation mode.
 	 * The returned callback is then queried for its {@code allowed} state.
 	 * <p>
@@ -1107,7 +1102,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 	public boolean verifyCommand(String methodName) {
 		OA oa = OARuntime.oa(this);
-		OAObjectCallback eq = oa.internal().objects().callbacks().getVerifyCommandObjectCallback(this, methodName, OAObjectCallback.CHECK_ALL);
+		OAObjectCallback eq = oa.internal().objects().rules().getVerifyCommandObjectCallback(this, methodName);
 		return eq.getAllowed();
 	}
 
@@ -1117,7 +1112,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * rules and context.
 	 * <p>
 	 * This method delegates to
-	 * {@link OAObjectCallbackService#getVerifyCommandObjectCallback(OAObject, String, int)}
+	 * {@link OAObjectCallbackService#getVerifyCommandObjectCallback(OAObject, String)}
 	 * using {@link OAObjectCallback#CHECK_ALL} as the evaluation mode.
 	 * The returned callback includes:
 	 * <ul>
@@ -1134,7 +1129,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 	public OAObjectCallback getVerifyCommand(String methodName) {
 		OA oa = OARuntime.oa(this);
-		OAObjectCallback eq = oa.internal().objects().callbacks().getVerifyCommandObjectCallback(this, methodName, OAObjectCallback.CHECK_ALL);
+		OAObjectCallback eq = oa.internal().objects().rules().getVerifyCommandObjectCallback(this, methodName);
 		return eq;
 	}
 
@@ -1159,7 +1154,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 	public OAObjectCallback getAllowSubmit() {
 		OA oa = OARuntime.oa(this);
-		OAObjectCallback eq = oa.internal().objects().callbacks().getAllowSubmitObjectCallback(this);
+		OAObjectCallback eq = oa.internal().objects().rules().getAllowSubmitObjectCallback(this);
 		return eq;
 	}
 
@@ -1168,7 +1163,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * is permitted to be saved according to OA’s save-validation rules.
 	 * <p>
 	 * This method delegates to
-	 * {@link OAObjectCallbackService#getVerifySaveObjectCallback(OAObject, int)}
+	 * {@link OAObjectCallbackService#getVerifySaveObjectCallback(OAObject)}
 	 * using {@link OAObjectCallback#CHECK_ALL} as the evaluation mode.  
 	 * The delegate evaluates:
 	 * <ul>
@@ -1184,7 +1179,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
     public OAObjectCallback getVerifySaveObjectCallback() {
 		OA oa = OARuntime.oa(this);
-        OAObjectCallback eq = oa.internal().objects().callbacks().getVerifySaveObjectCallback(this, OAObjectCallback.CHECK_ALL);
+        OAObjectCallback eq = oa.internal().objects().rules().getVerifySaveObjectCallback(this);
         return eq;
     }
 	
@@ -2468,7 +2463,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 	public boolean canSave() {
 		OA oa = OARuntime.oa(this);
-		boolean flag = oa.internal().objects().callbacks().getAllowSave(this, OAObjectCallback.CHECK_ALL);
+		boolean flag = oa.internal().objects().rules().getAllowSave(this);
 		return flag;
 	}
 
@@ -2517,7 +2512,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * Deletes this object from the OA Object Graph and its underlying datasource.
 	 * <p>
 	 * Before deletion, this method evaluates delete permissions through
-	 * {@link OAObjectCallbackService#getVerifyDeleteObjectCallback(Object, OAObject, int)}
+	 * {@link OAObjectCallbackService#getVerifyDeleteObjectCallback(Object, OAObject)}
 	 * unless the current thread is a remote thread. If the callback denies deletion,
 	 * a {@link RuntimeException} is thrown containing the callback's message and
 	 * optional cause.
@@ -2532,7 +2527,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		OA oa = OARuntime.oa(this);
 		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 		if (!srvcOARemoteThread.isRemoteThread()) {
-			OAObjectCallback em = oa.internal().objects().callbacks().getVerifyDeleteObjectCallback(null, this, OAObjectCallback.CHECK_CallbackMethod);
+			OAObjectCallback em = oa.internal().objects().rules().getVerifyDeleteObjectCallback(null, this);
 			if (!em.getAllowed()) {
 				String s = em.getResponse();
 				if (OAString.isEmpty(s)) {
@@ -2558,7 +2553,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 	public boolean canDelete() {
 		OA oa = OARuntime.oa(this);
-		boolean b = oa.internal().objects().callbacks().getAllowDelete(this);
+		boolean b = oa.internal().objects().rules().getAllowDelete(this);
 		return b;
 	}
 

@@ -7,12 +7,18 @@ import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubListener;
 import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.oa.api.ConfigOps;
+import com.viaoa.oa.api.ModelUserOps;
 import com.viaoa.oa.api.ReplicationOps;
+import com.viaoa.oa.api.SessionUserOps;
 import com.viaoa.oa.api.SyncOps;
 import com.viaoa.oa.api.internal.InternalOps;
 import com.viaoa.oa.api.services.ServicesOps;
 import com.viaoa.oa.internal.facade.InternalOpsImpl;
+import com.viaoa.oa.service.OAConfigService;
+import com.viaoa.oa.service.OAModelUserService;
 import com.viaoa.oa.service.OAReplicationService;
+import com.viaoa.oa.service.OASessionUserService;
 import com.viaoa.oa.service.OASyncService;
 import com.viaoa.oa.service.OATriggerService;
 import com.viaoa.oa.service.facade.ServicesOpsImpl;
@@ -122,6 +128,10 @@ public class OAImpl implements OA {
 
 	private OAObjectParentService srvcObjectParent;
 	private HubParentService srvcHubParent;
+	
+	private ConfigOps srvcConfig;
+	private ModelUserOps srvcModelUser;
+	private SessionUserOps srvcSessionUser;
 
     
 	public OAImpl(String packageName) {
@@ -138,6 +148,7 @@ public class OAImpl implements OA {
 		srvcObjectParent = new OAObjectParentService();
 		srvcHubParent = new HubParentService();
 		
+		srvcConfig = new OAConfigService();
 		
 	    srvcOASyncInternal = new OASyncService(this);
 
@@ -161,7 +172,8 @@ public class OAImpl implements OA {
 	    srvcServices = new ServicesOpsImpl(
 			new com.viaoa.oa.service.facade.HubsOpsImpl(srvcHubParent),
 			new com.viaoa.oa.service.facade.ObjectsOpsImpl(srvcObjectParent),
-			new com.viaoa.oa.service.facade.TriggersOpsImpl(srvcOATrigger)
+			new com.viaoa.oa.service.facade.TriggersOpsImpl(srvcOATrigger),
+			new com.viaoa.oa.service.facade.RulesOpsImpl(srvcObjectParent.getOAObjectRulesService())
 		);
 
 	    srvcInternal = new InternalOpsImpl(
@@ -176,12 +188,18 @@ public class OAImpl implements OA {
 		if (packageName != null) {
 			String[] classNames = OAReflect.getOAObjectClasses(packageName);
 			for (String cn : classNames) {
-				Class<?> c = Class.forName(packageName + "." + cn);
+				Class<? extends OAObject> c = (Class<? extends OAObject>) Class.forName(packageName + "." + cn);
 				if (OAObject.class.isAssignableFrom(c)) {
-					internal().objects().info().getObjectInfo(c);
+					OAObjectInfo oi = internal().objects().info().getObjectInfo(c);
+					if (oi.getModelUserClass()) {
+						if (srvcModelUser == null) srvcModelUser = new OAModelUserService(this, c);
+					}
 				}
 			}
 		}
+		
+		if (srvcModelUser == null) srvcModelUser = new OAModelUserService(this, null);
+		srvcSessionUser = new OASessionUserService(this);
 	}
 
 	public String getPackageName() {
@@ -324,6 +342,21 @@ public class OAImpl implements OA {
 		bClosed = true;
 		// srvcObjectParent.getOAObjectCacheService().close();
 		// todo: might need to create & call close on child services		
+	}
+
+	@Override
+	public ConfigOps config() {
+		return srvcConfig;
+	}
+
+	@Override
+	public ModelUserOps modelUser() {
+		return srvcModelUser;
+	}
+
+	@Override
+	public SessionUserOps sessionUser() {
+		return srvcSessionUser;
 	}
 	
 }

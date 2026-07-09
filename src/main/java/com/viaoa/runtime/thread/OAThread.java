@@ -17,7 +17,7 @@ package com.viaoa.runtime.thread;
 
 import com.viaoa.datetime.OADateTime;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.context.OAContextUser;
+import com.viaoa.session.OASessionUser;
 
 /**
  * Thread implementation that automatically propagates OA thread context from
@@ -38,7 +38,7 @@ public class OAThread extends Thread {
 	 * Snapshot of the OA thread-local context captured from the creating thread.
 	 * Restored at the start of {@link #run()} and cleared afterward.
 	 */
-	private final OAContextUser<?> contextUser;
+	private final OAThreadLocal threadLocal;
 
 	/**
 	 * The runnable task executed by this thread. Invoked inside {@link #run()}
@@ -53,7 +53,7 @@ public class OAThread extends Thread {
 	 * @param runnable the task to execute in this thread
 	 */
 	public OAThread(Runnable runnable) {
-		contextUser = OARuntime.thread().getContextUser();
+		threadLocal = OARuntime.thread().getThreadLocalService().getOAThreadLocal();
 		this.runnable = runnable;
 	}
 
@@ -63,16 +63,14 @@ public class OAThread extends Thread {
 	 */
 	@Override
 	public void run() {
-		if (contextUser != null) {
-			OARuntime.thread().setContextUser(contextUser);
+		if (threadLocal != null) {
+			OARuntime.thread().getThreadLocalService().initialize(threadLocal);
 		}
 		try {
-		runnable.run();
+			runnable.run();
 		}
 		finally {
-			if (contextUser != null) {
-				OARuntime.thread().setContextUser(null);
-			}
+			OARuntime.thread().getThreadLocalService().initialize(null);
 		}
 	}
 

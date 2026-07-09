@@ -105,7 +105,7 @@ public class OACalcInfo implements java.io.Serializable {
      * Properties that determine when the calculated value must be refreshed due to
      * contextual changes.
      */
-    private String[] contextDependentProperties;
+    private String[] modelUserDependentProperties;
 
     /**
      * Property name used to determine whether this calculated property is enabled.
@@ -133,23 +133,23 @@ public class OACalcInfo implements java.io.Serializable {
      * Property name used to determine contextual enabled state for this calculated
      * property.
      */
-    private String contextEnabledProperty;
+    private String modelUserEnabledProperty;
     
     /**
      * Explicit boolean determining contextual enabled state.
      */
-    private boolean contextEnabledValue;
+    private boolean modelUserEnabledValue;
     
     /**
      * Property name used to determine contextual visibility for this calculated
      * property.
      */
-    private String contextVisibleProperty;
+    private String modelUserVisibleProperty;
     
     /**
      * Explicit boolean determining contextual visibility.
      */
-    private boolean contextVisibleValue;
+    private boolean modelUserVisibleValue;
     
     /**
      * Creates a new calculated property definition using the supplied name and
@@ -373,8 +373,8 @@ public class OACalcInfo implements java.io.Serializable {
      *
      * @param ss the array of context-dependent property paths
      */
-    public void setContextDependentProperties(String[] ss) {
-        this.contextDependentProperties = ss;
+    public void setModelUserDependentProperties(String[] ss) {
+        this.modelUserDependentProperties = ss;
     }
     
     /**
@@ -384,8 +384,8 @@ public class OACalcInfo implements java.io.Serializable {
      *
      * @return an array of context-dependent property paths, or {@code null} if none are defined
      */
-    public String[] getContextDependentProperties() {
-        return this.contextDependentProperties;
+    public String[] getModelUserDependentProperties() {
+        return this.modelUserDependentProperties;
     }
     
     /**
@@ -474,8 +474,8 @@ public class OACalcInfo implements java.io.Serializable {
      *
      * @return the context-enabled property name, or {@code null} if none is defined
      */
-    public String getContextEnabledProperty() {
-        return contextEnabledProperty;
+    public String getModelUserEnabledProperty() {
+        return modelUserEnabledProperty;
     }
 
     /**
@@ -484,8 +484,8 @@ public class OACalcInfo implements java.io.Serializable {
      *
      * @param s the context-enabled property name
      */
-    public void setContextEnabledProperty(String s) {
-        contextEnabledProperty = s;
+    public void setModelUserEnabledProperty(String s) {
+        modelUserEnabledProperty = s;
     }
     
     /**
@@ -494,8 +494,8 @@ public class OACalcInfo implements java.io.Serializable {
      *
      * @return {@code true} if the property is contextually enabled, otherwise {@code false}
      */
-    public boolean getContextEnabledValue() {
-        return contextEnabledValue;
+    public boolean getModelUserEnabledValue() {
+        return modelUserEnabledValue;
     }
     
     /**
@@ -504,8 +504,8 @@ public class OACalcInfo implements java.io.Serializable {
      *
      * @param b {@code true} to mark the property as contextually enabled, otherwise {@code false}
      */
-    public void setContextEnabledValue(boolean b) {
-        contextEnabledValue = b;
+    public void setModelUserEnabledValue(boolean b) {
+        modelUserEnabledValue = b;
     }
     
     /**
@@ -514,8 +514,8 @@ public class OACalcInfo implements java.io.Serializable {
      *
      * @return the context-visible property name, or {@code null} if none is defined
      */
-    public String getContextVisibleProperty() {
-        return contextVisibleProperty;
+    public String getModelUserVisibleProperty() {
+        return modelUserVisibleProperty;
     }
     
     /**
@@ -525,8 +525,8 @@ public class OACalcInfo implements java.io.Serializable {
      * @param b {@code true} to mark the property as contextually visible,
      *          otherwise {@code false}
      */
-    public void setContextVisibleProperty(String s) {
-        contextVisibleProperty = s;
+    public void setModelUserVisibleProperty(String s) {
+        modelUserVisibleProperty = s;
     }
     
     /**
@@ -536,8 +536,8 @@ public class OACalcInfo implements java.io.Serializable {
      * @return {@code true} if the property should be contextually visible,
      *         otherwise {@code false}
      */
-    public boolean getContextVisibleValue() {
-        return contextVisibleValue;
+    public boolean getModelUserVisibleValue() {
+        return modelUserVisibleValue;
     }
 
     /**
@@ -547,8 +547,8 @@ public class OACalcInfo implements java.io.Serializable {
      * @param b {@code true} to mark the property as contextually visible,
      *          otherwise {@code false}
      */
-    public void setContextVisibleValue(boolean b) {
-        contextVisibleValue = b;
+    public void setModelUserVisibleValue(boolean b) {
+        modelUserVisibleValue = b;
     }
 
     /**

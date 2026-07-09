@@ -520,7 +520,14 @@ public interface OA {
     ServicesOps services();
 
 	InternalOps internal();
-    
+
+	ConfigOps config();
+	
     void close();
+
+
+    ModelUserOps modelUser();
+
+    SessionUserOps sessionUser();
 }
 

@@ -14,7 +14,8 @@ import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
-import com.viaoa.runtime.context.OAContextUser;
+import com.viaoa.runtime.thread.OAThreadLocal;
+import com.viaoa.session.OASessionUser;
 import com.viaoa.trigger.OATrigger;
 import com.viaoa.trigger.OATriggerListener;
 
@@ -211,7 +212,7 @@ public class OATriggerService implements TriggersOps {
 		Runnable runnable;
 		boolean bIsLoading;
 		boolean bSendMessages;
-		public OAContextUser contextUser;
+		OAThreadLocal tlOrig;
 
 		/**
 		 * Captures the current thread-local loading state and context
@@ -223,8 +224,8 @@ public class OATriggerService implements TriggersOps {
 			this.runnable = runnable;
 			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 			this.bIsLoading = srvcOAThreadLocal.isLoading();
-			this.contextUser = srvcOAThreadLocal.getContextUser();
 			this.bSendMessages = srvcOAThreadLocal.getSendSyncMessages();
+			this.tlOrig = srvcOAThreadLocal.getOAThreadLocal();
 		}
 
 		/**
@@ -233,18 +234,19 @@ public class OATriggerService implements TriggersOps {
 		 */
 		@Override
 		public void run() {
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
+			srvcOAThreadLocal.initialize(tlOrig);
+			
 			boolean bWasLoading = true;
 			boolean bHold2 = srvcOAThreadLocal.getSendSyncMessages();
 			try {
-				srvcOAThreadLocal.setContextUser(contextUser);
 				if (bIsLoading) {
 					bWasLoading = srvcOAThreadLocal.setLoading(true);
 				}
 				srvcOAThreadLocal.setSendSyncMessages(bSendMessages);
 				runnable.run();
 			} finally {
-				srvcOAThreadLocal.setContextUser(null);
+				srvcOAThreadLocal.initialize(null);
 				if (bIsLoading) {
 					srvcOAThreadLocal.setLoading(bWasLoading);
 				}

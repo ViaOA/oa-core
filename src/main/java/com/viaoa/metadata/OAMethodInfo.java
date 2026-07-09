@@ -71,23 +71,23 @@ public class OAMethodInfo implements java.io.Serializable {
      * Name of the property that determines whether this method is enabled
      * based on the current context.
      */
-    private String contextEnabledProperty;
+    private String modelUserEnabledProperty;
     
     /**
      * Context-based enabled value that must match for the method to be enabled.
      */
-    private boolean contextEnabledValue;
+    private boolean modelUserEnabledValue;
     
     /**
      * Name of the property that determines whether this method is visible
      * based on the current context.
      */
-    private String contextVisibleProperty;
+    private String modelUserVisibleProperty;
     
     /**
      * Context-based visible value that must match for the method to be visible.
      */
-    private boolean contextVisibleValue;
+    private boolean modelUserVisibleValue;
     
     /**
      * Java reflection Method invoked when this metadata entry's method is
@@ -108,7 +108,7 @@ public class OAMethodInfo implements java.io.Serializable {
     /**
      * Property names whose changes affect the method's context-dependent behavior.
      */
-    private String[] contextDependentProperties;
+    private String[] modelUserDependentProperties;
     
     /**
      * Creates a new, empty method-metadata descriptor.
@@ -158,8 +158,8 @@ public class OAMethodInfo implements java.io.Serializable {
      *
      * @param ss an array of context-dependent property names
      */
-    public void setContextDependentProperties(String[] ss) {
-        this.contextDependentProperties = ss;
+    public void setModelUserDependentProperties(String[] ss) {
+        this.modelUserDependentProperties = ss;
     }
     
     /**
@@ -168,8 +168,8 @@ public class OAMethodInfo implements java.io.Serializable {
      *
      * @return an array of context-dependent property names, or {@code null} if none are set
      */
-    public String[] getContextDependentProperties() {
-        return this.contextDependentProperties;
+    public String[] getModelUserDependentProperties() {
+        return this.modelUserDependentProperties;
     }   
     
     /**
@@ -254,8 +254,8 @@ public class OAMethodInfo implements java.io.Serializable {
      *
      * @return the context-enabled property name, or {@code null} if none is set
      */
-    public String getContextEnabledProperty() {
-        return contextEnabledProperty;
+    public String getModelUserEnabledProperty() {
+        return modelUserEnabledProperty;
     }
     
     /**
@@ -264,8 +264,8 @@ public class OAMethodInfo implements java.io.Serializable {
      *
      * @param s the context-enabled property name
      */
-    public void setContextEnabledProperty(String s) {
-        contextEnabledProperty = s;
+    public void setModelUserEnabledProperty(String s) {
+        modelUserEnabledProperty = s;
     }
 
     /**
@@ -275,8 +275,8 @@ public class OAMethodInfo implements java.io.Serializable {
      * @return {@code true} if the method is enabled when the context property matches,
      *         otherwise {@code false}
      */
-    public boolean getContextEnabledValue() {
-        return contextEnabledValue;
+    public boolean getModelUserEnabledValue() {
+        return modelUserEnabledValue;
     }
     
     /**
@@ -286,12 +286,12 @@ public class OAMethodInfo implements java.io.Serializable {
      * @param b {@code true} to enable the method when the context property matches,
      *          otherwise {@code false}
      */
-    public void setContextEnabledValue(boolean b) {
-        contextEnabledValue = b;
+    public void setModelUserEnabledValue(boolean b) {
+        modelUserEnabledValue = b;
     }
     
-    public String getContextVisibleProperty() {
-        return contextVisibleProperty;
+    public String getModelUserVisibleProperty() {
+        return modelUserVisibleProperty;
     }
     
     /**
@@ -300,8 +300,8 @@ public class OAMethodInfo implements java.io.Serializable {
      *
      * @param s the context-visible property name
      */
-    public void setContextVisibleProperty(String s) {
-        contextVisibleProperty = s;
+    public void setModelUserVisibleProperty(String s) {
+        modelUserVisibleProperty = s;
     }
     
     /**
@@ -311,8 +311,8 @@ public class OAMethodInfo implements java.io.Serializable {
      * @return {@code true} if the method is visible when the context property matches,
      *         otherwise {@code false}
      */
-    public boolean getContextVisibleValue() {
-        return contextVisibleValue;
+    public boolean getModelUserVisibleValue() {
+        return modelUserVisibleValue;
     }
     
     /**
@@ -322,8 +322,8 @@ public class OAMethodInfo implements java.io.Serializable {
      * @param b {@code true} to make the method visible when the context property matches,
      *          otherwise {@code false}
      */
-    public void setContextVisibleValue(boolean b) {
-        contextVisibleValue = b;
+    public void setModelUserVisibleValue(boolean b) {
+        modelUserVisibleValue = b;
     }
     
     /**

@@ -1,5 +1,6 @@
 package com.viaoa.oa.api.internal.hubs;
 
+import com.viaoa.callback.OAObjectCallback;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 
@@ -12,7 +13,7 @@ public interface HubAddRemoveOps {
 	public void clear(Hub<?> hub);
 	public <T extends OAObject> boolean canAdd(Hub<T> hub, T object);
 	public <T extends OAObject> String canAddMsg(Hub<T> hub, T obj);
-	public String getCantRemoveAllMessage(Hub<?> hub, int checkType);
+	public String getCantRemoveAllMessage(Hub<?> hub, OAObjectCallback.CheckType[] onlyCheckTypes);
 	public <T extends OAObject> void add(Hub<T> hub, T obj, boolean bAlreadyCalledContains);
 	public void clear(Hub<?> thisHub, boolean bSetAOtoNull, boolean bSendNewList);
 	public <T extends OAObject> boolean remove(Hub<T> hub, T obj);

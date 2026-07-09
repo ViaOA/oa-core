@@ -6,14 +6,17 @@ import org.junit.jupiter.api.Test;
 
 import com.test.pos.model.oa.Item;
 import com.viaoa.hub.Hub;
+import com.viaoa.session.OAContext;
+import com.viaoa.session.OASessionAccess;
+import com.viaoa.session.OASessionUser;
 
 class OAContextUserTest {
     @Test
     void constructorsExposeContextObjectAndHubSources() {
-        OAContext<String, Item> context = new OAContext<>("item", new OAContextAccess());
+        OAContext<String, Item> context = new OAContext<>("item", new OASessionAccess());
         Item item = new Item();
 
-        OAContextUser<Item> objectUser = new OAContextUser<>(context, item);
+        OASessionUser<Item> objectUser = new OASessionUser<>(context, item);
         assertSame(context, objectUser.getContext());
         assertSame(item, objectUser.getUserObject());
         assertSame(item, objectUser.getCurrentUserObject());
@@ -24,18 +27,18 @@ class OAContextUserTest {
         hub.add(item2);
         hub.setAO(item2);
 
-        OAContextUser<Item> hubUser = new OAContextUser<>(context, hub);
+        OASessionUser<Item> hubUser = new OASessionUser<>(context, hub);
         assertSame(hub, hubUser.getUserHub());
         assertNull(hubUser.getUserObject());
         assertSame(item2, hubUser.getCurrentUserObject());
 
-        OAContextUser<Item> empty = new OAContextUser<>(context);
+        OASessionUser<Item> empty = new OASessionUser<>(context);
         assertNull(empty.getCurrentUserObject());
     }
 
     @Test
     void booleanPermissionHelpersReadConfiguredUserPropertyPaths() {
-        OAContext<String, Item> context = new OAContext<>("item", new OAContextAccess());
+        OAContext<String, Item> context = new OAContext<>("item", new OASessionAccess());
         context.setAdminPath(Item.P_Stocking);
         context.setSuperAdminPath(Item.P_AgeRestricted);
         context.setAllowEditProcessedPath(Item.P_NotReturnable);
@@ -44,7 +47,7 @@ class OAContextUserTest {
         item.setStocking(true);
         item.setAgeRestricted(false);
         item.setNotReturnable(true);
-        OAContextUser<Item> user = new OAContextUser<>(context, item);
+        OASessionUser<Item> user = new OASessionUser<>(context, item);
 
         assertTrue(user.isAdmin());
         assertFalse(user.isSuperAdmin());

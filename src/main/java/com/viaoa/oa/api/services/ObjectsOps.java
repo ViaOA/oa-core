@@ -9,8 +9,6 @@ public interface ObjectsOps {
 	
 	public OAObjectReflectOps reflect();
 
-	public OAObjectCallbackOps callbacks();
-	
 	public OAObjectDeleteOps delete();
 	
 	

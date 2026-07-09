@@ -10,8 +10,8 @@ import java.util.logging.Logger;
 import com.test.pos.model.oa.*;
 import com.test.pos.model.oa.cs.*;
 import com.viaoa.runtime.OARuntime;
-import com.viaoa.runtime.context.OAContext;
-import com.viaoa.runtime.context.OAContextUser;
+import com.viaoa.session.OAContext;
+import com.viaoa.session.OASessionUser;
 import com.viaoa.hub.*;
 import com.viaoa.object.OAObject;
 
@@ -137,7 +137,7 @@ public class ModelDelegate {
 
 //qqqqqqqqqqqqqqqqq Custom
 	public static TeamMember getCurrentTeamMember() {
-		OAContextUser<AppUser> cu = (OAContextUser<AppUser>) OARuntime.context().getDefaultContextUser();
+		OASessionUser<AppUser> cu = (OASessionUser<AppUser>) OARuntime.context().getDefaultContextUser();
 		AppUser appUser = cu.getCurrentUserObject();
 		
 		// Object objContext = OAThreadLocalDelegate.getContext();

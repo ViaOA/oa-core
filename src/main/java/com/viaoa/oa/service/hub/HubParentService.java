@@ -216,28 +216,28 @@ public class HubParentService {
 				return HubParentService.this.srvcObjectParent.getOAObjectHubService().addHub(oaObj, hub);
 			}
 			@Override
-			public OAObjectCallback callObjectCallbackGetVerifyRemoveAllObjectCallback(Hub<?> hub, int checkType) {
-				return HubParentService.this.srvcObjectParent.getOAObjectCallbackService().getVerifyRemoveAllObjectCallback(hub, checkType);
+			public OAObjectCallback callObjectCallbackGetVerifyRemoveAllObjectCallback(Hub<?> hub, OAObjectCallback.CheckType[] onlyCheckTypes) {
+				return HubParentService.this.srvcObjectParent.getOAObjectRulesService().getVerifyRemoveAllObjectCallback(hub, onlyCheckTypes);
 			}
 			@Override
-			public <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyAddObjectCallback(Hub<T> hub, T oaObj, int checkType) {
-				return HubParentService.this.srvcObjectParent.getOAObjectCallbackService().getVerifyAddObjectCallback(hub, oaObj, checkType);
+			public <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyAddObjectCallback(Hub<T> hub, T oaObj, OAObjectCallback.CheckType[] onlyCheckTypes) {
+				return HubParentService.this.srvcObjectParent.getOAObjectRulesService().getVerifyAddObjectCallback(hub, oaObj, onlyCheckTypes);
 			}
 			@Override
-			public <T extends OAObject> OAObjectCallback callObjectCallbackGetAllowRemoveObjectCallback(Hub<T> hub, T objRemove, int checkType) {
-				return HubParentService.this.srvcObjectParent.getOAObjectCallbackService().getAllowRemoveObjectCallback(hub, objRemove, checkType);
+			public <T extends OAObject> OAObjectCallback callObjectCallbackGetAllowRemoveObjectCallback(Hub<T> hub, T objRemove, OAObjectCallback.CheckType[] onlyCheckTypes) {
+				return HubParentService.this.srvcObjectParent.getOAObjectRulesService().getAllowRemoveObjectCallback(hub, objRemove, onlyCheckTypes);
 			}
 			@Override
-			public <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyRemoveObjectCallback(Hub<T> hub, T objRemove, int checkType) {
-				return HubParentService.this.srvcObjectParent.getOAObjectCallbackService().getVerifyRemoveObjectCallback(hub, objRemove, checkType);
+			public <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyRemoveObjectCallback(Hub<T> hub, T objRemove, OAObjectCallback.CheckType[] onlyCheckTypes) {
+				return HubParentService.this.srvcObjectParent.getOAObjectRulesService().getVerifyRemoveObjectCallback(hub, objRemove, onlyCheckTypes);
 			}
 			@Override
-			public OAObjectCallback callObjectCallbackGetAllowRemoveAllObjectCallback(Hub<?> hub, int checkType) {
-				return HubParentService.this.srvcObjectParent.getOAObjectCallbackService().getAllowRemoveAllObjectCallback(hub, checkType);
+			public OAObjectCallback callObjectCallbackGetAllowRemoveAllObjectCallback(Hub<?> hub, OAObjectCallback.CheckType[] onlyCheckTypes) {
+				return HubParentService.this.srvcObjectParent.getOAObjectRulesService().getAllowRemoveAllObjectCallback(hub, onlyCheckTypes);
 			}
 			@Override
-			public <T extends OAObject> OAObjectCallback callObjectCallbackGetAllowAddObjectCallback(Hub<T> hub, T objAdd, int checkType) {
-				return HubParentService.this.srvcObjectParent.getOAObjectCallbackService().getAllowAddObjectCallback(hub, objAdd, checkType);
+			public <T extends OAObject> OAObjectCallback callObjectCallbackGetAllowAddObjectCallback(Hub<T> hub, T objAdd, OAObjectCallback.CheckType[] onlyCheckTypes) {
+				return HubParentService.this.srvcObjectParent.getOAObjectRulesService().getAllowAddObjectCallback(hub, objAdd, onlyCheckTypes);
 			}
 			@Override
 			public <T extends OAObject> boolean callHubVerifyUniqueProperty(Hub<T> thisHub, T object) {
@@ -1024,8 +1024,8 @@ public class HubParentService {
 		
     	srvcHubEvent = new HubEventService(faHub) {
 			@Override
-			public <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyRemoveObjectCallback(Hub<T> hub, T objRemove, int checkType) {
-				return HubParentService.this.srvcObjectParent.getOAObjectCallbackService().getVerifyRemoveObjectCallback(hub, objRemove, checkType);
+			public <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyRemoveObjectCallback(Hub<T> hub, T objRemove, OAObjectCallback.CheckType[] onlyCheckTypes) {
+				return HubParentService.this.srvcObjectParent.getOAObjectRulesService().getVerifyRemoveObjectCallback(hub, objRemove, onlyCheckTypes);
 			}
 			@Override
 			public <T extends OAObject> void callObjectCacheFireAfterRemoveEvent(Hub<T> hub, T obj) {
@@ -1040,16 +1040,16 @@ public class HubParentService {
 				return HubParentService.this.srvcObjectParent.getOAObjectInfoService().getOAObjectInfo(obj);
 			}
 			@Override
-			public OAObjectCallback callObjectCallbackGetVerifyRemoveAllObjectCallback(Hub<?> hub, int checkType) {
-				return HubParentService.this.srvcObjectParent.getOAObjectCallbackService().getVerifyRemoveAllObjectCallback(hub, checkType);
+			public OAObjectCallback callObjectCallbackGetVerifyRemoveAllObjectCallback(Hub<?> hub, OAObjectCallback.CheckType[] onlyCheckTypes) {
+				return HubParentService.this.srvcObjectParent.getOAObjectRulesService().getVerifyRemoveAllObjectCallback(hub, onlyCheckTypes);
 			}
 			@Override
 			public <T extends OAObject> void callObjectCacheFireAfterAddEvent(Hub<T> hub, T obj) {
 				HubParentService.this.srvcObjectParent.getOAObjectCacheService().fireAfterAddEvent(hub, obj);				
 			}
 			@Override
-			public <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyAddObjectCallback(Hub<T> hub, T oaObj, int checkType) {
-				return HubParentService.this.srvcObjectParent.getOAObjectCallbackService().getVerifyAddObjectCallback(hub, oaObj, checkType);
+			public <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyAddObjectCallback(Hub<T> hub, T oaObj, OAObjectCallback.CheckType[] onlyCheckTypes) {
+				return HubParentService.this.srvcObjectParent.getOAObjectRulesService().getVerifyAddObjectCallback(hub, oaObj, onlyCheckTypes);
 			}
 			@Override
 			public OALinkInfo callObjectInfoGetLinkInfo(OAObjectInfo oi, String propertyName) {

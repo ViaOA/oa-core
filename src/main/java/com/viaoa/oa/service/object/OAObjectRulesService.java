@@ -5,16 +5,16 @@ import java.util.logging.Logger;
 
 import com.viaoa.callback.OACallbackLabel;
 import com.viaoa.callback.OAObjectCallback;
+import com.viaoa.callback.OAObjectCallback.CheckType;
 import com.viaoa.callback.OAObjectCallback.Type;
 import com.viaoa.cascade.OACascade;
 import com.viaoa.compare.match.OAMatchUnknown;
 import com.viaoa.converter.OAConv;
-import com.viaoa.runtime.context.OAContextAccess;
-import com.viaoa.runtime.context.OAContextUser;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListener;
 import com.viaoa.hub.listener.HubChangeListener;
+import com.viaoa.lang.OAStr;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OACalcInfo;
 import com.viaoa.metadata.OALinkInfo;
@@ -22,107 +22,113 @@ import com.viaoa.metadata.OAMethodInfo;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.metadata.OAObjectModel;
 import com.viaoa.metadata.OAPropertyInfo;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
+import com.viaoa.runtime.OARuntime;
+import com.viaoa.session.OASessionAccess;
+import com.viaoa.session.OASessionUser;
 
+public abstract class OAObjectRulesService {
+	private static final Logger LOG = Logger.getLogger(OAObjectRulesService.class.getName());
 
-//qqqqqqqqq add:  Severity (INFO / WARNING / ERROR)
-//qqqqqqqq add:  Async/background command support
-
-/**
- * Rule and permission engine for {@link OAObject} interactions.
- * <p>
- * This service evaluates whether a user action on an object or hub is
- * permitted, visible, enabled, confirmable, or requires further UI messaging.
- * It unifies rule sources from annotations, object-level callback methods,
- * Hub listeners, user context, and metadata from {@code OAObjectInfo}.
- *
- * <h3>Primary Responsibilities</h3>
- * <ul>
- *   <li>Resolve enable/visible rules for properties, links, and methods</li>
- *   <li>Check add/remove/delete/save permissions for Hub operations</li>
- *   <li>Provide UI data (tooltips, labels, formatting)</li>
- *   <li>Execute annotation-driven and {@code callback*} methods on objects</li>
- *   <li>Propagate errors, responses, or confirmation titles/messages</li>
- *   <li>Traverse owner/master hierarchy to enforce inherited rules</li>
- * </ul>
- *
- * <h3>Evaluation Sources</h3>
- * <ul>
- *   <li>Metadata from {@code @OAObjCallback} on class/props/links/methods</li>
- *   <li>Domain logic in {@code callback*}(..) methods</li>
- *   <li>Hub listeners associated with UI contexts</li>
- *   <li>Context-driven {@link com.viaoa.context.OAContextAccess} constraints</li>
- *   <li>Process/edit flags on objects and hubs</li>
- * </ul>
- *
- * <h3>Correctness Guarantees</h3>
- * <ul>
- *   <li>No side effects on object identity, lifecycle, or loading</li>
- *   <li>All rule failures optionally provide actionable UI feedback</li>
- *   <li>User/role checks are always respected before UI updates</li>
- * </ul>
- *
- * <h3>Usage</h3>
- * Invoked automatically by:
- * <ul>
- *   <li>{@link OAObject} mutation (before-change routing)</li>
- *   <li>{@link Hub} add/remove operations</li>
- *   <li>UI controllers to dynamically update visual state</li>
- * </ul>
- *
- * Application code should not call this directly except to query allowed actions.
- *
- * @see OAObjectCallback
- * @see com.viaoa.annotation.OAObjCallback
- */
-public abstract class OAObjectCallbackService {
-	private static final Logger LOG = Logger.getLogger(OAObjectCallbackService.class.getName());
-
-	public OAObjectCallbackService() {
+	public OAObjectRulesService() {
 	}
-
-	/**
-	 * Returns whether the specified property or link is visible by evaluating
-	 * the associated {@link OAObjectCallback}. The visibility decision is
-	 * determined by {@code getAllowVisibleObjectCallback(...)}.
-	 *
-	 * @param hub  the hub providing contextual visibility rules, or {@code null}
-	 * @param obj  the target object, or {@code null}
-	 * @param name the property or link name, or {@code null}
-	 * @return {@code true} if visibility is allowed; otherwise {@code false}
-	 */
+	
 	public <T extends OAObject> boolean getAllowVisible(Hub<T> hub, T obj, String name) {
-		return getAllowVisibleObjectCallback(hub, obj, name).getAllowed();
+		OAObjectCallback cb = getAllowVisibleObjectCallback(hub, obj, name);
+		return cb == null ? false : cb.getAllowed();
+	}
+    @SuppressWarnings("unchecked")
+    public <T extends OAObject> OAObjectCallback getAllowVisibleObjectCallback(Hub<T> hub, T oaObj, String name) {
+		if (hub == null && oaObj == null) {
+			return null;
+		}
+		if (oaObj == null) {
+			if (name == null) {
+				name = callHubDetailGetPropertyFromMasterToDetail(hub);
+				oaObj = (T) hub.getMasterObject();
+			} else {
+				oaObj = (T) hub.getAO();
+			}
+		}
+		Class<? extends OAObject> type = hub != null ? hub.getObjectClass() : oaObj.getClass();
+		OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowVisible, hub, type, oaObj, name, null);
+		processObjectCallback(objectCallback);
+		return objectCallback;
+    }
+
+    
+	public boolean getVerifyPropertyChange(OAObject obj, String propertyName, Object oldValue, Object newValue) {
+		OAObjectCallback cb = getVerifyPropertyChangeObjectCallback(null, obj, propertyName, oldValue, newValue);
+		return cb == null ? false : cb.getAllowed();
+	}
+	public boolean getVerifyPropertyChangeCallbackOnly(OAObject obj, String propertyName, Object oldValue, Object newValue) {
+		OAObjectCallback cb = getVerifyPropertyChangeObjectCallback(OAObjectCallback.getCallbackOnlyCheckType(), obj, propertyName, oldValue, newValue);
+		return cb == null ? false : cb.getAllowed();
+	}
+	public OAObjectCallback getVerifyPropertyChangeObjectCallback(OAObjectCallback.CheckType[] checkTypeOnly, final OAObject oaObj, final String propertyName, final Object oldValue, final Object newValue) 
+	{
+		final OAObjectCallback objectCallback = new OAObjectCallback(Type.VerifyPropertyChange, checkTypeOnly, null, null, oaObj, propertyName, newValue);
+		objectCallback.setOldValue(oldValue);
+		processObjectCallback(objectCallback);
+		return objectCallback;
 	}
 
-	/**
-	 * Returns whether the specified property, link, or command is enabled
-	 * by evaluating the associated {@link OAObjectCallback}. The enabled
-	 * state is determined by {@code getAllowEnabledObjectCallback(...)}.
-	 *
-	 * @param checkType the bitmask of checking options
-	 * @param hub       the hub providing contextual rules, or {@code null}
-	 * @param obj       the target object, or {@code null}
-	 * @param name      the property, link, or method name, or {@code null}
-	 * @return {@code true} if the action is enabled; otherwise {@code false}
-	 */
-	public <T extends OAObject> boolean getAllowEnabled(int checkType, Hub<T> hub, T obj, String name) {
-		return getAllowEnabledObjectCallback(checkType, hub, obj, name).getAllowed();
+	public OAObjectCallback getVerifyPropertyChangeCallbackOnlyObjectCallback(final OAObject oaObj, final String propertyName, final Object oldValue, final Object newValue) {
+		return getVerifyPropertyChangeObjectCallback(OAObjectCallback.getCallbackOnlyCheckType(), oaObj, propertyName, oldValue, newValue);
 	}
+	
+	
+	
+	
+	public <T extends OAObject> boolean getAllowEnabled(Hub<T> hub, T obj, String name) {
+		OAObjectCallback cb = getAllowEnabledObjectCallback(null, hub, obj, name);
+		return cb == null ? false : cb.getAllowed();
+	}
+	public <T extends OAObject> boolean getAllowEnabledCallbackOnly(Hub<T> hub, T obj, String name) {
+		OAObjectCallback cb = getAllowEnabledObjectCallback(OAObjectCallback.getCallbackOnlyCheckType(), hub, obj, name);
+		return cb == null ? false : cb.getAllowed();
+	}
+	public <T extends OAObject> OAObjectCallback getAllowEnabledObjectCallback(OAObjectCallback.CheckType[] onlyCheckType, final Hub<T> hub, T oaObj, String name) {
+		if (hub == null && oaObj == null) {
+			return null;
+		}
+		if (oaObj == null) {
+			if (name == null) {
+				name = callHubDetailGetPropertyFromMasterToDetail(hub);
+				oaObj = (T) hub.getMasterObject();
+			} else {
+				oaObj = (T) (OAObject) hub.getAO();
+			}
+		}
+		final OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowEnabled, onlyCheckType, hub, null, oaObj, name, null);
+		processObjectCallback(objectCallback);
+		return objectCallback;
+	}
+	public OAObjectCallback getAllowEnabledObjectCallback(Hub<? extends OAObject> hub) {
+		final OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowEnabled);
 
-	/**
-	 * Returns whether the specified object can be copied by evaluating the
-	 * associated {@link OAObjectCallback}. If the object is {@code null},
-	 * copying is not allowed.
-	 *
-	 * @param oaObj the object to evaluate
-	 * @return {@code true} if copying is allowed; otherwise {@code false}
-	 */
+		OAObject objMaster = hub.getMasterObject();
+		if (objMaster == null) {
+			processHubOnlyCallback(objectCallback, hub, null);
+			if (objectCallback.getAllowed()) {
+				processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, null);
+			}
+		} else {
+			String propertyName = callHubDetailGetPropertyFromMasterToDetail(hub);
+			objectCallback.setPropertyName(propertyName);
+			objectCallback.setObject(objMaster);
+			processObjectCallback(objectCallback);
+		}
+		return objectCallback;
+	}
+	
 	public boolean getAllowCopy(OAObject oaObj) {
 		if (oaObj == null) {
 			return false;
 		}
-		return getAllowCopyObjectCallback(oaObj).getAllowed();
+		OAObjectCallback cb = getAllowCopyObjectCallback(oaObj);
+		return cb == null ? false : cb.getAllowed();
 	}
 
 	/**
@@ -151,23 +157,6 @@ public abstract class OAObjectCallbackService {
 		return (T) objx;
 	}
 
-    
-    
-	/**
-	 * Returns whether the specified property change is permitted by evaluating
-	 * the associated {@link OAObjectCallback} for verification.
-	 *
-	 * @param checkType    the bitmask of checking options
-	 * @param obj          the target object
-	 * @param propertyName the property being changed
-	 * @param oldValue     the previous value
-	 * @param newValue     the proposed new value
-	 * @return {@code true} if the property change is allowed; otherwise {@code false}
-	 */
-	public boolean getVerifyPropertyChange(int checkType, OAObject obj, String propertyName, Object oldValue, Object newValue) {
-		return getVerifyPropertyChangeObjectCallback(checkType, obj, propertyName, oldValue, newValue).getAllowed();
-	}
-
 	/**
 	 * Returns whether the specified object can be added to the given hub by
 	 * evaluating the associated {@link OAObjectCallback}.
@@ -177,8 +166,17 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if the add operation is allowed; otherwise {@code false}
 	 */
-	public <T extends OAObject> boolean getAllowAdd(Hub<T> hub, T obj, int checkType) {
-		return getAllowAddObjectCallback(hub, obj, checkType).getAllowed();
+	public <T extends OAObject> boolean getAllowAdd(Hub<T> hub, T obj, OAObjectCallback.CheckType[] onlyCheckTypes) {
+		OAObjectCallback cb = getAllowAddObjectCallback(hub, obj, onlyCheckTypes);
+		return cb == null ? false : cb.getAllowed();
+	}
+	public <T extends OAObject> boolean getAllowAdd(Hub<T> hub, T obj) {
+		OAObjectCallback cb = getAllowAddObjectCallback(hub, obj);
+		return cb == null ? false : cb.getAllowed();
+	}
+	public <T extends OAObject> boolean getAllowAddIgnoreProcessed(Hub<T> hub, T obj) {
+		OAObjectCallback cb = getAllowAddObjectCallback(hub, obj, OAObjectCallback.getAllCheckTypesButProcessed(Type.AllowAdd));
+		return cb == null ? false : cb.getAllowed();
 	}
 
 	/**
@@ -190,8 +188,12 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if verification succeeds; otherwise {@code false}
 	 */
-	public <T extends OAObject> boolean getVerifyAdd(Hub<T> hub, T obj, int checkType) {
-		return getVerifyAddObjectCallback(hub, obj, checkType).getAllowed();
+	public <T extends OAObject> boolean getVerifyAdd(Hub<T> hub, T obj, OAObjectCallback.CheckType[] onlyCheckTypes) {
+		OAObjectCallback cb = getVerifyAddObjectCallback(hub, obj, onlyCheckTypes);
+		return cb == null ? false : cb.getAllowed();
+	}
+	public <T extends OAObject> boolean getVerifyAdd(Hub<T> hub, T obj) {
+		return getVerifyAdd(hub, obj, null);
 	}
 
 	/**
@@ -203,8 +205,18 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if the remove operation is allowed; otherwise {@code false}
 	 */
-	public <T extends OAObject> boolean getAllowRemove(Hub<T> hub, T obj, int checkType) {
-		return getAllowRemoveObjectCallback(hub, obj, checkType).getAllowed();
+	public <T extends OAObject> boolean getAllowRemove(Hub<T> hub, T obj, OAObjectCallback.CheckType[] onlyCheckTypes) {
+		OAObjectCallback cb = getAllowRemoveObjectCallback(hub, obj, onlyCheckTypes);
+		return cb == null ? false : cb.getAllowed();
+	}
+	public <T extends OAObject> boolean getAllowRemove(Hub<T> hub, T obj) {
+		return getAllowRemove(hub, obj, null);
+	}
+	public <T extends OAObject> boolean getAllowRemoveCallbackOnly(Hub<T> hub, T obj) {
+		return getAllowRemove(hub, obj, OAObjectCallback.getCallbackOnlyCheckType());
+	}
+	public <T extends OAObject> boolean getAllowRemoveIgnoreProcessed(Hub<T> hub, T obj) {
+		return getAllowRemove(hub, obj, OAObjectCallback.getAllCheckTypesButProcessed(Type.AllowRemove));
 	}
     
 	/**
@@ -216,8 +228,18 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if verification succeeds; otherwise {@code false}
 	 */
-	public <T extends OAObject> boolean getVerifyRemove(Hub<T> hub, T obj, int checkType) {
-		return getVerifyRemoveObjectCallback(hub, obj, checkType).getAllowed();
+	public <T extends OAObject> boolean getVerifyRemove(Hub<T> hub, T obj, OAObjectCallback.CheckType[] onlyCheckTypes) {
+		OAObjectCallback cb = getVerifyRemoveObjectCallback(hub, obj, onlyCheckTypes);
+		return cb == null ? false : cb.getAllowed();
+	}
+	public <T extends OAObject> boolean getVerifyRemove(Hub<T> hub, T obj) {
+		return getVerifyRemove(hub, obj, null);
+	}
+	public <T extends OAObject> boolean getVerifyRemoveCallbackOnly(Hub<T> hub, T obj) {
+		return getVerifyRemove(hub, obj, OAObjectCallback.getCallbackOnlyCheckType());
+	}
+	public <T extends OAObject> boolean getVerifyRemoveIgnoreProcessed(Hub<T> hub, T obj) {
+		return getVerifyRemove(hub, obj, OAObjectCallback.getAllCheckTypesButProcessed(Type.VerifyRemove));
 	}
 
 	/**
@@ -228,8 +250,12 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if removing all objects is allowed; otherwise {@code false}
 	 */
-	public boolean getAllowRemoveAll(Hub<? extends OAObject> hub, int checkType) {
-		return getAllowRemoveAllObjectCallback(hub, checkType).getAllowed();
+	public boolean getAllowRemoveAll(Hub<? extends OAObject> hub, OAObjectCallback.CheckType[] onlyCheckTypes) {
+		OAObjectCallback cb = getAllowRemoveAllObjectCallback(hub, onlyCheckTypes);
+		return cb == null ? false : cb.getAllowed();
+	}
+	public boolean getAllowRemoveAll(Hub<? extends OAObject> hub) {
+		return getAllowRemoveAll(hub, null);
 	}
     
 	/**
@@ -240,8 +266,12 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if verification succeeds; otherwise {@code false}
 	 */
-	public boolean getVerifyRemoveAll(Hub<? extends OAObject> hub, int checkType) {
-		return getVerifyRemoveAllObjectCallback(hub, checkType).getAllowed();
+	public boolean getVerifyRemoveAll(Hub<? extends OAObject> hub, OAObjectCallback.CheckType[] onlyCheckTypes) {
+		OAObjectCallback cb = getVerifyRemoveAllObjectCallback(hub, onlyCheckTypes);
+		return cb == null ? false : cb.getAllowed();
+	}
+	public boolean getVerifyRemoveAll(Hub<? extends OAObject> hub) {
+		return getVerifyRemoveAll(hub, null);
 	}
 
 	/**
@@ -271,9 +301,15 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if verification succeeds; otherwise {@code false}
 	 */
-	public <T extends OAObject> boolean getVerifyDelete(Hub<T> hub, T obj, int checkType) {
-		OAObjectCallback cb = getVerifyDeleteObjectCallback(hub, obj, checkType);
+	public <T extends OAObject> boolean getVerifyDelete(Hub<T> hub, T obj, OAObjectCallback.CheckType[] onlyCheckTypes) {
+		OAObjectCallback cb = getVerifyDeleteObjectCallback(hub, obj, onlyCheckTypes);
 		return cb == null ? false : cb.getAllowed();
+	}
+	public <T extends OAObject> boolean getVerifyDelete(Hub<T> hub, T obj) {
+		return getVerifyDelete(hub, obj, null);
+	}
+	public <T extends OAObject> boolean getVerifyDelete(T obj) {
+		return getVerifyDelete(null, obj, null);
 	}
 
 	/**
@@ -284,8 +320,12 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if saving is allowed; otherwise {@code false}
 	 */
-	public boolean getAllowSave(OAObject obj, int checkType) {
-		return getAllowSaveObjectCallback(obj, checkType).getAllowed();
+	public boolean getAllowSave(OAObject obj, OAObjectCallback.CheckType[] onlyCheckTypes) {
+		OAObjectCallback cb = getAllowSaveObjectCallback(obj, onlyCheckTypes);
+		return cb == null ? false : cb.getAllowed();
+	}
+	public boolean getAllowSave(OAObject obj) {
+		return getAllowSave(obj, null);
 	}
 
 	/**
@@ -296,8 +336,12 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return {@code true} if verification succeeds; otherwise {@code false}
 	 */
-	public boolean getVerifySave(OAObject obj, int checkType) {
-		return getVerifySaveObjectCallback(obj, checkType).getAllowed();
+	public boolean getVerifySave(OAObject obj, OAObjectCallback.CheckType[] onlyCheckTypes) {
+		OAObjectCallback cb = getVerifySaveObjectCallback(obj, onlyCheckTypes);
+		return cb == null ? false : cb.getAllowed();
+	}
+	public boolean getVerifySave(OAObject obj) {
+		return getVerifySave(obj, null);
 	}
 
 	/**
@@ -318,6 +362,12 @@ public abstract class OAObjectCallbackService {
 		_getAllowSubmit(em, obj, new OACascade());
 
 		return em;
+	}
+	
+	public boolean getAllowSubmit(OAObject obj) {
+		if (obj == null) return false;
+		OAObjectCallback cb = getAllowSubmitObjectCallback(obj);
+		return cb == null ? false : cb.getAllowed();
 	}
 	
 	/**
@@ -348,8 +398,7 @@ public abstract class OAObjectCallbackService {
 		for (OAPropertyInfo pi : oi.getPropertyInfos()) {
 			if (OAString.isNotEmpty(pi.getEnumPropertyName())) continue;
 			Object val = obj.getProperty(pi.getName());
-			final OAObjectCallback emx = new OAObjectCallback(Type.VerifyPropertyChange, OAObjectCallback.CHECK_ALL, null, null, obj,
-					pi.getName(), val);
+			final OAObjectCallback emx = new OAObjectCallback(Type.VerifyPropertyChange, null, null, obj, pi.getName(), val);
 
 			if (val instanceof String) {
 				if (((String) val).length() > pi.getMaxLength() && pi.getMaxLength() > 0) {
@@ -369,6 +418,9 @@ public abstract class OAObjectCallbackService {
 				em.setAllowed(emx.getAllowed());
 				if (OAString.isEmpty(em.getResponse())) {
 					em.setResponse(emx.getResponse());
+				}
+				if (em.getThrowable() == null) {
+					em.setThrowable(emx.getThrowable());
 				}
 				break;
 			}
@@ -405,7 +457,6 @@ public abstract class OAObjectCallbackService {
 			}
 		}
 	}
-
 	
 	/**
 	 * Returns the formatting string for the specified object and property by
@@ -484,100 +535,6 @@ public abstract class OAObjectCallbackService {
 	}
 
 	/**
-	 * Creates and returns an {@link OAObjectCallback} of type
-	 * {@code AllowVisible} for the given hub by delegating to the overloaded
-	 * method with {@code null} object and property name.
-	 *
-	 * @param hub the hub providing visibility context
-	 * @return the resulting callback
-	 */
-    public OAObjectCallback getAllowVisibleObjectCallback(Hub<? extends OAObject> hub) {
-        return getAllowVisibleObjectCallback(hub, null, null);
-    }
-
-    /**
-     * Creates and evaluates an {@link OAObjectCallback} of type
-     * {@code AllowVisible} for the specified hub, object, and property or link
-     * name. When the object is {@code null}, the appropriate master object is
-     * resolved from the hub.
-     *
-     * @param hub   the hub providing contextual rules
-     * @param oaObj the target object, or {@code null}
-     * @param name  the property or link name, or {@code null}
-     * @return the resulting callback, or {@code null} if hub and object are both null
-     */
-    @SuppressWarnings("unchecked")
-    public <T extends OAObject> OAObjectCallback getAllowVisibleObjectCallback(Hub<T> hub, T oaObj, String name) {
-		if (hub == null && oaObj == null) {
-			return null;
-		}
-		if (oaObj == null) {
-			if (name == null) {
-				name = callHubDetailGetPropertyFromMasterToDetail(hub);
-				oaObj = (T) hub.getMasterObject();
-			} else {
-				oaObj = (T) hub.getAO();
-			}
-		}
-		OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowVisible, OAObjectCallback.CHECK_ALL, hub, null, oaObj, name, null);
-		processObjectCallback(objectCallback);
-		return objectCallback;
-	}
-
-	/**
-	 * Creates and evaluates an {@link OAObjectCallback} of type
-	 * {@code AllowEnabled} using the specified hub, object, property name,
-	 * and check-type mask. When the object is {@code null}, the appropriate
-	 * master object is resolved from the hub.
-	 *
-	 * @param checkType the bitmask of checking options
-	 * @param hub       the hub providing contextual rules
-	 * @param oaObj     the target object, or {@code null}
-	 * @param name      the property, link, or method name, or {@code null}
-	 * @return the resulting callback, or {@code null} if hub and object are both null
-	 */
-	public <T extends OAObject> OAObjectCallback getAllowEnabledObjectCallback(final int checkType, final Hub<T> hub, T oaObj, String name) {
-		if (hub == null && oaObj == null) {
-			return null;
-		}
-		if (oaObj == null) {
-			if (name == null) {
-				name = callHubDetailGetPropertyFromMasterToDetail(hub);
-				oaObj = (T) hub.getMasterObject();
-			} else {
-				oaObj = (T) (OAObject) hub.getAO();
-			}
-		}
-		final OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowEnabled, checkType, hub, null, oaObj, name, null);
-		processObjectCallback(objectCallback);
-		return objectCallback;
-	}
-
-	/**
-	 * Creates and evaluates an {@link OAObjectCallback} of type
-	 * {@code AllowEnabled} for the given hub. If the hub has a master
-	 * object, the callback is evaluated against that object; otherwise,
-	 * only hub listeners are processed.
-	 *
-	 * @param hub the hub providing contextual rules
-	 * @return the resulting callback
-	 */
-	public OAObjectCallback getAllowEnabledObjectCallback(Hub<? extends OAObject> hub) {
-		final OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowEnabled);
-
-		OAObject objMaster = hub.getMasterObject();
-		if (objMaster == null) {
-			processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, null);
-		} else {
-			String propertyName = callHubDetailGetPropertyFromMasterToDetail(hub);
-			objectCallback.setPropertyName(propertyName);
-			objectCallback.setObject(objMaster);
-			processObjectCallback(objectCallback);
-		}
-		return objectCallback;
-	}
-
-	/**
 	 * Creates and evaluates an {@link OAObjectCallback} of type
 	 * {@code AllowCopy} for the specified object.
 	 *
@@ -585,7 +542,8 @@ public abstract class OAObjectCallbackService {
 	 * @return the resulting callback
 	 */
 	public OAObjectCallback getAllowCopyObjectCallback(final OAObject oaObj) {
-		final OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowCopy, OAObjectCallback.CHECK_ALL, null, null, oaObj, null, null);
+		if (oaObj == null) return null;
+		final OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowCopy, null, null, oaObj, null, null);
 		processObjectCallback(objectCallback);
 		return objectCallback;
 	}
@@ -599,8 +557,8 @@ public abstract class OAObjectCallbackService {
 	 * @return the resulting callback
 	 */
 	public OAObjectCallback getCopyObjectCallback(final OAObject oaObj) {
-		final OAObjectCallback objectCallback = new OAObjectCallback(Type.GetCopy, OAObjectCallback.CHECK_ALL, null, null, oaObj, null,
-				null);
+		if (oaObj == null) return null;
+		final OAObjectCallback objectCallback = new OAObjectCallback(Type.GetCopy, null, null, oaObj, null, null);
 		processObjectCallback(objectCallback);
 		return objectCallback;
 	}
@@ -614,30 +572,8 @@ public abstract class OAObjectCallbackService {
 	 * @return the resulting callback
 	 */
 	public <T extends OAObject> OAObjectCallback getAfterCopyObjectCallback(final T oaObj, final T oaObjCopy) {
-		final OAObjectCallback objectCallback = new OAObjectCallback(Type.AfterCopy, OAObjectCallback.CHECK_ALL, null, null, oaObj, null,
+		final OAObjectCallback objectCallback = new OAObjectCallback(Type.AfterCopy, null, null, oaObj, null,
 				oaObjCopy);
-		processObjectCallback(objectCallback);
-		return objectCallback;
-	}
-
-	/**
-	 * Creates and evaluates an {@link OAObjectCallback} of type
-	 * {@code VerifyPropertyChange} to validate a property update.
-	 * The old value is assigned before processing.
-	 *
-	 * @param checkType    the bitmask of checking options
-	 * @param oaObj        the target object
-	 * @param propertyName the property being changed
-	 * @param oldValue     the previous value
-	 * @param newValue     the proposed new value
-	 * @return the resulting callback
-	 */
-	public OAObjectCallback getVerifyPropertyChangeObjectCallback(final int checkType, final OAObject oaObj,
-			final String propertyName,
-			final Object oldValue, final Object newValue) {
-		final OAObjectCallback objectCallback = new OAObjectCallback(Type.VerifyPropertyChange, checkType, null, null, oaObj, propertyName,
-				newValue);
-		objectCallback.setOldValue(oldValue);
 		processObjectCallback(objectCallback);
 		return objectCallback;
 	}
@@ -651,30 +587,18 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType  the bitmask of checking options
 	 * @return the resulting callback
 	 */
-	public OAObjectCallback getVerifyCommandObjectCallback(final OAObject oaObj, final String methodName, int checkType) {
-		final OAObjectCallback objectCallback = new OAObjectCallback(Type.VerifyCommand, checkType, null, null, oaObj, methodName, null);
+	public OAObjectCallback getVerifyCommandObjectCallback(final OAObject oaObj, final String methodName, OAObjectCallback.CheckType[] onlyCheckTypes) {
+		if (oaObj == null) return null;
+		final OAObjectCallback objectCallback = new OAObjectCallback(Type.VerifyCommand, onlyCheckTypes, null, null, oaObj, methodName, null);
 		processObjectCallback(objectCallback);
 		return objectCallback;
 	}
-	
-	
-	/**
-	 * Updates the callback to disallow editing when context rules
-	 * indicate that processed-state editing is not permitted.
-	 *
-	 * @param objectCallback the callback to update
-	 */
-	public void updateEditProcessed(OAObjectCallback objectCallback) {
-		if (objectCallback == null) {
-			return;
-		}
-		
-		OAContextUser cu = callContextGetDefaultContextUser();
-		if (!cu.getAllowEditProcessed()) {
-			String sx = cu.getContext().getAllowEditProcessedPath();
-			objectCallback.setResponse("User." + sx + "=false");
-			objectCallback.setAllowed(false);
-		}
+	public OAObjectCallback getVerifyCommandObjectCallback(final OAObject oaObj, final String methodName) {
+		return getVerifyCommandObjectCallback(oaObj, methodName, null);
+	}
+	public boolean getVerifyCommand(final OAObject oaObj, final String methodName) {
+		OAObjectCallback cb = getVerifyCommandObjectCallback(oaObj, methodName, null);
+		return cb == null ? false : cb.getAllowed();
 	}
 
 	/**
@@ -688,7 +612,7 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
-	public <T extends OAObject> OAObjectCallback getAllowAddObjectCallback(final Hub<T> hub, T objAdd, final int checkType) {
+	public <T extends OAObject> OAObjectCallback getAllowAddObjectCallback(final Hub<T> hub, T objAdd, final OAObjectCallback.CheckType[] onlyCheckTypes) {
 		if (hub == null) {
 			return null;
 		}
@@ -698,24 +622,34 @@ public abstract class OAObjectCallbackService {
 
 		OAObjectCallback objectCallback = null;
 		if (li == null || (li.getPrivateMethod() && objMaster == null)) {
-			objectCallback = new OAObjectCallback(Type.AllowAdd, checkType, hub, null, null, null, objAdd);
-			if ((checkType & OAObjectCallback.CHECK_Processed) != 0) {
+			objectCallback = new OAObjectCallback(Type.AllowAdd, onlyCheckTypes, hub, null, null, null, objAdd);
+			if (objectCallback.isUsed(OAObjectCallback.CheckType.Processed)) {
 				if (hub.getOAObjectInfo().getProcessed()) {
 					updateEditProcessed(objectCallback);
 				}
 			}
-			processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, objAdd);
+			processHubOnlyCallback(objectCallback, hub, objAdd);
+			if (objectCallback.getAllowed()) {
+				processObjectCallbackForHubListeners(objectCallback, hub, objAdd, null, null, null);
+			}
 		} else {
 			OALinkInfo liRev = li.getReverseLinkInfo();
 			if (liRev != null && !liRev.getCalculated()) {
-				objectCallback = new OAObjectCallback(Type.AllowAdd, checkType, hub, null, objMaster, liRev.getName(), objAdd);
+				objectCallback = new OAObjectCallback(Type.AllowAdd, onlyCheckTypes, hub, null, objMaster, liRev.getName(), objAdd);
 				processObjectCallback(objectCallback);
 			}
-		}
-		if (objectCallback == null) {
-			objectCallback = new OAObjectCallback(Type.AllowAdd, checkType, hub, null, null, null, objAdd);
+			else {
+				objectCallback = new OAObjectCallback(Type.AllowAdd, onlyCheckTypes, hub, null, null, null, objAdd);
+	            processHubOnlyCallback(objectCallback, hub, objAdd);
+			    if (objectCallback.getAllowed()) {
+			    	processObjectCallbackForHubListeners(objectCallback, hub, objAdd, null, null, null);
+			    }
+			}
 		}
 		return objectCallback;
+	}
+	public <T extends OAObject> OAObjectCallback getAllowAddObjectCallback(final Hub<T> hub, T objAdd) {
+		return getAllowAddObjectCallback(hub, objAdd, null);
 	}
 
 	/**
@@ -729,7 +663,7 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
-	public <T extends OAObject> OAObjectCallback getVerifyAddObjectCallback(final Hub<T> hub, final T oaObj, final int checkType) {
+	public <T extends OAObject> OAObjectCallback getVerifyAddObjectCallback(final Hub<T> hub, final T oaObj, final OAObjectCallback.CheckType[] onlyCheckTypes) {
 		if (hub == null) {
 			return null;
 		}
@@ -739,18 +673,29 @@ public abstract class OAObjectCallbackService {
 		OAObjectCallback objectCallback = null;
 
 		if (li == null || (li.getPrivateMethod() && objMaster == null)) {
-			objectCallback = new OAObjectCallback(Type.VerifyAdd, checkType, hub, null, oaObj, null, null);
-			processObjectCallbackForHubListeners(objectCallback, hub, oaObj, null, null, null);
+			objectCallback = new OAObjectCallback(Type.VerifyAdd, onlyCheckTypes, hub, null, null, null, oaObj);
+			if (objectCallback.isUsed(OAObjectCallback.CheckType.Processed)) {
+				if (hub.getOAObjectInfo().getProcessed()) {
+					updateEditProcessed(objectCallback);
+				}
+			}			
+			processHubOnlyCallback(objectCallback, hub, oaObj);
+			if (objectCallback.getAllowed()) {
+				processObjectCallbackForHubListeners(objectCallback, hub, oaObj, null, null, null);
+			}
 		} else {
 			OALinkInfo liRev = li.getReverseLinkInfo();
 			if (liRev != null && !liRev.getCalculated()) {
-				objectCallback = new OAObjectCallback(Type.VerifyAdd, checkType, hub, null, objMaster, liRev.getName(), oaObj);
+				objectCallback = new OAObjectCallback(Type.VerifyAdd, onlyCheckTypes, hub, null, objMaster, liRev.getName(), oaObj);
 				processObjectCallback(objectCallback);
 			}
-		}
-		if (objectCallback == null) {
-			objectCallback = new OAObjectCallback(Type.VerifyAdd, checkType, hub, null, null, null, oaObj);
-			processObjectCallback(objectCallback);
+			else {
+				objectCallback = new OAObjectCallback(Type.VerifyAdd, onlyCheckTypes, hub, null, null, null, oaObj);
+	            processHubOnlyCallback(objectCallback, hub, oaObj);
+			    if (objectCallback.getAllowed()) {
+			    	processObjectCallbackForHubListeners(objectCallback, hub, oaObj, null, null, null);
+			    }
+			}
 		}
 		return objectCallback;
 	}
@@ -764,33 +709,9 @@ public abstract class OAObjectCallbackService {
 	 * @return the resulting callback, or {@code null} if the class is {@code null}
 	 */
 	public OAObjectCallback getAllowNewObjectCallback(final Class<? extends OAObject> clazz) {
-		if (clazz == null) {
-			return null;
-		}
-		final OAObjectInfo oi = callInfoGetObjectInfo(clazz);
-
-		int ct = (OAObjectCallback.CHECK_Processed | OAObjectCallback.CHECK_UserEnabledProperty);
-		OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowNew, ct, null, clazz, null, null, null);
-
-		if (oi.getProcessed()) {
-			updateEditProcessed(objectCallback);
-		}
-		if (objectCallback.getAllowed()) {
-			String pp = oi.getContextEnabledProperty();
-			if (OAString.isNotEmpty(pp)) {
-				if (!callContextGetDefaultContextUser().isEnabled(pp, oi.getContextEnabledValue())) {
-					objectCallback.setAllowed(false);
-					String s = "Not enabled, user rule for " + clazz.getSimpleName() + ", ";
-					OAObject user = callContextGetDefaultContextUser().getCurrentUserObject();
-					if (user == null) {
-						s = "OAContext.getContextObject (User) returned null";
-					} else {
-						s = "User." + pp + " must be " + oi.getContextEnabledValue();
-					}
-					objectCallback.setResponse(s);
-				}
-			}
-		}
+		if (clazz == null) return null;
+		OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowNew, null, clazz, null, null, null);
+		processObjectCallback(objectCallback);
 		return objectCallback;
 	}
 
@@ -814,20 +735,38 @@ public abstract class OAObjectCallbackService {
 
 		if (li == null || (li.getPrivateMethod() && objMaster == null)) {
 			objectCallback = getAllowNewObjectCallback(hub.getObjectClass());
-			processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, null);
+			processHubOnlyCallback(objectCallback, hub, null);
+			if (objectCallback.getAllowed()) {
+				processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, null);
+			}
 		} else {
 			OALinkInfo liRev = li.getReverseLinkInfo();
 			if (liRev != null && !liRev.getCalculated()) {
-				objectCallback = new OAObjectCallback(Type.AllowNew, OAObjectCallback.CHECK_ALL, hub, null, objMaster, liRev.getName(), null);
+				objectCallback = new OAObjectCallback(Type.AllowNew, hub, null, objMaster, liRev.getName(), null);
 				processObjectCallback(objectCallback);
 			} else {
 				objectCallback = getAllowNewObjectCallback(hub.getObjectClass());
-				processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, null);
+				processHubOnlyCallback(objectCallback, hub, null);
+				if (objectCallback.getAllowed()) {
+					processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, null);
+				}
 			}
 		}
 		return objectCallback;
 	}
-
+	
+	public boolean getAllowNewObject(final Hub<? extends OAObject> hub) {
+		if (hub == null) return false;
+		OAObjectCallback cb = getAllowNewObjectCallback(hub);
+		return cb == null ? false : cb.isAllowed();
+	}
+	
+	public boolean getAllowNewObject(final Class<? extends OAObject> type) {
+		if (type == null) return false;
+		OAObjectCallback cb = getAllowNewObjectCallback(type);
+		return cb == null ? false : cb.isAllowed();
+	}
+	
 	/**
 	 * Creates and evaluates an {@link OAObjectCallback} of type {@code AllowRemove}
 	 * to determine whether the specified object may be removed from the hub.
@@ -839,7 +778,7 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
-	public <T extends OAObject> OAObjectCallback getAllowRemoveObjectCallback(final Hub<T> hub, final T objRemove, final int checkType) {
+	public <T extends OAObject> OAObjectCallback getAllowRemoveObjectCallback(final Hub<T> hub, final T objRemove, final OAObjectCallback.CheckType[] onlyCheckTypes) {
 		if (hub == null) {
 			return null;
 		}
@@ -850,24 +789,36 @@ public abstract class OAObjectCallbackService {
 		OAObjectCallback objectCallback = null;
 
 		if (li == null || (li.getPrivateMethod() && objMaster == null)) {
-			objectCallback = new OAObjectCallback(Type.AllowRemove, checkType, hub, null, null, null, objRemove);
-			if ((checkType & OAObjectCallback.CHECK_Processed) != 0) {
+			objectCallback = new OAObjectCallback(Type.AllowRemove, onlyCheckTypes, hub, null, null, null, objRemove);
+
+			if (objectCallback.isUsed(OAObjectCallback.CheckType.Processed)) {
 				if (hub.getOAObjectInfo().getProcessed()) {
 					updateEditProcessed(objectCallback);
 				}
 			}
-			processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, objRemove);
+			processHubOnlyCallback(objectCallback, hub, objRemove);
+			if (objectCallback.getAllowed()) {
+				processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, objRemove);
+			}
 		} else {
 			OALinkInfo liRev = li.getReverseLinkInfo();
 			if (liRev != null && !li.getCalculated()) {
-				objectCallback = new OAObjectCallback(Type.AllowRemove, checkType, hub, null, objMaster, liRev.getName(), objRemove);
+				objectCallback = new OAObjectCallback(Type.AllowRemove, onlyCheckTypes, hub, null, objMaster, liRev.getName(), objRemove);
 				processObjectCallback(objectCallback);
 			}
-		}
-		if (objectCallback == null) {
-			objectCallback = new OAObjectCallback(Type.AllowRemove, checkType, hub, null, null, null, objRemove);
+			else {
+				objectCallback = new OAObjectCallback(Type.AllowRemove, onlyCheckTypes, hub, null, null, null, objRemove);
+	            processHubOnlyCallback(objectCallback, hub, objRemove);
+			    if (objectCallback.getAllowed()) {
+			    	processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, objRemove);
+			    }
+			}
 		}
 		return objectCallback;
+	}
+	
+	public <T extends OAObject> OAObjectCallback getAllowRemoveObjectCallback(final Hub<T> hub, final T objRemove) {
+		return getAllowRemoveObjectCallback(hub, objRemove, null);
 	}
 
 	/**
@@ -880,7 +831,7 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
-	public <T extends OAObject> OAObjectCallback getVerifyRemoveObjectCallback(final Hub<T> hub, final T objRemove, final int checkType) {
+	public <T extends OAObject> OAObjectCallback getVerifyRemoveObjectCallback(final Hub<T> hub, final T objRemove, final OAObjectCallback.CheckType[] onlyCheckTypes) {
 		if (hub == null) {
 			return null;
 		}
@@ -891,23 +842,31 @@ public abstract class OAObjectCallbackService {
 		OAObjectCallback objectCallback = null;
 
 		if (li == null || (li.getPrivateMethod() && objMaster == null)) {
-			objectCallback = new OAObjectCallback(Type.VerifyRemove, checkType, hub, null, null, null, objRemove);
-			if ((checkType & OAObjectCallback.CHECK_Processed) != 0) {
+			objectCallback = new OAObjectCallback(Type.VerifyRemove, onlyCheckTypes, hub, null, null, null, objRemove);
+			if (objectCallback.isUsed(OAObjectCallback.CheckType.Processed)) {
 				if (hub.getOAObjectInfo().getProcessed()) {
 					updateEditProcessed(objectCallback);
 				}
 			}
-			processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, objRemove);
+			processHubOnlyCallback(objectCallback, hub, objRemove);
+			if (objectCallback.getAllowed()) {
+				processObjectCallbackForHubListeners(objectCallback, hub, objRemove, null, null, null);
+			}
 		} else {
 			OALinkInfo liRev = li.getReverseLinkInfo();
 			if (liRev != null && !li.getCalculated()) {
-				objectCallback = new OAObjectCallback(Type.VerifyRemove, checkType, hub, null, objMaster, liRev.getName(), objRemove);
+				objectCallback = new OAObjectCallback(Type.VerifyRemove, onlyCheckTypes, hub, null, objMaster, liRev.getName(), objRemove);
 				processObjectCallback(objectCallback);
 			}
+			else {
+				objectCallback = new OAObjectCallback(Type.VerifyRemove, onlyCheckTypes, hub, null, null, null, objRemove);
+	            processHubOnlyCallback(objectCallback, hub, objRemove);
+			    if (objectCallback.getAllowed()) {
+			    	processObjectCallbackForHubListeners(objectCallback, hub, objRemove, null, null, null);
+			    }
+			}
 		}
-		if (objectCallback == null) {
-			objectCallback = new OAObjectCallback(Type.VerifyRemove, checkType, hub, null, null, null, objRemove);
-		}
+		
 		return objectCallback;
 	}
 
@@ -921,7 +880,7 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
-	public OAObjectCallback getAllowRemoveAllObjectCallback(final Hub<? extends OAObject> hub, final int checkType) {
+	public OAObjectCallback getAllowRemoveAllObjectCallback(final Hub<? extends OAObject> hub, final OAObjectCallback.CheckType[] onlyCheckTypes) {
 		if (hub == null) {
 			return null;
 		}
@@ -932,24 +891,34 @@ public abstract class OAObjectCallbackService {
 		OAObjectCallback objectCallback = null;
 
 		if (li == null || (li.getPrivateMethod() && objMaster == null)) {
-			objectCallback = new OAObjectCallback(Type.AllowRemoveAll, checkType, hub, null, null, null, null);
-			if ((checkType & OAObjectCallback.CHECK_Processed) != 0) {
+			objectCallback = new OAObjectCallback(Type.AllowRemoveAll, onlyCheckTypes, hub, null, null, null, null);
+			if (objectCallback.isUsed(OAObjectCallback.CheckType.Processed)) {
 				if (hub.getOAObjectInfo().getProcessed()) {
 					updateEditProcessed(objectCallback);
 				}
 			}
-			processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, null);
+			processHubOnlyCallback(objectCallback, hub, null);
+			if (objectCallback.getAllowed()) {
+				processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, null);
+			}
 		} else {
 			OALinkInfo liRev = li.getReverseLinkInfo();
 			if (liRev != null && !li.getCalculated()) {
-				objectCallback = new OAObjectCallback(Type.AllowRemoveAll, checkType, hub, null, objMaster, liRev.getName(), null);
+				objectCallback = new OAObjectCallback(Type.AllowRemoveAll, onlyCheckTypes, hub, null, objMaster, liRev.getName(), null);
 				processObjectCallback(objectCallback);
 			}
-		}
-		if (objectCallback == null) {
-			objectCallback = new OAObjectCallback(Type.AllowRemoveAll, checkType, hub, null, null, null, null);
+			else {
+				objectCallback = new OAObjectCallback(Type.AllowRemoveAll, onlyCheckTypes, hub, null, null, null, null);
+	            processHubOnlyCallback(objectCallback, hub, null);
+			    if (objectCallback.getAllowed()) {
+			    	processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, null);
+			    }
+			}
 		}
 		return objectCallback;
+	}
+	public OAObjectCallback getAllowRemoveAllObjectCallback(final Hub<? extends OAObject> hub) {
+		return getAllowRemoveAllObjectCallback(hub, null);
 	}
 	
 	/**
@@ -962,7 +931,7 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
-	public OAObjectCallback getVerifyRemoveAllObjectCallback(final Hub<? extends OAObject> hub, final int checkType) {
+	public OAObjectCallback getVerifyRemoveAllObjectCallback(final Hub<? extends OAObject> hub, final OAObjectCallback.CheckType[] onlyCheckTypes) {
 		if (hub == null) {
 			return null;
 		}
@@ -973,22 +942,29 @@ public abstract class OAObjectCallbackService {
 		OAObjectCallback objectCallback = null;
 
 		if (li == null || (li.getPrivateMethod() && objMaster == null)) {
-			objectCallback = new OAObjectCallback(Type.VerifyRemoveAll, checkType, hub, null, null, null, null);
-			if ((checkType & OAObjectCallback.CHECK_Processed) != 0) {
+			objectCallback = new OAObjectCallback(Type.VerifyRemoveAll, onlyCheckTypes, hub, null, null, null, null);
+			if (objectCallback.isUsed(OAObjectCallback.CheckType.Processed)) {
 				if (hub.getOAObjectInfo().getProcessed()) {
 					updateEditProcessed(objectCallback);
 				}
 			}
-			processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, null);
+			processHubOnlyCallback(objectCallback, hub, null);
+			if (objectCallback.getAllowed()) {
+				processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, null);
+			}
 		} else {
 			OALinkInfo liRev = li.getReverseLinkInfo();
 			if (liRev != null && !li.getCalculated()) {
-				objectCallback = new OAObjectCallback(Type.VerifyRemoveAll, checkType, hub, null, objMaster, liRev.getName(), null);
+				objectCallback = new OAObjectCallback(Type.VerifyRemoveAll, onlyCheckTypes, hub, null, objMaster, liRev.getName(), null);
 				processObjectCallback(objectCallback);
 			}
-		}
-		if (objectCallback == null) {
-			objectCallback = new OAObjectCallback(Type.VerifyRemoveAll, checkType, hub, null, null, null, null);
+			else {
+				objectCallback = new OAObjectCallback(Type.VerifyRemoveAll, onlyCheckTypes, hub, null, null, null, null);
+				processHubOnlyCallback(objectCallback, hub, null);
+				if (objectCallback.getAllowed()) {
+					processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, null);
+				}
+			}
 		}
 		return objectCallback;
 	}
@@ -1002,10 +978,14 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback
 	 */
-	public OAObjectCallback getAllowSaveObjectCallback(final OAObject oaObj, final int checkType) {
-		final OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowSave, checkType, null, null, oaObj, null, null);
+	public OAObjectCallback getAllowSaveObjectCallback(final OAObject oaObj, final OAObjectCallback.CheckType[] onlyCheckTypes) {
+		if (oaObj == null) return null;
+		final OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowSave, onlyCheckTypes, null, null, oaObj, null, null);
 		processObjectCallback(objectCallback);
 		return objectCallback;
+	}
+	public OAObjectCallback getAllowSaveObjectCallback(final OAObject oaObj) {
+		return getAllowSaveObjectCallback(oaObj, null);
 	}
 
 	/**
@@ -1017,10 +997,14 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback
 	 */
-	public OAObjectCallback getVerifySaveObjectCallback(final OAObject oaObj, final int checkType) {
-		final OAObjectCallback objectCallback = new OAObjectCallback(Type.VerifySave, checkType, null, null, oaObj, null, null);
+	public OAObjectCallback getVerifySaveObjectCallback(final OAObject oaObj, final OAObjectCallback.CheckType[] onlyCheckTypes) {
+		if (oaObj == null) return null;
+		final OAObjectCallback objectCallback = new OAObjectCallback(Type.VerifySave, onlyCheckTypes, null, null, oaObj, null, null);
 		processObjectCallback(objectCallback);
 		return objectCallback;
+	}
+	public OAObjectCallback getVerifySaveObjectCallback(final OAObject oaObj) {
+		return getVerifySaveObjectCallback(oaObj, null);
 	}
 
 	/**
@@ -1032,38 +1016,13 @@ public abstract class OAObjectCallbackService {
 	 * @return the resulting callback, or {@code null} if the object or its class is null
 	 */
 	public OAObjectCallback getAllowDeleteObjectCallback(final OAObject objDelete) {
-		if (objDelete == null) {
-			return null;
-		}
+		if (objDelete == null) return null;
 
-		final Class clazz = objDelete.getClass();
-		if (clazz == null) {
-			return null;
-		}
+		final Class<? extends OAObject> clazz = objDelete.getClass();
 		final OAObjectInfo oi = callInfoGetObjectInfo(clazz);
 
-		int ct = (OAObjectCallback.CHECK_Processed | OAObjectCallback.CHECK_UserEnabledProperty);
-		OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowDelete, ct, null, clazz, null, null, objDelete);
-
-		if (oi.getProcessed()) {
-			updateEditProcessed(objectCallback);
-		}
-		if (objectCallback.getAllowed()) {
-			String pp = oi.getContextEnabledProperty();
-			if (OAString.isNotEmpty(pp)) {
-				if (!callContextGetDefaultContextUser().isEnabled(pp, oi.getContextEnabledValue())) {
-					objectCallback.setAllowed(false);
-					String s = "Not enabled, user rule for " + clazz.getSimpleName() + ", ";
-					OAObject user = callContextGetDefaultContextUser().getCurrentUserObject();
-					if (user == null) {
-						s = "OAContext.getContextObject (User) returned null";
-					} else {
-						s = "User." + pp + " must be " + oi.getContextEnabledValue();
-					}
-					objectCallback.setResponse(s);
-				}
-			}
-		}
+		OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowDelete, null, clazz, objDelete);
+		processObjectCallback(objectCallback);
 		return objectCallback;
 	}
 	
@@ -1077,7 +1036,7 @@ public abstract class OAObjectCallbackService {
 	 * @param objDelete the object to delete
 	 * @return the resulting callback, or {@code null} if the hub or object is {@code null}
 	 */
-	public OAObjectCallback getAllowDeleteObjectCallback(final Hub<? extends OAObject> hub, final OAObject objDelete) {
+	public <T extends OAObject> OAObjectCallback getAllowDeleteObjectCallback(final Hub<T> hub, final T objDelete) {
 		if (hub == null || objDelete == null) {
 			return null;
 		}
@@ -1089,16 +1048,26 @@ public abstract class OAObjectCallbackService {
 
 		if (li == null || (li.getPrivateMethod() && objMaster == null)) {
 			objectCallback = getAllowDeleteObjectCallback(objDelete);
-			processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, null);
+			if (objectCallback.isUsed(OAObjectCallback.CheckType.Processed)) {
+				if (hub.getOAObjectInfo().getProcessed()) {
+					updateEditProcessed(objectCallback);
+				}
+			}
+			processHubOnlyCallback(objectCallback, hub, objDelete);
+			if (objectCallback.getAllowed()) {
+				processObjectCallbackForHubListeners(objectCallback, hub, objDelete, null, null, null);
+			}
 		} else {
 			OALinkInfo liRev = li.getReverseLinkInfo();
 			if (liRev != null && !liRev.getCalculated()) {
-				objectCallback = new OAObjectCallback(Type.AllowDelete, OAObjectCallback.CHECK_ALL, hub, null, objMaster, liRev.getName(),
-						objDelete);
+				objectCallback = new OAObjectCallback(Type.AllowDelete, hub, null, objMaster, liRev.getName(), objDelete);
 				processObjectCallback(objectCallback);
 			} else {
 				objectCallback = getAllowDeleteObjectCallback(objDelete);
-				processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, null);
+				processHubOnlyCallback(objectCallback, hub, objDelete);
+				if (objectCallback.getAllowed()) {
+					processObjectCallbackForHubListeners(objectCallback, hub, null, null, null, null);
+				}
 			}
 		}
 		return objectCallback;
@@ -1115,33 +1084,39 @@ public abstract class OAObjectCallbackService {
 	 * @param checkType the bitmask of checking options
 	 * @return the resulting callback
 	 */
-	public <T extends OAObject> OAObjectCallback getVerifyDeleteObjectCallback(final Hub<T> hub, final T objDelete, final int checkType) {
+	public <T extends OAObject> OAObjectCallback getVerifyDeleteObjectCallback(final Hub<T> hub, final T objDelete, final OAObjectCallback.CheckType[] onlyCheckTypes) {
 		OAObjectCallback objectCallback = null;
 		if (hub != null) {
 			OALinkInfo li = callHubDetailGetLinkInfoFromDetailToMaster(hub);
 			OAObject objMaster = hub.getMasterObject();
 
 			if (li == null || (li.getPrivateMethod() && objMaster == null)) {
-				objectCallback = new OAObjectCallback(Type.VerifyDelete, checkType, hub, null, null, null, objDelete);
-				if ((checkType & OAObjectCallback.CHECK_Processed) != 0) {
+				objectCallback = new OAObjectCallback(Type.VerifyDelete, onlyCheckTypes, hub, null, null, null, objDelete);
+				if (objectCallback.isUsed(OAObjectCallback.CheckType.Processed)) {
 					if (hub.getOAObjectInfo().getProcessed()) {
 						updateEditProcessed(objectCallback);
 					}
 				}
-				processObjectCallbackForHubListeners(objectCallback, hub, objDelete, null, null, null);
+				processHubOnlyCallback(objectCallback, hub, objDelete);
+				if (objectCallback.getAllowed()) {
+					processObjectCallbackForHubListeners(objectCallback, hub, objDelete, null, null, null);
+				}
 			} else {
 				OALinkInfo liRev = li.getReverseLinkInfo();
 				if (liRev != null && !li.getCalculated()) {
-					objectCallback = new OAObjectCallback(Type.VerifyDelete, checkType, hub, null, objMaster, liRev.getName(), objDelete);
+					objectCallback = new OAObjectCallback(Type.VerifyDelete, onlyCheckTypes, hub, null, objMaster, liRev.getName(), objDelete);
 					processObjectCallback(objectCallback);
 				}
 			}
 		}
 		if (objectCallback == null) {
-			objectCallback = new OAObjectCallback(Type.VerifyDelete, checkType, hub, null, objDelete, null, null);
+			objectCallback = new OAObjectCallback(Type.VerifyDelete, onlyCheckTypes, hub, null, objDelete, null, null);
 			processObjectCallback(objectCallback);
 		}
 		return objectCallback;
+	}
+	public <T extends OAObject> OAObjectCallback getVerifyDeleteObjectCallback(final Hub<T> hub, final T objDelete) {
+		return getVerifyDeleteObjectCallback(hub, objDelete, null);
 	}
 	
 	/**
@@ -1175,9 +1150,7 @@ public abstract class OAObjectCallbackService {
      */
     public OAObjectCallback getConfirmPropertyChangeObjectCallback(final OAObject oaObj, String property, Object newValue,
 			String confirmMessage, String confirmTitle) {
-		final OAObjectCallback objectCallback = new OAObjectCallback(Type.SetConfirmForPropertyChange, OAObjectCallback.CHECK_ALL, null,
-				null,
-				oaObj, property, newValue);
+		final OAObjectCallback objectCallback = new OAObjectCallback(Type.SetConfirmForPropertyChange, null, null, oaObj, property, newValue);
 		objectCallback.setValue(newValue);
 		objectCallback.setPropertyName(property);
 		objectCallback.setConfirmMessage(confirmMessage);
@@ -1198,11 +1171,8 @@ public abstract class OAObjectCallbackService {
      * @param confirmTitle   the confirmation title
      * @return the resulting callback
      */
-	public OAObjectCallback getConfirmCommandObjectCallback(final OAObject oaObj, String methodName, String confirmMessage,
-			String confirmTitle) {
-		final OAObjectCallback objectCallback = new OAObjectCallback(Type.SetConfirmForCommand, OAObjectCallback.CHECK_ALL, null, null,
-				oaObj,
-				methodName, null);
+	public OAObjectCallback getConfirmCommandObjectCallback(final OAObject oaObj, String methodName, String confirmMessage, String confirmTitle) {
+		final OAObjectCallback objectCallback = new OAObjectCallback(Type.SetConfirmForCommand, null, null, oaObj, methodName, null);
 		objectCallback.setConfirmMessage(confirmMessage);
 		objectCallback.setConfirmTitle(confirmTitle);
 
@@ -1222,7 +1192,7 @@ public abstract class OAObjectCallbackService {
 	 * @return the resulting callback
 	 */
 	public OAObjectCallback getConfirmSaveObjectCallback(final OAObject oaObj, String confirmMessage, String confirmTitle) {
-		final OAObjectCallback objectCallback = new OAObjectCallback(Type.SetConfirmForSave, OAObjectCallback.CHECK_ALL, null, null, oaObj,
+		final OAObjectCallback objectCallback = new OAObjectCallback(Type.SetConfirmForSave, null, null, oaObj,
 				null, null);
 		objectCallback.setConfirmMessage(confirmMessage);
 		objectCallback.setConfirmTitle(confirmTitle);
@@ -1243,9 +1213,7 @@ public abstract class OAObjectCallbackService {
 	 * @return the resulting callback
 	 */
 	public OAObjectCallback getConfirmDeleteObjectCallback(final OAObject oaObj, String confirmMessage, String confirmTitle) {
-		final OAObjectCallback objectCallback = new OAObjectCallback(Type.SetConfirmForDelete, OAObjectCallback.CHECK_ALL, null, null,
-				oaObj,
-				null, null);
+		final OAObjectCallback objectCallback = new OAObjectCallback(Type.SetConfirmForDelete, null, null, oaObj, null, null);
 		objectCallback.setConfirmMessage(confirmMessage);
 		objectCallback.setConfirmTitle(confirmTitle);
 		processObjectCallback(objectCallback);
@@ -1264,22 +1232,18 @@ public abstract class OAObjectCallbackService {
 	 * @param confirmTitle   the confirmation title to assign
 	 * @return the resulting callback
 	 */
-	public <T extends OAObject> OAObjectCallback getConfirmRemoveObjectCallback(final Hub<T> hub, final T oaObj, String confirmMessage,
-			String confirmTitle) {
+	public <T extends OAObject> OAObjectCallback getConfirmRemoveObjectCallback(final Hub<T> hub, final T oaObj, String confirmMessage, String confirmTitle) {
 		OAObjectCallback objectCallback;
 		OAObject objMaster = hub.getMasterObject();
 		if (objMaster != null) {
 			String propertyName = callHubDetailGetPropertyFromMasterToDetail(hub);
-			objectCallback = new OAObjectCallback(Type.SetConfirmForRemove, OAObjectCallback.CHECK_ALL, hub, null, oaObj, propertyName,
-					null);
-			objectCallback.setConfirmMessage(confirmMessage);
-			objectCallback.setConfirmTitle(confirmTitle);
-			processObjectCallback(objectCallback);
+			objectCallback = new OAObjectCallback(Type.SetConfirmForRemove, hub, null, objMaster, propertyName, oaObj);
 		} else {
-			objectCallback = new OAObjectCallback(Type.SetConfirmForRemove, OAObjectCallback.CHECK_ALL, hub, null, oaObj, null, null);
-			objectCallback.setConfirmMessage(confirmMessage);
-			objectCallback.setConfirmTitle(confirmTitle);
+			objectCallback = new OAObjectCallback(Type.SetConfirmForRemove, hub, null, oaObj, null, null);
 		}
+		objectCallback.setConfirmMessage(confirmMessage);
+		objectCallback.setConfirmTitle(confirmTitle);
+		processObjectCallback(objectCallback);
 		return objectCallback;
 	}
 
@@ -1294,22 +1258,18 @@ public abstract class OAObjectCallbackService {
 	 * @param confirmTitle   the confirmation title to assign
 	 * @return the resulting callback
 	 */
-    public OAObjectCallback getConfirmRemoveAllObjectCallback(final Hub<? extends OAObject> hub, String confirmMessage,
-            String confirmTitle) {
+    public OAObjectCallback getConfirmRemoveAllObjectCallback(final Hub<? extends OAObject> hub, String confirmMessage, String confirmTitle) {
         OAObjectCallback objectCallback;
         OAObject objMaster = hub.getMasterObject();
         if (objMaster != null) {
             String propertyName = callHubDetailGetPropertyFromMasterToDetail(hub);
-                objectCallback = new OAObjectCallback(Type.SetConfirmForRemoveAll, OAObjectCallback.CHECK_ALL, 
-                    hub, null, null, propertyName, null);
-            objectCallback.setConfirmMessage(confirmMessage);
-            objectCallback.setConfirmTitle(confirmTitle);
-            processObjectCallback(objectCallback);
+            objectCallback = new OAObjectCallback(Type.SetConfirmForRemoveAll, hub, null, null, propertyName, null);
         } else {
-            objectCallback = new OAObjectCallback(Type.SetConfirmForRemoveAll, OAObjectCallback.CHECK_ALL, hub, null, null, null, null);
-            objectCallback.setConfirmMessage(confirmMessage);
-            objectCallback.setConfirmTitle(confirmTitle);
+            objectCallback = new OAObjectCallback(Type.SetConfirmForRemoveAll, hub, null, null, null, null);
         }
+        objectCallback.setConfirmMessage(confirmMessage);
+        objectCallback.setConfirmTitle(confirmTitle);
+        processObjectCallback(objectCallback);
         return objectCallback;
     }
 
@@ -1326,21 +1286,19 @@ public abstract class OAObjectCallbackService {
      * @param confirmTitle   the confirmation title to assign
      * @return the resulting callback
      */
-	public <T extends OAObject> OAObjectCallback getConfirmAddObjectCallback(final Hub<T> hub, final T oaObj, String confirmMessage,
-			String confirmTitle) {
+	public <T extends OAObject> OAObjectCallback getConfirmAddObjectCallback(final Hub<T> hub, final T oaObj, String confirmMessage, String confirmTitle) {
+		if (hub == null) return null;
 		OAObjectCallback objectCallback;
 		OAObject objMaster = hub.getMasterObject();
 		if (objMaster != null) {
 			String propertyName = callHubDetailGetPropertyFromMasterToDetail(hub);
-			objectCallback = new OAObjectCallback(Type.SetConfirmForAdd, OAObjectCallback.CHECK_ALL, hub, null, oaObj, propertyName, null);
-			objectCallback.setConfirmMessage(confirmMessage);
-			objectCallback.setConfirmTitle(confirmTitle);
-			processObjectCallback(objectCallback);
+			objectCallback = new OAObjectCallback(Type.SetConfirmForAdd, (CheckType[]) null, hub, null, objMaster, propertyName, oaObj);
 		} else {
-			objectCallback = new OAObjectCallback(Type.SetConfirmForAdd, OAObjectCallback.CHECK_ALL, hub, null, oaObj, null, null);
-			objectCallback.setConfirmMessage(confirmMessage);
-			objectCallback.setConfirmTitle(confirmTitle);
+			objectCallback = new OAObjectCallback(Type.SetConfirmForAdd, hub, null, null, null, oaObj);
 		}
+		objectCallback.setConfirmMessage(confirmMessage);
+		objectCallback.setConfirmTitle(confirmTitle);
+		processObjectCallback(objectCallback);
 		return objectCallback;
 	}
 
@@ -1352,348 +1310,375 @@ public abstract class OAObjectCallbackService {
 	 *
 	 * @param objectCallback the callback to process
 	 */
-	protected void processObjectCallback(OAObjectCallback objectCallback) {
-		_processObjectCallback(objectCallback);
-		if ((!objectCallback.getAllowed() || objectCallback.getThrowable() != null)) {
-			// allow AppUser.admin=true to always be valid
-			if (callContextGetDefaultContextUser().isSuperAdmin()) { // allow all if super admin
-				objectCallback.setThrowable(null);
-				objectCallback.setAllowed(true);
+	protected void processObjectCallback(OAObjectCallback cb) {
+		if (cb == null) return;
+		_processObjectCallback(cb);
+		
+		if ((!cb.getAllowed() || cb.getThrowable() != null) && cb.isUsed(CheckType.SuperAdminOverride)) {
+			Class<? extends OAObject> c = cb.getCalcClass();
+			if (c != null) {
+				OA oa = OARuntime.oa(c);
+			    if (oa.modelUser().isSuperAdmin()) {
+			    	cb.setThrowable(null);
+			    	cb.setAllowed(true);
+				}
 			}
 		}
 	}
-    
-	/**
-	 * Processes the supplied callback by evaluating rules based on hub context,
-	 * class metadata, object state, property-level definitions, user-access
-	 * settings, and any callback methods defined on the object. This method
-	 * updates the callback’s allowed state and response message as needed
-	 * and invokes hub listeners when applicable.
-	 *
-	 * @param objectCallback the callback being evaluated
-	 */
-	protected void _processObjectCallback(final OAObjectCallback objectCallback) {
-		final Hub hubThis = objectCallback.getHub();
-		final Class<?> clazz = objectCallback.getCalcClass();
-		final OAObject oaObj = objectCallback.getObject();
-		final String propertyName = objectCallback.getPropertyName();
-		final Object oldValue = objectCallback.getOldValue();
-		final Object value = objectCallback.getValue();
-		final int checkType = objectCallback.getCheckType();
 
-		final boolean bCheckProcessedCheck = (objectCallback.getCheckType() & OAObjectCallback.CHECK_Processed) != 0;
-		final boolean bCheckEnabledProperty = (objectCallback.getCheckType() & OAObjectCallback.CHECK_EnabledProperty) != 0;
-		final boolean bCheckUserEnabledProperty = (objectCallback.getCheckType() & OAObjectCallback.CHECK_UserEnabledProperty) != 0;
-		final boolean bCheckCallbackMethod = (objectCallback.getCheckType() & OAObjectCallback.CHECK_CallbackMethod) != 0;
-		final boolean bCheckIncludeMaster = (objectCallback.getCheckType() & OAObjectCallback.CHECK_IncludeMaster) != 0;
+	private class ProcessInfo {
+		final OAObjectCallback cb;
+		final Hub hubThis;
+		final Class<?> clazz;
+		final OAObject oaObj;
+		final String propertyName;
+		final Object oldValue;
+		final Object value;
+		final Type type;
 
-		final OAObjectInfo oi = callInfoGetObjectInfo(clazz);
-
-		if (bCheckProcessedCheck) {
-			if (objectCallback.getType() == Type.AllowDelete && value != null && OAString.isEmpty(propertyName)) {
-				OAObjectInfo oix = callInfoGetObjectInfo(value.getClass());
-				if (oix.getProcessed()) {
-					updateEditProcessed(objectCallback);
-				}
-			}
-		}
-
-		final OAContextAccess contextAccess = callContextGetDefaultContextUser().getContext().getContextAccess();
+		final OAObjectInfo oi;
+		final OA oa;
+		final Hub<?> hubModelUser;
+		final OASessionUser sessionUser;
+		final OASessionAccess sessionAccess;
 		
-		// 20200217 add OAUserAccess
-		if (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType() == Type.AllowVisible) {
-			if (contextAccess != null) {
-				boolean bx = true;
-				if (objectCallback.getType() == Type.AllowEnabled) {
-					if (oaObj != null) {
-						bx = contextAccess.getEnabled(oaObj);
-					} else {
-						bx = contextAccess.getEnabled(clazz);
-					}
-				} else {
-					if (oaObj != null) {
-						bx = contextAccess.getVisible(oaObj);
-					} else {
-						bx = contextAccess.getVisible(clazz);
-					}
-				}
-				if (!bx) {
-					objectCallback.setAllowed(false);
-					objectCallback.setResponse("UserAccess returned false");
-					return;
-				}
-			}
-		}
+		public ProcessInfo(final OAObjectCallback cb) {
+			this.cb = cb;
+			hubThis = cb.getHub();
+			clazz = cb.getCalcClass();
+			oaObj = cb.getObject();
+			propertyName = cb.getPropertyName();
+			oldValue = cb.getOldValue();
+			value = cb.getValue();
+			type = cb.getType();
 
-		// follow the first link (if any), if it is not owner
-		if (bCheckIncludeMaster && hubThis != null
-				&& (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().isCheckEnabledFirst()
-						|| objectCallback.getType() == Type.AllowVisible)) {
-			OALinkInfo li = callHubDetailGetLinkInfoFromMasterHubToDetail(hubThis);
-			if (li != null && !li.getOwner()) {
-				OAObject objx = hubThis.getMasterObject();
-				if (objx != null) {
-					if (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().isCheckEnabledFirst()) {
-						int ct = (objectCallback.getCheckType() ^ objectCallback.CHECK_IncludeMaster) ^ objectCallback.CHECK_Processed;
-						OAObjectCallback objectCallbackX = new OAObjectCallback(Type.AllowEnabled, ct, hubThis.getMasterHub(), null, objx,
-								li.getName(), null);
-						objectCallbackX.setAllowed(objectCallback.getAllowed());
-						_processObjectCallback(objectCallbackX);
-						objectCallback.setAllowed(objectCallbackX.getAllowed());
-						if (OAString.isEmpty(objectCallback.getResponse())) {
-							objectCallback.setResponse(objectCallbackX.getResponse());
-						}
-					} else if (objectCallback.getType() == Type.AllowVisible) {
-						int ct = (objectCallback.getCheckType() ^ objectCallback.CHECK_IncludeMaster) ^ objectCallback.CHECK_Processed;
-						OAObjectCallback objectCallbackX = new OAObjectCallback(Type.AllowVisible, ct, hubThis.getMasterHub(), null, objx,
-								li.getName(), null);
-						objectCallbackX.setAllowed(objectCallback.getAllowed());
-						_processObjectCallback(objectCallbackX);
-						objectCallback.setAllowed(objectCallbackX.getAllowed());
-						if (OAString.isEmpty(objectCallback.getResponse())) {
-							objectCallback.setResponse(objectCallbackX.getResponse());
-						}
-					}
-				}
-			}
+			oi = callInfoGetObjectInfo(cb.getCalcClass());
+			oa = OARuntime.oa(clazz);
+			hubModelUser = oa.modelUser().getCalc();
+			sessionUser = oa.sessionUser().get();
+			sessionAccess = (sessionUser == null) ? null : sessionUser.getSessionAccess();
 		}
+	}
+	
+	protected void _processObjectCallback(final OAObjectCallback cb) {
+		ProcessInfo pi = new ProcessInfo(cb);
 
-		if (oaObj != null && objectCallback.getType().isCheckOwner()) {
-			ownerHierProcess(objectCallback, oaObj, propertyName);
+		_processObjectCallback_1A(pi);
+		if (cb.isAllowed()) {
+			_processObjectCallback_1B(pi);
 		}
-		if (bCheckProcessedCheck && oi.getProcessed() && OAString.isEmpty(propertyName) && objectCallback.getAllowed()
-				&& ((objectCallback.getType() == Type.AllowEnabled) || objectCallback.getType().isCheckEnabledFirst())) {
-			updateEditProcessed(objectCallback);
-		}
-
-		if (oaObj != null && objectCallback.getType() == Type.AllowVisible && OAString.isNotEmpty(propertyName)
-				&& objectCallback.isAllowed()
-				&& oi.getHasOneAndOnlyOneLink()) {
-			OALinkInfo li = oi.getLinkInfo(propertyName);
-			if (li != null && li.getOneAndOnlyOne()) {
-				if (callPropertyGetProperty(oaObj, propertyName) == null) {
-					for (OALinkInfo lix : oi.getLinkInfos()) {
-						if (lix == li || !lix.getOneAndOnlyOne()) {
-							continue;
-						}
-						if (callPropertyGetProperty(oaObj, lix.getName()) != null) {
-							objectCallback.setAllowed(false);
-						}
-					}
-				}
-			}
-		}
-
-		// "allow" can be overwritten, if there is a lower level annotation/objectCallback defined
-		if (objectCallback.getType() == Type.AllowVisible && OAString.isNotEmpty(propertyName)) {
-			String sx = null;
-			boolean bx = true;
-			OAPropertyInfo pi = oi.getPropertyInfo(propertyName);
-			if (pi != null) {
-				sx = pi.getVisibleProperty();
-				bx = pi.getVisibleValue();
+		
+		_processObjectCallback_2(pi); // callback
+		
+		_processObjectCallback_3(pi); // hublisteners
+	}
+	
+	protected void _processObjectCallback_1A(ProcessInfo pi) {
+		OAObjectCallback cb = pi.cb;		
+		
+		if (pi.sessionAccess == null) return;
+		boolean bx = true;
+		// checkSessionEnabled
+		if (cb.isUsed(CheckType.SessionEnabled)) {
+			if (pi.oaObj != null) {
+				bx = pi.sessionAccess.getEnabled(pi.oaObj, pi.propertyName);
 			} else {
-				OALinkInfo li = oi.getLinkInfo(propertyName);
-				if (li != null) {
-					sx = li.getVisibleProperty();
-					bx = li.getVisibleValue();
-				} else {
-					OACalcInfo ci = oi.getCalcInfo(propertyName);
-					if (ci != null) {
-						sx = ci.getVisibleProperty();
-						bx = ci.getVisibleValue();
-					} else {
-						OAMethodInfo mi = oi.getMethodInfo(propertyName);
-						if (mi != null) {
-							sx = mi.getVisibleProperty();
-							bx = mi.getVisibleValue();
-						}
-					}
-				}
+				bx = pi.sessionAccess.getEnabled(pi.clazz, pi.propertyName);
 			}
-			final boolean bHadVisibleProperty = (oaObj != null && OAString.isNotEmpty(sx));
-			if (bHadVisibleProperty) {
-				Object valx = callReflectGetProperty(oaObj, sx);
-				objectCallback.setAllowed(bx == OAConv.toBoolean(valx));
-				if (!objectCallback.getAllowed() && OAString.isEmpty(objectCallback.getResponse())) {
-					objectCallback.setAllowed(false);
-					String s = "Not visible, " + oaObj.getClass().getSimpleName() + "." + sx + " is not " + bx;
-					objectCallback.setResponse(s);
-				}
-			}
-
-			sx = null;
-			bx = true;
-			pi = oi.getPropertyInfo(propertyName);
-			if (pi != null) {
-				sx = pi.getContextVisibleProperty();
-				bx = pi.getContextVisibleValue();
+		}
+		
+		// checkSessionVisible
+		if (bx && cb.isUsed(CheckType.SessionVisible)) {
+			if (pi.oaObj != null) {
+				bx = pi.sessionAccess.getVisible(pi.oaObj, pi.propertyName);
 			} else {
-				OALinkInfo li = oi.getLinkInfo(propertyName);
-				if (li != null) {
-					sx = li.getContextVisibleProperty();
-					bx = li.getContextVisibleValue();
-				} else {
-					OACalcInfo ci = oi.getCalcInfo(propertyName);
-					if (ci != null) {
-						sx = ci.getContextVisibleProperty();
-						bx = ci.getContextVisibleValue();
-					} else {
-						OAMethodInfo mi = oi.getMethodInfo(propertyName);
-						if (mi != null) {
-							sx = mi.getContextVisibleProperty();
-							bx = mi.getContextVisibleValue();
+				bx = pi.sessionAccess.getVisible(pi.clazz, pi.propertyName);
+			}
+		}
+		if (!bx) {
+			cb.setAllowed(false);
+			cb.setResponse("SessionAccess returned false");
+		}
+	}
+	
+	protected void _processObjectCallback_1B(ProcessInfo pi) {
+		final OAObjectCallback cb = pi.cb;		
+		// checkOwner
+		if (cb.isUsed(CheckType.Owner)) {
+			if (pi.oaObj != null) {
+				ownerHierProcess(cb, pi.oaObj, pi.propertyName);
+			}
+			if (pi.hubThis != null) {
+				OALinkInfo li = callHubDetailGetLinkInfoFromMasterHubToDetail(pi.hubThis);
+				if (li != null && li.getOwner()) {
+					final OAObject objMaster = pi.hubThis.getMasterObject();
+					if (objMaster != null) {
+						if (pi.type == Type.AllowVisible) {
+							OAObjectCallback objectCallbackX = new OAObjectCallback(Type.AllowVisible, pi.cb.getCheckTypes() , pi.hubThis.getMasterHub(), null, objMaster, li.getName(), null);
+							objectCallbackX.setAllowed(cb.getAllowed());
+							_processObjectCallback(objectCallbackX);
+							cb.setAllowed(objectCallbackX.getAllowed());
+							if (OAString.isEmpty(cb.getResponse())) {
+								cb.setResponse(objectCallbackX.getResponse());
+							}
+							if (cb.getThrowable() == null) {
+								cb.setThrowable(objectCallbackX.getThrowable());
+							}
+						}
+						else {
+							CheckType[] cts = cb.getCheckTypesExcept(CheckType.Owner, CheckType.Processed);
+							OAObjectCallback objectCallbackX = new OAObjectCallback(Type.AllowEnabled, cts, pi.hubThis.getMasterHub(), null, objMaster, li.getName(), null);
+							objectCallbackX.setAllowed(cb.getAllowed());
+							_processObjectCallback(objectCallbackX);
+							cb.setAllowed(objectCallbackX.getAllowed());
+							if (OAString.isEmpty(cb.getResponse())) {
+								cb.setResponse(objectCallbackX.getResponse());
+							}
+							if (cb.getThrowable() == null) {
+								cb.setThrowable(objectCallbackX.getThrowable());
+							}
 						}
 					}
 				}
 			}
-			if ((!bHadVisibleProperty || objectCallback.getAllowed()) && OAString.isNotEmpty(sx)) {
-				OAObject user = callContextGetDefaultContextUser().getCurrentUserObject();
-				if (user == null) {
-					
-					if (callSyncIsClient()) {
-						objectCallback.setAllowed(false);
-					}
-				} else {
-					Object valx = callReflectGetProperty(user, sx);
-					objectCallback.setAllowed(bx == OAConv.toBoolean(valx));
-				}
-				if (!objectCallback.getAllowed() && OAString.isEmpty(objectCallback.getResponse())) {
-					objectCallback.setAllowed(false);
-					String s = user == null ? "User" : user.getClass().getSimpleName();
-					s = "Not visible, " + s + "." + sx + " is not " + bx;
-					objectCallback.setResponse(s);
-				}
+		}		
+		if (!cb.isAllowed()) return;
+		
+		// checkProcessed
+		if (cb.isUsed(CheckType.Processed)) {
+			if (pi.oi.getProcessed()) {
+				updateEditProcessed(cb);
 			}
-		} else if ((objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().isCheckEnabledFirst())
-				&& OAString.isNotEmpty(propertyName)) {
-			// was: else if (objectCallback.getAllowed() && (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().checkEnabledFirst) && OAString.isNotEmpty(propertyName)) {
-			if (oaObj == null) {
-				return;
-			}
+		}
+		if (!cb.isAllowed()) return;
+		
+		
+		// checkEnabled
+		if (cb.isUsed(CheckType.Enabled)) {
 			String enabledName = null;
 			boolean enabledValue = true;
-			OAPropertyInfo pi = oi.getPropertyInfo(propertyName);
-			boolean bIsProcessed = false;
-			if (pi != null) {
-				enabledName = pi.getEnabledProperty();
-				enabledValue = pi.getEnabledValue();
-				bIsProcessed = pi.getProcessed();
-			} else {
-				OALinkInfo li = oi.getLinkInfo(propertyName);
-				if (li != null) {
-					enabledName = li.getEnabledProperty();
-					enabledValue = li.getEnabledValue();
-					bIsProcessed = li.getProcessed();
+			
+			enabledName = pi.oi.getEnabledProperty();
+			if (OAStr.isNotEmpty(enabledName)) {
+				enabledValue = pi.oi.getEnabledValue();
+				evaluateObject(cb, enabledName, enabledValue);
+				if (!cb.isAllowed()) return;
+			}
+			
+			if (pi.oaObj != null && OAString.isNotEmpty(pi.propertyName)) {
+				OAPropertyInfo pix = pi.oi.getPropertyInfo(pi.propertyName);
+				boolean bIsProcessed = false;
+				if (pix != null) {
+					enabledName = pix.getEnabledProperty();
+					enabledValue = pix.getEnabledValue();
+					bIsProcessed = pix.getProcessed();
 				} else {
-					OACalcInfo ci = oi.getCalcInfo(propertyName);
-					if (ci != null) {
-						enabledName = ci.getEnabledProperty();
-						enabledValue = ci.getEnabledValue();
+					OALinkInfo li = pi.oi.getLinkInfo(pi.propertyName);
+					if (li != null) {
+						enabledName = li.getEnabledProperty();
+						enabledValue = li.getEnabledValue();
+						bIsProcessed = li.getProcessed();
 					} else {
-						OAMethodInfo mi = oi.getMethodInfo(propertyName);
-						if (mi != null) {
-							enabledName = mi.getEnabledProperty();
-							enabledValue = mi.getEnabledValue();
+						OACalcInfo ci = pi.oi.getCalcInfo(pi.propertyName);
+						if (ci != null) {
+							enabledName = ci.getEnabledProperty();
+							enabledValue = ci.getEnabledValue();
+						} else {
+							OAMethodInfo mi = pi.oi.getMethodInfo(pi.propertyName);
+							if (mi != null) {
+								enabledName = mi.getEnabledProperty();
+								enabledValue = mi.getEnabledValue();
+							}
 						}
 					}
 				}
-			}
-
-			if (bCheckProcessedCheck && bIsProcessed) {
-				updateEditProcessed(objectCallback);
-			}
-
-			final boolean bHadEnabledProperty = (objectCallback.getAllowed() && OAString.isNotEmpty(enabledName));
-			if (bHadEnabledProperty && bCheckEnabledProperty) {
-				Object valx = callReflectGetProperty(oaObj, enabledName);
-				objectCallback.setAllowed(enabledValue == OAConv.toBoolean(valx));
-				if (!objectCallback.getAllowed() && OAString.isEmpty(objectCallback.getResponse())) {
-					objectCallback.setAllowed(false);
-					String s = "Not enabled, " + oaObj.getClass().getSimpleName() + "." + enabledName + " is not " + enabledValue;
-					objectCallback.setResponse(s);
+				if (OAStr.isNotEmpty(enabledName)) {
+					evaluateObject(cb, enabledName, enabledValue);
+					if (bIsProcessed && cb.isUsed(CheckType.Processed)) {
+						updateEditProcessed(cb);
+					}
 				}
-			}
+				
+				if (!cb.isAllowed()) return;
+			}		
+		}
 
-			enabledName = null;
-			enabledValue = true;
-			pi = oi.getPropertyInfo(propertyName);
-			if (pi != null) {
-				enabledName = pi.getContextEnabledProperty();
-				enabledValue = pi.getContextEnabledValue();
-			} else {
-				OALinkInfo li = oi.getLinkInfo(propertyName);
-				if (li != null) {
-					enabledName = li.getContextEnabledProperty();
-					enabledValue = li.getContextEnabledValue();
+		
+		// checkUserEnabled
+		if (cb.isUsed(CheckType.UserEnabled)) {
+			String enabledName = null;
+			boolean enabledValue = true;
+			
+			enabledName = pi.oi.getModelUserEnabledProperty();
+			if (OAStr.isNotEmpty(enabledName)) {
+				enabledValue = pi.oi.getModelUserEnabledValue();
+				evaluateUser(cb, enabledName, enabledValue);
+				if (!cb.isAllowed()) return;
+			}
+			
+			if (pi.oaObj != null && OAString.isNotEmpty(pi.propertyName)) {
+				OAPropertyInfo pix = pi.oi.getPropertyInfo(pi.propertyName);
+				boolean bIsProcessed = false;
+				if (pix != null) {
+					enabledName = pix.getModelUserEnabledProperty();
+					enabledValue = pix.getModelUserEnabledValue();
+					bIsProcessed = pix.getProcessed();
 				} else {
-					OACalcInfo ci = oi.getCalcInfo(propertyName);
-					if (ci != null) {
-						enabledName = ci.getContextEnabledProperty();
-						enabledValue = ci.getContextEnabledValue();
+					OALinkInfo li = pi.oi.getLinkInfo(pi.propertyName);
+					if (li != null) {
+						enabledName = li.getModelUserEnabledProperty();
+						enabledValue = li.getModelUserEnabledValue();
+						bIsProcessed = li.getProcessed();
 					} else {
-						OAMethodInfo mi = oi.getMethodInfo(propertyName);
-						if (mi != null) {
-							enabledName = mi.getContextEnabledProperty();
-							enabledValue = mi.getContextEnabledValue();
+						OACalcInfo ci = pi.oi.getCalcInfo(pi.propertyName);
+						if (ci != null) {
+							enabledName = ci.getModelUserEnabledProperty();
+							enabledValue = ci.getModelUserEnabledValue();
+						} else {
+							OAMethodInfo mi = pi.oi.getMethodInfo(pi.propertyName);
+							if (mi != null) {
+								enabledName = mi.getModelUserEnabledProperty();
+								enabledValue = mi.getModelUserEnabledValue();
+							}
 						}
 					}
 				}
+				if (OAStr.isNotEmpty(enabledName)) {
+					evaluateUser(cb, enabledName, enabledValue);
+				}
+				if (!cb.isAllowed()) return;
+				
+				if (bIsProcessed && cb.isUsed(CheckType.Processed)) {
+					updateEditProcessed(cb);
+				}
+				if (!cb.isAllowed()) return;
+			}		
+		}
+		
+		// checkVisible
+		if (cb.isUsed(CheckType.Visible)) {
+			String visibleName = null;
+			boolean visibleValue = true;
+			
+			visibleName = pi.oi.getVisibleProperty();
+			if (OAStr.isNotEmpty(visibleName)) {
+				visibleValue = pi.oi.getVisibleValue();
+				evaluateObject(cb, visibleName, visibleValue);
+				if (!cb.isAllowed()) return;
 			}
-			if ((!bHadEnabledProperty || objectCallback.getAllowed()) && OAString.isNotEmpty(enabledName) && bCheckUserEnabledProperty) {
-				boolean b = callContextGetDefaultContextUser().isEnabled(enabledName, enabledValue);
-				objectCallback.setAllowed(b);
-				if (!b) {
-					objectCallback.setAllowed(false);
-					if (OAString.isEmpty(objectCallback.getResponse())) {
-						objectCallback.setAllowed(false);
-						OAObject user = callContextGetDefaultContextUser().getCurrentUserObject();
-						String s = user == null ? "User" : user.getClass().getSimpleName();
-						s = "Not enabled, " + s + "." + enabledName + " is not " + enabledValue;
-						objectCallback.setResponse(s);
+			
+			if (pi.oaObj != null && OAString.isNotEmpty(pi.propertyName)) {
+				OAPropertyInfo pix = pi.oi.getPropertyInfo(pi.propertyName);
+				boolean bIsProcessed = false;
+				if (pix != null) {
+					visibleName = pix.getVisibleProperty();
+					visibleValue = pix.getVisibleValue();
+					bIsProcessed = pix.getProcessed();
+				} else {
+					OALinkInfo li = pi.oi.getLinkInfo(pi.propertyName);
+					if (li != null) {
+						visibleName = li.getVisibleProperty();
+						visibleValue = li.getVisibleValue();
+						bIsProcessed = li.getProcessed();
+					} else {
+						OACalcInfo ci = pi.oi.getCalcInfo(pi.propertyName);
+						if (ci != null) {
+							visibleName = ci.getVisibleProperty();
+							visibleValue = ci.getVisibleValue();
+						} else {
+							OAMethodInfo mi = pi.oi.getMethodInfo(pi.propertyName);
+							if (mi != null) {
+								visibleName = mi.getVisibleProperty();
+								visibleValue = mi.getVisibleValue();
+							}
+						}
 					}
 				}
-			}
-		}
-
-		if (oaObj == null) {
-			return;
-		}
-		Hub[] hubs = callHubGetHubReferences(oaObj);
-
-		// call the callback method, this can override eq.allowed
-		if (OAString.isNotEmpty(propertyName) && objectCallback.getType().isCheckEnabledFirst()) {
-			OAObjectCallback objectCallbackX = new OAObjectCallback(Type.AllowEnabled, OAObjectCallback.CHECK_CallbackMethod, null, null,
-					oaObj, propertyName, null);
-			objectCallbackX.setAllowed(objectCallback.getAllowed());
-			callObjectCallbackMethod(objectCallbackX);
-
-			// call hub listeners
-			if (hubs != null) {
-				for (Hub h : hubs) {
-					if (h == null) {
-						continue;
-					}
-					processObjectCallbackForHubListeners(objectCallbackX, h, oaObj, propertyName, oldValue, value);
+				if (OAStr.isNotEmpty(visibleName)) {
+					evaluateObject(cb, visibleName, visibleValue);
 				}
-			}
-			objectCallback.setAllowed(objectCallbackX.getAllowed());
-			if (OAString.isEmpty(objectCallback.getResponse())) {
-				objectCallback.setResponse(objectCallbackX.getResponse());
-			}
+				if (!cb.isAllowed()) return;
+				
+				if (bIsProcessed && cb.isUsed(CheckType.Processed)) {
+					updateEditProcessed(cb);
+				}
+				if (!cb.isAllowed()) return;
+			}		
 		}
-
-		if (bCheckCallbackMethod) {
-			callObjectCallbackMethod(objectCallback);
+		
+		// checkUserVisible
+		if (cb.isUsed(CheckType.UserVisible)) {
+			String visibleName = null;
+			boolean visibleValue = true;
+			
+			visibleName = pi.oi.getModelUserVisibleProperty();
+			if (OAStr.isNotEmpty(visibleName)) {
+				visibleValue = pi.oi.getModelUserVisibleValue();
+				evaluateUser(cb, visibleName, visibleValue);
+				if (!cb.isAllowed()) return;
+			}
+			
+			if (pi.oaObj != null && OAString.isNotEmpty(pi.propertyName)) {
+				OAPropertyInfo pix = pi.oi.getPropertyInfo(pi.propertyName);
+				boolean bIsProcessed = false;
+				if (pix != null) {
+					visibleName = pix.getModelUserVisibleProperty();
+					visibleValue = pix.getModelUserVisibleValue();
+					bIsProcessed = pix.getProcessed();
+				} else {
+					OALinkInfo li = pi.oi.getLinkInfo(pi.propertyName);
+					if (li != null) {
+						visibleName = li.getModelUserVisibleProperty();
+						visibleValue = li.getModelUserVisibleValue();
+						bIsProcessed = li.getProcessed();
+					} else {
+						OACalcInfo ci = pi.oi.getCalcInfo(pi.propertyName);
+						if (ci != null) {
+							visibleName = ci.getModelUserVisibleProperty();
+							visibleValue = ci.getModelUserVisibleValue();
+						} else {
+							OAMethodInfo mi = pi.oi.getMethodInfo(pi.propertyName);
+							if (mi != null) {
+								visibleName = mi.getModelUserVisibleProperty();
+								visibleValue = mi.getModelUserVisibleValue();
+							}
+						}
+					}
+				}
+				if (OAStr.isNotEmpty(visibleName)) {
+					evaluateUser(cb, visibleName, visibleValue);
+				}
+				if (!cb.isAllowed()) return;
+				
+				if (bIsProcessed && cb.isUsed(CheckType.Processed)) {
+					updateEditProcessed(cb);
+				}
+				if (!cb.isAllowed()) return;
+			}		
 		}
+	}
+	
+	protected void _processObjectCallback_2(ProcessInfo pi) {
+		if (pi.oaObj == null) return;
+		OAObjectCallback cb = pi.cb;		
 
-		// call hub listeners
-		if (hubs != null) {
+		if (cb.isUsed(CheckType.CallbackMethod)) {
+			callObjectCallbackMethod(cb);
+		}
+	}
+	
+	protected void _processObjectCallback_3(ProcessInfo pi) {
+		if (pi.oaObj == null) return;
+		OAObjectCallback cb = pi.cb;		
+		final Hub[] hubs = callHubGetHubReferences(pi.oaObj);
+	
+		// checkHubListeners
+		if (hubs != null && cb.isUsed(CheckType.HubListeners)) { 
 			for (Hub h : hubs) {
 				if (h == null) {
 					continue;
 				}
-				processObjectCallbackForHubListeners(objectCallback, h, oaObj, propertyName, oldValue, value);
+				processObjectCallbackForHubListeners(cb, h, pi.oaObj, pi.propertyName, pi.oldValue, pi.value);
 			}
 		}
 	}
@@ -1724,11 +1709,8 @@ public abstract class OAObjectCallbackService {
 	 * @param li             the link used when navigating the owner hierarchy
 	 * @param cnter          the recursion depth counter
 	 */
-	protected void _ownerHierProcess(OAObjectCallback objectCallback, final OAObject oaObj, final String propertyName,
-			final OALinkInfo li, final int cnter) {
-		if (oaObj == null) {
-			return;
-		}
+	protected void _ownerHierProcess(OAObjectCallback objectCallback, final OAObject oaObj, final String propertyName, final OALinkInfo li, final int cnter) {
+		if (oaObj == null) return;
 		if (cnter > 50) {
 			return;
 		}
@@ -1743,43 +1725,46 @@ public abstract class OAObjectCallbackService {
 				_ownerHierProcess(objectCallback, objOwner, lix.getName(), lix, cnter + 1);
 			}
 		}
-
+		
 		String pp;
 		boolean b;
 		Object valx;
-		boolean bPassed = objectCallback.getAllowed();
+		boolean bWasAllowed = objectCallback.getAllowed();
+		
+		final OA oa = OARuntime.oa(oaObj);
+		final Hub<?> hub = oa.modelUser().getCalc();
+		final OAObject user = hub == null ? null : hub.getAO();
 
 		// check class level @OAObjCallback annotation
 		if (objectCallback.getType() == Type.AllowVisible) {
 			pp = oi.getVisibleProperty();
-			if (bPassed && OAString.isNotEmpty(pp)) {
+			if (bWasAllowed && OAString.isNotEmpty(pp)) {
 				b = oi.getVisibleValue();
 				valx = callReflectGetProperty(oaObj, pp);
-				bPassed = (b == OAConv.toBoolean(valx));
-				if (!bPassed) {
+				bWasAllowed = (b == OAConv.toBoolean(valx));
+				if (!bWasAllowed) {
 					objectCallback.setAllowed(false);
-					String s = "Not visible, rule for " + oaObj.getClass().getSimpleName() + ", " + pp + " != " + b;
+					String s = "Not visible, rule for " + (hub == null ? "Unknown" :hub.getObjectClass().getSimpleName()) + ", " + pp + " != " + b;
 					objectCallback.setResponse(s);
 				}
 			}
-			pp = oi.getContextVisibleProperty();
-			if (bPassed && OAString.isNotEmpty(pp)) {
-				b = oi.getContextVisibleValue();
+			pp = oi.getModelUserVisibleProperty();
+			if (bWasAllowed && OAString.isNotEmpty(pp) && objectCallback.isUsed(CheckType.UserVisible)) {
+				b = oi.getModelUserVisibleValue();
 
-				OAObject user = callContextGetDefaultContextUser().getCurrentUserObject();
 				if (user == null) {
 					if (callSyncIsClient()) {
-						bPassed = false;
+						bWasAllowed = false;
 					}
 				} else {
 					valx = callReflectGetProperty(user, pp);
-					bPassed = (b == OAConv.toBoolean(valx));
+					bWasAllowed = (b == OAConv.toBoolean(valx));
 				}
-				if (!bPassed) {
+				if (!bWasAllowed) {
 					objectCallback.setAllowed(false);
-					String s = "Not visible, user rule for " + oaObj.getClass().getSimpleName() + ", ";
+					String s = "Not visible, user rule for " + (hub == null ? "Unknown" :hub.getObjectClass().getSimpleName()) + ", ";
 					if (user == null) {
-						s = "OAAuthDelegate.getUser returned null";
+						s = "ModelUser is null";
 					} else {
 						s = "User." + pp + " != " + b;
 					}
@@ -1787,46 +1772,47 @@ public abstract class OAObjectCallbackService {
 				}
 			}
 
-			// this can overwrite objectCallback.allowed
-			callObjectCallbackMethod(oaObj, null, objectCallback);
-			bPassed = objectCallback.getAllowed();
-			if (!bPassed && OAString.isEmpty(objectCallback.getResponse())) {
-				String s = "Not visible, edit query for " + oaObj.getClass().getSimpleName() + " allowVisible returned false";
-				objectCallback.setResponse(s);
+			if (objectCallback.isUsed(CheckType.CallbackMethod)) {
+				// this can overwrite objectCallback.allowed
+				callObjectCallbackMethod(oaObj, null, objectCallback);
+				bWasAllowed = objectCallback.getAllowed();
+				if (!bWasAllowed && OAString.isEmpty(objectCallback.getResponse())) {
+					String s = "Not visible, edit query for " + (hub == null ? "Unknown" :hub.getObjectClass().getSimpleName()) + " allowVisible returned false";
+					objectCallback.setResponse(s);
+				}
 			}
-
-			if (bPassed && li != null) {
+			
+			if (bWasAllowed && li != null && objectCallback.isUsed(CheckType.Visible)) {
 				pp = li.getVisibleProperty();
 				if (OAString.isNotEmpty(pp)) {
 					b = li.getVisibleValue();
 					valx = callReflectGetProperty(oaObj, pp);
-					bPassed = (b == OAConv.toBoolean(valx));
-					if (!bPassed) {
+					bWasAllowed = (b == OAConv.toBoolean(valx));
+					if (!bWasAllowed) {
 						objectCallback.setAllowed(false);
-						String s = "Not visible, rule for " + oaObj.getClass().getSimpleName() + "." + propertyName + ", " + pp + " != "
+						String s = "Not visible, rule for " + (hub == null ? "Unknown" :hub.getObjectClass().getSimpleName()) + "." + propertyName + ", " + pp + " != "
 								+ b;
 						objectCallback.setResponse(s);
 					}
 				}
 			}
-			if (bPassed && li != null) {
-				pp = li.getContextVisibleProperty();
+			if (bWasAllowed && li != null && objectCallback.isUsed(CheckType.UserVisible)) {
+				pp = li.getModelUserVisibleProperty();
 				if (OAString.isNotEmpty(pp)) {
-					b = li.getContextVisibleValue();
-					OAObject user = callContextGetDefaultContextUser().getCurrentUserObject();
+					b = li.getModelUserVisibleValue();
 					if (user == null) {
 						if (callSyncIsClient()) {
-							bPassed = false;
+							bWasAllowed = false;
 						}
 					} else {
 						valx = callReflectGetProperty(user, pp);
-						bPassed = (b == OAConv.toBoolean(valx));
+						bWasAllowed = (b == OAConv.toBoolean(valx));
 					}
-					if (!bPassed) {
+					if (!bWasAllowed) {
 						objectCallback.setAllowed(false);
-						String s = "Not visible, user rule for " + oaObj.getClass().getSimpleName() + "." + propertyName + ", ";
+						String s = "Not visible, user rule for " + (hub == null ? "Unknown" :hub.getObjectClass().getSimpleName()) + "." + propertyName + ", ";
 						if (user == null) {
-							s = "OAAuthDelegate.getUser returned null";
+							s = "ModelUser is null";
 						} else {
 							s = "User." + pp + " must be " + b;
 						}
@@ -1837,108 +1823,89 @@ public abstract class OAObjectCallbackService {
 
 			// this can overwrite objectCallback.allowed
 			if (li != null && OAString.isNotEmpty(propertyName)) {
-				callObjectCallbackMethod(oaObj, propertyName, objectCallback);
-				bPassed = objectCallback.getAllowed();
-				if (!bPassed && OAString.isEmpty(objectCallback.getResponse())) {
-					String s = "Not visible, edit query for " + oaObj.getClass().getSimpleName() + "." + propertyName
-							+ " allowVisible returned false";
-					objectCallback.setResponse(s);
-				}
-			}
-		} else if (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().isCheckEnabledFirst()) {
-			//was:  else if ( (objectCallback.getType() == Type.AllowEnabled || objectCallback.getType().checkEnabledFirst) && !(OASync.isServer() && OARuntime.threadService().getContext() == null)) {
-
-			// final boolean bCheckProcessedCheck = (objectCallback.getCheckType() & OAObjectCallback.CHECK_Processed) != 0;
-			final boolean bCheckEnabledProperty = (objectCallback.getCheckType() & OAObjectCallback.CHECK_EnabledProperty) != 0;
-			final boolean bCheckUserEnabledProperty = (objectCallback.getCheckType() & OAObjectCallback.CHECK_UserEnabledProperty) != 0;
-			final boolean bCheckCallbackMethod = (objectCallback.getCheckType() & OAObjectCallback.CHECK_CallbackMethod) != 0;
-
-			if (bPassed) {
-				pp = oi.getEnabledProperty();
-				if (OAString.isNotEmpty(pp) && bCheckEnabledProperty) {
-					b = oi.getEnabledValue();
-					valx = callReflectGetProperty(oaObj, pp);
-					bPassed = (b == OAConv.toBoolean(valx));
-					if (!bPassed) {
-						objectCallback.setAllowed(false);
-						String s = "Not enabled, rule for " + oaObj.getClass().getSimpleName() + ", " + pp + " != " + b;
+				if (objectCallback.isUsed(CheckType.CallbackMethod)) {
+					callObjectCallbackMethod(oaObj, propertyName, objectCallback);
+					bWasAllowed = objectCallback.getAllowed();
+					if (!bWasAllowed && OAString.isEmpty(objectCallback.getResponse())) {
+						String s = "Not visible, edit query for " + (hub == null ? "Unknown" :hub.getObjectClass().getSimpleName()) + "." + propertyName
+								+ " allowVisible returned false";
 						objectCallback.setResponse(s);
 					}
 				}
 			}
-			pp = oi.getContextEnabledProperty();
-			if (bPassed && OAString.isNotEmpty(pp) && bCheckUserEnabledProperty) {
-				b = oi.getContextEnabledValue();
-				if (!callContextGetDefaultContextUser().isEnabled(pp, b)) {
-					bPassed = false;
-					objectCallback.setAllowed(false);
-					String s = "Not enabled, user rule for " + oaObj.getClass().getSimpleName() + ", ";
-					OAObject user = callContextGetDefaultContextUser().getCurrentUserObject();
-					if (user == null) {
-						s = "OAAuthDelegate.getUser returned null";
-					} else {
-						s = "User." + pp + " must be " + b;
+		} else if (objectCallback.isUsed(CheckType.Enabled)) {
+			final boolean bCheckEnabledProperty = objectCallback.isUsed(OAObjectCallback.CheckType.Enabled);
+			final boolean bCheckUserEnabledProperty = objectCallback.isUsed(OAObjectCallback.CheckType.UserEnabled);
+			final boolean bCheckCallbackMethod = objectCallback.isUsed(OAObjectCallback.CheckType.CallbackMethod);
+
+			if (bWasAllowed) {
+				pp = oi.getEnabledProperty();
+				if (OAString.isNotEmpty(pp) && bCheckEnabledProperty) {
+					b = oi.getEnabledValue();
+					valx = callReflectGetProperty(oaObj, pp);
+					bWasAllowed = (b == OAConv.toBoolean(valx));
+					if (!bWasAllowed) {
+						objectCallback.setAllowed(false);
+						String s = "Not enabled, rule for " + (hub == null ? "Unknown" :hub.getObjectClass().getSimpleName()) + ", " + pp + " != " + b;
+						objectCallback.setResponse(s);
 					}
-					objectCallback.setResponse(s);
 				}
+			}
+			pp = oi.getModelUserEnabledProperty();
+			if (bWasAllowed && OAString.isNotEmpty(pp) && bCheckUserEnabledProperty) {
+				evaluateUser(objectCallback, pp, oi.getModelUserEnabledValue());
 			}
 
 			// this can overwrite objectCallback.allowed
 			if (bCheckCallbackMethod) {
-				OAObjectCallback objectCallbackX = new OAObjectCallback(Type.AllowEnabled, objectCallback.getCheckType(), objectCallback);
+				
+				OAObjectCallback objectCallbackX = new OAObjectCallback(Type.AllowEnabled, null, objectCallback);
 
-				callObjectCallbackMethod(oaObj, null, objectCallbackX);
-				bPassed = objectCallbackX.getAllowed();
-				objectCallback.setAllowed(bPassed);
-				if (!bPassed && OAString.isEmpty(objectCallback.getResponse())) {
-					String s = "Not enabled, edit query for " + oaObj.getClass().getSimpleName() + " allowEnabled returned false";
-					objectCallback.setResponse(s);
+				if (objectCallback.isUsed(CheckType.CallbackMethod)) {
+					callObjectCallbackMethod(oaObj, null, objectCallbackX);
+					bWasAllowed = objectCallbackX.getAllowed();
+					objectCallback.setAllowed(bWasAllowed);
+					if (!bWasAllowed && OAString.isEmpty(objectCallback.getResponse())) {
+						String s = "Not enabled, edit query for " + (hub == null ? "Unknown" :hub.getObjectClass().getSimpleName()) + " allowEnabled returned false";
+						objectCallback.setResponse(s);
+					}
 				}
 			}
 
-			if (li != null && bPassed) {
+			if (li != null && bWasAllowed) {
 				pp = li.getEnabledProperty();
 				if (OAString.isNotEmpty(pp) && bCheckEnabledProperty) {
 					b = li.getEnabledValue();
 					valx = callReflectGetProperty(oaObj, pp);
-					bPassed = (b == OAConv.toBoolean(valx));
-					if (!bPassed) {
+					bWasAllowed = (b == OAConv.toBoolean(valx));
+					if (!bWasAllowed) {
 						objectCallback.setAllowed(false);
-						String s = "Not enabled, rule for " + oaObj.getClass().getSimpleName() + "." + propertyName + ", " + pp + " != "
+						String s = "Not enabled, rule for " + (hub == null ? "Unknown" :hub.getObjectClass().getSimpleName()) + "." + propertyName + ", " + pp + " != "
 								+ b;
 						objectCallback.setResponse(s);
 					}
 				}
 			}
 
-			if (li != null && bPassed) {
-				pp = li.getContextEnabledProperty();
+			if (li != null && bWasAllowed) {
+				pp = li.getModelUserEnabledProperty();
 				if (OAString.isNotEmpty(pp) && bCheckUserEnabledProperty) {
-					b = li.getContextEnabledValue();
-					if (!callContextGetDefaultContextUser().isEnabled(pp, b)) {
-						OAObject user = callContextGetDefaultContextUser().getCurrentUserObject();
-						objectCallback.setAllowed(false);
-						String s = "Not enabled, user rule for " + oaObj.getClass().getSimpleName() + "." + propertyName + ", ";
-						if (user == null) {
-							s = "OAAuthDelegate.getUser returned null";
-						} else {
-							s = "User." + pp + " must be " + b;
-						}
-						objectCallback.setResponse(s);
-					}
+					evaluateUser(objectCallback, pp, li.getModelUserEnabledValue());
 				}
 			}
 
 			// this can overwrite objectCallback.allowed
 			if (bCheckCallbackMethod && li != null && OAString.isNotEmpty(propertyName)) {
-				OAObjectCallback objectCallbackX = new OAObjectCallback(Type.AllowEnabled, objectCallback.getCheckType(), objectCallback);
-				callObjectCallbackMethod(oaObj, propertyName, objectCallbackX);
-				bPassed = objectCallbackX.getAllowed();
-				objectCallback.setAllowed(bPassed);
-				if (!bPassed && OAString.isEmpty(objectCallback.getResponse())) {
-					String s = "Not enabled, edit query for " + oaObj.getClass().getSimpleName() + "." + propertyName
-							+ " allowEnabled returned false";
-					objectCallback.setResponse(s);
+				OAObjectCallback objectCallbackX = new OAObjectCallback(Type.AllowEnabled, null, objectCallback);
+				if (objectCallback.isUsed(CheckType.CallbackMethod)) {
+					callObjectCallbackMethod(oaObj, propertyName, objectCallbackX);
+					bWasAllowed = objectCallbackX.getAllowed();
+					objectCallback.setAllowed(bWasAllowed);
+					if (!bWasAllowed && OAString.isEmpty(objectCallback.getResponse())) {
+						String s = "Not enabled, edit query for " + (hub == null ? "Unknown" :hub.getObjectClass().getSimpleName()) + "." + propertyName
+								+ " allowEnabled returned false";
+						objectCallback.setResponse(s);
+					}
 				}
 			}
 		}
@@ -1960,12 +1927,18 @@ public abstract class OAObjectCallbackService {
 	 */
 	protected <T extends OAObject> void processObjectCallbackForHubListeners(OAObjectCallback objectCallback, final Hub<T> hub, final T oaObj,
 			final String propertyName, final Object oldValue, final Object newValue) {
-		if (objectCallback.getType().isCheckEnabledFirst()) {
+		if (objectCallback.isUsed(CheckType.Enabled)) {
 			OAObjectCallback objectCallbackX = new OAObjectCallback(Type.AllowEnabled);
 			objectCallbackX.setAllowed(objectCallback.getAllowed());
 			objectCallbackX.setPropertyName(objectCallback.getPropertyName());
 			_processObjectCallbackForHubListeners(objectCallbackX, hub, oaObj, propertyName, oldValue, newValue);
 			objectCallback.setAllowed(objectCallbackX.getAllowed());
+			if (OAString.isEmpty(objectCallback.getResponse())) {
+				objectCallback.setResponse(objectCallbackX.getResponse());
+			}
+			if (objectCallback.getThrowable() == null) {
+				objectCallback.setThrowable(objectCallbackX.getThrowable());
+			}
 		}
 		_processObjectCallbackForHubListeners(objectCallback, hub, oaObj, propertyName, oldValue, newValue);
 	}
@@ -2093,7 +2066,7 @@ public abstract class OAObjectCallbackService {
 		if (bBefore != objectCallback.getAllowed()) {
 			String s = objectCallback.getResponse();
 			if (OAString.isEmpty(s)) {
-				s = objectCallback.getType() + " failed for " + oaObj.getClass().getSimpleName() + "." + propertyName;
+				s = objectCallback.getType() + " failed for " + (oaObj == null ? "Unknown" : oaObj.getClass().getSimpleName()) + "." + propertyName;
 			}
 			objectCallback.setResponse(s);
 		}
@@ -2190,8 +2163,10 @@ public abstract class OAObjectCallbackService {
 	 * @param changeListener the listener to register dependencies with
 	 * @param bEnabled       true to use enabled dependencies; false for visible
 	 */
-	public <T extends OAObject> void addObjectCallbackChangeListeners(final Hub<T> hub, final Class<T> cz, final String prop, String ppPrefix,
-			final HubChangeListener changeListener, final boolean bEnabled) {
+	public <T extends OAObject> void addObjectCallbackChangeListeners(
+		final Hub<T> hub, final Class<T> cz, final String prop, String ppPrefix,
+		final HubChangeListener changeListener, final boolean bEnabled) 
+	{
 		if (ppPrefix == null) {
 			ppPrefix = "";
 		}
@@ -2208,17 +2183,22 @@ public abstract class OAObjectCallbackService {
 		}
 
 		// dependent properties
-		addDependentProps(	hub, ppPrefix,
-							bEnabled ? null : oi.getViewDependentProperties(),
-							bEnabled ? oi.getContextDependentProperties() : null,
-							(OAString.isEmpty(prop) && oi.getProcessed()),
-							changeListener);
+		addDependentProps(	
+			hub, ppPrefix,
+			bEnabled ? null : oi.getViewDependentProperties(),
+			bEnabled ? oi.getModelUserDependentProperties() : null,
+			(OAString.isEmpty(prop) && oi.getProcessed()),
+			changeListener
+		);
 
-		final Hub hubUser = callContextGetDefaultContextUser().getUserHub();
+
+		final OA oa = OARuntime.oa(cz);
+		final Hub hubUser =  oa.modelUser().getCalc();
+
 		if (bEnabled) {
-			s = oi.getContextEnabledProperty();
+			s = oi.getModelUserEnabledProperty();
 		} else {
-			s = oi.getContextVisibleProperty();
+			s = oi.getModelUserVisibleProperty();
 		}
 		if (OAString.isNotEmpty(s)) {
 			changeListener.add(hubUser, s);
@@ -2238,13 +2218,13 @@ public abstract class OAObjectCallbackService {
 			if (OAString.isNotEmpty(s)) {
 				changeListener.add(hub, ppPrefix + s);
 			}
-			addDependentProps(	hub, ppPrefix, pi.getViewDependentProperties(), pi.getContextDependentProperties(),
+			addDependentProps(	hub, ppPrefix, pi.getViewDependentProperties(), pi.getModelUserDependentProperties(),
 								(bEnabled && pi.getProcessed()), changeListener);
 
 			if (bEnabled) {
-				s = pi.getContextEnabledProperty();
+				s = pi.getModelUserEnabledProperty();
 			} else {
-				s = pi.getContextVisibleProperty();
+				s = pi.getModelUserVisibleProperty();
 			}
 			if (OAString.isNotEmpty(s)) {
 				changeListener.add(hubUser, s);
@@ -2260,13 +2240,13 @@ public abstract class OAObjectCallbackService {
 				if (OAString.isNotEmpty(s)) {
 					changeListener.add(hub, ppPrefix + s);
 				}
-				addDependentProps(	hub, ppPrefix, li.getViewDependentProperties(), li.getContextDependentProperties(),
+				addDependentProps(	hub, ppPrefix, li.getViewDependentProperties(), li.getModelUserDependentProperties(),
 									(bEnabled && li.getProcessed()), changeListener);
 
 				if (bEnabled) {
-					s = li.getContextEnabledProperty();
+					s = li.getModelUserEnabledProperty();
 				} else {
-					s = li.getContextVisibleProperty();
+					s = li.getModelUserVisibleProperty();
 				}
 				if (OAString.isNotEmpty(s)) {
 					changeListener.add(hubUser, s);
@@ -2282,13 +2262,13 @@ public abstract class OAObjectCallbackService {
 					if (OAString.isNotEmpty(s)) {
 						changeListener.add(hub, ppPrefix + s);
 					}
-					addDependentProps(	hub, ppPrefix, ci.getViewDependentProperties(), ci.getContextDependentProperties(), false,
+					addDependentProps(	hub, ppPrefix, ci.getViewDependentProperties(), ci.getModelUserDependentProperties(), false,
 										changeListener);
 
 					if (bEnabled) {
-						s = ci.getContextEnabledProperty();
+						s = ci.getModelUserEnabledProperty();
 					} else {
-						s = ci.getContextVisibleProperty();
+						s = ci.getModelUserVisibleProperty();
 					}
 					if (OAString.isNotEmpty(s)) {
 						changeListener.add(hubUser, s);
@@ -2304,13 +2284,13 @@ public abstract class OAObjectCallbackService {
 						if (OAString.isNotEmpty(s)) {
 							changeListener.add(hub, ppPrefix + s);
 						}
-						addDependentProps(	hub, ppPrefix, mi.getViewDependentProperties(), mi.getContextDependentProperties(), false,
+						addDependentProps(	hub, ppPrefix, mi.getViewDependentProperties(), mi.getModelUserDependentProperties(), false,
 											changeListener);
 
 						if (bEnabled) {
-							s = mi.getContextEnabledProperty();
+							s = mi.getModelUserEnabledProperty();
 						} else {
-							s = mi.getContextVisibleProperty();
+							s = mi.getModelUserVisibleProperty();
 						}
 						if (OAString.isNotEmpty(s)) {
 							changeListener.add(hubUser, s);
@@ -2329,40 +2309,199 @@ public abstract class OAObjectCallbackService {
 	 * @param hub                       the hub whose objects are monitored
 	 * @param prefix                    optional property-path prefix
 	 * @param viewDependentProperties   properties affecting visibility
-	 * @param contextDependentProperties properties affecting context visibility or enabled state
+	 * @param userModelDependentProperties properties affecting context visibility or enabled state
 	 * @param bProcessed                true to include processed-dependent properties
 	 * @param changeListener            the listener that receives dependent paths
 	 */
-	protected void addDependentProps(final Hub<? extends OAObject> hub, String prefix, String[] viewDependentProperties, String[] contextDependentProperties,
-			boolean bProcessed, HubChangeListener changeListener) {
+	protected void addDependentProps(
+		final Hub<? extends OAObject> hub, String prefix, 
+		String[] viewDependentProperties, String[] userModelDependentProperties,
+		boolean bProcessed, HubChangeListener changeListener) 
+	{
+		
+		final OA oa = OARuntime.oa(hub);
 		if (viewDependentProperties != null) {
 			for (String s : viewDependentProperties) {
 				changeListener.add(hub, prefix + s);
 			}
 		}
-		if (contextDependentProperties != null) {
-			Hub hubUser = callContextGetDefaultContextUser().getUserHub();
-			if (contextDependentProperties.length > 0 && hubUser == null) {
+		if (userModelDependentProperties != null) {
+			Hub hubUser = oa.modelUser().getCalc();
+			if (userModelDependentProperties.length > 0 && hubUser == null) {
 				changeListener.addAlwaysFalse(hub);
 			}
-			for (String s : contextDependentProperties) {
+			for (String s : userModelDependentProperties) {
 				changeListener.add(hubUser, s);
 			}
 		}
 		if (bProcessed) {
-			Hub hubUser = callContextGetDefaultContextUser().getUserHub();
+			Hub hubUser = oa.modelUser().getCalc();
 			if (hubUser == null) {
 				changeListener.addAlwaysFalse(hub);
 			}
-			changeListener.add(hubUser, callContextGetDefaultContextUser().getContext().getAllowEditProcessedPath());
+			changeListener.add(hubUser, oa.modelUser().getEditProcessedPropertyName());
 		}
 	}
+	
+	public void updateEditProcessed(OAObjectCallback objectCallback) {
+		if (objectCallback == null) return;
+		
+		Class<? extends OAObject> c = objectCallback.getCalcClass();
+		OA oa = OARuntime.oa(c);
+		
+		evaluateUser(objectCallback, oa.modelUser().getEditProcessedPropertyName(), true);
+	}
+	
+	protected boolean evaluateUser(OAObjectCallback objectCallback, final String propertyPath, final boolean bMatchValue) {
+		if (objectCallback == null) return false;
+		if (OAStr.isEmpty(propertyPath)) return true;
+		
+		final OA oa = OARuntime.oa(objectCallback.getCalcClass());
+		final Hub hub = oa.modelUser().getCalc();
+		
+		if (hub == null) {
+			objectCallback.setAllowed(false);
+			String s = "ModelUser Hub is null";
+			objectCallback.setResponse(s);
+			return false;
+		}
+		
+		boolean b = false;
+		OAObject objUser = hub.getAO();
+		if (objUser != null) {
+			Object val = objUser.getProperty(propertyPath);
+			b = (OAConv.toBoolean(val) == bMatchValue);
+		}
 
+		if (b || objectCallback == null) return b;
+
+		objectCallback.setAllowed(false);
+		Class clazz = objectCallback.getCalcClass();
+		
+		String s = "Type is "+ objectCallback.getType().name() +", user rule for ";
+		
+		if (clazz == null) s += "UnknownClass"; 
+		else s += clazz.getSimpleName();
+		s += ", ";
+		
+		if (objUser == null) s += "ModelUser returned null";
+		else s += objUser.getClass().getSimpleName() + "." + propertyPath + " must be " + bMatchValue;
+		objectCallback.setResponse(s);
+			
+		return b;
+	}
+
+	protected boolean evaluateObject(OAObjectCallback objectCallback, final String propertyPath, final boolean bMatchValue) {
+		if (objectCallback == null) return false;
+		if (OAStr.isEmpty(propertyPath)) return true;
+
+		final OAObject obj = objectCallback.getObject(); 
+		
+		if (obj == null) {
+			objectCallback.setAllowed(false);
+			String s = "Object is null";
+			objectCallback.setResponse(s);
+			return false;
+		}
+		
+		boolean b = false;
+		if (obj != null) {
+			Object val = obj.getProperty(propertyPath);
+			b = (OAConv.toBoolean(val) == bMatchValue);
+		}
+
+		if (b) return b;
+
+		objectCallback.setAllowed(false);
+		Class clazz = objectCallback.getCalcClass();
+		
+		String s = "Type is "+ objectCallback.getType().name() +", rule for ";
+		
+		if (clazz == null) s += "UnknownClass"; 
+		else s += clazz.getSimpleName();
+		s += "." + propertyPath + " must be " + bMatchValue;
+		objectCallback.setResponse(s);
+			
+		return b;
+	}
+	
+	protected void processHubOnlyCallback(OAObjectCallback cb, Hub<? extends OAObject> hub, OAObject valueObj) {
+	    if (cb == null || hub == null || !cb.getAllowed()) return;
+
+	    Class<? extends OAObject> clazz = hub.getObjectClass();
+	    if (clazz == null) return;
+
+	    OA oa = OARuntime.oa(clazz);
+	    OASessionUser sessionUser = oa.sessionUser().get();
+	    OASessionAccess sa = sessionUser == null ? null : sessionUser.getSessionAccess();
+
+	    if (sa != null) {
+		    if (cb.isUsed(CheckType.SessionEnabled)) {
+		        boolean ok = sa.getEnabled(clazz);
+		        if (ok && valueObj != null) ok = sa.getEnabled(valueObj);
+	
+		        if (!ok) {
+		            cb.setAllowed(false);
+		            cb.setResponse("SessionAccess returned false");
+		            return;
+		        }
+		    }
+		    if (cb.isUsed(CheckType.SessionVisible)) {
+		        boolean ok = sa.getVisible(clazz);
+		        if (ok && valueObj != null) ok = sa.getVisible(valueObj);
+	
+		        if (!ok) {
+		            cb.setAllowed(false);
+		            cb.setResponse("SessionAccess returned false");
+		            return;
+		        }
+		    }
+	    }
+		    
+		if (cb.isUsed(OAObjectCallback.CheckType.UserEnabled)) {
+	        OAObjectInfo oi = callInfoGetObjectInfo(clazz);
+	        evaluateUser(cb, oi.getModelUserEnabledProperty(), oi.getModelUserEnabledValue());
+	    }
+	}
+
+	protected void processClassOnlyCallback(final OAObjectCallback cb, final Class<? extends OAObject> clazz, OAObject valueObj) {
+	    if (cb == null || clazz == null || !cb.getAllowed()) return;
+
+	    OA oa = OARuntime.oa(clazz);
+	    OASessionUser sessionUser = oa.sessionUser().get();
+	    OASessionAccess sa = sessionUser == null ? null : sessionUser.getSessionAccess();
+
+	    if (sa != null) {
+		    if (cb.isUsed(CheckType.SessionEnabled)) {
+		        boolean ok = sa.getEnabled(clazz);
+		        if (ok && valueObj != null) ok = sa.getEnabled(valueObj);
+	
+		        if (!ok) {
+		            cb.setAllowed(false);
+		            cb.setResponse("SessionAccess returned false");
+		            return;
+		        }
+		    }
+		    if (cb.isUsed(CheckType.SessionVisible)) {
+		        boolean ok = sa.getVisible(clazz);
+		        if (ok && valueObj != null) ok = sa.getVisible(valueObj);
+	
+		        if (!ok) {
+		            cb.setAllowed(false);
+		            cb.setResponse("SessionAccess returned false");
+		            return;
+		        }
+		    }
+	    }
+
+		if (cb.isUsed(OAObjectCallback.CheckType.UserEnabled)) {
+	        OAObjectInfo oi = callInfoGetObjectInfo(clazz);
+	        evaluateUser(cb, oi.getModelUserEnabledProperty(), oi.getModelUserEnabledValue());
+	    }
+	}
 	
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz);	
-
 	public abstract Object callPropertyGetProperty(OAObject oaObj, String propertyName);
-
 	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath);
 	public abstract <T extends OAObject> Hub<T>[] callHubGetHubReferences(T oaObj);	
 	public abstract Method callInfoGetMethod(OAObjectInfo oi, String methodName, final Class<?> classParam);	
@@ -2371,8 +2510,5 @@ public abstract class OAObjectCallbackService {
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<? extends OAObject> hub);
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub<? extends OAObject> hub);
 	public abstract <T extends OAObject> HubListener<T>[] callHubEventGetAllListeners(Hub<T> hub);
-
 	public abstract boolean callSyncIsClient();
-	protected abstract OAContextUser callContextGetDefaultContextUser();
 }
-

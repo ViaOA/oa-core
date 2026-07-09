@@ -188,7 +188,7 @@ public @interface OAOne {
 	 * Identifies a property path, evaluated on the context object, that
 	 * provides the default reference. A value of "." indicates this object.
 	 */
-	String defaultContextPropertyPath() default "";
+	String defaultModelUserPropertyPath() default "";
 
 	/**
 	 * Indicates that this ONE link is only valid if all other

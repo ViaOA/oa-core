@@ -33,9 +33,9 @@ import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
-import com.viaoa.runtime.context.OAContextUser;
 import com.viaoa.select.OASelect;
 import com.viaoa.serialize.OAObjectSerializer;
+import com.viaoa.session.OASessionUser;
 import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.remote.RemoteServerInterface;
 import com.viaoa.sync.remote.RemoteSessionInterface;
@@ -81,7 +81,6 @@ public class OAObjectParentService {
     private OAObjectAutoAddService srvcOAObjectAutoAdd;
     private OAObjectCacheService srvcOAObjectCache;
     private OAObjectChangeService srvcOAObjectChange;
-    private OAObjectCallbackService srvcOAObjectCallback;
     private OAObjectCSService srvcOAObjectCS;
     // private OAObjectDatabaseService srvcOAObjectDatabase;
     private OAObjectDeleteService srvcOAObjectDelete;
@@ -107,6 +106,7 @@ public class OAObjectParentService {
     private OAObjectSiblingService srvcOAObjectSibling;
     private OAObjectStateService srvcOAObjectState;
     private OAObjectUniqueService srvcOAObjectUnique;
+    private OAObjectRulesService srvcOAObjectRules;
     
 	/**
 	 * Reserved property name representing an object's "new" lifecycle state.
@@ -142,9 +142,11 @@ public class OAObjectParentService {
 	    getOAObjectAutoAddService();
 	    getOAObjectCacheService();
 	    getOAObjectChangeService();
-	    getOAObjectCallbackService();
+//qqqqqqqqqqq remove	    
+//qqqq	    getOAObjectCallbackService();
 	    getOAObjectCSService();
 	    // getOAObjectDatabaseService();
+	    getOAObjectRulesService();
 	    getOAObjectDeleteService();
 	    getOAObjectDSService();
 	    getOAObjectEnumService();
@@ -283,62 +285,7 @@ public class OAObjectParentService {
     	return srvcOAObjectCache; 
     }
 
-    public OAObjectCallbackService getOAObjectCallbackService() {
-    	if (srvcOAObjectCallback != null) return srvcOAObjectCallback;
-    	
-    	srvcOAObjectCallback = new OAObjectCallbackService() {
-			@Override
-			public OAObjectInfo callInfoGetObjectInfo(Class<?>  clazz) {
-				return OAObjectParentService.this.getOAObjectInfoService().getOAObjectInfo(clazz);
-			}
-			@Override
-			public Object callPropertyGetProperty(OAObject oaObj, String propertyName) {
-				return OAObjectParentService.this.getOAObjectPropertyService().getProperty(oaObj, propertyName);
-			}
-			@Override
-			public Object callReflectGetProperty(OAObject oaObj, String propPath) {
-				return OAObjectParentService.this.getOAObjectReflectService().getProperty(oaObj, propPath);
-			}
-			@Override
-			public <T extends OAObject> Hub<T>[] callHubGetHubReferences(T oaObj) {
-				return OAObjectParentService.this.getOAObjectHubService().getHubReferences(oaObj);
-			}
-			@Override
-			public Method callInfoGetMethod(OAObjectInfo oi, String methodName, Class<?> classParam) {
-				return OAObjectParentService.this.getOAObjectInfoService().getMethod(oi, methodName, classParam);
-			}
-			@Override
-			public Method callInfoGetMethod(OAObjectInfo oi, String methodName, int argumentCount) {
-				return OAObjectParentService.this.getOAObjectInfoService().getMethod(oi, methodName, argumentCount);
-			}
-			@Override
-			public String callHubDetailGetPropertyFromMasterToDetail(Hub<?> hub) {
-				return OAObjectParentService.this.getHubParentService().getHubDetailService().getPropertyFromMasterToDetail(hub);
-			}
-			@Override
-			public OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub) {
-				return OAObjectParentService.this.getHubParentService().getHubDetailService().getLinkInfoFromDetailToMaster(hub);
-			}
-			@Override
-			public OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub<?> hub) {
-				return OAObjectParentService.this.getHubParentService().getHubDetailService().getLinkInfoFromMasterToDetail(hub);
-			}
-			@Override
-			public <T extends OAObject> HubListener<T>[] callHubEventGetAllListeners(Hub<T> hub) {
-				return OAObjectParentService.this.getHubParentService().getHubEventService().getAllListeners(hub);
-			}
-			@Override
-			public boolean callSyncIsClient() {
-				return OAObjectParentService.this.srvcSync.isClient();
-			}
-			@Override
-			protected OAContextUser callContextGetDefaultContextUser() {
-				OAContextUser cu = OARuntime.context().getDefaultContextUser();
-				return cu;
-			}
-    	};
-    	return srvcOAObjectCallback;
-    }
+    
     
     public OAObjectChangeService getOAObjectChangeService() {
     	if (srvcOAObjectChange != null) return srvcOAObjectChange;
@@ -931,12 +878,12 @@ public class OAObjectParentService {
 				return OAObjectParentService.this.getOAObjectDSService().isAssigningId(obj);
 			}
 			@Override
-			public OAObjectCallback callCallbackGetVerifyPropertyChangeObjectCallback(int checkType, OAObject oaObj, String propertyName, Object oldValue, Object newValue) {
-				return OAObjectParentService.this.getOAObjectCallbackService().getVerifyPropertyChangeObjectCallback(checkType, oaObj, propertyName, oldValue, newValue);
+			public OAObjectCallback callRulesGetVerifyPropertyChangeCallbackOnlyObjectCallback(OAObject oaObj, String propertyName, Object oldValue, Object newValue) {
+				return OAObjectParentService.this.getOAObjectRulesService().getVerifyPropertyChangeCallbackOnlyObjectCallback(oaObj, propertyName, oldValue, newValue);
 			}
 			@Override
-			public OAObjectCallback callCallbackGetAllowSubmitObjectCallback(OAObject obj) {
-				return OAObjectParentService.this.getOAObjectCallbackService().getAllowSubmitObjectCallback(obj);
+			public OAObjectCallback callRulesGetAllowSubmitObjectCallback(OAObject obj) {
+				return OAObjectParentService.this.getOAObjectRulesService().getAllowSubmitObjectCallback(obj);
 			}
 			@Override
 			public <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok) {
@@ -1199,11 +1146,6 @@ public class OAObjectParentService {
 			@Override
 			public OAObject callCacheAdd(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll) {
 				return OAObjectParentService.this.getOAObjectCacheService().add(obj, bErrorIfExists, bAddToSelectAll);
-			}
-			@Override
-			public OAContextUser callContextGetContextUser() {
-				OAContextUser cu = OARuntime.thread().getContextUser();
-				return cu;
 			}
 		};
     	return srvcOAObjectInitialize;
@@ -2039,6 +1981,56 @@ public class OAObjectParentService {
     	return srvcOAObjectUnique;
     }
     
+    public OAObjectRulesService getOAObjectRulesService() {
+    	if (srvcOAObjectRules != null) return srvcOAObjectRules;
+    	srvcOAObjectRules = new OAObjectRulesService() {
+			@Override
+			public OAObjectInfo callInfoGetObjectInfo(Class<?>  clazz) {
+				return OAObjectParentService.this.getOAObjectInfoService().getOAObjectInfo(clazz);
+			}
+			@Override
+			public Object callPropertyGetProperty(OAObject oaObj, String propertyName) {
+				return OAObjectParentService.this.getOAObjectPropertyService().getProperty(oaObj, propertyName);
+			}
+			@Override
+			public Object callReflectGetProperty(OAObject oaObj, String propPath) {
+				return OAObjectParentService.this.getOAObjectReflectService().getProperty(oaObj, propPath);
+			}
+			@Override
+			public <T extends OAObject> Hub<T>[] callHubGetHubReferences(T oaObj) {
+				return OAObjectParentService.this.getOAObjectHubService().getHubReferences(oaObj);
+			}
+			@Override
+			public Method callInfoGetMethod(OAObjectInfo oi, String methodName, Class<?> classParam) {
+				return OAObjectParentService.this.getOAObjectInfoService().getMethod(oi, methodName, classParam);
+			}
+			@Override
+			public Method callInfoGetMethod(OAObjectInfo oi, String methodName, int argumentCount) {
+				return OAObjectParentService.this.getOAObjectInfoService().getMethod(oi, methodName, argumentCount);
+			}
+			@Override
+			public String callHubDetailGetPropertyFromMasterToDetail(Hub<?> hub) {
+				return OAObjectParentService.this.getHubParentService().getHubDetailService().getPropertyFromMasterToDetail(hub);
+			}
+			@Override
+			public OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub) {
+				return OAObjectParentService.this.getHubParentService().getHubDetailService().getLinkInfoFromDetailToMaster(hub);
+			}
+			@Override
+			public OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub<?> hub) {
+				return OAObjectParentService.this.getHubParentService().getHubDetailService().getLinkInfoFromMasterToDetail(hub);
+			}
+			@Override
+			public <T extends OAObject> HubListener<T>[] callHubEventGetAllListeners(Hub<T> hub) {
+				return OAObjectParentService.this.getHubParentService().getHubEventService().getAllListeners(hub);
+			}
+			@Override
+			public boolean callSyncIsClient() {
+				return OAObjectParentService.this.srvcSync.isClient();
+			}    		
+    	};
+    	return srvcOAObjectRules;
+    }    
     	
 	// flag so that OAObject.finalize should ignore this object.	
 	//qqqqqqqqqqqq make sure other code looks for guid=0, and ignore default cleanup (cached, etc)

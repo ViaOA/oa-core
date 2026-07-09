@@ -16,16 +16,19 @@
 package com.viaoa.runtime.thread;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.viaoa.hub.*;
 import com.viaoa.lang.Tuple3;
+import com.viaoa.oa.OA;
 import com.viaoa.oa.sibling.OASiblingHelper;
 import com.viaoa.object.OAObject;
 import com.viaoa.process.OAProcess;
 import com.viaoa.remote.info.RequestInfo;
-import com.viaoa.runtime.context.OAContextUser;
 import com.viaoa.serialize.OAObjectSerializer;
+import com.viaoa.session.OASessionUser;
 import com.viaoa.transaction.OATransaction;
 
 /**
@@ -456,10 +459,14 @@ public class OAThreadLocal {
 	 */
 	public ArrayList<HubEvent> alHubEvent;
 
+	
 	/**
-	 * Thread-scoped OAContext . May store any
+	 * Instance of the OAModel object.isModelUserClass for each OA.
+	 * ex: AppUser instance.
 	 */
-	public OAContextUser contextUser;
+	public Map<OA, Hub<?>> hmModelUser;
+
+	private OASessionUser<?> sessionUser;
 
 	/**
 	 * Flag used by OAContext to automatically grant admin privileges
@@ -505,4 +512,31 @@ public class OAThreadLocal {
 	//qqqqqqqqqqqqqqqqqqqvvvvvvvvv 20260403
 	public String replicationSource;
 
+	
+	@SuppressWarnings("unchecked")
+	public <T extends OAObject> Hub<T> getModelUser(OA oa) {
+		if (hmModelUser == null) return null;
+		return (Hub<T>) hmModelUser.get(oa);
+	}
+
+	public <T extends OAObject> void setModelUser(OA oa, Hub<T> hub) {
+	    if (oa == null) return;
+		if (hmModelUser == null) hmModelUser = new HashMap<>();
+	    if (hub == null) hmModelUser.remove(oa);
+	    else hmModelUser.put(oa, hub);
+	}	
+
+	public void clearModelUser() {
+		if (hmModelUser != null) hmModelUser.clear();
+	}
+
+	public OASessionUser<?> getSessionUser() {
+		return sessionUser;
+	}
+
+	public void setSessionUser(OASessionUser<?> su) {
+		sessionUser = su;
+	}
+
+	
 }

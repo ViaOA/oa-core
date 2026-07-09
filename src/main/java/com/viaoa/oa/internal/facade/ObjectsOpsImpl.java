@@ -32,7 +32,7 @@ import com.viaoa.oa.api.internal.objects.OAObjectAnnotationOps;
 import com.viaoa.oa.api.internal.objects.OAObjectAutoAddOps;
 import com.viaoa.oa.api.internal.objects.OAObjectCSOps;
 import com.viaoa.oa.api.internal.objects.OAObjectCacheOps;
-import com.viaoa.oa.api.internal.objects.OAObjectCallbackOps;
+import com.viaoa.oa.api.internal.objects.OAObjectRulesOps;
 import com.viaoa.oa.api.internal.objects.OAObjectChangeOps;
 import com.viaoa.oa.api.internal.objects.OAObjectDSOps;
 import com.viaoa.oa.api.internal.objects.OAObjectDeleteOps;
@@ -66,7 +66,7 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	private OAObjectAutoAddOps opsAutoAdd;
 	private OAObjectCacheOps opsCache;
 	private OAObjectReflectOps opsReflect;
-	private OAObjectCallbackOps opsCallback;
+	private OAObjectRulesOps opsCallback;
 	private OAObjectChangeOps opsChange;
 	private OAObjectDeleteOps opsDelete;
 	private OAObjectCSOps opsCS;
@@ -375,197 +375,228 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	}
 
 	@Override
-	public OAObjectCallbackOps callbacks() {
+	public OAObjectRulesOps rules() {
 		if (opsCallback != null) return opsCallback;
-		opsCallback = new OAObjectCallbackOps() {
+		opsCallback = new OAObjectRulesOps() {
 			@Override
 			public <T extends OAObject> void addObjectCallbackChangeListeners(Hub<T> hub, Class<T> cz, String prop, String ppPrefix, HubChangeListener changeListener, boolean bEnabled) {
-				srvc.getOAObjectCallbackService().addObjectCallbackChangeListeners(hub, cz, prop, ppPrefix, changeListener, bEnabled);
+				srvc.getOAObjectRulesService().addObjectCallbackChangeListeners(hub, cz, prop, ppPrefix, changeListener, bEnabled);
 			}
 
 			@Override
 			public OAObjectCallback getConfirmPropertyChangeObjectCallback(OAObject oaObj, String property, Object newValue, String confirmMessage, String confirmTitle) {
-				return srvc.getOAObjectCallbackService().getConfirmPropertyChangeObjectCallback(oaObj, property, newValue, confirmMessage, confirmTitle);
+				return srvc.getOAObjectRulesService().getConfirmPropertyChangeObjectCallback(oaObj, property, newValue, confirmMessage, confirmTitle);
 			}
 
 			@Override
 			public OAObjectCallback getConfirmDeleteObjectCallback(OAObject oaObj, String confirmMessage, String confirmTitle) {
-				return srvc.getOAObjectCallbackService().getConfirmDeleteObjectCallback(oaObj, confirmMessage, confirmTitle);
+				return srvc.getOAObjectRulesService().getConfirmDeleteObjectCallback(oaObj, confirmMessage, confirmTitle);
 			}
 
 			@Override
 			public <T extends OAObject> OAObjectCallback getConfirmRemoveObjectCallback(Hub<T> hub, T oaObj, String confirmMessage, String confirmTitle) {
-				return srvc.getOAObjectCallbackService().getConfirmRemoveObjectCallback(hub, oaObj, confirmMessage, confirmTitle);
+				return srvc.getOAObjectRulesService().getConfirmRemoveObjectCallback(hub, oaObj, confirmMessage, confirmTitle);
 			}
 
 			@Override
 			public <T extends OAObject> OAObjectCallback getConfirmAddObjectCallback(Hub<T> hub, T oaObj, String confirmMessage, String confirmTitle) {
-				return srvc.getOAObjectCallbackService().getConfirmAddObjectCallback(hub, oaObj, confirmMessage, confirmTitle);
+				return srvc.getOAObjectRulesService().getConfirmAddObjectCallback(hub, oaObj, confirmMessage, confirmTitle);
 			}
 
 			@Override
 			public OAObjectCallback getAllowNewObjectCallback(Hub<? extends OAObject> hub) {
-				return srvc.getOAObjectCallbackService().getAllowNewObjectCallback(hub);
+				return srvc.getOAObjectRulesService().getAllowNewObjectCallback(hub);
 			}
 
 			@Override
-			public OAObjectCallback getVerifySaveObjectCallback(OAObject oaObj, int checkType) {
-				return srvc.getOAObjectCallbackService().getVerifySaveObjectCallback(oaObj, checkType);
+			public OAObjectCallback getVerifySaveObjectCallback(OAObject oaObj) {
+				return srvc.getOAObjectRulesService().getVerifySaveObjectCallback(oaObj);
 			}
 
 			@Override
 			public OAObjectCallback getConfirmSaveObjectCallback(OAObject oaObj, String confirmMessage, String confirmTitle) {
-				return srvc.getOAObjectCallbackService().getConfirmSaveObjectCallback(oaObj, confirmMessage, confirmTitle);
+				return srvc.getOAObjectRulesService().getConfirmSaveObjectCallback(oaObj, confirmMessage, confirmTitle);
 			}
 
 			@Override
-			public OAObjectCallback getVerifyCommandObjectCallback(OAObject oaObj, String methodName, int checkType) {
-				return srvc.getOAObjectCallbackService().getVerifyCommandObjectCallback(oaObj, methodName, checkType);
+			public OAObjectCallback getVerifyCommandObjectCallback(OAObject oaObj, String methodName) {
+				return srvc.getOAObjectRulesService().getVerifyCommandObjectCallback(oaObj, methodName);
 			}
 
 			@Override
 			public OAObjectCallback getConfirmCommandObjectCallback(OAObject oaObj, String methodName, String confirmMessage, String confirmTitle) {
-				return srvc.getOAObjectCallbackService().getConfirmCommandObjectCallback(oaObj, methodName, confirmMessage, confirmTitle);
+				return srvc.getOAObjectRulesService().getConfirmCommandObjectCallback(oaObj, methodName, confirmMessage, confirmTitle);
 			}
 
 			@Override
-			public <T extends OAObject> OAObjectCallback getVerifyDeleteObjectCallback(Hub<T> hub, T objDelete, int checkType) {
-				return srvc.getOAObjectCallbackService().getVerifyDeleteObjectCallback(hub, objDelete, checkType);
+			public <T extends OAObject> OAObjectCallback getVerifyDeleteObjectCallback(Hub<T> hub, T objDelete) {
+				return srvc.getOAObjectRulesService().getVerifyDeleteObjectCallback(hub, objDelete);
 			}
 
 			@Override
-			public OAObjectCallback getVerifyPropertyChangeObjectCallback(int checkType, OAObject oaObj, String propertyName, Object oldValue, Object newValue) {
-				return srvc.getOAObjectCallbackService().getVerifyPropertyChangeObjectCallback(checkType, oaObj, propertyName, oldValue, newValue);
+			public OAObjectCallback getVerifyPropertyChangeCallbackOnlyObjectCallback(OAObject oaObj, String propertyName, Object oldValue, Object newValue) {
+				return srvc.getOAObjectRulesService().getVerifyPropertyChangeCallbackOnlyObjectCallback(oaObj, propertyName, oldValue, newValue);
 			}
 
 			@Override
 			public <T extends OAObject> T getCopy(T oaObj) {
-				return srvc.getOAObjectCallbackService().getCopy(oaObj);
+				return srvc.getOAObjectRulesService().getCopy(oaObj);
 			}
 
 			@Override
-			public <T extends OAObject> boolean getAllowRemove(Hub<T> hub, T obj, int checkType) {
-				return srvc.getOAObjectCallbackService().getAllowRemove(hub, obj, checkType);
+			public <T extends OAObject> boolean getAllowRemove(Hub<T> hub, T obj) {
+				return srvc.getOAObjectRulesService().getAllowRemove(hub, obj);
+			}
+			@Override
+			public <T extends OAObject> boolean getAllowRemoveCallbackOnly(Hub<T> hub, T obj) {
+				return srvc.getOAObjectRulesService().getAllowRemoveCallbackOnly(hub, obj);
+			}
+			@Override
+			public <T extends OAObject> boolean getAllowRemoveIgnoreProcessed(Hub<T> hub, T obj) {
+				return srvc.getOAObjectRulesService().getAllowRemoveIgnoreProcessed(hub, obj);
 			}
 
+			
 			@Override
 			public <T extends OAObject> boolean getAllowDelete(Hub<T> hub, T obj) {
-				return srvc.getOAObjectCallbackService().getAllowDelete(hub, obj);
+				return srvc.getOAObjectRulesService().getAllowDelete(hub, obj);
 			}
 
 			@Override
 			public <T extends OAObject> boolean getAllowDelete(T obj) {
-				return srvc.getOAObjectCallbackService().getAllowDelete(obj);
+				return srvc.getOAObjectRulesService().getAllowDelete(obj);
 			}
 			
 			@Override
-			public <T extends OAObject> boolean getAllowAdd(Hub<T> hub, T obj, int checkType) {
-				return srvc.getOAObjectCallbackService().getAllowAdd(hub, obj, checkType);
+			public <T extends OAObject> boolean getAllowAdd(Hub<T> hub, T obj) {
+				return srvc.getOAObjectRulesService().getAllowAdd(hub, obj);
+			}
+			@Override
+			public <T extends OAObject> boolean getAllowAddIgnoreProcessed(Hub<T> hub, T obj) {
+				return srvc.getOAObjectRulesService().getAllowAddIgnoreProcessed(hub, obj);
 			}
 
+			
 			@Override
-			public <T extends OAObject> OAObjectCallback getAllowRemoveObjectCallback(Hub<T> hub, T objRemove, int checkType) {
-				return srvc.getOAObjectCallbackService().getAllowRemoveObjectCallback(hub, objRemove, checkType);
+			public <T extends OAObject> OAObjectCallback getAllowRemoveObjectCallback(Hub<T> hub, T objRemove) {
+				return srvc.getOAObjectRulesService().getAllowRemoveObjectCallback(hub, objRemove);
 			}
 
 			@Override
 			public OAObjectCallback getAllowCopyObjectCallback(OAObject oaObj) {
-				return srvc.getOAObjectCallbackService().getAllowCopyObjectCallback(oaObj);
+				return srvc.getOAObjectRulesService().getAllowCopyObjectCallback(oaObj);
 			}
 
 			@Override
 			public String getToolTip(OAObject obj, String propertyName, String defaultToolTip) {
-				return srvc.getOAObjectCallbackService().getToolTip(obj, propertyName, defaultToolTip);
+				return srvc.getOAObjectRulesService().getToolTip(obj, propertyName, defaultToolTip);
 			}
 
 			@Override
-			public boolean getVerifyPropertyChange(int checkType, OAObject obj, String propertyName, Object oldValue, Object newValue) {
-				return srvc.getOAObjectCallbackService().getVerifyPropertyChange(checkType, obj, propertyName, oldValue, newValue);
+			public boolean getVerifyPropertyChangeCallbackOnly(OAObject obj, String propertyName, Object oldValue, Object newValue) {
+				return srvc.getOAObjectRulesService().getVerifyPropertyChangeCallbackOnly(obj, propertyName, oldValue, newValue);
 			}
 
 			@Override
-			public <T extends OAObject> boolean getAllowEnabled(int checkType, Hub<T> hub, T obj, String name) {
-				return srvc.getOAObjectCallbackService().getAllowEnabled(checkType, hub, obj, name);
+			public <T extends OAObject> boolean getAllowEnabled(Hub<T> hub, T obj, String name) {
+				return srvc.getOAObjectRulesService().getAllowEnabled(hub, obj, name);
 			}
-
 			@Override
-			public <T extends OAObject> OAObjectCallback getAllowEnabledObjectCallback(int checkType, Hub<T> hub, T oaObj, String name) {
-				return srvc.getOAObjectCallbackService().getAllowEnabledObjectCallback(checkType, hub, oaObj, name);
+			public <T extends OAObject> boolean getAllowEnabledCallbackOnly(Hub<T> hub, T obj, String name) {
+				return srvc.getOAObjectRulesService().getAllowEnabledCallbackOnly(hub, obj, name);
+			}
+			
+			
+			
+			@Override
+			public <T extends OAObject> OAObjectCallback getAllowEnabledObjectCallback(Hub<T> hub, T oaObj, String name) {
+				return srvc.getOAObjectRulesService().getAllowEnabledObjectCallback(null, hub, oaObj, name);
 			}
 
 			@Override
 			public <T extends OAObject> boolean getAllowVisible(Hub<T> hub, T oaObj, String name) {
-				return srvc.getOAObjectCallbackService().getAllowVisible(hub, oaObj, name);
+				return srvc.getOAObjectRulesService().getAllowVisible(hub, oaObj, name);
 			}
 
 			@Override
 			public <T extends OAObject> OAObjectCallback getAllowVisibleObjectCallback(Hub<T> hub, T oaObj, String name) {
-				return srvc.getOAObjectCallbackService().getAllowVisibleObjectCallback(hub, oaObj, name);
+				return srvc.getOAObjectRulesService().getAllowVisibleObjectCallback(hub, oaObj, name);
 			}
 
 			@Override
 			public OAObjectCallback getAllowSubmitObjectCallback(OAObject oaObj) {
-				return srvc.getOAObjectCallbackService().getAllowSubmitObjectCallback(oaObj);
+				return srvc.getOAObjectRulesService().getAllowSubmitObjectCallback(oaObj);
 			}
 
 			@Override
-			public boolean getAllowSave(OAObject oaObj, int checkType) {
-				return srvc.getOAObjectCallbackService().getAllowSave(oaObj, checkType);
+			public boolean getAllowSave(OAObject oaObj) {
+				return srvc.getOAObjectRulesService().getAllowSave(oaObj);
 			}
 
 			@Override
-			public <T extends OAObject> OAObjectCallback getAllowAddObjectCallback(Hub<T> hub, T objAdd, int checkType) {
-				return srvc.getOAObjectCallbackService().getAllowAddObjectCallback(hub, objAdd, checkType);
+			public <T extends OAObject> OAObjectCallback getAllowAddObjectCallback(Hub<T> hub, T objAdd) {
+				return srvc.getOAObjectRulesService().getAllowAddObjectCallback(hub, objAdd);
 			}
 
 			@Override
 			public <T extends OAObject> OAObjectCallback getAllowDeleteObjectCallback(Hub<T> hub, T obj) {
-				return srvc.getOAObjectCallbackService().getAllowDeleteObjectCallback(hub, obj);
+				return srvc.getOAObjectRulesService().getAllowDeleteObjectCallback(hub, obj);
 			}
 
 			@Override
 			public OAObjectCallback getAllowEnabledObjectCallback(Hub<? extends OAObject> hub) {
-				return srvc.getOAObjectCallbackService().getAllowEnabledObjectCallback(hub);
+				return srvc.getOAObjectRulesService().getAllowEnabledObjectCallback(hub);
 			}
 
 			@Override
-			public OAObjectCallback getAllowSaveObjectCallback(OAObject obj, int checkType) {
-				return srvc.getOAObjectCallbackService().getAllowSaveObjectCallback(obj, checkType);
+			public OAObjectCallback getAllowSaveObjectCallback(OAObject obj) {
+				return srvc.getOAObjectRulesService().getAllowSaveObjectCallback(obj);
 			}
 
 			@Override
 			public OAObjectCallback getAllowDeleteObjectCallback(OAObject ao) {
-				return srvc.getOAObjectCallbackService().getAllowDeleteObjectCallback(ao);
+				return srvc.getOAObjectRulesService().getAllowDeleteObjectCallback(ao);
 			}
 
 			@Override
-			public OAObjectCallback getAllowRemoveAllObjectCallback(Hub<? extends OAObject> hub, int checkType) {
-				return srvc.getOAObjectCallbackService().getAllowRemoveAllObjectCallback(hub, checkType);
+			public OAObjectCallback getAllowRemoveAllObjectCallback(Hub<? extends OAObject> hub) {
+				return srvc.getOAObjectRulesService().getAllowRemoveAllObjectCallback(hub);
 			}
 
 			@Override
 			public OAObjectCallback getConfirmRemoveAllObjectCallback(Hub<? extends OAObject> hub, String confirmMessage, String confirmTitle) {
-				return srvc.getOAObjectCallbackService().getConfirmRemoveAllObjectCallback(hub, confirmMessage, confirmTitle);
+				return srvc.getOAObjectRulesService().getConfirmRemoveAllObjectCallback(hub, confirmMessage, confirmTitle);
 			}
 
 			@Override
 			public String getFormat(OAObject obj, String propertyName, String defaultFormat) {
-				return srvc.getOAObjectCallbackService().getFormat(obj, propertyName, defaultFormat);
+				return srvc.getOAObjectRulesService().getFormat(obj, propertyName, defaultFormat);
 			}
 
 			@Override
 			public OAObjectCallback getAllowVisibleObjectCallback(Hub<? extends OAObject> hub) {
-				return srvc.getOAObjectCallbackService().getAllowVisibleObjectCallback(hub);
+				return srvc.getOAObjectRulesService().getAllowVisibleObjectCallback(hub, null, null);
 			}
 
 			@Override
-			public <T extends OAObject> boolean getVerifyRemove(Hub<T> hub, T obj, int checkType) {
-				return srvc.getOAObjectCallbackService().getVerifyRemove(hub, obj, checkType);
+			public <T extends OAObject> boolean getVerifyRemove(Hub<T> hub, T obj) {
+				return srvc.getOAObjectRulesService().getVerifyRemove(hub, obj);
 			}
 
+			@Override
+			public <T extends OAObject> boolean getVerifyRemoveCallbackOnly(Hub<T> hub, T obj) {
+				return srvc.getOAObjectRulesService().getVerifyRemoveCallbackOnly(hub, obj);
+			}
+
+			@Override
+			public <T extends OAObject> boolean getVerifyRemoveIgnoreProcessed(Hub<T> hub, T obj) {
+				return srvc.getOAObjectRulesService().getVerifyRemoveIgnoreProcessed(hub, obj);
+			}
+
+			
 			@Override
 			public void onObjectCallbackModel(Class<? extends OAObject> clazz, String property, OAObjectModel model) {
-				srvc.getOAObjectCallbackService().onObjectCallbackModel(clazz, property, model);
+				srvc.getOAObjectRulesService().onObjectCallbackModel(clazz, property, model);
 				
 			}
 		};
@@ -870,6 +901,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 			@Override
 			public boolean cacheHub(OALinkInfo linkInfo, Hub<?> hub) {
 				return srvc.getOAObjectInfoService().cacheHub(linkInfo, hub);
+			}
+
+			@Override
+			public Class<? extends OAObject>[] getAllClasses() {
+				return srvc.getOAObjectInfoService().getAllClasses();
 			}
 		};
 		return opsInfo;

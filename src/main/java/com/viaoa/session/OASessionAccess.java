@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.viaoa.runtime.context;
+package com.viaoa.session;
 
 /*qqqqqqqqqq
 CODEX
@@ -150,19 +150,19 @@ Used by OAContext<p>
  * application-level permission enforcement, determining which OAObjects and
  * properties are visible or enabled for a given user or thread context.
  */
-public class OAContextAccess {
+public class OASessionAccess {
 
 	/** Path-based rules granting “enabled” access. */
-	private final List<ContextAccess> alEnabledUserAccess = new ArrayList<>();
+	private final List<SessionAccess> alEnabledUserAccess = new ArrayList<>();
 
 	/** Path-based rules denying “enabled” access. */
-	private final List<ContextAccess> alNotEnabledUserAccess = new ArrayList<>();
+	private final List<SessionAccess> alNotEnabledUserAccess = new ArrayList<>();
 
 	/** Path-based rules granting “visible” access. */
-	private final List<ContextAccess> alVisibleUserAccess = new ArrayList<>();
+	private final List<SessionAccess> alVisibleUserAccess = new ArrayList<>();
 
 	/** Path-based rules denying “visible” access. */
-	private final List<ContextAccess> alNotVisibleUserAccess = new ArrayList<>();
+	private final List<SessionAccess> alNotVisibleUserAccess = new ArrayList<>();
 
 	/** Classes that are explicitly marked as enabled. */
 	private final Set<Class<? extends OAObject>> hsEnabledClass = new HashSet<>();
@@ -188,6 +188,36 @@ public class OAContextAccess {
 	/** Not-visible rules for specific properties of specific classes. */
 	private final Map<Class<? extends OAObject>, String[]> hmNotVisibleClass = new HashMap<>();
 
+	
+	/** Default access values when no rule applies. */
+	private boolean bDefaultEnabled, bDefaultVisible;
+
+	/**
+	 * Child OAUserAccess instances. After this OAUserAccess computes a result,
+	 * each child reevaluates it, allowing hierarchical permission rules.
+	 */
+	private final ArrayList<OASessionAccess> alOAUserAccess = new ArrayList<>();
+
+	/**
+	 * Constructs an OAUserAccess with default values of false for both enabled
+	 * and visible. No package restriction is applied.
+	 */
+	public OASessionAccess() {
+
+	}
+
+	/**
+	 * Constructs an OAUserAccess with the specified default enabled and visible
+	 * values.
+	 *
+	 * @param bDefaultEnabled default enabled flag
+	 * @param bDefaultVisible default visible flag
+	 */
+	public OASessionAccess(boolean bDefaultEnabled, boolean bDefaultVisible) {
+		this.bDefaultEnabled = bDefaultEnabled;
+		this.bDefaultVisible = bDefaultVisible;
+	}
+	
 
 	//qqqqqqqqqqqqq
 	// todo? add query extraWhereClause .....
@@ -224,34 +254,6 @@ public class OAContextAccess {
 	// todo? allow param to determine if user has access
 	// ex:  buyer.isManager  ... if true then skip the rule
 
-	/** Default access values when no rule applies. */
-	private boolean bDefaultEnabled, bDefaultVisible;
-
-	/**
-	 * Child OAUserAccess instances. After this OAUserAccess computes a result,
-	 * each child reevaluates it, allowing hierarchical permission rules.
-	 */
-	private final ArrayList<OAContextAccess> alOAUserAccess = new ArrayList<>();
-
-	/**
-	 * Constructs an OAUserAccess with default values of false for both enabled
-	 * and visible. No package restriction is applied.
-	 */
-	public OAContextAccess() {
-
-	}
-
-	/**
-	 * Constructs an OAUserAccess with the specified default enabled and visible
-	 * values.
-	 *
-	 * @param bDefaultEnabled default enabled flag
-	 * @param bDefaultVisible default visible flag
-	 */
-	public OAContextAccess(boolean bDefaultEnabled, boolean bDefaultVisible) {
-		this.bDefaultEnabled = bDefaultEnabled;
-		this.bDefaultVisible = bDefaultVisible;
-	}
 
 	/**
 	 * Adds a child OAUserAccess to be evaluated after this one. The result of
@@ -259,7 +261,7 @@ public class OAContextAccess {
 	 *
 	 * @param ua child OAUserAccess
 	 */
-	public void addUserAccess(OAContextAccess ua) {
+	public void addUserAccess(OASessionAccess ua) {
 		if (ua != null) {
 			alOAUserAccess.add(ua);
 		}
@@ -270,7 +272,7 @@ public class OAContextAccess {
 	 * visibility or enabled rule. Includes both forward and reverse property
 	 * paths to determine reachability and common ancestors.
 	 */
-	protected static class ContextAccess {
+	protected static class SessionAccess {
 		/** Optional root hub for path evaluation. */
 		Hub hub;
 
@@ -299,7 +301,7 @@ public class OAContextAccess {
 		 * @param pp property path string
 		 * @param bOnlyEndProperty whether only the final path segment applies
 		 */
-		public ContextAccess(OAObject obj, String pp, boolean bOnlyEndProperty) {
+		public SessionAccess(OAObject obj, String pp, boolean bOnlyEndProperty) {
 			this.obj = obj;
 			this.pp = new OAPath(obj.getClass(), pp);
 			this.ppReverse = this.pp.getReversePath();
@@ -313,7 +315,7 @@ public class OAContextAccess {
 		 * @param pp property path string
 		 * @param bOnlyEndProperty whether only the final segment applies
 		 */
-		public ContextAccess(Hub hub, String pp, boolean bOnlyEndProperty) {
+		public SessionAccess(Hub hub, String pp, boolean bOnlyEndProperty) {
 			this.hub = hub;
 			this.pp = new OAPath(hub.getObjectClass(), pp);
 			this.ppReverse = this.pp.getReversePath();
@@ -408,7 +410,7 @@ public class OAContextAccess {
 		if (obj == null) {
 			return;
 		}
-		ContextAccess ua = new ContextAccess(obj, pp, bOnlyEndProperty);
+		SessionAccess ua = new SessionAccess(obj, pp, bOnlyEndProperty);
 		if (OAString.isNotEmpty(propertyName)) {
 			ua.props = new String[] { propertyName };
 		}
@@ -430,7 +432,7 @@ public class OAContextAccess {
 		if (hub.getObjectClass() == null) {
 			throw new RuntimeException("hub getObjectClass can not be null");
 		}
-		ContextAccess ua = new ContextAccess(hub, pp, bOnlyEndProperty);
+		SessionAccess ua = new SessionAccess(hub, pp, bOnlyEndProperty);
 		if (OAString.isNotEmpty(propertyName)) {
 			ua.props = new String[] { propertyName };
 		}
@@ -449,7 +451,7 @@ public class OAContextAccess {
 		if (obj == null) {
 			return;
 		}
-		ContextAccess ua = new ContextAccess(obj, pp, bOnlyEndProperty);
+		SessionAccess ua = new SessionAccess(obj, pp, bOnlyEndProperty);
 		if (OAString.isNotEmpty(propertyName)) {
 			ua.props = new String[] { propertyName };
 		}
@@ -467,7 +469,7 @@ public class OAContextAccess {
 		if (hub.getObjectClass() == null) {
 			throw new RuntimeException("hub getObjectClass can not be null");
 		}
-		ContextAccess ua = new ContextAccess(hub, pp, bOnlyEndProperty);
+		SessionAccess ua = new SessionAccess(hub, pp, bOnlyEndProperty);
 		if (OAString.isNotEmpty(propertyName)) {
 			ua.props = new String[] { propertyName };
 		}
@@ -486,7 +488,7 @@ public class OAContextAccess {
 		if (obj == null) {
 			return;
 		}
-		ContextAccess ua = new ContextAccess(obj, pp, bOnlyEndProperty);
+		SessionAccess ua = new SessionAccess(obj, pp, bOnlyEndProperty);
 		if (OAString.isNotEmpty(propertyName)) {
 			ua.props = new String[] { propertyName };
 		}
@@ -514,7 +516,7 @@ public class OAContextAccess {
 		if (hub.getObjectClass() == null) {
 			throw new RuntimeException("hub getObjectClass can not be null");
 		}
-		ContextAccess ua = new ContextAccess(hub, pp, bOnlyEndProperty);
+		SessionAccess ua = new SessionAccess(hub, pp, bOnlyEndProperty);
 		if (OAString.isNotEmpty(propertyName)) {
 			ua.props = new String[] { propertyName };
 		}
@@ -533,7 +535,7 @@ public class OAContextAccess {
 		if (obj == null) {
 			return;
 		}
-		ContextAccess ua = new ContextAccess(obj, pp, bOnlyEndProperty);
+		SessionAccess ua = new SessionAccess(obj, pp, bOnlyEndProperty);
 		if (OAString.isNotEmpty(propertyName)) {
 			ua.props = new String[] { propertyName };
 		}
@@ -551,7 +553,7 @@ public class OAContextAccess {
 		if (hub.getObjectClass() == null) {
 			throw new RuntimeException("hub getObjectClass can not be null");
 		}
-		ContextAccess ua = new ContextAccess(hub, pp, bOnlyEndProperty);
+		SessionAccess ua = new SessionAccess(hub, pp, bOnlyEndProperty);
 		if (OAString.isNotEmpty(propertyName)) {
 			ua.props = new String[] { propertyName };
 		}
@@ -593,6 +595,13 @@ public class OAContextAccess {
 		return getEnabled(null, clazz, null, bDefaultEnabled);
 	}
 
+	public boolean getEnabled(final Class clazz, final String propertyName) {
+		if (clazz == null) {
+			return false;
+		}
+		return getEnabled(null, clazz, propertyName, bDefaultEnabled);
+	}
+	
 	public boolean getEnabled(final OAObject obj, final String propertyName, final boolean bDefault) {
 		if (obj == null) {
 			return false;
@@ -629,26 +638,26 @@ public class OAContextAccess {
 			bResult = false;
 		}
 
-		if (obj != null) {
-			if (propertyName != null) {
-				String[] ss = hmEnabledClass.get(cz);
-				if (ss != null) {
-					for (String s : ss) {
-						if (propertyName.equalsIgnoreCase(s)) {
-							bResult = true;
-						}
-					}
-				}
-				ss = hmNotEnabledClass.get(cz);
-				if (ss != null) {
-					for (String s : ss) {
-						if (propertyName.equalsIgnoreCase(s)) {
-							bResult = false;
-						}
+		if (propertyName != null) {
+			String[] ss = hmEnabledClass.get(cz);
+			if (ss != null) {
+				for (String s : ss) {
+					if (propertyName.equalsIgnoreCase(s)) {
+						bResult = true;
 					}
 				}
 			}
+			ss = hmNotEnabledClass.get(cz);
+			if (ss != null) {
+				for (String s : ss) {
+					if (propertyName.equalsIgnoreCase(s)) {
+						bResult = false;
+					}
+				}
+			}
+		}
 
+		if (obj != null) {
 			boolean b = getIsInSamePath(obj, propertyName, alEnabledUserAccess);
 			if (b) {
 				bResult = true;
@@ -659,7 +668,7 @@ public class OAContextAccess {
 			}
 		}
 
-		for (OAContextAccess ua : alOAUserAccess) {
+		for (OASessionAccess ua : alOAUserAccess) {
 			bResult = ua.getEnabled(obj, cz, propertyName, bResult);
 		}
 		return bResult;
@@ -676,6 +685,14 @@ public class OAContextAccess {
 			return false;
 		}
 		boolean b = getVisible(null, clazz, null, bDefaultVisible);
+		return b;
+	}
+
+	public boolean getVisible(Class clazz, String propertyName) {
+		if (clazz == null) {
+			return false;
+		}
+		boolean b = getVisible(null, clazz, propertyName, bDefaultVisible);
 		return b;
 	}
 
@@ -732,26 +749,26 @@ public class OAContextAccess {
 			bResult = false;
 		}
 
-		if (obj != null) {
-			if (propertyName != null) {
-				String[] ss = hmVisibleClass.get(cz);
-				if (ss != null) {
-					for (String s : ss) {
-						if (propertyName.equalsIgnoreCase(s)) {
-							bResult = true;
-						}
-					}
-				}
-				ss = hmNotVisibleClass.get(cz);
-				if (ss != null) {
-					for (String s : ss) {
-						if (propertyName.equalsIgnoreCase(s)) {
-							bResult = false;
-						}
+		if (propertyName != null) {
+			String[] ss = hmVisibleClass.get(cz);
+			if (ss != null) {
+				for (String s : ss) {
+					if (propertyName.equalsIgnoreCase(s)) {
+						bResult = true;
 					}
 				}
 			}
+			ss = hmNotVisibleClass.get(cz);
+			if (ss != null) {
+				for (String s : ss) {
+					if (propertyName.equalsIgnoreCase(s)) {
+						bResult = false;
+					}
+				}
+			}
+		}
 
+		if (obj != null) {
 			boolean b = getIsInSamePath(obj, propertyName, alVisibleUserAccess);
 			if (b) {
 				bResult = true;
@@ -762,7 +779,7 @@ public class OAContextAccess {
 			}
 		}
 
-		for (OAContextAccess ua : alOAUserAccess) {
+		for (OASessionAccess ua : alOAUserAccess) {
 			bResult = ua.getVisible(obj, cz, propertyName, bResult);
 		}
 		return bResult;
@@ -785,13 +802,13 @@ public class OAContextAccess {
 	 * @return true if object matches rule; false otherwise
 	 */
 	protected boolean getIsInSamePath(final OAObject objSearch, final String propertyName,
-			final List<ContextAccess> alUserAccess) {
+			final List<SessionAccess> alUserAccess) {
 		if (objSearch == null || alUserAccess == null) {
 			return false;
 		}
 		final Class cz = objSearch.getClass();
 
-		for (final ContextAccess ua : alUserAccess) {
+		for (final SessionAccess ua : alUserAccess) {
 			if (propertyName != null) {
 				if (ua.props == null) {
 					continue;

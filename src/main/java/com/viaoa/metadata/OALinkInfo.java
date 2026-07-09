@@ -293,7 +293,7 @@ public class OALinkInfo { //implements java.io.Serializable {
 	/**
 	 * Properties that affect context-level refresh for this link.
 	 */
-	private String[] contextDependentProperties;
+	private String[] modelUserDependentProperties;
 
 	/**
 	 * Default property path used when navigating from this link.
@@ -314,7 +314,7 @@ public class OALinkInfo { //implements java.io.Serializable {
 	/**
 	 * Default property path used for context-based evaluations.
 	 */
-	private String defaultContextPropertyPath;
+	private String defaultModelUserPropertyPath;
 
 	/**
 	 * Scheduler callback method associated with this link.
@@ -349,22 +349,22 @@ public class OALinkInfo { //implements java.io.Serializable {
 	/**
 	 * Property name determining context-based enabled state.
 	 */
-	private String contextEnabledProperty;
+	private String modelUserEnabledProperty;
 
 	/**
 	 * Boolean indicating context-based enabled state.
 	 */
-	private boolean contextEnabledValue;
+	private boolean modelUserEnabledValue;
 	
 	/**
 	 * Property name determining context-based visibility.
 	 */
-	private String contextVisibleProperty;
+	private String modelUserVisibleProperty;
 	
 	/**
 	 * Boolean indicating context-based visibility.
 	 */
-	private boolean contextVisibleValue;
+	private boolean modelUserVisibleValue;
 	
 	
 	/**
@@ -1218,8 +1218,8 @@ public class OALinkInfo { //implements java.io.Serializable {
 	 *
 	 * @return an array of context-dependent property names, or {@code null} if none are defined
 	 */
-	public String[] getContextDependentProperties() {
-		return contextDependentProperties;
+	public String[] getModelUserDependentProperties() {
+		return modelUserDependentProperties;
 	}
 
 	/**
@@ -1227,8 +1227,8 @@ public class OALinkInfo { //implements java.io.Serializable {
 	 *
 	 * @param props an array of context-dependent property names
 	 */
-	public void setContextDependentProperties(String[] props) {
-		contextDependentProperties = props;
+	public void setModelUserDependentProperties(String[] props) {
+		modelUserDependentProperties = props;
 	}
 
 	/*
@@ -1445,8 +1445,8 @@ public class OALinkInfo { //implements java.io.Serializable {
 	 *
 	 * @return the context-enabled property name, or {@code null} if none is set
 	 */
-	public String getContextEnabledProperty() {
-		return contextEnabledProperty;
+	public String getModelUserEnabledProperty() {
+		return modelUserEnabledProperty;
 	}
 
 	/**
@@ -1455,8 +1455,8 @@ public class OALinkInfo { //implements java.io.Serializable {
 	 *
 	 * @param s the context-enabled property name
 	 */
-	public void setContextEnabledProperty(String s) {
-		contextEnabledProperty = s;
+	public void setModelUserEnabledProperty(String s) {
+		modelUserEnabledProperty = s;
 	}
 
 	/**
@@ -1464,8 +1464,8 @@ public class OALinkInfo { //implements java.io.Serializable {
 	 *
 	 * @return {@code true} if the link is context-enabled, otherwise {@code false}
 	 */
-	public boolean getContextEnabledValue() {
-		return contextEnabledValue;
+	public boolean getModelUserEnabledValue() {
+		return modelUserEnabledValue;
 	}
 
 	/**
@@ -1473,8 +1473,8 @@ public class OALinkInfo { //implements java.io.Serializable {
 	 *
 	 * @param b {@code true} to enable the link in context, {@code false} otherwise
 	 */
-	public void setContextEnabledValue(boolean b) {
-		contextEnabledValue = b;
+	public void setModelUserEnabledValue(boolean b) {
+		modelUserEnabledValue = b;
 	}
 
 	/**
@@ -1483,8 +1483,8 @@ public class OALinkInfo { //implements java.io.Serializable {
 	 *
 	 * @return the context-visible property name, or {@code null} if none is set
 	 */
-	public String getContextVisibleProperty() {
-		return contextVisibleProperty;
+	public String getModelUserVisibleProperty() {
+		return modelUserVisibleProperty;
 	}
 
 	/**
@@ -1493,8 +1493,8 @@ public class OALinkInfo { //implements java.io.Serializable {
 	 *
 	 * @param s the context-visible property name
 	 */
-	public void setContextVisibleProperty(String s) {
-		contextVisibleProperty = s;
+	public void setModelUserVisibleProperty(String s) {
+		modelUserVisibleProperty = s;
 	}
 
 	/**
@@ -1502,8 +1502,8 @@ public class OALinkInfo { //implements java.io.Serializable {
 	 *
 	 * @return {@code true} if the link is context-visible, otherwise {@code false}
 	 */
-	public boolean getContextVisibleValue() {
-		return contextVisibleValue;
+	public boolean getModelUserVisibleValue() {
+		return modelUserVisibleValue;
 	}
 
 	/**
@@ -1511,8 +1511,8 @@ public class OALinkInfo { //implements java.io.Serializable {
 	 *
 	 * @param b {@code true} to make the link context-visible, {@code false} otherwise
 	 */
-	public void setContextVisibleValue(boolean b) {
-		contextVisibleValue = b;
+	public void setModelUserVisibleValue(boolean b) {
+		modelUserVisibleValue = b;
 	}
 
 	/**
@@ -1615,8 +1615,8 @@ public class OALinkInfo { //implements java.io.Serializable {
 	 *
 	 * @return the default context property path, or {@code null} if none is set
 	 */
-	public String getDefaultContextPropertyPath() {
-		return defaultContextPropertyPath;
+	public String getDefaultModelUserPropertyPath() {
+		return defaultModelUserPropertyPath;
 	}
 
 	/**
@@ -1624,8 +1624,8 @@ public class OALinkInfo { //implements java.io.Serializable {
 	 *
 	 * @param pp the default context property path
 	 */
-	public void setDefaultContextPropertyPath(String pp) {
-		this.defaultContextPropertyPath = pp;
+	public void setDefaultModelUserPropertyPath(String pp) {
+		this.defaultModelUserPropertyPath = pp;
 	}
 
 	/**

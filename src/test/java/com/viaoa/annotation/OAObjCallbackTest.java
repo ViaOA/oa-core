@@ -25,12 +25,12 @@ class OAObjCallbackTest {
         enabledValue = false,
         visibleProperty = "explicit_visibleProperty",
         visibleValue = false,
-        contextEnabledProperty = "explicit_contextEnabledProperty",
-        contextEnabledValue = false,
-        contextVisibleProperty = "explicit_contextVisibleProperty",
-        contextVisibleValue = false,
+        modelUserEnabledProperty = "explicit_contextEnabledProperty",
+        modelUserEnabledValue = false,
+        modelUserVisibleProperty = "explicit_contextVisibleProperty",
+        modelUserVisibleValue = false,
         viewDependentProperties = { "one", "two" },
-        contextDependentProperties = { "one", "two" },
+        modelUserDependentProperties = { "one", "two" },
         supportedTypes = { OAObjectCallback.Type.AllowEnabled }
     )
     private static class ExplicitFixture {}
@@ -70,28 +70,28 @@ class OAObjCallbackTest {
     void defaultContextEnabledPropertyMatchesDeclaration() throws Exception {
         OAObjCallback ann = DefaultFixture.class.getAnnotation(OAObjCallback.class);
 
-        assertEquals("", ann.contextEnabledProperty());
+        assertEquals("", ann.modelUserEnabledProperty());
     }
 
     @Test
     void defaultContextEnabledValueMatchesDeclaration() throws Exception {
         OAObjCallback ann = DefaultFixture.class.getAnnotation(OAObjCallback.class);
 
-        assertEquals(true, ann.contextEnabledValue());
+        assertEquals(true, ann.modelUserEnabledValue());
     }
 
     @Test
     void defaultContextVisiblePropertyMatchesDeclaration() throws Exception {
         OAObjCallback ann = DefaultFixture.class.getAnnotation(OAObjCallback.class);
 
-        assertEquals("", ann.contextVisibleProperty());
+        assertEquals("", ann.modelUserVisibleProperty());
     }
 
     @Test
     void defaultContextVisibleValueMatchesDeclaration() throws Exception {
         OAObjCallback ann = DefaultFixture.class.getAnnotation(OAObjCallback.class);
 
-        assertEquals(true, ann.contextVisibleValue());
+        assertEquals(true, ann.modelUserVisibleValue());
     }
 
     @Test
@@ -105,7 +105,7 @@ class OAObjCallbackTest {
     void defaultContextDependentPropertiesMatchesDeclaration() throws Exception {
         OAObjCallback ann = DefaultFixture.class.getAnnotation(OAObjCallback.class);
 
-        assertArrayEquals(new String[0], ann.contextDependentProperties());
+        assertArrayEquals(new String[0], ann.modelUserDependentProperties());
     }
 
     @Test
@@ -123,12 +123,12 @@ class OAObjCallbackTest {
         assertEquals(false, ann.enabledValue());
         assertEquals("explicit_visibleProperty", ann.visibleProperty());
         assertEquals(false, ann.visibleValue());
-        assertEquals("explicit_contextEnabledProperty", ann.contextEnabledProperty());
-        assertEquals(false, ann.contextEnabledValue());
-        assertEquals("explicit_contextVisibleProperty", ann.contextVisibleProperty());
-        assertEquals(false, ann.contextVisibleValue());
+        assertEquals("explicit_contextEnabledProperty", ann.modelUserEnabledProperty());
+        assertEquals(false, ann.modelUserEnabledValue());
+        assertEquals("explicit_contextVisibleProperty", ann.modelUserVisibleProperty());
+        assertEquals(false, ann.modelUserVisibleValue());
         assertArrayEquals(new String[] { "one", "two" }, ann.viewDependentProperties());
-        assertArrayEquals(new String[] { "one", "two" }, ann.contextDependentProperties());
+        assertArrayEquals(new String[] { "one", "two" }, ann.modelUserDependentProperties());
         assertArrayEquals(new OAObjectCallback.Type[] { OAObjectCallback.Type.AllowEnabled }, ann.supportedTypes());
     }
 }

@@ -45,7 +45,7 @@ class OAOneTest {
         defaultPropertyPath = "explicit_defaultPropertyPath",
         defaultPropertyPathIsHierarchy = true,
         defaultPropertyPathCanBeChanged = true,
-        defaultContextPropertyPath = "explicit_defaultContextPropertyPath",
+        defaultModelUserPropertyPath = "explicit_defaultContextPropertyPath",
         isOneAndOnlyOne = true,
         importMatch = true,
         equalPropertyPath = "explicit_equalPropertyPath",
@@ -226,7 +226,7 @@ class OAOneTest {
     void defaultDefaultContextPropertyPathMatchesDeclaration() throws Exception {
         OAOne ann = DefaultFixture.class.getMethod("value").getAnnotation(OAOne.class);
 
-        assertEquals("", ann.defaultContextPropertyPath());
+        assertEquals("", ann.defaultModelUserPropertyPath());
     }
 
     @Test
@@ -298,7 +298,7 @@ class OAOneTest {
         assertEquals("explicit_defaultPropertyPath", ann.defaultPropertyPath());
         assertEquals(true, ann.defaultPropertyPathIsHierarchy());
         assertEquals(true, ann.defaultPropertyPathCanBeChanged());
-        assertEquals("explicit_defaultContextPropertyPath", ann.defaultContextPropertyPath());
+        assertEquals("explicit_defaultContextPropertyPath", ann.defaultModelUserPropertyPath());
         assertEquals(true, ann.isOneAndOnlyOne());
         assertEquals(true, ann.importMatch());
         assertEquals("explicit_equalPropertyPath", ann.equalPropertyPath());

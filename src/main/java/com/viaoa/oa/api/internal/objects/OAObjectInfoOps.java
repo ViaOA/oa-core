@@ -30,6 +30,7 @@ public interface OAObjectInfoOps {
 	public Method getMethod(OAObjectInfo oi, String methodName, int argumentCount);
 	public OAPropertyInfo getPropertyInfo(OAObjectInfo oi, String propertyName);
 	public boolean isPojoSingleton(OAObjectInfo toObjectInfo);
+	public Class<? extends OAObject>[] getAllClasses();
 
 	
 }

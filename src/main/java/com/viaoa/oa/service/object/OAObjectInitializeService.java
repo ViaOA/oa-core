@@ -4,12 +4,15 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 import com.viaoa.find.OAFinder;
+import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
-import com.viaoa.runtime.context.OAContextUser;
+import com.viaoa.runtime.OARuntime;
+import com.viaoa.session.OASessionUser;
 
 
 /*qqqqqqqqqqqqqq
@@ -226,13 +229,14 @@ public abstract class OAObjectInitializeService {
 					//    fkey, since it uses it's own pkey as the fkey
 
 					// 20190205 set default linkOne
-					if (li.getType() == li.TYPE_ONE && OAString.isNotEmpty(li.getDefaultContextPropertyPath())) {
+					if (li.getType() == li.TYPE_ONE && OAString.isNotEmpty(li.getDefaultModelUserPropertyPath())) {
+						OA oa = OARuntime.oa(oaObj);
 						
-						OAContextUser cu = callContextGetContextUser();
-						OAObject objx = cu == null ? null : cu.getCurrentUserObject();
+						Hub<?> hub = oa.modelUser().getCalc();
+						OAObject objx = hub == null ? null : hub.getAO();
 						if (objx != null) {
-							if (!li.getDefaultContextPropertyPath().equals(".")) {
-								OAFinder hf = new OAFinder(li.getDefaultContextPropertyPath());
+							if (!li.getDefaultModelUserPropertyPath().equals(".")) {
+								OAFinder hf = new OAFinder(li.getDefaultModelUserPropertyPath());
 								objx = hf.findFirst(objx);
 							}
 							callPropertyUnsafeAddProperty(oaObj, li.getName(), objx);
@@ -385,6 +389,5 @@ public abstract class OAObjectInitializeService {
 	public abstract void callSyncClientObjectCreated(OAObject obj);	
 	public abstract boolean callThreadLocalIsLoading();
 	public abstract boolean callThreadLocalSetLoading(boolean b);
-	public abstract OAContextUser callContextGetContextUser();
 }
 

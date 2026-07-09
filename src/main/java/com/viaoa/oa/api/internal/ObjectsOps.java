@@ -1,12 +1,10 @@
 package com.viaoa.oa.api.internal;
 
-import java.lang.reflect.Method;
-
 import com.viaoa.oa.api.internal.objects.OAObjectAnnotationOps;
 import com.viaoa.oa.api.internal.objects.OAObjectAutoAddOps;
 import com.viaoa.oa.api.internal.objects.OAObjectCSOps;
 import com.viaoa.oa.api.internal.objects.OAObjectCacheOps;
-import com.viaoa.oa.api.internal.objects.OAObjectCallbackOps;
+import com.viaoa.oa.api.internal.objects.OAObjectRulesOps;
 import com.viaoa.oa.api.internal.objects.OAObjectChangeOps;
 import com.viaoa.oa.api.internal.objects.OAObjectDSOps;
 import com.viaoa.oa.api.internal.objects.OAObjectDeleteOps;
@@ -36,7 +34,7 @@ public interface ObjectsOps {
 	
 	public OAObjectCacheOps cache();
 
-	public OAObjectCallbackOps callbacks();
+	public OAObjectRulesOps rules();
 
 	public OAObjectChangeOps change();
 	

@@ -68,7 +68,7 @@ public abstract class HubEventService {
 		// verify with objectCallback
 		if (!callRemoteThreadIsRemoteThread()) {
 			if (obj instanceof OAObject) {
-				OAObjectCallback em = callObjectCallbackGetVerifyRemoveObjectCallback(thisHub, obj, OAObjectCallback.CHECK_CallbackMethod);
+				OAObjectCallback em = callObjectCallbackGetVerifyRemoveObjectCallback(thisHub, obj, OAObjectCallback.getCallbackOnlyCheckType());
 				if (em != null && !em.getAllowed()) {
 					String s = em.getResponse();
 					if (OAString.isEmpty(s)) {
@@ -178,7 +178,7 @@ public abstract class HubEventService {
 	public <T extends OAObject> void fireBeforeRemoveAllEvent(Hub<T> thisHub) {
 		// verify with objectCallback
 		if (!callRemoteThreadIsRemoteThread()) {
-			OAObjectCallback em = callObjectCallbackGetVerifyRemoveAllObjectCallback(thisHub, OAObjectCallback.CHECK_CallbackMethod);
+			OAObjectCallback em = callObjectCallbackGetVerifyRemoveAllObjectCallback(thisHub, OAObjectCallback.getCallbackOnlyCheckType());
 			if (!em.getAllowed()) {
 				String s = em.getResponse();
 				if (OAString.isEmpty(s)) {
@@ -280,8 +280,7 @@ public abstract class HubEventService {
 		// verify with objectCallback
 		if (!callRemoteThreadIsRemoteThread()) {
 			if (obj instanceof OAObject) {
-				OAObjectCallback em = callObjectCallbackGetVerifyAddObjectCallback(	thisHub, obj,
-																							OAObjectCallback.CHECK_CallbackMethod);
+				OAObjectCallback em = callObjectCallbackGetVerifyAddObjectCallback(	thisHub, obj, OAObjectCallback.getCallbackOnlyCheckType());
 				if (!em.getAllowed()) {
 					String s = em.getResponse();
 					if (OAString.isEmpty(s)) {
@@ -394,7 +393,7 @@ public abstract class HubEventService {
 		// verify with objectCallback
 		if (!callRemoteThreadIsRemoteThread()) {
 			if (obj instanceof OAObject) {
-				OAObjectCallback em = callObjectCallbackGetVerifyAddObjectCallback(	thisHub, obj, OAObjectCallback.CHECK_CallbackMethod);
+				OAObjectCallback em = callObjectCallbackGetVerifyAddObjectCallback(	thisHub, obj, OAObjectCallback.getCallbackOnlyCheckType());
 				if (!em.getAllowed()) {
 					String s = em.getResponse();
 					if (OAString.isEmpty(s)) {
@@ -1405,13 +1404,13 @@ public abstract class HubEventService {
 		}
 	}
 
-	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyRemoveObjectCallback(final Hub<T> hub, final T objRemove, final int checkType);
+	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyRemoveObjectCallback(final Hub<T> hub, final T objRemove, final OAObjectCallback.CheckType[] onlyCheckTypes);
 	public abstract <T extends OAObject> void callObjectCacheFireAfterRemoveEvent(Hub<T> hub, T obj);
 	public abstract OAObjectInfo callObjectInfoGetObjectInfo(Class<?> clazz);
 	public abstract OAObjectInfo callObjectInfoGetObjectInfo(OAObject obj);
-	public abstract OAObjectCallback callObjectCallbackGetVerifyRemoveAllObjectCallback(final Hub<?> hub, final int checkType);
+	public abstract OAObjectCallback callObjectCallbackGetVerifyRemoveAllObjectCallback(final Hub<?> hub, final OAObjectCallback.CheckType[] onlyCheckTypes);
 	public abstract <T extends OAObject> void callObjectCacheFireAfterAddEvent(Hub<T> hub, T obj);
-	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyAddObjectCallback(final Hub<T> hub, final T oaObj, final int checkType);
+	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyAddObjectCallback(final Hub<T> hub, final T oaObj, final OAObjectCallback.CheckType[] onlyCheckTypes);
 	public abstract OALinkInfo callObjectInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
 	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub<?> thisHub);
 	public abstract <T extends OAObject> boolean callHubVerifyUniqueProperty(final Hub<T> thisHub, final T object);

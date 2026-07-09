@@ -1138,7 +1138,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			return false;
 		}
 		OA oa = OARuntime.oa(this);
-		return oa.internal().objects().callbacks().getAllowEnabled(OAObjectCallback.CHECK_CallbackMethod, (Hub<OAObject>) this, null, null);
+		return oa.internal().objects().rules().getAllowEnabledCallbackOnly((Hub<OAObject>) this, null, null);
 	}
 
 	/**
@@ -2675,9 +2675,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 * @return true if the object can be added
 	 */
 	public boolean getAllowAdd(TYPE obj) {
-		if (obj == null) return false;
-		OA oa = OARuntime.oa(this.getObjectClass());
-		return oa.internal().hubs().addRemove().canAdd(this, obj);
+		return getAllowAdd(obj, false);
 	}
 
 	/**
@@ -2689,16 +2687,17 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 * @return true if adding is permitted
 	 */
 	@SuppressWarnings({"unchecked","rawtypes"})
-	public boolean getAllowAdd(int checkType, TYPE obj) {
+	public boolean getAllowAdd(TYPE obj, boolean bIgnoreProcessed) {
 		if (!(obj instanceof OAObject)) {
-			return true;
+			return false;
 		}
 		OA oa = OARuntime.oa(this);
 		
 		Hub<OAObject> hub = (Hub) this;
 	    OAObject oaObj = (OAObject) obj;
 	    
-		return oa.internal().objects().callbacks().getAllowAdd(hub, oaObj, checkType);
+		if (bIgnoreProcessed) return oa.internal().objects().rules().getAllowAddIgnoreProcessed(hub, oaObj);
+		return oa.internal().objects().rules().getAllowAdd(hub, oaObj);
 	}
 
 	/**
@@ -2709,7 +2708,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 * @param obj       object to evaluate
 	 * @return true if removing is permitted
 	 */
-	public boolean getAllowRemove(int checkType, TYPE obj) {
+	public boolean getAllowRemove(TYPE obj, boolean bCallbackOnly, boolean bIgnoreProcessed) {
 		if (!(obj instanceof OAObject)) {
 			return true;
 		}
@@ -2718,7 +2717,12 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		Hub<OAObject> hub = (Hub) this;
 	    OAObject oaObj = (OAObject) obj;
 		
-		return oa.internal().objects().callbacks().getAllowRemove(hub, oaObj, checkType);
+	    if (bCallbackOnly) return oa.internal().objects().rules().getAllowRemoveCallbackOnly(hub, oaObj);
+	    if (bIgnoreProcessed) return oa.internal().objects().rules().getAllowRemoveIgnoreProcessed(hub, oaObj);
+		return oa.internal().objects().rules().getAllowRemove(hub, oaObj);
+	}
+	public boolean getAllowRemove(TYPE obj) {
+		return getAllowRemove(obj, false, false);
 	}
 
 	/**
@@ -2729,14 +2733,19 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 * @param obj       object to evaluate
 	 * @return true if removal is verified as allowed
 	 */
-	public boolean getVerifyRemove(int checkType, TYPE obj) {
+	public boolean getVerifyRemove(TYPE obj, boolean bCallbackOnly, boolean bIgnoreProcessed) {
 		if (!(obj instanceof OAObject)) {
 			return true;
 		}
 		OA oa = OARuntime.oa(this);
 		Hub<OAObject> hub = (Hub) this;
 	    OAObject oaObj = (OAObject) obj;
-		return oa.internal().objects().callbacks().getVerifyRemove(hub, oaObj, checkType);
+		if (bCallbackOnly) return oa.internal().objects().rules().getVerifyRemoveCallbackOnly(hub, oaObj);
+		if (bIgnoreProcessed) return oa.internal().objects().rules().getVerifyRemoveIgnoreProcessed(hub, oaObj);
+		return oa.internal().objects().rules().getVerifyRemove(hub, oaObj);
+	}
+	public boolean getVerifyRemove(TYPE obj) {
+		return getVerifyRemove(obj, false, false);
 	}
 
 	/**
@@ -2747,9 +2756,9 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 * @param checkType            callback check type
 	 * @return true if all objects can be removed
 	 */
-	public boolean getAllowRemoveAll(final boolean bCheckObjectCallback, final int checkType) {
+	public boolean getAllowRemoveAll(final boolean bCheckObjectCallback, final OAObjectCallback.CheckType[] onlyCheckTypes) {
 		OA oa = OARuntime.oa(this);
-		String s = oa.internal().hubs().addRemove().getCantRemoveAllMessage(this, checkType);
+		String s = oa.internal().hubs().addRemove().getCantRemoveAllMessage(this, onlyCheckTypes);
 		return s == null;
 	}
 	

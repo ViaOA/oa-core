@@ -140,8 +140,7 @@ public abstract class HubAddRemoveService {
 		}
 
 		if (!bIsRemovingAll && !callRemoteThreadIsRemoteThread()) {
-			if (!thisHub.getAllowRemove(OAObjectCallback.CHECK_CallbackMethod, obj)) {
-				//was: if (!canRemove(thisHub, obj)) {
+			if (!thisHub.getAllowRemove(obj, true, true)) {
 				if (!callThreadLocalIsDeleting(obj)) {
 					throw new RuntimeException("Cant remove object, "+obj.getClass().getSimpleName()+", Hub can remove returned false");
 				}
@@ -240,7 +239,7 @@ public abstract class HubAddRemoveService {
 	 * @return a message describing why removal is not allowed, or {@code null} if allowed
 	 */
 	@SuppressWarnings({"unchecked"})
-	public <T extends OAObject> String getCantRemoveMessage(final Hub<T> thisHub, final T obj, final int checkType) {
+	public <T extends OAObject> String getCantRemoveMessage(final Hub<T> thisHub, final T obj, final OAObjectCallback.CheckType[] onlyCheckTypes) {
 		if (thisHub == null) {
 			return "hub is null";
 		}
@@ -269,8 +268,8 @@ public abstract class HubAddRemoveService {
 			}
 		}
 
-		if (checkType > 0) {
-			OAObjectCallback eq = callObjectCallbackGetAllowRemoveObjectCallback(thisHub, obj, checkType);
+		if (onlyCheckTypes != null) {
+			OAObjectCallback eq = callObjectCallbackGetAllowRemoveObjectCallback(thisHub, obj, onlyCheckTypes);
 			if (eq != null && !eq.getAllowed()) {
 				String s = eq.getResponse();
 				s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
@@ -278,7 +277,7 @@ public abstract class HubAddRemoveService {
 			}
 
 			if (obj instanceof OAObject) {
-				eq = callObjectCallbackGetVerifyRemoveObjectCallback(thisHub, obj, checkType);
+				eq = callObjectCallbackGetVerifyRemoveObjectCallback(thisHub, obj, onlyCheckTypes);
 				if (eq != null && !eq.getAllowed()) {
 					String s = eq.getResponse();
 					s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
@@ -288,7 +287,7 @@ public abstract class HubAddRemoveService {
 		}
 
 		if (thisHub.getSharedHub() != null) {
-			return getCantRemoveMessage(thisHub.getSharedHub(), obj, checkType);
+			return getCantRemoveMessage(thisHub.getSharedHub(), obj, onlyCheckTypes);
 		}
 		return null;
 	}
@@ -301,7 +300,7 @@ public abstract class HubAddRemoveService {
 	 * @param checkType the callback check type
 	 * @return a message describing why remove-all is not allowed, or {@code null} if allowed
 	 */
-	public String getCantRemoveAllMessage(final Hub<?> thisHub, final int checkType) {
+	public String getCantRemoveAllMessage(final Hub<?> thisHub, final OAObjectCallback.CheckType[] onlyCheckTypes) {
 		if (thisHub == null) {
 			return "hub is null";
 		}
@@ -318,14 +317,14 @@ public abstract class HubAddRemoveService {
 			}
 		}
 		
-		if (checkType > 0) {
-			OAObjectCallback eq = callObjectCallbackGetAllowRemoveAllObjectCallback(thisHub, checkType);
+		if (onlyCheckTypes != null) {
+			OAObjectCallback eq = callObjectCallbackGetAllowRemoveAllObjectCallback(thisHub, onlyCheckTypes);
 			if (eq != null && !eq.getAllowed()) {
 				String s = eq.getResponse();
 				s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
 				return "ObjectCallback.allowRemoveAll is false, msg: " + s;
 			}
-			eq = callObjectCallbackGetVerifyRemoveAllObjectCallback(thisHub, checkType);
+			eq = callObjectCallbackGetVerifyRemoveAllObjectCallback(thisHub, onlyCheckTypes);
 			if (eq != null && !eq.getAllowed()) {
 				String s = eq.getResponse();
 				s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
@@ -335,7 +334,7 @@ public abstract class HubAddRemoveService {
 
 		Hub<?> hubx = faHub.getHubDataUnique(thisHub).getSharedHub();
 		if (hubx != null) {
-			return getCantRemoveAllMessage(hubx, checkType);
+			return getCantRemoveAllMessage(hubx, onlyCheckTypes);
 		}
 		return null;
 	}
@@ -361,7 +360,7 @@ public abstract class HubAddRemoveService {
 	public void clear(final Hub<?> thisHub, final boolean bSetAOtoNull, final boolean bSendNewList) {
 		if (thisHub == null) return;
 		if (!callRemoteThreadIsRemoteThread() && bSendNewList) {
-			OAObjectCallback eq = callObjectCallbackGetVerifyRemoveAllObjectCallback(thisHub, OAObjectCallback.CHECK_CallbackMethod);
+			OAObjectCallback eq = callObjectCallbackGetVerifyRemoveAllObjectCallback(thisHub, OAObjectCallback.getCallbackOnlyCheckType());
 			if (eq != null && !eq.getAllowed()) {
 				String s = eq.getResponse();
 				if (OAString.isEmpty(s)) {
@@ -370,7 +369,7 @@ public abstract class HubAddRemoveService {
 				throw new RuntimeException(s);
 			}
 
-			eq = callObjectCallbackGetAllowRemoveAllObjectCallback(thisHub, OAObjectCallback.CHECK_CallbackMethod);
+			eq = callObjectCallbackGetAllowRemoveAllObjectCallback(thisHub, OAObjectCallback.getCallbackOnlyCheckType());
 			if (eq != null && !eq.getAllowed()) {
 				String s = eq.getResponse();
 				if (OAString.isEmpty(s)) {
@@ -573,14 +572,14 @@ public abstract class HubAddRemoveService {
 			}
 		}
 
-		OAObjectCallback eq = callObjectCallbackGetAllowAddObjectCallback(thisHub, obj, OAObjectCallback.CHECK_CallbackMethod);
+		OAObjectCallback eq = callObjectCallbackGetAllowAddObjectCallback(thisHub, obj, OAObjectCallback.getCallbackOnlyCheckType());
 		if (eq != null && !eq.getAllowed()) {
 			String s = eq.getResponse();
 			s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
 			return "ObjectCallback.allowAdd is false, msg: " + s;
 		}
 
-		eq = callObjectCallbackGetVerifyAddObjectCallback(thisHub, obj, OAObjectCallback.CHECK_CallbackMethod);
+		eq = callObjectCallbackGetVerifyAddObjectCallback(thisHub, obj, OAObjectCallback.getCallbackOnlyCheckType());
 		if (eq != null && !eq.getAllowed()) {
 			String s = eq.getResponse();
 			s = OAString.concat(s, eq.getThrowable().getMessage(), ", ");
@@ -1392,12 +1391,12 @@ public abstract class HubAddRemoveService {
 	
 	
 	// ObjectCallback
-	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetAllowRemoveObjectCallback(final Hub<T> hub, final T objRemove, final int checkType);
-	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyRemoveObjectCallback(final Hub<T> hub, final T objRemove, final int checkType);
-	public abstract OAObjectCallback callObjectCallbackGetAllowRemoveAllObjectCallback(final Hub<?> hub, final int checkType);
-	public abstract OAObjectCallback callObjectCallbackGetVerifyRemoveAllObjectCallback(final Hub<?> hub, final int checkType);
-	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetAllowAddObjectCallback(final Hub<T> hub, T objAdd, final int checkType);
-	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyAddObjectCallback(final Hub<T> hub, final T oaObj, final int checkType);
+	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetAllowRemoveObjectCallback(final Hub<T> hub, final T objRemove, final OAObjectCallback.CheckType[] onlyCheckTypes);
+	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyRemoveObjectCallback(final Hub<T> hub, final T objRemove, final OAObjectCallback.CheckType[] onlyCheckTypes);
+	public abstract OAObjectCallback callObjectCallbackGetAllowRemoveAllObjectCallback(final Hub<?> hub, final OAObjectCallback.CheckType[] onlyCheckTypes);
+	public abstract OAObjectCallback callObjectCallbackGetVerifyRemoveAllObjectCallback(final Hub<?> hub, final OAObjectCallback.CheckType[] onlyCheckTypes);
+	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetAllowAddObjectCallback(final Hub<T> hub, T objAdd, final OAObjectCallback.CheckType[] onlyCheckTypes);
+	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyAddObjectCallback(final Hub<T> hub, final T oaObj, final OAObjectCallback.CheckType[] onlyCheckTypes);
 	
 	// ObjectDelete
 	public abstract void callObjectDeleteDelete(final OAObject oaObj, OACascade cascade);	

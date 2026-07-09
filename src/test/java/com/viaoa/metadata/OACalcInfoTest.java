@@ -31,15 +31,15 @@ class OACalcInfoTest {
         calc.setDependentProperties(new String[] { "b" });
         calc.setOACalculatedProperty(null);
         calc.setViewDependentProperties(new String[] { "view" });
-        calc.setContextDependentProperties(new String[] { "context" });
+        calc.setModelUserDependentProperties(new String[] { "context" });
         calc.setEnabledProperty("enabled");
         calc.setEnabledValue(false);
         calc.setVisibleProperty("visible");
         calc.setVisibleValue(false);
-        calc.setContextEnabledProperty("ctxEnabled");
-        calc.setContextEnabledValue(false);
-        calc.setContextVisibleProperty("ctxVisible");
-        calc.setContextVisibleValue(false);
+        calc.setModelUserEnabledProperty("ctxEnabled");
+        calc.setModelUserEnabledValue(false);
+        calc.setModelUserVisibleProperty("ctxVisible");
+        calc.setModelUserVisibleValue(false);
         calc.setObjectCallbackMethod(method);
 
         assertEquals(Double.class, calc.getClassType());
@@ -50,15 +50,15 @@ class OACalcInfoTest {
         assertArrayEquals(new String[] { "b" }, calc.getDependentProperties());
         assertNull(calc.getOACalculatedProperty());
         assertArrayEquals(new String[] { "view" }, calc.getViewDependentProperties());
-        assertArrayEquals(new String[] { "context" }, calc.getContextDependentProperties());
+        assertArrayEquals(new String[] { "context" }, calc.getModelUserDependentProperties());
         assertEquals("enabled", calc.getEnabledProperty());
         assertFalse(calc.getEnabledValue());
         assertEquals("visible", calc.getVisibleProperty());
         assertFalse(calc.getVisibleValue());
-        assertEquals("ctxEnabled", calc.getContextEnabledProperty());
-        assertFalse(calc.getContextEnabledValue());
-        assertEquals("ctxVisible", calc.getContextVisibleProperty());
-        assertFalse(calc.getContextVisibleValue());
+        assertEquals("ctxEnabled", calc.getModelUserEnabledProperty());
+        assertFalse(calc.getModelUserEnabledValue());
+        assertEquals("ctxVisible", calc.getModelUserVisibleProperty());
+        assertFalse(calc.getModelUserVisibleValue());
         assertSame(method, calc.getObjectCallbackMethod());
         assertSame(OACalcInfo.getFriendAccess(), OACalcInfo.getFriendAccess());
     }

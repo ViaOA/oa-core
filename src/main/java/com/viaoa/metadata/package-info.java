@@ -105,7 +105,7 @@ Generated models commonly omit optional metadata. Runtime callers must safely qu
 startup or runtime failures.
 Source scope:
 OAObjectInfo.hasImportMatchProperties(), getImportMatchPropertyNames(), getImportMatchPropertyPaths(),
-getViewDependentProperties(), getContextDependentProperties(), OAPropertyInfo, OALinkInfo, OAMethodInfo optional
+getViewDependentProperties(), getModelUserDependentProperties(), OAPropertyInfo, OALinkInfo, OAMethodInfo optional
 fields.
 Related CODEX findings:
 Existing package-info notes fixed null import-match presence check.

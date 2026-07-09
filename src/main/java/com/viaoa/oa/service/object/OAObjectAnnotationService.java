@@ -265,7 +265,7 @@ public abstract class OAObjectAnnotationService {
 				oi.setRootTreePropertyPaths(pps);
 				oi.setLookup(oaclass.isLookup());
 				oi.setProcessed(oaclass.isProcessed());
-				oi.setModeUserClass(oaclass.isModelUserClass());
+				oi.setModelUserClass(oaclass.isModelUserClass());
 				
 				s = oaclass.pluralName();
 				if (OAStr.isNotEmpty(s))  oi.setPluralName(s);
@@ -292,12 +292,12 @@ public abstract class OAObjectAnnotationService {
 				oi.setEnabledValue(eq.enabledValue());
 				oi.setVisibleProperty(eq.visibleProperty());
 				oi.setVisibleValue(eq.visibleValue());
-				oi.setContextEnabledProperty(eq.contextEnabledProperty());
-				oi.setContextEnabledValue(eq.contextEnabledValue());
-				oi.setContextVisibleProperty(eq.contextVisibleProperty());
-				oi.setContextVisibleValue(eq.contextVisibleValue());
+				oi.setModelUserEnabledProperty(eq.modelUserEnabledProperty());
+				oi.setModelUserEnabledValue(eq.modelUserEnabledValue());
+				oi.setModelUserVisibleProperty(eq.modelUserVisibleProperty());
+				oi.setModelUserVisibleValue(eq.modelUserVisibleValue());
 				oi.setViewDependentProperties(eq.viewDependentProperties());
-				oi.setContextDependentProperties(eq.contextDependentProperties());
+				oi.setModelUserDependentProperties(eq.modelUserDependentProperties());
 			}
 		}
 		// prop ids
@@ -525,12 +525,12 @@ public abstract class OAObjectAnnotationService {
 				pi.setEnabledValue(eq.enabledValue());
 				pi.setVisibleProperty(eq.visibleProperty());
 				pi.setVisibleValue(eq.visibleValue());
-				pi.setContextEnabledProperty(eq.contextEnabledProperty());
-				pi.setContextEnabledValue(eq.contextEnabledValue());
-				pi.setContextVisibleProperty(eq.contextVisibleProperty());
-				pi.setContextVisibleValue(eq.contextVisibleValue());
+				pi.setModelUserEnabledProperty(eq.modelUserEnabledProperty());
+				pi.setModelUserEnabledValue(eq.modelUserEnabledValue());
+				pi.setModelUserVisibleProperty(eq.modelUserVisibleProperty());
+				pi.setModelUserVisibleValue(eq.modelUserVisibleValue());
 				pi.setViewDependentProperties(eq.viewDependentProperties());
-				pi.setContextDependentProperties(eq.contextDependentProperties());
+				pi.setModelUserDependentProperties(eq.modelUserDependentProperties());
 			}
 		}
 
@@ -611,12 +611,12 @@ public abstract class OAObjectAnnotationService {
 				ci.setEnabledValue(eq.enabledValue());
 				ci.setVisibleProperty(eq.visibleProperty());
 				ci.setVisibleValue(eq.visibleValue());
-				ci.setContextEnabledProperty(eq.contextEnabledProperty());
-				ci.setContextEnabledValue(eq.contextEnabledValue());
-				ci.setContextVisibleProperty(eq.contextVisibleProperty());
-				ci.setContextVisibleValue(eq.contextVisibleValue());
+				ci.setModelUserEnabledProperty(eq.modelUserEnabledProperty());
+				ci.setModelUserEnabledValue(eq.modelUserEnabledValue());
+				ci.setModelUserVisibleProperty(eq.modelUserVisibleProperty());
+				ci.setModelUserVisibleValue(eq.modelUserVisibleValue());
 				ci.setViewDependentProperties(eq.viewDependentProperties());
-				ci.setContextDependentProperties(eq.contextDependentProperties());
+				ci.setModelUserDependentProperties(eq.modelUserDependentProperties());
 			}
 			ci.setObjectCallbackMethod(m);
 		}
@@ -692,7 +692,7 @@ public abstract class OAObjectAnnotationService {
 			li.setDefaultPropertyPathIsHierarchy(annotation.defaultPropertyPathIsHierarchy());
 			li.setDefaultPropertyPathCanBeChanged(annotation.defaultPropertyPathCanBeChanged());
 
-			li.setDefaultContextPropertyPath(annotation.defaultContextPropertyPath());
+			li.setDefaultModelUserPropertyPath(annotation.defaultModelUserPropertyPath());
 
 			li.setEqualPropertyPath(annotation.equalPropertyPath());
 			li.setSelectFromPropertyPath(annotation.selectFromPropertyPath());
@@ -703,12 +703,12 @@ public abstract class OAObjectAnnotationService {
 				li.setEnabledValue(eq.enabledValue());
 				li.setVisibleProperty(eq.visibleProperty());
 				li.setVisibleValue(eq.visibleValue());
-				li.setContextEnabledProperty(eq.contextEnabledProperty());
-				li.setContextEnabledValue(eq.contextEnabledValue());
-				li.setContextVisibleProperty(eq.contextVisibleProperty());
-				li.setContextVisibleValue(eq.contextVisibleValue());
+				li.setModelUserEnabledProperty(eq.modelUserEnabledProperty());
+				li.setModelUserEnabledValue(eq.modelUserEnabledValue());
+				li.setModelUserVisibleProperty(eq.modelUserVisibleProperty());
+				li.setModelUserVisibleValue(eq.modelUserVisibleValue());
 				li.setViewDependentProperties(eq.viewDependentProperties());
-				li.setContextDependentProperties(eq.contextDependentProperties());
+				li.setModelUserDependentProperties(eq.modelUserDependentProperties());
 			}
 		}
 
@@ -824,12 +824,12 @@ public abstract class OAObjectAnnotationService {
 				li.setEnabledValue(eq.enabledValue());
 				li.setVisibleProperty(eq.visibleProperty());
 				li.setVisibleValue(eq.visibleValue());
-				li.setContextEnabledProperty(eq.contextEnabledProperty());
-				li.setContextEnabledValue(eq.contextEnabledValue());
-				li.setContextVisibleProperty(eq.contextVisibleProperty());
-				li.setContextVisibleValue(eq.contextVisibleValue());
+				li.setModelUserEnabledProperty(eq.modelUserEnabledProperty());
+				li.setModelUserEnabledValue(eq.modelUserEnabledValue());
+				li.setModelUserVisibleProperty(eq.modelUserVisibleProperty());
+				li.setModelUserVisibleValue(eq.modelUserVisibleValue());
 				li.setViewDependentProperties(eq.viewDependentProperties());
-				li.setContextDependentProperties(eq.contextDependentProperties());
+				li.setModelUserDependentProperties(eq.modelUserDependentProperties());
 			}
 		}
 
@@ -859,12 +859,12 @@ public abstract class OAObjectAnnotationService {
 				mi.setEnabledValue(eq.enabledValue());
 				mi.setVisibleProperty(eq.visibleProperty());
 				mi.setVisibleValue(eq.visibleValue());
-				mi.setContextEnabledProperty(eq.contextEnabledProperty());
-				mi.setContextEnabledValue(eq.contextEnabledValue());
-				mi.setContextVisibleProperty(eq.contextVisibleProperty());
-				mi.setContextVisibleValue(eq.contextVisibleValue());
+				mi.setModelUserEnabledProperty(eq.modelUserEnabledProperty());
+				mi.setModelUserEnabledValue(eq.modelUserEnabledValue());
+				mi.setModelUserVisibleProperty(eq.modelUserVisibleProperty());
+				mi.setModelUserVisibleValue(eq.modelUserVisibleValue());
 				mi.setViewDependentProperties(eq.viewDependentProperties());
-				mi.setContextDependentProperties(eq.contextDependentProperties());
+				mi.setModelUserDependentProperties(eq.modelUserDependentProperties());
 			}
 		}
 
@@ -989,18 +989,18 @@ public abstract class OAObjectAnnotationService {
 						pi.setVisibleProperty(s);
 						pi.setVisibleValue(eq.visibleValue());
 					}
-					s = eq.contextEnabledProperty();
+					s = eq.modelUserEnabledProperty();
 					if (OAString.isNotEmpty(s)) {
-						pi.setContextEnabledProperty(s);
-						pi.setContextEnabledValue(eq.contextEnabledValue());
+						pi.setModelUserEnabledProperty(s);
+						pi.setModelUserEnabledValue(eq.modelUserEnabledValue());
 					}
-					s = eq.contextVisibleProperty();
+					s = eq.modelUserVisibleProperty();
 					if (OAString.isNotEmpty(s)) {
-						pi.setContextVisibleProperty(s);
-						pi.setContextVisibleValue(eq.contextVisibleValue());
+						pi.setModelUserVisibleProperty(s);
+						pi.setModelUserVisibleValue(eq.modelUserVisibleValue());
 					}
 					pi.setViewDependentProperties(eq.viewDependentProperties());
-					pi.setContextDependentProperties(eq.contextDependentProperties());
+					pi.setModelUserDependentProperties(eq.modelUserDependentProperties());
 				}
 			} else {
 				if (name.length() == 0) {
@@ -1016,18 +1016,18 @@ public abstract class OAObjectAnnotationService {
 							oi.setVisibleProperty(s);
 							oi.setVisibleValue(eq.visibleValue());
 						}
-						s = eq.contextEnabledProperty();
+						s = eq.modelUserEnabledProperty();
 						if (OAString.isNotEmpty(s)) {
-							oi.setContextEnabledProperty(s);
-							oi.setContextEnabledValue(eq.contextEnabledValue());
+							oi.setModelUserEnabledProperty(s);
+							oi.setModelUserEnabledValue(eq.modelUserEnabledValue());
 						}
-						s = eq.contextVisibleProperty();
+						s = eq.modelUserVisibleProperty();
 						if (OAString.isNotEmpty(s)) {
-							oi.setContextVisibleProperty(s);
-							oi.setContextVisibleValue(eq.contextVisibleValue());
+							oi.setModelUserVisibleProperty(s);
+							oi.setModelUserVisibleValue(eq.modelUserVisibleValue());
 						}
 						oi.setViewDependentProperties(eq.viewDependentProperties());
-						oi.setContextDependentProperties(eq.contextDependentProperties());
+						oi.setModelUserDependentProperties(eq.modelUserDependentProperties());
 					}
 				} else {
 					OALinkInfo li = oi.getLinkInfo(name);
@@ -1044,18 +1044,18 @@ public abstract class OAObjectAnnotationService {
 								li.setVisibleProperty(s);
 								li.setVisibleValue(eq.visibleValue());
 							}
-							s = eq.contextEnabledProperty();
+							s = eq.modelUserEnabledProperty();
 							if (OAString.isNotEmpty(s)) {
-								li.setContextEnabledProperty(s);
-								li.setContextEnabledValue(eq.contextEnabledValue());
+								li.setModelUserEnabledProperty(s);
+								li.setModelUserEnabledValue(eq.modelUserEnabledValue());
 							}
-							s = eq.contextVisibleProperty();
+							s = eq.modelUserVisibleProperty();
 							if (OAString.isNotEmpty(s)) {
-								li.setContextVisibleProperty(s);
-								li.setContextVisibleValue(eq.contextVisibleValue());
+								li.setModelUserVisibleProperty(s);
+								li.setModelUserVisibleValue(eq.modelUserVisibleValue());
 							}
 							li.setViewDependentProperties(eq.viewDependentProperties());
-							li.setContextDependentProperties(eq.contextDependentProperties());
+							li.setModelUserDependentProperties(eq.modelUserDependentProperties());
 						}
 					} else {
 						OACalcInfo ci = oi.getCalcInfo(name);
@@ -1072,18 +1072,18 @@ public abstract class OAObjectAnnotationService {
 									ci.setVisibleProperty(s);
 									ci.setVisibleValue(eq.visibleValue());
 								}
-								s = eq.contextEnabledProperty();
+								s = eq.modelUserEnabledProperty();
 								if (OAString.isNotEmpty(s)) {
-									ci.setContextEnabledProperty(s);
-									ci.setContextEnabledValue(eq.contextEnabledValue());
+									ci.setModelUserEnabledProperty(s);
+									ci.setModelUserEnabledValue(eq.modelUserEnabledValue());
 								}
-								s = eq.contextVisibleProperty();
+								s = eq.modelUserVisibleProperty();
 								if (OAString.isNotEmpty(s)) {
-									ci.setContextVisibleProperty(s);
-									ci.setContextVisibleValue(eq.contextVisibleValue());
+									ci.setModelUserVisibleProperty(s);
+									ci.setModelUserVisibleValue(eq.modelUserVisibleValue());
 								}
 								ci.setViewDependentProperties(eq.viewDependentProperties());
-								ci.setContextDependentProperties(eq.contextDependentProperties());
+								ci.setModelUserDependentProperties(eq.modelUserDependentProperties());
 							}
 						} else {
 							OAMethodInfo mi = oi.getMethodInfo(name);
@@ -1100,18 +1100,18 @@ public abstract class OAObjectAnnotationService {
 										mi.setVisibleProperty(s);
 										mi.setVisibleValue(eq.visibleValue());
 									}
-									s = eq.contextEnabledProperty();
+									s = eq.modelUserEnabledProperty();
 									if (OAString.isNotEmpty(s)) {
-										mi.setContextEnabledProperty(s);
-										mi.setContextEnabledValue(eq.contextEnabledValue());
+										mi.setModelUserEnabledProperty(s);
+										mi.setModelUserEnabledValue(eq.modelUserEnabledValue());
 									}
-									s = eq.contextVisibleProperty();
+									s = eq.modelUserVisibleProperty();
 									if (OAString.isNotEmpty(s)) {
-										mi.setContextVisibleProperty(s);
-										mi.setContextVisibleValue(eq.contextVisibleValue());
+										mi.setModelUserVisibleProperty(s);
+										mi.setModelUserVisibleValue(eq.modelUserVisibleValue());
 									}
 									mi.setViewDependentProperties(eq.viewDependentProperties());
-									mi.setContextDependentProperties(eq.contextDependentProperties());
+									mi.setModelUserDependentProperties(eq.modelUserDependentProperties());
 								}
 							} else {
 								b = false;

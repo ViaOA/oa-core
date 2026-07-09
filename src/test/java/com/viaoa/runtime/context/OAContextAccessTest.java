@@ -6,11 +6,12 @@ import org.junit.jupiter.api.Test;
 
 import com.test.pos.model.oa.Register;
 import com.viaoa.select.OASelect;
+import com.viaoa.session.OASessionAccess;
 
 class OAContextAccessTest {
     @Test
     void queryHooksAreNoOpsByDefault() {
-        OAContextAccess access = new OAContextAccess();
+        OASessionAccess access = new OASessionAccess();
 
         assertFalse(access.updateSelect(new OASelect<>(Register.class)));
         assertNull(access.getExtraWhereClause(Register.class));
@@ -18,7 +19,7 @@ class OAContextAccessTest {
 
     @Test
     void classAndPropertyVisibilityRulesCanAllowAndDenyAccess() {
-        OAContextAccess access = new OAContextAccess();
+        OASessionAccess access = new OASessionAccess();
         Register register = new Register();
 
         assertTrue(access.getVisible(register, Register.class, Register.P_Code, true));

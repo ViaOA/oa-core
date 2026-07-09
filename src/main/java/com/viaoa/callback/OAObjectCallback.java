@@ -15,6 +15,11 @@
  */
 package com.viaoa.callback;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.List;
+
 import com.viaoa.converter.OAConv;
 import com.viaoa.hub.Hub;
 import com.viaoa.lang.OAString;
@@ -66,7 +71,7 @@ public class OAObjectCallback {
 	 * The Hub associated with this callback, providing contextual information
 	 * about the collection or owner from which the callback originated.
 	 */
-	private Hub hub;
+	private Hub<?> hub;
 
 	/**
 	 * The target OAObject associated with this callback, representing the
@@ -81,53 +86,10 @@ public class OAObjectCallback {
 	private Type type = Type.Unknown;
 
 	/**
-	 * Bitmask of flags indicating which checking rules are applied when
-	 * evaluating the callback. Defaults to {@code CHECK_ALL}.
+	 * Optional list of the CheckTypes to perform, given the Type.checkType list
 	 */
-	private int checkType = CHECK_ALL;
-
-	/**
-	 * Bitmask flag indicating that no checking rules should be applied.
-	 */
-	public static final int CHECK_None = 0;
-
-	/**
-	 * Bitmask flag enabling evaluation related to processed-state rules.
-	 */
-	public static final int CHECK_Processed = 1; // used to include checking for processed flags
+	private final EnumSet<CheckType> hmOnlyCheckTypes;
 	
-	/**
-	 * Bitmask flag enabling checking of enabled-property rules.
-	 */
-	public static final int CHECK_EnabledProperty = 2;
-
-	/**
-	 * Bitmask flag enabling checking of user-enabled property rules.
-	 */
-	public static final int CHECK_UserEnabledProperty = 4;
-	
-	/**
-	 * Bitmask flag indicating that callback methods should be invoked as
-	 * part of rule evaluation.
-	 */
-	public static final int CHECK_CallbackMethod = 8;
-
-	/**
-	 * Bitmask flag enabling evaluation of owner or master objects during
-	 * callback evaluation.
-	 */
-	public static final int CHECK_IncludeMaster = 16; // check owner object
-
-	/**
-	 * Bitmask representing all available checking rules combined.
-	 */
-	public static final int CHECK_ALL = 31;
-
-	/**
-	 * Bitmask representing all checking rules except processed-state evaluation.
-	 */
-	public static final int CHECK_AllButProcessed = (CHECK_ALL ^ CHECK_Processed);
-
 	/**
 	 * Optional confirmation dialog title used when a callback type requires
 	 * user confirmation before proceeding.
@@ -201,6 +163,92 @@ public class OAObjectCallback {
 	private boolean acknownledged;
 
 	/**
+	 * Explicit class reference used to resolve the effective class for this
+	 * callback when provided. Otherwise fallback rules apply.
+	 */
+	private Class<? extends OAObject> clazz;
+
+	
+	/**
+	 * Creates a callback with the specified {@link Type}.
+	 * Initializes the callback with the given type and leaves all
+	 * other fields at their default values.
+	 *
+	 * @param type the callback type to assign
+	 */
+	public OAObjectCallback(Type type) {
+		if (type == null) type = Type.Unknown;
+		this.type = type;
+		this.hmOnlyCheckTypes = null;
+	}
+
+	/**
+	 * Creates a callback with full context information including type,
+	 * check flags, hub, class, target object, property name, and value.
+	 * All supplied fields are assigned directly, and the callback is
+	 * initialized as allowed.
+	 *
+	 * @param type the callback type to assign
+	 * @param onlyCheckTypes, if populated then these are the only CheckTypes to use (ignore others in Type.checkType list)
+	 * @param hub the associated hub, or {@code null}
+	 * @param clazz an explicit class to associate, or {@code null}
+	 * @param oaObj the target {@link OAObject}, or {@code null}
+	 * @param propertyName the related property name, or {@code null}
+	 * @param value the callback value, interpreted according to the type
+	 */
+	public OAObjectCallback(Type type, CheckType[] onlyCheckTypes, Hub<?> hub, Class<? extends OAObject> clazz, OAObject oaObj, String propertyName, Object value) {
+		if (type == null) type = Type.Unknown;
+		this.type = type;
+		this.hmOnlyCheckTypes = (onlyCheckTypes == null) ? null : EnumSet.copyOf(Arrays.asList(onlyCheckTypes));
+		this.hub = hub;
+		this.clazz = clazz;
+		this.object = oaObj;
+		this.propertyName = propertyName;
+		this.value = value;
+		this.allowed = true;
+	}
+
+	public OAObjectCallback(Type type, Hub<?> hub, Class<? extends OAObject> clazz, OAObject oaObj) {
+		this(type, (CheckType[]) null, hub, clazz, oaObj, null, null);
+	}
+	
+	public OAObjectCallback(Type type, Hub<?> hub, Class<? extends OAObject> clazz, OAObject oaObj, String propertyName, Object value) {
+		this(type, (CheckType[]) null, hub, clazz, oaObj, propertyName, value);
+	}
+
+	public OAObjectCallback(Type type, CheckType onlyCheckType, Hub<?> hub, Class<? extends OAObject> clazz, OAObject oaObj, String propertyName, Object value) {
+		this(type, onlyCheckType == null ? null : new CheckType[] {onlyCheckType}, 
+			hub, clazz, oaObj, propertyName, value);
+	}
+	
+	/**
+	 * Creates a callback by copying contextual information from an
+	 * existing callback. The new instance uses the specified type
+	 * and check flags, while hub, class, object, property name,
+	 * value, and allowed state are copied from the source.
+	 *
+	 * @param type the callback type to assign
+	 * @param onlyCheckTypes, if populated then these are the only CheckTypes to use (ignore others in Type.checkType list)
+	 * @param eq the source callback to copy values from
+	 */
+	public OAObjectCallback(Type type, CheckType[] onlyCheckTypes, OAObjectCallback eq) {
+		if (type == null) type = Type.Unknown;
+		this.type = type;
+		this.hmOnlyCheckTypes = (onlyCheckTypes == null || onlyCheckTypes.length == 0) ? null : EnumSet.copyOf(Arrays.asList(onlyCheckTypes));
+
+		if (eq == null) {
+			return;
+		}
+		this.hub = eq.getHub();
+		this.clazz = eq.getCalcClass();
+		this.object = eq.getObject();
+		this.propertyName = eq.getPropertyName();
+		this.value = eq.getValue();
+		this.allowed = eq.getAllowed();
+	}
+
+	
+	/**
 	 * Defines the semantic category of an {@link OAObjectCallback} request.
 	 * <p>
 	 * Each enum value determines what kind of rule, UI behavior, confirmation,
@@ -226,263 +274,554 @@ public class OAObjectCallback {
 	 * <p>Values without arguments default to {@code checkOwner = false}
 	 * and {@code checkEnabledFirst = false}.</p>
 	 */
-	public enum Type { // properies to use based on type:
+	public enum Type { // the policy descriptor
+		
 	    /**
 	     * Indicates an unspecified or uninitialized callback type.
 	     * Performs no owner or enabled-first evaluation.
 	     */
-		Unknown(false),
+		Unknown(new CheckType[] {}, new CategoryType[0]),
 
 	    /**
 	     * Determines whether a target object or property is enabled.
 	     * Also invoked for types that have {@code checkEnabledFirst = true}.
 	     * Includes owner checks but does not perform enabled-first evaluation.
 	     */
-		AllowEnabled(true, false), 
+		AllowEnabled( 
+			new CheckType[] { 
+				CheckType.Owner, CheckType.Processed, CheckType.Enabled, CheckType.UserEnabled, 
+				CheckType.SessionEnabled, CheckType.HubListeners, CheckType.SuperAdminOverride, CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.PermissionGate, 
+				CategoryType.CanSetResponse
+			}
+		), 
 
 	    /**
 	     * Determines whether an object, property, link, or method is visible.
 	     * Performs owner checks. Does not perform enabled-first evaluation.
 	     */
-		AllowVisible(true),
+		AllowVisible(
+			new CheckType[] {
+				CheckType.Owner, CheckType.Visible, CheckType.UserVisible, 
+				CheckType.SessionVisible, CheckType.HubListeners, CheckType.SuperAdminOverride, CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.PermissionGate, CategoryType.CanSetResponse
+			}
+		),
 
 	    /**
 	     * Determines whether creation of a new object is permitted.
 	     * Performs owner checks and evaluates enabled-first rules.
 	     */
-		AllowNew(true, true),
+		AllowNew(
+			new CheckType[] { 
+				CheckType.Owner, CheckType.Processed, CheckType.Enabled, CheckType.UserEnabled, 
+				CheckType.SessionEnabled, CheckType.HubListeners, CheckType.SuperAdminOverride, CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.PermissionGate, CategoryType.MutationPermission, CategoryType.ObjectLifecycleOperation,
+				CategoryType.CanSetResponse
+			}
+		),
 
 	    /**
 	     * Determines whether an object can be added to a hub.
 	     * Performs owner checks and evaluates enabled-first rules.
 	     */
-		AllowAdd(true, true),
+		AllowAdd( 
+			new CheckType[] {
+				CheckType.Owner, CheckType.Processed, CheckType.Enabled, CheckType.UserEnabled, 
+				CheckType.SessionEnabled, CheckType.HubListeners, CheckType.SuperAdminOverride, CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.PermissionGate, CategoryType.MutationPermission, 
+				CategoryType.HubOperation,
+				CategoryType.CanSetResponse
+			}
+		),
 		
 	    /**
 	     * Determines whether an object can be removed from a hub.
 	     * Performs owner checks and evaluates enabled-first rules.
 	     */
-		AllowRemove(true, true),
+		AllowRemove(
+			new CheckType[] {
+				CheckType.Owner, CheckType.Processed, CheckType.Enabled, CheckType.UserEnabled, 
+				CheckType.SessionEnabled, CheckType.HubListeners, CheckType.SuperAdminOverride, CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.PermissionGate, CategoryType.MutationPermission, 
+				CategoryType.HubOperation,
+				CategoryType.CanSetResponse
+			}
+		),
 
 	    /**
 	     * Determines whether all items may be removed from a hub.
 	     * Performs owner checks and evaluates enabled-first rules.
 	     */
-		AllowRemoveAll(true, true),
+		AllowRemoveAll( 
+			new CheckType[] {
+				CheckType.Owner, CheckType.Processed, CheckType.Enabled, CheckType.UserEnabled, 
+				CheckType.SessionEnabled, CheckType.HubListeners, CheckType.SuperAdminOverride, CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.PermissionGate, CategoryType.MutationPermission, 
+				CategoryType.HubOperation,
+				CategoryType.CanSetResponse
+			}
+		),
 
 	    /**
 	     * Determines whether deletion of an object is permitted.
 	     * Performs owner checks and evaluates enabled-first rules.
 	     */
-		AllowDelete(true, true),
+		AllowDelete( 
+			new CheckType[] {
+				CheckType.Owner, CheckType.Processed, CheckType.Enabled, CheckType.UserEnabled, 
+				CheckType.SessionEnabled, CheckType.HubListeners, CheckType.SuperAdminOverride, CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.PermissionGate, CategoryType.MutationPermission, CategoryType.ObjectLifecycleOperation,
+				CategoryType.CanSetResponse
+			}
+		),
 
 	    /**
 	     * Determines whether saving an object is permitted.
 	     * Does not evaluate owner or enabled-first rules.
-	     * Saving must be allowed even if an object is disabled.
 	     */
-		AllowSave(false, false), // dont check parent(s) or if enabled.  Need to be able to save a disabled object
+		AllowSave(
+			new CheckType[] {
+				CheckType.Processed, CheckType.Enabled, CheckType.UserEnabled, 
+				CheckType.SessionEnabled, CheckType.HubListeners, CheckType.SuperAdminOverride, CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.PermissionGate, CategoryType.ObjectLifecycleOperation,
+				CategoryType.CanSetResponse
+			}
+		),
 
 	    /**
 	     * Determines whether an object copy operation is permitted.
 	     * No owner or enabled-first evaluation.
 	     */
-		AllowCopy(false),
+		AllowCopy( 
+			new CheckType[] {
+				CheckType.Processed, CheckType.Enabled, CheckType.UserEnabled, 
+				CheckType.SuperAdminOverride, CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.PermissionGate,
+				CategoryType.CopyLifecycle,
+				CategoryType.CanSetResponse
+			}
+		),
 
 	    /**
 	     * Validates that an object’s required values and rules are satisfied
 	     * before submitting. No owner or enabled-first evaluation.
 	     */
-		AllowSubmit(false, false), // called to see if object is populated with correct values
+		AllowSubmit( 
+			new CheckType[] {
+				CheckType.Owner, CheckType.HubListeners, CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.PermissionGate, CategoryType.ValidationGate, CategoryType.ObjectLifecycleOperation, CategoryType.CanSetResponse
+			}
+		),
 
+		
+		
 	    /**
 	     * Verifies whether a property change is valid.
 	     * Checks new and old values, and may block the action using
 	     * {@code allowed = false} or a {@code throwable}.
 	     * Performs owner checks and evaluates enabled-first rules.
 	     */
-		VerifyPropertyChange(true, true), // use: value to get new value, name, response, throwable - set allowEnablede=false, or throwable!=null to cancel
+		VerifyPropertyChange( 
+			new CheckType[] {
+				CheckType.Owner, CheckType.Processed, CheckType.Enabled, CheckType.UserEnabled, 
+				CheckType.SessionEnabled, CheckType.HubListeners, CheckType.SuperAdminOverride, CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.ValidationGate, CategoryType.ObjectLifecycleOperation,
+				CategoryType.CanSetResponse
+			}
+		), 
 
 	    /**
 	     * Verifies whether adding an object to a hub is valid.
 	     * Uses the callback value as the object being added.
 	     * Performs owner checks and evaluates enabled-first rules.
 	     */
-		VerifyAdd(true, true), // use: value to get added object, allowAdd, throwable - set allowed=false, or throwable!=null to cancel
+		VerifyAdd( 
+			new CheckType[] {
+				CheckType.Owner, CheckType.Processed, CheckType.Enabled, CheckType.UserEnabled, 
+				CheckType.SessionEnabled, CheckType.HubListeners, CheckType.SuperAdminOverride, CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.ValidationGate, CategoryType.ObjectLifecycleOperation,
+				CategoryType.HubOperation,
+				CategoryType.CanSetResponse
+			}
+		),
 
 	    /**
 	     * Verifies whether removing an object from a hub is valid.
 	     * Uses the callback value as the object being removed.
 	     * Performs owner checks and evaluates enabled-first rules.
 	     */
-		VerifyRemove(true, true), // use: value to get removed object, allowRemove, throwable - set allowRemove=false, or throwable!=null to cancel
+		VerifyRemove(
+			new CheckType[] {
+				CheckType.Owner, CheckType.Processed, CheckType.Enabled, CheckType.UserEnabled, 
+				CheckType.SessionEnabled, CheckType.HubListeners, CheckType.SuperAdminOverride, CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.ValidationGate, CategoryType.ObjectLifecycleOperation,
+				CategoryType.HubOperation,
+				CategoryType.CanSetResponse
+			}
+		), 
 
 	    /**
 	     * Verifies whether removing all objects from a hub is valid.
 	     * Performs owner checks and evaluates enabled-first rules.
 	     */
-		VerifyRemoveAll(true, true), // use: allowRemoveAll, response, throwable - set allowRemoveAll=false, or throwable!=null to cancel
+		VerifyRemoveAll( 
+			new CheckType[] {
+				CheckType.Owner, CheckType.Processed, CheckType.Enabled, CheckType.UserEnabled, 
+				CheckType.SessionEnabled, CheckType.HubListeners, CheckType.SuperAdminOverride, CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.ValidationGate, CategoryType.ObjectLifecycleOperation,
+				CategoryType.HubOperation,
+				CategoryType.CanSetResponse
+			}
+		), 
 
 	    /**
 	     * Verifies whether deleting an object is valid.
 	     * Uses the callback value as the deleted object.
 	     * Performs owner checks and evaluates enabled-first rules.
 	     */
-		VerifyDelete(true, true), // use: value to get deleted object, allowDelete, throwable - set allowDelete=false, or throwable!=null to cancel
+		VerifyDelete(
+			new CheckType[] {
+				CheckType.Owner, CheckType.Processed, CheckType.Enabled, CheckType.UserEnabled, 
+				CheckType.SessionEnabled, CheckType.HubListeners, CheckType.SuperAdminOverride, CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.ValidationGate, CategoryType.ObjectLifecycleOperation,
+				CategoryType.HubOperation,
+				CategoryType.CanSetResponse
+			}
+		),
 
 	    /**
 	     * Verifies whether saving an object is valid.
-	     * Does not perform owner or enabled-first evaluation.
+	     * Does not perform owner.
 	     */
-		VerifySave(false, false), // dont check parent(s) or if enabled.  Need to be able to save a disabled object
+		VerifySave( 
+			new CheckType[] {
+				CheckType.Processed, CheckType.Enabled, CheckType.UserEnabled, 
+				CheckType.SessionEnabled, CheckType.HubListeners, CheckType.SuperAdminOverride, CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.ValidationGate, CategoryType.ObjectLifecycleOperation,
+				CategoryType.CanSetResponse
+			}
+		), 
 
 	    /**
 	     * Verifies whether invoking a command/method is valid.
 	     * Performs owner checks and evaluates enabled-first rules.
 	     */
-		VerifyCommand(true, true),
+		VerifyCommand( 
+			new CheckType[] {
+				CheckType.Owner, CheckType.Processed, CheckType.Enabled, CheckType.UserEnabled, 
+				CheckType.SessionEnabled, CheckType.HubListeners, CheckType.SuperAdminOverride, CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.ValidationGate, 
+				CategoryType.CanSetResponse
+			}
+		),
 
 	    /**
 	     * Supplies copy behavior. Callback may set allowed,
 	     * supply a replacement value, or allow default copy logic.
 	     * No owner or enabled-first evaluation.
 	     */
-		GetCopy(false), // can set allowed(..), or setValue(newObj), or nothing to have OAObject.createCopy(..) called.
+		GetCopy( 
+			new CheckType[] {
+				CheckType.HubListeners, CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.CopyLifecycle
+			}
+		),
 
 	    /**
 	     * Invoked after an object copy has been created.
 	     * The callback value contains the new object.
 	     * No owner or enabled-first evaluation.
 	     */
-		AfterCopy(false), // value=newObject
+		AfterCopy(
+			new CheckType[] {
+				CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.CopyLifecycle
+			}
+		), 
 
 	    /**
 	     * Supplies confirmation title and message for a property change.
 	     * No owner or enabled-first evaluation.
 	     */
-		SetConfirmForPropertyChange(false),
+		SetConfirmForPropertyChange(
+			new CheckType[] {
+				CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.Confirmation
+			}
+		),
 
 	    /**
 	     * Supplies confirmation title and message for an add operation.
 	     * No owner or enabled-first evaluation.
 	     */
-		SetConfirmForAdd(false),
+		SetConfirmForAdd(
+			new CheckType[] {
+				CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.Confirmation
+			}
+		),
 
 	    /**
 	     * Supplies confirmation title and message for a remove operation.
 	     * No owner or enabled-first evaluation.
 	     */
-		SetConfirmForRemove(false),
+		SetConfirmForRemove(
+			new CheckType[] {
+				CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.Confirmation
+			}
+		),
 
 	    /**
 	     * Supplies confirmation title and message for a remove-all operation.
 	     * No owner or enabled-first evaluation.
 	     */
-		SetConfirmForRemoveAll(false),
+		SetConfirmForRemoveAll(
+			new CheckType[] {
+				CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.Confirmation
+			}
+		),
 
 	    /**
 	     * Supplies confirmation title and message for a delete operation.
 	     * No owner or enabled-first evaluation.
 	     */
-		SetConfirmForDelete(false),
+		SetConfirmForDelete(
+			new CheckType[] {
+				CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.Confirmation
+			}
+		),
 
 	    /**
 	     * Supplies confirmation title and message for a save operation.
 	     * No owner or enabled-first evaluation.
 	     */
-		SetConfirmForSave(false),
+		SetConfirmForSave(
+			new CheckType[] {
+				CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.Confirmation
+			}
+		),
 
 	    /**
 	     * Supplies confirmation title and message for a command/method invocation.
 	     * No owner or enabled-first evaluation.
 	     */
-		SetConfirmForCommand(false), //todo: qqqq
+		SetConfirmForCommand(
+			new CheckType[] {
+				CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.Confirmation
+			}
+		),
 
 	    /**
 	     * Supplies a tooltip string for UI presentation.
 	     * Uses the callback’s toolTip field.
 	     */
-		GetToolTip(false), // use: toolTip
+		GetToolTip(
+			new CheckType[] {
+				CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.UiOnly
+			}
+		),
 
 	    /**
 	     * Allows callback logic to update the label used to render a UI component.
 	     * Uses the callback’s label field.
 	     */
-		RenderLabel(false), // use: update the label used to render a component
+		RenderLabel(
+			new CheckType[] {
+				CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.UiOnly
+			}
+		),
 
 	    /**
 	     * Updates the label belonging to a UI component.
 	     * Uses the callback’s label field.
 	     */
-		UpdateLabel(false), // update the jlabel that belongs to a component
+		UpdateLabel(
+			new CheckType[] {
+				CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.UiOnly
+			}
+		),
 		
 	    /**
 	     * Supplies a format string used to customize UI formatting.
 	     * Uses the callback’s format field.
 	     */
-		GetFormat(false); // use: format
-
-		/**
-		 * Indicates whether callback evaluation should include checking owner or
-		 * master objects when determining rule applicability.
-		 */
-		protected boolean checkOwner;
-
-		/**
-		 * Indicates whether enabled-state evaluation should be performed before
-		 * invoking callback-specific logic.
-		 */
-		protected boolean checkEnabledFirst;
+		GetFormat(
+			new CheckType[] {
+				CheckType.CallbackMethod
+			},
+			new CategoryType [] { 
+				CategoryType.UiOnly
+			}
+		);
 		
-		/**
-		 * Returns whether this callback type requires evaluation of owner/master
-		 * objects.
-		 *
-		 * @return true if owner checking is required
-		 */
-		public boolean isCheckOwner() {
-			return checkOwner;
+		private final EnumSet<CategoryType> categoryTypes;
+		private final EnumSet<CheckType> checkTypes;
+
+		Type(CheckType[] checkTypes, CategoryType... cts) {
+			this.checkTypes = checkTypes.length == 0
+			    ? EnumSet.noneOf(CheckType.class)
+			    : EnumSet.copyOf(Arrays.asList(checkTypes));
+			
+			this.categoryTypes = cts.length == 0
+		        ? EnumSet.noneOf(CategoryType.class)
+		        : EnumSet.copyOf(Arrays.asList(cts));
 		}
 
-		/**
-		 * Returns whether this callback type requires enabled-state evaluation
-		 * before executing callback-specific logic.
-		 *
-		 * @return true if enabled-first rules must run
-		 */
-		public boolean isCheckEnabledFirst() {
-			return checkEnabledFirst;
+		public boolean has(CategoryType flag) {
+		    return categoryTypes.contains(flag);
 		}
-		
-		/**
-		 * Constructor that initializes a callback type with a flag indicating
-		 * whether owner/master objects should be evaluated.
-		 *
-		 * @param checkOwner true to enable owner checking
-		 */
-		Type(boolean checkOwner) {
-			this.checkOwner = checkOwner;
-		}
-
-		/**
-		 * Constructor that initializes a callback type with flags indicating
-		 * whether owner checking and enabled-first evaluation should be applied.
-		 *
-		 * @param checkOwner true to include owner/master object evaluation
-		 * @param checkEnabledFirst true to perform enabled-first rules
-		 */
-		Type(boolean checkOwner, boolean checkEnabledFirst) {
-			this.checkOwner = checkOwner;
-			this.checkEnabledFirst = checkEnabledFirst;
+		public boolean has(CheckType flag) {
+		    return checkTypes.contains(flag);
 		}
 	}
 
-	/**
-	 * Explicit class reference used to resolve the effective class for this
-	 * callback when provided. Otherwise fallback rules apply.
-	 */
-	private Class clazz;
+	// helps document 
+	public enum CategoryType {
+	    PermissionGate, // This type answers whether an action/state is permitted. 
+	    ValidationGate, // This type validates data/action integrity.
+	    UiOnly, // This type only affects presentation/interaction text, label, format, tooltip, confirmation.
+	    Confirmation, // This type supplies confirmation text/title.
+	    CopyLifecycle, // This type participates in copy flow.
+	    MutationPermission, // This permission type allows a model-changing action.
+	    HubOperation, // This type is inherently about Hub membership.
+	    ObjectLifecycleOperation, // This type concerns object lifecycle: new/save/delete/submit/copy.
+	    CanSetResponse,  // Callback type can provide denial. Useful for UI/controller error explanation response.
+	}
+	
+	public enum CheckType {
+	    Owner,
+	    Processed,
+	    SessionEnabled, 
+	    Enabled,
+	    UserEnabled,
+	    Visible,
+	    UserVisible,
+	    SessionVisible, 
+	    HubListeners,
+	    SuperAdminOverride,
+	    CallbackMethod
+	}	
 
+	public boolean isUsed(CheckType ct) {
+		if (ct == null) return false;
+		if (!type.has(ct)) return false;
+		if (hmOnlyCheckTypes != null && hmOnlyCheckTypes.size() > 0) {
+			return hmOnlyCheckTypes.contains(ct);
+		}
+		return true;
+	}
+	
+	public CheckType[] getCheckTypes() {
+		return getCheckTypesExcept(new CheckType[0]);
+	}
+	
+	public CheckType[] getCheckTypesExcept(CheckType ... ctsExclude) {
+		List<CheckType> al = new ArrayList<>();
+		List lst = ctsExclude == null || ctsExclude.length == 0 ? null : Arrays.asList(ctsExclude);
+		for (CheckType ct : type.checkTypes) {
+			if (!isUsed(ct)) continue;
+			if (lst != null) {
+				if (lst.contains(ct)) continue;
+			}
+			al.add(ct);
+		}
+		return al.toArray(new CheckType[0]);
+	}
+	
+	public static CheckType[] getAllCheckTypesButProcessed(Type type) {
+		if (type == null) return null;
+		EnumSet<CheckType> es = type.checkTypes.clone();
+		es.remove(CheckType.Processed);
+		return es.toArray(new CheckType[0]);
+	}
+
+	public static CheckType[] getAllCheckTypesExcept(Type type, CheckType... cts) {
+		if (type == null) return null;
+		EnumSet<CheckType> es = type.checkTypes.clone();
+		if (cts != null) {
+			for (CheckType ct : cts) {
+				es.remove(ct);
+			}
+		}
+		return es.toArray(new CheckType[0]);
+	}
+	
+	public static CheckType[] getCallbackOnlyCheckType() {
+		return new CheckType[] { CheckType.CallbackMethod };
+	}
+
+	public static CheckType[] getCheckTypes(CheckType ct) {
+		if (ct == null) return null;
+		return new CheckType[] { ct };
+	}
+	
 	/**
 	 * Determines the effective class associated with this callback.
 	 *
@@ -496,7 +835,7 @@ public class OAObjectCallback {
 	 *
 	 * @return the resolved class, or {@code null} if none is available
 	 */
-	public Class getCalcClass() {
+	public Class<? extends OAObject> getCalcClass() {
 		if (clazz != null) {
 			return clazz;
 		}
@@ -508,79 +847,6 @@ public class OAObjectCallback {
 		}
 		return null;
 	}
-
-	/**
-	 * Creates a callback with the specified {@link Type}.
-	 * Initializes the callback with the given type and leaves all
-	 * other fields at their default values.
-	 *
-	 * @param type the callback type to assign
-	 */
-	public OAObjectCallback(Type type) {
-		if (type == null) type = Type.Unknown;
-		this.type = type;
-	}
-
-	/**
-	 * Creates a callback with full context information including type,
-	 * check flags, hub, class, target object, property name, and value.
-	 * All supplied fields are assigned directly, and the callback is
-	 * initialized as allowed.
-	 *
-	 * @param type the callback type to assign
-	 * @param checkType the bitmask of checking options
-	 * @param hub the associated hub, or {@code null}
-	 * @param clazz an explicit class to associate, or {@code null}
-	 * @param oaObj the target {@link OAObject}, or {@code null}
-	 * @param propertyName the related property name, or {@code null}
-	 * @param value the callback value, interpreted according to the type
-	 */
-	public OAObjectCallback(Type type, int checkType, Hub hub, Class clazz, OAObject oaObj, String propertyName, Object value) {
-		if (type == null) type = Type.Unknown;
-		this.type = type;
-		this.checkType = checkType;
-		this.hub = hub;
-		this.clazz = clazz;
-		this.object = oaObj;
-		this.propertyName = propertyName;
-		this.value = value;
-		this.allowed = true;
-	}
-
-	/**
-	 * Creates a callback by copying contextual information from an
-	 * existing callback. The new instance uses the specified type
-	 * and check flags, while hub, class, object, property name,
-	 * value, and allowed state are copied from the source.
-	 *
-	 * @param type the callback type to assign
-	 * @param checkType the bitmask of checking options
-	 * @param eq the source callback to copy values from
-	 */
-	public OAObjectCallback(Type type, int checkType, OAObjectCallback eq) {
-		if (type == null) type = Type.Unknown;
-		this.type = type;
-		this.checkType = checkType;
-
-		if (eq == null) {
-			return;
-		}
-		this.hub = eq.getHub();
-		this.clazz = eq.getCalcClass();
-		this.object = eq.getObject();
-		this.propertyName = eq.getPropertyName();
-		this.value = eq.getValue();
-		this.allowed = eq.getAllowed();
-	}
-
-	/*
-	public OAObjectCallback(Type type, int checkType) {
-	    this.type = type;
-	    this.checkType = checkType;
-
-	    this.allowed = true;
-	}
-	*/
 
 	/**
 	 * Sets the callback type.
@@ -600,26 +866,6 @@ public class OAObjectCallback {
 	 */
 	public Type getType() {
 		return this.type;
-	}
-
-	/**
-	 * Returns the bitmask of checking options that control how the callback
-	 * is evaluated.
-	 *
-	 * @return the current check-type bitmask
-	 */
-	public int getCheckType() {
-		return checkType;
-	}
-
-	/**
-	 * Sets the bitmask of checking options that determine how the callback
-	 * should be evaluated.
-	 *
-	 * @param x the new check-type bitmask
-	 */
-	public void setCheckType(int x) {
-		this.checkType = x;
 	}
 
 	/**
@@ -882,15 +1128,6 @@ public class OAObjectCallback {
 		this.allowed = enabled;
 	}
 
-	/*qqqq replaced with old/newValue
-	public Object getValue() {
-	    return value;
-	}
-	public void setValue(Object value) {
-	    this.value = value;
-	}
-	*/
-
 	/**
 	 * Returns the callback value converted to a boolean.
 	 *
@@ -945,13 +1182,4 @@ public class OAObjectCallback {
 	public void setFormat(String format) {
 		this.format = format;
 	}
-	
-	/*qqqqqqq
-	public String getName() {
-	    return name;
-	}
-	public void setName(String name) {
-	    this.name = name;
-	}
-	*/
 }

@@ -92,7 +92,7 @@ public class TMPermission extends OAObject {
         this();
         setId(id);
     }
-    @OAObjCallback(contextEnabledProperty = AppUser.P_Admin)
+    @OAObjCallback(modelUserEnabledProperty = AppUser.P_Admin)
     public void callback(final OAObjectCallback callback) {
         if (callback == null) return;
         switch (callback.getType()) {

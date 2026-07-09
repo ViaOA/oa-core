@@ -22,11 +22,11 @@ import com.viaoa.oa.sibling.OASiblingHelper;
 import com.viaoa.object.OAObject;
 import com.viaoa.process.OAProcess;
 import com.viaoa.remote.info.RequestInfo;
-import com.viaoa.runtime.context.OAContextUser;
 import com.viaoa.runtime.thread.OARemoteThread;
 import com.viaoa.runtime.thread.OAThreadLocal;
 import com.viaoa.runtime.thread.OAThreadLocalHubMergerCallback;
 import com.viaoa.serialize.OAObjectSerializer;
+import com.viaoa.session.OASessionUser;
 import com.viaoa.transaction.OATransaction;
 import com.viaoa.undo.OAUndoManager;
 
@@ -2216,26 +2216,33 @@ public class OAThreadLocalService {
 		return false;
 	}
 	
-	/**
-	 * Returns the context object associated with the current thread.
-	 *
-	 * @return the context object
-	 */
-	public OAContextUser<?> getContextUser() {
+	public Hub<?> getModelUserHub(OA oa) {
+		if (oa == null) return null;
 		OAThreadLocal ti = getThreadLocal(true);
-		return ti.contextUser;
+		return ti.getModelUser(oa);
 	}
 
-	/**
-	 * Assigns the context object for the current thread.
-	 *
-	 * @param context the context to assign
-	 */
-	public void setContextUser(OAContextUser<?> cu) {
+	public void setModelUserHub(OA oa, Hub<?> hub) {
+		if (oa == null) return;
 		OAThreadLocal ti = getThreadLocal(true);
-		ti.contextUser = cu;
+		ti.setModelUser(oa, hub); 
 	}
 
+	public void clearModelUsers() {
+		OAThreadLocal ti = getThreadLocal(true);
+		ti.clearModelUser(); 
+	}
+	
+	public OASessionUser<?> getSessionUser() {
+		OAThreadLocal ti = getThreadLocal(true);
+		return ti.getSessionUser();
+	}
+	
+	public void setSessionUser(OASessionUser<?> su) {
+		OAThreadLocal ti = getThreadLocal(true);
+		ti.setSessionUser(su);
+	}
+	
 	/**
 	 * Sets the admin flag for the current thread-local instance.
 	 *
@@ -2305,15 +2312,24 @@ public class OAThreadLocalService {
 	 * Copies selected state fields from the supplied thread-local instance into
 	 * the current thread-local instance.
 	 *
-	 * @param tl the thread-local instance to copy from
+	 * @param tlHold the thread-local instance to copy from
 	 */
-	public void initialize(OAThreadLocal tl) {
-		if (tl == null) {
-			return;
+	public void initialize(OAThreadLocal tlHold) {
+		OAThreadLocal tlCurrent = getThreadLocal(true);
+		if (tlHold == null) {
+			tlCurrent.isAdmin = false;
+			tlCurrent.setSessionUser(null);
+			tlCurrent.clearModelUser();
 		}
-		OAThreadLocal tlx = getThreadLocal(true);
-		tlx.isAdmin = tl.isAdmin;
-		tlx.contextUser = tl.contextUser;
+		else {
+			tlCurrent.isAdmin = tlHold.isAdmin;
+			tlCurrent.setSessionUser(tlHold.getSessionUser());
+			if (tlHold.hmModelUser != null) {
+				for (OA oax : tlHold.hmModelUser.keySet()) {
+					tlCurrent.setModelUser(oax, tlHold.getModelUser(oax));
+				}
+			}
+		}
 	}
 
 	/**

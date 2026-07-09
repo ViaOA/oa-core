@@ -9,5 +9,6 @@ public interface ServicesOps {
 	public TriggersOps triggers();
 	
 	
-
+	public RulesOps rules();
+	
 }

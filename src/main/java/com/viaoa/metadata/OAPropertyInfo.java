@@ -255,31 +255,31 @@ public class OAPropertyInfo implements java.io.Serializable {
 	 * Property name used to determine whether this property is enabled within a
 	 * context-dependent rule set.
 	 */
-	private String contextEnabledProperty;
+	private String modelUserEnabledProperty;
 	
 	/**
 	 * Static enabled value applied under context-dependent visibility rules when
 	 * no dynamic property name is provided.
 	 */
-	private boolean contextEnabledValue;
+	private boolean modelUserEnabledValue;
 	
 	/**
 	 * Property name used to determine whether this property is visible under a
 	 * context-dependent rule set.
 	 */
-	private String contextVisibleProperty;
+	private String modelUserVisibleProperty;
 	
 	/**
 	 * Static visibility value applied under context-based rules when no explicit
 	 * property controls visibility.
 	 */
-	private boolean contextVisibleValue;
+	private boolean modelUserVisibleValue;
 
 	/**
 	 * List of property names whose value or behavior depends on the evaluation
 	 * of this property. Used to support cross-property interaction rules.
 	 */
-	private String[] contextDependentProperties;
+	private String[] modelUserDependentProperties;
 
 	/**
 	 * Array of property names whose behavior depends on the evaluation or
@@ -824,15 +824,15 @@ public class OAPropertyInfo implements java.io.Serializable {
 	/**
 	 * Sets the list of context-dependent property names.
 	 */
-	public void setContextDependentProperties(String[] ss) {
-		this.contextDependentProperties = ss;
+	public void setModelUserDependentProperties(String[] ss) {
+		this.modelUserDependentProperties = ss;
 	}
 
 	/**
 	 * Returns the list of context-dependent property names.
 	 */
-	public String[] getContextDependentProperties() {
-		return this.contextDependentProperties;
+	public String[] getModelUserDependentProperties() {
+		return this.modelUserDependentProperties;
 	}
 
 	/**
@@ -894,57 +894,57 @@ public class OAPropertyInfo implements java.io.Serializable {
 	/**
 	 * Returns the context property name used to determine whether this property is enabled.
 	 */
-	public String getContextEnabledProperty() {
-		return contextEnabledProperty;
+	public String getModelUserEnabledProperty() {
+		return modelUserEnabledProperty;
 	}
 
 	/**
 	 * Sets the context property name used to determine whether this property is enabled.
 	 */
-	public void setContextEnabledProperty(String s) {
-		contextEnabledProperty = s;
+	public void setModelUserEnabledProperty(String s) {
+		modelUserEnabledProperty = s;
 	}
 
 	/**
 	 * Returns the context-enabled value for this property.
 	 */
-	public boolean getContextEnabledValue() {
-		return contextEnabledValue;
+	public boolean getModelUserEnabledValue() {
+		return modelUserEnabledValue;
 	}
 
 	/**
 	 * Sets the context-enabled value for this property.
 	 */
-	public void setContextEnabledValue(boolean b) {
-		contextEnabledValue = b;
+	public void setModelUserEnabledValue(boolean b) {
+		modelUserEnabledValue = b;
 	}
 
 	/**
 	 * Returns the context property name used to determine visibility.
 	 */
-	public String getContextVisibleProperty() {
-		return contextVisibleProperty;
+	public String getModelUserVisibleProperty() {
+		return modelUserVisibleProperty;
 	}
 
 	/**
 	 * Sets the context property name used to determine visibility.
 	 */
-	public void setContextVisibleProperty(String s) {
-		contextVisibleProperty = s;
+	public void setModelUserVisibleProperty(String s) {
+		modelUserVisibleProperty = s;
 	}
 
 	/**
 	 * Returns the context visibility value for this property.
 	 */
-	public boolean getContextVisibleValue() {
-		return contextVisibleValue;
+	public boolean getModelUserVisibleValue() {
+		return modelUserVisibleValue;
 	}
 
 	/**
 	 * Sets the context visibility value for this property.
 	 */
-	public void setContextVisibleValue(boolean b) {
-		contextVisibleValue = b;
+	public void setModelUserVisibleValue(boolean b) {
+		modelUserVisibleValue = b;
 	}
 
 	/**

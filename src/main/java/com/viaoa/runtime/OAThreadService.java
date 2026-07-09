@@ -4,7 +4,10 @@ import java.util.logging.Logger;
 
 import javax.swing.SwingUtilities;
 
-import com.viaoa.runtime.context.OAContextUser;
+import com.viaoa.hub.Hub;
+import com.viaoa.oa.OA;
+import com.viaoa.object.OAObject;
+import com.viaoa.session.OASessionUser;
 import com.viaoa.transaction.OATransaction;
 
 /* qqqqqqqqqqqqq
@@ -50,13 +53,13 @@ public class OAThreadService {
 	}
 	
 	
-	public OAContextUser<?> getContextUser() {
-		OAContextUser<?> context = srvcThreadLocal.getContextUser();
-		return context;
+	public Hub<?> getModelUserHub(OA oa) {
+		Hub<?> hub = srvcThreadLocal.getModelUserHub(oa);
+		return hub;
 	}
 
-	public void setContextUser(OAContextUser<?> contextUser) {
-		srvcThreadLocal.setContextUser(contextUser);
+	public void setModelUserHub(OA oa, Hub<?> hub) {
+		srvcThreadLocal.setModelUserHub(oa, hub);
 	}
 	
 	public boolean isAdmin() {

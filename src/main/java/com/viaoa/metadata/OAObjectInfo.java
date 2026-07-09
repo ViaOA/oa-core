@@ -447,7 +447,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 * List of properties whose state or evaluation rules depend on a broader
 	 * application context rather than UI view rules alone.
 	 */
-	private String[] contextDependentProperties;
+	private String[] modelUserDependentProperties;
 
 	/**
 	 * Name of the property used to determine whether this type should be
@@ -477,26 +477,26 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 * Name of the property that determines whether this type is enabled within
 	 * a specific context-dependent rule set.
 	 */
-	private String contextEnabledProperty;
+	private String modelUserEnabledProperty;
 
 	/**
 	 * Static context-enabled value assigned to this type when context-dependent
 	 * rules require a fixed boolean state.
 	 */
-	private boolean contextEnabledValue;
+	private boolean modelUserEnabledValue;
 
 	/**
 	 * Name of the property that controls visibility of this type under
 	 * context-dependent evaluation rules.
 	 */
-	private String contextVisibleProperty;
+	private String modelUserVisibleProperty;
 	
 	/**
 	 * Static context-visible value associated with this type, used when
 	 * visibility rules require a fixed boolean state rather than a
 	 * property-driven evaluation.
 	 */
-	private boolean contextVisibleValue;
+	private boolean modelUserVisibleValue;
 	
 	/**
 	 * Indicates whether this type defines exactly one link property, used
@@ -618,7 +618,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	public boolean getModelUserClass() {
 		return bIsModelUserClass;
 	}
-	public void setModeUserClass(boolean b) {
+	public void setModelUserClass(boolean b) {
 		this.bIsModelUserClass = b;
 	}
 	
@@ -2211,8 +2211,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 *
 	 * @param ss array of context-dependent property names.
 	 */
-	public void setContextDependentProperties(String[] ss) {
-		this.contextDependentProperties = ss;
+	public void setModelUserDependentProperties(String[] ss) {
+		this.modelUserDependentProperties = ss;
 	}
 
 	/**
@@ -2221,8 +2221,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 *
 	 * @return array of context-dependent property names.
 	 */
-	public String[] getContextDependentProperties() {
-		return this.contextDependentProperties;
+	public String[] getModelUserDependentProperties() {
+		return this.modelUserDependentProperties;
 	}
 
 	/**
@@ -2301,8 +2301,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 *
 	 * @return context-enabled property name.
 	 */
-	public String getContextEnabledProperty() {
-		return contextEnabledProperty;
+	public String getModelUserEnabledProperty() {
+		return modelUserEnabledProperty;
 	}
 
 	/**
@@ -2311,8 +2311,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 *
 	 * @param s the context-enabled property name.
 	 */
-	public void setContextEnabledProperty(String s) {
-		contextEnabledProperty = s;
+	public void setModelUserEnabledProperty(String s) {
+		modelUserEnabledProperty = s;
 	}
 
 	/**
@@ -2320,8 +2320,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 *
 	 * @return true if context-enabled, otherwise false.
 	 */
-	public boolean getContextEnabledValue() {
-		return contextEnabledValue;
+	public boolean getModelUserEnabledValue() {
+		return modelUserEnabledValue;
 	}
 
 	/**
@@ -2329,8 +2329,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 *
 	 * @param b the context-enabled value to assign.
 	 */
-	public void setContextEnabledValue(boolean b) {
-		contextEnabledValue = b;
+	public void setModelUserEnabledValue(boolean b) {
+		modelUserEnabledValue = b;
 	}
 
 	/**
@@ -2339,8 +2339,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 *
 	 * @return context-visible property name.
 	 */
-	public String getContextVisibleProperty() {
-		return contextVisibleProperty;
+	public String getModelUserVisibleProperty() {
+		return modelUserVisibleProperty;
 	}
 
 	/**
@@ -2349,8 +2349,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 *
 	 * @param s the context-visible property name.
 	 */
-	public void setContextVisibleProperty(String s) {
-		contextVisibleProperty = s;
+	public void setModelUserVisibleProperty(String s) {
+		modelUserVisibleProperty = s;
 	}
 
 	/**
@@ -2358,8 +2358,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 *
 	 * @return true if context-visible, otherwise false.
 	 */
-	public boolean getContextVisibleValue() {
-		return contextVisibleValue;
+	public boolean getModelUserVisibleValue() {
+		return modelUserVisibleValue;
 	}
 
 	/**
@@ -2367,8 +2367,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 *
 	 * @param b the context-visible value to assign.
 	 */
-	public void setContextVisibleValue(boolean b) {
-		contextVisibleValue = b;
+	public void setModelUserVisibleValue(boolean b) {
+		modelUserVisibleValue = b;
 	}
 
 	/**
