@@ -50,7 +50,7 @@ class OATriggerTest {
                 + Product.P_Sku;
         String generatedPath = StorePP.registers().registerSessions().invoices().invoiceBaskets().lineItems().product()
                 .sku();
-        String textUtilPath = OATextUtil.createPropertyPath(Store.P_Registers, Register.P_RegisterSessions,
+        String textUtilPath = OATextUtil.createPath(Store.P_Registers, Register.P_RegisterSessions,
                 RegisterSession.P_Invoices, Invoice.P_InvoiceBaskets, InvoiceBasket.P_LineItems, LineItem.P_Product,
                 Product.P_Sku);
         String[] paths = { rawPath, generatedPath, textUtilPath };
@@ -59,8 +59,8 @@ class OATriggerTest {
 
         assertEquals(Store.class, trigger.getRootClass());
         assertSame(listener, trigger.getTriggerListener());
-        assertSame(paths, trigger.getPropertyPaths());
-        assertArrayEquals(new String[] { rawPath, rawPath, rawPath }, trigger.getPropertyPaths());
+        assertSame(paths, trigger.getPaths());
+        assertArrayEquals(new String[] { rawPath, rawPath, rawPath }, trigger.getPaths());
         assertTrue(trigger.getOnlyUseLoadedData());
         assertTrue(trigger.getServerSideOnly());
         assertTrue(trigger.getUseBackgroundThread());
@@ -78,7 +78,7 @@ class OATriggerTest {
 
         assertEquals(Store.class, trigger.getRootClass());
         assertSame(listener, trigger.getTriggerListener());
-        assertArrayEquals(new String[] { Store.P_Name }, trigger.getPropertyPaths());
+        assertArrayEquals(new String[] { Store.P_Name }, trigger.getPaths());
         assertFalse(trigger.getOnlyUseLoadedData());
         assertFalse(trigger.getServerSideOnly());
         assertFalse(trigger.getUseBackgroundThread());
@@ -94,8 +94,8 @@ class OATriggerTest {
         assertNull(arrayTrigger.getName());
         assertNull(arrayTrigger.getRootClass());
         assertNull(arrayTrigger.getTriggerListener());
-        assertNull(arrayTrigger.getPropertyPaths());
-        assertArrayEquals(new String[] { null }, singleTrigger.getPropertyPaths());
+        assertNull(arrayTrigger.getPaths());
+        assertArrayEquals(new String[] { null }, singleTrigger.getPaths());
     }
 
     @Test
@@ -161,10 +161,10 @@ class OATriggerTest {
         String[] paths = { Store.P_Name };
         OATrigger trigger = new OATrigger("paths", Store.class, null, paths, false, false, false, false);
 
-        assertSame(paths, trigger.getPropertyPaths());
+        assertSame(paths, trigger.getPaths());
 
         paths[0] = Store.P_StoreNumber;
-        assertArrayEquals(new String[] { Store.P_StoreNumber }, trigger.getPropertyPaths());
+        assertArrayEquals(new String[] { Store.P_StoreNumber }, trigger.getPaths());
     }
 
     @Test

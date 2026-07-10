@@ -842,6 +842,11 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		this.type = DateTimeType.Instant;
 	}
 
+	/**
+	 * Creates an instant-valued OADateTime from a JDBC {@link Timestamp}.
+	 *
+	 * @param ts timestamp to copy, or {@code null} for current system time
+	 */
 	public OADateTime(Timestamp ts) {
 		if (ts == null) {
 			this._time = System.currentTimeMillis();
@@ -969,10 +974,20 @@ public class OADateTime implements java.io.Serializable, Comparable {
 	    return Timestamp.from(instant);
 	}
 
+	/**
+	 * Converts this value to a JDBC date using the timestamp conversion rules.
+	 *
+	 * @return JDBC date value
+	 */
 	public java.sql.Date toSqlDate() {
 		return new java.sql.Date(toTimestamp().getTime());
 	}
 
+	/**
+	 * Converts this value to a legacy {@link java.util.Date} using the timestamp conversion rules.
+	 *
+	 * @return legacy date value
+	 */
 	public java.util.Date toDate() {
 		return new java.util.Date(toTimestamp().getTime());
 	}
@@ -1123,15 +1138,47 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return dt;
 	}
 
+	/**
+	 * Creates a new value using this instance's effective zone and semantic type.
+	 *
+	 * @param year full year
+	 * @param month month from 1 to 12
+	 * @param day day of month
+	 * @param hrs hour of day from 0 to 23
+	 * @param mins minute of hour
+	 * @param secs second of minute
+	 * @param milsecs millisecond of second
+	 * @return new value using the supplied fields
+	 */
 	protected OADateTime createUtil(int year, int month, int day, int hrs, int mins, int secs, int milsecs) {
 		return this.createUtil(getZoneId(), year, month, day, hrs, mins, secs, milsecs);
 	}
 	
+	/**
+	 * Creates a new value using the supplied zone and this instance's semantic type.
+	 *
+	 * @param zid zone used to interpret the supplied local fields
+	 * @param year full year
+	 * @param month month from 1 to 12
+	 * @param day day of month
+	 * @param hrs hour of day from 0 to 23
+	 * @param mins minute of hour
+	 * @param secs second of minute
+	 * @param milsecs millisecond of second
+	 * @return new value using the supplied fields
+	 */
 	protected OADateTime createUtil(ZoneId zid, int year, int month, int day, int hrs, int mins, int secs, int milsecs) {
 	    OADateTime dt = new OADateTime(zid, year, month, day, hrs, mins, secs, milsecs);
 	    dt.type = this.type;
 	    return dt;
 	}	
+	/**
+	 * Creates a new value from epoch milliseconds and a zone, preserving this instance's semantic type.
+	 *
+	 * @param time epoch-millisecond value
+	 * @param zid zone to associate with the value
+	 * @return new value using the supplied instant and zone
+	 */
 	protected OADateTime createUtil(long time, ZoneId zid) {
 	    OADateTime dt = new OADateTime(time, zid);
 	    dt.type = this.type;
@@ -1261,6 +1308,14 @@ public class OADateTime implements java.io.Serializable, Comparable {
 		return dt;
 	}
 
+	/**
+	 * Returns a new OADateTime with hour, minute, and second replaced and milliseconds set to zero.
+	 *
+	 * @param hours hour of day from 0 to 23
+	 * @param minutes minute of hour
+	 * @param seconds second of minute
+	 * @return new value with the supplied time
+	 */
 	public OADateTime withTime(int hours, int minutes, int seconds) {
 		return withTime(hours, minutes, seconds, 0);
 	}

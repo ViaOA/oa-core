@@ -44,6 +44,7 @@ public class TeamMember extends OAObject {
      
     public static final String P_CalcFullName = "calcFullName";
     public static final String P_CalcDisplayName = "calcDisplayName";
+    public static final String P_AccessSafePermission = "accessSafePermission";
      
     public static final String P_AppUser = "appUser";
     public static final String P_AppUserId = "appUserId"; // fkey
@@ -186,6 +187,19 @@ public class TeamMember extends OAObject {
         String en = OAStr.notNull(getEmpNumber());
         dn = dn + "(" + en + ")";
         return dn;
+    }
+    @OACalculatedProperty(displayName = "Access Safe Permission", displayLength = 5, columnLength = 22, properties = {P_TMPermissions+"."+TMPermission.P_Type})
+    public boolean getAccessSafePermission() {
+        Hub<TMPermission> hubTMPermissions = this.getTMPermissions();
+        for (TMPermission tmPermission : hubTMPermissions) {
+        	if (tmPermission.getType() >= TMPermission.TYPE_manager) {
+        		return true;
+        	}
+        }
+        return false;
+    }
+    public boolean canAccessSafePermission() {
+        return getAccessSafePermission();
     }
 
     @OAOne(

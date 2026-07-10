@@ -20,9 +20,8 @@ import com.viaoa.object.OAObject;
 
 
 /**
- * Callback used by {@link OAObjectReflectDelegate} during deep copy
- * operations to customize how owned objects, properties, and link
- * references are duplicated.
+ * Callback used during OA deep-copy operations to customize how owned objects,
+ * properties, and link references are duplicated.
  *
  * <p>Copying in OA proceeds through a recursive traversal of owned objects
  * and link relationships.  This callback allows applications to override

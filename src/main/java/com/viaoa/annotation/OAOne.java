@@ -36,13 +36,13 @@ import java.lang.annotation.Target;
  *   <li><b>Reverse link</b>: the name of the {@code @OAMany} or {@code @OAOne}
  *       property in the target class.</li>
  *   <li><b>Creation flow</b>: allowCreateNew, autoCreateNew, allowAddExisting.</li>
- *   <li><b>Validation</b>: required, mustBeEmptyForDelete, defaultPropertyPath.</li>
+ *   <li><b>Validation</b>: required, mustBeEmptyForDelete, defaultPath.</li>
  *   <li><b>Calculated link</b>: isCalculated, calcDependentProperties.</li>
- *   <li><b>Import/merge</b>: importMatch, equalPropertyPath.</li>
+ *   <li><b>Import/merge</b>: importMatch, equalPath.</li>
  * </ul>
  *
  * <p>This metadata defines how OA wires Hubs for link relationships and
- * how OAObjectGraph handles cascades and updates.</p>
+ * how OA runtime handles cascades and updates.</p>
  */
 @Documented
 @Target(ElementType.METHOD)
@@ -170,25 +170,25 @@ public @interface OAOne {
 	 * Defines a property path used to supply the default value for this
 	 * ONE reference.
 	 */
-	String defaultPropertyPath() default "";
+	String defaultPath() default "";
 
 	/**
-	 * Indicates whether the {@code defaultPropertyPath} should be
+	 * Indicates whether the {@code defaultPath} should be
 	 * interpreted as a hierarchical path when locating the default value.
 	 */
-	boolean defaultPropertyPathIsHierarchy() default false;
+	boolean defaultPathIsHierarchy() default false;
 
 	/**
 	 * Determines whether the default value obtained from
-	 * {@code defaultPropertyPath} can later be modified by the user.
+	 * {@code defaultPath} can later be modified by the user.
 	 */
-	boolean defaultPropertyPathCanBeChanged() default false;
+	boolean defaultPathCanBeChanged() default false;
 
 	/**
 	 * Identifies a property path, evaluated on the context object, that
 	 * provides the default reference. A value of "." indicates this object.
 	 */
-	String defaultModelUserPropertyPath() default "";
+	String defaultModelUserPath() default "";
 
 	/**
 	 * Indicates that this ONE link is only valid if all other
@@ -206,13 +206,13 @@ public @interface OAOne {
 	 * Defines a property path used to compare objects for equality
 	 * during linking, merging, or import operations.
 	 */
-	String equalPropertyPath() default "";
+	String equalPath() default "";
 
 	/**
 	 * Property path that locates a Hub of objects which may be selected
 	 * as candidates for this ONE reference.
 	 */
-	String selectFromPropertyPath() default "";
+	String selectFromPath() default "";
 
 	/**
 	 * Declares the foreign-key mappings used by this ONE relationship.

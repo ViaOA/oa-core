@@ -15,25 +15,7 @@
  */
 package com.viaoa.hub.auto;
 
-/*qqqqqqqqq
-CODEX
 
- 1. file/class/method: src/main/java/com/viaoa/hub/auto/HubAutoMatch.java:204 init(...)
-  2. exact execution path: create with default constructor, then call init(hub, badProperty, hubMaster, ...). init()
-     sets bInit = true, assigns hub/hubMaster, and registers itself as a listener on hubMaster before
-     setProperty(badProperty) validates getter/setter methods. If validation throws, caller can catch the exception,
-     but the HubAutoMatch instance is now marked initialized and remains attached to hubMaster.
-  3. why this is a real correctness bug: this is not just caller-visible partial progress. The failed initialization
-     leaves a live listener behind and prevents retry because future init(...) calls immediately return on bInit.
-     Later master Hub events can invoke a partially initialized matcher and mutate the target Hub incorrectly or
-     throw from unrelated Hub operations.
-  4. semantic/invariant violated: HUB_AUTO_MATCH_FAILED_INIT_DOES_NOT_ATTACH_LISTENER_OR_POISON_RETRY
-  5. minimal fix or CODEX/defer recommendation: validate property/method compatibility before setting bInit and
-     before listener registration, or roll back listener/state in a catch block and leave the instance retryable.
-  6. suggested regression test: default-construct HubAutoMatch, call init with an invalid property and catch the
-     exception, then verify no listener remains on hubMaster and a second init with a valid property succeeds.
-
-*/
 
 import java.lang.reflect.Method;
 import java.util.List;
@@ -94,7 +76,7 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 	 * master Hub.
 	 */
 	protected Hub<TYPE> hub;
-	
+
 	/**
 	 * The master Hub providing source objects that the target Hub must match.
 	 */
@@ -105,25 +87,25 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 	 * objects or values from the master Hub.
 	 */
 	protected String property;
-	
+
 	/**
 	 * Indicates whether synchronization is invoked manually instead of
 	 * automatically reacting to Hub events.
 	 */
 	protected boolean bManuallyCalled;
-	
+
 	/**
 	 * When true, synchronization events initiated on the server will be
 	 * published to clients even if triggered by server-only threads.
 	 */
 	private boolean bServerSideOnly;
-	
+
 	/**
 	 * Controls whether synchronization logic is active. When false, all update
 	 * operations are skipped.
 	 */
 	private boolean bEnabled = true;
-	
+
 	/**
 	 * Optional object whose property controls whether synchronization should
 	 * stop dynamically.
@@ -153,7 +135,7 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 	 * assign values to new or synchronized objects in the target Hub.
 	 */
 	protected transient Method setMethod;
-	
+
 	/**
 	 * Constructs a HubAutoMatch that synchronizes the target hub with the master hub
 	 * based on the specified property. The update behavior can be configured to run
@@ -194,8 +176,8 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 	public HubAutoMatch(Hub<TYPE> hub, String property, Hub<TYPE2> hubMaster, OAObject objStop, String stopProperty) {
 		init(hub, property, hubMaster, objStop, stopProperty);
 	}
-	
-	
+
+
 	/**
 	 * Default constructor. The {@link #init(Hub, String, Hub, OAObject, String)}
 	 * method must be called before use.
@@ -240,10 +222,10 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 		}
 		this.objStop = objStop;
 		this.stopProperty = stopProperty;
-		
-		//qqqqqqqq to do:
+
+
 		// add listener on objStore.stopProperty ??
-		
+
 		setProperty(property);
 	}
 
@@ -344,7 +326,7 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
     public void update() {
         _update(true);
     }
-	
+
     /**
      * Internal update routine that synchronizes the target hub with the master hub.
      * Performs stop-condition evaluation, thread-safety checks, state verification,
@@ -354,19 +336,19 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
      */
 	protected void _update(final boolean bCheckInSync) {
 		if (!getEnabled()) return;
-		
+
 		if (objStop != null && OAStr.isNotEmpty(this.stopProperty)) {
 			Object obj = objStop.getProperty(this.stopProperty);
 			if (OAConv.toBoolean(obj)) {
 				return;
 			}
 		}
-		
+
 		if (!abUpdating.compareAndSet(false, true)) {
 			return; // already updating
 		}
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
-		
+
 		boolean bWas = false;
         try {
             if (bServerSideOnly) {
@@ -381,6 +363,9 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
     			if (hubMaster != null && oa.internal().hubs().status().getCurrentState(hubMaster, null, null) != Hub.HubCurrentStateEnum.InSync) {
     			    srvcOAThreadLocal.addHubMergerCallback(new OAThreadLocalHubMergerCallback() {
                         @Override
+                        /**
+                         * Runs the configured Hub callback operation.
+                         */
                         public void callback() {
                             _update(false);
                         }
@@ -388,7 +373,7 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
     				return;
     			}
             }
-            
+
 			if (hubMaster != null) {
 				_update1();
 			} else {
@@ -456,7 +441,7 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 						break;
 					}
 					if (!OAObject.class.isAssignableFrom(returnTypeClass)) {
-						// ex: VEnum used to set 
+						// ex: VEnum used to set
 						Object obj2 = OAConverter.convert(returnTypeClass, obj);
 						if (o != null && o.equals(obj2)) {
 							break;
@@ -518,45 +503,20 @@ public class HubAutoMatch<TYPE extends OAObject, TYPE2 extends OAObject> extends
 		final OA oa = OARuntime.oa(cz);
 		Hub<VEnum> hubEnums = oa.internal().objects().enumx().getVEnums(cz, property);
 		int max = hubEnums.size();
-		
-		
+
+
 		for (int i = hub.getSize(); i < max; i++) {
-			
-			// TOdo: qqqqqqqqqqqq
-			//qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq			
-			//qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq			
-//qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq			
-//qqqqqqqq  needs VEnum support			
+
+
+
+
+
+
 //			createNewObject(i);
 		}
 	}
 
-	/*was: 20250908
-	private int findMaxEnumValue() {
-		
-		Field field = null;
 
-		String name = "hub" + property;
-
-		for (Field f : cz.getFields()) {
-			if (name.equalsIgnoreCase(f.getName())) {
-				field = f;
-				break;
-			}
-		}
-
-		int max = 0;
-		try {
-			Object objx = field.get(null);
-			if (objx instanceof Hub) {
-				max = ((Hub) objx).getSize() - 1;
-			}
-		} catch (Exception ex) {
-			//qqqqqqq
-		}
-		return max;
-	}
-	*/
 
 	/**
 	 * Determines whether an object should be removed when it does not exist in the

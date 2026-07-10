@@ -46,12 +46,19 @@ public class NextNumber extends OAObject {
 
 	private static int cnter;
 
+	/**
+	 * Creates a local sequence holder and increments the diagnostic instance
+	 * counter used by logging.
+	 */
 	public NextNumber() {
 		cnter++;
 	}
 
 	/**
-	 * Returns Identifier for this object, the Class name (including package name).
+	 * Returns the identifier for this sequence, normally the fully qualified class
+	 * name that owns the autonumber property.
+	 *
+	 * @return sequence identifier
 	 */
 	@OAProperty(isUnique = true)
 	@OAId()
@@ -60,7 +67,9 @@ public class NextNumber extends OAObject {
 	}
 
 	/**
-	 * Set automatically to the full Class name when the Class is assigned.
+	 * Sets the identifier for this sequence and fires the OA property-change event.
+	 *
+	 * @param id sequence identifier, normally a fully qualified class name
 	 */
 	public void setId(String id) {
 		String old = this.id;
@@ -73,14 +82,18 @@ public class NextNumber extends OAObject {
 	}
 
 	/**
-	 * Returns the next number to assign.
+	 * Returns the next number that should be assigned by this sequence.
+	 *
+	 * @return next sequence value
 	 */
 	public int getNext() {
 		return nextNum;
 	}
 
 	/**
-	 * Sets the next number to assign.
+	 * Sets the next number that should be assigned by this sequence.
+	 *
+	 * @param nextNum next sequence value
 	 */
 	public void setNext(int nextNum) {
 		int old = this.nextNum;
@@ -88,12 +101,22 @@ public class NextNumber extends OAObject {
 		firePropertyChange("next", old, this.nextNum);
 	}
 
+	/**
+	 * Sets the model property name that receives values from this sequence.
+	 *
+	 * @param prop property name
+	 */
 	public void setProperty(String prop) {
 		String old = this.propertyName;
 		this.propertyName = prop;
 		firePropertyChange("property", old, this.propertyName);
 	}
 
+	/**
+	 * Returns the model property name that receives values from this sequence.
+	 *
+	 * @return property name
+	 */
 	public String getProperty() {
 		return propertyName;
 	}

@@ -75,7 +75,7 @@ import com.viaoa.runtime.thread.OAThreadLocal;
  */
 public class HubMerger<F extends OAObject, T extends OAObject> {
     private static Logger LOG = Logger.getLogger(HubMerger.class.getName());
-    
+
     /**
      * Debug flag that can be enabled to assist with tracing internal behavior.
      */
@@ -96,7 +96,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
      * Root node of the property-path traversal model. Represents the first link
      * in the chain used to expand objects from the root Hub.
      */
-    private Node nodeRoot; // first node from propertyPath
+    private Node nodeRoot; // first node from path
 
     /**
      * Root Data object representing the starting point of merged membership
@@ -108,7 +108,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
      * The property path used to traverse from objects in the root Hub to
      * destination objects in the combined Hub.
      */
-    String propertyPath; // property path
+    String path; // property path
 
     /**
      * Destination Hub that receives merged objects as defined by the property path.
@@ -233,10 +233,10 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
      *
      * @param hubRoot the root Hub used to traverse objects
      * @param hubCombinedObjects the destination Hub that receives merged objects
-     * @param propertyPath the property path for traversal
+     * @param path the property path for traversal
      */
-    public HubMerger(Hub<F> hubRoot, Hub<T> hubCombinedObjects, String propertyPath) {
-        this(hubRoot, hubCombinedObjects, propertyPath, false, null, true, false, false);
+    public HubMerger(Hub<F> hubRoot, Hub<T> hubCombinedObjects, String path) {
+        this(hubRoot, hubCombinedObjects, path, false, null, true, false, false);
     }
 
     /**
@@ -245,11 +245,11 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
      *
      * @param hubRoot the root Hub
      * @param hubCombinedObjects the destination Hub
-     * @param propertyPath the property path for traversal
+     * @param path the property path for traversal
      * @param bUseAll true to use all objects in the root Hub; false to use only its AO
      */
-    public HubMerger(Hub<F> hubRoot, Hub<T> hubCombinedObjects, String propertyPath, boolean bUseAll) {
-        this(hubRoot, hubCombinedObjects, propertyPath, false, null, bUseAll, false, false);
+    public HubMerger(Hub<F> hubRoot, Hub<T> hubCombinedObjects, String path, boolean bUseAll) {
+        this(hubRoot, hubCombinedObjects, path, false, null, bUseAll, false, false);
     }
 
     /**
@@ -258,12 +258,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
      *
      * @param hubRoot the root Hub
      * @param hubCombinedObjects the destination Hub
-     * @param propertyPath the property path for traversal
+     * @param path the property path for traversal
      * @param bShareActiveObject true to share the AO of the last Hub
      * @param bUseAll true to use all objects in the root Hub
      */
-    public HubMerger(Hub<F> hubRoot, Hub<T> hubCombinedObjects, String propertyPath, boolean bShareActiveObject, boolean bUseAll) {
-        this(hubRoot, hubCombinedObjects, propertyPath, bShareActiveObject, null, bUseAll, false, false);
+    public HubMerger(Hub<F> hubRoot, Hub<T> hubCombinedObjects, String path, boolean bShareActiveObject, boolean bUseAll) {
+        this(hubRoot, hubCombinedObjects, path, bShareActiveObject, null, bUseAll, false, false);
     }
 
     /**
@@ -272,14 +272,14 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
      *
      * @param hubRoot the root Hub
      * @param hubCombinedObjects the destination Hub
-     * @param propertyPath the path used to traverse from root to target objects
+     * @param path the path used to traverse from root to target objects
      * @param bShareActiveObject true if the AO from the final Hub is shared
      * @param selectOrder optional ordering for filtering operations
      * @param bUseAll true to include all root Hub objects
      */
-    public HubMerger(Hub<F> hubRoot, Hub<T> hubCombinedObjects, String propertyPath, boolean bShareActiveObject, String selectOrder,
+    public HubMerger(Hub<F> hubRoot, Hub<T> hubCombinedObjects, String path, boolean bShareActiveObject, String selectOrder,
             boolean bUseAll) {
-        this(hubRoot, hubCombinedObjects, propertyPath, bShareActiveObject, selectOrder, bUseAll, false, false);
+        this(hubRoot, hubCombinedObjects, path, bShareActiveObject, selectOrder, bUseAll, false, false);
     }
 
     /**
@@ -307,7 +307,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
      *
      * @param hubRoot the root Hub
      * @param hubCombinedObjects the destination Hub
-     * @param propertyPath the traversal path
+     * @param path the traversal path
      * @param bShareActiveObject true if the AO is shared from the terminal Hub
      * @param selectOrder optional ordering expression for filtering
      * @param bUseAll true to use all objects in the root Hub
@@ -315,20 +315,20 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
      * @param bUseBackgroundThread true to enable background updates
      */
     public HubMerger(Hub<F> hubRoot, Hub<T> hubCombinedObjects,
-            String propertyPath, boolean bShareActiveObject, String selectOrder,
+            String path, boolean bShareActiveObject, String selectOrder,
             boolean bUseAll, boolean bIncludeRootHub, boolean bUseBackgroundThread) {
         id = aiId.getAndIncrement();
         if (hubRoot == null) {
             throw new IllegalArgumentException("Root hub can not be null");
         }
-        LOG.fine("hubRoot=" + hubRoot.getObjectClass().getSimpleName() + ", propertyPath=" + propertyPath);
+        LOG.fine("hubRoot=" + hubRoot.getObjectClass().getSimpleName() + ", path=" + path);
 
         if (hubCombinedObjects == null) {
             // 20150720 allow combinedHub to be null
             //throw new IllegalArgumentException("Combined hub can not be null");
         }
         setUseBackgroundThread(bUseBackgroundThread);
-        init(hubRoot, hubCombinedObjects, propertyPath, bShareActiveObject, selectOrder, bUseAll, bIncludeRootHub);
+        init(hubRoot, hubCombinedObjects, path, bShareActiveObject, selectOrder, bUseAll, bIncludeRootHub);
     }
 
     /**
@@ -337,14 +337,14 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
      *
      * @param hubRoot the root Hub
      * @param hubCombinedObjects the destination Hub
-     * @param propertyPath the traversal path
+     * @param path the traversal path
      * @param bShareActiveObject true to share the AO of the terminal Hub
      * @param bUseAll true to use all root Hub objects
      * @param bIncludeRootHub true to include root Hub objects
      */
-    public HubMerger(Hub<F> hubRoot, Hub<T> hubCombinedObjects, String propertyPath, boolean bShareActiveObject, boolean bUseAll,
+    public HubMerger(Hub<F> hubRoot, Hub<T> hubCombinedObjects, String path, boolean bShareActiveObject, boolean bUseAll,
             boolean bIncludeRootHub) {
-        this(hubRoot, hubCombinedObjects, propertyPath, bShareActiveObject, null, bUseAll, bIncludeRootHub, false);
+        this(hubRoot, hubCombinedObjects, path, bShareActiveObject, null, bUseAll, bIncludeRootHub, false);
     }
 
     /**
@@ -359,15 +359,15 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
      *
      * @param obj the starting object for traversal
      * @param hubCombinedObjects the destination Hub
-     * @param propertyPath the traversal path
+     * @param path the traversal path
      */
-    public HubMerger(F obj, Hub<T> hubCombinedObjects, String propertyPath) {
+    public HubMerger(F obj, Hub<T> hubCombinedObjects, String path) {
         id = aiId.getAndIncrement();
         bCreatedFromOneObject = true;
         Hub h = new Hub(obj.getClass());
         h.add(obj);
         h.setPos(0);
-        init(h, hubCombinedObjects, propertyPath, false, null, true, false);
+        init(h, hubCombinedObjects, path, false, null, true, false);
     }
 
     /**
@@ -406,24 +406,24 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
      *
      * @param hubRoot the root Hub
      * @param hubCombinedObjects the destination Hub
-     * @param propertyPath the traversal path
+     * @param path the traversal path
      * @param bShareActiveObject whether the terminal Hub AO is shared
      * @param selectOrder optional ordering expression
      * @param bUseAll whether to include all root Hub objects
      * @param bIncludeRootHub whether to include root Hub members in results
      */
-    private void init(Hub hubRoot, Hub hubCombinedObjects, String propertyPath, boolean bShareActiveObject, String selectOrder,
+    private void init(Hub hubRoot, Hub hubCombinedObjects, String path, boolean bShareActiveObject, String selectOrder,
             boolean bUseAll, boolean bIncludeRootHub) {
 
         this.hubRoot = hubRoot;
         this.hubCombined = hubCombinedObjects;
-        this.propertyPath = propertyPath;
+        this.path = path;
         this.bShareActiveObject = bShareActiveObject;
         this.bUseAll = bUseAll;
         this.bIncludeRootHub = bIncludeRootHub;
 
         if (hubCombined != null) {
-            hlCombinedNoOp = new HubListenerAdapter(this, "HubMerger", "hubMerger, hubRoot=" + hubRoot + ", pp=" + propertyPath) {
+            hlCombinedNoOp = new HubListenerAdapter(this, "HubMerger", "hubMerger, hubRoot=" + hubRoot + ", path=" + path) {
                 // no-op, just want to know that hubCombined uses a HubMerger
             };
             hubCombined.addHubListener(hlCombinedNoOp);
@@ -432,7 +432,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         long ts = System.currentTimeMillis();
 
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
-        
+
         final OASiblingHelper sh = getSiblingHelper();
         final boolean bx = srvcOAThreadLocal.addSiblingHelper(sh);
         final boolean bz = bServerSideOnly;
@@ -455,7 +455,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         }
         ts = System.currentTimeMillis() - ts;
 
-        String s = ("HM." + id + ") new HubMerger hub=" + hubRoot + ", propertyPath=" + propertyPath + ", useAll=" + bUseAll
+        String s = ("HM." + id + ") new HubMerger hub=" + hubRoot + ", path=" + path + ", useAll=" + bUseAll
                 + ", useBackgroundThread=" + getUseBackgroundThread());
         s += ", combinedHub=" + hubCombined;
         s += ", time=" + ts + "ms";
@@ -464,7 +464,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             if (bUseAll) {
                 int x = hubRoot.size();
                 if (x > 100) {
-                    if (x > 350 || propertyPath.indexOf(".") > 0) {
+                    if (x > 350 || path.indexOf(".") > 0) {
                         s += ", ALERT (large root hub)";
                     }
                 }
@@ -504,7 +504,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
     public OASiblingHelper getSiblingHelper() {
         if (siblingHelper == null) {
             siblingHelper = new OASiblingHelper<>(this.hubRoot);
-            siblingHelper.add(this.propertyPath);
+            siblingHelper.add(this.path);
         }
         return siblingHelper;
     }
@@ -577,7 +577,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
      * @return the property path
      */
     public String getPath() {
-        return this.propertyPath;
+        return this.path;
     }
 
     /**
@@ -613,7 +613,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
      * unexpected relationships.
      */
     public void verify() {
-        // qqqqq todo: needs to verify recursive data
+
         if (!bVERIFY) {
             return;
         }
@@ -801,14 +801,9 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
     protected void onNewListRealHub(HubEvent<T> e) {
     }
 
-    /* //qqqqqq not sure if this is used // check to see if this, and Data.getChildrenCount() can be
-     * removed public int getChildrenCount() { if (!bEnabled) return 0; int cnt = 0;
-     *
-     * Node node = nodeRoot; for ( ; node != null; node = node.child) { if (node.data != null) cnt +=
-     * node.data.getChildrenCount(); } // this needs to consider what to do if recursive is included cnt
-     * += dataRoot.getChildrenCount(); return cnt; } */
-    
-    
+
+
+
     /**
      * Builds the linked chain of Node objects defining the traversal model for the
      * property path. Validates link types, detects recursive structures, assigns
@@ -819,16 +814,16 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         Class clazz = hubRoot.getObjectClass();
 		final OA oa = OARuntime.oa(clazz);
 
-        // 20120809 using new OAPropertyPath
-        OAPath oaPropPath = new OAPath(propertyPath);
+        // 20120809 using new OAPath
+        OAPath oaPropPath = new OAPath(path);
         try {
             oaPropPath.setup(clazz);
         } catch (Exception e) {
-            throw new IllegalArgumentException("Cant find property for PropertyPath=\"" + propertyPath + "\" starting with Class "
+            throw new IllegalArgumentException("Cant find property for Path=\"" + path + "\" starting with Class "
                     + hubRoot.getObjectClass().getName(), e);
         }
         if (oaPropPath.hasPrivateLink()) {
-            throw new RuntimeException("property path has private link, pp=" + oaPropPath.getPropertyPath());
+            throw new RuntimeException("property path has private link, pp=" + oaPropPath.getPath());
         }
         String[] pps = oaPropPath.getProperties();
         Method[] methods = oaPropPath.getMethods();
@@ -843,11 +838,11 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                     int i = 0;
                     for (Object obj : objs) {
                         if ("?".equals(obj)) {
-                            //qqqqq if any param is "?" then need to have as HubMerger input value(s)
+
                             // if (filterInputValues == null || pos > filterInputValues.length - 1) throw new RuntimeExcepiton(...
                             // objs[i] = filterInputValues[pos++]; // this will need to be replacement value
 
-                            throw new RuntimeException("propertyPath has filter with input param '?', which is not yet supported");
+                            throw new RuntimeException("path has filter with input param '?', which is not yet supported");
                         }
                     }
                 }
@@ -885,7 +880,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 
             OALinkInfo linkInfo = oa.internal().objects().info().getLinkInfo(oi, prop);
             if (linkInfo == null) {
-                throw new IllegalArgumentException("Cant find " + prop + " for PropertyPath \"" + propertyPath + "\" starting with Class "
+                throw new IllegalArgumentException("Cant find " + prop + " for Path \"" + path + "\" starting with Class "
                         + hubRoot.getObjectClass().getName());
             }
             bLastWasMany = linkInfo.getType() == linkInfo.MANY;
@@ -929,14 +924,14 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             if (!clazz.equals(Hub.class)) {
                 // if (!OAObject.class.equals(clazz)) { // 20120809 could be using generic type reference
                 // (ex: OALeftJoin.A)
-                throw new IllegalArgumentException("Classes do not match.  Property path \"" + propertyPath + "\" is for objects of Class "
+                throw new IllegalArgumentException("Classes do not match.  Path \"" + path + "\" is for objects of Class "
                         + clazz.getName() + " and hubCombined is for objects of Class " + hubCombined.getObjectClass());
                 // }
             }
         }
         if (bIncludeRootHub && hubCombined != null) {
             if (!hubRoot.getObjectClass().equals(clazz)) {
-                throw new IllegalArgumentException("IncludeRootHub=true, and HubRoot class does not match.  Property path \"" + propertyPath
+                throw new IllegalArgumentException("IncludeRootHub=true, and HubRoot class does not match.  Path \"" + path
                         + "\" is for objects of Class " + clazz.getName() + " and hubCombined is for objects of Class "
                         + hubCombined.getObjectClass());
             }
@@ -2086,7 +2081,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
          */
         public @Override void beforeRemoveAll(HubEvent e) {
             final boolean b = (hub == hubRoot);
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
             try {
                 if (b) {
                     srvcOAThreadLocal.setHubMergerChanging(true);
@@ -2191,6 +2186,9 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 
             getExecutorService().submit(new Runnable() {
                 @Override
+                /**
+                 * Runs the deferred Hub operation.
+                 */
                 public void run() {
                     ((MyThread) Thread.currentThread()).cntNewList = cnt;
 
@@ -2242,7 +2240,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         private void _onNewList() {
             long ts = System.currentTimeMillis();
             final boolean b = bServerSideOnly;
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
             try {
                 srvcOAThreadLocal.setHubMergerChanging(true);
                 if (!b) {
@@ -2265,7 +2263,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 
             ts = System.currentTimeMillis() - ts;
             if (ts > 25) {
-                String s = ("HM." + id + ") onNewList hub=" + hubRoot + ", propertyPath=" + propertyPath + ", useAll=" + bUseAll
+                String s = ("HM." + id + ") onNewList hub=" + hubRoot + ", path=" + path + ", useAll=" + bUseAll
                         + ", useBackgroundThread=" + getUseBackgroundThread());
                 s += ", combinedHub=" + hubCombined;
                 s += ", time=" + ts + "ms";
@@ -2274,7 +2272,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                     if (bUseAll) {
                         int x = hubRoot.size();
                         if (x > 50) {
-                            if (x > 150 || propertyPath.indexOf(".") > 0) {
+                            if (x > 150 || path.indexOf(".") > 0) {
                                 s += ", ALERT";
                             }
                         }
@@ -2320,7 +2318,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         private void _onNewList3() {
             final OASiblingHelper sh = getSiblingHelper();
 			final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
             boolean bx = srvcOAThreadLocal.addSiblingHelper(sh);
 			boolean bWas = false;
             try {
@@ -2456,7 +2454,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         public void beforeRemove(HubEvent e) {
             Object obj = e.getObject();
             final boolean b = (hub == hubRoot);
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
             try {
                 if (b) {
                     srvcOAThreadLocal.setHubMergerChanging(true);
@@ -2528,7 +2526,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         @Override
         public void beforeAdd(HubEvent e) {
             final boolean b = (hub == hubRoot);
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
             try {
                 if (b) {
                     srvcOAThreadLocal.setHubMergerChanging(true);
@@ -2561,7 +2559,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
          */
         public @Override void afterAdd(HubEvent e) {
             final boolean b = (hub == hubRoot);
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
             try {
                 if (b) {
                     srvcOAThreadLocal.setHubMergerChanging(true);
@@ -2622,7 +2620,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         @Override
         public void beforeInsert(HubEvent e) {
             final boolean b = (hub == hubRoot);
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
             try {
                 if (b) {
                     srvcOAThreadLocal.setHubMergerChanging(true);
@@ -2653,10 +2651,10 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
          *
          * @param e the HubEvent describing the insertion
          */
-        @Override 
+        @Override
         public void afterInsert(HubEvent e) {
             final boolean b = (hub == hubRoot);
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
             try {
                 if (b) {
                     srvcOAThreadLocal.setHubMergerChanging(true);
@@ -2868,7 +2866,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                 }
             }
             final boolean b = (hub == hubRoot);
-			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
             try {
                 if (b) {
                     srvcOAThreadLocal.setHubMergerChanging(true);
@@ -2959,6 +2957,12 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         if (executorService == null) {
             executorService = Executors.newCachedThreadPool(new ThreadFactory() {
                 @Override
+                /**
+                 * Creates a worker thread for Hub processing.
+                 *
+                 * @param r the runnable to execute
+                 * @return the new thread
+                 */
                 public Thread newThread(Runnable r) {
                     Thread t = new MyThread(r, "HubMerger." + aiThreadCnt.getAndIncrement());
                     t.setDaemon(true);

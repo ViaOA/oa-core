@@ -25,41 +25,21 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
 
-/*qqqqqqqqqqqqqq
-CODEX
-
-OA listeners ??
-   short curcuit policy
-      only for "before" events
-      others need to catch exception and call all listeners
-
-
- */
-
-
 
 /**
- * qqqqqqqqqqqqqqqqqqqqqqqqqqqq dropped "extends PropertyChangeEvent"
- * 
- * Single event type used by {@link Hub} and {@link com.viaoa.object.OAObject} to
- * represent structural and property-change activity throughout the OA graph.
+ * Event object published by a {@link Hub}.
  * <p>
- * Extends {@link java.beans.PropertyChangeEvent} and adds Hub-specific context:
- * current object, positional info (pos/from/to), cancel/response flags, and
- * multiple constructors for add/insert/remove/move/replace/property-change cases.
- * <p>
- * For link properties persisted as {@link com.viaoa.object.OAObjectKey}, {@link #getOldValue()}
- * resolves the prior reference to its real {@code OAObject} using link metadata, so
- * listeners always see object instances (not keys) for reverse-link scenarios.
- * <p>
- * Typical producers: Hub add/remove/move/AO changes, OAObject property updates.
- * Typical consumers: {@link HubListener} implementations across UI, caching, and sync.
+ * A HubEvent carries the Hub, object, property name, old/new values, positions,
+ * and optional link metadata needed by Hub listeners and OA runtime services to
+ * respond to collection, active-object, and property changes.
+ *
+ * @param <TYPE> the Hub object type
  */
 public class HubEvent<TYPE extends OAObject> {
 	private static final Logger LOG = OALogger.getLogger(HubEvent.class);
-	
+
 	Hub<TYPE> hub;
-	
+
 	/**
 	 * The object associated with this event, such as the added,
 	 * removed, moved, or property-changed object.
@@ -67,9 +47,9 @@ public class HubEvent<TYPE extends OAObject> {
 	TYPE object;
 
 	TYPE object2;
-	
+
 	private Object oldValue;
-	
+
 	/**
 	 * Cached resolved old-value object used when translating an
 	 * {@link OAObjectKey} into its corresponding {@link OAObject}
@@ -78,7 +58,7 @@ public class HubEvent<TYPE extends OAObject> {
 	private Object oldValue2;
 
 	private Object newValue;
-	
+
 	private String propertyName;
 
 	/**
@@ -87,28 +67,28 @@ public class HubEvent<TYPE extends OAObject> {
 	 * {@code toPos} is the destination position for move events.
 	 */
 	int pos, toPos;
-	
+
 	/**
 	 * Flag indicating whether this event has been marked as canceled,
 	 * preventing further processing.
 	 */
 	boolean bCancel;
-	
+
 	/**
 	 * Optional response text that listeners can set to return
 	 * information back to the event producer.
 	 */
 	String response;
 
-	
-	
+
+
 	/**
 	 * Internal counter used for debug tracing in the optional
 	 * p(String) diagnostic helper method.
 	 */
 	static int cnt = 0;
 
-	
+
 	/**
 	 * Creates a HubEvent with the given Hub as its source and no associated
 	 * object or position information.
@@ -118,8 +98,8 @@ public class HubEvent<TYPE extends OAObject> {
 	public HubEvent(Hub<TYPE> hub) {
 		this.hub = hub;
 	}
-	
-	
+
+
 	/**
 	 * Creates a HubEvent for an add event where an object is added to a Hub.
 	 *
@@ -140,8 +120,8 @@ public class HubEvent<TYPE extends OAObject> {
 	public HubEvent(TYPE obj) {
 		this.object = obj;
 	}
-	
-	
+
+
 	/**
 	 * Creates a HubEvent for a property-change originating from a Hub.
 	 *
@@ -158,8 +138,8 @@ public class HubEvent<TYPE extends OAObject> {
 		this.oldValue = oldValue;
 		this.newValue = newValue;
 	}
-	
-	
+
+
 	/**
 	 * Creates a HubEvent for a property-change originating directly from
 	 * an object rather than a Hub.
@@ -187,13 +167,16 @@ public class HubEvent<TYPE extends OAObject> {
 		this.object2 = object2;
 	}
 
+	/**
+	 * Creates a Hub helper instance.
+	 */
 	public HubEvent(Hub<TYPE> hub, TYPE obj, String propertyName) {
 		this.hub = hub;
 		this.object = obj;
 		this.propertyName = propertyName;
 	}
-	
-	
+
+
 	/**
 	 * Creates a HubEvent representing a move operation where an object is
 	 * moved from one position to another within the Hub.
@@ -223,12 +206,17 @@ public class HubEvent<TYPE extends OAObject> {
 	}
 
 
-	
-	
+
+
+	/**
+	 * Returns the Hub value.
+	 *
+	 * @return the Hub value
+	 */
 	public Hub<TYPE> getHub() {
 		return hub;
 	}
-	
+
 
 	/**
 	 * Returns the object associated with this event.
@@ -239,19 +227,34 @@ public class HubEvent<TYPE extends OAObject> {
 		return object;
 	}
 
+	/**
+	 * Returns the Object2 value.
+	 *
+	 * @return the Object2 value
+	 */
 	public TYPE getObject2() {
 		return object2;
 	}
-	
+
+	/**
+	 * Returns the PropertyName value.
+	 *
+	 * @return the PropertyName value
+	 */
 	public String getPropertyName() {
 		return propertyName;
 	}
-	
+
+	/**
+	 * Returns the NewValue value.
+	 *
+	 * @return the NewValue value
+	 */
 	public Object getNewValue() {
 		return newValue;
 	}
-	
-	
+
+
 	/**
 	 * Returns the old value associated with this event. If the old value is
 	 * an {@link OAObjectKey} and the event object is an {@link OAObject},
@@ -288,9 +291,9 @@ public class HubEvent<TYPE extends OAObject> {
 		}
 		return oldObj;
 	}
-	
-	
-	
+
+
+
 	/**
 	 * Returns the position associated with this event. Used for add,
 	 * insert, remove, and active-object events.
@@ -372,7 +375,7 @@ public class HubEvent<TYPE extends OAObject> {
 		}
 		return name.equalsIgnoreCase(getPropertyName());
 	}
-	
+
 	/**
 	 * Internal debug helper that prints an event trace message every tenth
 	 * invocation. Used for monitoring event activity during development.
@@ -384,5 +387,5 @@ public class HubEvent<TYPE extends OAObject> {
 			System.out.println("Event =========> " + (++cnt) + " " + s);
 		}
 	}
-	
+
 }

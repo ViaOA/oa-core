@@ -29,7 +29,7 @@ class OATemplateTest {
             "registers.registerSessions.invoices.invoiceBaskets.lineItems.product.item.name";
     private static final String PP_STORE_TO_ITEM_NAME_PATH = StorePP.registers().registerSessions().invoices()
             .invoiceBaskets().lineItems().product().item().name();
-    private static final String TEXT_UTIL_STORE_TO_ITEM_NAME_PATH = OATextUtil.createPropertyPath(Store.P_Registers,
+    private static final String TEXT_UTIL_STORE_TO_ITEM_NAME_PATH = OATextUtil.createPath(Store.P_Registers,
             Register.P_RegisterSessions, RegisterSession.P_Invoices, Invoice.P_InvoiceBaskets,
             InvoiceBasket.P_LineItems, LineItem.P_Product, Product.P_Item, Item.P_Name);
 

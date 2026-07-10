@@ -3,6 +3,9 @@ package com.viaoa.oa.api.services.hubs;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 
+/**
+ * Public OA Hub link service operations for synchronizing Hubs through model relationships.
+ */
 public interface HubLinkOps {
 
     /**
@@ -17,7 +20,7 @@ public interface HubLinkOps {
      * relationship (reference or Hub) on the objects contained in {@code hub2}.
      * <p>
      * This is commonly used to synchronize Hubs based on relationships, allowing
-     * one Hub to follow another through the Object Graph as navigation occurs.
+     * one Hub to follow another through the OA model as navigation occurs.
      *
      * @param hub1 the Hub to be linked and updated
      * @param hub2 the source Hub whose active object drives the link
@@ -25,5 +28,12 @@ public interface HubLinkOps {
      */
     void link(Hub<?> hub1, Hub<?> hub2, String referenceName);
 
+	/**
+	 * Returns the Hub that owns link configuration for the supplied Hub.
+	 *
+	 * @param thisHub the Hub to inspect
+	 * @param bIncludeCopiedHubs {@code true} to include copied Hubs when resolving link ownership
+	 * @return the Hub with link configuration, or {@code null}
+	 */
     public <T extends OAObject> Hub<T> getHubWithLink(final Hub<T> thisHub, boolean bIncludeCopiedHubs);
 }

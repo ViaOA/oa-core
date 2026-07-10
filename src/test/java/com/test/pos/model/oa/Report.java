@@ -189,7 +189,7 @@ public class Report extends OAObject {
         displayName = "Report Def", 
         reverseName = ReportDef.P_Reports, 
         allowCreateNew = false, 
-        selectFromPropertyPath = P_CalcReportClass + "." + ReportClass.P_ReportDefs, 
+        selectFromPath = P_CalcReportClass + "." + ReportClass.P_ReportDefs, 
         fkeys = {@OAFkey(fromProperty = P_ReportDefId, toProperty = ReportDef.P_Id)}
     )
     public ReportDef getReportDef() {

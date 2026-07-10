@@ -17,8 +17,8 @@ import com.viaoa.sync.remote.RemoteSyncInterface;
 CODEX
 
 #2 — bug
-  file/class/method: src/main/java/com/viaoa/graph/service/object/OAObjectSaveService.java:34, save(OAObject,int)
-  and src/main/java/com/viaoa/graph/service/object/OAObjectParentService.java:1779, callRemoteSyncAddNewToCache
+  file/class/method: src/main/java/com/viaoa/oa/service/object/OAObjectSaveService.java:34, save(OAObject,int)
+  and src/main/java/com/viaoa/oa/service/object/OAObjectParentService.java:1779, callRemoteSyncAddNewToCache
   exact concern: New objects call srvcSync.getRemoteSync().addNewToCache(oos) before confirming sync-client/server
   role or null remote sync availability.
   why it matters: Saving a new, non-mastered object in single-user/unconfigured runtime can dereference a null
@@ -32,7 +32,7 @@ CODEX
 
 
  #3 — bug
-  file/class/method: src/main/java/com/viaoa/graph/service/object/OAObjectSaveService.java:248, recursive save of
+  file/class/method: src/main/java/com/viaoa/oa/service/object/OAObjectSaveService.java:248, recursive save of
   new ONE reference
   exact concern: If callDSSaveWithoutReferences(oaRef) throws, the code still executes callObjectSetNew(oaRef,
   false) before rethrowing.
@@ -45,7 +45,7 @@ CODEX
   new.
 
  #4 — invariant risk
-  file/class/method: src/main/java/com/viaoa/graph/service/object/OAObjectSaveService.java:348, onSave
+  file/class/method: src/main/java/com/viaoa/oa/service/object/OAObjectSaveService.java:348, onSave
   exact concern: setDeleted(false) and setChanged(false) happen before callDSSave(oaObj). The top-level save retry
   path restores changed state, but lower/internal callers can leave the object clean after a failed datasource save.
   why it matters: Persistence failure must not clear dirty/deleted lifecycle state. Otherwise runtime and
@@ -57,14 +57,14 @@ CODEX
   suggested test coverage: Exercise both top-level save and internal object-only save with datasource failure.
 
  #2
-  file/class/method: src/main/java/com/viaoa/graph/service/object/OAObjectSaveService.java:137 save(...)
+  file/class/method: src/main/java/com/viaoa/oa/service/object/OAObjectSaveService.java:137 save(...)
 
   exact execution path that triggers the bug: save(oaObj, rule, cascade) -> cascade.depthAdd() -> any exception
   before line 191, such as _save(...), before-save listener, onSave(...), or MANY cascade -> method exits without
   cascade.depthSubtract().
 
   why it is a real correctness risk: the shared OACascade object is left with inflated depth. Any caller reusing
-  that cascade can incorrectly hit overflow/depth behavior and skip or defer graph saves.
+  that cascade can incorrectly hit overflow/depth behavior and skip or defer cascade saves.
 
   severity: invariant bug
 
@@ -75,7 +75,7 @@ CODEX
 
 
 #1
-  file/class/method: src/main/java/com/viaoa/graph/service/object/OAObjectSaveService.java, save(...)
+  file/class/method: src/main/java/com/viaoa/oa/service/object/OAObjectSaveService.java, save(...)
 
   exact execution path: save(...) enters retry loop, onSave(oaObj) throws on attempt 1, catch logs, sets changed
   true, calls _save(...), does not continue, then falls through to the “onSave returned false” warning and break.
@@ -101,11 +101,22 @@ public abstract class OAObjectSaveService {
 
 	private final OAObject.FriendAccess faObject;
 
+	/**
+	 * Performs OAObjectSaveService behavior for the OA object service.
+	 *
+	 * @param oaObjectFriendAccess method input
+	 */
 	public OAObjectSaveService(OAObject.FriendAccess oaObjectFriendAccess) {
 		if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
 		this.faObject = oaObjectFriendAccess;
 	}
 
+	/**
+	 * Saves the supplied OAObject using this service.
+	 *
+	 * @param oaObj method input
+	 * @param iCascadeRule method input
+	 */
 	public void save(OAObject oaObj, int iCascadeRule) {
 		if (oaObj == null) {
 			return;
@@ -152,6 +163,13 @@ public abstract class OAObjectSaveService {
 		save(oaObj, iCascadeRule, cascade, true, true);
 	}
 
+	/**
+	 * Saves the supplied OAObject using this service.
+	 *
+	 * @param oaObj method input
+	 * @param iCascadeRule method input
+	 * @param cascade method input
+	 */
 	public void save(OAObject oaObj, int iCascadeRule, OACascade cascade) {
 		save(oaObj, iCascadeRule, cascade, false, true);
 	}
@@ -257,7 +275,7 @@ public abstract class OAObjectSaveService {
 	 * Check all Links with TYPE=MANY and CASCADE=true to either call "save()" or to check if objects can be saved.<br>
 	 * This will also check any Link with TYPE=ONE to see if isNew(). If it isNew then it will be saved (but not its links) before this
 	 * object can be saved. This is needed since the OADataSource's will require the parent to exist before this object can be saved.
-	 * 
+	 *
 	 * @param checkOnly if true then "canSave" is called, else "save()" is called
 	 * @return null if all objects can be saved
 	 */
@@ -384,7 +402,6 @@ public abstract class OAObjectSaveService {
 	private final Map<UUID, Thread> hmSaveNewLock = new HashMap<>(11);
 
 	/**
-
 	*/
 	public boolean onSave(OAObject oaObj) {
 		OAObjectInfo oi = callInfoGetOAObjectInfo(oaObj.getClass());
@@ -450,24 +467,132 @@ public abstract class OAObjectSaveService {
 		return true;
 	}
 
+	/**
+	 * Dependency hook used by this service to cSIsClient.
+	 *
+	 * @param oaOjb method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callCSIsClient(OAObject oaOjb); 
+	/**
+	 * Dependency hook used by this service to cSServerSave.
+	 *
+	 * @param oaObj method input
+	 * @param iCascadeRule method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callCSServerSave(OAObject oaObj, int iCascadeRule);
+	/**
+	 * Dependency hook used by this service to hubGetHubReferences.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> Hub<T>[] callHubGetHubReferences(T oaObj); 
+	/**
+	 * Dependency hook used by this service to infoGetObjectInfo.
+	 *
+	 * @param obj method input
+	 * @return result value
+	 */
 	public abstract OAObjectInfo callInfoGetObjectInfo(OAObject obj); 
+	/**
+	 * Dependency hook used by this service to reflectIsReferenceNullOrNotLoaded.
+	 *
+	 * @param oaObj method input
+	 * @param propertyName method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callReflectIsReferenceNullOrNotLoaded(OAObject oaObj, String propertyName);
+	/**
+	 * Dependency hook used by this service to reflectGetProperty.
+	 *
+	 * @param oaObj method input
+	 * @param propPath method input
+	 * @return result value
+	 */
 	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath); 
+	/**
+	 * Dependency hook used by this service to infoGetOAObjectInfo.
+	 *
+	 * @param clazz method input
+	 * @return result value
+	 */
 	public abstract OAObjectInfo callInfoGetOAObjectInfo(Class<?> clazz);
+	/**
+	 * Dependency hook used by this service to dSSaveWithoutReferences.
+	 *
+	 * @param oaObj method input
+	 */
 	public abstract void callDSSaveWithoutReferences(OAObject oaObj);
+	/**
+	 * Dependency hook used by this service to objectSetNew.
+	 *
+	 * @param oaObj method input
+	 * @param b method input
+	 */
 	public abstract void callObjectSetNew(final OAObject oaObj, final boolean b);
+	/**
+	 * Dependency hook used by this service to hubSaveAll.
+	 *
+	 * @param hub method input
+	 * @param iCascadeRule method input
+	 * @param cascade method input
+	 */
 	public abstract void callHubSaveAll(Hub<?> hub, int iCascadeRule, OACascade cascade);
+	/**
+	 * Dependency hook used by this service to reflectGetRawReference.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @return result value
+	 */
 	public abstract Object callReflectGetRawReference(OAObject oaObj, String name);
+	/**
+	 * Dependency hook used by this service to dSSave.
+	 *
+	 * @param oaObj method input
+	 */
 	public abstract void callDSSave(OAObject oaObj); 
 //	public abstract void callLogLogToXmlFile(OAObject oaObj, boolean bSave);
+	/**
+	 * Dependency hook used by this service to hubEventFireBeforeSaveEvent.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 */
 	public abstract <T extends OAObject> void callHubEventFireBeforeSaveEvent(Hub<T> thisHub, T obj);
+	/**
+	 * Dependency hook used by this service to hubEventFireAfterSaveEvent.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 */
 	public abstract <T extends OAObject> void callHubEventFireAfterSaveEvent(Hub<T> thisHub, T obj);
+	/**
+	 * Dependency hook used by this service to threadLocalIsDeleting.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callThreadLocalIsDeleting();
 
+	/**
+	 * Dependency hook used by this service to hubIsInHubWithMaster.
+	 *
+	 * @param thisObj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	protected abstract boolean callHubIsInHubWithMaster(OAObject thisObj);
+	/**
+	 * Dependency hook used by this service to remoteSyncAddNewToCache.
+	 *
+	 * @param oos method input
+	 */
 	protected abstract void callRemoteSyncAddNewToCache(OAObjectSerializer<? extends OAObject> oos);
+	/**
+	 * Dependency hook used by this service to cSSyncIsRunning.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	protected abstract boolean callCSSyncIsRunning();
 }

@@ -52,216 +52,11 @@ import com.viaoa.sync.remote.RemoteSessionInterface;
 import com.viaoa.sync.remote.RemoteSyncImpl;
 import com.viaoa.sync.remote.RemoteSyncInterface;
 
-/*qqqqqqqqqqqqqq
-CODEX
-
-
-6. src/main/java/com/viaoa/sync/OASyncServer.java — onClientDisconnect(int)
-     Concrete bug: cx.remoteSession.clearLocks() is called without checking whether remoteSession was ever created.
-     Runtime scenario: client connects and disconnects before completing remote session setup.
-     Why this violates sync semantics: disconnect cleanup can throw during a normal connection lifecycle path,
-     skipping later cleanup and making reconnect/session accounting less reliable.
-     Minimal fix direction: null-check cx.remoteSession before clearing locks.
-     Suggested CODEX comment location: OASyncServer.onClientDisconnect, around lines 654-664.
-
-1. src/main/java/com/viaoa/sync/OASyncServer.java — getRemoteSession(...).isLockedByAnotherClient(...)
-     Concrete bug: the loop calls cx.remoteSession.isLockedByThisClient(...) for every ClientInfoExt without checking
-     whether remoteSession is null.
-     Runtime scenario: client A has an active session and checks/sets a lock while client B has connected but has not
-     yet completed getRemoteSession(...), or client B disconnected before session creation.
-     Why this violates OA/OG sync semantics: lock checks can fail with NPE during normal connect/disconnect timing,
-     which can falsely break remote save/edit workflows and leave lock behavior unreliable.
-     Minimal fix direction: skip entries where cx.remoteSession == null.
-     Suggested CODEX comment location: OASyncServer.getRemoteSession(...), inside anonymous isLockedByAnotherClient,
-     around the loop over hmClientInfoExt.
-  2. src/main/java/com/viaoa/sync/OASyncServer.java — getRemoteClient(...).updateObjectCache(...)
-     Concrete bug: the anonymous RemoteClientImpl.updateObjectCache(...) assumes cx.remoteSession is non-null.
-     Runtime scenario: a client obtains/uses RemoteClientInterface before session creation is fully established, or a
-     disconnect/reconnect race nulls/removes session state while a datasource/detail request is still returning
-     objects.
-     Why this violates OA/OG sync semantics: server-side cache-retention tracking can throw instead of recording that
-     the client now holds returned objects, causing remote select/detail work to fail or lose retention state.
-     Minimal fix direction: ensure getRemoteClient(...) creates/validates the session first, or null-check and fail
-     visibly instead of dereferencing cx.remoteSession.
-     Suggested CODEX comment location: OASyncServer.getRemoteClient(...), anonymous updateObjectCache, around the
-     cx.remoteSession.updateObjectsWithoutHubs(...) call.
-  3. src/main/java/com/viaoa/sync/OASyncServer.java — getRemoteMultiplexerServer().removeSession(int)
-     Concrete bug: override decrements aiSessionCount unconditionally, even if the underlying remote multiplexer had
-     no session to remove.
-     Runtime scenario: onException(...) removes a session after a callback stop, then the socket close/disconnect path
-     also calls removeSession(connectionId). OARemoteMultiplexerServer.removeSession is idempotent, but the sync
-     server counter is not.
-     Why this violates OA/OG sync semantics: session lifecycle state drifts from actual remote session state, making
-     server monitoring/admin decisions and lifecycle assertions unreliable during normal failure/disconnect paths.
-     Minimal fix direction: decrement only when a session actually existed, or move the count update behind a boolean-
-     returning remove operation / local membership check.
-     Suggested CODEX comment location: OASyncServer.getRemoteMultiplexerServer(), override removeSession, around the
-     unconditional aiSessionCount.decrementAndGet().
-  4. src/main/java/com/viaoa/sync/OASyncServer.java — start() / startLoadDataInBackgroundThread()
-     Concrete bug: startLoadDataInBackgroundThread() starts a new background load thread every time start() is called;
-     it has no guard for an existing live threadLoadSibling.
-     Runtime scenario: server is stopped and started again, or start() is accidentally called twice during test/
-     runtime setup. Multiple background workers then consume the same sibling-load queue concurrently.
-     Why this violates OA/OG sync semantics: background detail/sibling preloading becomes nondeterministic and leaks
-     daemon workers across lifecycle retries.
-     Minimal fix direction: guard with if (threadLoadSibling != null && threadLoadSibling.isAlive()) return;, and add
-     a stop/lifecycle flag if restart is supported.
-     Suggested CODEX comment location: OASyncServer.startLoadDataInBackgroundThread, around thread creation.
-
-
-1. src/main/java/com/viaoa/sync/OASyncServer.java — onUpdate(ClientInfo)
-     Concrete bug: onUpdate replaces the server’s ClientInfoExt.ci with the client-supplied ClientInfo without
-     preserving server-owned lifecycle state such as disconnected.
-     Runtime scenario: a client update is in flight while the socket disconnects. onClientDisconnect(...) sets
-     cx.ci.disconnected, then a late RemoteSessionImpl.update(ci) calls onUpdate(ci) and replaces cx.ci with a stale
-     client object whose disconnected is null.
-     Why this violates OA/OG sync semantics: a disconnected session can silently appear connected again. It also
-     affects RemoteSessionImpl.saveCache(...), whose subclass clears caches only when cx.ci.getDisconnected() != null;
-     a late update can prevent disconnected-session cache cleanup.
-     Minimal fix direction: treat disconnect timestamp as server-owned state. Ignore updates after disconnect, or
-     merge mutable client fields while preserving disconnected.
-     Suggested CODEX comment location: OASyncServer.onUpdate, around the cx.ci = ci assignment.
-  2. src/main/java/com/viaoa/sync/OASyncServer.java / src/main/java/com/viaoa/sync/model/ServerInfo.java — start(),
-     stop(), ServerInfo.started
-     Concrete bug: ServerInfo.started is never set by OASyncServer.start() or stop().
-     Runtime scenario: server starts successfully, clients/admin call getDisplayMessage(), and the message reports
-     started=false for a running sync server.
-     Why this violates OA/OG sync semantics: runtime lifecycle state is false. Monitoring/admin/discovery code cannot
-     rely on ServerInfo to distinguish started/stopped sync state.
-     Minimal fix direction: set getServerInfo().setStarted(true) after successful startup completion, and set it false
-     during stop/failed startup cleanup.
-     Suggested CODEX comment location: OASyncServer.start() around lines 1215-1221, and stop() around lines 1230-1234.
-
-1. src/main/java/com/viaoa/sync/OASyncServer.java:401 / src/main/java/com/viaoa/graph/service/
-     OASyncService.java:215 / src/main/java/com/viaoa/graph/service/object/OAObjectLockService.java:60
-
-  Concrete bug:
-  Server-mode getRemoteSessionForServer() and getRemoteClientForServer() can never create the server’s own session/
-  client facade because they call getRemoteSession(getClientInfo(), null) / getRemoteClient(getClientInfo()), and
-  getClientInfo() uses connectionId=0. getRemoteSession(...) and getRemoteClient(...) require
-  hmClientInfoExt.get(connectionId) to exist, but server connectionId 0 is never inserted into hmClientInfoExt.
-
-  Runtime scenario:
-  In sync-server mode, OAObjectLockService.lock/unlock/isLocked sees callSyncIsServer() == true, so it delegates to s
-  rvcSync.getRemoteSession(). OASyncService.getRemoteSession() returns syncServer.getRemoteSessionForServer(), which
-  returns null. The lock operation then returns false instead of using either a real server-local session lock or loc
-  al lock path.
-
-  Why this violates OA/OG sync semantics:
-  Server-mode object locking silently becomes a false no-op. The code comments/Javadoc explicitly say the server-side
-  session is created and registered, but the actual lookup path cannot create one without a ClientInfoExt entry.
-
-  Minimal fix direction:
-  Either create/register a real server-local ClientInfoExt for connectionId 0, or make getRemoteSessionForServer()
-  construct a dedicated local RemoteSessionImpl that does not depend on multiplexer client-session state. Same
-  decision should be made for getRemoteClientForServer().
-
-  Suggested CODEX comment location:
-  OASyncServer.getRemoteSessionForServer() and getRemoteClientForServer(), before the lazy assignment.
-
-  Suggested regression test:
-  testSyncServerObjectLockUsesServerLocalSessionInsteadOfReturningFalse()
-
-
-  2. src/main/java/com/viaoa/sync/OASyncServer.java:864
-
-  Concrete bug:
-  onException(...) calls cx.remoteClientCallback.stop(...) and then removes the session in the same block. If callback
-  stop throws or times out, removeSession(...) is skipped.
-
-  Runtime scenario:
-  Server detects a client remote exception and attempts to stop the client. The callback path is already degraded, so
-  remoteClientCallback.stop(...) throws. The server does not remove the remote session.
-
-  Why this violates sync semantics:
-  A broken client/session can remain registered after a failure path that intended to remove it, leaving stale session
-  state and stale sync filtering state.
-
-  Minimal fix direction:
-  Call removeSession(...) in a finally or catch callback failure and still remove when the session exists.
-
-  Suggested CODEX comment location:
-  OASyncServer.getRemoteMultiplexerServer().onException(...).
-
-  Suggested regression test:
-  testServerExceptionCleanupRemovesSessionWhenClientStopCallbackFails()
-
-
-
-1. src/main/java/com/viaoa/sync/OASyncServer.java:929 / shouldSendSyncMessageToClient(...)
-
-  Concrete bug: addToHub / insertInHub sync filtering assumes the server cache still has the master object after
-  confirming only that the client GUID map contains the master GUID.
-
-  Runtime scenario: a client has seen a master object, so its hmGuid contains the master GUID. Later the server
-  broadcasts an addToHub or insertInHub message, but the weak object cache no longer has the master object at line
-  937. Line 938 then calls property access with obj == null.
-
-  Why this violates sync semantics: sync filtering must not fail while deciding whether to deliver a valid hub
-  mutation. A cache miss during routing can break message delivery or remote processing even though the sync message
-  already has the authoritative class/key/property data.
-
-  Minimal fix direction: if callObjectCacheGet(...) returns null, do not dereference it. Either conservatively send
-  the message after the GUID checks, or treat the hub-loaded probe as unavailable and return a deterministic routing
-  decision.
-
-  Suggested CODEX comment location: OASyncServer.shouldSendSyncMessageToClient(...), around lines 929-938.
-
-  Suggested regression test: testAddToHubSyncFilteringDoesNotThrowWhenMasterGuidKnownButServerCacheMisses()
-
-  2. src/main/java/com/viaoa/sync/OASyncServer.java:771 + src/main/java/com/viaoa/sync/OASyncClient.java:416 /
-     connection startup
-
-  Concrete bug: server connection setup creates the remote multiplexer session before inserting ClientInfoExt into
-  hmClientInfoExt, while client startup accepts null remote session/client lookups as success.
-
-  Runtime scenario: onClientConnect(...) calls createSession(socket, connectionId) at line 772, then inserts the
-  connection state at line 773. If the client immediately calls getRemoteSession(...) or getRemoteClient(...) during
-  that window, server lookup returns null because hmClientInfoExt does not yet contain the connection. Client start()
-  does not validate non-null results and can still set clientInfo.started=true.
-
-  Why this violates sync semantics: client startup can falsely succeed with missing remote session/client interfaces.
-  Later sync operations then fail, no-op, or initialize inconsistently.
-
-  Minimal fix direction: register ClientInfoExt before exposing the remote session, with rollback if
-  createSession(...) fails. Also make OASyncClient.start() validate all required remote interfaces are non-null before
-  marking started.
-
-  Suggested CODEX comment location: OASyncServer.onClientConnect(...) around lines 771-773 and OASyncClient.start()
-  around lines 416-428.
-
-  Suggested regression test: testClientStartFailsIfRemoteSessionOrRemoteClientLookupReturnsNull()
-
-
-
-1. src/main/java/com/viaoa/sync/OASyncServer.java:550 / getRemoteSession(...) and src/main/java/com/viaoa/sync/
-     OASyncServer.java:668 / getRemoteClient(...)
-
-  Concrete bug: both methods assume the remote multiplexer session still exists once hmClientInfoExt has an entry.
-
-  Runtime scenario: a disconnect removes the remote multiplexer session, but hmClientInfoExt remains for disconnect/
-  cache-save/admin state. A late remote lookup or reconnect race calls getRemoteSession(...) / getRemoteClient(...);
-  getSession(id, false) returns null, then .getGuidHashMap() throws.
-
-  Why this violates sync semantics: disconnected-session state is intentionally retained, but remote facade creation
-  treats it as active. A normal disconnect race can fail with NPE instead of cleanly returning null or rejecting the
-  stale session.
-
-  Minimal fix direction: store Session session = getRemoteMultiplexerServer().getSession(id, false) and return null/
-  fail visibly if null or disconnected before dereferencing.
-
-  Suggested CODEX comment location: lines 550 and 668.
-
-  Suggested regression test: testLateRemoteFacadeLookupAfterDisconnectDoesNotThrowNpe()
-
-
-
-*/
 
 /**
  * Server-side synchronization endpoint for an OA model.
  * <p>
- * An {@code OASyncServer} hosts the authoritative {@code OAObject} graph and
+ * An {@code OASyncServer} hosts the authoritative {@code OAObject} model and
  * manages connections from one or more {@link OASyncClient} instances. It
  * routes remote method calls, broadcast sync messages, and manages per-client
  * session state.
@@ -303,7 +98,7 @@ CODEX
  *
  * <p>
  * {@code OASyncServer} is designed to be long-lived and to coordinate the
- * object graph state for all connected clients.
+ * OA model state for all connected clients.
  */
 public class OASyncServer {
 	private static Logger LOG = Logger.getLogger(OASyncServer.class.getName());
@@ -438,6 +233,10 @@ public class OASyncServer {
 		return remoteSyncImpl;
 	}
 
+	/**
+	 * Returns the server-side remote sync implementation.
+	 * @return remote sync interface
+	 */
 	public RemoteSyncInterface getRemoteSyncInterface() {
 		return remoteSyncInterface;
 	}
@@ -455,29 +254,56 @@ public class OASyncServer {
 	public RemoteServerImpl getRemoteServer() {
 		if (remoteServer == null) {
 			remoteServer = new RemoteServerImpl() {
+				/**
+				 * Returns or creates a remote session for a connected client.
+				 * @param ci client information
+				 * @param callback client callback interface
+				 * @return remote session for the client
+				 */
 				@Override
 				public RemoteSessionInterface getRemoteSession(ClientInfo ci, RemoteClientCallbackInterface callback) {
 					RemoteSessionInterface rsi = OASyncServer.this.getRemoteSession(ci, callback);
 					return rsi;
 				}
 
+				/**
+				 * Returns or creates the remote client interface for a connected client.
+				 * @param ci client information
+				 * @return remote client interface
+				 */
 				@Override
 				public RemoteClientInterface getRemoteClient(ClientInfo ci) {
 					RemoteClientInterface rci = OASyncServer.this.getRemoteClient(ci);
 					return rci;
 				}
 
+				/**
+				 * Returns a human-readable server display message.
+				 * @return display message
+				 */
 				@Override
 				public String getDisplayMessage() {
 					return OASyncServer.this.getDisplayMessage();
 				}
 
+				/**
+				 * Refreshes server cache state for a class.
+				 * @param clazz class to refresh
+				 */
 				@Override
 				public void refreshCache(Class clazz) {
 					final OA oa = OARuntime.oa(clazz);
 			    	oa.internal().objects().cache().refresh(clazz);
 				}
 
+				/**
+				 * Finds or creates a unique object for the supplied property value.
+				 * @param clazz object class
+				 * @param propertyName unique property name
+				 * @param uniqueKey unique property value
+				 * @param bAutoCreate true to create the object when missing
+				 * @return unique object, or null
+				 */
 				@Override
 				public OAObject getUnique(Class<? extends OAObject> clazz, String propertyName, Object uniqueKey, boolean bAutoCreate) {
 					
@@ -487,9 +313,12 @@ public class OASyncServer {
 					return oaObj;
 				}
 
+				/**
+				 * Allocates the next block of object GUID values.
+				 * @return first GUID value in the allocated block
+				 */
 				@Override
 				public long getNextFiftyObjectGuids() {
-					// TODO Auto-generated method stub
 					return 0;
 				}
 			};
@@ -573,6 +402,12 @@ public class OASyncServer {
 		rs = new RemoteSessionImpl(ci.getConnectionId(), hm) {
 			boolean bClearedCache;
 
+			/**
+			 * Checks whether another client owns the object lock.
+			 * @param objectClass object class
+			 * @param objectKey object key
+			 * @return true if locked by another client
+			 */
 			@Override
 			public boolean isLockedByAnotherClient(Class objectClass, OAObjectKey objectKey) {
 				for (Map.Entry<Integer, ClientInfoExt> entry : hmClientInfoExt.entrySet()) {
@@ -587,6 +422,11 @@ public class OASyncServer {
 				return false;
 			}
 
+			/**
+			 * Saves cached objects for this remote session.
+			 * @param cascade cascade tracker
+			 * @param iCascadeRule cascade rule
+			 */
 			@Override
 			public void saveCache(OACascade cascade, int iCascadeRule) {
 				super.saveCache(cascade, iCascadeRule);
@@ -596,6 +436,12 @@ public class OASyncServer {
 				}
 			}
 
+			/**
+			 * Checks whether this session owns an object lock.
+			 * @param objectClass object class
+			 * @param objectKey object key
+			 * @return true if locked by this session
+			 */
 			@Override
 			public boolean isLocked(Class objectClass, OAObjectKey objectKey) {
 				boolean b = isLockedByThisClient(objectClass, objectKey);
@@ -605,11 +451,20 @@ public class OASyncServer {
 				return b;
 			}
 
+			/**
+			 * Receives an exception report from a client session.
+			 * @param msg exception message
+			 * @param ex exception
+			 */
 			@Override
 			public void sendException(String msg, Throwable ex) {
 				OASyncServer.this.onClientException(ci, msg, ex);
 			}
 
+			/**
+			 * Updates server-side client information.
+			 * @param ci updated client information
+			 */
 			@Override
 			public void update(ClientInfo ci) {
 				OASyncServer.this.onUpdate(ci);
@@ -629,6 +484,9 @@ public class OASyncServer {
 	 */
 	public void startUpdateThread(final int seconds) {
 		Thread t = new Thread(new Runnable() {
+			/**
+			 * Runs deferred server cache-save work for a disconnected client.
+			 */
 			@Override
 			public void run() {
 				getClientInfo();
@@ -698,6 +556,11 @@ public class OASyncServer {
 				cx.remoteSession.updateObjectsWithoutHubs( obj.getClass(), obj.getObjectKey(), oa.internal().objects().hub().isInHubWithMaster(obj) );
 			}
 
+			/**
+			 * Queues background detail/sibling loading for a returned object.
+			 * @param obj object to load from
+			 * @param property property to load
+			 */
 			@Override
 			protected void loadDataInBackground(OAObject obj, String property) {
 				OASyncServer.this.loadDataInBackground(obj, property);
@@ -778,17 +641,30 @@ public class OASyncServer {
 	public OAMultiplexerServer getMultiplexerServer() {
 		if (multiplexerServer == null) {
 			multiplexerServer = new OAMultiplexerServer(port) {
+				/**
+				 * Handles a new multiplexer client connection.
+				 * @param socket client socket
+				 * @param connectionId connection id
+				 */
 				@Override
 				protected void onClientConnect(Socket socket, int connectionId) {
 					OASyncServer.this.onClientConnect(socket, connectionId);
 				}
 
+				/**
+				 * Handles multiplexer client disconnection.
+				 * @param connectionId connection id
+				 */
 				@Override
 				protected void onClientDisconnect(int connectionId) {
 					getRemoteMultiplexerServer().removeSession(connectionId);
 					OASyncServer.this.onClientDisconnect(connectionId);
 				}
 
+				/**
+				 * Returns the message used when a connection is rejected.
+				 * @return invalid connection message
+				 */
 				@Override
 				public String getInvalidConnectionMessage() {
 					String s = super.getInvalidConnectionMessage();
@@ -943,16 +819,32 @@ public class OASyncServer {
 	public OARemoteMultiplexerServer getRemoteMultiplexerServer() {
 		if (remoteMultiplexerServer == null) {
 			remoteMultiplexerServer = new OARemoteMultiplexerServer(getMultiplexerServer()) {
+				/**
+				 * Updates statistics after a client-to-server invocation.
+				 * @param ri remote request information
+				 */
 				@Override
 				protected void afterInvokeForCtoS(RequestInfo ri) {
 					OASyncServer.this.afterInvokeRemoteMethod(ri);
 				}
 
+				/**
+				 * Updates statistics after a server-to-client invocation.
+				 * @param ri remote request information
+				 */
 				@Override
 				protected void afterInvokeForStoC(RequestInfo ri) {
 					OASyncServer.this.afterInvokeRemoteMethod(ri);
 				}
 
+				/**
+				 * Handles remote multiplexer exceptions for a client connection.
+				 * @param connectionId connection id
+				 * @param title exception title
+				 * @param msg exception message
+				 * @param e exception
+				 * @param bWillDisconnect true when the connection will be disconnected
+				 */
 				@Override
 				protected void onException(int connectionId, String title, String msg, Exception e, boolean bWillDisconnect) {
 					ClientInfoExt cx = hmClientInfoExt.get(connectionId);
@@ -964,6 +856,11 @@ public class OASyncServer {
 					}
 				}
 
+				/**
+				 * Records a newly created remote session.
+				 * @param socket client socket
+				 * @param connectionId connection id
+				 */
 				@Override
 				public void createSession(Socket socket, int connectionId) {
 					aiSessionCount.incrementAndGet();
@@ -971,6 +868,10 @@ public class OASyncServer {
 					OASyncServer.this.onSessionCreated(connectionId, socket);
 				}
 
+				/**
+				 * Removes a remote session.
+				 * @param connectionId connection id
+				 */
 				@Override
 				public void removeSession(int connectionId) {
 					aiSessionCount.decrementAndGet();
@@ -978,6 +879,12 @@ public class OASyncServer {
 					OASyncServer.this.onSessionRemoved(connectionId);
 				}
 				
+                /**
+                 * Determines whether a sync message should be sent to a client.
+                 * @param ri remote request information
+                 * @param hmGuid client GUID visibility map
+                 * @return true if the sync message should be sent
+                 */
                 @Override
                 protected boolean shouldSendSyncMessageToClient(RequestInfo ri, ConcurrentHashMap<UUID, Boolean> hmGuid) {
 			        String mn = ri.method.getName();
@@ -1291,6 +1198,9 @@ public class OASyncServer {
 		String tname = "OASyncServer_logRequests";
 		LOG.config("starting thread that writes logs, threadName=" + tname);
 		threadStatsLogger = new Thread(new Runnable() {
+			/**
+			 * Runs the background sibling/detail loader.
+			 */
 			@Override
 			public void run() {
 				_runRequestStatsLogger();
@@ -1461,6 +1371,11 @@ public class OASyncServer {
 		OAObject obj;
 		String property;
 
+		/**
+		 * Creates a background load request.
+		 * @param obj object to load from
+		 * @param property property to load
+		 */
 		public LoadSibling(OAObject obj, String property) {
 			this.ms = System.currentTimeMillis();
 			this.obj = obj;
@@ -1500,6 +1415,9 @@ public class OASyncServer {
 		String tname = "OASyncServer_LoadSibling";
 		LOG.config("starting thread that Load Sibling obj/props for a client getDetail request, threadName=" + tname);
 		threadLoadSibling = new Thread(new Runnable() {
+			/**
+			 * Runs a queued background sibling/detail load request.
+			 */
 			@Override
 			public void run() {
 				_runLoadDataInBackground();

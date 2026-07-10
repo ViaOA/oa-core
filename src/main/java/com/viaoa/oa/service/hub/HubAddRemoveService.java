@@ -22,7 +22,7 @@ import com.viaoa.object.OAObject;
 CODEX
 
  #3
-  File/Class/Method: src/main/java/com/viaoa/graph/service/hub/HubAddRemoveService.java, _clear(...)
+  File/Class/Method: src/main/java/com/viaoa/oa/service/hub/HubAddRemoveService.java, _clear(...)
 
   Exact execution path: on a remote thread, _clear(...) calls callRemoteThreadSetStartedNextThread(true), then
   performs AO reset, select cancel, before-remove-all event, CS remove-all, vector clear, change tracking, and
@@ -41,7 +41,7 @@ CODEX
   restored and next remote message can run.
 
  #5
-  File/Class/Method: src/main/java/com/viaoa/graph/service/hub/HubAddRemoveService.java, _add(...), remove(...),
+  File/Class/Method: src/main/java/com/viaoa/oa/service/hub/HubAddRemoveService.java, _add(...), remove(...),
   move(...)
 
   Exact execution path: _add(...) sends callHubCSAddToHub(...) before internalAdd(...); remove(...) sends
@@ -66,6 +66,10 @@ CODEX
 
 */
 
+/**
+ * Coordinates adding, inserting, moving, and removing objects from Hubs.
+ */
+
 public abstract class HubAddRemoveService {
 	private final Logger LOG = Logger.getLogger(HubAddRemoveService.class.getName());
 
@@ -75,10 +79,26 @@ public abstract class HubAddRemoveService {
     	if (faHub == null) throw new IllegalArgumentException("Hub.FriendAccess can not be null");
     	this.faHub = faHub;
 	}
-	
+
+	/**
+	 * Removes or unregisters Hub state using this service.
+	 *
+	 * @param thisHub method input
+	 * @param pos method input
+	 * @return result value
+	 */
+
 	public <T extends OAObject> T remove(final Hub<T> thisHub, final int pos) {
 		return remove(thisHub, pos, false);
 	}
+	/**
+	 * Removes or unregisters Hub state using this service.
+	 *
+	 * @param thisHub method input
+	 * @param pos method input
+	 * @param bForce method input
+	 * @return result value
+	 */
 	public <T extends OAObject> T remove(Hub<T> thisHub, int pos, boolean bForce) {
 		T obj = callHubDataGetObjectAt(thisHub, pos);
 		if (obj == null) return null;
@@ -87,13 +107,21 @@ public abstract class HubAddRemoveService {
 	}
 
 	/**
-	 * @param obj can be an OAObjet, OAObjectKey, pkey value  
+	 * @param obj can be an OAObjet, OAObjectKey, pkey value
 	 */
 	public <T extends OAObject> boolean remove(Hub<T> hub, Object obj) {
 		T t = remove(hub, obj, false, true, false, true, true, false);
  		return t != null;
 	}
-	
+
+	/**
+	 * Removes or unregisters Hub state using this service.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 * @return result value
+	 */
+
 	public <T extends OAObject> boolean remove(Hub<T> thisHub, T obj) {
  		T t = remove(thisHub, obj, false, true, false, true, true, false);
  		return t != null;
@@ -105,7 +133,7 @@ public abstract class HubAddRemoveService {
 	 * reference cleanup, and master/detail property adjustments.
 	 *
 	 * @param thisHub         the hub from which the object will be removed
-	 * @param obj             the object to remove (OAObject, OAObjectKey, pkey value(s)) 
+	 * @param obj             the object to remove (OAObject, OAObjectKey, pkey value(s))
 	 * @param bForce          whether to force removal
 	 * @param bSendEvent      whether to send before/after remove events
 	 * @param bDeleting       whether the removal is part of a delete operation
@@ -742,7 +770,7 @@ public abstract class HubAddRemoveService {
 						if (hubx != null) {
 							Object objx = hubx.getAO();
 							if (objx != null) {
-								String ppx = callHubSelectGetSelectWhereHubPropertyPath(thisHub);
+								String ppx = callHubSelectGetSelectWhereHubPath(thisHub);
 								OALinkInfo lix = hubx.getOAObjectInfo().getLinkInfo(ppx);
 								if (lix != null) {
 									lix = lix.getReverseLinkInfo();
@@ -1087,7 +1115,7 @@ public abstract class HubAddRemoveService {
 			if (hubx != null) {
 				Object objx = hubx.getAO();
 				if (objx != null) {
-					String ppx = callHubSelectGetSelectWhereHubPropertyPath(thisHub);
+					String ppx = callHubSelectGetSelectWhereHubPath(thisHub);
 					OALinkInfo lix = hubx.getOAObjectInfo().getLinkInfo(ppx);
 					if (lix != null) {
 						lix = lix.getReverseLinkInfo();
@@ -1391,117 +1419,597 @@ public abstract class HubAddRemoveService {
 	
 	
 	// ObjectCallback
+	/**
+	 * Dependency hook used by this service for ObjectCallbackGetAllowRemoveObjectCallback behavior.
+	 *
+	 * @param hub method input
+	 * @param objRemove method input
+	 * @param onlyCheckTypes method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetAllowRemoveObjectCallback(final Hub<T> hub, final T objRemove, final OAObjectCallback.CheckType[] onlyCheckTypes);
+	/**
+	 * Dependency hook used by this service for ObjectCallbackGetVerifyRemoveObjectCallback behavior.
+	 *
+	 * @param hub method input
+	 * @param objRemove method input
+	 * @param onlyCheckTypes method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyRemoveObjectCallback(final Hub<T> hub, final T objRemove, final OAObjectCallback.CheckType[] onlyCheckTypes);
+	/**
+	 * Dependency hook used by this service for ObjectCallbackGetAllowRemoveAllObjectCallback behavior.
+	 *
+	 * @param hub method input
+	 * @param onlyCheckTypes method input
+	 * @return result value
+	 */
 	public abstract OAObjectCallback callObjectCallbackGetAllowRemoveAllObjectCallback(final Hub<?> hub, final OAObjectCallback.CheckType[] onlyCheckTypes);
+	/**
+	 * Dependency hook used by this service for ObjectCallbackGetVerifyRemoveAllObjectCallback behavior.
+	 *
+	 * @param hub method input
+	 * @param onlyCheckTypes method input
+	 * @return result value
+	 */
 	public abstract OAObjectCallback callObjectCallbackGetVerifyRemoveAllObjectCallback(final Hub<?> hub, final OAObjectCallback.CheckType[] onlyCheckTypes);
+	/**
+	 * Dependency hook used by this service for ObjectCallbackGetAllowAddObjectCallback behavior.
+	 *
+	 * @param hub method input
+	 * @param objAdd method input
+	 * @param onlyCheckTypes method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetAllowAddObjectCallback(final Hub<T> hub, T objAdd, final OAObjectCallback.CheckType[] onlyCheckTypes);
+	/**
+	 * Dependency hook used by this service for ObjectCallbackGetVerifyAddObjectCallback behavior.
+	 *
+	 * @param hub method input
+	 * @param oaObj method input
+	 * @param onlyCheckTypes method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyAddObjectCallback(final Hub<T> hub, final T oaObj, final OAObjectCallback.CheckType[] onlyCheckTypes);
 	
 	// ObjectDelete
-	public abstract void callObjectDeleteDelete(final OAObject oaObj, OACascade cascade);	
+	/**
+	 * Dependency hook used by this service for ObjectDeleteDelete behavior.
+	 *
+	 * @param oaObj method input
+	 * @param cascade method input
+	 */
+	public abstract void callObjectDeleteDelete(final OAObject oaObj, OACascade cascade);
 
 	// ObjectDS
+	/**
+	 * Dependency hook used by this service for ObjectDSRemoveReference behavior.
+	 *
+	 * @param oaObj method input
+	 * @param li method input
+	 */
 	public abstract void callObjectDSRemoveReference(OAObject oaObj, OALinkInfo li);
 	
 	// ObjectHub
+	/**
+	 * Dependency hook used by this service for ObjectHubAddHub behavior.
+	 *
+	 * @param oaObj method input
+	 * @param hub method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> boolean callObjectHubAddHub(T oaObj, Hub<T> hub);
+	/**
+	 * Dependency hook used by this service for ObjectHubRemoveHub behavior.
+	 *
+	 * @param oaObj method input
+	 * @param hub method input
+	 * @param bIsOnHubFinalize method input
+	 */
 	public abstract <T extends OAObject> void callObjectHubRemoveHub(final T oaObj, Hub<T> hub, boolean bIsOnHubFinalize);
 
 	// ObjectInfo
-	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi); 
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetReverseLinkInfo behavior.
+	 *
+	 * @param thisLi method input
+	 * @return result value
+	 */
+	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi);
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetRecursiveLinkInfo behavior.
+	 *
+	 * @param thisOI method input
+	 * @param type method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callObjectInfoGetRecursiveLinkInfo(OAObjectInfo thisOI, int type);
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetMethod behavior.
+	 *
+	 * @param li method input
+	 * @return result value
+	 */
 	public abstract Method callObjectInfoGetMethod(OALinkInfo li);
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetMethod behavior.
+	 *
+	 * @param clazz method input
+	 * @param methodName method input
+	 * @return result value
+	 */
 	public abstract Method callObjectInfoGetMethod(Class<?> clazz, String methodName);
 	
 	// ObjectReflect
+	/**
+	 * Dependency hook used by this service for ObjectReflectSetProperty behavior.
+	 *
+	 * @param oaObj method input
+	 * @param propName method input
+	 * @param value method input
+	 * @param fmt method input
+	 */
 	public abstract void callObjectReflectSetProperty(final OAObject oaObj, String propName, Object value, final String fmt);
+	/**
+	 * Dependency hook used by this service for ObjectReflectGetProperty behavior.
+	 *
+	 * @param oaObj method input
+	 * @param propPath method input
+	 * @return result value
+	 */
 	public abstract Object callObjectReflectGetProperty(OAObject oaObj, String propPath);
-	public abstract Object callObjectReflectGetRawReference(OAObject oaObj, String name);	
+	/**
+	 * Dependency hook used by this service for ObjectReflectGetRawReference behavior.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @return result value
+	 */
+	public abstract Object callObjectReflectGetRawReference(OAObject oaObj, String name);
 
 	// ObjectSave
-	public abstract void callObjectSaveSave(OAObject oaObj, int iCascadeRule, OACascade cascade);	
-	
+	/**
+	 * Dependency hook used by this service for ObjectSaveSave behavior.
+	 *
+	 * @param oaObj method input
+	 * @param iCascadeRule method input
+	 * @param cascade method input
+	 */
+	public abstract void callObjectSaveSave(OAObject oaObj, int iCascadeRule, OACascade cascade);
+
 	// HubAddRemove
-	public abstract <T extends OAObject>  T[] callHubAddRemoveGetAddedObjects(Hub<T> thisHub);	
+	/**
+	 * Dependency hook used by this service for HubAddRemoveGetAddedObjects behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
+	public abstract <T extends OAObject>  T[] callHubAddRemoveGetAddedObjects(Hub<T> thisHub);
+	/**
+	 * Dependency hook used by this service for HubAddRemoveGetRemovedObjects behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T[] callHubAddRemoveGetRemovedObjects(Hub<T> thisHub);
 	
 	// HubCS
+	/**
+	 * Dependency hook used by this service for HubCSRemoveFromHub behavior.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 * @param pos method input
+	 */
 	public abstract <T extends OAObject> void callHubCSRemoveFromHub(Hub<T> thisHub, T obj, int pos);
+	/**
+	 * Dependency hook used by this service for HubCSRemoveAllFromHub behavior.
+	 *
+	 * @param thisHub method input
+	 */
 	public abstract void callHubCSRemoveAllFromHub(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubCSAddToHub behavior.
+	 *
+	 * @param thisHub method input
+	 * @param thisObj method input
+	 */
 	public abstract <T extends OAObject> void callHubCSAddToHub(final Hub<T> thisHub, final T thisObj);
+	/**
+	 * Dependency hook used by this service for HubCSMoveObjectInHub behavior.
+	 *
+	 * @param thisHub method input
+	 * @param posFrom method input
+	 * @param posTo method input
+	 */
 	public abstract void callHubCSMoveObjectInHub(Hub<?> thisHub, int posFrom, int posTo);
+	/**
+	 * Dependency hook used by this service for HubCSInsertInHub behavior.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 * @param pos method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> boolean callHubCSInsertInHub(Hub<T> thisHub, T obj, int pos);
 	
 	// HubData
+	/**
+	 * Dependency hook used by this service for HubDataGetObjectAt behavior.
+	 *
+	 * @param thisHub method input
+	 * @param pos method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callHubDataGetObjectAt(Hub<T> thisHub, int pos);
+	/**
+	 * Dependency hook used by this service for HubDataGetPos behavior.
+	 *
+	 * @param thisHub method input
+	 * @param object method input
+	 * @param adjustMaster method input
+	 * @param bUpdateLink method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> int callHubDataGetPos(final Hub<T> thisHub, T object, final boolean adjustMaster, final boolean bUpdateLink);
+	/**
+	 * Dependency hook used by this service for HubData_remove behavior.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 * @param bDeleting method input
+	 * @param bIsRemovingAll method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> int callHubData_remove(Hub<T> thisHub, T obj, boolean bDeleting, boolean bIsRemovingAll);
+	/**
+	 * Dependency hook used by this service for HubDataSetObjectClass behavior.
+	 *
+	 * @param thisHub method input
+	 * @param objClass method input
+	 */
 	public abstract <T extends OAObject> void callHubDataSetObjectClass(Hub<T> thisHub, Class<T> objClass);
+	/**
+	 * Dependency hook used by this service for HubDataCreateVecRemove behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> Vector<T> callHubDataCreateVecRemove(Hub<T> thisHub);
+	/**
+	 * Dependency hook used by this service for HubDataContains behavior.
+	 *
+	 * @param hub method input
+	 * @param obj method input
+	 * @param bJustAdded method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> boolean callHubDataContains(Hub<T> hub, T obj, final boolean bJustAdded);
+	/**
+	 * Dependency hook used by this service for HubData_add behavior.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 * @param bHasLock method input
+	 * @param bCheckContains method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> boolean callHubData_add(Hub<T> thisHub, T obj, boolean bHasLock, boolean bCheckContains);
+	/**
+	 * Dependency hook used by this service for HubData_move behavior.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 * @param posFrom method input
+	 * @param posTo method input
+	 */
 	public abstract <T extends OAObject> void callHubData_move(Hub<T> thisHub, T obj, int posFrom, int posTo);
+	/**
+	 * Dependency hook used by this service for HubData_insert behavior.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 * @param pos method input
+	 * @param bIsLocked method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> boolean callHubData_insert(Hub<T> thisHub, T obj, int pos, boolean bIsLocked);
+	/**
+	 * Dependency hook used by this service for HubDataGetAddedObjects behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T[] callHubDataGetAddedObjects(Hub<T> thisHub);
+	/**
+	 * Dependency hook used by this service for HubDataGetRemovedObjects behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T[] callHubDataGetRemovedObjects(Hub<T> thisHub);
+	/**
+	 * Dependency hook used by this service for HubDataRemoveFromAddedList behavior.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 */
 	public abstract <T extends OAObject> void callHubDataRemoveFromAddedList(Hub<T> thisHub, T obj);
+	/**
+	 * Dependency hook used by this service for HubDataRemoveFromRemovedList behavior.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 */
 	public abstract <T extends OAObject> void callHubDataRemoveFromRemovedList(Hub<T> thisHub, T obj);
 
 	// HubDetail
+	/**
+	 * Dependency hook used by this service for HubDetailGetDataMaster behavior.
+	 *
+	 * @param thisHub method input
+	 * @param bIncludedFilteredHub method input
+	 * @return result value
+	 */
 	public abstract HubDataMaster callHubDetailGetDataMaster(final Hub<?> thisHub, boolean bIncludedFilteredHub);
+	/**
+	 * Dependency hook used by this service for HubDetailGetDataMaster behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract HubDataMaster callHubDetailGetDataMaster(final Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubDetailSetPropertyToMasterHub behavior.
+	 *
+	 * @param thisHub method input
+	 * @param detailObject method input
+	 * @param objMaster method input
+	 */
 	public abstract <T extends OAObject> void callHubDetailSetPropertyToMasterHub(Hub<T> thisHub, T detailObject, OAObject objMaster);
+	/**
+	 * Dependency hook used by this service for HubDetailIsRecursiveMasterDetail behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract boolean callHubDetailIsRecursiveMasterDetail(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubDetailGetMasterObject behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract OAObject callHubDetailGetMasterObject(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubDetailGetLinkInfoFromDetailToMaster behavior.
+	 *
+	 * @param hub method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
 	
 	// HubDS
+	/**
+	 * Dependency hook used by this service for HubDSUpdateMany2ManyLinks behavior.
+	 *
+	 * @param masterObject method input
+	 * @param adds method input
+	 * @param removes method input
+	 * @param propFromMaster method input
+	 */
 	public abstract void callHubDSUpdateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propFromMaster);
 	
 	// HubEvent
+	/**
+	 * Dependency hook used by this service for HubEventFireBeforeRemoveEvent behavior.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 * @param pos method input
+	 */
 	public abstract <T extends OAObject> void callHubEventFireBeforeRemoveEvent(Hub<T> thisHub, T obj, int pos);
+	/**
+	 * Dependency hook used by this service for HubEventFireAfterRemoveEvent behavior.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 * @param pos method input
+	 */
 	public abstract <T extends OAObject> void callHubEventFireAfterRemoveEvent(Hub<T> thisHub, final T obj, int pos);
+	/**
+	 * Dependency hook used by this service for HubEventFireBeforeRemoveAllEvent behavior.
+	 *
+	 * @param thisHub method input
+	 */
 	public abstract void callHubEventFireBeforeRemoveAllEvent(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubEventFireOnNewListEvent behavior.
+	 *
+	 * @param thisHub method input
+	 * @param bAll method input
+	 */
 	public abstract void callHubEventFireOnNewListEvent(Hub<?> thisHub, boolean bAll);
+	/**
+	 * Dependency hook used by this service for HubEventFireAfterRemoveAllEvent behavior.
+	 *
+	 * @param thisHub method input
+	 */
 	public abstract void callHubEventFireAfterRemoveAllEvent(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubEventFireBeforeAddEvent behavior.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 * @param pos method input
+	 */
 	public abstract <T extends OAObject> void callHubEventFireBeforeAddEvent(Hub<T> thisHub, T obj, int pos);
+	/**
+	 * Dependency hook used by this service for HubEventFireAfterAddEvent behavior.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 * @param pos method input
+	 */
 	public abstract <T extends OAObject> void callHubEventFireAfterAddEvent(Hub<T> thisHub, final T obj, int pos);
+	/**
+	 * Dependency hook used by this service for HubEventFireBeforeMoveEvent behavior.
+	 *
+	 * @param thisHub method input
+	 * @param fromPos method input
+	 * @param toPos method input
+	 */
 	public abstract void callHubEventFireBeforeMoveEvent(Hub<?> thisHub, int fromPos, int toPos);
+	/**
+	 * Dependency hook used by this service for HubEventFireAfterMoveEvent behavior.
+	 *
+	 * @param thisHub method input
+	 * @param fromPos method input
+	 * @param toPos method input
+	 */
 	public abstract void callHubEventFireAfterMoveEvent(Hub<?> thisHub, int fromPos, int toPos);
+	/**
+	 * Dependency hook used by this service for HubEventFireBeforeInsertEvent behavior.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 * @param pos method input
+	 */
 	public abstract <T extends OAObject> void callHubEventFireBeforeInsertEvent(Hub<T> thisHub, T obj, int pos);
+	/**
+	 * Dependency hook used by this service for HubEventFireAfterInsertEvent behavior.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 * @param pos method input
+	 */
 	public abstract <T extends OAObject> void callHubEventFireAfterInsertEvent(Hub<T> thisHub, final T obj, int pos);
 
 	// HubFind
+	/**
+	 * Dependency hook used by this service for HubFindGetRealObject behavior.
+	 *
+	 * @param hub method input
+	 * @param object method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callHubFindGetRealObject(Hub<T> hub, Object object); //qqqqqqq Object can be T, OAObjectKey, pkey value
 	
 	// HubShare
+	/**
+	 * Dependency hook used by this service for HubShareSetSharedHubsAfterRemove behavior.
+	 *
+	 * @param thisHub method input
+	 * @param objRemoved method input
+	 * @param posRemoved method input
+	 */
 	public abstract <T extends OAObject> void callHubShareSetSharedHubsAfterRemove(Hub<T> thisHub, T objRemoved, int posRemoved);
+	/**
+	 * Dependency hook used by this service for HubShareSetSharedHubsAfterRemoveAll behavior.
+	 *
+	 * @param thisHub method input
+	 */
 	public abstract void callHubShareSetSharedHubsAfterRemoveAll(Hub<?> thisHub);
 	
 	// HubStatus
+	/**
+	 * Dependency hook used by this service for HubStatusSetReferenceable behavior.
+	 *
+	 * @param hub method input
+	 * @param bReferenceable method input
+	 */
 	public abstract void callHubStatusSetReferenceable(Hub<?> hub, boolean bReferenceable);
+	/**
+	 * Dependency hook used by this service for HubStatusSetChanged behavior.
+	 *
+	 * @param thisHub method input
+	 * @param bChanged method input
+	 */
 	public abstract void callHubStatusSetChanged(Hub<?> thisHub, boolean bChanged);
 	
 	// HubSelect
+	/**
+	 * Dependency hook used by this service for HubSelectCancelSelect behavior.
+	 *
+	 * @param thisHub method input
+	 * @param bRemoveSelect method input
+	 */
 	public abstract void callHubSelectCancelSelect(Hub<?> thisHub, boolean bRemoveSelect);
+	/**
+	 * Dependency hook used by this service for HubSelectGetSelectWhereHub behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> Hub<T> callHubSelectGetSelectWhereHub(Hub<T> thisHub);
-	public abstract String callHubSelectGetSelectWhereHubPropertyPath(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubSelectGetSelectWhereHubPath behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
+	public abstract String callHubSelectGetSelectWhereHubPath(Hub<?> thisHub);
 	
 	// HubVerify
+	/**
+	 * Dependency hook used by this service for HubVerifyUniqueProperty behavior.
+	 *
+	 * @param thisHub method input
+	 * @param object method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> boolean callHubVerifyUniqueProperty(final Hub<T> thisHub, final T object);
 
 	// ThreadLocal
+	/**
+	 * Dependency hook used by this service for ThreadLocalIsDeleting behavior.
+	 *
+	 * @param obj method input
+	 * @return result value
+	 */
 	public abstract boolean callThreadLocalIsDeleting(Object obj);
+	/**
+	 * Dependency hook used by this service for ThreadLocalIsLoading behavior.
+	 *
+	 * @return result value
+	 */
 	public abstract boolean callThreadLocalIsLoading();
+	/**
+	 * Dependency hook used by this service for ThreadLocalLock behavior.
+	 *
+	 * @param object method input
+	 */
 	public abstract void callThreadLocalLock(Object object);
+	/**
+	 * Dependency hook used by this service for ThreadLocalUnlock behavior.
+	 *
+	 * @param object method input
+	 */
 	public abstract void callThreadLocalUnlock(Object object);
 	
 	// RemoteThread
+	/**
+	 * Dependency hook used by this service for RemoteThreadIsRemoteThread behavior.
+	 *
+	 * @return result value
+	 */
 	public abstract boolean callRemoteThreadIsRemoteThread();
+	/**
+	 * Dependency hook used by this service for RemoteThreadStartNextThread behavior.
+	 */
 	public abstract void callRemoteThreadStartNextThread();
+	/**
+	 * Dependency hook used by this service for RemoteThreadSetStartedNextThread behavior.
+	 *
+	 * @param b method input
+	 */
 	public abstract void callRemoteThreadSetStartedNextThread(boolean b);
 	
 	// Sync
+	/**
+	 * Dependency hook used by this service for SyncIsClient behavior.
+	 *
+	 * @return result value
+	 */
 	public abstract boolean callSyncIsClient();
 }

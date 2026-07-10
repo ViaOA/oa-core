@@ -67,7 +67,7 @@ CODEX
  - Method: getMethods(Class, String, Class, boolean)
   - Issue: Boolean isX() getters are not resolved for property paths.
   - Why it is a problem: The lookup tries getX() and then X(), but not isX(). Boolean properties exposed only as
-    isActive() fail property-path resolution even though OAPropertyPath supports this pattern.
+    isActive() fail property-path resolution even though OAPath supports this pattern.
   - Classification: CODEX/FIXNOW
   
   - Method: getMethods(Class, String, Class, boolean)
@@ -271,19 +271,19 @@ public class OAReflect {
 	/**
 	 * Delegates to {@link #getMethods(Class,String,boolean)}.
 	 */
-	public static Method[] getMethods(Class clazz, String propertyPath) {
-		return getMethods(clazz, propertyPath, true);
+	public static Method[] getMethods(Class clazz, String path) {
+		return getMethods(clazz, path, true);
 	}
 
-	public static Method[] getMethods(Class clazz, String propertyPath, boolean bThrowException) {
-		return getMethods(clazz, propertyPath, null, bThrowException);
+	public static Method[] getMethods(Class clazz, String path, boolean bThrowException) {
+		return getMethods(clazz, path, null, bThrowException);
 	}
 
 	/**
 	 * Get the methods for a property path.
 	 *
 	 * @param clazz           beginning Class object to start with.
-	 * @param propertyPath    is dot "." separated list (case insensitive). <br>
+	 * @param path    is dot "." separated list (case insensitive). <br>
 	 *                        Example: getMethods(Order.class, "employee.department.region.name") will retrieve the following methods:
 	 *                        Order.getEmployee(), Employee.getDepartment(), Department.getRegion(), Region.getName()
 	 *                        <p>
@@ -293,14 +293,14 @@ public class OAReflect {
 	 * @return array of "get' methods that can be used to retrieve a value from an object of type clazz. If the a method can not be found
 	 *         then null is returned.
 	 * @see #getPropertyValue(Object,Method) throws OAException if methods can not be found and bThrowException is true. also can use newer
-	 *      OAPropertyPath, which has more info, including the methods
+	 *      OAPath, which has more info, including the methods
 	 * @param substituteClass class to use if a link property is of type OAObject.class
 	 */
-	public static Method[] getMethods(Class clazz, String propertyPath, final Class substituteClass, boolean bThrowException) {
+	public static Method[] getMethods(Class clazz, String path, final Class substituteClass, boolean bThrowException) {
 		// ex:  (c,"emp.dept.manager.lastname")
 		int pos, prev;
-		if (propertyPath == null) {
-			propertyPath = "";
+		if (path == null) {
+			path = "";
 		}
 
 		List<Method> alMethod = new ArrayList();
@@ -308,25 +308,25 @@ public class OAReflect {
 		Class classLast = clazz;
 		for (pos = prev = 0; pos >= 0; prev = pos + 1) {
 
-			int posx = propertyPath.indexOf('(', prev);
-			pos = propertyPath.indexOf('.', prev);
+			int posx = path.indexOf('(', prev);
+			pos = path.indexOf('.', prev);
 
 			if (posx >= 0 && posx < pos) {
-				pos = propertyPath.indexOf(')', posx);
-				pos = propertyPath.indexOf('.', pos);
+				pos = path.indexOf(')', posx);
+				pos = path.indexOf('.', pos);
 			} else {
-				pos = propertyPath.indexOf('.', prev);
+				pos = path.indexOf('.', prev);
 			}
 
 			String name;
 			if (pos >= 0) {
-				name = propertyPath.substring(prev, pos);
+				name = path.substring(prev, pos);
 			} else {
-				name = propertyPath.substring(prev);
+				name = path.substring(prev);
 			}
 
 			/**
-			 * 2004/09/09 Add support for "casting" a property in a PropertyPath. Example: "(Manager)Employee.Department"
+			 * 2004/09/09 Add support for "casting" a property in a path. Example: "(Manager)Employee.Department"
 			 */
 			String castName = null;
 			int p = name.indexOf('(');
@@ -362,7 +362,7 @@ public class OAReflect {
 					}
 					//was: if (!bThrowException) return null;
 					RuntimeException rex = new RuntimeException("Throwing exception, OAReflect.getMethods() cant find method. class="
-							+ (clazz == null ? "null" : clazz.getName()) + " prop=" + name + " path=" + propertyPath);
+							+ (clazz == null ? "null" : clazz.getName()) + " prop=" + name + " path=" + path);
 					rex.printStackTrace();
 					throw rex;
 				}
@@ -382,7 +382,7 @@ public class OAReflect {
 				}
 			} else {
 				/**
-				 * 2004/09/09 Add support for "casting" a property in a PropertyPath. Example: "(Manager)Employee.Department"
+				 * 2004/09/09 Add support for "casting" a property in a path. Example: "(Manager)Employee.Department"
 				 */
 				if (castName != null) {
 					String cn;

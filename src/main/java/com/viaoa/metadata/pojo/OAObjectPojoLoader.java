@@ -37,15 +37,15 @@ import com.viaoa.runtime.OARuntime;
  *   <li>represent regular scalar properties,</li>
  *   <li>represent {@code TYPE_ONE} links and their foreign keys,</li>
  *   <li>represent import-match properties, and</li>
- *   <li>represent "unique via equalPropertyPath" link patterns.</li>
+ *   <li>represent "unique via equalPath" link patterns.</li>
  * </ul>
- * The resulting {@link Pojo} graph (links, import matches, unique keys) is
+ * The resulting {@link Pojo} model (links, import matches, unique keys) is
  * later used to locate the correct target {@code OAObject} instance when
  * deserializing JSON:
  * <ol>
  *   <li>by primary-key properties,</li>
  *   <li>by import-match properties / link-ones, or</li>
- *   <li>by unique properties reachable through an {@code equalPropertyPath}
+ *   <li>by unique properties reachable through an {@code equalPath}
  *       on a one-to-many association.</li>
  * </ol>
  * <p>
@@ -94,7 +94,7 @@ public class OAObjectPojoLoader implements Serializable {
 			pojoRegularProperty.setPojoProperty(pojoProperty);
 			pojoProperty.setName(pd.getLowerName());
 			pojoProperty.setUpperName(pd.getName());
-			pojoProperty.setPropertyPath(pd.getLowerName());
+			pojoProperty.setPath(pd.getLowerName());
 			// pojoProperty.setJavaType(pd.getType());
 		}
 
@@ -161,12 +161,12 @@ public class OAObjectPojoLoader implements Serializable {
 	 * unique-property rules require following nested paths.
 	 *
 	 * @param oi                  OAObject metadata
-	 * @param prefixPropertyPath  accumulated property-path prefix
+	 * @param prefixPath  accumulated property-path prefix
 	 * @param pojo                the root {@link Pojo} metadata tree
 	 * @param pojoLinkOne         link-one metadata container
 	 * @param lp                  OA link-one definition
 	 */
-	protected void processPojoLinkOne(final OAObjectInfo oi, final String prefixPropertyPath, final Pojo pojo,
+	protected void processPojoLinkOne(final OAObjectInfo oi, final String prefixPath, final Pojo pojo,
 			final PojoLinkOne pojoLinkOne,
 			final OALinkInfo lp) {
 
@@ -188,20 +188,20 @@ public class OAObjectPojoLoader implements Serializable {
 			pjp.setUpperName(propertyDef.getName());
 
 			String s;
-			if (OAString.isEmpty(prefixPropertyPath)) {
+			if (OAString.isEmpty(prefixPath)) {
 				s = lp.getLowerName() + "." + fk.getToPropertyInfo().getLowerName();
 			} else {
-				s = prefixPropertyPath + "." + lp.getLowerName() + "." + fk.getToPropertyInfo().getLowerName();
+				s = prefixPath + "." + lp.getLowerName() + "." + fk.getToPropertyInfo().getLowerName();
 			}
-			pjp.setPropertyPath(s);
+			pjp.setPath(s);
 
 		}
 
 		// 2.B: import match
-		processPojoLinkOneWithImportMatches(oi, prefixPropertyPath, pojo, pojoLinkOne, lp);
+		processPojoLinkOneWithImportMatches(oi, prefixPath, pojo, pojoLinkOne, lp);
 
 		// 2.C: links with selectFromPp that has a unique property
-		processPojoLinkOneWithEqualPropPathsAndUnique(oi, prefixPropertyPath, pojo, lp, pojoLinkOne);
+		processPojoLinkOneWithEqualPropPathsAndUnique(oi, prefixPath, pojo, lp, pojoLinkOne);
 
 	}
 
@@ -212,12 +212,12 @@ public class OAObjectPojoLoader implements Serializable {
 	 * traversed through link-one paths.
 	 *
 	 * @param oi                  OAObject metadata
-	 * @param prefixPropertyPath  accumulated property-path prefix
+	 * @param prefixPath  accumulated property-path prefix
 	 * @param pojo                root POJO metadata
 	 * @param plo                 link-one metadata holder
 	 * @param lp                  OA link-one definition
 	 */
-	protected void processPojoLinkOneWithImportMatches(final OAObjectInfo oi, final String prefixPropertyPath, final Pojo pojo,
+	protected void processPojoLinkOneWithImportMatches(final OAObjectInfo oi, final String prefixPath, final Pojo pojo,
 			final PojoLinkOne plo,
 			OALinkInfo lp) {
 
@@ -241,12 +241,12 @@ public class OAObjectPojoLoader implements Serializable {
 			pjp.setUpperName(s);
 			// pjp.setJavaType(px.getType());
 
-			if (OAString.isEmpty(prefixPropertyPath)) {
+			if (OAString.isEmpty(prefixPath)) {
 				s = lp.getLowerName() + "." + px.getLowerName();
 			} else {
-				s = prefixPropertyPath + "." + lp.getLowerName() + "." + px.getLowerName();
+				s = prefixPath + "." + lp.getLowerName() + "." + px.getLowerName();
 			}
-			pjp.setPropertyPath(s);
+			pjp.setPath(s);
 		}
 
 		for (OALinkInfo lpx : oix.getLinkInfos()) {
@@ -274,10 +274,10 @@ public class OAObjectPojoLoader implements Serializable {
 			plor.setPojoLinkOne(plox);
 
 			String s;
-			if (OAString.isEmpty(prefixPropertyPath)) {
+			if (OAString.isEmpty(prefixPath)) {
 				s = lp.getLowerName();
 			} else {
-				s = prefixPropertyPath + "." + lp.getLowerName();
+				s = prefixPath + "." + lp.getLowerName();
 			}
 			processPojoLinkOne(oi, s, pojo, plox, lpx);
 
@@ -292,22 +292,22 @@ public class OAObjectPojoLoader implements Serializable {
 	 * references that require recursion.
 	 *
 	 * @param oi                  OAObject metadata
-	 * @param prefixPropertyPath  accumulated property-path prefix
+	 * @param prefixPath  accumulated property-path prefix
 	 * @param pojo                root POJO metadata
 	 * @param lp                  OA link-one definition
 	 * @param plo                 link-one POJO metadata holder
 	 */
-	protected void processPojoLinkOneWithEqualPropPathsAndUnique(final OAObjectInfo oi, final String prefixPropertyPath, final Pojo pojo,
+	protected void processPojoLinkOneWithEqualPropPathsAndUnique(final OAObjectInfo oi, final String prefixPath, final Pojo pojo,
 			final OALinkInfo lp,
 			final PojoLinkOne plo) {
 
-		if (OAString.isEmpty(lp.getEqualPropertyPath())) {
+		if (OAString.isEmpty(lp.getEqualPath())) {
 			return;
 		}
 
 		final OALinkInfo lpRev = lp.getReverseLinkInfo();
 		if (lpRev == null) return;
-		final String pp = lpRev.getEqualPropertyPath();
+		final String pp = lpRev.getEqualPath();
 		if (OAString.isEmpty(pp)) {
 			return;
 		}
@@ -342,12 +342,12 @@ public class OAObjectPojoLoader implements Serializable {
 			// pjp.setJavaType(px.getType());
 
 			String s;
-			if (OAString.isEmpty(prefixPropertyPath)) {
+			if (OAString.isEmpty(prefixPath)) {
 				s = lp.getLowerName() + "." + px.getLowerName();
 			} else {
-				s = prefixPropertyPath + "." + lp.getLowerName() + "." + px.getLowerName();
+				s = prefixPath + "." + lp.getLowerName() + "." + px.getLowerName();
 			}
-			pjp.setPropertyPath(s);
+			pjp.setPath(s);
 
 			return;
 		}
@@ -370,10 +370,10 @@ public class OAObjectPojoLoader implements Serializable {
 		plor.setPojoLinkOne(plox);
 
 		String s;
-		if (OAString.isEmpty(prefixPropertyPath)) {
+		if (OAString.isEmpty(prefixPath)) {
 			s = lp.getLowerName();
 		} else {
-			s = prefixPropertyPath + "." + lp.getName();
+			s = prefixPath + "." + lp.getName();
 		}
 
 		processPojoLinkOne(oix, s, pojo, plox, lpx);
@@ -524,7 +524,7 @@ public class OAObjectPojoLoader implements Serializable {
 
 			PojoLink pl = plo.getPojoLink();
 			OALinkInfo li = oi.getLinkInfo(pl.getName());
-			OAPropertyInfo pi = li.getToObjectInfo().getPropertyInfo(OAString.field(pp.getPropertyPath(), ".", 2));
+			OAPropertyInfo pi = li.getToObjectInfo().getPropertyInfo(OAString.field(pp.getPath(), ".", 2));
 
 			int kpos = pi.getPojoKeyPos();
 			pp.setKeyPos(kpos == 0 ? 1 : kpos);
@@ -541,7 +541,7 @@ public class OAObjectPojoLoader implements Serializable {
 			OALinkInfo li = oi.getLinkInfo(pl.getName());
 
 			if (pp != null) {
-				OAPropertyInfo pi = li.getToObjectInfo().getPropertyInfo(OAString.fieldAt(pp.getPropertyPath(), ".", 1));
+				OAPropertyInfo pi = li.getToObjectInfo().getPropertyInfo(OAString.fieldAt(pp.getPath(), ".", 1));
 				int kpos = pi.getPojoKeyPos();
 				pp.setKeyPos(kpos == 0 ? 1 : kpos);
 				bFound = true;
@@ -564,7 +564,7 @@ public class OAObjectPojoLoader implements Serializable {
 		if (pp != null) {
 			PojoLink pl = plo.getPojoLink();
 			OALinkInfo li = oi.getLinkInfo(pl.getName());
-			OAPropertyInfo pi = li.getToObjectInfo().getPropertyInfo(OAString.field(pp.getPropertyPath(), ".", 2));
+			OAPropertyInfo pi = li.getToObjectInfo().getPropertyInfo(OAString.field(pp.getPath(), ".", 2));
 
 			int kpos = pi.getPojoKeyPos();
 			pp.setKeyPos(kpos == 0 ? 1 : kpos);

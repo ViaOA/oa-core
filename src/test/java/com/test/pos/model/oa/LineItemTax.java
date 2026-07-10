@@ -132,7 +132,7 @@ public class LineItemTax extends OAObject {
         reverseName = VertexTaxCodeRate.P_LineItemTaxes, 
         required = true, 
         allowCreateNew = false, 
-        selectFromPropertyPath = P_LineItem + "." + LineItem.P_Product + "." + Product.P_Item + "." + Item.P_VertexTaxCodes + "." + VertexTaxCode.P_VertexTaxCodeRates, 
+        selectFromPath = P_LineItem + "." + LineItem.P_Product + "." + Product.P_Item + "." + Item.P_VertexTaxCodes + "." + VertexTaxCode.P_VertexTaxCodeRates, 
         fkeys = {@OAFkey(fromProperty = P_VertexTaxCodeRateId, toProperty = VertexTaxCodeRate.P_Id)}
     )
     public VertexTaxCodeRate getVertexTaxCodeRate() {

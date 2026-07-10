@@ -27,7 +27,7 @@ class OAFunctionTest {
             "registers.registerSessions.invoices.invoiceBaskets.lineItems";
     private static final String PP_STORE_TO_LINE_ITEMS = StorePP.registers().registerSessions().invoices()
             .invoiceBaskets().lineItems().pp();
-    private static final String TEXT_UTIL_STORE_TO_LINE_ITEMS = OATextUtil.createPropertyPath(Store.P_Registers,
+    private static final String TEXT_UTIL_STORE_TO_LINE_ITEMS = OATextUtil.createPath(Store.P_Registers,
             Register.P_RegisterSessions, RegisterSession.P_Invoices, Invoice.P_InvoiceBaskets,
             InvoiceBasket.P_LineItems);
     private static final String RAW_STORE_TO_ITEM_NAME = RAW_STORE_TO_LINE_ITEMS + ".product.item.name";

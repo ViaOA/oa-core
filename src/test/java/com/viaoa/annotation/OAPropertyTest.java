@@ -70,7 +70,7 @@ class OAPropertyTest {
         ignoreTimeZone = true,
         isSubmit = true,
         isObjectStatus = true,
-        timeZonePropertyPath = "explicit_timeZonePropertyPath",
+        timeZonePath = "explicit_timeZonePropertyPath",
         isUpper = true,
         isLower = true,
         sensitiveData = true,
@@ -428,7 +428,7 @@ class OAPropertyTest {
     void defaultTimeZonePropertyPathMatchesDeclaration() throws Exception {
         OAProperty ann = DefaultFixture.class.getMethod("value").getAnnotation(OAProperty.class);
 
-        assertEquals("", ann.timeZonePropertyPath());
+        assertEquals("", ann.timeZonePath());
     }
 
     @Test
@@ -539,7 +539,7 @@ class OAPropertyTest {
         assertEquals(true, ann.ignoreTimeZone());
         assertEquals(true, ann.isSubmit());
         assertEquals(true, ann.isObjectStatus());
-        assertEquals("explicit_timeZonePropertyPath", ann.timeZonePropertyPath());
+        assertEquals("explicit_timeZonePropertyPath", ann.timeZonePath());
         assertEquals(true, ann.isUpper());
         assertEquals(true, ann.isLower());
         assertEquals(true, ann.sensitiveData());

@@ -43,7 +43,7 @@ interpreted against unrelated Hub classes or unrelated graph scopes.
 Rationale:
 Sibling prefetch is meaningful only relative to a root collection and its metadata-defined graph neighborhood.
 Source scope:
-OASiblingHelper constructor, getHub, add, getPropertyPath.
+OASiblingHelper constructor, getHub, add, getPath.
 Related CODEX findings:
 None.
 Suggested unit tests:
@@ -75,7 +75,7 @@ dependencies, the learned sibling tree and resolved property paths must be deter
 Rationale:
 Prefetch prediction must not produce different semantic paths for the same graph state and access pattern.
 Source scope:
-OASiblingHelper.add, onGetReference, getPropertyPath.
+OASiblingHelper.add, onGetReference, getPath.
 Related CODEX findings:
 None.
 Suggested unit tests:
@@ -106,11 +106,11 @@ Rationale:
 Sibling helpers should predict and organize reference loading without causing hidden graph mutation or datasource
 access.
 Source scope:
-OASiblingHelper class documentation, add, onGetReference, getPropertyPath.
+OASiblingHelper class documentation, add, onGetReference, getPath.
 Related CODEX findings:
 Class documentation states the helper stores link metadata and never forces lazy loading.
 Suggested unit tests:
-Verify add/onGetReference/getPropertyPath do not trigger datasource loads for unrelated references.
+Verify add/onGetReference/getPath do not trigger datasource loads for unrelated references.
 Spec target section:
 Lazy-reference discovery boundaries.
 
@@ -179,12 +179,12 @@ Observed reference discovery semantics.
 
 GRAPH-SIBLING-011 — Property Path Resolution Semantics
 Contract statement:
-getPropertyPath must return the metadata path from the root Hub to the requested object/property when one is known
+getPath must return the metadata path from the root Hub to the requested object/property when one is known
 or discoverable, and must return null when no safe sibling path exists.
 Rationale:
 Callers need a clear distinction between valid sibling path resolution and absence of a sibling-prefetch candidate.
 Source scope:
-OASiblingHelper.getPropertyPath.
+OASiblingHelper.getPath.
 Related CODEX findings:
 None.
 Suggested unit tests:
@@ -199,7 +199,7 @@ paths that can be resolved.
 Rationale:
 Search caching should improve performance without creating different graph meanings.
 Source scope:
-OASiblingHelper.nodeLastFound, getPropertyPath, _findNode.
+OASiblingHelper.nodeLastFound, getPath, _findNode.
 Related CODEX findings:
 SIB-SAME-THREAD-ENFORCED notes nodeLastFound mutation can produce wrong paths under accidental cross-thread reuse.
 Suggested unit tests:
@@ -228,7 +228,7 @@ ThreadLocal/runtime-context restoration and thread ownership.
 GRAPH-SIBLING-014 — Concurrent Use Boundary
 Contract statement:
 A sibling helper is either thread-confined or must provide deterministic synchronization for concurrent add,
-onGetReference, and getPropertyPath calls; callers must not observe corrupted learned-path state.
+onGetReference, and getPath calls; callers must not observe corrupted learned-path state.
 Rationale:
 Sibling helpers maintain mutable node trees and cached search state.
 Source scope:
@@ -279,7 +279,7 @@ paths unless metadata and runtime state support that result.
 Rationale:
 Sibling prefetch must not turn missing or unavailable graph state into false navigation success.
 Source scope:
-OASiblingHelper.onGetReference, getPropertyPath, _findNode.
+OASiblingHelper.onGetReference, getPath, _findNode.
 Related CODEX findings:
 None.
 Suggested unit tests:

@@ -26,133 +26,181 @@ import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
 
 /**
- * Carrier object for interactive edit/query callbacks on {@link OAObject} instances.
+ * Request/response carrier used by the OA object rules engine.
  * <p>
- * An {@code OAObjectCallback} represents a request to determine whether an action
- * is permitted, visible, or requires confirmation, or to supply additional UI data
- * such as formatting or tooltips. It is used as a shared contract between:
+ * An {@code OAObjectCallback} describes one model-rule question being asked by OA
+ * and carries both the evaluation context and the resulting answer. It is
+ * processed by {@code OAObjectRulesService} and is also the shared carrier used by
+ * OAObject callback methods, Hub listeners, and UI/controller code.
+ * </p>
+ *
+ * <h3>Core Contract</h3>
  * <ul>
- *   <li>OAObject callback methods (model rules)</li>
- *   <li>Hub listeners (contextual rules)</li>
- *   <li>Controller/UI code (visual and interaction behavior)</li>
+ *   <li>{@link #getType() type} defines the semantic question, such as
+ *       {@link Type#AllowDelete}, {@link Type#VerifySave},
+ *       {@link Type#SetConfirmForDelete}, or {@link Type#GetToolTip}.</li>
+ *   <li>{@link CheckType} values define which rules-engine pipeline stages are
+ *       active for the request.</li>
+ *   <li>{@link CategoryType} values are descriptive metadata for grouping
+ *       {@link Type} values.</li>
+ *   <li>{@link #getAllowed() allowed}, {@link #getResponse() response}, and
+ *       {@link #getThrowable() throwable} carry the rule result.</li>
  * </ul>
  *
- * <h3>Primary Responsibilities</h3>
+ * <h3>Context Fields</h3>
  * <ul>
- *   <li>Report if an edit operation is <b>allowed</b> or must be <b>blocked</b></li>
- *   <li>Provide <b>confirm messages</b> and <b>tooltips</b> for UI presentation</li>
- *   <li>Propagate <b>context</b>: hub, owning object, property, new/old values</li>
- *   <li>Provide <b>optional response</b> or <b>throwable</b> when rules fail</li>
- *   <li>Support UI result control such as format or label customization</li>
+ *   <li>{@code object} is the callback target or receiver. It is the object whose
+ *       callback method can run.</li>
+ *   <li>{@code propertyName} is the member being evaluated on {@code object}.</li>
+ *   <li>{@code value} is the operation operand or new value.</li>
+ *   <li>{@code oldValue} is the previous property value for property-change
+ *       verification.</li>
+ *   <li>{@code hub} supplies Hub context for Hub/listener operations.</li>
+ *   <li>{@code clazz} supplies explicit class context when no object instance
+ *       exists.</li>
  * </ul>
  *
- * <h3>Callback Types</h3>
- * Uses {@link Type} to describe the semantic request, including:
+ * <h3>Common Operation Shapes</h3>
  * <ul>
- *   <li>Availability (AllowNew/Add/Delete/Visible/Enabled)</li>
- *   <li>Verification (VerifyPropertyChange/Add/Delete/Save/...)</li>
- *   <li>UI behavior (GetToolTip / RenderLabel / GetFormat)</li>
- *   <li>Copy operations (GetCopy / AfterCopy)</li>
- *   <li>Confirmation requests (SetConfirmFor*)</li>
+ *   <li>{@link Type#VerifyPropertyChange}: {@code object} is the target object,
+ *       {@code propertyName} is the changed property, {@code oldValue} is the
+ *       previous value, and {@code value} is the new value.</li>
+ *   <li>{@link Type#AllowAdd} / {@link Type#VerifyAdd} through Hub only:
+ *       {@code object} is {@code null} and {@code value} is the object being
+ *       added.</li>
+ *   <li>{@link Type#AllowAdd} / {@link Type#VerifyAdd} through a master
+ *       reverse-link: {@code object} is the master object, {@code propertyName}
+ *       is the reverse link/property, and {@code value} is the object being
+ *       added.</li>
+ *   <li>{@link Type#AllowRemove} / {@link Type#VerifyRemove} through Hub only:
+ *       {@code object} is {@code null} and {@code value} is the object being
+ *       removed.</li>
+ *   <li>{@link Type#AllowDelete} / {@link Type#VerifyDelete} direct object:
+ *       {@code object} is the object being deleted and {@code value} is
+ *       {@code null}.</li>
+ *   <li>{@link Type#AllowDelete} / {@link Type#VerifyDelete} through a master
+ *       reverse-link: {@code object} is the master object, {@code propertyName}
+ *       is the reverse link/property, and {@code value} is the object being
+ *       deleted.</li>
  * </ul>
  *
- * <h3>Usage</h3>
- * Instances are created and processed by {@link OAObjectCallbackDelegate} and never
- * directly by application code. Domain objects may implement {@code callback*}
- * methods to participate in rule enforcement and UI interaction.
- *
- * @see OAObjectCallbackDelegate
+ * @see OAObject
+ * @see Hub
  * @see com.viaoa.annotation.OAObjCallback
  */
 public class OAObjectCallback {
 	static final long serialVersionUID = 1L;
 
 	/**
-	 * The Hub associated with this callback, providing contextual information
-	 * about the collection or owner from which the callback originated.
+	 * Hub context for this rule request.
+	 * <p>
+	 * The Hub supplies collection, active-object, detail/master, and listener
+	 * context for Hub-based operations. It can be {@code null} for direct
+	 * object/class requests.
+	 * </p>
 	 */
 	private Hub<?> hub;
 
 	/**
-	 * The target OAObject associated with this callback, representing the
-	 * domain object being evaluated or modified.
+	 * Callback target or receiver.
+	 * <p>
+	 * This is the object whose callback method can run. For Hub-only add/remove
+	 * requests this can be {@code null}; in those cases the operation operand is
+	 * carried by {@link #value}.
+	 * </p>
 	 */
 	private OAObject object;
 
 	/**
-	 * The semantic callback type indicating what rule, action, or UI behavior
-	 * is being evaluated. Defaults to {@link Type#Unknown}.
+	 * Semantic question being asked by the rules engine.
+	 * <p>
+	 * Defaults to {@link Type#Unknown}.
+	 * </p>
 	 */
 	private Type type = Type.Unknown;
 
 	/**
-	 * Optional list of the CheckTypes to perform, given the Type.checkType list
+	 * Optional narrowing set for the active {@link CheckType} values.
+	 * <p>
+	 * When populated, only these checks are used from the {@link Type}'s default
+	 * check list.
+	 * </p>
 	 */
 	private final EnumSet<CheckType> hmOnlyCheckTypes;
 	
 	/**
-	 * Optional confirmation dialog title used when a callback type requires
-	 * user confirmation before proceeding.
+	 * Optional confirmation title supplied by confirmation-type requests.
 	 */
 	private String confirmTitle; // allow interaction with UI to have user confirm before continuing
 
 	/**
-	 * Optional confirmation message presented to the user for confirmation-type
-	 * callback requests.
+	 * Optional confirmation message supplied by confirmation-type requests.
 	 */
 	private String confirmMessage; // message to use for confirming
 
 	/**
-	 * Tooltip text supplied by callback logic for UI presentation.
+	 * Tooltip text supplied by rule processing or object callback logic.
 	 */
 	private String toolTip;
 
 	/**
-	 * Optional formatting string used to control UI formatting based on the
-	 * callback type.
+	 * Optional format string supplied by rule processing or object callback logic.
 	 */
 	private String format; // allows creating customized formatter
 
 	/**
-	 * Indicates whether the callback action is currently permitted. Defaults
-	 * to {@code true}.
+	 * Current allowed/denied result for this rule request.
+	 * <p>
+	 * The value defaults to {@code true}. Rules, callback methods, and Hub
+	 * listeners can set it to {@code false} to deny the request.
+	 * </p>
 	 */
 	private boolean allowed = true; // flag to know if the type of objectCallback is permitted
 
 	/**
-	 * The callback value whose meaning is determined by the {@link Type}.
-	 * For example, new value, added object, removed object, or other contextual
-	 * data.
+	 * Operation operand or new value.
+	 * <p>
+	 * The meaning depends on {@link #type}. Examples include the new property
+	 * value for {@link Type#VerifyPropertyChange}, the object being added for
+	 * {@link Type#AllowAdd}/{@link Type#VerifyAdd}, or the object being removed
+	 * for {@link Type#AllowRemove}/{@link Type#VerifyRemove}.
+	 * </p>
 	 */
 	private Object value; // depends on Type
 
 	/**
-	 * Optional Swing label used for UI-related callback types that allow
-	 * label configuration or rendering customization.
+	 * Optional label carrier used by UI-related callback types.
 	 */
 	private OACallbackLabel label; // used for UI rendering control
 
 	/**
-	 * Optional response message assigned by callback logic, typically returned
-	 * to UI or controller code for display or further handling.
+	 * Human-readable result or denial explanation.
+	 * <p>
+	 * Rules and callbacks can set this for UI/controller code to display or log.
+	 * </p>
 	 */
 	private String response; // used to give message back to caller
 
 	/**
-	 * Optional throwable assigned when callback logic determines that an action
-	 * should fail and propagate an exception back to the caller.
+	 * Exception or failure detail produced by rule processing.
+	 * <p>
+	 * Callers can propagate this when the rule result should fail with an
+	 * exception instead of only a response message.
+	 * </p>
 	 */
 	private Throwable throwable; // used to tell the caller to throw this exception and not to allow further processing.
 
 	/**
-	 * The property name associated with this callback, used primarily for
-	 * verification or confirmation-type callbacks.
+	 * Member being evaluated on {@link #object}.
+	 * <p>
+	 * This is commonly a property, link, method, or reverse-link name depending
+	 * on the callback {@link #type}.
+	 * </p>
 	 */
 	private String propertyName;
 
 	/**
-	 * The previous value associated with a property-change callback. Used for
-	 * comparison logic in validation operations.
+	 * Previous property value for property-change verification.
 	 */
 	private Object oldValue;
 
@@ -163,18 +211,20 @@ public class OAObjectCallback {
 	private boolean acknownledged;
 
 	/**
-	 * Explicit class reference used to resolve the effective class for this
-	 * callback when provided. Otherwise fallback rules apply.
+	 * Explicit class context used when no object instance exists or when class
+	 * context must be supplied directly.
 	 */
 	private Class<? extends OAObject> clazz;
 
 	
 	/**
-	 * Creates a callback with the specified {@link Type}.
-	 * Initializes the callback with the given type and leaves all
-	 * other fields at their default values.
+	 * Creates a rule request for the supplied semantic {@link Type}.
+	 * <p>
+	 * Other context fields remain unset and {@link #getAllowed()} defaults to
+	 * {@code true}. A {@code null} type is normalized to {@link Type#Unknown}.
+	 * </p>
 	 *
-	 * @param type the callback type to assign
+	 * @param type the semantic rule question to ask
 	 */
 	public OAObjectCallback(Type type) {
 		if (type == null) type = Type.Unknown;
@@ -183,18 +233,19 @@ public class OAObjectCallback {
 	}
 
 	/**
-	 * Creates a callback with full context information including type,
-	 * check flags, hub, class, target object, property name, and value.
-	 * All supplied fields are assigned directly, and the callback is
-	 * initialized as allowed.
+	 * Creates a rule request with full context information.
+	 * <p>
+	 * The supplied {@code onlyCheckTypes} narrow the default pipeline stages for
+	 * the selected {@link Type}. The callback starts in the allowed state.
+	 * </p>
 	 *
-	 * @param type the callback type to assign
-	 * @param onlyCheckTypes, if populated then these are the only CheckTypes to use (ignore others in Type.checkType list)
-	 * @param hub the associated hub, or {@code null}
-	 * @param clazz an explicit class to associate, or {@code null}
-	 * @param oaObj the target {@link OAObject}, or {@code null}
-	 * @param propertyName the related property name, or {@code null}
-	 * @param value the callback value, interpreted according to the type
+	 * @param type the semantic rule question to ask
+	 * @param onlyCheckTypes optional checks to use instead of the full default check list
+	 * @param hub Hub context for Hub/listener operations, or {@code null}
+	 * @param clazz explicit class context, or {@code null}
+	 * @param oaObj callback target/receiver, or {@code null}
+	 * @param propertyName member being evaluated on {@code oaObj}, or {@code null}
+	 * @param value operation operand or new value, interpreted by {@code type}
 	 */
 	public OAObjectCallback(Type type, CheckType[] onlyCheckTypes, Hub<?> hub, Class<? extends OAObject> clazz, OAObject oaObj, String propertyName, Object value) {
 		if (type == null) type = Type.Unknown;
@@ -208,28 +259,59 @@ public class OAObjectCallback {
 		this.allowed = true;
 	}
 
+	/**
+	 * Creates a rule request with Hub, class, and object context.
+	 *
+	 * @param type the semantic rule question to ask
+	 * @param hub Hub context, or {@code null}
+	 * @param clazz explicit class context, or {@code null}
+	 * @param oaObj callback target/receiver, or {@code null}
+	 */
 	public OAObjectCallback(Type type, Hub<?> hub, Class<? extends OAObject> clazz, OAObject oaObj) {
 		this(type, (CheckType[]) null, hub, clazz, oaObj, null, null);
 	}
 	
+	/**
+	 * Creates a rule request with Hub, object/class, member, and operation value context.
+	 *
+	 * @param type the semantic rule question to ask
+	 * @param hub Hub context, or {@code null}
+	 * @param clazz explicit class context, or {@code null}
+	 * @param oaObj callback target/receiver, or {@code null}
+	 * @param propertyName member being evaluated on {@code oaObj}, or {@code null}
+	 * @param value operation operand or new value, interpreted by {@code type}
+	 */
 	public OAObjectCallback(Type type, Hub<?> hub, Class<? extends OAObject> clazz, OAObject oaObj, String propertyName, Object value) {
 		this(type, (CheckType[]) null, hub, clazz, oaObj, propertyName, value);
 	}
 
+	/**
+	 * Creates a rule request constrained to one rules-engine check stage.
+	 *
+	 * @param type the semantic rule question to ask
+	 * @param onlyCheckType optional single check to use instead of the full default check list
+	 * @param hub Hub context, or {@code null}
+	 * @param clazz explicit class context, or {@code null}
+	 * @param oaObj callback target/receiver, or {@code null}
+	 * @param propertyName member being evaluated on {@code oaObj}, or {@code null}
+	 * @param value operation operand or new value, interpreted by {@code type}
+	 */
 	public OAObjectCallback(Type type, CheckType onlyCheckType, Hub<?> hub, Class<? extends OAObject> clazz, OAObject oaObj, String propertyName, Object value) {
 		this(type, onlyCheckType == null ? null : new CheckType[] {onlyCheckType}, 
 			hub, clazz, oaObj, propertyName, value);
 	}
 	
 	/**
-	 * Creates a callback by copying contextual information from an
-	 * existing callback. The new instance uses the specified type
-	 * and check flags, while hub, class, object, property name,
-	 * value, and allowed state are copied from the source.
+	 * Creates a rule request by copying context from another callback.
+	 * <p>
+	 * The new instance uses the supplied {@code type} and optional check narrowing,
+	 * while Hub, class, object, property, value, and current allowed state are
+	 * copied from {@code eq}.
+	 * </p>
 	 *
-	 * @param type the callback type to assign
-	 * @param onlyCheckTypes, if populated then these are the only CheckTypes to use (ignore others in Type.checkType list)
-	 * @param eq the source callback to copy values from
+	 * @param type the semantic rule question to ask
+	 * @param onlyCheckTypes optional checks to use instead of the full default check list
+	 * @param eq source callback to copy context from, or {@code null}
 	 */
 	public OAObjectCallback(Type type, CheckType[] onlyCheckTypes, OAObjectCallback eq) {
 		if (type == null) type = Type.Unknown;
@@ -249,43 +331,24 @@ public class OAObjectCallback {
 
 	
 	/**
-	 * Defines the semantic category of an {@link OAObjectCallback} request.
+	 * Semantic question being asked of the OA rules engine.
 	 * <p>
-	 * Each enum value determines what kind of rule, UI behavior, confirmation,
-	 * or verification is being performed, and also encodes whether the callback
-	 * should evaluate owner/parent objects and whether it should perform an
-	 * “enabled-first” check prior to running other logic.
-	 *
-	 * <p>The constructor arguments set two internal behavioral flags:</p>
-	 * <ul>
-	 *   <li><b>checkOwner</b> — whether owner/parent objects should be evaluated</li>
-	 *   <li><b>checkEnabledFirst</b> — whether enabled-state rules are evaluated
-	 *       before invoking callback logic</li>
-	 * </ul>
-	 *
-	 * <p>Callback categories include:</p>
-	 * <ul>
-	 *   <li><b>Allow*</b> — determine whether an action is permitted</li>
-	 *   <li><b>Verify*</b> — validate an edit operation based on new/old values</li>
-	 *   <li><b>SetConfirmFor*</b> — define confirmation messages and titles</li>
-	 *   <li><b>Get*</b> — supply tooltip, format, label, or copy behavior</li>
-	 * </ul>
-	 *
-	 * <p>Values without arguments default to {@code checkOwner = false}
-	 * and {@code checkEnabledFirst = false}.</p>
+	 * Each {@code Type} identifies one supported model interaction, such as
+	 * {@link #AllowDelete}, {@link #VerifySave}, {@link #SetConfirmForDelete}, or
+	 * {@link #GetToolTip}. The type also declares its default {@link CheckType}
+	 * pipeline stages and descriptive {@link CategoryType} values.
+	 * </p>
 	 */
 	public enum Type { // the policy descriptor
 		
 	    /**
-	     * Indicates an unspecified or uninitialized callback type.
-	     * Performs no owner or enabled-first evaluation.
+	     * Unspecified or uninitialized rule question.
+	     * <p>No rules-engine checks are active by default.</p>
 	     */
 		Unknown(new CheckType[] {}, new CategoryType[0]),
 
 	    /**
-	     * Determines whether a target object or property is enabled.
-	     * Also invoked for types that have {@code checkEnabledFirst = true}.
-	     * Includes owner checks but does not perform enabled-first evaluation.
+	     * Asks whether a target object, property, link, or method is enabled.
 	     */
 		AllowEnabled( 
 			new CheckType[] { 
@@ -299,8 +362,7 @@ public class OAObjectCallback {
 		), 
 
 	    /**
-	     * Determines whether an object, property, link, or method is visible.
-	     * Performs owner checks. Does not perform enabled-first evaluation.
+	     * Asks whether a target object, property, link, or method is visible.
 	     */
 		AllowVisible(
 			new CheckType[] {
@@ -313,8 +375,7 @@ public class OAObjectCallback {
 		),
 
 	    /**
-	     * Determines whether creation of a new object is permitted.
-	     * Performs owner checks and evaluates enabled-first rules.
+	     * Asks whether creation of a new object is permitted.
 	     */
 		AllowNew(
 			new CheckType[] { 
@@ -328,8 +389,7 @@ public class OAObjectCallback {
 		),
 
 	    /**
-	     * Determines whether an object can be added to a hub.
-	     * Performs owner checks and evaluates enabled-first rules.
+	     * Asks whether an object can be added to a Hub.
 	     */
 		AllowAdd( 
 			new CheckType[] {
@@ -344,8 +404,7 @@ public class OAObjectCallback {
 		),
 		
 	    /**
-	     * Determines whether an object can be removed from a hub.
-	     * Performs owner checks and evaluates enabled-first rules.
+	     * Asks whether an object can be removed from a Hub.
 	     */
 		AllowRemove(
 			new CheckType[] {
@@ -360,8 +419,7 @@ public class OAObjectCallback {
 		),
 
 	    /**
-	     * Determines whether all items may be removed from a hub.
-	     * Performs owner checks and evaluates enabled-first rules.
+	     * Asks whether all objects may be removed from a Hub.
 	     */
 		AllowRemoveAll( 
 			new CheckType[] {
@@ -376,8 +434,7 @@ public class OAObjectCallback {
 		),
 
 	    /**
-	     * Determines whether deletion of an object is permitted.
-	     * Performs owner checks and evaluates enabled-first rules.
+	     * Asks whether deletion of an object is permitted.
 	     */
 		AllowDelete( 
 			new CheckType[] {
@@ -391,8 +448,7 @@ public class OAObjectCallback {
 		),
 
 	    /**
-	     * Determines whether saving an object is permitted.
-	     * Does not evaluate owner or enabled-first rules.
+	     * Asks whether saving an object is permitted.
 	     */
 		AllowSave(
 			new CheckType[] {
@@ -406,8 +462,7 @@ public class OAObjectCallback {
 		),
 
 	    /**
-	     * Determines whether an object copy operation is permitted.
-	     * No owner or enabled-first evaluation.
+	     * Asks whether an object copy operation is permitted.
 	     */
 		AllowCopy( 
 			new CheckType[] {
@@ -422,8 +477,7 @@ public class OAObjectCallback {
 		),
 
 	    /**
-	     * Validates that an object’s required values and rules are satisfied
-	     * before submitting. No owner or enabled-first evaluation.
+	     * Asks whether an object can be submitted.
 	     */
 		AllowSubmit( 
 			new CheckType[] {
@@ -438,9 +492,7 @@ public class OAObjectCallback {
 		
 	    /**
 	     * Verifies whether a property change is valid.
-	     * Checks new and old values, and may block the action using
-	     * {@code allowed = false} or a {@code throwable}.
-	     * Performs owner checks and evaluates enabled-first rules.
+	     * <p>{@code value} is the new value and {@code oldValue} is the previous value.</p>
 	     */
 		VerifyPropertyChange( 
 			new CheckType[] {
@@ -454,9 +506,8 @@ public class OAObjectCallback {
 		), 
 
 	    /**
-	     * Verifies whether adding an object to a hub is valid.
-	     * Uses the callback value as the object being added.
-	     * Performs owner checks and evaluates enabled-first rules.
+	     * Verifies whether adding an object to a Hub is valid.
+	     * <p>{@code value} is the object being added.</p>
 	     */
 		VerifyAdd( 
 			new CheckType[] {
@@ -471,9 +522,8 @@ public class OAObjectCallback {
 		),
 
 	    /**
-	     * Verifies whether removing an object from a hub is valid.
-	     * Uses the callback value as the object being removed.
-	     * Performs owner checks and evaluates enabled-first rules.
+	     * Verifies whether removing an object from a Hub is valid.
+	     * <p>{@code value} is the object being removed.</p>
 	     */
 		VerifyRemove(
 			new CheckType[] {
@@ -488,8 +538,7 @@ public class OAObjectCallback {
 		), 
 
 	    /**
-	     * Verifies whether removing all objects from a hub is valid.
-	     * Performs owner checks and evaluates enabled-first rules.
+	     * Verifies whether removing all objects from a Hub is valid.
 	     */
 		VerifyRemoveAll( 
 			new CheckType[] {
@@ -505,8 +554,7 @@ public class OAObjectCallback {
 
 	    /**
 	     * Verifies whether deleting an object is valid.
-	     * Uses the callback value as the deleted object.
-	     * Performs owner checks and evaluates enabled-first rules.
+	     * <p>For relationship-scoped deletes, {@code value} can be the object being deleted.</p>
 	     */
 		VerifyDelete(
 			new CheckType[] {
@@ -522,7 +570,6 @@ public class OAObjectCallback {
 
 	    /**
 	     * Verifies whether saving an object is valid.
-	     * Does not perform owner.
 	     */
 		VerifySave( 
 			new CheckType[] {
@@ -536,8 +583,7 @@ public class OAObjectCallback {
 		), 
 
 	    /**
-	     * Verifies whether invoking a command/method is valid.
-	     * Performs owner checks and evaluates enabled-first rules.
+	     * Verifies whether invoking a command or model method is valid.
 	     */
 		VerifyCommand( 
 			new CheckType[] {
@@ -551,9 +597,8 @@ public class OAObjectCallback {
 		),
 
 	    /**
-	     * Supplies copy behavior. Callback may set allowed,
-	     * supply a replacement value, or allow default copy logic.
-	     * No owner or enabled-first evaluation.
+	     * Requests copy behavior for an object or member.
+	     * <p>Callback logic may set a replacement value or allow default copy handling.</p>
 	     */
 		GetCopy( 
 			new CheckType[] {
@@ -565,9 +610,8 @@ public class OAObjectCallback {
 		),
 
 	    /**
-	     * Invoked after an object copy has been created.
-	     * The callback value contains the new object.
-	     * No owner or enabled-first evaluation.
+	     * Notifies callback logic after an object copy has been created.
+	     * <p>{@code value} contains the copied/new object.</p>
 	     */
 		AfterCopy(
 			new CheckType[] {
@@ -579,8 +623,7 @@ public class OAObjectCallback {
 		), 
 
 	    /**
-	     * Supplies confirmation title and message for a property change.
-	     * No owner or enabled-first evaluation.
+	     * Requests confirmation title/message for a property change.
 	     */
 		SetConfirmForPropertyChange(
 			new CheckType[] {
@@ -592,8 +635,7 @@ public class OAObjectCallback {
 		),
 
 	    /**
-	     * Supplies confirmation title and message for an add operation.
-	     * No owner or enabled-first evaluation.
+	     * Requests confirmation title/message for an add operation.
 	     */
 		SetConfirmForAdd(
 			new CheckType[] {
@@ -605,8 +647,7 @@ public class OAObjectCallback {
 		),
 
 	    /**
-	     * Supplies confirmation title and message for a remove operation.
-	     * No owner or enabled-first evaluation.
+	     * Requests confirmation title/message for a remove operation.
 	     */
 		SetConfirmForRemove(
 			new CheckType[] {
@@ -618,8 +659,7 @@ public class OAObjectCallback {
 		),
 
 	    /**
-	     * Supplies confirmation title and message for a remove-all operation.
-	     * No owner or enabled-first evaluation.
+	     * Requests confirmation title/message for a remove-all operation.
 	     */
 		SetConfirmForRemoveAll(
 			new CheckType[] {
@@ -631,8 +671,7 @@ public class OAObjectCallback {
 		),
 
 	    /**
-	     * Supplies confirmation title and message for a delete operation.
-	     * No owner or enabled-first evaluation.
+	     * Requests confirmation title/message for a delete operation.
 	     */
 		SetConfirmForDelete(
 			new CheckType[] {
@@ -644,8 +683,7 @@ public class OAObjectCallback {
 		),
 
 	    /**
-	     * Supplies confirmation title and message for a save operation.
-	     * No owner or enabled-first evaluation.
+	     * Requests confirmation title/message for a save operation.
 	     */
 		SetConfirmForSave(
 			new CheckType[] {
@@ -657,8 +695,7 @@ public class OAObjectCallback {
 		),
 
 	    /**
-	     * Supplies confirmation title and message for a command/method invocation.
-	     * No owner or enabled-first evaluation.
+	     * Requests confirmation title/message for a command or method invocation.
 	     */
 		SetConfirmForCommand(
 			new CheckType[] {
@@ -734,41 +771,99 @@ public class OAObjectCallback {
 		        : EnumSet.copyOf(Arrays.asList(cts));
 		}
 
+		/**
+		 * Returns whether this type belongs to a descriptive category.
+		 *
+		 * @param flag category to test
+		 * @return {@code true} if this type has the category
+		 */
 		public boolean has(CategoryType flag) {
 		    return categoryTypes.contains(flag);
 		}
+		/**
+		 * Returns whether this type uses a rules-engine processing stage by default.
+		 *
+		 * @param flag check stage to test
+		 * @return {@code true} if this type includes the check stage
+		 */
 		public boolean has(CheckType flag) {
 		    return checkTypes.contains(flag);
 		}
 	}
 
-	// helps document 
+	/**
+	 * Descriptive metadata used to group {@link Type} values.
+	 * <p>
+	 * Category values describe the kind of interaction represented by a type. They
+	 * are intended for classification, filtering, documentation, and API clarity;
+	 * rule processing is defined by {@link CheckType}.
+	 * </p>
+	 */
 	public enum CategoryType {
-	    PermissionGate, // This type answers whether an action/state is permitted. 
-	    ValidationGate, // This type validates data/action integrity.
-	    UiOnly, // This type only affects presentation/interaction text, label, format, tooltip, confirmation.
-	    Confirmation, // This type supplies confirmation text/title.
-	    CopyLifecycle, // This type participates in copy flow.
-	    MutationPermission, // This permission type allows a model-changing action.
-	    HubOperation, // This type is inherently about Hub membership.
-	    ObjectLifecycleOperation, // This type concerns object lifecycle: new/save/delete/submit/copy.
-	    CanSetResponse,  // Callback type can provide denial. Useful for UI/controller error explanation response.
+	    /** Type answers whether an action or state is permitted. */
+	    PermissionGate,
+	    /** Type validates data or action integrity. */
+	    ValidationGate,
+	    /** Type only affects presentation or interaction data such as labels, format, or tooltip. */
+	    UiOnly,
+	    /** Type supplies confirmation title/message data. */
+	    Confirmation,
+	    /** Type participates in copy flow. */
+	    CopyLifecycle,
+	    /** Type permits or denies a model-changing action. */
+	    MutationPermission,
+	    /** Type is inherently about Hub membership or Hub-scoped operation. */
+	    HubOperation,
+	    /** Type concerns object lifecycle such as new, save, delete, submit, or copy. */
+	    ObjectLifecycleOperation,
+	    /** Type can provide a response explaining the rule result. */
+	    CanSetResponse,
 	}
 	
+	/**
+	 * Rules-engine processing stage used by {@link OAObjectCallback}.
+	 * <p>
+	 * A {@link Type} declares the default check stages that participate in rule
+	 * evaluation. A callback instance can narrow those stages with
+	 * {@code onlyCheckTypes}; {@link #isUsed(CheckType)} answers whether a stage is
+	 * active for a specific callback.
+	 * </p>
+	 */
 	public enum CheckType {
+	    /** Evaluate owner/master hierarchy visibility or enabled state. */
 	    Owner,
+	    /** Evaluate processed-state restrictions. */
 	    Processed,
+	    /** Evaluate session-user/session-access enabled scope. */
 	    SessionEnabled, 
+	    /** Evaluate model metadata enabled rules. */
 	    Enabled,
+	    /** Evaluate ModelUser enabled rules. */
 	    UserEnabled,
+	    /** Evaluate model metadata visible rules. */
 	    Visible,
+	    /** Evaluate ModelUser visible rules. */
 	    UserVisible,
+	    /** Evaluate session-user/session-access visible scope. */
 	    SessionVisible, 
+	    /** Invoke Hub listener participation for the rule request. */
 	    HubListeners,
+	    /** Apply super-admin override policy where the rule type allows it. */
 	    SuperAdminOverride,
+	    /** Invoke the model object's callback method for the rule request. */
 	    CallbackMethod
 	}	
 
+	/**
+	 * Returns whether a check stage is active for this callback instance.
+	 * <p>
+	 * The stage must be included by the {@link Type}. If this callback was created
+	 * with a narrowed check list, the stage must also be present in that list.
+	 * </p>
+	 *
+	 * @param ct check stage to test
+	 * @return {@code true} if the stage should run for this request
+	 */
 	public boolean isUsed(CheckType ct) {
 		if (ct == null) return false;
 		if (!type.has(ct)) return false;
@@ -778,10 +873,21 @@ public class OAObjectCallback {
 		return true;
 	}
 	
+	/**
+	 * Returns the active check stages for this callback.
+	 *
+	 * @return active check stages in type declaration order
+	 */
 	public CheckType[] getCheckTypes() {
 		return getCheckTypesExcept(new CheckType[0]);
 	}
 	
+	/**
+	 * Returns active check stages after excluding selected stages.
+	 *
+	 * @param ctsExclude check stages to omit
+	 * @return active check stages in type declaration order
+	 */
 	public CheckType[] getCheckTypesExcept(CheckType ... ctsExclude) {
 		List<CheckType> al = new ArrayList<>();
 		List lst = ctsExclude == null || ctsExclude.length == 0 ? null : Arrays.asList(ctsExclude);
@@ -795,6 +901,12 @@ public class OAObjectCallback {
 		return al.toArray(new CheckType[0]);
 	}
 	
+	/**
+	 * Returns a type's default check stages except {@link CheckType#Processed}.
+	 *
+	 * @param type rule type to inspect
+	 * @return check stages, or {@code null} when {@code type} is {@code null}
+	 */
 	public static CheckType[] getAllCheckTypesButProcessed(Type type) {
 		if (type == null) return null;
 		EnumSet<CheckType> es = type.checkTypes.clone();
@@ -802,6 +914,13 @@ public class OAObjectCallback {
 		return es.toArray(new CheckType[0]);
 	}
 
+	/**
+	 * Returns a type's default check stages except the supplied exclusions.
+	 *
+	 * @param type rule type to inspect
+	 * @param cts check stages to omit
+	 * @return check stages, or {@code null} when {@code type} is {@code null}
+	 */
 	public static CheckType[] getAllCheckTypesExcept(Type type, CheckType... cts) {
 		if (type == null) return null;
 		EnumSet<CheckType> es = type.checkTypes.clone();
@@ -813,10 +932,21 @@ public class OAObjectCallback {
 		return es.toArray(new CheckType[0]);
 	}
 	
+	/**
+	 * Returns a check list that invokes only the model callback method stage.
+	 *
+	 * @return callback-method-only check list
+	 */
 	public static CheckType[] getCallbackOnlyCheckType() {
 		return new CheckType[] { CheckType.CallbackMethod };
 	}
 
+	/**
+	 * Wraps a single check stage as a check list.
+	 *
+	 * @param ct check stage to wrap
+	 * @return one-element check list, or {@code null} when {@code ct} is {@code null}
+	 */
 	public static CheckType[] getCheckTypes(CheckType ct) {
 		if (ct == null) return null;
 		return new CheckType[] { ct };
@@ -849,9 +979,9 @@ public class OAObjectCallback {
 	}
 
 	/**
-	 * Sets the callback type.
+	 * Sets the semantic rule question for this callback.
 	 *
-	 * @param t the new callback type
+	 * @param type the new rule type
 	 */
 	public void setType(Type type) {
 		if (type == null) type = Type.Unknown;
@@ -859,46 +989,45 @@ public class OAObjectCallback {
 	}
 
 	/**
-	 * Returns the callback type. Note that {@link Type#AllowEnabled}
-	 * may be invoked for other types that have {@code checkEnabledFirst = true}.
+	 * Returns the semantic rule question for this callback.
 	 *
-	 * @return the current callback type
+	 * @return the current rule type
 	 */
 	public Type getType() {
 		return this.type;
 	}
 
 	/**
-	 * Assigns the hub associated with this callback.
+	 * Assigns Hub context for this rule request.
 	 *
-	 * @param h the hub to set
+	 * @param h Hub context, or {@code null}
 	 */
 	public void setHub(Hub h) {
 		this.hub = h;
 	}
 
 	/**
-	 * Returns the hub associated with this callback.
+	 * Returns Hub context for this rule request.
 	 *
-	 * @return the assigned hub, or {@code null} if none
+	 * @return assigned Hub context, or {@code null}
 	 */
 	public Hub getHub() {
 		return hub;
 	}
 
 	/**
-	 * Returns the object associated with this callback.
+	 * Returns the callback target/receiver.
 	 *
-	 * @return the target object, or {@code null} if none
+	 * @return target object, or {@code null}
 	 */
 	public OAObject getObject() {
 		return object;
 	}
 
 	/**
-	 * Sets the object associated with this callback.
+	 * Sets the callback target/receiver.
 	 *
-	 * @param object the target object to assign
+	 * @param object target object, or {@code null}
 	 */
 	public void setObject(OAObject object) {
 		this.object = object;
@@ -930,92 +1059,96 @@ public class OAObjectCallback {
 	}
 
 	/**
-	 * Returns the property name associated with this callback.
+	 * Returns the member being evaluated on the callback target.
 	 *
-	 * @return the property name, or {@code null} if none is set
+	 * @return property, link, method, or reverse-link name, or {@code null}
 	 */
 	public String getPropertyName() {
 		return propertyName;
 	}
 
 	/**
-	 * Sets the property name associated with this callback.
+	 * Sets the member being evaluated on the callback target.
 	 *
-	 * @param s the property name to assign
+	 * @param s property, link, method, or reverse-link name, or {@code null}
 	 */
 	public void setPropertyName(String s) {
 		this.propertyName = s;
 	}
 
 	/**
-	 * Sets the old value for this callback.
+	 * Sets the previous property value for property-change verification.
 	 *
-	 * @param obj the previous value to assign
+	 * @param obj previous value, or {@code null}
 	 */
 	public void setOldValue(Object obj) {
 		oldValue = obj;
 	}
 
 	/**
-	 * Returns the old value associated with this callback.
+	 * Returns the previous property value for property-change verification.
 	 *
-	 * @return the old value, or {@code null} if none is set
+	 * @return previous value, or {@code null}
 	 */
 	public Object getOldValue() {
 		return oldValue;
 	}
 
 	/**
-	 * Sets the value for this callback. The meaning of the value depends
-	 * on the callback type.
+	 * Sets the operation operand or new value.
+	 * <p>
+	 * The meaning depends on {@link #getType()}. For example, this is the new
+	 * property value for {@link Type#VerifyPropertyChange}, the added object for
+	 * {@link Type#AllowAdd}/{@link Type#VerifyAdd}, and the removed object for
+	 * {@link Type#AllowRemove}/{@link Type#VerifyRemove}.
+	 * </p>
 	 *
-	 * @param obj the value to assign
+	 * @param obj operation operand or new value
 	 */
 	public void setValue(Object obj) {
 		value = obj;
 	}
 
 	/**
-	 * Returns the current value associated with this callback.
+	 * Returns the operation operand or new value.
 	 *
-	 * @return the value, or {@code null} if none is set
+	 * @return operation operand or new value, or {@code null}
 	 */
 	public Object getValue() {
 		return value;
 	}
 
 	/**
-	 * Sets the response message for this callback.
+	 * Sets the human-readable result or denial explanation.
 	 *
-	 * @param response the message to assign
+	 * @param response response text, or {@code null}
 	 */
 	public void setResponse(String response) {
 		this.response = response;
 	}
 
 	/**
-	 * Returns the response message associated with this callback.
+	 * Returns the human-readable result or denial explanation.
 	 *
-	 * @return the response message, or {@code null} if none is set
+	 * @return response text, or {@code null}
 	 */
 	public String getResponse() {
 		return this.response;
 	}
 
 	/**
-	 * Returns the throwable assigned to this callback.
+	 * Returns exception/failure detail produced by rule processing.
 	 *
-	 * @return the throwable, or {@code null} if none is set
+	 * @return throwable detail, or {@code null}
 	 */
 	public Throwable getThrowable() {
 		return throwable;
 	}
 
 	/**
-	 * Assigns a throwable to this callback. When set, the caller may
-	 * throw it and cancel further processing.
+	 * Sets exception/failure detail for this rule result.
 	 *
-	 * @param t the throwable to assign
+	 * @param t throwable detail, or {@code null}
 	 */
 	public void setThrowable(Throwable t) {
 		this.throwable = t;
@@ -1102,16 +1235,16 @@ public class OAObjectCallback {
 	}
 
 	/**
-	 * Returns whether the callback action is currently allowed.
+	 * Returns whether the rule request is currently allowed.
 	 *
-	 * @return {@code true} if the action is allowed; otherwise {@code false}
+	 * @return {@code true} if allowed; otherwise {@code false}
 	 */
 	public boolean isAllowed() {
 		return allowed;
 	}
 
 	/**
-	 * Returns whether the callback action is allowed.
+	 * Returns whether the rule request is allowed.
 	 *
 	 * @return {@code true} if allowed; otherwise {@code false}
 	 */
@@ -1120,64 +1253,63 @@ public class OAObjectCallback {
 	}
 
 	/**
-	 * Sets whether the callback action is allowed.
+	 * Sets whether the rule request is allowed.
 	 *
-	 * @param enabled {@code true} to allow the action, {@code false} to block it
+	 * @param enabled {@code true} to allow the request, {@code false} to deny it
 	 */
 	public void setAllowed(boolean enabled) {
 		this.allowed = enabled;
 	}
 
 	/**
-	 * Returns the callback value converted to a boolean.
+	 * Returns the operation value converted to a boolean.
 	 *
-	 * @return the boolean representation of the value
+	 * @return boolean representation of {@link #getValue()}
 	 */
 	public boolean getBooleanValue() {
 		return OAConv.toBoolean(value);
 	}
 
 	/**
-	 * Returns the callback value converted to an integer.
+	 * Returns the operation value converted to an integer.
 	 *
-	 * @return the integer representation of the value
+	 * @return integer representation of {@link #getValue()}
 	 */
 	public int getIntValue() {
 		return OAConv.toInt(value);
 	}
 
 	/**
-	 * Returns the label associated with this callback.
+	 * Returns the label carrier used by UI-related rule requests.
 	 *
-	 * @return the label, or {@code null} if none is set
+	 * @return label carrier, or {@code null}
 	 */
 	public OACallbackLabel getLabel() {
 		return label;
 	}
 
 	/**
-	 * Assigns a label to this callback for UI-related operations.
+	 * Sets the label carrier used by UI-related rule requests.
 	 *
-	 * @param label the label to assign
+	 * @param label label carrier, or {@code null}
 	 */
 	public void setLabel(OACallbackLabel label) {
 		this.label = label;
 	}
 
 	/**
-	 * Returns the formatting string associated with this callback.
+	 * Returns the format string supplied by UI-related rule requests.
 	 *
-	 * @return the format string, or {@code null} if none is set
+	 * @return format string, or {@code null}
 	 */
 	public String getFormat() {
 		return format;
 	}
 
 	/**
-	 * Sets the formatting string for this callback. The meaning of the
-	 * format depends on the callback type.
+	 * Sets the format string supplied by UI-related rule requests.
 	 *
-	 * @param format the format string to assign
+	 * @param format format string, or {@code null}
 	 */
 	public void setFormat(String format) {
 		this.format = format;

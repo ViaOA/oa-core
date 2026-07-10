@@ -27,12 +27,21 @@ import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.reflect.OAReflect;
 
+/**
+ * Resolves OAObject metadata and model information.
+ */
 public abstract class OAObjectInfoService {
 	private static final Logger LOG = Logger.getLogger(OAObjectInfoService.class.getName());
 
 	private final OAObject.FriendAccess faObject;
 	private final OAObjectInfo.FriendAccess faObjectInfo;
 	
+	/**
+	 * Performs OAObjectInfoService behavior for the OA object service.
+	 *
+	 * @param faObject method input
+	 * @param faObjectInfo method input
+	 */
     public OAObjectInfoService(OAObject.FriendAccess faObject, OAObjectInfo.FriendAccess faObjectInfo) {
     	if (faObject == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
     	this.faObject = faObject;
@@ -205,7 +214,7 @@ public abstract class OAObjectInfoService {
 			oiRev.getLinkInfos().add(liRev);
 		}
 
-		// 20220503 load importMatch propertyPaths
+		// 20220503 load importMatch paths
 		callAnnotationUpdateImportMatches(oi);
 
 		// 20220918 load fkey
@@ -1633,23 +1642,23 @@ public abstract class OAObjectInfoService {
 	 * determined.
 	 *
 	 * @param clazz        the starting class.
-	 * @param propertyPath the forward property path.
+	 * @param path the forward property path.
 	 * @return the reversed property path, or null.
 	 */
-	public String reversePath(Class<? extends OAObject> clazz, String propertyPath) {
-		String revPropertyPath = "";
-		StringTokenizer st = new StringTokenizer(propertyPath, ".");
+	public String reversePath(Class<? extends OAObject> clazz, String path) {
+		String revPath = "";
+		StringTokenizer st = new StringTokenizer(path, ".");
 		for (int i = 0; st.hasMoreTokens(); i++) {
 			String value = st.nextToken();
 			if (i > 0) {
-				revPropertyPath = "." + revPropertyPath;
+				revPath = "." + revPath;
 			}
-			revPropertyPath = value + revPropertyPath;
+			revPath = value + revPath;
 		}
 
-		propertyPath = revPropertyPath;
-		revPropertyPath = "";
-		st = new StringTokenizer(propertyPath, ".");
+		path = revPath;
+		revPath = "";
+		st = new StringTokenizer(path, ".");
 		for (int i = 0; st.hasMoreTokens(); i++) {
 			String value = st.nextToken();
 
@@ -1661,10 +1670,10 @@ public abstract class OAObjectInfoService {
 				if (liRev == null) continue;
 				if (value.equalsIgnoreCase(liRev.getName())) {
 					if (clazz.equals(liRev.getToClass())) {
-						if (revPropertyPath.length() > 0) {
-							revPropertyPath = "." + revPropertyPath;
+						if (revPath.length() > 0) {
+							revPath = "." + revPath;
 						}
-						revPropertyPath = li.getName() + revPropertyPath;
+						revPath = li.getName() + revPath;
 						clazz = li.getToClass();
 						bFound = true;
 						break;
@@ -1681,11 +1690,11 @@ public abstract class OAObjectInfoService {
 				}
 			}
 
-			revPropertyPath = null;
+			revPath = null;
 			break;
 		}
 
-		return revPropertyPath;
+		return revPath;
 	}
 
 	/**
@@ -1864,16 +1873,62 @@ public abstract class OAObjectInfoService {
     	return hmObjectInfo;
     }
 
+	/**
+	 * Returns the allClasses value.
+	 *
+	 * @return result value
+	 */
     public Class<? extends OAObject>[] getAllClasses() {
     	return (Class<? extends OAObject>[]) hmObjectInfo.keySet().toArray();
     }
     
     
+	/**
+	 * Dependency hook used by this service to annotationUpdate2.
+	 *
+	 * @param oi method input
+	 * @param clazz method input
+	 */
 	public abstract void callAnnotationUpdate2(OAObjectInfo oi, Class<?> clazz);
+	/**
+	 * Dependency hook used by this service to annotationUpdateImportMatches.
+	 *
+	 * @param oi method input
+	 */
 	public abstract void callAnnotationUpdateImportMatches(OAObjectInfo oi); 
+	/**
+	 * Dependency hook used by this service to annotationUpdateLinkFkeys.
+	 *
+	 * @param oi method input
+	 */
 	public abstract void callAnnotationUpdateLinkFkeys(final OAObjectInfo oi);
+	/**
+	 * Dependency hook used by this service to annotationUpdate.
+	 *
+	 * @param oi method input
+	 * @param clazz method input
+	 */
 	public abstract void callAnnotationUpdate(OAObjectInfo oi, Class<?> clazz); 
+	/**
+	 * Dependency hook used by this service to reflectGetRawReference.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @return result value
+	 */
 	public abstract Object callReflectGetRawReference(OAObject oaObj, String name);
+	/**
+	 * Dependency hook used by this service to reflectGetProperty.
+	 *
+	 * @param oaObj method input
+	 * @param propPath method input
+	 * @return result value
+	 */
 	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath);
+	/**
+	 * Dependency hook used by this service to syncIsClient.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callSyncIsClient();
 }

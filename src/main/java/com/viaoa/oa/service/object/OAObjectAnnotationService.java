@@ -45,7 +45,7 @@ import com.viaoa.trigger.OATriggerMethodListener;
 /*qqqqqqqqqqqq
 CODEX
 
-1. file/class/method: src/main/java/com/viaoa/graph/service/object/OAObjectAnnotationService.java:86 update2 /
+1. file/class/method: src/main/java/com/viaoa/oa/service/object/OAObjectAnnotationService.java:86 update2 /
      _update2
 
   concrete bug: Inherited @OATriggerMethod methods are registered against the declaring superclass, not the concrete
@@ -57,18 +57,18 @@ CODEX
   OATriggerService.addTrigger then registers against BaseOrder metadata. Property changes on SpecialOrder use
   SpecialOrder object info, so the inherited trigger can be missed for subclass instances.
 
-  why this violates OA/OG trigger semantics: Annotation traversal explicitly walks superclasses, so inherited trigger
+  why this violates OA trigger semantics: Annotation traversal explicitly walks superclasses, so inherited trigger
   methods should apply to the concrete class metadata being built. Registering to the declaring class silently narrows
   the trigger target and can miss required derived-state/business-rule execution.
 
   minimal fix direction: For inherited trigger annotations, use oi.getForClass() as the trigger root class and
   listener root class, while still invoking the superclass Method on the concrete instance.
 
-  suggested CODEX comment location: Around src/main/java/com/viaoa/graph/service/object/
+  suggested CODEX comment location: Around src/main/java/com/viaoa/oa/service/object/
   OAObjectAnnotationService.java:1066, where the listener and trigger are created with clazz.
 
 
-2. src/main/java/com/viaoa/graph/service/object/OAObjectAnnotationService.java:140 _update
+2. src/main/java/com/viaoa/oa/service/object/OAObjectAnnotationService.java:140 _update
      Bug/risk: class-level @OAObjCallback processing is guarded by the same hs.contains("OAClass") block as @OAClass.
      Execution path: subclass has @OAClass, superclass has class-level @OAObjCallback, subclass does not. update()
      processes subclass first, adds "OAClass", then skips the superclass block entirely, including superclass
@@ -77,7 +77,7 @@ CODEX
      for subclasses even though the annotation service explicitly walks superclasses.
      Severity: Medium
      Minimal hardening: track OAClass and class-level OAObjCallback independently, e.g. separate hs keys.
-  3. src/main/java/com/viaoa/graph/service/object/OAObjectAnnotationService.java:210 _update
+  3. src/main/java/com/viaoa/oa/service/object/OAObjectAnnotationService.java:210 _update
      Bug/risk: duplicate @OAId(pos=...) only logs a warning and then overwrites the existing ID property at that
      position.
      Production/runtime impact: reflection method order is not a stable semantic ordering guarantee. With duplicate ID
@@ -86,8 +86,8 @@ CODEX
      Severity: High
      Minimal hardening: fail fast for duplicate ID positions or preserve the first and mark metadata invalid rather
      than overwriting.
-  4. src/main/java/com/viaoa/graph/service/object/OAObjectAnnotationService.java:558 _update / src/main/java/com/
-     viaoa/graph/service/object/OAObjectAnnotationService.java:1132 updateLinkFkeys
+  4. src/main/java/com/viaoa/oa/service/object/OAObjectAnnotationService.java:558 _update / src/main/java/com/
+     viaoa/oa/service/object/OAObjectAnnotationService.java:1132 updateLinkFkeys
      Bug/risk: invalid @OAFkey(fromProperty=..., toProperty=...) values are accepted into metadata even when
      fromProperty or toProperty does not resolve.
      Execution path: _update creates OAFkeyInfo with fromPropertyInfo == null; updateLinkFkeys later sets
@@ -97,10 +97,10 @@ CODEX
      Severity: High
      Minimal hardening: validate both sides during metadata finalization; fail metadata build or mark link invalid if
      either property cannot resolve.
-  5. src/main/java/com/viaoa/graph/service/object/OAObjectAnnotationService.java:603 _update
+  5. src/main/java/com/viaoa/oa/service/object/OAObjectAnnotationService.java:603 _update
      Bug/risk: any non-static method returning Hub creates an OALinkInfo before checking whether @OAMany exists.
      Production/runtime impact: helper/accessor methods that return Hub but are not model links can become runtime
-     relationship metadata. That can affect graph traversal, serialization, Hub wiring, and path/query behavior.
+     relationship metadata. That can affect OA model traversal, serialization, Hub wiring, and path/query behavior.
      Severity: Medium
      Minimal hardening: require @OAMany for runtime link creation, or explicitly validate/whitelist legacy unannotated
      Hub methods.
@@ -143,7 +143,7 @@ CODEX
      Severity: Low/Medium
      Execution path: a static method named addressesModelCallback(Object model) or similar is annotated or discovered.
      Loader uses cs[0].isAssignableFrom(OAObjectModel.class), so Object.class passes validation. Later
-     OAObjectCallbackService.onObjectCallbackModel only invokes if cs[0].equals(OAObjectModel.class), so the accepted
+     OAObjectRulesService.onObjectCallbackModel only invokes if cs[0].equals(OAObjectModel.class), so the accepted
      callback silently does not run.
      Why it matters: metadata validation says the callback is acceptable, but runtime dispatch skips it, producing
      missed model callbacks without a clear failure.
@@ -187,6 +187,11 @@ public abstract class OAObjectAnnotationService {
 
 	private final OAObjectInfo.FriendAccess faObjectInfo;
 	
+	/**
+	 * Performs OAObjectAnnotationService behavior for the OA object service.
+	 *
+	 * @param faObjectInfo method input
+	 */
     public OAObjectAnnotationService(OAObjectInfo.FriendAccess faObjectInfo) {
     	if (faObjectInfo == null) throw new IllegalArgumentException("OAObjectInfo.FriendAccess can not be null");
     	this.faObjectInfo = faObjectInfo;
@@ -261,8 +266,8 @@ public abstract class OAObjectAnnotationService {
 				s = oaclass.displayName();
 				if (OAStr.isNotEmpty(s)) oi.setDisplayName(s);
 
-				String[] pps = oaclass.rootTreePropertyPaths();
-				oi.setRootTreePropertyPaths(pps);
+				String[] pps = oaclass.rootTreePaths();
+				oi.setRootTreePaths(pps);
 				oi.setLookup(oaclass.isLookup());
 				oi.setProcessed(oaclass.isProcessed());
 				oi.setModelUserClass(oaclass.isModelUserClass());
@@ -419,7 +424,7 @@ public abstract class OAObjectAnnotationService {
 			pi.setSubmit(oaprop.isSubmit());
 			pi.setObjectStatus(oaprop.isObjectStatus());
 			pi.setIgnoreTimeZone(oaprop.ignoreTimeZone());
-			pi.setTimeZonePropertyPath(oaprop.timeZonePropertyPath());
+			pi.setTimeZonePath(oaprop.timeZonePath());
 
 			pi.setClassType(m.getReturnType());
 			pi.setTrackPrimitiveNull(pi.getIsPrimitive() && oaprop.trackPrimitiveNull() && !oaprop.isFkeyOnly());
@@ -688,14 +693,14 @@ public abstract class OAObjectAnnotationService {
 			}
 			li.setOneAndOnlyOne(b);
 
-			li.setDefaultPropertyPath(annotation.defaultPropertyPath());
-			li.setDefaultPropertyPathIsHierarchy(annotation.defaultPropertyPathIsHierarchy());
-			li.setDefaultPropertyPathCanBeChanged(annotation.defaultPropertyPathCanBeChanged());
+			li.setDefaultPath(annotation.defaultPath());
+			li.setDefaultPathIsHierarchy(annotation.defaultPathIsHierarchy());
+			li.setDefaultPathCanBeChanged(annotation.defaultPathCanBeChanged());
 
-			li.setDefaultModelUserPropertyPath(annotation.defaultModelUserPropertyPath());
+			li.setDefaultModelUserPath(annotation.defaultModelUserPath());
 
-			li.setEqualPropertyPath(annotation.equalPropertyPath());
-			li.setSelectFromPropertyPath(annotation.selectFromPropertyPath());
+			li.setEqualPath(annotation.equalPath());
+			li.setSelectFromPath(annotation.selectFromPath());
 
 			OAObjCallback eq = (OAObjCallback) m.getAnnotation(OAObjCallback.class);
 			if (eq != null) {
@@ -812,10 +817,10 @@ public abstract class OAObjectAnnotationService {
 			li.setServerSideCalc(annotation.isServerSideCalc());
 			li.setPrivateMethod(!annotation.createMethod());
 			li.setCacheSize(annotation.cacheSize());
-			s = annotation.mergerPropertyPath();
-			li.setMergerPropertyPath(s);
-			li.setEqualPropertyPath(annotation.equalPropertyPath());
-			li.setSelectFromPropertyPath(annotation.selectFromPropertyPath());
+			s = annotation.mergerPath();
+			li.setMergerPath(s);
+			li.setEqualPath(annotation.equalPath());
+			li.setSelectFromPath(annotation.selectFromPath());
 			li.setOAMany(annotation);
 
 			OAObjCallback eq = (OAObjCallback) m.getAnnotation(OAObjCallback.class);
@@ -1265,7 +1270,7 @@ public abstract class OAObjectAnnotationService {
 	 * @param oi the metadata object whose import-match mappings will be populated
 	 */
 	public void updateImportMatches(OAObjectInfo oi) {
-		// get all ImportMatches and create propertyPaths for each
+		// get all ImportMatches and create paths for each
 		final ArrayList<Object> al = new ArrayList<>();
 
 		for (OAPropertyInfo pi : oi.getPropertyInfos()) {
@@ -1281,7 +1286,7 @@ public abstract class OAObjectAnnotationService {
 		}
 
 		final ArrayList<String> alPropertyName = new ArrayList<>();
-		final ArrayList<String> alPropertyPath = new ArrayList<>();
+		final ArrayList<String> alPath = new ArrayList<>();
 
 		for (Object obj : al) {
 			if (obj == null) {
@@ -1290,7 +1295,7 @@ public abstract class OAObjectAnnotationService {
 			if (obj instanceof OAPropertyInfo) {
 				OAPropertyInfo pi = (OAPropertyInfo) obj;
 				alPropertyName.add(pi.getLowerName());
-				alPropertyPath.add(""); // "this"
+				alPath.add(""); // "this"
 			} else {
 				OALinkInfo li = (OALinkInfo) obj;
 
@@ -1301,23 +1306,23 @@ public abstract class OAObjectAnnotationService {
 				} else {
 					prefixName = li.getLowerName();
 				}
-				recurseUpdateImportMatches(	0, prefixName, li.getLowerName(), li, alPropertyName, alPropertyPath,
+				recurseUpdateImportMatches(	0, prefixName, li.getLowerName(), li, alPropertyName, alPath,
 											new HashSet<OALinkInfo>());
 				*/
 
-				recurseUpdateImportMatches(	0, "", li.getLowerName(), li, alPropertyName, alPropertyPath,
+				recurseUpdateImportMatches(	0, "", li.getLowerName(), li, alPropertyName, alPath,
 											new HashSet<OALinkInfo>());
 			}
 		}
 		faObjectInfo.setImportMatchPropertyNames(oi, alPropertyName.toArray(new String[alPropertyName.size()]));
-		faObjectInfo.setImportMatchPropertyPaths(oi, alPropertyPath.toArray(new String[alPropertyPath.size()]));
+		faObjectInfo.setImportMatchPaths(oi, alPath.toArray(new String[alPath.size()]));
 	}
 
 	
 	
 	/**
 	 * Recursively generates import-match property names and paths for a link
-	 * hierarchy.  
+	 * hierarchy.
 	 * <p>
 	 * For each link marked as import-match, dependent properties and child links
 	 * are traversed, producing flattened property-name and property-path entries
@@ -1328,12 +1333,12 @@ public abstract class OAObjectAnnotationService {
 	 * @param prefixPath     accumulated property-path prefix
 	 * @param li             the link being processed
 	 * @param alPropertyName list collecting generated property names
-	 * @param alPropertyPath list collecting generated property paths
+	 * @param alPath list collecting generated property paths
 	 * @param hsLi           tracks visited links to prevent recursion cycles
 	 */
 	private static void recurseUpdateImportMatches(final int level, final String prefixName, final String prefixPath, final OALinkInfo li,
 			final ArrayList<String> alPropertyName,
-			final ArrayList<String> alPropertyPath, final HashSet<OALinkInfo> hsLi) {
+			final ArrayList<String> alPath, final HashSet<OALinkInfo> hsLi) {
 
 		if (li == null || !li.isImportMatch()) {
 			return;
@@ -1368,14 +1373,14 @@ public abstract class OAObjectAnnotationService {
 					}
 					alPropertyName.add(fki.getFromPropertyInfo().getName());
 					String s = prefixPath + "." + fki.getFromPropertyInfo().getName();
-					alPropertyPath.add(s);
+					alPath.add(s);
 				}
 			} else {
 				for (String pkName : oiTo.getKeyProperties()) {
 					OAPropertyInfo pi = oiTo.getPropertyInfo(pkName);
 					alPropertyName.add(prefixName + pi.getName());
 					String s = (prefixPath == null || prefixPath.length() == 0) ? pi.getLowerName() : (prefixPath + "." + pi.getName());
-					alPropertyPath.add(s);
+					alPath.add(s);
 				}
 			}
 		} else {
@@ -1385,7 +1390,7 @@ public abstract class OAObjectAnnotationService {
 				}
 				alPropertyName.add(prefixName + pi.getName());
 				String s = (prefixPath == null || prefixPath.length() == 0) ? pi.getLowerName() : (prefixPath + "." + pi.getName());
-				alPropertyPath.add(s);
+				alPath.add(s);
 			}
 
 			for (OALinkInfo lix : oiTo.getLinkInfos()) {
@@ -1393,15 +1398,40 @@ public abstract class OAObjectAnnotationService {
 					continue;
 				}
 				recurseUpdateImportMatches(	level + 1, prefixName + lix.getName(), prefixPath + "." + lix.getName(), lix, alPropertyName,
-											alPropertyPath,
+											alPath,
 											hsLi);
 			}
 		}
 	}
 	
 	
+	/**
+	 * Dependency hook used by this service to reflectGetHubObjectClass.
+	 *
+	 * @param method method input
+	 * @return result value
+	 */
 	public abstract Class<?> callReflectGetHubObjectClass(Method method);
+	/**
+	 * Dependency hook used by this service to infoGetCalcInfo.
+	 *
+	 * @param thisOI method input
+	 * @param name method input
+	 * @return result value
+	 */
 	public abstract OACalcInfo callInfoGetCalcInfo(OAObjectInfo thisOI, String name);
+	/**
+	 * Dependency hook used by this service to infoGetLinkInfo.
+	 *
+	 * @param oi method input
+	 * @param propertyName method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
+	/**
+	 * Dependency hook used by this service to addTrigger.
+	 *
+	 * @param trigger method input
+	 */
 	public abstract void callAddTrigger(OATrigger trigger);
 }

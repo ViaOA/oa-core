@@ -16,7 +16,7 @@ import com.viaoa.select.OASelect;
 CODEX
 
 #2
-  File/class/method: src/main/java/com/viaoa/graph/service/object/OAObjectCSService.java:154, delete(...)
+  File/class/method: src/main/java/com/viaoa/oa/service/object/OAObjectCSService.java:154, delete(...)
 
   Exact changed-code path: callSyncSyncServerDelete(...) result is assigned to b, but ignored; method always returns
   true.
@@ -39,12 +39,15 @@ CODEX
 public abstract class OAObjectCSService {
 	private static final Logger LOG = Logger.getLogger(OAObjectCSService.class.getName());
 
+	/**
+	 * Performs OAObjectCSService behavior for the OA object service.
+	 */
 	public OAObjectCSService() {
 	}
 
 	/**
 	 * Determines whether this runtime is operating in server or standalone mode.
-	 * 
+	 *
 	 * @return {@code true} if running as a server or standalone runtime;
 	 *         {@code false} if running as a client
 	 */
@@ -53,11 +56,23 @@ public abstract class OAObjectCSService {
 		return callSyncIsServer();
 	}
 
+	/**
+	 * Returns whether client is true.
+	 *
+	 * @param obj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public boolean isClient(OAObject obj) {
 		//qqqqqqq obj not used, remove qqqqq todo:
 		return callSyncIsClient();
 	}
 
+	/**
+	 * Returns whether singleUser is true.
+	 *
+	 * @param obj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public boolean isSingleUser(OAObject obj) {
 		//qqqqqqq obj not used, remove qqqqq todo:
 		return callSyncIsSingleUser();
@@ -75,10 +90,14 @@ public abstract class OAObjectCSService {
 	 * @param obj the object whose class is evaluated for workstation mode
 	 * @return {@code true} if not running as a server; otherwise {@code false}
 	 */
-/*qqqqqqqq 20260511 needs to change Workstation to Client, SingleUser	
+/*qqqqqqqq 20260511 needs to change Workstation to Client, SingleUser
+
+
 	public boolean isWorkstation(OAObject obj) {
 		return !callSyncIsServer();
 	}
+
+
 
 	public boolean isWorkstation() {
 		return !callSyncIsServer();
@@ -98,6 +117,11 @@ public abstract class OAObjectCSService {
 	}
 
 
+	/**
+	 * Performs objectFinalized behavior for the OA object service.
+	 *
+	 * @param guid method input
+	 */
 	public void objectFinalized(UUID guid) {
 		if (guid == null) return;
 		if (callSyncIsClient()) {
@@ -347,25 +371,148 @@ public abstract class OAObjectCSService {
         callRemoteSyncPropertyChange(obj.getClass(), key, propertyName, newValue, bIsBlob);
 	}
 
-	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz);	
+	/**
+	 * Dependency hook used by this service to infoGetObjectInfo.
+	 *
+	 * @param clazz method input
+	 * @return result value
+	 */
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz);
+	/**
+	 * Dependency hook used by this service to syncIsSingleUser.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callSyncIsSingleUser();
+	/**
+	 * Dependency hook used by this service to syncIsServer.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callSyncIsServer();
+	/**
+	 * Dependency hook used by this service to syncIsClient.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callSyncIsClient();
-	public abstract Object callSyncClientGetDetail(final OAObject masterObject, final String propertyName);	
+	/**
+	 * Dependency hook used by this service to syncClientGetDetail.
+	 *
+	 * @param masterObject method input
+	 * @param propertyName method input
+	 * @return result value
+	 */
+	public abstract Object callSyncClientGetDetail(final OAObject masterObject, final String propertyName);
+	/**
+	 * Dependency hook used by this service to remoteSyncPropertyChange.
+	 *
+	 * @param objectClass method input
+	 * @param origKey method input
+	 * @param propertyName method input
+	 * @param newValue method input
+	 * @param bIsBlob method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callRemoteSyncPropertyChange(Class<? extends OAObject> objectClass, OAObjectKey origKey, String propertyName, Object newValue, boolean bIsBlob);
-	public abstract void callSyncClientObjectCreated(OAObject obj);	
-	public abstract void callSyncClientObjectFinalized(UUID guid);	
+	/**
+	 * Dependency hook used by this service to syncClientObjectCreated.
+	 *
+	 * @param obj method input
+	 */
+	public abstract void callSyncClientObjectCreated(OAObject obj);
+	/**
+	 * Dependency hook used by this service to syncClientObjectFinalized.
+	 *
+	 * @param guid method input
+	 */
+	public abstract void callSyncClientObjectFinalized(UUID guid);
+	/**
+	 * Dependency hook used by this service to hubSelectLoadAllData.
+	 *
+	 * @param thisHub method input
+	 * @param select method input
+	 */
 	public abstract <T extends OAObject> void callHubSelectLoadAllData(Hub<T> thisHub, OASelect<T> select);
+	/**
+	 * Dependency hook used by this service to syncClientUpdateObjectsWithoutHubs.
+	 *
+	 * @param obj method input
+	 */
 	public abstract void callSyncClientUpdateObjectsWithoutHubs(OAObject obj);
+	/**
+	 * Dependency hook used by this service to syncClientCreateCopy.
+	 *
+	 * @param objectClass method input
+	 * @param objectKey method input
+	 * @param excludeProperties method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callSyncClientCreateCopy(Class<T> objectClass, OAObjectKey objectKey, String[] excludeProperties);
+	/**
+	 * Dependency hook used by this service to syncServerSave.
+	 *
+	 * @param objectClass method input
+	 * @param objectKey method input
+	 * @param iCascadeRule method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callSyncServerSave(Class<? extends OAObject> objectClass, OAObjectKey objectKey, int iCascadeRule);
+	/**
+	 * Dependency hook used by this service to infoGetLinkInfo.
+	 *
+	 * @param oi method input
+	 * @param propertyName method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
+	/**
+	 * Dependency hook used by this service to threadLocalGetSendSyncMessages.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callThreadLocalGetSendSyncMessages();
+	/**
+	 * Dependency hook used by this service to threadLocalSetSendSyncMessages.
+	 *
+	 * @param b method input
+	 */
 	public abstract void callThreadLocalSetSendSyncMessages(boolean b);
-	public abstract boolean callThreadLocalIsLoading();		
+	/**
+	 * Dependency hook used by this service to threadLocalIsLoading.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
+	public abstract boolean callThreadLocalIsLoading();
+	/**
+	 * Dependency hook used by this service to syncServerGetObject.
+	 *
+	 * @param clazz method input
+	 * @param key method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callSyncServerGetObject(Class<T> clazz, OAObjectKey key);
+	/**
+	 * Dependency hook used by this service to syncSyncServerDelete.
+	 *
+	 * @param clazz method input
+	 * @param key method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callSyncSyncServerDelete(Class<? extends OAObject> clazz, OAObjectKey key);
+	/**
+	 * Dependency hook used by this service to syncSyncClientDelete.
+	 *
+	 * @param clazz method input
+	 * @param key method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callSyncSyncClientDelete(Class<? extends OAObject> clazz, OAObjectKey key);
+	/**
+	 * Dependency hook used by this service to syncIsRunning.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	protected abstract boolean callSyncIsRunning();
 
 }

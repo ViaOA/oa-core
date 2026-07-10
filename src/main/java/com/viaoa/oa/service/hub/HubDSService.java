@@ -8,6 +8,10 @@ import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
 
+/**
+ * Coordinates datasource-backed Hub selection and load state.
+ */
+
 public abstract class HubDSService {
 	private final Logger LOG = Logger.getLogger(HubDSService.class.getName());
 
@@ -70,8 +74,27 @@ public abstract class HubDSService {
         ds.updateMany2ManyLinks(objMaster, null, objs, propFromMaster);
     }
 
+	/**
+	 * Dependency hook used by this service for ObjectInfoIsMany2Many behavior.
+	 *
+	 * @param thisLi method input
+	 * @return result value
+	 */
+
 	public abstract boolean callObjectInfoIsMany2Many(OALinkInfo thisLi);
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetReverseLinkInfo behavior.
+	 *
+	 * @param thisLi method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi);
+	/**
+	 * Dependency hook used by this service for HubAddRemoveGetRemovedObjects behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T[] callHubAddRemoveGetRemovedObjects(Hub<T> thisHub);
 }
 

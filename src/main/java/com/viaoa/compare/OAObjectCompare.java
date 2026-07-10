@@ -143,15 +143,15 @@ public class OAObjectCompare {
     /**
      * Internal entry point that performs a comparison using the given property path.
      *
-     * @param propertyPath the current property path
+     * @param path the current property path
      * @param objLeft the left-hand object
      * @param objRight the right-hand object
      * @return true if the objects are considered equal
      * @throws IllegalAccessException if reflective field access fails
      */
-    private boolean _compare(String propertyPath, Object objLeft, Object objRight) throws IllegalAccessException {
+    private boolean _compare(String path, Object objLeft, Object objRight) throws IllegalAccessException {
         boolean bResult = true;
-        bResult = _compare(propertyPath, objLeft, objRight, true);
+        bResult = _compare(path, objLeft, objRight, true);
         return bResult;
     }
 
@@ -208,22 +208,22 @@ public class OAObjectCompare {
     /**
      * Performs a recursive comparison of two objects with optional mismatch reporting.
      *
-     * @param propertyPath the current property path
+     * @param path the current property path
      * @param objLeft the left-hand object
      * @param objRight the right-hand object
      * @param bReportNotEquals true to report mismatches as they are found
      * @return true if the objects are considered equal
      * @throws IllegalAccessException if reflective field access fails
      */
-    protected boolean _compare(String propertyPath, Object objLeft, Object objRight, boolean bReportNotEquals) throws IllegalAccessException {
+    protected boolean _compare(String path, Object objLeft, Object objRight, boolean bReportNotEquals) throws IllegalAccessException {
         if (objLeft == objRight) return true;
         if (objLeft == null || objRight == null) {
-            if (bReportNotEquals) foundOne(propertyPath, objLeft, objRight);
+            if (bReportNotEquals) foundOne(path, objLeft, objRight);
             return false;
         }
 
         if (!objLeft.getClass().equals(objRight.getClass())) {
-            if (bReportNotEquals) foundOne(propertyPath, objLeft, objRight);
+            if (bReportNotEquals) foundOne(path, objLeft, objRight);
             return false;
         }
         
@@ -231,7 +231,7 @@ public class OAObjectCompare {
         if (s.indexOf("java.") == 0) {
             boolean b = objLeft.equals(objRight);
             if (!b && bReportNotEquals) {
-                foundOne(propertyPath, objLeft, objRight);
+                foundOne(path, objLeft, objRight);
             }
             return b;
         }
@@ -242,7 +242,7 @@ public class OAObjectCompare {
             if (Array.getLength(objRight) != x) {
                 bMatch = false;
                 if (bReportNotEquals) {
-                    foundOne(propertyPath, "length="+Array.getLength(objLeft), "length="+Array.getLength(objRight));
+                    foundOne(path, "length="+Array.getLength(objLeft), "length="+Array.getLength(objRight));
                 }
             }
 
@@ -252,11 +252,11 @@ public class OAObjectCompare {
                 Object key = getKey(obj);
                 Object objx = hm.put(key, obj);
                 if (objx != null) {
-                    foundOne(propertyPath, "duplicate key in collection", key);
+                    foundOne(path, "duplicate key in collection", key);
                 }
             }
             if (hm.size() != x) {
-                foundOne(propertyPath, "duplicate keys in collection", "");
+                foundOne(path, "duplicate keys in collection", "");
             }
             x = Array.getLength(objRight);
             for (int i=0; i<x; i++) {
@@ -267,11 +267,11 @@ public class OAObjectCompare {
                 if (objL == null) {
                     bMatch = false;
                     if (bReportNotEquals) {
-                        foundOne(propertyPath+"["+i+"]", "not found", key);
+                        foundOne(path+"["+i+"]", "not found", key);
                     }
                 }
                 else {
-                    boolean b = _compare(propertyPath+"["+i+"]", objL, objR, bReportNotEquals);
+                    boolean b = _compare(path+"["+i+"]", objL, objR, bReportNotEquals);
                     if (!b) bMatch = false;
                 }
             }
@@ -280,7 +280,7 @@ public class OAObjectCompare {
                 bMatch = false;
                 if (bReportNotEquals) {
                     int pos = OAArray.indexOf((Object[]) objLeft, ex.getValue());
-                    foundOne(propertyPath+"["+pos+"]", key, "not found");
+                    foundOne(path+"["+pos+"]", key, "not found");
                 }
             }
             return bMatch;
@@ -290,7 +290,7 @@ public class OAObjectCompare {
         if (!bReportNotEquals) b = objLeft.equals(objRight);
         
         if (!b && bReportNotEquals) {
-            b = _compareFields(propertyPath, objLeft, objRight, bReportNotEquals);
+            b = _compareFields(path, objLeft, objRight, bReportNotEquals);
         }
         return b;
     }
@@ -308,14 +308,14 @@ public class OAObjectCompare {
     /**
      * Compares all non-static, non-transient fields of two objects using reflection.
      *
-     * @param propertyPath the current property path
+     * @param path the current property path
      * @param objLeft the left-hand object
      * @param objRight the right-hand object
      * @param bReportNotEquals true to report mismatches as they are found
      * @return true if all fields are considered equal
      * @throws IllegalAccessException if reflective field access fails
      */
-    private boolean _compareFields(String propertyPath, Object objLeft, Object objRight, boolean bReportNotEquals) throws IllegalAccessException {
+    private boolean _compareFields(String path, Object objLeft, Object objRight, boolean bReportNotEquals) throws IllegalAccessException {
         // check to see if these objects have already been compared
         Object objx = hmVisitor.get(objLeft);
         if (objx == objRight) {
@@ -338,7 +338,7 @@ public class OAObjectCompare {
             Object oL = field.get(objLeft);
             Object oR = field.get(objRight);
             
-            if (!_compare(propertyPath+"."+field.getName(), oL, oR, bReportNotEquals) ) {
+            if (!_compare(path+"."+field.getName(), oL, oR, bReportNotEquals) ) {
                 bResult = false;
             }
         }
@@ -348,16 +348,16 @@ public class OAObjectCompare {
     /**
      * Called when a mismatch is detected between two objects.
      *
-     * @param propertyPath the property path where the mismatch occurred
+     * @param path the property path where the mismatch occurred
      * @param objLeft the left-hand value
      * @param objRight the right-hand value
      */
-    public void foundOne(String propertyPath, Object objLeft, Object objRight) {
+    public void foundOne(String path, Object objLeft, Object objRight) {
         String s1 = objLeft+"";
         if (s1.length() > 40) s1 = s1.substring(0,40)+"...";
         String s2 = objRight+"";
         if (s2.length() > 40) s2 = s2.substring(0,40)+"...";
-        System.out.println(propertyPath+": "+leftName+"="+s1+", "+rightName+"="+s2);
+        System.out.println(path+": "+leftName+"="+s1+", "+rightName+"="+s2);
     }
     
     /**
@@ -372,8 +372,8 @@ public class OAObjectCompare {
         
         OAObjectCompare oc = new OAObjectCompare() {
             @Override
-            public void foundOne(String propertyPath, Object objLeft, Object objRight) {
-                super.foundOne(propertyPath, objLeft, objRight);
+            public void foundOne(String path, Object objLeft, Object objRight) {
+                super.foundOne(path, objLeft, objRight);
             }
         };
         oc.compare(obj1, obj2);

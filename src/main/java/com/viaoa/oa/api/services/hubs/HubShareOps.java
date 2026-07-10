@@ -3,6 +3,9 @@ package com.viaoa.oa.api.services.hubs;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 
+/**
+ * Public OA Hub share service operations for sharing Hub membership and active-object state.
+ */
 public interface HubShareOps {
 
     /**
@@ -10,7 +13,7 @@ public interface HubShareOps {
      * <p>
      * {@code share(...)} wires {@code hub2} to use the same underlying objects and
      * collection state as {@code hub}, allowing both Hubs to work with the same
-     * live object set within the Object Graph.
+     * live object set within the OA model.
      * <p>
      * The {@code shareActiveObject} flag controls whether the two Hubs also share the same
      * active object. When {@code true}, active object changes are shared between

@@ -5,6 +5,10 @@ import com.viaoa.hub.*;
 import com.viaoa.hub.auto.HubAutoSequence;
 import com.viaoa.object.OAObject;
 
+/**
+ * Maintains sequence/order values for Hub contents.
+ */
+
 public abstract class HubSequenceService {
 	private final Logger LOG = Logger.getLogger(HubSequenceService.class.getName());
 
@@ -70,7 +74,19 @@ public abstract class HubSequenceService {
 		}
 	}
 
+	/**
+	 * Dependency hook used by this service for HubCSIsClient behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
+
 	public abstract boolean callHubCSIsClient(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubSortCancelSort behavior.
+	 *
+	 * @param hub method input
+	 */
 	public abstract void callHubSortCancelSort(Hub<?> hub);
 
 }

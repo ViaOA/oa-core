@@ -37,7 +37,7 @@ class OALinkInfoTest {
     void simpleFlagAndStringAccessorsRoundTrip() throws Exception {
         OALinkInfo link = new OALinkInfo(LineItem.P_Product, Product.class, OALinkInfo.ONE);
         Method method = Product.class.getMethod("getSku");
-        String itemPath = OATextUtil.createPropertyPath(LineItem.P_Product, Product.P_Item, Item.P_Name);
+        String itemPath = OATextUtil.createPath(LineItem.P_Product, Product.P_Item, Item.P_Name);
 
         link.setOwner(true);
         link.setRecursive(true);
@@ -69,7 +69,7 @@ class OALinkInfoTest {
         link.setCalcDependentProperties(new String[] { Product.P_Item });
         link.setViewDependentProperties(new String[] { "view" });
         link.setModelUserDependentProperties(new String[] { "context" });
-        link.setMergerPropertyPath(itemPath);
+        link.setMergerPath(itemPath);
         link.setEnabledProperty("enabled");
         link.setEnabledValue(false);
         link.setVisibleProperty("visible");
@@ -80,15 +80,15 @@ class OALinkInfoTest {
         link.setModelUserVisibleValue(false);
         link.setObjectCallbackMethod(method);
         link.setSchedulerMethod(method);
-        link.setDefaultPropertyPath(itemPath);
-        link.setDefaultPropertyPathIsHierarchy(true);
-        link.setDefaultPropertyPathCanBeChanged(false);
-        link.setDefaultModelUserPropertyPath("contextPath");
+        link.setDefaultPath(itemPath);
+        link.setDefaultPathIsHierarchy(true);
+        link.setDefaultPathCanBeChanged(false);
+        link.setDefaultModelUserPath("contextPath");
         link.setOneAndOnlyOne(true);
         link.setRequired(true);
         link.setImportMatch(true);
-        link.setEqualPropertyPath(Product.P_Sku);
-        link.setSelectFromPropertyPath(itemPath);
+        link.setEqualPath(Product.P_Sku);
+        link.setSelectFromPath(itemPath);
         link.setAutoCreateProperty("auto");
 
         assertTrue(link.getRecursive());
@@ -117,7 +117,7 @@ class OALinkInfoTest {
         assertArrayEquals(new String[] { Product.P_Item }, link.getCalcDependentProperties());
         assertArrayEquals(new String[] { "view" }, link.getViewDependentProperties());
         assertArrayEquals(new String[] { "context" }, link.getModelUserDependentProperties());
-        assertEquals(itemPath, link.getMergerPropertyPath());
+        assertEquals(itemPath, link.getMergerPath());
         assertEquals("enabled", link.getEnabledProperty());
         assertFalse(link.getEnabledValue());
         assertEquals("visible", link.getVisibleProperty());
@@ -128,16 +128,16 @@ class OALinkInfoTest {
         assertFalse(link.getModelUserVisibleValue());
         assertSame(method, link.getObjectCallbackMethod());
         assertSame(method, link.getSchedulerMethod());
-        assertEquals(itemPath, link.getDefaultPropertyPath());
-        assertTrue(link.getDefaultPropertyPathIsHierarchy());
-        assertFalse(link.getDefaultPropertyPathCanBeChanged());
-        assertEquals("contextPath", link.getDefaultModelUserPropertyPath());
+        assertEquals(itemPath, link.getDefaultPath());
+        assertTrue(link.getDefaultPathIsHierarchy());
+        assertFalse(link.getDefaultPathCanBeChanged());
+        assertEquals("contextPath", link.getDefaultModelUserPath());
         assertTrue(link.getOneAndOnlyOne());
         assertTrue(link.getRequired());
         assertTrue(link.isImportMatch());
         assertTrue(link.getImportMatch());
-        assertEquals(Product.P_Sku, link.getEqualPropertyPath());
-        assertEquals(itemPath, link.getSelectFromPropertyPath());
+        assertEquals(Product.P_Sku, link.getEqualPath());
+        assertEquals(itemPath, link.getSelectFromPath());
         assertEquals("auto", link.getAutoCreateProperty());
         assertNotNull(link.getFkeyInfos());
     }

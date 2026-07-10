@@ -4,6 +4,9 @@ import com.viaoa.hub.Hub;
 import com.viaoa.hub.auto.HubAutoMatch;
 import com.viaoa.object.OAObject;
 
+/**
+ * Internal live matching operations that keep one Hub synchronized with objects related to another Hub.
+ */
 public interface HubAutoMatchOps {
 
     /**
@@ -31,10 +34,40 @@ public interface HubAutoMatchOps {
     <T extends OAObject, T2 extends OAObject> HubAutoMatch<T,T2> match(Hub<T> hub, String property, Hub<T2> hubMaster);    
 
     
+	/**
+	 * Creates internal auto-match maintenance between two Hubs.
+	 *
+	 * @param hub the target Hub maintained by the match
+	 * @param property the reference property used for matching
+	 * @param hubMaster the source Hub supplying matching objects
+	 * @param bServerSideOnly {@code true} to maintain matching only on the server side
+	 * @return the auto-match controller
+	 */
     public <T extends OAObject, T2 extends OAObject> HubAutoMatch<T,T2> setAutoMatch(Hub<T> hub, String property, Hub<T2> hubMaster, boolean bServerSideOnly);
 
+	/**
+	 * Creates auto-match maintenance with a stop object/property boundary.
+	 *
+	 * @param hub the target Hub maintained by the match
+	 * @param property the reference property used for matching
+	 * @param hubMaster the source Hub supplying matching objects
+	 * @param objStop optional object that stops matching traversal
+	 * @param stopProperty optional property used as the stop condition
+	 * @return the auto-match controller
+	 */
     public <T extends OAObject, T2 extends OAObject> HubAutoMatch<T,T2> setAutoMatch(Hub<T> hub, String property, Hub<T2> hubMaster, OAObject objStop, String stopProperty);
     
+	/**
+	 * Creates auto-match maintenance with server-side and stop-boundary options.
+	 *
+	 * @param hub the target Hub maintained by the match
+	 * @param property the reference property used for matching
+	 * @param hubMaster the source Hub supplying matching objects
+	 * @param bServerSideOnly {@code true} to maintain matching only on the server side
+	 * @param objStop optional object that stops matching traversal
+	 * @param stopProperty optional property used as the stop condition
+	 * @return the auto-match controller
+	 */
     public <T extends OAObject, T2 extends OAObject> HubAutoMatch<T,T2> setAutoMatch(Hub<T> hub, String property, Hub<T2> hubMaster, boolean bServerSideOnly, OAObject objStop, String stopProperty);
     
 }

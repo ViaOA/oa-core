@@ -85,7 +85,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
      * List of dependent property paths whose changes trigger re-evaluation of
      * cached objects for possible inclusion in the Hub.
      */
-    private String[] dependentPropertyPaths;
+    private String[] dependentPaths;
     
     /**
      * When true, Hub update operations triggered by this filter are treated
@@ -160,9 +160,15 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         if (filter != null) addFilter(filter, false);
         
         cacheListener = new OAObjectCacheListener<T>() {
+            /**
+             * Property changes are handled through dependent-property triggers.
+             */
             @Override
             public void afterPropertyChange(T obj, String propertyName, Object oldValue, Object newValue) {
             }
+            /**
+             * Adds a newly cached object to the target Hub when it matches this filter.
+             */
             @Override
             public void afterAdd(T obj) {
                 if (obj.isLoading()) return;
@@ -189,12 +195,21 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
                 	}
                 }
             }
+            /**
+             * Hub-add events are not used by this cache filter.
+             */
             @Override
             public void afterAdd(Hub<T> hub, T obj) {
             }
+            /**
+             * Hub-remove events are not used by this cache filter.
+             */
             @Override
             public void afterRemove(Hub<T> hub, T obj) {
             }
+            /**
+             * Treats a loaded object like a cache add for Hub membership purposes.
+             */
             @Override
             public void afterLoad(T obj) {
                 afterAdd(obj);
@@ -451,6 +466,12 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
         	
         	// need to check loaded objects 
         	oa.internal().objects().cache().visit(clazz, new OACallback() {
+                /**
+                 * Visits cached objects during a full Hub refresh.
+                 *
+                 * @param obj cached object being visited
+                 * @return {@code true} to continue traversal
+                 */
                 @SuppressWarnings("unchecked")
                 @Override
                 public boolean updateObject(Object obj) {
@@ -507,7 +528,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
     public void addDependentProperty(final String prop, final boolean bRefresh) {
         if (prop == null || prop.length() == 0) return;
         
-        dependentPropertyPaths = (String[]) OAArray.add(String.class, dependentPropertyPaths, prop);
+        dependentPaths = (String[]) OAArray.add(String.class, dependentPaths, prop);
         
         // need to recheck in case there was previous changes for the newly added dependentProp that was never checked.  
         final Hub<T> hub = wrHub.get();
@@ -532,6 +553,12 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
 	        
 			final OA oa = OARuntime.oa(clazz);
 			oa.internal().objects().cache().visit(clazz, new OACallback() {
+	            /**
+	             * Re-evaluates a cached object after a dependent property is registered.
+	             *
+	             * @param obj cached object being visited
+	             * @return {@code true} to continue traversal
+	             */
 	            @Override
 	            public boolean updateObject(Object obj) {
 	                if (isUsed((T) obj)) hub.add((T) obj);
@@ -569,8 +596,11 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
     protected void setupTrigger() {
         OATriggerListener<T> triggerListener = new OATriggerListener<T>() {
             
+            /**
+             * Re-evaluates affected root objects when a dependent property path changes.
+             */
             @Override
-            public void onTrigger(final T rootObject, final HubEvent hubEvent, final String propertyPathFromRoot) throws Exception {
+            public void onTrigger(final T rootObject, final HubEvent hubEvent, final String pathFromRoot) throws Exception {
                 final Hub<T> hub = wrHub.get();
                 if (hub == null) {
                 	close();
@@ -584,6 +614,9 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
                             synchronized (this) {
                                 if (changeRefresher == null) {
                                     changeRefresher = new OAChangeRefresher() {
+                                        /**
+                                         * Performs a deferred full refresh after a dependent-path change.
+                                         */
                                         @Override
                                         protected void process() throws Exception {
                                     		final OA oa = OARuntime.oa(hub);
@@ -617,7 +650,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
                     
                     // the reverse property could not be used to get objRoot 
                     // - need to see if any of the rootObjs + pp used the changed obj
-                    final OAFinder finder = new OAFinder(propertyPathFromRoot) {
+                    final OAFinder finder = new OAFinder(pathFromRoot) {
                         protected boolean isUsed(OAObject obj) {
                             if (obj == hubEvent.getObject()) return true;
                             if (masterObject == obj) return true;
@@ -678,7 +711,7 @@ public class OAObjectCacheFilter<T extends OAObject> implements OAFilter<T> {
             name = "OAObjectCacheFilter" + (aiUnique.incrementAndGet());
         }
         
-        trigger = new OATrigger(name, clazz, triggerListener, dependentPropertyPaths, true, false, false, true);
+        trigger = new OATrigger(name, clazz, triggerListener, dependentPaths, true, false, false, true);
         OA oa = OARuntime.oa(clazz);
         oa.internal().triggers().addTrigger(trigger);
     }

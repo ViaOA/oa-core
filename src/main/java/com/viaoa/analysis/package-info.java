@@ -87,7 +87,7 @@ Related CODEX findings:
 none observed in current implementation.
 Suggested unit tests:
 analysisResolvesPathUsingOAPathSemantics(), analysisRejectsInvalidPathVisibly(),
-analysisHandlesCalculatedPropertyPathDependencies().
+analysisHandlesCalculatedPathDependencies().
 Spec target section:
 Analysis Runtime / Path and Dependency Semantics.
 

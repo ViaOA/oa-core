@@ -80,6 +80,9 @@ public class OACacheListenerUtil {
     protected void init() {
         if (listener != null) return;
         listener = new OAObjectCacheListener() {
+            /**
+             * Captures stack information for matching property changes.
+             */
             @Override
             public void afterPropertyChange(OAObject obj, String propertyName, Object oldValue, Object newValue) {
             	if (property != null) {
@@ -101,15 +104,27 @@ public class OACacheListenerUtil {
                 String sx = sb.toString();
                 OACacheListenerUtil.this.onEvent(obj, propertyName, oldValue, newValue, sx);
             }
+            /**
+             * Object-add events are ignored by this property-change utility.
+             */
             @Override
             public void afterAdd(OAObject obj) {
             }
+            /**
+             * Hub-add events are ignored by this property-change utility.
+             */
             @Override
             public void afterAdd(Hub hub, OAObject obj) {
             }
+            /**
+             * Hub-remove events are ignored by this property-change utility.
+             */
             @Override
             public void afterRemove(Hub hub, OAObject obj) {
             }
+            /**
+             * Load events are ignored by this property-change utility.
+             */
             @Override
             public void afterLoad(OAObject obj) {
             }

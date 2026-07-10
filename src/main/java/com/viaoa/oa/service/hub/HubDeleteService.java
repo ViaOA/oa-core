@@ -17,11 +17,11 @@ import com.viaoa.runtime.OARuntime;
 CODEX
 
 #6 — bug
-  file/class/method: src/main/java/com/viaoa/graph/service/hub/HubDeleteService.java:61, _runDeleteAll; src/main/
-  java/com/viaoa/graph/service/hub/HubDeleteService.java:127, _deleteAll
+  file/class/method: src/main/java/com/viaoa/oa/service/hub/HubDeleteService.java:61, _runDeleteAll; src/main/
+  java/com/viaoa/oa/service/hub/HubDeleteService.java:127, _deleteAll
   exact concern: Both delete-all paths clear the Hub/vector before deleting the objects. If object delete fails mid-
   loop, the in-memory Hub has already been emptied and remote/listener remove-all may already have been sent.
-  why it matters: A failed delete can leave runtime graph state inconsistent with datasource state and with clients.
+  why it matters: A failed delete can leave runtime OA model state inconsistent with datasource state and with clients.
   severity: invariant risk
   minimal fix: Define failure semantics. Minimal hardening is to preserve the object snapshot and restore
   membership/change state on delete failure, or delete first and clear only after successful delete cascade.
@@ -30,14 +30,14 @@ CODEX
   state, and events.
 
  #8
-  file/class/method: src/main/java/com/viaoa/graph/service/hub/HubDeleteService.java:91, src/main/java/com/viaoa/
-  graph/service/hub/HubDeleteService.java:143
+  file/class/method: src/main/java/com/viaoa/oa/service/hub/HubDeleteService.java:91, src/main/java/com/viaoa/
+  oa/service/hub/HubDeleteService.java:143
 
   exact execution path that triggers the bug: Hub.deleteAll() -> snapshot objects -> clear Hub/vector before
   deleting objects -> one object delete fails -> Hub membership is already gone, change tracking may already be
   updated, and remove-all effects may already have been sent.
 
-  why it is a real correctness risk: failed delete can leave in-memory graph state inconsistent with datasource
+  why it is a real correctness risk: failed delete can leave in-memory OA model state inconsistent with datasource
   state. Objects that still exist in storage are no longer in the Hub.
 
   severity: high-risk bug
@@ -58,6 +58,11 @@ HUB-DELETEALL-USES-SNAPSHOT:
 deleteAll operates only on the Hub contents captured at start. Objects added during deleteAll are not part of that delete operation and must remain in the Hub.
 
 */
+
+
+/**
+ * Coordinates delete operations for Hub contents.
+ */
 
 
 public abstract class HubDeleteService {
@@ -248,23 +253,129 @@ public abstract class HubDeleteService {
         thisHub.setChanged(false); // removes all vecAdd, vecRemove objects
     }
 
+	/**
+	 * Dependency hook used by this service for ObjectDeleteDelete behavior.
+	 *
+	 * @param oaObj method input
+	 * @param cascade method input
+	 */
+
 	public abstract void callObjectDeleteDelete(final OAObject oaObj, OACascade cascade);
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetReverseLinkInfo behavior.
+	 *
+	 * @param thisLi method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi);
+	/**
+	 * Dependency hook used by this service for HubCSDeleteAll behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract boolean callHubCSDeleteAll(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubAddRemoveClear behavior.
+	 *
+	 * @param thisHub method input
+	 */
 	public abstract void callHubAddRemoveClear(final Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubDataClearHubChanges behavior.
+	 *
+	 * @param thisHub method input
+	 */
 	public abstract void callHubDataClearHubChanges(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubAddRemoveRemove behavior.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 * @param bForce method input
+	 * @param bSendEvent method input
+	 * @param bDeleting method input
+	 * @param bSetAO method input
+	 * @param bSetPropToMaster method input
+	 * @param bIsRemovingAll method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> boolean callHubAddRemoveRemove(final Hub<T> thisHub, T obj, final boolean bForce,
 			final boolean bSendEvent, final boolean bDeleting, final boolean bSetAO,
 			final boolean bSetPropToMaster, final boolean bIsRemovingAll);
+	/**
+	 * Dependency hook used by this service for HubDetailGetLinkInfoFromDetailToMaster behavior.
+	 *
+	 * @param hub method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service for HubDetailGetMasterObject behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract OAObject callHubDetailGetMasterObject(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubDataCreateVecRemove behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> Vector<T> callHubDataCreateVecRemove(Hub<T> thisHub);
+	/**
+	 * Dependency hook used by this service for HubStatusSetChanged behavior.
+	 *
+	 * @param thisHub method input
+	 * @param bChanged method input
+	 */
 	public abstract void callHubStatusSetChanged(Hub<?> thisHub, boolean bChanged);
+	/**
+	 * Dependency hook used by this service for Hub_updateHubAddsAndRemoves behavior.
+	 *
+	 * @param thisHub method input
+	 * @param iCascadeRule method input
+	 * @param cascade method input
+	 * @param bIsSaving method input
+	 */
 	public abstract void callHub_updateHubAddsAndRemoves(final Hub<?> thisHub, final int iCascadeRule, final OACascade cascade, final boolean bIsSaving);
+	/**
+	 * Dependency hook used by this service for ThreadLocalSetDeleting behavior.
+	 *
+	 * @param hub method input
+	 * @param b method input
+	 */
 	public abstract void callThreadLocalSetDeleting(Hub<?> hub, boolean b);
+	/**
+	 * Dependency hook used by this service for ThreadLocalIsDeleting behavior.
+	 *
+	 * @param hub method input
+	 * @return result value
+	 */
 	public abstract boolean callThreadLocalIsDeleting(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service for ThreadLocalLock behavior.
+	 *
+	 * @param hub method input
+	 */
 	public abstract void callThreadLocalLock(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service for ThreadLocalUnlock behavior.
+	 *
+	 * @param hub method input
+	 */
 	public abstract void callThreadLocalUnlock(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service for ThreadLocalGetSendSyncMessages behavior.
+	 *
+	 * @return result value
+	 */
 	public abstract boolean callThreadLocalGetSendSyncMessages();
+	/**
+	 * Dependency hook used by this service for ThreadLocalSetSendSyncMessages behavior.
+	 *
+	 * @param b method input
+	 */
 	public abstract void callThreadLocalSetSendSyncMessages(boolean b);
 }

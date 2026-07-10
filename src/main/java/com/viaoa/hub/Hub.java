@@ -15,26 +15,7 @@
  */
 package com.viaoa.hub;
 
-/*qqqqqqqqqq
-CODEX
 
-1. file/class/method: src/main/java/com/viaoa/hub/Hub.java:2789 addAll, src/main/java/com/viaoa/hub/Hub.java:2809
-     addAll(int, Collection), src/main/java/com/viaoa/hub/Hub.java:2829 removeAll, src/main/java/com/viaoa/hub/
-     Hub.java:2846 retainAll
-  2. exact execution path: call addAll with an empty collection, all duplicates, or objects rejected by add; call
-     removeAll with objects not present; or call retainAll with no membership changes. Each method returns true
-     regardless of whether the Hub changed.
-  3. why it is a real correctness bug: Hub implements List, and these methods use the Collection contract where the
-     boolean reports whether the collection changed. Returning true for no-op or failed mutation creates false-
-     success behavior for callers using the return value to drive persistence, events, retry, or tests.
-  4. semantic/invariant violated: HUB_COLLECTION_MUTATION_RETURN_VALUE_REFLECTS_ACTUAL_CHANGE
-  5. minimal fix or CODEX/defer recommendation: accumulate the result of each delegated add/remove/retain operation
-     and return true only when membership actually changed. Null collection behavior should be decided explicitly;
-     for List, null should throw, but if OA keeps null-as-no-op, return false.
-  6. suggested regression test: addAll(Collections.emptyList()), addAll(existingObjects), removeAll(nonMembers), and
-     retainAll(allCurrentObjects) should return false and leave Hub membership unchanged.
-
-*/
 
 import java.io.IOException;
 import java.io.ObjectStreamException;
@@ -69,12 +50,12 @@ import com.viaoa.trigger.OATrigger;
 import com.viaoa.trigger.OATriggerListener;
 
 /**
- * Core observable collection for OAObject graphs.
+ * Core observable collection for OAObject OA models.
  * <p>
  * The Hub acts as an enhanced, observable {@link java.util.List} that maintains a
  * single "active object" (AO) and propagates all object and structural changes
  * throughout linked, shared, and detail Hubs. It is the foundation of OA’s
- * object-graph synchronization, event dispatch, and master-detail wiring.
+ * object-OA model synchronization, event dispatch, and master-detail wiring.
  *
  * <h3>Core Responsibilities</h3>
  * <ul>
@@ -112,7 +93,7 @@ import com.viaoa.trigger.OATriggerListener;
  * declarative binding between model, view, and persistence layers.
  */
 public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Cloneable, Comparable<Hub<?>>, Iterable<TYPE> {
-	
+
 	/**
 	 * Serialization version identifier used to validate compatibility when
 	 * Hub instances are serialized and deserialized.
@@ -244,7 +225,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			if (bCreateSelect) {
 				// create select, but dont call select.select(), since it could be
 				// coming from server. See: OAObjectReflectDelegate.getReferenceHub(..)
-				
+
 				OASelect sel = oa.internal().hubs().select().getSelect( (Hub<? extends OAObject>) this, true);
 				if (masterObject != null) {
 					sel.setWhereObject(masterObject);
@@ -392,7 +373,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			OASelect sel = data.getSelect();
 			if (sel != null) {
 			    boolean b = sel.isCounted();
-			
+
 			    if (!sel.hasBeenStarted()) {
 			        if (b) s += " counted: " + sel.getCount() + ", ";
 			        s += " not selected";
@@ -411,9 +392,9 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			s += ",csize:" + getCurrentSize();
 			//}
 
-			
+
 			final OA oa = OARuntime.oa(this);
-			
+
 			HubDataMaster dm = oa.internal().hubs().detail().getDataMaster(this);
 			if (dm.getMasterHub() != null) {
 				if (cnt > 5) {
@@ -542,8 +523,8 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
         }
         return al;
     }
-	
-	
+
+
     /**
      * Copies all objects from this Hub into the supplied Hub. Objects already
      * present in the destination Hub are not added again.
@@ -690,6 +671,9 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		}
 	}
 
+	/**
+	 * Performs the saveAll operation for this Hub component.
+	 */
 	public void saveAll(int iCascadeRule) {
 		final OA oa = OARuntime.oa(this);
 		oa.internal().hubs().save().saveAll(this, iCascadeRule);
@@ -732,13 +716,19 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	}
 
 	@Override
+	/**
+	 * Compares this Hub with another Hub for ordering.
+	 *
+	 * @param obj the Hub to compare
+	 * @return the comparison result
+	 */
 	public int compareTo(Hub<?> obj) {
 		if (obj == null) return 1;
 		if (obj == this) return 0;
 		return Integer.compare(System.identityHashCode(this), System.identityHashCode(obj));
 	}
-	
-	
+
+
 	/**
 	 * Retrieves an object from this Hub by matching its key. Uses the object's
 	 * hashCode() and equals() (or OAObjectKey comparison) to determine a match.
@@ -854,6 +844,10 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		return (TYPE) oa.internal().hubs().ao().setActiveObject(this, pos);
 	}
 
+	/**
+	 * Sets the ActiveObject value.
+	 * @param obj the ActiveObject value
+	 */
 	public TYPE setActiveObject(Object obj) {
 		final OA oa = OARuntime.oa(this);
 		return oa.internal().hubs().ao().setActiveObject(this, obj);
@@ -869,7 +863,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		final OA oa = OARuntime.oa(this);
 		oa.internal().hubs().ao().setActiveObject(this, object);
 	}
-	
+
 	/**
 	 * Convenience wrapper for setActiveObject(int).
 	 *
@@ -881,12 +875,16 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		return oa.internal().hubs().ao().setActiveObject(this, pos);
 	}
 
+	/**
+	 * Sets the AO value.
+	 * @param obj the AO value
+	 */
 	public TYPE setAO(Object obj) {
 		final OA oa = OARuntime.oa(this);
 		return oa.internal().hubs().ao().setActiveObject(this, obj);
 	}
-	
-	
+
+
 	/**
 	 * Convenience wrapper for setActiveObject(Object).
 	 *
@@ -1101,7 +1099,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		}
 		/* 20200522 removed, caller should setLoading(..) if it's needed
 		 * otherwise, events from add will check isLoading and not run code.  Ex: M2M wont be set
-		
+
 		boolean b = (getSize() == 0);
 		if (b) {
 			OARuntime.threadLocals().setLoading(true);
@@ -1204,7 +1202,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		return oa.internal().hubs().addRemove().insert(this, obj, pos);
 	}
 
-	
+
 	/**
 	 * Removes and returns the object at the supplied position. Sends a remove
 	 * event. If the position is invalid, returns null.
@@ -1220,20 +1218,26 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	}
 
 	@Override
+	/**
+	 * Removes the current object through this iterator or Hub operation.
+	 */
 	public boolean remove(Object obj) {
 		if (obj == null) return false;
 		OA oa = OARuntime.oa(this.getObjectClass());
 		return oa.internal().hubs().addRemove().remove(this, obj);
 	}
-	
+
+	/**
+	 * Removes the current object through this iterator or Hub operation.
+	 */
 	public boolean remove(TYPE obj) {
 		if (obj == null) return false;
 		OA oa = OARuntime.oa(obj.getClass());
 		return oa.internal().hubs().addRemove().remove(this, obj);
 	}
 
-	
-	
+
+
 	/**
 	 * Convenience wrapper for remove(int).
 	 *
@@ -1575,11 +1579,11 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 * @return master Hub or null
 	 */
 	public Hub getMasterHub() {
-		
-//qqqqqqqqqqqqq Important note: this is different then just using datam.masterHub, it will check shared hubs.
+
+
 		//  use datam.masterHub to get thisHub's value
 		final OA oa = OARuntime.oa(this);
-		
+
 		return oa.internal().hubs().detail().getMasterHub(this);
 	}
 
@@ -1591,10 +1595,10 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	public OAObject getMasterObject() {
 		final OA oa = OARuntime.oa(this);
 
-//qqqqqqqqqqqqq Important note: this is different then just using datam.masterHub, it will check shared hubs.
+
   	//  use datam.masterHub to get thisHub's value
-				
-		
+
+
 		return oa.internal().hubs().detail().getMasterObject(this);
 	}
 
@@ -1672,11 +1676,11 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 *
 	 * @param hl                     listener to add
 	 * @param property               property name for events
-	 * @param dependentPropertyPaths array of dependent properties
+	 * @param dependentPaths array of dependent properties
 	 */
-	public void addHubListener(HubListener<TYPE> hl, String property, String[] dependentPropertyPaths) {
+	public void addHubListener(HubListener<TYPE> hl, String property, String[] dependentPaths) {
 		final OA oa = OARuntime.oa(this);
-		oa.internal().hubs().events().addHubListener(this, hl, property, dependentPropertyPaths);
+		oa.internal().hubs().events().addHubListener(this, hl, property, dependentPaths);
 	}
 
 	/**
@@ -1684,13 +1688,13 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 *
 	 * @param hl                   listener to add
 	 * @param property             property for events
-	 * @param dependentPropertyPath dependent property that triggers updates
+	 * @param dependentPath dependent property that triggers updates
 	 */
-	public void addHubListener(HubListener<TYPE> hl, String property, String dependentPropertyPath) {
+	public void addHubListener(HubListener<TYPE> hl, String property, String dependentPath) {
 		final OA oa = OARuntime.oa(this);
 		String[] ss;
-		if (dependentPropertyPath != null && dependentPropertyPath.length() > 0) {
-			ss = new String[] { dependentPropertyPath };
+		if (dependentPath != null && dependentPath.length() > 0) {
+			ss = new String[] { dependentPath };
 		} else {
 			ss = null;
 		}
@@ -1703,14 +1707,14 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 *
 	 * @param hl                   listener to add
 	 * @param property             primary property for events
-	 * @param dependentPropertyPath dependent property to observe
+	 * @param dependentPath dependent property to observe
 	 * @param bActiveObjectOnly     true to restrict events to active object
 	 */
-	public void addHubListener(HubListener<TYPE> hl, String property, String dependentPropertyPath, boolean bActiveObjectOnly) {
+	public void addHubListener(HubListener<TYPE> hl, String property, String dependentPath, boolean bActiveObjectOnly) {
 		final OA oa = OARuntime.oa(this);
 		String[] ss;
-		if (dependentPropertyPath != null && dependentPropertyPath.length() > 0) {
-			ss = new String[] { dependentPropertyPath };
+		if (dependentPath != null && dependentPath.length() > 0) {
+			ss = new String[] { dependentPath };
 		} else {
 			ss = null;
 		}
@@ -1724,12 +1728,12 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 *
 	 * @param hl                     listener to add
 	 * @param property               property name
-	 * @param dependentPropertyPaths dependent property paths
+	 * @param dependentPaths dependent property paths
 	 * @param bActiveObjectOnly      restrict to active object if true
 	 */
-	public void addHubListener(HubListener<TYPE> hl, String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly) {
+	public void addHubListener(HubListener<TYPE> hl, String property, String[] dependentPaths, boolean bActiveObjectOnly) {
 		final OA oa = OARuntime.oa(this);
-		oa.internal().hubs().events().addHubListener(this, hl, property, dependentPropertyPaths, bActiveObjectOnly);
+		oa.internal().hubs().events().addHubListener(this, hl, property, dependentPaths, bActiveObjectOnly);
 	}
 
 	/**
@@ -1738,14 +1742,14 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 *
 	 * @param hl                     listener to add
 	 * @param property               property to observe
-	 * @param dependentPropertyPaths dependent paths
+	 * @param dependentPaths dependent paths
 	 * @param bActiveObjectOnly      true to restrict events to active object
 	 * @param bUseBackgroundThread   true to run listener in background thread
 	 */
-	public void addHubListener(HubListener<TYPE> hl, String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly,
+	public void addHubListener(HubListener<TYPE> hl, String property, String[] dependentPaths, boolean bActiveObjectOnly,
 			boolean bUseBackgroundThread) {
 		final OA oa = OARuntime.oa(this);
-		oa.internal().hubs().events().addHubListener(this, hl, property, dependentPropertyPaths, bActiveObjectOnly, bUseBackgroundThread);
+		oa.internal().hubs().events().addHubListener(this, hl, property, dependentPaths, bActiveObjectOnly, bUseBackgroundThread);
 	}
 
 	/**
@@ -1754,18 +1758,25 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 *
 	 * @param hl          listener to add
 	 * @param property    property name for event dispatch
-	 * @param propertyPath property path whose changes will trigger updates
+	 * @param path property path whose changes will trigger updates
 	 */
-	public void addTriggerListener(final HubListener<TYPE> hl, final String property, String propertyPath) {
+	public void addTriggerListener(final HubListener<TYPE> hl, final String property, String path) {
 		OATriggerListener<TYPE> tl = new OATriggerListener<TYPE>() {
 			@Override
-			public void onTrigger(TYPE obj, HubEvent hubEvent, String propertyPath) throws Exception {
+			/**
+			 * Handles a trigger event for a Hub object.
+			 * @param obj the Hub object
+			 * @param hubEvent the Hub event
+			 * @param path the trigger property path
+			 * @throws Exception if event processing fails
+			 */
+			public void onTrigger(TYPE obj, HubEvent hubEvent, String path) throws Exception {
 				final OA oa = OARuntime.oa(Hub.this);
 				oa.internal().hubs().events().fireCalcPropertyChange(Hub.this, obj, property);
 				if (hl != null) hl.afterPropertyChange(hubEvent);
 			}
 		};
-		OATrigger trigger = new OATrigger(property, getObjectClass(), tl, new String[] { propertyPath }, true, false, false, true);
+		OATrigger trigger = new OATrigger(property, getObjectClass(), tl, new String[] { path }, true, false, false, true);
 		final OA oa = OARuntime.oa(getObjectClass());
         oa.internal().triggers().addTrigger(trigger);
 	}
@@ -1776,19 +1787,26 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 *
 	 * @param hl                   listener to add
 	 * @param property             property name for event dispatch
-	 * @param propertyPath         property path that triggers update
+	 * @param path         property path that triggers update
 	 * @param useBackgroundThread  true to run listener in background thread
 	 */
-	public void addTriggerListener(HubListener<TYPE> hl, final String property, String propertyPath, boolean useBackgroundThread) {
+	public void addTriggerListener(HubListener<TYPE> hl, final String property, String path, boolean useBackgroundThread) {
 		OATriggerListener<TYPE> tl = new OATriggerListener<TYPE>() {
 			@Override
-			public void onTrigger(TYPE obj, HubEvent hubEvent, String propertyPath) throws Exception {
+			/**
+			 * Handles a trigger event for a Hub object.
+			 * @param obj the Hub object
+			 * @param hubEvent the Hub event
+			 * @param path the trigger property path
+			 * @throws Exception if event processing fails
+			 */
+			public void onTrigger(TYPE obj, HubEvent hubEvent, String path) throws Exception {
 				final OA oa = OARuntime.oa(Hub.this);
 				oa.internal().hubs().events().fireCalcPropertyChange(Hub.this, obj, property);
 				if (hl != null) hl.afterPropertyChange(hubEvent);
 			}
 		};
-		OATrigger trigger = new OATrigger(property, getObjectClass(), tl, new String[] { propertyPath }, true, false, useBackgroundThread, true);
+		OATrigger trigger = new OATrigger(property, getObjectClass(), tl, new String[] { path }, true, false, useBackgroundThread, true);
 		final OA oa = OARuntime.oa(getObjectClass());
         oa.internal().triggers().addTrigger(trigger);
 	}
@@ -1916,7 +1934,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		final OA oa = OARuntime.oa(this);
 		oa.internal().hubs().autoMatch().setAutoMatch(this, property, hubMaster, bServerSideOnly, objStop, stopProperty);
 	}
-	
+
 	/**
 	 * Ensures that for each object in the master Hub, a corresponding object
 	 * exists in this Hub. No specific property is required.
@@ -1955,19 +1973,19 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 * Sorts this Hub using one or more property paths. Each path may contain
 	 * comma-separated fields for multi-field sorting.
 	 *
-	 * @param propertyPaths list of property paths
+	 * @param paths list of property paths
 	 */
-	public void sort(String... propertyPaths) {
+	public void sort(String... paths) {
 		final OA oa = OARuntime.oa(this);
 		String s = "";
-		for (int i = 0; propertyPaths != null && i < propertyPaths.length; i++) {
-			if (propertyPaths[i] == null) {
+		for (int i = 0; paths != null && i < paths.length; i++) {
+			if (paths[i] == null) {
 				continue;
 			}
 			if (s.length() > 0) {
 				s += ", ";
 			}
-			s += propertyPaths[i];
+			s += paths[i];
 		}
 		oa.internal().hubs().sort().sort(this, s, true, null);
 	}
@@ -1976,25 +1994,25 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 * Sorts the Hub according to the supplied property path string, using the
 	 * specified ascending/descending order.
 	 *
-	 * @param propertyPaths property path(s)
+	 * @param paths property path(s)
 	 * @param bAscending    true for ascending, false for descending
 	 */
-	public void sort(String propertyPaths, boolean bAscending) {
+	public void sort(String paths, boolean bAscending) {
 		final OA oa = OARuntime.oa(this);
-		oa.internal().hubs().sort().sort(this, propertyPaths, bAscending, null);
+		oa.internal().hubs().sort().sort(this, paths, bAscending, null);
 	}
 
 	/**
 	 * Sorts this Hub using the supplied property paths, ordering direction, and
 	 * optional custom comparator.
 	 *
-	 * @param propertyPaths property path(s)
+	 * @param paths property path(s)
 	 * @param bAscending    sort direction
 	 * @param comp          optional comparator
 	 */
-	public void sort(String propertyPaths, boolean bAscending, Comparator comp) {
+	public void sort(String paths, boolean bAscending, Comparator comp) {
 		final OA oa = OARuntime.oa(this);
-		oa.internal().hubs().sort().sort(this, propertyPaths, bAscending, comp);
+		oa.internal().hubs().sort().sort(this, paths, bAscending, comp);
 	}
 
 	/**
@@ -2039,27 +2057,27 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 * Finds and returns the first object whose property value matches the
 	 * supplied value using OACompare.like(). Does not change the active object.
 	 *
-	 * @param propertyPath property to evaluate
+	 * @param path property to evaluate
 	 * @param findValue    value to match
 	 * @return first matching object or null
 	 */
-	public TYPE find(String propertyPath, Object findValue) {
+	public TYPE find(String path, Object findValue) {
 		final OA oa = OARuntime.oa(this);
-		return (TYPE) oa.internal().hubs().find().findFirst(this, propertyPath, findValue, false, null);
+		return (TYPE) oa.internal().hubs().find().findFirst(this, path, findValue, false, null);
 	}
 
 	/**
 	 * Finds the first object matching the supplied property/value pair and
 	 * optionally sets it as the active object.
 	 *
-	 * @param propertyPath property to evaluate
+	 * @param path property to evaluate
 	 * @param findValue    match value
 	 * @param bSetAO       true to set active object
 	 * @return matching object or null
 	 */
-	public TYPE find(String propertyPath, Object findValue, boolean bSetAO) {
+	public TYPE find(String path, Object findValue, boolean bSetAO) {
 		final OA oa = OARuntime.oa(this);
-		return (TYPE) oa.internal().hubs().find().findFirst(this, propertyPath, findValue, bSetAO, null);
+		return (TYPE) oa.internal().hubs().find().findFirst(this, path, findValue, bSetAO, null);
 	}
 
 	/**
@@ -2068,13 +2086,13 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 * the active object.
 	 *
 	 * @param fromObject   starting object
-	 * @param propertyPath property to evaluate
+	 * @param path property to evaluate
 	 * @param findValue    match value
 	 * @return matching object or null
 	 */
-	public TYPE find(TYPE fromObject, String propertyPath, Object findValue) {
+	public TYPE find(TYPE fromObject, String path, Object findValue) {
 		final OA oa = OARuntime.oa(this);
-		return (TYPE) oa.internal().hubs().find().findFirst(this, propertyPath, findValue, false, fromObject);
+		return (TYPE) oa.internal().hubs().find().findFirst(this, path, findValue, false, fromObject);
 	}
 
 	/**
@@ -2082,14 +2100,14 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 * object and optionally sets it as the active object.
 	 *
 	 * @param fromObject starting object
-	 * @param propertyPath property to evaluate
+	 * @param path property to evaluate
 	 * @param findValue     match value
 	 * @param bSetAO        true to update active object
 	 * @return matching object or null
 	 */
-	public TYPE find(TYPE fromObject, String propertyPath, Object findValue, boolean bSetAO) {
+	public TYPE find(TYPE fromObject, String path, Object findValue, boolean bSetAO) {
 		final OA oa = OARuntime.oa(this);
-		return (TYPE) oa.internal().hubs().find().findFirst(this, propertyPath, findValue, bSetAO, fromObject);
+		return (TYPE) oa.internal().hubs().find().findFirst(this, path, findValue, bSetAO, fromObject);
 	}
 
 	/**
@@ -2097,13 +2115,13 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 * property/value pair. Does not change the active object.
 	 *
 	 * @param fromObject   starting object
-	 * @param propertyPath property to evaluate
+	 * @param path property to evaluate
 	 * @param findValue    value to match
 	 * @return next matching object or null
 	 */
-	public TYPE findNext(TYPE fromObject, String propertyPath, Object findValue) {
+	public TYPE findNext(TYPE fromObject, String path, Object findValue) {
 		final OA oa = OARuntime.oa(this);
-		return (TYPE) oa.internal().hubs().find().findFirst(this, propertyPath, findValue, false, fromObject);
+		return (TYPE) oa.internal().hubs().find().findFirst(this, path, findValue, false, fromObject);
 	}
 
 	/**
@@ -2111,14 +2129,14 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 * optionally sets it as the active object.
 	 *
 	 * @param fromObject   starting object
-	 * @param propertyPath property to evaluate
+	 * @param path property to evaluate
 	 * @param findValue    value to match
 	 * @param bSetAO       true to set active object
 	 * @return next matching object or null
 	 */
-	public TYPE findNext(TYPE fromObject, String propertyPath, Object findValue, boolean bSetAO) {
+	public TYPE findNext(TYPE fromObject, String path, Object findValue, boolean bSetAO) {
 		final OA oa = OARuntime.oa(this);
-		return (TYPE) oa.internal().hubs().find().findFirst(this, propertyPath, findValue, bSetAO, fromObject);
+		return (TYPE) oa.internal().hubs().find().findFirst(this, path, findValue, bSetAO, fromObject);
 	}
 
 	/**
@@ -2162,7 +2180,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	public void setSelectWhereHub(Hub fromHub, String ppFromHub) {
 		final OA oa = OARuntime.oa(this);
 		oa.internal().hubs().select().setSelectWhereHub(this, fromHub);
-		oa.internal().hubs().select().setSelectWhereHubPropertyPath(this, ppFromHub);
+		oa.internal().hubs().select().setSelectWhereHubPath(this, ppFromHub);
 	}
 
 	/**
@@ -2313,10 +2331,10 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	@SuppressWarnings({"unchecked","rawtypes"})
 	public void select(OASelect<? extends OAObject> select) { // This is the main select method for
 		final OA oa = OARuntime.oa(this);
-		
+
 		Hub<OAObject> hubX = (Hub) this;
 	    OASelect selX = (OASelect) select;
-		
+
 		oa.internal().hubs().select().select(hubX, selX);
 	}
 
@@ -2488,6 +2506,13 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		oa.internal().hubs().link().setLinkHub(this, null, linkHub, null, false, bAutoCreate, false);
 	}
 
+	/**
+	 * Sets the LinkHub value.
+	 * @param linkHub the LinkHub value
+	 * @param property the LinkHub value
+	 * @param bAutoCreate the LinkHub value
+	 * @param bAutoCreateAllowDups the LinkHub value
+	 */
 	public void setLinkHub(Hub linkHub, String property, boolean bAutoCreate, boolean bAutoCreateAllowDups) {
 		// setLinkHub(Hub thisHub, String propertyFrom, Hub linkHub, String
 		// propertyTo, boolean linkPosFlag, boolean bAutoCreate) {
@@ -2495,6 +2520,12 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		oa.internal().hubs().link().setLinkHub(this, null, linkHub, property, false, bAutoCreate, bAutoCreateAllowDups);
 	}
 
+	/**
+	 * Sets the LinkHub value.
+	 * @param linkHub the LinkHub value
+	 * @param property the LinkHub value
+	 * @param bAutoCreate the LinkHub value
+	 */
 	public void setLinkHub(Hub linkHub, String property, boolean bAutoCreate) {
 		// setLinkHub(Hub thisHub, String propertyFrom, Hub linkHub, String
 		// propertyTo, boolean linkPosFlag, boolean bAutoCreate) {
@@ -2502,7 +2533,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		oa.internal().hubs().link().setLinkHub(this, null, linkHub, property, false, bAutoCreate, false);
 	}
 
-	
+
 	/**
 	 * Internal method that links this Hub to another Hub using the supplied
 	 * property names and link position flag. All parameters are passed directly
@@ -2584,41 +2615,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		return this.createSharedHub();
 	}
 
-	/**
-	 * Updates a linked Hub property using the Hub returned by
-	 * {@link HubLinkDelegate#getHubWithLink(Hub, boolean)} and passing it to
-	 * {@link HubLinkDelegate#updateLinkedToHub(Hub, Hub, Object)}.
-	 *
-	 * @param obj   unused parameter
-	 * @param value value to apply to the linked property
-	 */
-/*qqqqq 20260220 not sure this is being used, LinkToHub has wrong arg values	
-	public void updateLinkProperty(Object obj, Object value) {
-		final OA oa = OARuntime.graph(this);
-		Hub<TYPE> h = oa.internal().hubs().link().getHubWithLink(this, true);
-		if (h == null) {
-			return;
-		}
-		oa.internal().hubs().callHubLinkUpdateLinkedToHub(h, h.getLinkHub(false), value);
-	}
-*/	
 
-	/**
-	 * Returns whether this Hub’s object class is considered server-side by
-	 * delegating to {@link OASyncDelegate#isServer(Class)}.
-	 *
-	 * @return true if server-side
-	 */
-/*qqqqqqqqqq remove	
-	public boolean isServer() {
-		final OA oa = OARuntime.graph(this);
-		return oa.internal().sync().isServer();
-	}
-	public boolean isclient() {
-		final OA oa = OARuntime.graph(this);
-		return oa.internal().sync().isClient();
-	}
-*/
 	/**
 	 * Returns whether an object can be added to this Hub by delegating to
 	 * {@link HubAddRemoveDelegate#canAdd(Hub, Object)}.
@@ -2692,10 +2689,10 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			return false;
 		}
 		OA oa = OARuntime.oa(this);
-		
+
 		Hub<OAObject> hub = (Hub) this;
 	    OAObject oaObj = (OAObject) obj;
-	    
+
 		if (bIgnoreProcessed) return oa.internal().objects().rules().getAllowAddIgnoreProcessed(hub, oaObj);
 		return oa.internal().objects().rules().getAllowAdd(hub, oaObj);
 	}
@@ -2713,14 +2710,19 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			return true;
 		}
 		OA oa = OARuntime.oa(this);
-		
+
 		Hub<OAObject> hub = (Hub) this;
 	    OAObject oaObj = (OAObject) obj;
-		
+
 	    if (bCallbackOnly) return oa.internal().objects().rules().getAllowRemoveCallbackOnly(hub, oaObj);
 	    if (bIgnoreProcessed) return oa.internal().objects().rules().getAllowRemoveIgnoreProcessed(hub, oaObj);
 		return oa.internal().objects().rules().getAllowRemove(hub, oaObj);
 	}
+	/**
+	 * Returns the AllowRemove value.
+	 *
+	 * @return the AllowRemove value
+	 */
 	public boolean getAllowRemove(TYPE obj) {
 		return getAllowRemove(obj, false, false);
 	}
@@ -2744,6 +2746,11 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		if (bIgnoreProcessed) return oa.internal().objects().rules().getVerifyRemoveIgnoreProcessed(hub, oaObj);
 		return oa.internal().objects().rules().getVerifyRemove(hub, oaObj);
 	}
+	/**
+	 * Returns the VerifyRemove value.
+	 *
+	 * @return the VerifyRemove value
+	 */
 	public boolean getVerifyRemove(TYPE obj) {
 		return getVerifyRemove(obj, false, false);
 	}
@@ -2761,7 +2768,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		String s = oa.internal().hubs().addRemove().getCantRemoveAllMessage(this, onlyCheckTypes);
 		return s == null;
 	}
-	
+
 	/**
 	 * Sets the loading flag by delegating to OARuntime.threadLocals().setLoading.
 	 *
@@ -2999,12 +3006,20 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			TYPE currentObject;
 
 			@Override
+			/**
+			 * Returns whether Next is available.
+			 *
+			 * @return {@code true} if Next is available
+			 */
 			public boolean hasNext() {
 				int x = list.size();
 				return (x > 0 && pos < (x - 1));
 			}
 
 			@Override
+			/**
+			 * Removes the current object through this iterator or Hub operation.
+			 */
 			public void remove() {
 				int size = list.size();
 				if (pos >= 0 && pos < size) {
@@ -3020,6 +3035,11 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			}
 
 			@Override
+			/**
+			 * Returns the next object in iteration order.
+			 *
+			 * @return the object from the iterator
+			 */
 			public TYPE next() throws NoSuchElementException {
 				int x = list.size();
 				if (pos < x) {
@@ -3033,11 +3053,21 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			}
 
 			@Override
+			/**
+			 * Returns whether Previous is available.
+			 *
+			 * @return {@code true} if Previous is available
+			 */
 			public boolean hasPrevious() {
 				return (pos > 0);
 			}
 
 			@Override
+			/**
+			 * Returns the previous object in iteration order.
+			 *
+			 * @return the object from the iterator
+			 */
 			public TYPE previous() {
 				if (pos >= 0) {
 					--pos;
@@ -3050,6 +3080,11 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			}
 
 			@Override
+			/**
+			 * Returns the next iterator index.
+			 *
+			 * @return the iterator index
+			 */
 			public int nextIndex() {
 				int x = list.size();
 				if (pos == x) {
@@ -3059,6 +3094,11 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			}
 
 			@Override
+			/**
+			 * Returns the previous iterator index.
+			 *
+			 * @return the iterator index
+			 */
 			public int previousIndex() {
 				if (pos < 0) {
 					return pos;
@@ -3067,6 +3107,9 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			}
 
 			@Override
+			/**
+			 * Performs the set operation for this Hub component.
+			 */
 			public void set(TYPE e) {
 				if (pos >= 0 && pos < list.size()) {
 					Hub.this.remove(currentObject);
@@ -3077,6 +3120,9 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			}
 
 			@Override
+			/**
+			 * Adds an object through this iterator or Hub operation.
+			 */
 			public void add(TYPE e) {
 				if (Hub.this.contains(e)) {
 					return;
@@ -3139,7 +3185,7 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 
 	/*
 	    hub.onChangeAO( event -> {
-	
+
 	    });
 	 */
 	/**
@@ -3155,6 +3201,10 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		}
 		addHubListener(new HubListenerAdapter() {
 			@Override
+			/**
+			 * Handles the Hub active-object change event.
+			 * @param e the Hub event
+			 */
 			public void afterChangeActiveObject(HubEvent e) {
 				onEvent.onEvent(e);
 			}
@@ -3174,6 +3224,10 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		}
 		addHubListener(new HubListenerAdapter() {
 			@Override
+			/**
+			 * Handles the Hub property-change event.
+			 * @param e the Hub event
+			 */
 			public void afterPropertyChange(HubEvent e) {
 				onEvent.onEvent(e);
 			}
@@ -3195,6 +3249,10 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		}
 		addHubListener(new HubListenerAdapter() {
 			@Override
+			/**
+			 * Handles the Hub property-change event.
+			 * @param e the Hub event
+			 */
 			public void afterPropertyChange(HubEvent e) {
 				if (propName.equalsIgnoreCase(e.getPropertyName())) {
 					onEvent.onEvent(e);
@@ -3215,6 +3273,10 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		}
 		addHubListener(new HubListenerAdapter() {
 			@Override
+			/**
+			 * Handles the Hub after-add event.
+			 * @param e the Hub event
+			 */
 			public void afterAdd(HubEvent e) {
 				onEvent.onEvent(e);
 			}
@@ -3234,6 +3296,10 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		}
 		addHubListener(new HubListenerAdapter() {
 			@Override
+			/**
+			 * Handles the Hub before-refresh event.
+			 * @param e the Hub event
+			 */
 			public void beforeRefresh(HubEvent e) {
 				onEvent.onEvent(e);
 			}
@@ -3253,6 +3319,10 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		}
 		addHubListener(new HubListenerAdapter() {
 			@Override
+			/**
+			 * Handles replacement or refresh of the Hub list.
+			 * @param e the Hub event
+			 */
 			public void onNewList(HubEvent e) {
 				onEvent.onEvent(e);
 			}
@@ -3274,6 +3344,10 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		}
 		addHubListener(new HubListenerAdapter() {
 			@Override
+			/**
+			 * Handles the Hub after-remove event.
+			 * @param e the Hub event
+			 */
 			public void afterRemove(HubEvent e) {
 				onEvent.onEvent(e);
 			}
@@ -3287,12 +3361,12 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 * this Hub as the master.
 	 *
 	 * @param filter                   filter to apply
-	 * @param dependentPropertyPaths   optional dependent property paths
+	 * @param dependentPaths   optional dependent property paths
 	 * @return the newly created filtered Hub
 	 */
-	public Hub<TYPE> createFilteredHub(OAFilter filter, String... dependentPropertyPaths) {
+	public Hub<TYPE> createFilteredHub(OAFilter filter, String... dependentPaths) {
 		Hub h = new Hub(this.getObjectClass());
-		HubFilter f = new HubFilter(this, h, filter, dependentPropertyPaths);
+		HubFilter f = new HubFilter(this, h, filter, dependentPaths);
 		return h;
 	}
 
@@ -3311,26 +3385,61 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	public static final class FriendAccess {
 		private FriendAccess() {
 		}
+		/**
+		 * Returns the HubData value.
+		 *
+		 * @return the HubData value
+		 */
 		public <T extends OAObject> HubData<T> getHubData(Hub<T> hub) {
 			return hub.data;
 		}
+		/**
+		 * Sets the HubData value.
+		 * @param hub the HubData value
+		 * @param data the HubData value
+		 */
 		public <T extends OAObject> void setHubData(Hub<T> hub, HubData<T> data) {
 			hub.data = data;
 		}
 
+		/**
+		 * Returns the HubDataActive value.
+		 *
+		 * @return the HubDataActive value
+		 */
 		public <T extends OAObject> HubDataActive<T> getHubDataActive(Hub<T> hub) {
 			return hub.dataa;
 		}
+		/**
+		 * Sets the HubDataActive value.
+		 * @param hub the HubDataActive value
+		 * @param dataa the HubDataActive value
+		 */
 		public void setHubDataActive(Hub<?> hub, HubDataActive dataa) {
 			hub.dataa = dataa;
 		}
 
+		/**
+		 * Returns the HubDataUnique value.
+		 *
+		 * @return the HubDataUnique value
+		 */
 		public <T extends OAObject> HubDataUnique<T> getHubDataUnique(Hub<T> hub) {
 			return hub.datau;
 		}
+		/**
+		 * Returns the HubDataMaster value.
+		 *
+		 * @return the HubDataMaster value
+		 */
 		public HubDataMaster getHubDataMaster(Hub<?> hub) {
 			return hub.datam;
 		}
+		/**
+		 * Sets the HubDataMaster value.
+		 * @param hub the HubDataMaster value
+		 * @param dm the HubDataMaster value
+		 */
 		public void setHubDataMaster(Hub<?> hub, HubDataMaster dm) {
 			hub.datam = dm;
 		}
@@ -3341,6 +3450,11 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		return friendAccess;
 	}
 
+	/**
+	 * Returns the OA value.
+	 *
+	 * @return the OA value
+	 */
 	public OA getOA() {
 		return OARuntime.oa(this);
 	}

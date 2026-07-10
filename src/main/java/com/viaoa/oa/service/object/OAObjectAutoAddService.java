@@ -9,6 +9,9 @@ import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
 
+/**
+ * Maintains auto-add state for OAObjects and coordinates related property-change notifications.
+ */
 public abstract class OAObjectAutoAddService {
 	private static final Logger LOG = Logger.getLogger(OAObjectAutoAddService.class.getName());
 
@@ -20,6 +23,11 @@ public abstract class OAObjectAutoAddService {
 	
 	private final OAObject.FriendAccess faObject;
 	
+	/**
+	 * Performs OAObjectAutoAddService behavior for the OA object service.
+	 *
+	 * @param faObject method input
+	 */
 	public OAObjectAutoAddService(OAObject.FriendAccess faObject) {
     	if (faObject == null) throw new IllegalArgumentException("OAObject.FriendAccess can not be null");
     	this.faObject = faObject;
@@ -138,12 +146,58 @@ public abstract class OAObjectAutoAddService {
 		return !hmAutoAdd.containsKey(faObject.getGuid(oaObj));
 	}
 
+	/**
+	 * Dependency hook used by this service to objectEventFirePropertyChange.
+	 *
+	 * @param oaObj method input
+	 * @param propertyName method input
+	 * @param oldObj method input
+	 * @param newObj method input
+	 * @param bLocalOnly method input
+	 * @param bSetChanged method input
+	 */
 	public abstract void callObjectEventFirePropertyChange(OAObject oaObj, String propertyName, Object oldObj, Object newObj, boolean bLocalOnly, boolean bSetChanged);
+	/**
+	 * Dependency hook used by this service to objectInfoGetOAObjectInfo.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
 	public abstract OAObjectInfo callObjectInfoGetOAObjectInfo(OAObject oaObj);
+	/**
+	 * Dependency hook used by this service to objectReflectGetRawReference.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @return result value
+	 */
 	public abstract Object callObjectReflectGetRawReference(OAObject oaObj, String name);
+	/**
+	 * Dependency hook used by this service to objectInfoGetReverseLinkInfo.
+	 *
+	 * @param li method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo li);
+	/**
+	 * Dependency hook used by this service to objectReflectGetProperty.
+	 *
+	 * @param obj method input
+	 * @param name method input
+	 * @return result value
+	 */
 	public abstract Object callObjectReflectGetProperty(OAObject obj, String name);	
+	/**
+	 * Dependency hook used by this service to threadLocalGetSendSyncMessages.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callThreadLocalGetSendSyncMessages();
+	/**
+	 * Dependency hook used by this service to threadLocalSetSendSyncMessages.
+	 *
+	 * @param b method input
+	 */
 	public abstract void callThreadLocalSetSendSyncMessages(boolean b);
 	
 }

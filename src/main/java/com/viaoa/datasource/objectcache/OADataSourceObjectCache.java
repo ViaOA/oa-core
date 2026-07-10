@@ -63,7 +63,7 @@ import com.viaoa.serialize.OAObjectSerializer;
  *   <li>Thread-safe storage using {@link java.util.concurrent.ConcurrentHashMap}
  *       and {@link java.util.concurrent.locks.ReentrantReadWriteLock}.</li>
  *   <li>Supports {@link com.viaoa.filter.OAQueryFilter}, {@link com.viaoa.filter.OAAndFilter},
- *       and hub/property-path based selection.</li>
+ *       and Hub/OAPath based selection.</li>
  *   <li>Automatic ID assignment via {@link com.viaoa.datasource.autonumber.OADataSourceAuto}.</li>
  *   <li>Persistent save/load using compressed serialization streams.</li>
  *   <li>Full CRUD operations with integration to {@link com.viaoa.object.OAObjectCacheDelegate}.</li>
@@ -99,6 +99,13 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
     	this(true);
     }
 
+    /**
+     * Creates a new object-cache datasource and optionally marks it as the last
+     * datasource in the chain.
+     *
+     * @param bMakeLastDataSource true to use this datasource as the fallback
+     *                            datasource for supported classes
+     */
     public OADataSourceObjectCache(boolean bMakeLastDataSource) {
         super(bMakeLastDataSource);
     }
@@ -119,7 +126,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
      * Selects objects from the in-memory cache matching the supplied filters,
      * query expressions, and optional ordering. Query text is converted to
      * {@link OAQueryFilter} instances, merged via {@link OAAndFilter}, and
-     * applied to the object sets. If a {@code whereObject} and property path
+     * applied to the object sets. If a {@code whereObject} and OAPath
      * are supplied, the method resolves the referenced objects or collections
      * and returns a list-based iterator. Otherwise, an {@link ObjectCacheIterator}
      * is used.
@@ -127,8 +134,8 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
      * @param selectClass the class of objects to search
      * @param queryWhere where-clause expression used to create a filter
      * @param params parameters for the where-clause
-     * @param queryOrder property-path ordering expression
-     * @param whereObject reference object used for property-path based selection
+     * @param queryOrder OAPath ordering expression
+     * @param whereObject reference object used for OAPath based selection
      * @param propertyFromWhereObject property or property path from the reference object
      * @param extraWhere additional query filter expression
      * @param max maximum number of results, or zero for unlimited
@@ -177,7 +184,7 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
             OALinkInfo li = oi.getLinkInfo(propertyFromWhereObject);
 
             if (li == null) {
-                // check to see if propertyFromWhereObject is a propertyPath. 
+                // check to see if propertyFromWhereObject is a path.
                 //   If so, then add to the query and re-select
                 OAPath pp = new OAPath(whereObject.getClass(), propertyFromWhereObject);
 
@@ -219,14 +226,14 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
                 else if (queryWhere == null) {
                     queryWhere = "";
                 }
-                queryWhere += pp.getPropertyPath() + " == ?";
+                queryWhere += pp.getPath() + " == ?";
                 params = OAArray.add(Object.class, params, whereObject);
                 return select(selectClass, queryWhere, params, queryOrder, null, null, extraWhere, max, filterx, bDirty);
             }
             
             
             // 20250407 use reference object from oaobj.properties[]
-			//final OA oa = OARuntime.graph(whereObject);
+			//final OA oa = OARuntime.oa(whereObject);
             Object objx = oa.internal().objects().property().getProperty(whereObject, propertyFromWhereObject);
             if (objx != null) {
 	            final List al = new ArrayList();
@@ -246,27 +253,27 @@ public class OADataSourceObjectCache extends OADataSourceAuto {
 	            return dsi;
             }
             
-            // find using selectFromPropertyPath, or equalPropertyPath
+            // find using selectFromPath, or equalPath
             final OALinkInfo liRev = li.getReverseLinkInfo();
         	if (liRev == null) return new OADataSourceEmptyIterator();
             
-            String spp = liRev.getSelectFromPropertyPath();
+            String spp = liRev.getSelectFromPath();
             if (OAStr.isNotEmpty(spp)) {
                 OAPath pp = new OAPath(li.getToClass(), spp);
                 pp = pp.getReversePath();
                 if (pp == null) spp = null;
-                else spp = pp.getPropertyPath();
+                else spp = pp.getPath();
             }
             else {
-                spp = li.getEqualPropertyPath();
+                spp = li.getEqualPath();
                 if (OAStr.isNotEmpty(spp)) {
-                    String s = liRev == null ? null : liRev.getEqualPropertyPath();
+                    String s = liRev == null ? null : liRev.getEqualPath();
                     if (OAStr.isNotEmpty(s)) {
                         OAPath pp = new OAPath(li.getToClass(), s);
                         pp = pp.getReversePath();
                         if (pp == null) spp = null;
                         else {
-                            s = pp.getPropertyPath();
+                            s = pp.getPath();
                             spp += "." + s;
                         }
                     }

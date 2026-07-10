@@ -15,6 +15,10 @@ import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.*;
 
+/**
+ * Publishes Hub events and manages Hub listeners.
+ */
+
 public abstract class HubEventService {
 	private final Logger LOG = Logger.getLogger(HubEventService.class.getName());
 
@@ -1016,14 +1020,14 @@ public abstract class HubEventService {
 	 * @param thisHub                 the Hub to attach the listener to
 	 * @param hl                      the listener to add
 	 * @param property                the property name
-	 * @param dependentPropertyPaths  dependent properties to monitor
+	 * @param dependentPaths  dependent properties to monitor
 	 */
-	public void addHubListener(Hub<?> thisHub, HubListener hl, String property, String[] dependentPropertyPaths) {
+	public void addHubListener(Hub<?> thisHub, HubListener hl, String property, String[] dependentPaths) {
 		if (property != null && property.indexOf('.') >= 0) {
 			throw new RuntimeException(
 					"dont use a property path for listener, use addHubListener(h,hl,propertyName, String[path]) instead");
 		}
-		getHubListenerTree(thisHub).addListener(hl, property, dependentPropertyPaths, false);
+		getHubListenerTree(thisHub).addListener(hl, property, dependentPaths, false);
 		clearGetAllListenerCache(thisHub);
 	}
 
@@ -1035,16 +1039,16 @@ public abstract class HubEventService {
 	 * @param thisHub                 the Hub to attach the listener to
 	 * @param hl                      the listener to add
 	 * @param property                the property name
-	 * @param dependentPropertyPaths  dependent properties to monitor
+	 * @param dependentPaths  dependent properties to monitor
 	 * @param bActiveObjectOnly       true to notify only for active-object events
 	 */
-	public void addHubListener(Hub<?> thisHub, HubListener hl, String property, String[] dependentPropertyPaths,
+	public void addHubListener(Hub<?> thisHub, HubListener hl, String property, String[] dependentPaths,
 			boolean bActiveObjectOnly) {
 		if (property != null && property.indexOf('.') >= 0) {
 			throw new RuntimeException(
 					"dont use a property path for listener, use addHubListener(h,hl,propertyName, String[path]) instead");
 		}
-		getHubListenerTree(thisHub).addListener(hl, property, dependentPropertyPaths, bActiveObjectOnly);
+		getHubListenerTree(thisHub).addListener(hl, property, dependentPaths, bActiveObjectOnly);
 		clearGetAllListenerCache(thisHub);
 	}
 
@@ -1056,17 +1060,17 @@ public abstract class HubEventService {
 	 * @param thisHub                 the Hub to attach the listener to
 	 * @param hl                      the listener to add
 	 * @param property                the property name
-	 * @param dependentPropertyPaths  dependent properties to monitor
+	 * @param dependentPaths  dependent properties to monitor
 	 * @param bActiveObjectOnly       true for active-object-only events
 	 * @param bUseBackgroundThread    true to dispatch events in a background thread
 	 */
-	public void addHubListener(Hub<?> thisHub, HubListener hl, String property, String[] dependentPropertyPaths,
+	public void addHubListener(Hub<?> thisHub, HubListener hl, String property, String[] dependentPaths,
 			boolean bActiveObjectOnly, boolean bUseBackgroundThread) {
 		if (property != null && property.indexOf('.') >= 0) {
 			throw new RuntimeException(
 					"dont use a property path for listener, use addHubListener(h,hl,propertyName, String[path]) instead");
 		}
-		getHubListenerTree(thisHub).addListener(hl, property, dependentPropertyPaths, bActiveObjectOnly, bUseBackgroundThread);
+		getHubListenerTree(thisHub).addListener(hl, property, dependentPaths, bActiveObjectOnly, bUseBackgroundThread);
 		clearGetAllListenerCache(thisHub);
 	}
 
@@ -1121,6 +1125,10 @@ public abstract class HubEventService {
 		getHubListenerTree(thisHub).addListener(hl);
 		clearGetAllListenerCache(thisHub);
 	}
+
+	/**
+	 * TotalHubListeners state used by this Hub service.
+	 */
 
 	public int TotalHubListeners;
 
@@ -1404,25 +1412,152 @@ public abstract class HubEventService {
 		}
 	}
 
+	/**
+	 * Dependency hook used by this service for ObjectCallbackGetVerifyRemoveObjectCallback behavior.
+	 *
+	 * @param hub method input
+	 * @param objRemove method input
+	 * @param onlyCheckTypes method input
+	 * @return result value
+	 */
+
 	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyRemoveObjectCallback(final Hub<T> hub, final T objRemove, final OAObjectCallback.CheckType[] onlyCheckTypes);
+	/**
+	 * Dependency hook used by this service for ObjectCacheFireAfterRemoveEvent behavior.
+	 *
+	 * @param hub method input
+	 * @param obj method input
+	 */
 	public abstract <T extends OAObject> void callObjectCacheFireAfterRemoveEvent(Hub<T> hub, T obj);
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetObjectInfo behavior.
+	 *
+	 * @param clazz method input
+	 * @return result value
+	 */
 	public abstract OAObjectInfo callObjectInfoGetObjectInfo(Class<?> clazz);
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetObjectInfo behavior.
+	 *
+	 * @param obj method input
+	 * @return result value
+	 */
 	public abstract OAObjectInfo callObjectInfoGetObjectInfo(OAObject obj);
+	/**
+	 * Dependency hook used by this service for ObjectCallbackGetVerifyRemoveAllObjectCallback behavior.
+	 *
+	 * @param hub method input
+	 * @param onlyCheckTypes method input
+	 * @return result value
+	 */
 	public abstract OAObjectCallback callObjectCallbackGetVerifyRemoveAllObjectCallback(final Hub<?> hub, final OAObjectCallback.CheckType[] onlyCheckTypes);
+	/**
+	 * Dependency hook used by this service for ObjectCacheFireAfterAddEvent behavior.
+	 *
+	 * @param hub method input
+	 * @param obj method input
+	 */
 	public abstract <T extends OAObject> void callObjectCacheFireAfterAddEvent(Hub<T> hub, T obj);
+	/**
+	 * Dependency hook used by this service for ObjectCallbackGetVerifyAddObjectCallback behavior.
+	 *
+	 * @param hub method input
+	 * @param oaObj method input
+	 * @param onlyCheckTypes method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> OAObjectCallback callObjectCallbackGetVerifyAddObjectCallback(final Hub<T> hub, final T oaObj, final OAObjectCallback.CheckType[] onlyCheckTypes);
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetLinkInfo behavior.
+	 *
+	 * @param oi method input
+	 * @param propertyName method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callObjectInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
+	/**
+	 * Dependency hook used by this service for HubDetailGetPropertyFromMasterToDetail behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubVerifyUniqueProperty behavior.
+	 *
+	 * @param thisHub method input
+	 * @param object method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> boolean callHubVerifyUniqueProperty(final Hub<T> thisHub, final T object);
+	/**
+	 * Dependency hook used by this service for HubDetailUpdateDetail behavior.
+	 *
+	 * @param thisHub method input
+	 * @param detail method input
+	 * @param detailHub method input
+	 * @param bUpdateLink method input
+	 */
 	public abstract void callHubDetailUpdateDetail(final Hub<?> thisHub, final HubDetail detail, final Hub<?> detailHub, final boolean bUpdateLink);
+	/**
+	 * Dependency hook used by this service for HubShareGetSharedWeakHubs behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> WeakReference<Hub<T>>[] callHubShareGetSharedWeakHubs(Hub<T> thisHub);
+	/**
+	 * Dependency hook used by this service for HubDataIncChangeCount behavior.
+	 *
+	 * @param thisHub method input
+	 */
 	public abstract void callHubDataIncChangeCount(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for RemoteThreadIsRemoteThread behavior.
+	 *
+	 * @return result value
+	 */
 	public abstract boolean callRemoteThreadIsRemoteThread();
+	/**
+	 * Dependency hook used by this service for ThreadLocalAddHubEvent behavior.
+	 *
+	 * @param he method input
+	 * @return result value
+	 */
 	public abstract boolean callThreadLocalAddHubEvent(HubEvent he);
+	/**
+	 * Dependency hook used by this service for ThreadLocalRemoveHubEvent behavior.
+	 *
+	 * @param he method input
+	 */
 	public abstract void callThreadLocalRemoveHubEvent(HubEvent<?> he);
-	public abstract boolean callThreadLocalIsLoading();		
+	/**
+	 * Dependency hook used by this service for ThreadLocalIsLoading behavior.
+	 *
+	 * @return result value
+	 */
+	public abstract boolean callThreadLocalIsLoading();
+	/**
+	 * Dependency hook used by this service for RemoteThreadShouldEventsBeQueued behavior.
+	 *
+	 * @return result value
+	 */
 	public abstract boolean callRemoteThreadShouldEventsBeQueued();
+	/**
+	 * Dependency hook used by this service for RemoteThreadQueueEvent behavior.
+	 *
+	 * @param r method input
+	 * @return result value
+	 */
 	public abstract boolean callRemoteThreadQueueEvent(Runnable r);
+	/**
+	 * Dependency hook used by this service for ThreadLocalHasSentCalcPropertyChange behavior.
+	 *
+	 * @param thisHub method input
+	 * @param thisObj method input
+	 * @param propertyName method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> boolean callThreadLocalHasSentCalcPropertyChange(Hub<T> thisHub, T thisObj, String propertyName);
 	
 }

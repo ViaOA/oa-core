@@ -21,26 +21,26 @@ import com.viaoa.path.OAPath;
 CODEX
 
  #5 — New Concrete Bug
-  File/Class/Method: src/main/java/com/viaoa/graph/service/object/OAObjectDeleteService.java, delete(...)
+  File/Class/Method: src/main/java/com/viaoa/oa/service/object/OAObjectDeleteService.java, delete(...)
 
   Exact execution path: delete(...) deletes children first via deleteChildren(...), then calls onDelete(oaObj) for
   the parent. If parent datasource delete fails after children have been deleted, the child deletes have already
   committed but the parent remains.
 
-  Why it is a correctness bug: delete cascade can leave the object graph and datasource in a partially deleted
+  Why it is a correctness bug: delete cascade can leave the OA model and datasource in a partially deleted
   state: children gone, parent still present. This is a concrete cascade failure path outside Hub.deleteAll.
 
   Minimal fix: define transactional requirements. Minimal hardening is to delete parent first when safe, or require
-  datasource transaction wrapping for parent/child cascade and fail without mutating in-memory graph when no
+  datasource transaction wrapping for parent/child cascade and fail without mutating in-memory OA model state when no
   transaction boundary exists.
 
   Suggested test: parent with children; child deletes succeed; parent datasource delete throws; assert either the
-  whole cascade rolls back or the in-memory graph clearly preserves/marks partial failure instead of silently losing
+  whole cascade rolls back or the in-memory OA model state clearly preserves/marks partial failure instead of silently losing
   children.
 
 
 #1
-  File/Class/Method: src/main/java/com/viaoa/graph/service/object/OAObjectDeleteService.java, setDeleted(...)
+  File/Class/Method: src/main/java/com/viaoa/oa/service/object/OAObjectDeleteService.java, setDeleted(...)
 
   Exact execution path: setDeleted(obj, false) fires before-change, sets deleted flag false, fires after-change,
   then verifies key uniqueness and re-adds to cache. If callKeyVerifyKeyChange(...) fails, the object remains
@@ -69,7 +69,7 @@ CODEX
 > *** change to match ... default: partial deletes can happen if exceptin.  If OATransaction is true, then "work" with it to be atomic
 	//Default delete cascade semantics allow partial progress if an exception occurs.
 	//Successfully completed child/reference/hub/datasource deletes are not automatically
-	//rolled back by OG.
+	//rolled back by OA.
 	//
 	//If an OATransaction is active, delete cascade must cooperate with it so the caller
 	//can get atomic/all-or-nothing persistence behavior.
@@ -88,6 +88,11 @@ public abstract class OAObjectDeleteService {
 
 	private final OAObject.FriendAccess faObject;
 
+	/**
+	 * Performs OAObjectDeleteService behavior for the OA object service.
+	 *
+	 * @param oaObjectFriendAccess method input
+	 */
 	public OAObjectDeleteService(OAObject.FriendAccess oaObjectFriendAccess) {
 		if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
 		this.faObject = oaObjectFriendAccess;
@@ -248,23 +253,23 @@ public abstract class OAObjectDeleteService {
     					continue;
     				}
     
-                    String spp = liRev.getSelectFromPropertyPath();
+                    String spp = liRev.getSelectFromPath();
                     if (OAStr.isNotEmpty(spp)) {
                         OAPath pp = new OAPath(li.getToClass(), spp);
                         pp = pp.getReversePath();
                         if (pp == null) spp = null;
-                        else spp = pp.getPropertyPath();
+                        else spp = pp.getPath();
                     }
                     else {
-                        spp = li.getEqualPropertyPath();
+                        spp = li.getEqualPath();
                         if (OAStr.isNotEmpty(spp)) {
-                            String s = liRev.getEqualPropertyPath();
+                            String s = liRev.getEqualPath();
                             if (OAStr.isNotEmpty(s)) {
                                 OAPath pp = new OAPath(li.getToClass(), s);
                                 pp = pp.getReversePath();
                                 if (pp == null) spp = null;
                                 else {
-                                    s = pp.getPropertyPath();
+                                    s = pp.getPath();
                                     spp += "." + s;
                                 }
                             }
@@ -274,6 +279,12 @@ public abstract class OAObjectDeleteService {
     				
                     if (OAStr.isNotEmpty(spp)) {
                         OAFinder f = new OAFinder(spp) {
+	/**
+	 * Returns whether used is true.
+	 *
+	 * @param obj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
                             protected boolean isUsed(OAObject obj) {
                                 Object objx = liRev.getValue(obj);
                                 if (objx instanceof Hub) {
@@ -289,6 +300,12 @@ public abstract class OAObjectDeleteService {
                     else {
                     	callCacheCallback(new OACallback() {
         					@Override
+	/**
+	 * Updates service-managed state for the supplied input.
+	 *
+	 * @param obj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
         					public boolean updateObject(Object obj) {
         						if (callReflectIsReferenceNullOrNotLoadedOrEmptyHub((OAObject) obj, liRev.getName())) {
         							return true;
@@ -351,23 +368,23 @@ public abstract class OAObjectDeleteService {
     				}
     
     				//  use find ... but dont want it to load reference (short curcuit on pp)
-    				String spp = liRev.getSelectFromPropertyPath();
+    				String spp = liRev.getSelectFromPath();
     				if (OAStr.isNotEmpty(spp)) {
                         OAPath pp = new OAPath(li.getToClass(), spp);
     				    pp = pp.getReversePath();
     				    if (pp == null) spp = null;
-    				    else spp = pp.getPropertyPath();
+    				    else spp = pp.getPath();
     				}
     				else {
-    				    spp = li.getEqualPropertyPath();
+    				    spp = li.getEqualPath();
     				    if (OAStr.isNotEmpty(spp)) {
-    				        String s = liRev.getEqualPropertyPath();
+    				        String s = liRev.getEqualPath();
     	                    if (OAStr.isNotEmpty(s)) {
     	                        OAPath pp = new OAPath(li.getToClass(), s);
     	                        pp = pp.getReversePath();
     	                        if (pp == null) spp = null;
     	                        else {
-    	                            s = pp.getPropertyPath();
+    	                            s = pp.getPath();
     	                            spp += "." + s;
     	                        }
     	                    }
@@ -377,6 +394,12 @@ public abstract class OAObjectDeleteService {
     				
                     if (OAStr.isNotEmpty(spp)) {
                         OAFinder<T,?> f = new OAFinder(spp) {
+	/**
+	 * Returns whether used is true.
+	 *
+	 * @param obj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
                             protected boolean isUsed(OAObject obj) {
                             	Object objx = liRev.getValue(obj);
                                 if (objx instanceof OAObjectKey) { //qqqqq wont happen, it will resolve to oaobj if objkey
@@ -400,6 +423,12 @@ public abstract class OAObjectDeleteService {
                     else {
                     	callCacheCallback(new OACallback() {
         					@Override
+	/**
+	 * Updates service-managed state for the supplied input.
+	 *
+	 * @param obj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
         					public boolean updateObject(Object obj) {
         						Object objx = callPropertyGetProperty((OAObject) obj, liRev.getName(), false, false);
         						if (objx instanceof OAObjectKey) {
@@ -718,47 +747,302 @@ public abstract class OAObjectDeleteService {
 		oaObj.afterDelete();
 	}
 	
+	/**
+	 * Dependency hook used by this service to objectSetNew.
+	 *
+	 * @param oaObj method input
+	 * @param b method input
+	 */
 	public abstract void callObjectSetNew(final OAObject oaObj, final boolean b);
+	/**
+	 * Dependency hook used by this service to cacheAdd.
+	 *
+	 * @param obj method input
+	 * @param bErrorIfExists method input
+	 * @param bAddToSelectAll method input
+	 * @return result value
+	 */
 	public abstract OAObject callCacheAdd(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll);
+	/**
+	 * Dependency hook used by this service to cacheCallback.
+	 *
+	 * @param callback method input
+	 * @param clazz method input
+	 */
 	public abstract <T extends OAObject> void callCacheCallback(OACallback<T> callback, Class<T> clazz);
+	/**
+	 * Dependency hook used by this service to cSDelete.
+	 *
+	 * @param obj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callCSDelete(OAObject obj);	
+	/**
+	 * Dependency hook used by this service to cSSendDeleteToClients.
+	 *
+	 * @param obj method input
+	 */
 	public abstract void callCSSendDeleteToClients(OAObject obj);	
+	/**
+	 * Dependency hook used by this service to dSUpdateMany2ManyLinks.
+	 *
+	 * @param masterObject method input
+	 * @param adds method input
+	 * @param removes method input
+	 * @param propFromMaster method input
+	 */
 	public abstract void callDSUpdateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propFromMaster);
+	/**
+	 * Dependency hook used by this service to dSSupportsStorage.
+	 *
+	 * @param obj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callDSSupportsStorage(OAObject obj);
+	/**
+	 * Dependency hook used by this service to dSDelete.
+	 *
+	 * @param obj method input
+	 */
 	public abstract void callDSDelete(OAObject obj);
+	/**
+	 * Dependency hook used by this service to dSRemoveReference.
+	 *
+	 * @param oaObj method input
+	 * @param li method input
+	 */
 	public abstract void callDSRemoveReference(OAObject oaObj, OALinkInfo li);	
+	/**
+	 * Dependency hook used by this service to eventFireBeforePropertyChange.
+	 *
+	 * @param oaObj method input
+	 * @param propertyName method input
+	 * @param oldObj method input
+	 * @param newObj method input
+	 * @param bLocalOnly method input
+	 * @param bSetChanged method input
+	 */
 	public abstract void callEventFireBeforePropertyChange(final OAObject oaObj, final String propertyName,
 			Object oldObj, final Object newObj, final boolean bLocalOnly, final boolean bSetChanged);	
+	/**
+	 * Dependency hook used by this service to eventFirePropertyChange.
+	 *
+	 * @param oaObj method input
+	 * @param propertyName method input
+	 * @param oldObj method input
+	 * @param newObj method input
+	 * @param bLocalOnly method input
+	 * @param bSetChanged method input
+	 */
 	public abstract void callEventFirePropertyChange(final OAObject oaObj, final String propertyName, Object oldObj, Object newObj,
 			boolean bLocalOnly, boolean bSetChanged);
+	/**
+	 * Dependency hook used by this service to objectHubGetHubReferences.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> Hub<T>[] callObjectHubGetHubReferences(T oaObj);
+	/**
+	 * Dependency hook used by this service to objectHubDeleteAll.
+	 *
+	 * @param hub method input
+	 * @param cascade method input
+	 */
 	public abstract void callObjectHubDeleteAll(Hub<?> hub, OACascade cascade);
+	/**
+	 * Dependency hook used by this service to hubGetHub.
+	 *
+	 * @param oaObj method input
+	 * @param li method input
+	 * @return result value
+	 */
 	public abstract Hub<?> callHubGetHub(OAObject oaObj, OALinkInfo li);
+	/**
+	 * Dependency hook implemented by the owning OA object service.
+	 *
+	 * @param clazz method input
+	 * @return result value
+	 */
 	public abstract OAObjectInfo getOAObjectInfo(Class<?> clazz);	
+	/**
+	 * Dependency hook used by this service to infoIsMany2Many.
+	 *
+	 * @param li method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callInfoIsMany2Many(OALinkInfo li);
+	/**
+	 * Dependency hook used by this service to infoGetReverseLinkInfo.
+	 *
+	 * @param thisLi method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callInfoGetReverseLinkInfo(OALinkInfo thisLi);
+	/**
+	 * Dependency hook used by this service to keyVerifyKeyChange.
+	 *
+	 * @param oaObj method input
+	 * @param newObjectKey method input
+	 * @return result value
+	 */
 	public abstract String callKeyVerifyKeyChange(final OAObject oaObj, final OAObjectKey newObjectKey);
+	/**
+	 * Dependency hook used by this service to keyIsForSameOAObject.
+	 *
+	 * @param clazz method input
+	 * @param ok1 method input
+	 * @param ok2 method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callKeyIsForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey ok1, final OAObjectKey ok2);
+	/**
+	 * Dependency hook used by this service to reflectIsReferenceNullOrNotLoadedOrEmptyHub.
+	 *
+	 * @param oaObj method input
+	 * @param propertyName method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callReflectIsReferenceNullOrNotLoadedOrEmptyHub(OAObject oaObj, String propertyName);
+	/**
+	 * Dependency hook used by this service to reflectGetProperty.
+	 *
+	 * @param oaObj method input
+	 * @param propPath method input
+	 * @return result value
+	 */
 	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath);
+	/**
+	 * Dependency hook used by this service to reflectGetReferenceHub.
+	 *
+	 * @param oaObj method input
+	 * @param linkPropertyName method input
+	 * @param sortOrder method input
+	 * @param bSequence method input
+	 * @param hubMatch method input
+	 */
 	public abstract <T extends OAObject> Hub<T> callReflectGetReferenceHub(final OAObject oaObj, final String linkPropertyName, String sortOrder, boolean bSequence, Hub<T> hubMatch);
+	/**
+	 * Dependency hook used by this service to reflectGetReferenceObject.
+	 *
+	 * @param oaObj method input
+	 * @param linkPropertyName method input
+	 * @return result value
+	 */
 	public abstract Object callReflectGetReferenceObject(final OAObject oaObj, final String linkPropertyName);	
+	/**
+	 * Dependency hook used by this service to reflectSetProperty.
+	 *
+	 * @param oaObj method input
+	 * @param propName method input
+	 * @param value method input
+	 * @param fmt method input
+	 */
 	public abstract void callReflectSetProperty(final OAObject oaObj, String propName, Object value, final String fmt);
+	/**
+	 * Dependency hook used by this service to propertyRemoveProperty.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @param bFirePropertyChange method input
+	 */
 	public abstract void callPropertyRemoveProperty(OAObject oaObj, String name, boolean bFirePropertyChange);	
+	/**
+	 * Dependency hook used by this service to propertyGetProperty.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @param bReturnNotExist method input
+	 * @param bConvertWeakRef method input
+	 * @return result value
+	 */
 	public abstract Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef);	
+	/**
+	 * Dependency hook used by this service to propertyGetProperty.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @return result value
+	 */
 	public abstract Object callPropertyGetProperty(OAObject oaObj, String name);
+	/**
+	 * Dependency hook used by this service to hubRemove.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 * @param bForce method input
+	 * @param bSendEvent method input
+	 * @param bDeleting method input
+	 * @param bSetAO method input
+	 * @param bSetPropToMaster method input
+	 * @param bIsRemovingAll method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callHubRemove(final Hub<T> thisHub, Object obj, final boolean bForce,
 			final boolean bSendEvent, final boolean bDeleting, final boolean bSetAO,
 			final boolean bSetPropToMaster, final boolean bIsRemovingAll);
+	/**
+	 * Dependency hook used by this service to hubCSRemoveAllFromHub.
+	 *
+	 * @param thisHub method input
+	 */
 	public abstract void callHubCSRemoveAllFromHub(Hub<?> thisHub);	
+	/**
+	 * Dependency hook used by this service to hubDataRemoveFromRemovedList.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 */
 	public abstract <T extends OAObject> void callHubDataRemoveFromRemovedList(Hub<T> thisHub, T obj);
+	/**
+	 * Dependency hook used by this service to hubDSRemoveMany2ManyLinks.
+	 *
+	 * @param hub method input
+	 */
 	public abstract void callHubDSRemoveMany2ManyLinks(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service to hubEventFireBeforeDeleteEvent.
+	 *
+	 * @param hub method input
+	 * @param obj method input
+	 */
 	public abstract <T extends OAObject> void callHubEventFireBeforeDeleteEvent(Hub<T> hub, T obj);
+	/**
+	 * Dependency hook used by this service to hubEventFireAfterDeleteEvent.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 */
 	public abstract <T extends OAObject> void callHubEventFireAfterDeleteEvent(Hub<T> thisHub, T obj);
+	/**
+	 * Dependency hook used by this service to hubMasterGetMasterObject.
+	 *
+	 * @param hub method input
+	 * @return result value
+	 */
 	public abstract OAObject callHubMasterGetMasterObject(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service to syncIsServer.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callSyncIsServer();
+	/**
+	 * Dependency hook used by this service to syncIsClient.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callSyncIsClient();
+	/**
+	 * Dependency hook used by this service to localThreadSetDeleting.
+	 *
+	 * @param obj method input
+	 * @param b method input
+	 */
 	public abstract void callLocalThreadSetDeleting(Object obj, boolean b);
+	/**
+	 * Dependency hook used by this service to remoteTheadStartNextThread.
+	 */
 	public abstract void callRemoteTheadStartNextThread();
 
 }

@@ -20,7 +20,7 @@ import com.viaoa.select.OASelect;
 CODEX
 
  #8 — invariant risk
-  file/class/method: src/main/java/com/viaoa/graph/service/hub/HubSelectService.java:866, _refresh
+  file/class/method: src/main/java/com/viaoa/oa/service/hub/HubSelectService.java:866, _refresh
   exact concern: _refresh sets sel.setDirty(true) and only restores dirty state at the end. If select/add/remove/
   move throws, dirty state is not restored.
   why it matters: Select dirty state affects future refresh/select behavior. A failed refresh should not leave stale
@@ -33,7 +33,7 @@ CODEX
 
 
 #5
-  file/class/method: src/main/java/com/viaoa/graph/service/hub/HubSelectService.java:979 refreshSelect(...)
+  file/class/method: src/main/java/com/viaoa/oa/service/hub/HubSelectService.java:979 refreshSelect(...)
 
   exact execution path that triggers the bug: refreshSelect(hub) -> stores current AO -> sets select dirty true ->
   sel.select() or iteration/add/remove throws -> line 990 dirty restore and line 1001 AO restore are skipped.
@@ -50,6 +50,10 @@ CODEX
   restored.
 
 */
+
+/**
+ * Coordinates select, refresh, and load-more behavior for datasource-backed Hubs.
+ */
 
 public abstract class HubSelectService {
 	private final Logger LOG = Logger.getLogger(HubSelectService.class.getName());
@@ -433,7 +437,7 @@ public abstract class HubSelectService {
 		// 20200302
 		Hub<T> hx = faHub.getHubData(thisHub).getSelectWhereHub();
 		if (hx != null) {
-			String s = faHub.getHubData(thisHub).getSelectWhereHubPropertyPath();
+			String s = faHub.getHubData(thisHub).getSelectWhereHubPath();
 			if (OAString.isNotEmpty(s)) {
 				select.setWhereHub(hx, s);
 			}
@@ -771,11 +775,11 @@ public abstract class HubSelectService {
 	 * @param thisHub the Hub being queried
 	 * @return the whereHub property path
 	 */
-	public String getSelectWhereHubPropertyPath(Hub<?> thisHub) {
+	public String getSelectWhereHubPath(Hub<?> thisHub) {
 		if (thisHub == null) {
 			return null;
 		}
-		return faHub.getHubData(thisHub).getSelectWhereHubPropertyPath();
+		return faHub.getHubData(thisHub).getSelectWhereHubPath();
 	}
 
 	/**
@@ -785,11 +789,11 @@ public abstract class HubSelectService {
 	 * @param thisHub the Hub being configured
 	 * @param pp      the property path to use for filtering
 	 */
-	public void setSelectWhereHubPropertyPath(Hub<?> thisHub, String pp) {
+	public void setSelectWhereHubPath(Hub<?> thisHub, String pp) {
 		if (thisHub == null) {
 			return;
 		}
-		faHub.getHubData(thisHub).setSelectWhereHubPropertyPath(pp);
+		faHub.getHubData(thisHub).setSelectWhereHubPath(pp);
 	}
 
 	/*
@@ -814,13 +818,13 @@ public abstract class HubSelectService {
 	 * would end up using hub&lt;Company&gt;+"customers.orders"
 	 * <p>
 	 *
-	 * @param thisHub  Hub that could be in the same propertyPath of the hubFromHub.whereHubPropertyPath
+	 * @param thisHub  Hub that could be in the same path of the hubFromHub.whereHubPath
 	 * @param propName the link name of thisHub from hubFrom.
 	 * @param hubFrom  hub that might have a selectWhereHub & PP that can be used by thisHub.
 	 */
 	
 	/**
-	 * Attempts to adopt the whereHub + propertyPath from another Hub if thisHub
+	 * Attempts to adopt the whereHub + path from another Hub if thisHub
 	 * participates in the same property path chain.
 	 *
 	 * <p>Used to propagate filtering constraints across related Hubs.</p>
@@ -844,7 +848,7 @@ public abstract class HubSelectService {
 		if (hubSelectWhere == null) {
 			return false;
 		}
-		final String pp = getSelectWhereHubPropertyPath(hubFrom);
+		final String pp = getSelectWhereHubPath(hubFrom);
 		if (OAString.isEmpty(pp)) {
 			return false;
 		}
@@ -1019,25 +1023,142 @@ public abstract class HubSelectService {
 		return true;
 	}
 
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetObjectInfo behavior.
+	 *
+	 * @param clazz method input
+	 * @return result value
+	 */
+
 	public abstract OAObjectInfo callObjectInfoGetObjectInfo(Class<?> clazz);
+	/**
+	 * Dependency hook used by this service for ObjectHubRemoveHub behavior.
+	 *
+	 * @param oaObj method input
+	 * @param hub method input
+	 * @param bIsOnHubFinalize method input
+	 */
 	public abstract <T extends OAObject> void callObjectHubRemoveHub(final T oaObj, Hub<T> hub, boolean bIsOnHubFinalize);
+	/**
+	 * Dependency hook used by this service for ObjectCacheSetSelectAllHub behavior.
+	 *
+	 * @param hub method input
+	 */
 	public abstract void callObjectCacheSetSelectAllHub(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service for ObjectCacheRemoveSelectAllHub behavior.
+	 *
+	 * @param hub method input
+	 */
 	public abstract void callObjectCacheRemoveSelectAllHub(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service for HubDetailGetLinkInfoFromDetailToMaster behavior.
+	 *
+	 * @param hub method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service for HubDataEnsureCapacity behavior.
+	 *
+	 * @param hub method input
+	 * @param size method input
+	 */
 	public abstract void callHubDataEnsureCapacity(Hub<?> hub, int size);
+	/**
+	 * Dependency hook used by this service for HubAddRemoveAdd behavior.
+	 *
+	 * @param hub method input
+	 * @param obj method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> boolean callHubAddRemoveAdd(final Hub<T> hub, final T obj);
+	/**
+	 * Dependency hook used by this service for HubEventFireBeforeSelectEvent behavior.
+	 *
+	 * @param hub method input
+	 */
 	public abstract void callHubEventFireBeforeSelectEvent(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service for HubDataIncChangeCount behavior.
+	 *
+	 * @param hub method input
+	 */
 	public abstract void callHubDataIncChangeCount(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service for HubDataGetCurrentSize behavior.
+	 *
+	 * @param hub method input
+	 * @return result value
+	 */
 	public abstract int callHubDataGetCurrentSize(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service for HubDataGetObjectAt behavior.
+	 *
+	 * @param hub method input
+	 * @param pos method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callHubDataGetObjectAt(Hub<T> hub, int pos);
+	/**
+	 * Dependency hook used by this service for HubDataClearAllAndReset behavior.
+	 *
+	 * @param hub method input
+	 */
 	public abstract void callHubDataClearAllAndReset(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service for HubShareGetAllSharedHubs behavior.
+	 *
+	 * @param hub method input
+	 * @param filter method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> hub, OAFilter<Hub<T>> filter);
+	/**
+	 * Dependency hook used by this service for HubEventFireOnNewListEvent behavior.
+	 *
+	 * @param hub method input
+	 * @param bAll method input
+	 */
 	public abstract void callHubEventFireOnNewListEvent(Hub<?> hub, boolean bAll);
+	/**
+	 * Dependency hook used by this service for HubDataResizeToFit behavior.
+	 *
+	 * @param hub method input
+	 */
 	public abstract void callHubDataResizeToFit(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service for HubEventFireBeforeRefreshEvent behavior.
+	 *
+	 * @param hub method input
+	 */
 	public abstract void callHubEventFireBeforeRefreshEvent(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service for HubDetailGetMasterObject behavior.
+	 *
+	 * @param hub method input
+	 * @return result value
+	 */
 	public abstract OAObject callHubDetailGetMasterObject(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service for HubDetailGetPropertyFromMasterToDetail behavior.
+	 *
+	 * @param hub method input
+	 * @return result value
+	 */
 	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service for ThreadLocalSetLoading behavior.
+	 *
+	 * @param b method input
+	 * @return result value
+	 */
 	public abstract boolean callThreadLocalSetLoading(boolean b);
+	/**
+	 * Dependency hook used by this service for ThreadLocalSetRefreshing behavior.
+	 *
+	 * @param b method input
+	 */
 	public abstract void callThreadLocalSetRefreshing(boolean b);
 }
 

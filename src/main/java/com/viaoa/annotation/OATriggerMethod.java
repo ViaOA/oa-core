@@ -25,7 +25,7 @@ import com.viaoa.hub.HubEvent;
 
 /**
  * Declares a method as an OA trigger handler, invoked when one or more
- * property paths change anywhere in the object graph.
+ * property paths change anywhere in the OA model.
  *
  * <p>Triggers allow OA to avoid expensive deep property-path listeners.
  * Instead of having each object listen to a long path, OA reverses the
@@ -49,7 +49,7 @@ public @interface OATriggerMethod {
 
 	/**
 	 * Lists the property paths that will cause this trigger method to
-	 * be invoked whenever any of them change within the object graph.
+	 * be invoked whenever any of them change within the OA model.
 	 */
     String[] properties() default {};
     

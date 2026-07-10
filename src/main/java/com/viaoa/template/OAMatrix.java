@@ -186,7 +186,7 @@ public class OAMatrix {
          *
          * @return the property path for this column, or {@code null} if unset
          */
-        public String getPropertyPath() {
+        public String getPath() {
             return pp;
         }
         
@@ -240,9 +240,9 @@ public class OAMatrix {
         if (colFrom == null) return null;
         if (OAStr.isEmpty(pp)) return null;
         Column colRoot = getRootColumn(colFrom);
-        String fpp = getPropertyPathFromRoot(colFrom, pp);
+        String fpp = getPathFromRoot(colFrom, pp);
         if (!verifyLinkProperty(colRoot.hub == null ? colRoot.object.getClass() : colRoot.hub.getObjectClass(), fpp)) {
-            throw new RuntimeException("invalid propertyPath, must be for a link property, pp="+pp);
+            throw new RuntimeException("invalid path, must be for a link property, pp="+pp);
         }
         
         Column col = new Column();
@@ -271,7 +271,7 @@ public class OAMatrix {
         
         //Column colRoot = getRootColumn(colLeft);
         if (!verifyLinkProperty(colLeft.hub == null ? colLeft.object.getClass() : colLeft.hub.getObjectClass(), pp)) {
-            throw new RuntimeException("invalid propertyPath, must be for a link property, pp="+pp);
+            throw new RuntimeException("invalid path, must be for a link property, pp="+pp);
         }
         
         
@@ -293,9 +293,9 @@ public class OAMatrix {
         if (colLeft == null) return null;
         
         Column colRoot = getRootColumn(colLeft);
-        String fpp = getPropertyPathFromRoot(colLeft, pp);
+        String fpp = getPathFromRoot(colLeft, pp);
         if (!verifyLinkProperty(colRoot.hub == null ? colRoot.object.getClass() : colRoot.hub.getObjectClass(), fpp)) {
-            throw new RuntimeException("invalid propertyPath, must be for a link property, pp="+pp);
+            throw new RuntimeException("invalid path, must be for a link property, pp="+pp);
         }
         
         Column col = new Column();
@@ -335,13 +335,13 @@ public class OAMatrix {
      * @param pp        the property path to extend
      * @return the full property path relative to the root column
      */
-    public String getPropertyPathFromRoot(Column colParent, String pp) {
+    public String getPathFromRoot(Column colParent, String pp) {
         if (colParent == null) return pp;
         if (OAStr.isNotEmpty(colParent.pp)) {
             pp = OAStr.prepend(pp, colParent.pp, ".");
         }
         if (colParent.colFrom == null) return pp;
-        return getPropertyPathFromRoot(colParent.colFrom, pp);
+        return getPathFromRoot(colParent.colFrom, pp);
     }
 
     /**

@@ -32,7 +32,7 @@ import com.viaoa.hub.Hub;
  * <p>Acts as a convenience façade over {@link Hub#setLinkHub} and related APIs.</p>
  */
 public class HubLink {
-    
+
 	/**
 	 * Source Hub and destination Hub participating in the link relationship.
 	 */
@@ -42,13 +42,13 @@ public class HubLink {
 	 * Property names used to synchronize values between the source and destination Hubs.
 	 */
     private String fromProperty, toProperty;
-    
+
     /**
      * Flag indicating whether the position of the active object in the fromHub
      * should be used when updating the destination Hub.
      */
     private boolean bUseHubPosition;
-    
+
     /**
      * Flag indicating whether a new object should be automatically created in the
      * destination Hub when the active object in the source Hub changes.
@@ -110,7 +110,7 @@ public class HubLink {
         this.toProperty = toProperty;
         if (fromHub != null && toHub != null) fromHub.setLinkHub(toHub);
     }
-    
+
     /**
      * Creates a link using the active object in fromHub to update the
      * active object in toHub.
@@ -152,7 +152,7 @@ public class HubLink {
         if (fromHub != null) fromHub.removeLinkHub();
         super.finalize();
     }
-    
+
     /**
      * Returns the source Hub participating in this link.
      *
@@ -161,7 +161,7 @@ public class HubLink {
     public Hub getFromHub() {
         return fromHub;
     }
-    
+
     /**
      * Returns the destination Hub participating in this link.
      *

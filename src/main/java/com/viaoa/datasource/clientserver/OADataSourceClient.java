@@ -35,7 +35,7 @@ import com.viaoa.sync.remote.RemoteClientInterface;
 CODEX
 
  3. OADataSourceClient registration path
-      - Exact path: OASyncService.createClient() creates new OADataSourceClient(og.getPackageName()); the
+      - Exact path: OASyncService.createClient() creates new OADataSourceClient(oa.getPackageName()); the
         constructor only assigns packageName; no registration occurs; later OASelect.getDataSource() calls
         OARuntime.datasource().get(clazz, filter) and can return null.
       - Why bug: sync client datasource can be created but never discoverable through the runtime datasource

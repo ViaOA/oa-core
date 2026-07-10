@@ -54,131 +54,28 @@ import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.remote.RemoteServerInterface;
 
 /**
- * Core root class for all OA entity/model objects.
+ * Base class for OA model objects.
  * <p>
- * {@code OAObject} participates in the OA Object Graph, a strongly-typed,
- * observable, and navigable structure that enables automation of persistence,
- * distributed synchronization, REST publication, UI binding, and undo/redo —
- * without embedding infrastructure logic inside the domain model.
- *
- * <h3>Object Graph Overview</h3>
- * Application objects are linked through properties and {@link Hub} collections,
- * forming a live in-memory graph. Changes made anywhere in the graph can be
- * observed, validated, cascaded, persisted, and synchronized.
- *
- * <h3>Hub Collections & Automated Relationships</h3>
- * A {@link Hub} is an observable collection of {@code OAObject}s used
- * throughout the Object Graph to represent one-to-many and many-to-many
- * relationships. Hubs automatically propagate selection, filtering, sorting,
- * and change events to all linked components.
- *
- * Hubs can be <b>linked</b> to other hubs or objects to support:
- * <ul>
- *   <li><b>Master–Detail</b> navigation (detail hub follows master selection)</li>
- *   <li><b>Join Relationships</b> including cross-graph references</li>
- *   <li><b>Filtering & Sorting</b> with automatic update propagation</li>
- *   <li><b>Grouping & Aggregation</b> on live collections</li>
- *   <li><b>UI binding</b> where lists/tables update automatically</li>
- * </ul>
- * Linked hubs allow complex business structure modeling without manual
- * synchronization — navigation drives lazy loading, reuse, and optimized queries.
- *
- * <h3>Primary Capabilities</h3>
- * <ul>
- *   <li><b>Observable</b> – every object, property, and relationship emits
- *       change events across the graph, enabling distributed updates, UI binding,
- *       undo/redo, and automation</li>
- *   <li><b>Property Path Navigation</b> – fluent traversal across links and
- *       hubs (e.g. "customer.orders.product.price") supports binding, filtering,
- *       validation, and data queries</li>
- *   <li><b>Calculated Properties</b> – metadata-defined dependencies ensure
- *       derived values automatically update when inputs change</li>
- *   <li><b>Identity Management</b> – global GUID + datastore ID resolution</li>
- *   <li><b>Lifecycle Tracking</b> – new / deleted / changed state with strict
- *       before/after event ordering</li>
- *   <li><b>Lazy Loading</b> – transparent fetch of related data when required</li>
- *   <li><b>Automatic UI Binding</b> – model ↔ UI synchronization</li>
- *   <li><b>Optimistic Persistence</b> – dirty tracking and cascade evaluation</li>
- *   <li><b>Distributed Sync + REST</b> – publish/subscribe via lightweight
- *       serialization based on authority and membership</li>
- *   <li><b>Undo / Redo</b> – reversible property mutations when enabled</li>
- * </ul>
- *
- * <h3>Object Graph Caching & Lookup</h3>
- * All OAObjects participate in a global runtime cache keyed by GUID with a
- * secondary index for datastore IDs. This ensures:
- * <ul>
- *   <li><b>only one instance</b> per entity in memory</li>
- *   <li>identity consistency across datasource + REST boundaries</li>
- *   <li>no duplicate objects created during lazy load or sync</li>
- * </ul>
- *
- * <h3>Lazy Loading & Sibling Optimization</h3>
- * Related objects and Hub collections load on demand. OA uses context-aware
- * <b>sibling fetch hints</b> to batch neighboring requests, dramatically
- * reducing round-trips for scrolling and parent/child traversal.
- *
- * <h3>Dynamic / Interactive Serialization (REST & CS)</h3>
- * Serialization is graph-aware and context-sensitive:
- * <ul>
- *   <li><b>REST publishing</b> includes only reachable and permitted paths</li>
- *   <li><b>Authority enforcement</b> automatically filters sensitive properties</li>
- *   <li><b>Bidirectional links</b> normalized to avoid recursion</li>
- *   <li><b>Lazy references</b> represented by lightweight stubs until needed</li>
- * </ul>
- *
- * <h3>Callback + Metadata Driven Behavior</h3>
- * Rules and permissions dynamically govern what is allowed, visible, or
- * confirmable through:
- * <ul>
- *   <li>Metadata from {@link OAObjectInfo}</li>
- *   <li>Annotations and callback methods</li>
- *   <li>{@link OAObjectCallbackDelegate} routing</li>
- * </ul>
- *
- * <h3>Datasource / ORM Neutrality</h3>
- * {@code OAObject} contains no JDBC/SQL/ORM APIs. Datasource delegates support:
- * <ul>
- *   <li>Relational databases</li>
- *   <li>NoSQL / document stores</li>
- *   <li>Local/embedded storage</li>
- *   <li>Remote microservices</li>
- * </ul>
- * Object Graph-based queries (PropertyPaths, filters, links) are automatically
- * transformed into optimized datasource operations.
- *
- * <h3>Design Principles</h3>
- * <ul>
- *   <li><b>Model purity</b>: domain classes contain no infrastructure code</li>
- *   <li><b>Automation-first</b>: metadata drives code generation and behavior</li>
- *   <li><b>Single-instance identity</b> per entity per runtime context</li>
- *   <li><b>Transparent behavior</b>: all changes observable and validatable</li>
- * </ul>
- *
- * <h3>Implementation Notes</h3>
- * Behavior is delegated to specialized helpers:
- * <ul>
- *   <li>{@link OAObjectDelegate}</li>
- *   <li>{@link OAObjectEventDelegate}</li>
- *   <li>{@link OAObjectHubDelegate}</li>
- *   <li>{@link OAObjectReflectDelegate}</li>
- *   <li>{@link OAObjectCallbackDelegate}</li>
- *   <li>{@link OAObjectCacheDelegate}</li>
- * </ul>
- *
- * <h3>Usage</h3>
- * Entities extend {@code OAObject} to join the Object Graph. UI and service
- * layers interact using get/set methods — automation handles consistency,
- * persistence, and synchronization.
+ * {@code OAObject} supplies the runtime behavior that lets generated and hand
+ * written model classes participate in the OA model: property storage, change
+ * notification, identity, lifecycle flags, lazy loading, rule/callback checks,
+ * persistence hooks, synchronization, serialization, and Hub relationship
+ * support.
+ * <p>
+ * Application entities normally extend {@code OAObject}. The object itself does
+ * not contain datasource-specific code; persistence, metadata, rules, cache,
+ * sync, and Hub coordination are delegated through the owning {@link OA}
+ * runtime and its services.
+ * <p>
+ * OA model relationships are represented by object references and {@link Hub}
+ * collections. Property paths, metadata, and rules allow the runtime to keep
+ * object state, UI bindings, generated application behavior, and distributed
+ * updates coordinated from the model definition.
  *
  * @see Hub
  * @see OAObjectInfo
- * @see OAObjectDelegate
- * @see OAObjectEventDelegate
- * @see OAObjectHubDelegate
- * @see OAObjectCallbackDelegate
- * @see OAObjectCacheDelegate
- * @see com.viaoa.hub.Hub
+ * @see OAObjectKey
+ * @see OA
  */
 public class OAObject implements java.io.Serializable, Comparable<Object> {
 
@@ -233,7 +130,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		 *  String ver = "3.7.2.202206160";
          *  String ver = "3.7.3.202212260";
          *  String ver = "3.7.4.202310070";
-         *  String ver = "3.7.5.202310220"; 
+         *  String ver = "3.7.5.202310220";
          *  String ver = "3.7.6.202311270";
          *  String ver = "3.7.7.202402260";
          *  String ver = "3.7.8.202405070";
@@ -262,7 +159,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 
 	/**
 	 * Globally unique identifier for this OAObject instance. Used to enforce
-	 * single-instance identity across the Object Graph.
+	 * single-instance identity across the OA model.
 	 */
 	protected UUID guid; // global identifier for this object
 	
@@ -342,14 +239,14 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 
 	/**
 	 * Constructs a new {@code OAObject} instance and performs framework-level
-	 * initialization.  
+	 * initialization.
 	 * <p>
 	 * Initialization is delegated to {@link OAObjectDelegate#initialize(OAObject)},
 	 * which is responsible for:
 	 * <ul>
 	 *   <li>assigning a globally unique GUID for this instance,</li>
 	 *   <li>initializing internal property storage and metadata structures,</li>
-	 *   <li>registering the object with the Object Graph and caching system,</li>
+	 *   <li>registering the object with the OA model and caching system,</li>
 	 *   <li>marking the object as {@code new} and {@code changed} so it can be
 	 *       detected by persistence and synchronization layers,</li>
 	 *   <li>setting up any property-level or link-level runtime delegates.</li>
@@ -381,7 +278,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * <ul>
 	 *   <li>restoring serialized property and link values,</li>
 	 *   <li>reinitializing transient or delegate-managed state,</li>
-	 *   <li>re-attaching the object to the OA cache and Object Graph based on its GUID,</li>
+	 *   <li>re-attaching the object to the OA cache and OA model based on its GUID,</li>
 	 *   <li>ensuring that identity and reference rules are preserved.</li>
 	 * </ul>
 	 * No application code should call this method directly.
@@ -404,7 +301,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *   <li>otherwise registers this new instance and returns it.</li>
 	 * </ul>
 	 * This mechanism avoids duplicate {@code OAObject} instances appearing in the
-	 * Object Graph after serialization round-trips. Application code should not
+	 * OA model after serialization round-trips. Application code should not
 	 * call this method directly.
 	 *
 	 * @return the canonical {@code OAObject} instance for this GUID
@@ -427,7 +324,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *   <li>selecting which simple properties and link references are included,</li>
 	 *   <li>encoding values according to OA metadata and formatting rules,</li>
 	 *   <li>avoiding infinite recursion during link traversal,</li>
-	 *   <li>recording enough state to allow correct reattachment to the Object Graph
+	 *   <li>recording enough state to allow correct reattachment to the OA model
 	 *       during deserialization.</li>
 	 * </ul>
 	 * Applications should not call this method directly; it is part of the standard
@@ -796,7 +693,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * <p>
 	 * This convenience overload retrieves the current value of the specified
 	 * property and delegates to
-	 * {@link OAObjectCallbackService#getVerifyPropertyChange(int, OAObject, String, Object, Object)} 
+	 * the OA object rules engine
 	 * using {@link OAObjectCallback#CHECK_CallbackMethod} as the evaluation mode.
 	 * The delegate performs all validation, including:
 	 * <ul>
@@ -821,9 +718,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
      * property change is allowed, including any validation messages or metadata
      * returned by the callback system.
      * <p>
-     * This method delegates to
-     * {@link OAObjectCallbackService#getVerifyPropertyChangeObjectCallback(int, OAObject, String, Object, Object)}
-     * using {@link OAObjectCallback#CHECK_CallbackMethod} as the evaluation mode.
+     * This method delegates to the OA object rules engine using {@link OAObjectCallback#CHECK_CallbackMethod} as the evaluation mode.
      * The returned callback object includes:
      * <ul>
      *   <li>whether the change is permitted,</li>
@@ -852,7 +747,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * <p>
 	 * This is a convenience overload that resolves the current value of the
 	 * specified property and delegates to
-	 * {@link OAObjectCallbackService#getVerifyPropertyChangeObjectCallback(int, OAObject, String, Object, Object)}
+	 * the OA object rules engine
 	 * using {@link OAObjectCallback#CHECK_CallbackMethod} as the evaluation mode.
 	 * The returned callback object provides:
 	 * <ul>
@@ -879,9 +774,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
      * Determines whether the specified property is enabled according to OA's
      * callback and metadata rules.
      * <p>
-     * This method delegates to
-     * {@link OAObjectCallbackService#getAllowEnabled(int, OAObjectCallback, OAObject, String)}
-     * using {@link OAObjectCallback#CHECK_ALL} as the evaluation mode. The
+     * This method delegates to the OA object rules engine using
+     * {@link OAObjectCallback#CHECK_ALL} as the evaluation mode. The
      * delegate evaluates:
      * <ul>
      *   <li>property-level enable/disable rules,</li>
@@ -905,9 +799,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * Retrieves the {@link OAObjectCallback} describing whether the specified
 	 * property is enabled, including detailed callback metadata.
 	 * <p>
-	 * This method delegates to
-	 * {@link OAObjectCallbackService#getAllowEnabledObjectCallback(Hub, OAObject, String)}
-	 * using {@link OAObjectCallback#CHECK_ALL} as the evaluation mode. The
+	 * This method delegates to the OA object rules engine using
+     * {@link OAObjectCallback#CHECK_ALL} as the evaluation mode. The
 	 * returned callback object provides:
 	 * <ul>
 	 *   <li>whether the property is enabled,</li>
@@ -933,9 +826,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * Determines whether this object as a whole is enabled according to OA's
 	 * callback and metadata rules.
 	 * <p>
-	 * This method delegates to
-	 * {@link OAObjectCallbackServices#getAllowEnabled(int, OAObjectCallback, OAObject, String)}
-	 * using {@link OAObjectCallback#CHECK_ALL} as the evaluation mode and a
+	 * This method delegates to the OA object rules engine using
+	 * {@link OAObjectCallback#CHECK_ALL} as the evaluation mode and a
 	 * {@code null} property name. This signals the delegate to evaluate
 	 * object-level enablement rules rather than property-specific rules.
 	 * <p>
@@ -946,7 +838,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *   <li>metadata-defined enablement logic,</li>
 	 *   <li>contextual conditions such as read-only states.</li>
 	 * </ul>
-	 * 
+	 *
 	 * @return {@code true} if the object is enabled; {@code false} if it is
 	 *         disabled for the current context
 	 */
@@ -959,9 +851,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * Retrieves the {@link OAObjectCallback} describing whether this object,
 	 * as a whole, is enabled for interaction.
 	 * <p>
-	 * This method delegates to
-	 * {@link OAObjectCallbackServicee#getAllowEnabledObjectCallback(Hub, OAObject, String)}
-	 * using {@link OAObjectCallback#CHECK_ALL} as the evaluation mode and a
+	 * This method delegates to the OA object rules engine using
+	 * {@link OAObjectCallback#CHECK_ALL} as the evaluation mode and a
 	 * {@code null} property name. This instructs the delegate to evaluate
 	 * object-level enablement rules instead of property-specific rules.
 	 * <p>
@@ -985,9 +876,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * Determines whether the specified property is visible according to OA's
 	 * visibility rules and callback system.
 	 * <p>
-	 * This method delegates to
-	 * {@link OAObjectCallbackService#getAllowVisible(OAObjectCallback, OAObject, String)}
-	 * using a {@code null} callback context and the provided property name.  
+	 * This method delegates to the OA object rules engine using a {@code null}
+	 * callback context and the provided property name.
 	 * The delegate evaluates:
 	 * <ul>
 	 *   <li>property-level metadata controlling visibility,</li>
@@ -1010,9 +900,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * Retrieves the {@link OAObjectCallback} containing detailed visibility
 	 * information for the specified property.
 	 * <p>
-	 * This method delegates to
-	 * {@link OAObjectCallbackService#getAllowVisibleObjectCallback(OAObjectCallback, OAObject, String)}
-	 * using a {@code null} callback context and the supplied property name.  
+	 * This method delegates to the OA object rules engine using a {@code null}
+	 * callback context and the supplied property name.
 	 * The returned callback object reports:
 	 * <ul>
 	 *   <li>whether the property is visible,</li>
@@ -1036,9 +925,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * Determines whether this object, as a whole, is visible according to OA's
 	 * visibility rules and callback evaluations.
 	 * <p>
-	 * This method delegates to
-	 * {@link OAObjectCallbackService#getAllowVisible(OAObjectCallback, OAObject, String)}
-	 * using a {@code null} property name, which instructs the delegate to evaluate
+	 * This method delegates to the OA object rules engine using a {@code null} property name, which instructs the delegate to evaluate
 	 * object-level visibility rather than property-specific visibility.
 	 * <p>
 	 * The delegate considers:
@@ -1059,9 +946,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * Retrieves the {@link OAObjectCallback} containing detailed visibility
 	 * information for this object as a whole.
 	 * <p>
-	 * This method delegates to
-	 * {@link OAObjectCallbackService#getAllowVisibleObjectCallback(OAObjectCallback, OAObject, String)}
-	 * using a {@code null} property name, which signals that object-level
+	 * This method delegates to the OA object rules engine using a {@code null} property name, which signals that object-level
 	 * visibility—not property-level visibility—should be evaluated.
 	 * <p>
 	 * The returned callback provides:
@@ -1084,9 +969,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * Determines whether the specified command (method) is permitted to execute
 	 * according to OA's command-validation callback rules.
 	 * <p>
-	 * This method delegates to
-	 * {@link OAObjectCallbackService#getVerifyCommandObjectCallback(OAObject, String)}
-	 * using {@link OAObjectCallback#CHECK_ALL} as the evaluation mode.
+	 * This method delegates to the OA object rules engine using {@link OAObjectCallback#CHECK_ALL} as the evaluation mode.
 	 * The returned callback is then queried for its {@code allowed} state.
 	 * <p>
 	 * The delegate evaluates:
@@ -1111,9 +994,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * command (method) is permitted to execute under the current OA callback
 	 * rules and context.
 	 * <p>
-	 * This method delegates to
-	 * {@link OAObjectCallbackService#getVerifyCommandObjectCallback(OAObject, String)}
-	 * using {@link OAObjectCallback#CHECK_ALL} as the evaluation mode.
+	 * This method delegates to the OA object rules engine using {@link OAObjectCallback#CHECK_ALL} as the evaluation mode.
 	 * The returned callback includes:
 	 * <ul>
 	 *   <li>whether the command is allowed,</li>
@@ -1138,8 +1019,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * is allowed to be submitted according to OA’s submission rules and
 	 * callback logic.
 	 * <p>
-	 * This method delegates to
-	 * {@link OAObjectCallbackService#getAllowSubmitObjectCallback(OAObject)},
+	 * This method delegates to the OA object rules engine,
 	 * which evaluates:
 	 * <ul>
 	 *   <li>model- and metadata-defined submission constraints,</li>
@@ -1162,9 +1042,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * Retrieves the {@link OAObjectCallback} describing whether this object
 	 * is permitted to be saved according to OA’s save-validation rules.
 	 * <p>
-	 * This method delegates to
-	 * {@link OAObjectCallbackService#getVerifySaveObjectCallback(OAObject)}
-	 * using {@link OAObjectCallback#CHECK_ALL} as the evaluation mode.  
+	 * This method delegates to the OA object rules engine using {@link OAObjectCallback#CHECK_ALL} as the evaluation mode.
 	 * The delegate evaluates:
 	 * <ul>
 	 *   <li>model-level save rules and metadata constraints,</li>
@@ -1223,7 +1101,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * <ul>
 	 *   <li>marking the object as new or not new,</li>
 	 *   <li>updating internal change-tracking structures,</li>
-	 *   <li>notifying the Object Graph or caches when appropriate,</li>
+	 *   <li>notifying the OA model or caches when appropriate,</li>
 	 *   <li>triggering any related callbacks.</li>
 	 * </ul>
 	 * This method is annotated with {@code @XmlTransient} to prevent the new-state
@@ -1287,7 +1165,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * <ul>
 	 *   <li>updating the object's deleted state,</li>
 	 *   <li>managing cascade delete behavior when applicable,</li>
-	 *   <li>interacting with the Object Graph and caching layers,</li>
+	 *   <li>interacting with the OA model and caching layers,</li>
 	 *   <li>triggering any registered delete-related callbacks.</li>
 	 * </ul>
 	 * This method is annotated with {@code @XmlTransient} to ensure the deleted
@@ -1303,7 +1181,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	/**
 	 * Compares this object to another for equality based solely on GUID identity.
 	 * <p>
-	 * OA enforces a single-instance-per-GUID rule across the Object Graph.
+	 * OA enforces a single-instance-per-GUID rule across the OA model.
 	 * Therefore, two {@code OAObject} instances are considered equal if:
 	 * <ul>
 	 *   <li>the other object is also an {@code OAObject}, and</li>
@@ -1417,7 +1295,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * When {@code bIncludeLinks} is {@code true}, this method delegates to
 	 * {@link #getChanged(int)} using {@link #CASCADE_LINK_RULES}, which
 	 * instructs OA to examine linked objects whose metadata specifies
-	 * cascade-change participation.  
+	 * cascade-change participation.
 	 * When {@code bIncludeLinks} is {@code false}, only this object's own
 	 * change state is evaluated.
 	 *
@@ -1676,7 +1554,6 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *          {@code false} to disable it
 	 */
 	public static void setFinalizeSave(boolean b) {
-		//qqqqqqqqqqqqqqq remove this
 		// OAObjectService.bFinalizeSave = b;
 	}
 
@@ -1692,9 +1569,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *         {@code false} otherwise
 	 */
 	public static boolean getFinalizeSave() {
-//qqqqqqqqqqqq remove this qqqqqqqqqq		
 		// return OAObjectDelegate.bFinalizeSave;
-		return false; //qqqqqqqqqqqqqqqqq
+		return false;
 	}
 
 	
@@ -1952,7 +1828,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * This method retrieves the Hub associated with the given link property via
 	 * {@link #getHub(String)}. If the Hub exists, it triggers a
 	 * {@code newList} event using
-	 * {@link HubEventDelegate#fireOnNewListEvent(Hub, boolean)}. 
+	 * {@link HubEventDelegate#fireOnNewListEvent(Hub, boolean)}.
 	 * <p>
 	 * A {@code newList} event indicates that the Hub's underlying list has been
 	 * replaced, refreshed, or otherwise reinitialized. Typical consequences
@@ -2147,7 +2023,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * <p>
 	 * This method delegates to
 	 * {@link OAObjectReflectDelegate#getReferenceHub(OAObject, String, String, boolean, Hub)}
-	 * to resolve the Hub reference using OA's metadata and link rules. 
+	 * to resolve the Hub reference using OA's metadata and link rules.
 	 * <p>
 	 * Characteristics:
 	 * <ul>
@@ -2509,10 +2385,10 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	}
 
 	/**
-	 * Deletes this object from the OA Object Graph and its underlying datasource.
+	 * Deletes this object from the OA model and its underlying datasource.
 	 * <p>
 	 * Before deletion, this method evaluates delete permissions through
-	 * {@link OAObjectCallbackService#getVerifyDeleteObjectCallback(Object, OAObject)}
+	 * the OA object rules engine
 	 * unless the current thread is a remote thread. If the callback denies deletion,
 	 * a {@link RuntimeException} is thrown containing the callback's message and
 	 * optional cause.
@@ -2543,8 +2419,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * Determines whether this object is permitted to be deleted according to
 	 * OA's delete-validation rules.
 	 * <p>
-	 * This method delegates to
-	 * {@link OAObjectCallbackService#getAllowDelete(Object, OAObject)}, which
+	 * This method delegates to the OA object rules engine, which
 	 * evaluates metadata rules and any registered {@link OAObjectCallback}
 	 * handlers to decide whether deletion is allowed for the current context.
 	 *
@@ -2625,13 +2500,13 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * with {@code false} for the "find all" flag, meaning only the first
 	 * matching object (if any) is returned.
 	 *
-	 * @param propertyPath the property path used to navigate from this object
+	 * @param path the property path used to navigate from this object
 	 * @param value        the value to match against while searching
 	 * @return the first matching object, or {@code null} if none are found
 	 */
-	public Object find(String propertyPath, Object value) {
+	public Object find(String path, Object value) {
 		OA oa = OARuntime.oa(this);
-		Object[] objs = oa.internal().objects().find().find(this, propertyPath, value, false);
+		Object[] objs = oa.internal().objects().find().find(this, path, value, false);
 		if (objs != null && objs.length > 0) {
 			return objs[0];
 		}
@@ -2647,13 +2522,13 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * with {@code true} for the "find all" flag, causing the delegate to
 	 * return every matching object encountered during traversal.
 	 *
-	 * @param propertyPath the property path used to navigate from this object
+	 * @param path the property path used to navigate from this object
 	 * @param value        the value to match against while searching
 	 * @return an array of all matching objects; never {@code null}, but may be empty
 	 */
-	public Object[] findAll(String propertyPath, Object value) {
+	public Object[] findAll(String path, Object value) {
 		OA oa = OARuntime.oa(this);
-		return oa.internal().objects().find().find(this, propertyPath, value, true);
+		return oa.internal().objects().find().find(this, path, value, true);
 	}
 
 	/**
@@ -2707,29 +2582,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		return b;
 	}
 
-	/**
-	 * Determines whether this object is executing in a server context.
-	 * <p>
-	 * This method delegates to
-	 * {@link OASyncDelegate#isServer(Class)}, which evaluates whether
-	 * the class associated with this object is running on the server
-	 * within the OA Sync framework.
-	 *
-	 * @return {@code true} if the object is running on the server;
-	 *         {@code false} otherwise
-	 */
-/*qqqqqq remove	
-	public boolean isServer() {
-		final OA oa = OARuntime.graph(this);
-		return oa.internal().sync().isServer();
-	}
-
-	public boolean isSingleUser() {
-		final OA oa = OARuntime.graph(this);
-		return oa.internal().sync().isSingleUser();
-	}
-*/	
-	/**
+/**
 	 * Determines whether this object is executing in a client context.
 	 * <p>
 	 * This is the logical inverse of {@link #isServer()}, and returns
@@ -2738,12 +2591,6 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *
 	 * @return {@code true} if running on a client; {@code false} otherwise
 	 */
-/*qqqqqqq remove	
-	public boolean isClient() {
-		final OA oa = OARuntime.graph(this);
-		return oa.internal().sync().isClient();
-	}
-*/
 	/**
 	 * Determines whether the current thread is an OA remote thread, used to process
 	 * OASync messages.
@@ -2763,43 +2610,19 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 
 
 	/**
-	 * Enables or disables the sending of OA remote messages for the
-	 * current thread.
+	 * Enables or disables OA sync message sending for the current thread.
 	 * <p>
-	 * This method delegates to
-	 * {@link OARemoteThreadDelegate#sendSyncMessages(boolean)}, allowing
-	 * callers to control whether outbound remote messages should be
-	 * dispatched during operations that may trigger synchronization.
+	 * This updates the OA thread-local service flag used by runtime operations that
+	 * participate in synchronization.
 	 *
-	 * qqqqqqqqqqqqqqqqqq
-	 * @param b {@code true} to allow message sending; {@code false} to suppress it
-	 * @return the resulting message-sending state as reported by the delegate
-	 * 
-	 * qqqqqqqqqq change to sendSyncMessage(..)
-	 * 
+	 * @param b {@code true} to allow sync message sending; {@code false} to suppress it
 	 */
 	public void sendMessages(boolean b) {
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
         srvcOAThreadLocal.setSendSyncMessages(b);
 	}
 
-	/**
-	 * Enables the sending of OA remote messages for the current thread.
-	 * <p>
-	 * This is a convenience method equivalent to calling
-	 * {@link #sendMessages(boolean)} with {@code true}, allowing
-	 * outbound remote messages to be dispatched.
-	 *
-	 * @return {@code true} if message sending is enabled; {@code false} otherwise
-	 */
-/*qqqqqqqqqqqqq REMOVE	
-	public boolean sendMessages() {
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadImpl) OARuntime.thread()).getRemoteThreadService();  
-		return srvcOARemoteThread.sendMessages(true);
-	}
-*/
-	
-	/**
+/**
 	 * Callback invoked after this object has been loaded from a datasource.
 	 * <p>
 	 * The default implementation initializes any empty hubs associated with
@@ -2814,7 +2637,6 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 */
 	public void afterLoad() {
 		OA oa = OARuntime.oa(this);
-		//qqqqqqq oa.internal().objects().callObjectEmptyHubInitialize(this);
 		oa.internal().objects().event().fireAfterLoadEvent(this);
 		oa.internal().objects().cache().fireAfterLoadEvent(this);
 	}
@@ -2840,7 +2662,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * <p>
 	 * The GUID is a core component of OA’s identity system and is used for
 	 * equality checks, hashing, caching, remote synchronization, and ensuring
-	 * the single-instance-per-object rule across the Object Graph.
+	 * the single-instance-per-object rule across the OA model.
 	 *
 	 * @return the GUID value for this object
 	 */
@@ -3027,7 +2849,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * <p>
 	 * The method determines the originating method name via the call stack and
 	 * delegates the remote invocation to the {@link RemoteServerInterface}
-	 * obtained from the active {@link OASyncClient}.  
+	 * obtained from the active {@link OASyncClient}.
 	 * <p>
 	 * Remote execution is not allowed when:
 	 * <ul>
@@ -3208,15 +3030,13 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 
 
 	/**
-	 * Determines whether the specified property has been loaded.
+	 * Determines whether remote method invocation is available for objects in a Hub.
 	 * <p>
-	 * This method delegates directly to
-	 * {@link OAObjectPropertyDelegate#isPropertyLoaded(OAObject, String)},
-	 * which checks whether the property value has been resolved from the
-	 * datasource or object graph, including lazy-loaded fields.
+	 * Remote execution is available only when the current thread is not processing a
+	 * remote message and the Hub's object class is running in a client OA runtime.
 	 *
-	 * @param prop the property name to evaluate
-	 * @return {@code true} if the property is loaded; {@code false} otherwise
+	 * @param hub the Hub whose object class supplies the runtime context
+	 * @return {@code true} if remote invocation is available for the Hub
 	 */
 	public static boolean isRemoteAvailable(Hub hub) {
 		if (hub == null) {
@@ -3240,7 +3060,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * This method delegates directly to
 	 * {@link OAObjectPropertyDelegate#isPropertyLoaded(OAObject, String)},
 	 * which checks whether the property value has been resolved from the
-	 * datasource or object graph, including lazy-loaded fields.
+	 * datasource or OA runtime, including lazy-loaded fields.
 	 *
 	 * @param prop the property name to evaluate
 	 * @return {@code true} if the property is loaded; {@code false} otherwise
@@ -3256,7 +3076,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * This is an alias for {@link #isLoaded(String)} and delegates to
 	 * {@link OAObjectPropertyDelegate#isPropertyLoaded(OAObject, String)},
 	 * which checks whether the value for the given property has been resolved
-	 * from the datasource or the Object Graph.
+	 * from the datasource or the OA runtime.
 	 *
 	 * @param prop the property name to check
 	 * @return {@code true} if the property is loaded; {@code false} otherwise
@@ -3293,11 +3113,11 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * non-null, non-empty value is found.
 	 *
 	 * @param propertyName            the property to evaluate at each hierarchy level
-	 * @param heirarchyPropertyPath   the path used to navigate upward through the hierarchy
+	 * @param heirarchyPath   the path used to navigate upward through the hierarchy
 	 * @return the first non-empty value encountered, or {@code null} if none is found
 	 */
-	public Object hierFind(String propertyName, String heirarchyPropertyPath) {
-		OAHierFinder hf = new OAHierFinder<OAObject>(propertyName, heirarchyPropertyPath);
+	public Object hierFind(String propertyName, String heirarchyPath) {
+		OAHierFinder hf = new OAHierFinder<OAObject>(propertyName, heirarchyPath);
 		Object objx = hf.findFirstNotEmpty(this);
 		return objx;
 	}
@@ -3476,7 +3296,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * owned objects.
 	 * <p>
 	 * The method enforces a recursion limit of 10 levels to prevent infinite
-	 * cycles in object graphs. If this limit is exceeded, a warning is logged and
+	 * cycles in OA models. If this limit is exceeded, a warning is logged and
 	 * the method returns {@code true}.
 	 * <p>
 	 * Behavior:
@@ -3538,7 +3358,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param property   the name of the property to update
 	 * @param oldValue   the expected current value
 	 * @param newValue   the new value to assign if the comparison succeeds
-	 * @return result returned from delegate 
+	 * @return result returned from delegate
 	 */
 	public boolean compareAndSwap(String property, Object oldValue, Object newValue) {
 		return compareAndSwap(property, oldValue, newValue, true);
@@ -4018,14 +3838,32 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	}
 
 	
+	/**
+	 * Internal friend-access bridge used by OA runtime services.
+	 * <p>
+	 * These methods expose selected OAObject internals to package and service code
+	 * without making those fields part of the public application API.
+	 */
 	public static final class FriendAccess {
 		private FriendAccess() {
 		}
 		
+	    /**
+	     * Returns the runtime GUID for an object.
+	     *
+	     * @param obj the object
+	     * @return the object GUID
+	     */
 	    public UUID getGuid(OAObject obj) {
 	        return obj.guid;
 	    }
 
+	    /**
+	     * Assigns the runtime GUID for an object.
+	     *
+	     * @param obj the object
+	     * @param guid the GUID to assign
+	     */
 	    public void setGuid(OAObject obj, UUID guid) {
 	    	if (guid != null) {
 	    		if (obj.guid != null) throw new RuntimeException("OAObject guid can not be changed once it's been assigned.");
@@ -4036,54 +3874,140 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	    	obj.guid = guid;
 	    }
 
+	    /**
+	     * Returns the new-object flag.
+	     *
+	     * @param obj the object
+	     * @return {@code true} if the object is new
+	     */
 	    public boolean isNew(OAObject obj) {
 	        return obj.newFlag;
 	    }
+	    /**
+	     * Returns the raw new-object flag.
+	     *
+	     * @param obj the object
+	     * @return the new-object flag
+	     */
 	    public boolean getNewFlag(OAObject obj) {
 	        return obj.newFlag;
 	    }
 
+	    /**
+	     * Returns the raw deleted-object flag.
+	     *
+	     * @param obj the object
+	     * @return the deleted-object flag
+	     */
 	    public boolean getDeleteFlag(OAObject obj) {
 	        return obj.deletedFlag;
 	    }
+	    /**
+	     * Sets the raw deleted-object flag.
+	     *
+	     * @param obj the object
+	     * @param b the deleted flag value
+	     */
 	    public void setDeletedFlag(OAObject obj, boolean b) {
 	        obj.deletedFlag = b;
 	    }
 	    
+	    /**
+	     * Sets the raw new-object flag.
+	     *
+	     * @param obj the object
+	     * @param b the new flag value
+	     */
 	    public void setNew(OAObject obj, boolean b) {
 	        obj.newFlag = b;
 	    }
 
+	    /**
+	     * Returns the primitive-null tracking bytes.
+	     *
+	     * @param obj the object
+	     * @return primitive-null tracking bytes
+	     */
 	    public byte[] getNulls(OAObject obj) {
 	    	return obj.nulls;
 	    }
 
+	    /**
+	     * Sets the primitive-null tracking bytes.
+	     *
+	     * @param obj the object
+	     * @param bs primitive-null tracking bytes
+	     */
 	    public void setNulls(OAObject obj, byte[] bs) {
 	    	obj.nulls = bs;
 	    }
 
 
+		/**
+		 * Returns the raw changed-object flag.
+		 *
+		 * @param obj the object
+		 * @return the changed-object flag
+		 */
 		public boolean getChangedFlag(OAObject obj) {
 			return obj.changedFlag;
 		}
+		/**
+		 * Sets the raw changed-object flag.
+		 *
+		 * @param obj the object
+		 * @param b the changed flag value
+		 */
 		public void setChangedFlag(OAObject obj, boolean b) {
 			obj.changedFlag = b;;
 		}
 
+		/**
+		 * Returns the weak Hub references that currently include this object.
+		 *
+		 * @param obj the object
+		 * @return weak Hub references
+		 */
 		public WeakReference<Hub<?>>[] getWeakHubs(OAObject obj) {
 			return obj.weakhubs;
 		}
+		/**
+		 * Sets the weak Hub references for this object.
+		 *
+		 * @param obj the object
+		 * @param refs weak Hub references
+		 */
 		public void setWeakHubs(OAObject obj, WeakReference<Hub<?>>[] refs) {
 			obj.weakhubs = refs;
 		}
 		
+		/**
+		 * Returns the internal property storage array.
+		 *
+		 * @param obj the object
+		 * @return internal property values
+		 */
 		public Object[] getProperties(OAObject obj) {
 			return obj.properties;
 		}
+		/**
+		 * Sets the internal property storage array.
+		 *
+		 * @param obj the object
+		 * @param props internal property values
+		 */
 		public void setProperties(OAObject obj, Object[] props) {
 			obj.properties = props;
 		}
 
+		/**
+		 * Fires an object property-change event.
+		 *
+		 * @param oaObj the object
+		 * @param propertyName the property name
+		 * @param oldObj the previous value
+		 * @param newObj the new value
+		 */
 		public void firePropertyChange(OAObject oaObj, String propertyName, Object oldObj, Object newObj) {		
 			oaObj.firePropertyChange(propertyName, oldObj, newObj);
 		}
@@ -4094,6 +4018,11 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		return friendAccess;
 	}
 
+	/**
+	 * Returns the OA runtime that owns this object.
+	 *
+	 * @return the owning OA runtime
+	 */
 	public OA getOA() {
 		return OARuntime.oa(this);
 	}

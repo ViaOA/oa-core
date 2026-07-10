@@ -197,15 +197,15 @@ public abstract class OAChangeRefresher {
     /**
      * Registers a listener on the given hub for one or more property paths.
      * <p>
-     * If {@code propertyPaths} is null or empty, delegates to
+     * If {@code paths} is null or empty, delegates to
      * {@link #addListener(Hub, String)}.
      *
      * @param hub           the hub to observe
-     * @param propertyPaths property paths to listen for
+     * @param paths property paths to listen for
      */
-    public void addListener(Hub hub, String... propertyPaths) {
+    public void addListener(Hub hub, String... paths) {
         if (hub == null) return;
-        if (propertyPaths == null || propertyPaths.length == 0) {
+        if (paths == null || paths.length == 0) {
             addListener(hub, (String) null);
         }
         else {
@@ -218,7 +218,7 @@ public abstract class OAChangeRefresher {
                     }
                 }
             };
-            hub.addHubListener(hl, name, propertyPaths);
+            hub.addHubListener(hl, name, paths);
             MyListener ml = new MyListener(hub, hl);
             if (alMyListener == null) alMyListener = new ArrayList<MyListener>();
             alMyListener.add(ml);
@@ -232,24 +232,24 @@ public abstract class OAChangeRefresher {
      * property name. Otherwise, nested property-path logic is used.
      *
      * @param hub          the hub to monitor
-     * @param propertyPath the property path of interest
+     * @param path the property path of interest
      */
-    public void addListener(Hub hub, final String propertyPath) {
+    public void addListener(Hub hub, final String path) {
         if (hub == null) return;
         HubListener hl;
 
-        if (propertyPath != null && propertyPath.indexOf(".") < 0) {
+        if (path != null && path.indexOf(".") < 0) {
             hl = new HubListenerAdapter() {
                 @Override
                 public void afterPropertyChange(HubEvent e) {
-                    if (propertyPath.equalsIgnoreCase(e.getPropertyName())) {
+                    if (path.equalsIgnoreCase(e.getPropertyName())) {
                         refresh();
                     }
                 }
             };
-            hub.addHubListener(hl, propertyPath);
+            hub.addHubListener(hl, path);
         }
-        else if (OAString.isNotEmpty(propertyPath)) {
+        else if (OAString.isNotEmpty(path)) {
             final String name = "OAChangeRefresher" + aiName.getAndIncrement();
             hl = new HubListenerAdapter() {
                 @Override
@@ -259,7 +259,7 @@ public abstract class OAChangeRefresher {
                     }
                 }
             };
-            hub.addHubListener(hl, name, new String[] { propertyPath });
+            hub.addHubListener(hl, name, new String[] { path });
         }
         else {
             hl = new HubListenerAdapter() {

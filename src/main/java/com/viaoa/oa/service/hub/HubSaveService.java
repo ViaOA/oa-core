@@ -7,6 +7,10 @@ import com.viaoa.hub.*;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;
 
+/**
+ * Coordinates save operations for Hub contents.
+ */
+
 public abstract class HubSaveService {
 	private final Logger LOG = Logger.getLogger(HubSaveService.class.getName());
 
@@ -59,6 +63,13 @@ public abstract class HubSaveService {
      * @param iCascadeRule the cascade rule controlling persistence behavior
      * @param cascade      the cascade tracker preventing repeat processing
      */
+    /**
+     * Saves Hub contents or related OAObjects using this service.
+     *
+     * @param thisHub method input
+     * @param iCascadeRule method input
+     * @param cascade method input
+     */
     public void saveAll(Hub<?> thisHub, int iCascadeRule, OACascade cascade) {
         if (thisHub == null) return; //qq need to log this
         if (cascade.wasCascaded(thisHub, true)) return;
@@ -94,12 +105,58 @@ public abstract class HubSaveService {
     	callHubStatusSetReferenceable(thisHub, false);
     }
 
+	/**
+	 * Dependency hook used by this service for ObjectSaveSave behavior.
+	 *
+	 * @param oaObj method input
+	 * @param iCascadeRule method input
+	 * @param cascade method input
+	 */
+
 	public abstract void callObjectSaveSave(OAObject oaObj, int iCascadeRule, OACascade cascade);
+	/**
+	 * Dependency hook used by this service for ObjectInfoIsMany2Many behavior.
+	 *
+	 * @param thisLi method input
+	 * @return result value
+	 */
 	public abstract boolean callObjectInfoIsMany2Many(OALinkInfo thisLi);
+	/**
+	 * Dependency hook used by this service for ObjectSaveSaveObjectOnly behavior.
+	 *
+	 * @param oaObj method input
+	 * @param cascade method input
+	 */
 	public abstract void callObjectSaveSaveObjectOnly(OAObject oaObj, OACascade cascade);
+	/**
+	 * Dependency hook used by this service for HubDetailGetDataMaster behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract HubDataMaster callHubDetailGetDataMaster(final Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubDataGetAddedObjects behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T[] callHubDataGetAddedObjects(Hub<T> thisHub);
+	/**
+	 * Dependency hook used by this service for Hub_updateHubAddsAndRemoves behavior.
+	 *
+	 * @param thisHub method input
+	 * @param iCascadeRule method input
+	 * @param cascade method input
+	 * @param bIsSaving method input
+	 */
 	public abstract void callHub_updateHubAddsAndRemoves(final Hub<?> thisHub, final int iCascadeRule, final OACascade cascade, final boolean bIsSaving);
+	/**
+	 * Dependency hook used by this service for HubStatusSetReferenceable behavior.
+	 *
+	 * @param hub method input
+	 * @param bReferenceable method input
+	 */
 	public abstract void callHubStatusSetReferenceable(Hub<?> hub, boolean bReferenceable);
 }
 

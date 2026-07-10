@@ -64,7 +64,7 @@ import com.viaoa.runtime.OARuntime;
  * </ul>
  */
 public class SharedHub<TYPE extends OAObject> extends Hub<TYPE> {
-    
+
 	/**
 	 * Creates a SharedHub that mirrors the data and object references of the
 	 * supplied Hub. Active-object sharing is disabled by default, allowing

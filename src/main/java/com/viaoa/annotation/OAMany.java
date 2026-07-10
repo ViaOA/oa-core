@@ -37,12 +37,12 @@ import java.lang.annotation.Target;
  *   <li><b>Hub behavior</b>: seqProperty, cacheSize, sortProperty, sortAsc.</li>
  *   <li><b>Auto-matching</b>: matchHub, matchProperty, autoCreateProperty.</li>
  *   <li><b>Calculated Hubs</b>: isCalculated, isServerSideCalc, dependent properties.</li>
- *   <li><b>Merge logic</b>: mergerPropertyPath.</li>
+ *   <li><b>Merge logic</b>: mergerPath.</li>
  *   <li><b>Delete rules</b>: mustBeEmptyForDelete.</li>
  * </ul>
  *
  * <p>This annotation drives how OA creates detail Hubs, wiring, linking,
- * and merge/sync behavior across the object graph.</p>
+ * and merge/sync behavior across the OA model.</p>
  */
 @Documented
 @Target(ElementType.METHOD)
@@ -203,7 +203,7 @@ public @interface OAMany {
 	 * Defines the property path used by merge logic when combining or
 	 * reconciling objects within the MANY Hub.
 	 */
-	String mergerPropertyPath() default "";
+	String mergerPath() default "";
 
 	/**
 	 * Indicates that this MANY Hub may contain a large number of
@@ -227,12 +227,12 @@ public @interface OAMany {
 	 * Property path used to compare objects for equality when adding or
 	 * matching objects in this MANY Hub.
 	 */
-	String equalPropertyPath() default "";
+	String equalPath() default "";
 
 	/**
 	 * Property path to a Hub from which objects may be selected as
 	 * candidates for inclusion in this MANY Hub.
 	 */
-	String selectFromPropertyPath() default "";
+	String selectFromPath() default "";
 }
 

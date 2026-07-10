@@ -39,22 +39,22 @@ package com.viaoa.oa.service.object;
 
 /* CODEX Invariants
 
-OBJ-SERVICE-001 — Object Services Are Graph-Owned Internal Runtime Services
+OBJ-SERVICE-001 — Object Services Are OA-Owned Internal Runtime Services
 Contract statement: Object service classes are owned, created, wired, and coordinated by the owning OAObjectService/
 OA and must not act as independent application-level runtime authorities.
 Rationale: Object lifecycle, metadata, identity, cache, datasource, event, sync, and serialization behavior must
-remain graph-scoped and centrally coordinated.
-Source scope: OAObjectService parent coordinator; all classes in com.viaoa.graph.service.object; dependency hooks
-implemented by the owning graph service.
+remain OA-scoped and centrally coordinated.
+Source scope: OAObjectService parent coordinator; all classes in com.viaoa.oa.service.object; dependency hooks
+implemented by the owning OA service.
 Related CODEX findings: OAObjectParentService child sync hook and parent-role-guard findings.
 Suggested unit tests: testObjectSubServicesAreCreatedByParentService(),
-testChildServiceDoesNotBypassParentRoleGuards(), testObjectServiceUsesOwningGraphForRuntimeHooks()
-Spec target section: OG Object Runtime / Service Ownership
+testChildServiceDoesNotBypassParentRoleGuards(), testObjectServiceUsesOwningOAForRuntimeHooks()
+Spec target section: OA Object Runtime / Service Ownership
 
 OBJ-ROLE-001 — Single-User, Server, And Client Roles Are Distinct
 Contract statement: Object services must distinguish single-user, server, client, and unconfigured sync roles; local
 object work must not require remote sync services, and remote/client operations must require the correct role.
-Rationale: Save, delete, cache refresh, serialization, and sync hooks behave differently by graph role and must not
+Rationale: Save, delete, cache refresh, serialization, and sync hooks behave differently by OA runtime role and must not
 silently take the wrong path.
 Source scope: OAObjectCSService, OAObjectSaveService, OAObjectDeleteService, OAObjectParentService,
 OAObjectSerializeService, OAObjectCacheService.
@@ -62,7 +62,7 @@ Related CODEX findings: Local save requiring RemoteSyncInterface; remote delete 
 requiring parent role guards.
 Suggested unit tests: testSingleUserSaveDoesNotRequireRemoteSync(), testClientRemoteDeleteFalseIsVisible(),
 testChildSyncHooksRespectSingleUserServerClientRoles()
-Spec target section: OG Object Runtime / Role Semantics
+Spec target section: OA Object Runtime / Role Semantics
 
 OBJ-METADATA-001 — Annotation Metadata Must Be Valid Before Publication
 Contract statement: Annotation-derived object metadata must be complete, validated, and internally consistent before
@@ -76,12 +76,12 @@ metadata processing; calc property metadata findings.
 Suggested unit tests: testAnnotationMetadataRejectsDuplicateIdPositions(),
 testInvalidForeignKeyMappingFailsBeforePublish(), testClassCallbacksProcessedIndependentlyOfOAClass(),
 testHubReturningMethodRequiresValidManyMetadata()
-Spec target section: OG Object Runtime / Metadata Semantics
+Spec target section: OA Object Runtime / Metadata Semantics
 
-OBJ-ID-001 — Live Objects Have Stable Graph Identity After Initialization
-Contract statement: After successful initialization, each live OAObject must have stable graph identity, including
+OBJ-ID-001 — Live Objects Have Stable OA Identity After Initialization
+Contract statement: After successful initialization, each live OAObject must have stable OA model identity, including
 GUID/key identity according to metadata and runtime role.
-Rationale: Cache lookup, equality, Hub membership, serialization, sync, replication, and object graph traversal
+Rationale: Cache lookup, equality, Hub membership, serialization, sync, replication, and OA model traversal
 depend on stable identity.
 Source scope: OAObjectInitializeService, OAObjectGuidService, OAObjectKeyService, OAObjectCacheService,
 OAObjectDSService.
@@ -89,7 +89,7 @@ Related CODEX findings: Initialization cache publication before authoritative ID
 metadata processing findings.
 Suggested unit tests: testInitializedObjectHasStableGuid(), testInitializationFailureDoesNotPublishCachedIdentity(),
 testGuidAndIdIdentityRemainConsistentAfterCreate()
-Spec target section: OG Object Runtime / Identity Semantics
+Spec target section: OA Object Runtime / Identity Semantics
 
 OBJ-KEY-001 — Object Key Comparison Is Deterministic Across Key Forms
 Contract statement: Object identity comparison and cache resolution must be deterministic across GUID-only, ID-only,
@@ -100,11 +100,11 @@ Source scope: OAObjectKeyService, OAObjectGuidService, OAObjectCacheService, OAO
 Related CODEX findings: Package-info identity test outline for GUID-only, ID-only, mixed GUID/id keys.
 Suggested unit tests: testGuidOnlyAndIdOnlyKeyComparisonByContract(),
 testMixedGuidAndIdKeysResolveDeterministically(), testDuplicateCacheAddDoesNotCreateSecondAuthoritativeObject()
-Spec target section: OG Object Runtime / Key Semantics
+Spec target section: OA Object Runtime / Key Semantics
 
 OBJ-CACHE-001 — Cache Add And Resolve Preserve One Authoritative Instance
 Contract statement: Object cache add, resolve, refresh, and deserialize operations must not create duplicate
-authoritative objects for the same graph/class/key identity.
+authoritative objects for the same OA/class/key identity.
 Rationale: Duplicate live instances corrupt links, Hubs, object equality, save/delete, sync, and serialization
 behavior.
 Source scope: OAObjectCacheService, OAObjectKeyService, OAObjectInitializeService, OAObjectSerializeService,
@@ -113,7 +113,7 @@ Related CODEX findings: Cache publication before initialization success; cache r
 authoritative object concerns.
 Suggested unit tests: testCacheResolveReturnsSingleAuthoritativeInstance(), testFailedInitializeRollsBackCacheAdd(),
 testDeserializeDuplicateMergesWithCachedInstance()
-Spec target section: OG Object Runtime / Cache Semantics
+Spec target section: OA Object Runtime / Cache Semantics
 
 OBJ-CACHE-002 — Cache Indexes Must Track Key And Lifecycle Changes
 Contract statement: Cache indexes and object-reference indexes must be updated consistently when keys, GUIDs, delete
@@ -125,7 +125,7 @@ OAObjectPropertyService.
 Related CODEX findings: Delete cleanup removes object and key references; key/reference cleanup test outline.
 Suggested unit tests: testKeyChangeUpdatesCacheIndexes(), testDeleteCleanupRemovesObjectAndKeyReferences(),
 testRejectedKeyChangeLeavesCacheIndexesUnchanged()
-Spec target section: OG Object Runtime / Cache Index Semantics
+Spec target section: OA Object Runtime / Cache Index Semantics
 
 OBJ-INIT-001 — Initialization Publishes Runtime State Only After Required Setup Completes
 Contract statement: Object initialization may publish cache, GUID, primitive-null, datasource, or sync-visible state
@@ -137,7 +137,7 @@ OAObjectDSService.
 Related CODEX findings: Cache add before assignId/create failure; primitive-null initialization test outline.
 Suggested unit tests: testInitializeAddsToCacheOnlyAfterAuthoritativeSetup(),
 testFailedAssignIdDoesNotLeaveCachedObject(), testPrimitiveNullStateExistsBeforePrimitiveMutation()
-Spec target section: OG Object Runtime / Initialization Semantics
+Spec target section: OA Object Runtime / Initialization Semantics
 
 OBJ-LOAD-001 — Load And Refresh Must Preserve Unloaded/Loaded/Failed Distinctions
 Contract statement: Object load, refresh, and datasource materialization must distinguish unloaded, loading, loaded,
@@ -150,7 +150,7 @@ Related CODEX findings: Package-info cache refresh and role matrix test outline.
 Suggested unit tests: testFailedRefreshDoesNotMarkObjectLoaded(),
 testDatasourceRefreshKeepsRetryableStateAfterFailure(),
 testLoadedAbsentStateOnlyAfterAuthoritativeDatasourceResult()
-Spec target section: OG Object Runtime / Load Semantics
+Spec target section: OA Object Runtime / Load Semantics
 
 OBJ-LAZY-001 — Lazy References Must Not Collapse Unresolved State To Null
 Contract statement: Unresolved object references, id-only references, and lazy references must remain
@@ -162,51 +162,51 @@ OAObjectSerializeService.
 Related CODEX findings: Package-info identity and serialization test outline for id-only and deserialization forms.
 Suggested unit tests: testUnresolvedIdReferenceDoesNotBecomeNullOnCacheMiss(),
 testLazyReferenceCanResolveAfterInitialCacheMiss(), testSerializeIdOnlyReferencePreservesResolutionIntent()
-Spec target section: OG Object Runtime / Lazy Reference Semantics
+Spec target section: OA Object Runtime / Lazy Reference Semantics
 
 OBJ-PROPERTY-001 — Property Mutation Publishes Only Completed Semantic Changes
 Contract statement: Object property changes must update primitive-null masks, old/new values, changed state, reverse
 links, events, triggers, and sync hooks only according to completed mutation state.
 Rationale: Property mutation is the root of object lifecycle, validation, event, trigger, and sync behavior.
-Source scope: OAObjectPropertyService, OAObjectChangeService, OAObjectEventService, OAObjectCallbackService,
+Source scope: OAObjectPropertyService, OAObjectChangeService, OAObjectEventService, OAObjectRulesService,
 OAObjectParentService.
 Related CODEX findings: Primitive-null mask invariant outline; reverse-link failure findings.
 Suggested unit tests: testPrimitiveNullMaskUpdatedBeforePrimitiveNullMutation(),
 testFailedPropertyMutationDoesNotPublishAfterEvent(), testPropertyChangedStateMatchesCompletedMutation()
-Spec target section: OG Object Runtime / Property Mutation Semantics
+Spec target section: OA Object Runtime / Property Mutation Semantics
 
 OBJ-LINK-001 — Bidirectional Relationship Maintenance Must Complete Or Fail Visibly
-Contract statement: Link property transitions must update forward and reverse graph state according to metadata
+Contract statement: Link property transitions must update forward and reverse OA model state according to metadata
 before publishing after-events or completed mutation state; inverse-link failure must be visible.
-Rationale: Broken bidirectional links corrupt object graph traversal, Hub/detail relationships, cascade save/delete,
+Rationale: Broken bidirectional links corrupt OA model traversal, Hub/detail relationships, cascade save/delete,
 sync, and serialization.
 Source scope: OAObjectEventService, OAObjectPropertyService, OAObjectReflectService, OAObjectParentService.
 Related CODEX findings: Reverse Hub getter invalid/non-Hub; reverse update throws; silent inverse-link failure.
 Suggested unit tests: testLinkSetterUpdatesReverseHubBeforeAfterEvent(), testReverseLinkFailureIsVisible(),
 testFailedReverseLinkUpdateDoesNotPublishCompletedMutation()
-Spec target section: OG Object Runtime / Link Semantics
+Spec target section: OA Object Runtime / Link Semantics
 
 OBJ-HUB-001 — Object/Hub Relationship Discovery Must Match Metadata
 Contract statement: Object services that discover or expose Hubs, empty Hubs, auto-add Hubs, or parent/detail Hubs
 must follow OA metadata ownership, cardinality, and link semantics.
-Rationale: Object graph traversal, detail Hubs, cascade operations, auto-add behavior, and serialization depend on
+Rationale: Object OA model traversal, detail Hubs, cascade operations, auto-add behavior, and serialization depend on
 metadata-correct Hub relationships.
 Source scope: OAObjectHubService, OAObjectEmptyHubService, OAObjectAutoAddService, OAObjectReflectService,
 OAObjectInfoService, OAObjectAnnotationService.
 Related CODEX findings: Hub-returning methods creating link metadata before OAMany validation.
 Suggested unit tests: testObjectHubDiscoveryUsesDeclaredMetadata(), testEmptyHubCreationUsesCorrectLinkInfo(),
 testAutoAddHonorsOwnershipAndCardinality()
-Spec target section: OG Object Runtime / Object-Hub Relationship Semantics
+Spec target section: OA Object Runtime / Object-Hub Relationship Semantics
 
-OBJ-SAVE-001 — Save Uses The Authoritative Persistence Path For The Graph Role
+OBJ-SAVE-001 — Save Uses The Authoritative Persistence Path For The OA Role
 Contract statement: Object save must route through the datasource, client/server authority, or local persistence
-path required by the owning graph role and object class metadata.
+path required by the owning OA runtime role and object class metadata.
 Rationale: Single-user, server, and client modes must persist object state consistently and visibly.
 Source scope: OAObjectSaveService, OAObjectDSService, OAObjectCSService, OAObjectParentService.
 Related CODEX findings: Local save must not require RemoteSyncInterface; role matrix save tests.
 Suggested unit tests: testSingleUserSaveUsesLocalDatasource(), testClientSaveUsesRemoteAuthorityByContract(),
 testServerSaveUsesServerDatasourcePath()
-Spec target section: OG Object Runtime / Save Routing Semantics
+Spec target section: OA Object Runtime / Save Routing Semantics
 
 OBJ-SAVE-002 — Failed Save Preserves Retryable Lifecycle State
 Contract statement: A failed save must preserve or restore new, changed, deleted, cascade, and reference state
@@ -217,23 +217,23 @@ Related CODEX findings: saveWithoutReferences clears new state; failed datasourc
 shared OACascade state after failure.
 Suggested unit tests: testFailedSaveWithoutReferencesPreservesNewState(),
 testFailedDatasourceSavePreservesDirtyLifecycleFlags(), testFailedSaveLeavesCascadeRetryable()
-Spec target section: OG Object Runtime / Save Failure Semantics
+Spec target section: OA Object Runtime / Save Failure Semantics
 
 OBJ-SAVE-003 — Save Completion Side Effects Require Authoritative Save Completion
 Contract statement: After-save callbacks/events, sync messages, replication hooks, cascade continuation, and
 lifecycle cleanup must occur only after the authoritative save stage they represent has completed.
 Rationale: After-save side effects are observed by UI, triggers, sync, replication, and downstream cascade behavior
 as completed facts.
-Source scope: OAObjectSaveService, OAObjectEventService, OAObjectCallbackService, OAObjectParentService.
+Source scope: OAObjectSaveService, OAObjectEventService, OAObjectRulesService, OAObjectParentService.
 Related CODEX findings: Failed callDSSave still allowing after-save/cascade continuation.
 Suggested unit tests: testAfterSaveNotFiredWhenDatasourceSaveFails(),
 testFailedSaveDoesNotContinueCascadeAsSuccess(), testSaveSyncMessageOnlyAfterAuthoritativeSave()
-Spec target section: OG Object Runtime / Save Side-Effect Semantics
+Spec target section: OA Object Runtime / Save Side-Effect Semantics
 
 OBJ-DELETE-001 — Delete Coordinates Lifecycle, Datasource, Links, Cache, And Events
 Contract statement: Object delete must coordinate lifecycle flags, datasource/client-server delete, relationship
-cleanup, cache/key references, events, sync, and replication according to graph role.
-Rationale: Delete is a graph mutation, not only a flag change; partial delete state can leave orphaned children,
+cleanup, cache/key references, events, sync, and replication according to OA runtime role.
+Rationale: Delete is an OA model mutation, not only a flag change; partial delete state can leave orphaned children,
 stale cache entries, or divergent runtime state.
 Source scope: OAObjectDeleteService, OAObjectDSService, OAObjectCSService, OAObjectCacheService,
 OAObjectEventService, OAObjectParentService.
@@ -241,62 +241,62 @@ Related CODEX findings: Child deletes succeed then parent datasource delete thro
 delete cleanup reference test outline.
 Suggested unit tests: testDeleteRemovesCacheAndKeyReferencesAfterAuthorityCompletes(),
 testClientRemoteDeleteFalseDoesNotMarkDeleted(), testDeleteCoordinatesRelationshipCleanup()
-Spec target section: OG Object Runtime / Delete Semantics
+Spec target section: OA Object Runtime / Delete Semantics
 
 OBJ-DELETE-002 — Failed Delete Must Not Publish Completed Delete State
 Contract statement: A failed delete or undelete operation must not publish completed deleted state, clear retry
 state, emit completed after-events, or leave contradictory lifecycle flags.
-Rationale: False delete success corrupts object graph consistency and can make retry/reconciliation impossible.
+Rationale: False delete success corrupts OA model consistency and can make retry/reconciliation impossible.
 Source scope: OAObjectDeleteService, OAObjectEventService, OAObjectChangeService, OAObjectCacheService.
 Related CODEX findings: Cascade delete partial failure; setDeleted(false) conflicting key path; remote delete false
 result.
 Suggested unit tests: testFailedParentDatasourceDeleteDoesNotSilentlyLoseChildren(),
 testFailedUndeletePreservesDeletedState(), testDeleteFailureDoesNotEmitCompletedAfterEvent()
-Spec target section: OG Object Runtime / Delete Failure Semantics
+Spec target section: OA Object Runtime / Delete Failure Semantics
 
 OBJ-CASCADE-001 — Recursive Save/Delete Traversal Follows Metadata And Remains Bounded
 Contract statement: Recursive save/delete traversal must follow OA metadata ownership, cascade, link, and Hub
 semantics while preventing infinite recursion and duplicate invalid processing.
-Rationale: Object graph persistence must process required reachable objects without corrupting cycles, shared
+Rationale: OA model persistence must process required reachable objects without corrupting cycles, shared
 references, or ownership boundaries.
 Source scope: OAObjectSaveService, OAObjectDeleteService, OAObjectRecurseService, OAObjectReflectService,
 OAObjectInfoService.
 Related CODEX findings: Partial recursive save/delete and cascade state findings.
 Suggested unit tests: testRecursiveSaveFollowsCascadeMetadata(), testRecursiveDeleteHandlesCyclesWithoutLooping(),
 testSharedReferenceProcessedAccordingToCascadeContract()
-Spec target section: OG Object Runtime / Cascade Traversal Semantics
+Spec target section: OA Object Runtime / Cascade Traversal Semantics
 
 OBJ-CASCADE-002 — Partial Cascade Progress Must Be Visible And Retryable
 Contract statement: If recursive save/delete/cascade work partially succeeds and then fails, the failure must be
-caller-visible and remaining graph state must be recoverable or explicitly marked incomplete.
-Rationale: Cascades can cross many objects; silent partial success creates graph divergence and data loss.
+caller-visible and remaining OA model state must be recoverable or explicitly marked incomplete.
+Rationale: Cascades can cross many objects; silent partial success creates OA model divergence and data loss.
 Source scope: OAObjectSaveService, OAObjectDeleteService, OAObjectRecurseService, OACascade integration.
 Related CODEX findings: Parent delete failure after child deletes; failed recursive save shared cascade mutation.
 Suggested unit tests: testCascadeDeleteFailureReportsIncompleteState(),
 testCascadeSaveFailureDoesNotClearUnprocessedObjects(), testCascadeRetryAfterFailureDoesNotSkipRequiredObjects()
-Spec target section: OG Object Runtime / Cascade Failure Semantics
+Spec target section: OA Object Runtime / Cascade Failure Semantics
 
 OBJ-EVENT-001 — Object Events Represent Completed Observable State
 Contract statement: Object after-events, property-change events, callback notifications, and trigger-facing events
 must be published only after the observable object state they describe is valid.
 Rationale: UI, listeners, triggers, sync, validation, and replication treat events as semantic runtime facts.
-Source scope: OAObjectEventService, OAObjectCallbackService, OAObjectSaveService, OAObjectDeleteService,
+Source scope: OAObjectEventService, OAObjectRulesService, OAObjectSaveService, OAObjectDeleteService,
 OAObjectPropertyService.
 Related CODEX findings: Reverse-link failure before after-event; after-save on failed datasource save.
 Suggested unit tests: testPropertyAfterEventSeesCompletedState(), testFailedSaveDoesNotFireAfterSaveEvent(),
 testFailedReverseLinkUpdateDoesNotFireCompletedPropertyEvent()
-Spec target section: OG Object Runtime / Event Semantics
+Spec target section: OA Object Runtime / Event Semantics
 
 OBJ-CALLBACK-001 — Object Callbacks Participate At The Correct Lifecycle Stage
 Contract statement: Before callbacks may fail-fast/cancel according to contract; after/observer callbacks must run
 only for completed stages and must not silently hide failures that affect object correctness.
 Rationale: Object callbacks implement validation, lifecycle policy, UI feedback, and runtime extension behavior.
-Source scope: OAObjectCallbackService, OAObjectAnnotationService, OAObjectSaveService, OAObjectDeleteService,
+Source scope: OAObjectRulesService, OAObjectAnnotationService, OAObjectSaveService, OAObjectDeleteService,
 OAObjectEventService.
 Related CODEX findings: Class-level OAObjCallback metadata processing; save/delete listener failure paths.
 Suggested unit tests: testBeforeSaveCallbackCanCancelSave(), testAfterCallbackOnlyRunsForCompletedOperation(),
 testCallbackFailureIsVisibleWhenItAffectsMutation()
-Spec target section: OG Object Runtime / Callback Semantics
+Spec target section: OA Object Runtime / Callback Semantics
 
 OBJ-SYNC-001 — Object Sync Hooks Require The Correct Runtime Authority
 Contract statement: Object sync hooks must be invoked only when the required sync service and role exist; absent or
@@ -309,40 +309,40 @@ Related CODEX findings: OBJ-SYNC package-info invariant; local save requiring Re
 false result; child sync hook role guard.
 Suggested unit tests: testObjectSyncHookNoOpsInSingleUserWhenExpected(), testClientSyncHookRequiresClientRole(),
 testRemoteObjectDeleteFalseIsVisible()
-Spec target section: OG Object Runtime / Sync Hook Semantics
+Spec target section: OA Object Runtime / Sync Hook Semantics
 
 OBJ-SERIALIZE-001 — Deserialization Resolves To The Authoritative Cached Instance
-Contract statement: Deserialization must resolve graph/class/key identity to the authoritative cached instance when
-one exists, or create/register a new instance only according to graph identity rules.
-Rationale: Serialization round trips must not duplicate live objects or drift from graph cache identity.
+Contract statement: Deserialization must resolve OA/class/key identity to the authoritative cached instance when
+one exists, or create/register a new instance only according to OA model identity rules.
+Rationale: Serialization round trips must not duplicate live objects or drift from OA cache identity.
 Source scope: OAObjectSerializeService, OAObjectCacheService, OAObjectKeyService, OAObjectGuidService.
 Related CODEX findings: Package-info serialization tests for normal stream and remote stream behavior; duplicate
 deserialize merge.
 Suggested unit tests: testDeserializeUsesExistingCachedInstance(),
-testDeserializeNewObjectRegistersSingleAuthoritativeIdentity(), testRemoteStreamDeserializePreservesGraphIdentity()
-Spec target section: OG Object Runtime / Serialization Identity
+testDeserializeNewObjectRegistersSingleAuthoritativeIdentity(), testRemoteStreamDeserializePreservesOAIdentity()
+Spec target section: OA Object Runtime / Serialization Identity
 
 OBJ-SERIALIZE-002 — Serialization Preserves Load, Reference, And Sync Semantics
 Contract statement: Object serialization must preserve reference identity, id-only state, loaded/unloaded
 distinctions, and sync/client-server behavior according to stream context.
-Rationale: Serialized object graphs are used by remote, sync, persistence, cache, and tooling flows.
+Rationale: Serialized OA models are used by remote, sync, persistence, cache, and tooling flows.
 Source scope: OAObjectSerializeService, OAObjectReflectService, OAObjectPropertyService, OAObjectCSService.
 Related CODEX findings: Package-info serialization tests for normal/remote stream behavior with no sync client, sync
 client, and sync server.
 Suggested unit tests: testSerializeIdOnlyReferencePreservesReferenceIdentity(),
 testSerializationPreservesLoadedStateByContract(), testRemoteSerializationUsesSyncRoleByContract()
-Spec target section: OG Object Runtime / Serialization State Semantics
+Spec target section: OA Object Runtime / Serialization State Semantics
 
 OBJ-FIND-001 — Object Find And Traversal Follow Metadata And Runtime State
 Contract statement: Object find, recurse, sibling, and reflection traversal must follow OA metadata, Hub/link
 ownership, loaded/reference state, and cycle-prevention semantics.
-Rationale: Runtime graph traversal drives save/delete, find, validation, serialization, cascade, and tooling
+Rationale: OA model traversal drives save/delete, find, validation, serialization, cascade, and tooling
 behavior.
 Source scope: OAObjectFindService, OAObjectRecurseService, OAObjectSiblingService, OAObjectReflectService.
-Related CODEX findings: Package focus on recursive traversal, cascade behavior, and graph consistency.
+Related CODEX findings: Package focus on recursive traversal, cascade behavior, and OA model consistency.
 Suggested unit tests: testObjectFindFollowsMetadataLinks(),
-testRecursePreventsCyclesWithoutSkippingReachableObjects(), testSiblingTraversalUsesExpectedGraphScope()
-Spec target section: OG Object Runtime / Traversal Semantics
+testRecursePreventsCyclesWithoutSkippingReachableObjects(), testSiblingTraversalUsesExpectedOAScope()
+Spec target section: OA Object Runtime / Traversal Semantics
 
 OBJ-IMPORT-001 — Import/Match Resolves Existing Objects Deterministically
 Contract statement: Import and match-key behavior must resolve existing objects deterministically using configured
@@ -352,17 +352,17 @@ Source scope: OAObjectImportMatchService, OAObjectUniqueService, OAObjectKeyServ
 Related CODEX findings: Package-info object identity and cache duplicate concerns.
 Suggested unit tests: testImportMatchFindsExistingObjectByConfiguredKey(),
 testImportMatchDoesNotCreateDuplicateWhenCacheHasObject(), testImportMatchAmbiguityFailsVisibly()
-Spec target section: OG Object Runtime / Import Match Semantics
+Spec target section: OA Object Runtime / Import Match Semantics
 
-OBJ-UNIQUE-001 — Unique Object Constraints Must Be Deterministic And Graph-Scoped
-Contract statement: Unique-object lookups and constraints must use graph-scoped metadata, cache, and datasource
+OBJ-UNIQUE-001 — Unique Object Constraints Must Be Deterministic And OA-Scoped
+Contract statement: Unique-object lookups and constraints must use OA-scoped metadata, cache, and datasource
 rules and must not return a semantically wrong object.
 Rationale: Unique constraints often drive object lookup, duplicate prevention, and import behavior.
 Source scope: OAObjectUniqueService, OAObjectCacheService, OAObjectDSService, OAObjectInfoService.
 Related CODEX findings: Identity/cache duplicate concerns.
-Suggested unit tests: testUniqueLookupUsesOwningGraph(), testUniqueLookupRejectsAmbiguousMatch(),
+Suggested unit tests: testUniqueLookupUsesOwningOA(), testUniqueLookupRejectsAmbiguousMatch(),
 testUniqueCacheAndDatasourceResultsAreConsistent()
-Spec target section: OG Object Runtime / Unique Object Semantics
+Spec target section: OA Object Runtime / Unique Object Semantics
 
 OBJ-LOCK-001 — Object Locking Must Release State On All Completion Paths
 Contract statement: Object locks must be acquired, observed, and released according to contract on success, failure,
@@ -372,17 +372,17 @@ Source scope: OALock, OAObjectLockService.
 Related CODEX findings: none observed.
 Suggested unit tests: testObjectLockReleasedAfterException(), testObjectLockTimeoutDoesNotLeaveStaleLock(),
 testReentrantLockBehaviorMatchesContract()
-Spec target section: OG Object Runtime / Lock Semantics
+Spec target section: OA Object Runtime / Lock Semantics
 
 OBJ-SCHEDULE-001 — Scheduled Object Work Must Preserve Object Runtime Semantics
-Contract statement: Object-scheduled work must execute against the intended graph/object state and must not silently
-run after cancellation, shutdown, delete, or graph ownership changes unless explicitly contracted.
+Contract statement: Object-scheduled work must execute against the intended OA runtime/object state and must not silently
+run after cancellation, shutdown, delete, or OA ownership changes unless explicitly contracted.
 Rationale: Background object work can otherwise mutate stale or deleted objects and publish wrong events.
 Source scope: OAObjectSchedulerService, OAObjectLockService, OAObjectEventService.
 Related CODEX findings: none observed.
-Suggested unit tests: testScheduledObjectWorkUsesOwningGraph(), testCancelledObjectWorkDoesNotMutateObject(),
+Suggested unit tests: testScheduledObjectWorkUsesOwningOA(), testCancelledObjectWorkDoesNotMutateObject(),
 testScheduledWorkAfterDeleteUsesDocumentedBehavior()
-Spec target section: OG Object Runtime / Scheduled Work Semantics
+Spec target section: OA Object Runtime / Scheduled Work Semantics
 
 OBJ-ENUM-001 — Enum And Calculated Metadata Behavior Must Be Deterministic
 Contract statement: Enum, calculated, and metadata-derived property behavior must resolve consistently from object
@@ -393,19 +393,19 @@ Source scope: OAObjectEnumService, OAObjectAnnotationService, OAObjectInfoServic
 Related CODEX findings: Calculated property metadata and annotation processing findings.
 Suggested unit tests: testEnumMetadataResolutionIsDeterministic(),
 testCalculatedPropertyMetadataIncludesDependencies(), testInvalidCalculatedMetadataFailsBeforePublish()
-Spec target section: OG Object Runtime / Metadata-Derived Property Semantics
+Spec target section: OA Object Runtime / Metadata-Derived Property Semantics
 
 OBJ-FAILURE-001 — Object Operations Must Not Publish False Success
 Contract statement: Object services must not mark lifecycle state complete, update cache authority, fire completed
 events, emit sync/replication hooks, or continue dependent cascade work when an authoritative operation failed.
-Rationale: False success creates silent data loss, stale cache state, broken retry, and graph divergence.
+Rationale: False success creates silent data loss, stale cache state, broken retry, and OA model divergence.
 Source scope: OAObjectSaveService, OAObjectDeleteService, OAObjectInitializeService, OAObjectEventService,
 OAObjectCacheService, OAObjectCSService.
 Related CODEX findings: Failed save clears flags/fires events; failed initialize cache publication; remote delete
 false; cascade delete partial failure.
 Suggested unit tests: testFailedSaveDoesNotClearLifecycleOrFireAfterEvent(),
 testFailedInitializeDoesNotPublishCacheSuccess(), testRemoteDeleteFalseDoesNotPublishDeleteSuccess()
-Spec target section: OG Object Runtime / Failure Semantics
+Spec target section: OA Object Runtime / Failure Semantics
 
 OBJ-FAILURE-002 — Partial Progress Must Be Caller-Visible And Recoverable
 Contract statement: Object operations may make partial progress only when caller-visible failure or observable
@@ -419,13 +419,13 @@ Related CODEX findings: Partial recursive save/delete, failed datasource save/de
 initialize.
 Suggested unit tests: testPartialSaveFailureIsVisibleAndRetryable(),
 testPartialDeleteFailureIsVisibleAndRecoverable(), testFailedDatasourceOperationPreservesRetryState()
-Spec target section: OG Object Runtime / Partial Progress Semantics
+Spec target section: OA Object Runtime / Partial Progress Semantics
 
 OBJ-TRANSACTION-001 — Transaction Participation Must Respect Object Lifecycle Stages
 Contract statement: When object operations participate in transactions, lifecycle, callbacks, events, datasource
 work, and cleanup must align with the current transaction stage and must not publish committed semantics before
 commit authority.
-Rationale: Transactional object work must not expose committed object graph state during active, failed, or rollback
+Rationale: Transactional object work must not expose committed OA model state during active, failed, or rollback
 stages.
 Source scope: OAObjectSaveService, OAObjectDeleteService, OAObjectEventService, OAObjectChangeService, OALock
 integration.
@@ -433,7 +433,7 @@ Related CODEX findings: Package focus on transaction participation semantics; no
 observed.
 Suggested unit tests: testObjectSaveDefersCommittedSemanticsUntilTransactionCommit(),
 testRollbackPreservesObjectLifecycleStateByContract(), testTransactionFailureDoesNotFireCompletedObjectEvents()
-Spec target section: OG Object Runtime / Transaction Semantics
+Spec target section: OA Object Runtime / Transaction Semantics
 
 OBJ-TL-001 — Runtime ThreadLocal State Must Be Restored
 Contract statement: Object services that set runtime ThreadLocal/context flags for loading, saving, deleting, sync
@@ -446,18 +446,18 @@ Related CODEX findings: Child sync hook role/ThreadLocal risk; package focus on 
 assumptions.
 Suggested unit tests: testSaveRestoresThreadLocalFlagsAfterException(),
 testDeleteRestoresSyncSuppressionAfterFailure(), testSerializationRestoresRuntimeContextAfterException()
-Spec target section: OG Object Runtime / ThreadLocal Semantics
+Spec target section: OA Object Runtime / ThreadLocal Semantics
 
-OBJ-DETERMINISM-001 — Observable Object Mutations Must Be Deterministic For The Same Graph State
-Contract statement: For the same graph state, metadata, role, datasource result, and callback outcome, object
+OBJ-DETERMINISM-001 — Observable Object Mutations Must Be Deterministic For The Same OA State
+Contract statement: For the same OA model state, metadata, role, datasource result, and callback outcome, object
 services must produce the same lifecycle state, cache state, events, sync hooks, and relationship mutations.
 Rationale: Deterministic runtime behavior is required for testing, debugging, sync/replication, UI binding, and
 generated application semantics.
-Source scope: All com.viaoa.graph.service.object services.
+Source scope: All com.viaoa.oa.service.object services.
 Related CODEX findings: Package-wide lifecycle, identity, save/delete, metadata, and event findings.
 Suggested unit tests: testSameSaveScenarioProducesSameLifecycleAndEvents(),
 testSameDeleteScenarioProducesSameCacheAndEventState(), testSameMetadataInputProducesSameObjectInfo()
-Spec target section: OG Object Runtime / Deterministic Mutation Semantics
+Spec target section: OA Object Runtime / Deterministic Mutation Semantics
 
 */
 

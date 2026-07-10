@@ -64,7 +64,7 @@ import com.viaoa.object.OAObject;
  * </ul>
  */
 public class MergedHub<TYPE extends OAObject> extends Hub<TYPE> {
-    
+
 	/**
 	 * The HubMerger instance that populates and maintains this MergedHub.
 	 * Responsible for traversing the master-root Hub and flattening the
@@ -79,11 +79,11 @@ public class MergedHub<TYPE extends OAObject> extends Hub<TYPE> {
      *
      * @param clazz         the object type stored in this Hub
      * @param hubMasterRoot the root Hub from which property-path traversal begins
-     * @param propertyPath  the property path used to collect merged objects
+     * @param path  the property path used to collect merged objects
      */
-    public MergedHub(Class<TYPE> clazz, Hub hubMasterRoot, String propertyPath) {
+    public MergedHub(Class<TYPE> clazz, Hub hubMasterRoot, String path) {
         super(clazz);
-        this.hm = new HubMerger(hubMasterRoot, this, propertyPath, false, null, true); 
+        this.hm = new HubMerger(hubMasterRoot, this, path, false, null, true);
     }
 
     /**
@@ -92,14 +92,14 @@ public class MergedHub<TYPE extends OAObject> extends Hub<TYPE> {
      *
      * @param clazz         the object type stored in this Hub
      * @param hubMasterRoot the root Hub from which traversal begins
-     * @param propertyPath  the merge property path
+     * @param path  the merge property path
      * @param bUseAll       true to use all root objects, false for only the active one
      */
-    public MergedHub(Class<TYPE> clazz, Hub hubMasterRoot, String propertyPath, boolean bUseAll) {
+    public MergedHub(Class<TYPE> clazz, Hub hubMasterRoot, String path, boolean bUseAll) {
         super(clazz);
-        this.hm = new HubMerger(hubMasterRoot, this, propertyPath, false, null, bUseAll); 
+        this.hm = new HubMerger(hubMasterRoot, this, path, false, null, bUseAll);
     }
-    
+
     /**
      * Full constructor allowing advanced HubMerger configuration, including
      * shared-active-object mode and initial sort order applied to the merged
@@ -107,14 +107,14 @@ public class MergedHub<TYPE extends OAObject> extends Hub<TYPE> {
      *
      * @param clazz              the object type stored in this Hub
      * @param hubMasterRoot      the root Hub for property-path merging
-     * @param propertyPath       the path defining which objects to merge
+     * @param path       the path defining which objects to merge
      * @param bShareActiveObject true to share active-object state with master Hub
      * @param selectOrder        optional sort order for the HubMerger
      * @param bUseAll            true to merge from all roots, false for only the active one
      */
-    public MergedHub(Class<TYPE> clazz, Hub hubMasterRoot, String propertyPath, boolean bShareActiveObject, String selectOrder, boolean bUseAll) {
+    public MergedHub(Class<TYPE> clazz, Hub hubMasterRoot, String path, boolean bShareActiveObject, String selectOrder, boolean bUseAll) {
     	super(clazz);
-    	this.hm = new HubMerger(hubMasterRoot, this, propertyPath, bShareActiveObject, selectOrder, bUseAll); 
+		this.hm = new HubMerger(hubMasterRoot, this, path, bShareActiveObject, selectOrder, bUseAll);
     }
 
     /**
@@ -134,16 +134,16 @@ public class MergedHub<TYPE extends OAObject> extends Hub<TYPE> {
      *
      * @param clazz        the object type stored in this Hub
      * @param obj          the single root object from which merging begins
-     * @param propertyPath the merge property path
+     * @param path the merge property path
      */
-    public MergedHub(Class<TYPE> clazz, OAObject obj, String propertyPath) {
+    public MergedHub(Class<TYPE> clazz, OAObject obj, String path) {
         super(clazz);
-        
+
         Hub hubMasterRoot = new Hub(obj.getClass());
         hubMasterRoot.add(obj);
         hubMasterRoot.setPos(0);
-        
-        this.hm = new HubMerger(hubMasterRoot, this, propertyPath, false, null, true);
+
+        this.hm = new HubMerger(hubMasterRoot, this, path, false, null, true);
     }
 
 }

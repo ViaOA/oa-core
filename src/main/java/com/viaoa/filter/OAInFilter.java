@@ -343,7 +343,7 @@ public class OAInFilter implements OAFilter {
 	 *
 	 * @return the property path associated with this filter
 	 */
-	public OAPath getPropertyPath() {
+	public OAPath getPath() {
 		return pp;
 	}
 

@@ -66,7 +66,7 @@ import com.viaoa.runtime.OAThreadService;
  * <h3>Design Notes</h3>
  * <ul>
  *   <li>Uses {@link HubCombined} and {@link HubFilter} to bind the temporary
- *       Hub into the main Hub’s relationship graph without polluting its data.</li>
+ *       Hub into the main Hub’s relationship OA model without polluting its data.</li>
  *   <li>Ensures {@link OAObjectDelegate#initializeAfterLoading} is called
  *       after reflection-based construction for proper default initialization.</li>
  *   <li>Thread-local safety handled via {@link OAThreadLocalDelegate#setLoading}
@@ -153,11 +153,16 @@ public class HubNewObject<F extends OAObject> {
 
 		final OA oa = OARuntime.oa(hubMain);
 		hubNewObject.setSelectWhereHub(	oa.internal().hubs().select().getSelectWhereHub(hubMain),
-				oa.internal().hubs().select().getSelectWhereHubPropertyPath(hubMain));
+				oa.internal().hubs().select().getSelectWhereHubPath(hubMain));
 
 		// need to set up a filtered hub, so that hubNewObject can be associated with hubMain and it's masterObject/Hub, etc
 		Hub hubEmptyFiltered = new Hub(hubMain.getObjectClass());
 		HubFilter hf = new HubFilter(hubMain, hubEmptyFiltered) {
+			/**
+			 * Returns whether Used is true for the current Hub context.
+			 *
+			 * @return {@code true} if Used is true
+			 */
 			public boolean isUsed(Object object) {
 				return false;
 			}
@@ -202,7 +207,7 @@ public class HubNewObject<F extends OAObject> {
 		if (obj != null) {
 			OAObjectKey ok = obj.getObjectKey();
 			if (obj.isNew() && !ok.hasValidObjectIds()) {
-				// obj.setObjectDefaults(); // 20240507 this should be called when object is created. 
+				// obj.setObjectDefaults(); // 20240507 this should be called when object is created.
 				final OA oa = OARuntime.oa(obj);
 				if (oa.internal().objects().ds().getAssignIdOnCreate(obj)) {
 					oa.internal().objects().ds().assignId(obj);

@@ -4,6 +4,9 @@ import com.viaoa.hub.Hub;
 import com.viaoa.hub.copy.HubCopy;
 import com.viaoa.object.OAObject;
 
+/**
+ * Internal operations for creating live Hub copies that mirror source Hub membership.
+ */
 public interface HubCopyOps {
 
     /**
@@ -13,7 +16,7 @@ public interface HubCopyOps {
      * as the source Hub and stays automatically synchronized as objects are added
      * to or removed from the source Hub.
      * <p>
-     * Unlike {@link #share(Hub, Hub, boolean)}, the returned Hub is a separate Hub
+     * The returned Hub is a separate Hub
      * instance with its own internal state and may have different behavior such as
      * sorting or other Hub-level configuration, while still reflecting the same
      * object membership as the source Hub.
@@ -33,7 +36,7 @@ public interface HubCopyOps {
      * as the source Hub and stays automatically synchronized as objects are added
      * to or removed from the source Hub.
      * <p>
-     * Unlike {@link #share(Hub, Hub, boolean)}, the returned Hub is a separate Hub
+     * The returned Hub is a separate Hub
      * instance with its own internal state and may have different behavior such as
      * sorting or other Hub-level configuration, while still reflecting the same
      * object membership as the source Hub.

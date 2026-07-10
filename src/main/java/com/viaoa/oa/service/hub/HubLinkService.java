@@ -22,6 +22,10 @@ CODEX
 
 */
 
+/**
+ * Maintains Hub link, master, and relationship consistency.
+ */
+
 public abstract class HubLinkService {
 	private final Logger LOG = Logger.getLogger(HubLinkService.class.getName());
 
@@ -908,21 +912,130 @@ public abstract class HubLinkService {
 		}
 	}
 
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetObjectInfo behavior.
+	 *
+	 * @param clazz method input
+	 * @return result value
+	 */
+
 	public abstract OAObjectInfo callObjectInfoGetObjectInfo(Class<?> clazz);
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetMethod behavior.
+	 *
+	 * @param clazz method input
+	 * @param methodName method input
+	 * @return result value
+	 */
 	public abstract Method callObjectInfoGetMethod(Class<? extends OAObject> clazz, String methodName);
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetReverseLinkInfo behavior.
+	 *
+	 * @param thisLi method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi);
+	/**
+	 * Dependency hook used by this service for HubEventRemoveHubListener behavior.
+	 *
+	 * @param thisHub method input
+	 * @param l method input
+	 */
 	public abstract <T extends OAObject> void callHubEventRemoveHubListener(Hub<T> thisHub, HubListener<T> l);
+	/**
+	 * Dependency hook used by this service for HubEventFireAfterPropertyChange behavior.
+	 *
+	 * @param thisHub method input
+	 * @param oaObj method input
+	 * @param propertyName method input
+	 * @param oldValue method input
+	 * @param newValue method input
+	 * @param linkInfo method input
+	 */
 	public abstract <T extends OAObject> void callHubEventFireAfterPropertyChange(final Hub<T> thisHub, final T oaObj, final String propertyName, final Object oldValue,
 			final Object newValue, final OALinkInfo linkInfo);
+	/**
+	 * Dependency hook used by this service for HubEventAddHubListener behavior.
+	 *
+	 * @param thisHub method input
+	 * @param hl method input
+	 */
 	public abstract <T extends OAObject> void callHubEventAddHubListener(Hub<T> thisHub, HubListener<T> hl);
+	/**
+	 * Dependency hook used by this service for HubEventFireAfterChangeActiveObjectEvent behavior.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 * @param pos method input
+	 * @param bAllShared method input
+	 */
 	public abstract <T extends OAObject> void callHubEventFireAfterChangeActiveObjectEvent(Hub<T> thisHub, T obj, int pos, boolean bAllShared);
+	/**
+	 * Dependency hook used by this service for HubShareGetFirstSharedHub behavior.
+	 *
+	 * @param thisHub method input
+	 * @param filter method input
+	 * @param bIncludeFilteredHubs method input
+	 * @param bOnlyIfSharedAO method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> Hub<T> callHubShareGetFirstSharedHub(Hub<T> thisHub, OAFilter<Hub<T>> filter, boolean bIncludeFilteredHubs, boolean bOnlyIfSharedAO);
+	/**
+	 * Dependency hook used by this service for HubAOSetActiveObject behavior.
+	 *
+	 * @param thisHub method input
+	 * @param object method input
+	 * @param adjustMaster method input
+	 * @param bUpdateLink method input
+	 * @param bForce method input
+	 */
 	public abstract <T extends OAObject> void callHubAOSetActiveObject(Hub<T> thisHub, T object, boolean adjustMaster, boolean bUpdateLink, boolean bForce);
+	/**
+	 * Dependency hook used by this service for HubAOSetActiveObject behavior.
+	 *
+	 * @param thisHub method input
+	 * @param object method input
+	 * @param pos method input
+	 * @param bUpdateLink method input
+	 * @param bForce method input
+	 * @param bCalledByShareHub method input
+	 */
 	public abstract <T extends OAObject> void callHubAOSetActiveObject(final Hub<T> thisHub, T object, int pos, boolean bUpdateLink, boolean bForce, boolean bCalledByShareHub);
+	/**
+	 * Dependency hook used by this service for HubDetailGetDataMaster behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract HubDataMaster callHubDetailGetDataMaster(final Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubDataGetPos behavior.
+	 *
+	 * @param thisHub method input
+	 * @param object method input
+	 * @param adjustMaster method input
+	 * @param bUpdateLink method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> int callHubDataGetPos(final Hub<T> thisHub, T object, final boolean adjustMaster, final boolean bUpdateLink);
+	/**
+	 * Dependency hook used by this service for HubShareGetAllSharedHubs behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub);
+	/**
+	 * Dependency hook used by this service for ThreadLocalAddDontAdjustHub behavior.
+	 *
+	 * @param hub method input
+	 */
 	public abstract void callThreadLocalAddDontAdjustHub(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service for ThreadLocalRemoveDontAdjustHub behavior.
+	 *
+	 * @param hub method input
+	 */
 	public abstract void callThreadLocalRemoveDontAdjustHub(Hub<?> hub);
 }
 

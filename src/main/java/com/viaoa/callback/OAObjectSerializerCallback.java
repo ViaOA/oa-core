@@ -23,19 +23,21 @@ import com.viaoa.serialize.OAObjectSerializer;
  * for controlling which properties and references are included when an
  * OAObject is serialized for caching or remote synchronization.
  *
- * <p>Callbacks are invoked during graph traversal by {@link OAObjectSerializer}
+ * <p>Callbacks are invoked during object traversal by {@link OAObjectSerializer}
  * and allow filters to be applied per-object without requiring changes to
  * the domain model or metadata.</p>
  *
  * <p>When excluding properties or references, implementations must not
  * suppress required identity values such as GUID or primary-key fields,
  * so that the receiving side can correctly resolve object identity and
- * maintain Object Graph consistency.</p>
+ * maintain OA object consistency.</p>
  *
  * <p>This class is not serializable and is intended to be stateless.
  * It is provided per serialization session and must not assume
  * multi-threaded reuse.</p>
- * note: do not serialize this, since it will also include it's outer class, etc.
+ *
+ * <p>Instances should not be serialized. Serializing an implementation can
+ * accidentally include its enclosing object and unrelated runtime state.</p>
  *
  * @see OAObjectSerializer
  */

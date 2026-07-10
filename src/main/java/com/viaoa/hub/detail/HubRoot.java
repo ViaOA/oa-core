@@ -68,19 +68,19 @@ public class HubRoot {
 	 * Active Object changes determine when the recursive structure must update.
 	 */
 	private Hub hubMaster;
-	
+
 	/**
 	 * A copy of the current child Hub associated with the master Hub’s Active Object.
 	 * Updated as recursion changes, ensuring the root Hub reflects the correct branch.
 	 */
 	private volatile HubCopy hubCopy;
-	
+
 	/**
 	 * The property name representing the recursive one-to-many link from a master object
 	 * to its child Hub. Used to retrieve the correct detail Hub when updating.
 	 */
 	private String propertyFromMaster;
-	
+
 	/**
 	 * Listener registered on {@code hubMaster} to detect Active Object changes.
 	 * Triggers updates to maintain the correct recursive root structure.
@@ -148,6 +148,10 @@ public class HubRoot {
 
 		hubListener = new HubListenerAdapter() {
 			@Override
+			/**
+			 * Handles the Hub active-object change event.
+			 * @param e the Hub event
+			 */
 			public void afterChangeActiveObject(HubEvent e) {
 				if (lastAO != null) { // 20180305 ao could be the same as before
 					if (lastAO == e.getObject()) {

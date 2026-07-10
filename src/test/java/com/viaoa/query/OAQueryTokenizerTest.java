@@ -18,7 +18,7 @@ class OAQueryTokenizerTest implements OAQueryTokenType {
     private static final String GENERATED_ITEM_NAME_PATH = InvoicePP.invoiceBaskets().lineItems().product().item().name();
     private static final String P_CONSTANT_ITEM_NAME_PATH = Invoice.P_InvoiceBaskets + "." + InvoiceBasket.P_LineItems
             + "." + LineItem.P_Product + "." + Product.P_Item + "." + Item.P_Name;
-    private static final String TEXT_UTIL_ITEM_NAME_PATH = OATextUtil.createPropertyPath(Invoice.P_InvoiceBaskets,
+    private static final String TEXT_UTIL_ITEM_NAME_PATH = OATextUtil.createPath(Invoice.P_InvoiceBaskets,
             InvoiceBasket.P_LineItems, LineItem.P_Product, Product.P_Item, Item.P_Name);
     private static final String RAW_ITEM_NAME_PATH = "invoiceBaskets.lineItems.product.item.name";
 

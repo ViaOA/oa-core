@@ -25,7 +25,7 @@ import com.viaoa.annotation.OAFkey;
  *
  * <p>The mapping originates from {@link com.viaoa.annotation.OAFkey} on the
  * model and is consulted during lazy loading and reverse-link fix-up to ensure
- * that the correct target object is resolved without requiring full graph
+ * that the correct target object is resolved without requiring full model structure
  * materialization.</p>
  *
  * @see OALinkInfo

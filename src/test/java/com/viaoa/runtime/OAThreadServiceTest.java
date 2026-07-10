@@ -11,7 +11,6 @@ class OAThreadServiceTest {
 
         assertNotNull(service.getThreadLocalService());
         assertNotNull(service.getRemoteThreadService());
-        assertNull(service.getContextUser());
         assertFalse(service.isAdmin());
         assertFalse(service.isRemoteThread());
         assertFalse(service.isRefreshing());

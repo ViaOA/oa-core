@@ -4,6 +4,9 @@ import com.viaoa.hub.Hub;
 import com.viaoa.hub.auto.HubAutoMatch;
 import com.viaoa.object.OAObject;
 
+/**
+ * Public OA Hub auto-match service operations for maintaining live relationship-based matches.
+ */
 public interface HubAutoMatchOps {
 
     /**

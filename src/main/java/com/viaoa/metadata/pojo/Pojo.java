@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Root of the POJO mapping graph for a single OAObject type.
+ * Root of the POJO mapping model for a single OAObject type.
  * <p>
  * A {@code Pojo} instance describes:
  * <ul>
@@ -31,7 +31,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * This metadata is generated from {@link com.viaoa.metadata.OAObjectInfo}
  * by {@link OAObjectPojoLoader} and is later used by the JSON/Jackson
  * integration to map between flat JSON POJOs and live {@code OAObject}
- * graphs during import/export.
+ * models during import/export.
  */
 public class Pojo implements java.io.Serializable {
 	private static final long serialVersionUID = 1L;

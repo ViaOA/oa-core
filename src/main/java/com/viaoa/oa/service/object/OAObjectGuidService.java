@@ -7,11 +7,19 @@ import java.util.logging.Logger;
 
 import com.viaoa.object.OAObject;
 
+/**
+ * Assigns, updates, and reads GUID identity values for OAObjects.
+ */
 public abstract class OAObjectGuidService {
 	private static final Logger LOG = Logger.getLogger(OAObjectGuidService.class.getName());
 
 	private final OAObject.FriendAccess faObject;
 	
+	/**
+	 * Performs OAObjectGuidService behavior for the OA object service.
+	 *
+	 * @param faObject method input
+	 */
 	public OAObjectGuidService(OAObject.FriendAccess faObject) {
     	if (faObject == null) throw new IllegalArgumentException("OAObject.FriendAccess can not be null");
     	this.faObject = faObject;
@@ -27,17 +35,17 @@ public abstract class OAObjectGuidService {
 	 *
 	 * <h3>Assignment Rules</h3>
 	 * <ul>
-	 *   <li><b>Local-only classes</b>  
+	 *   <li><b>Local-only classes</b>
 	 *       Use a negative, decrementing counter to ensure the GUID does not
 	 *       overlap with server-issued identifiers.</li>
 	 *
-	 *   <li><b>Client-side execution</b>  
+	 *   <li><b>Client-side execution</b>
 	 *       Attempt to obtain a server-issued GUID via
-	 *       {@code OAObjectCSDelegate.getGuidFromServer(obj)}.  
+	 *       {@code OAObjectCSDelegate.getGuidFromServer(obj)}.
 	 *       If the server does not provide one (returns {@code 0}), a new GUID is
 	 *       generated locally using {@link #getNextGuid()}.</li>
 	 *
-	 *   <li><b>Server-side execution</b>  
+	 *   <li><b>Server-side execution</b>
 	 *       Always generates a new positive GUID using {@link #getNextGuid()}.</li>
 	 * </ul>
 	 *
@@ -45,7 +53,7 @@ public abstract class OAObjectGuidService {
 	 * identity, including hashing, cache insertion, linking, or client/server sync.</p>
 	 *
 	 * @param obj the object requiring GUID assignment; may be {@code null}.
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	public synchronized void assignGuid(OAObject obj) {
 		if (obj == null) return;
@@ -57,6 +65,11 @@ public abstract class OAObjectGuidService {
 		faObject.setGuid(obj, guid);
 	}
 
+	/**
+	 * Assigns identity state to the supplied OAObject.
+	 *
+	 * @param obj method input
+	 */
 	public synchronized void assignNewGuid(OAObject obj) {
 		if (obj == null) return;
 		faObject.setGuid(obj, null);
@@ -120,15 +133,31 @@ public abstract class OAObjectGuidService {
 		return guid;
 	}
 
+	/**
+	 * Sets the guid value.
+	 *
+	 * @param oaObj method input
+	 * @param guid method input
+	 */
 	public void setGuid(OAObject oaObj, UUID guid) {
 		if (oaObj == null) return;
 		faObject.setGuid(oaObj, guid);
 	}
 	
+	/**
+	 * Sets the nextGuid_NOTUSEd value.
+	 *
+	 * @param x method input
+	 */
 	public void setNextGuid_NOTUSEd(long x) {
 		// guidCounter.set(x);
 	}
 
+	/**
+	 * Updates service-managed state for the supplied input.
+	 *
+	 * @param guid method input
+	 */
 	public void updateGuid_NOTUSED(long guid) {
 		/*
 		for (;;) {

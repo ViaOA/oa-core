@@ -12,16 +12,30 @@ import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 
+/**
+ * Provides low-level OAObject property storage, access, and mutation helpers.
+ */
 public abstract class OAObjectPropertyService {
 	private static final Logger LOG = Logger.getLogger(OAObjectPropertyService.class.getName());
 
 	private final OAObject.FriendAccess faObject;
 	
+	/**
+	 * Performs OAObjectPropertyService behavior for the OA object service.
+	 *
+	 * @param faObject method input
+	 */
     public OAObjectPropertyService(OAObject.FriendAccess faObject) {
     	if (faObject == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
     	this.faObject = faObject;
     }
 	
+	/**
+	 * Returns the properties value.
+	 *
+	 * @param obj method input
+	 * @return result value
+	 */
 	public Object[] getProperties(OAObject obj) {
 		if (obj == null) return null;
 		return faObject.getProperties(obj);
@@ -32,7 +46,7 @@ public abstract class OAObjectPropertyService {
 	 * Returns whether the specified property has already been loaded for the
 	 * given object. A property is considered loaded when its stored value is
 	 * present and does not require resolution from a data source or remote
-	 * server.  
+	 * server.
 	 *
 	 * <p>The method checks for:</p>
 	 * <ul>
@@ -47,6 +61,13 @@ public abstract class OAObjectPropertyService {
 	 *         false if it is missing, unresolved, or not yet loaded
 	 */
 	@SuppressWarnings({"unchecked","rawtypes"})
+	/**
+	 * Returns whether propertyLoaded is true.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public boolean isPropertyLoaded(OAObject oaObj, String name) {
 		if (oaObj == null || name == null) {
 			return false;
@@ -153,7 +174,7 @@ public abstract class OAObjectPropertyService {
 	}
 	
 	/**
-	 * Convenience wrapper around the internal unsafeSetProperty method.  
+	 * Convenience wrapper around the internal unsafeSetProperty method.
 	 * Stores the given property value without firing events and replaces the
 	 * value if the property already exists.
 	 *
@@ -275,7 +296,7 @@ public abstract class OAObjectPropertyService {
 	}
 
 	/**
-	 * Removes the specified property only if its current value is null.  
+	 * Removes the specified property only if its current value is null.
 	 * The internal property array is compacted if empty slots are detected.
 	 * Optionally fires a property change event when removal occurs.
 	 *
@@ -346,7 +367,7 @@ public abstract class OAObjectPropertyService {
 
 	/**
 	 * Sets or updates the specified property on the object. The internal
-	 * property array is expanded as needed and the value is stored.  
+	 * property array is expanded as needed and the value is stored.
 	 * If the value is a Hub, its master object is initialized when required.
 	 *
 	 * @param oaObj the target object
@@ -401,7 +422,7 @@ public abstract class OAObjectPropertyService {
 	/**
 	 * Sets the value for a Hub-based property only if no existing non-null
 	 * value is already stored. WeakReference values are treated as empty when
-	 * their referent has been garbage collected.  
+	 * their referent has been garbage collected.
 	 * The property array is expanded as needed.
 	 *
 	 * <p>If the assigned value is a Hub, its master object is initialized
@@ -476,7 +497,7 @@ public abstract class OAObjectPropertyService {
 	}
 
 	/**
-	 * Convenience wrapper around the full compare-and-swap implementation.  
+	 * Convenience wrapper around the full compare-and-swap implementation.
 	 * Attempts to update the property only when its current value matches
 	 * the supplied match value.
 	 *
@@ -692,10 +713,10 @@ public abstract class OAObjectPropertyService {
 	
 	/**
 	 * Converts the stored value for the specified property to or from a
-	 * {@link WeakReference}.  
+	 * {@link WeakReference}.
 	 *
 	 * <p>If converting to a WeakReference, the current value is wrapped unless
-	 * it is already weak.  
+	 * it is already weak.
 	 * If converting from a WeakReference, the referent is restored when
 	 * available; otherwise the property is removed if appropriate.</p>
 	 *
@@ -752,7 +773,7 @@ public abstract class OAObjectPropertyService {
 
 	/**
 	 * Ensures that the specified object and its parent objects maintain either
-	 * strong or weak references depending on the supplied flag.  
+	 * strong or weak references depending on the supplied flag.
 	 *
 	 * <p>This is used on the server to prevent Hub values from being garbage
 	 * collected when their parent objects have a cache size that allows
@@ -769,7 +790,7 @@ public abstract class OAObjectPropertyService {
 
 	/**
 	 * Internal recursive implementation used to apply strong or weak reference
-	 * rules to an object and its parent objects.  
+	 * rules to an object and its parent objects.
 	 *
 	 * <p>The method walks one-to-many reverse links, ensuring that referenced
 	 * Hubs are converted to strong or weak references as needed, and prevents
@@ -870,12 +891,64 @@ public abstract class OAObjectPropertyService {
 		}
 	}
 
+	/**
+	 * Dependency hook used by this service to cacheGet.
+	 *
+	 * @param clazz method input
+	 * @param ok method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok);
+	/**
+	 * Dependency hook used by this service to hubSetMasterObject.
+	 *
+	 * @param hub method input
+	 * @param oaObj method input
+	 * @param nameFromMasterToDetail method input
+	 */
 	public abstract void callHubSetMasterObject(Hub<?> hub, OAObject oaObj, String nameFromMasterToDetail);
+	/**
+	 * Dependency hook used by this service to infoGetObjectInfo.
+	 *
+	 * @param clazz method input
+	 * @return result value
+	 */
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz); 
+	/**
+	 * Dependency hook used by this service to infoIsWeakReferenceable.
+	 *
+	 * @param oi method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callInfoIsWeakReferenceable(OAObjectInfo oi);
+	/**
+	 * Dependency hook used by this service to infoGetLinkInfo.
+	 *
+	 * @param clazz method input
+	 * @param propertyName method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callInfoGetLinkInfo(Class<? extends OAObject> clazz, String propertyName);	
+	/**
+	 * Dependency hook used by this service to keyIsForSameOAObject.
+	 *
+	 * @param clazz method input
+	 * @param ok1 method input
+	 * @param ok2 method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callKeyIsForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey ok1, final OAObjectKey ok2);
+	/**
+	 * Dependency hook used by this service to keyGetKey.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
 	public abstract OAObjectKey callKeyGetKey(OAObject oaObj);
+	/**
+	 * Dependency hook used by this service to syncIsServer.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callSyncIsServer();
 }

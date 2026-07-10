@@ -8,6 +8,9 @@ import com.viaoa.runtime.thread.OARemoteThread;
 public abstract class OARemoteThreadService {
 	private Logger LOG = Logger.getLogger(OARemoteThreadService.class.getName());
 
+	/**
+	 * Creates the runtime service instance.
+	 */
 	public OARemoteThreadService() {
 	}
 
@@ -124,5 +127,8 @@ public abstract class OARemoteThreadService {
         return true;
     }
 	
+    /**
+     * Runtime hook called by the owning service implementation.
+     */
     protected abstract void callThreadLocalNotifyWaitingThread();
 }

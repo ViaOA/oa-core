@@ -16,7 +16,7 @@
 /**
  * Provides a comprehensive set of {@link com.viaoa.filter.OAFilter} subclasses
  * used to evaluate object-level conditions across Hubs, OASelect queries, and
- * the OA Object Graph.  Filters enable declarative, reusable, type-safe
+ * the OA runtime.  Filters enable declarative, reusable, type-safe
  * selection logic without requiring SQL, reflection-based expression engines,
  * or custom comparator code.
  *
@@ -31,8 +31,8 @@
  *   <li><b>OASelect queries</b> – optionally push filter logic down into the
  *       datasource via {@code updateSelect()}.</li>
  *   <li><b>Finder evaluation</b> – filters attached to an
- *       {@link com.viaoa.util.OAFinder} allow deep filtering across
- *       multi-valued property paths.</li>
+ *       {@link com.viaoa.find.OAFinder} allow deep filtering across
+ *       multi-valued OAPaths.</li>
  *   <li><b>UI controllers</b> – filter tables, type-ahead lists, and other
  *       interactive components.</li>
  * </ul>
@@ -45,10 +45,10 @@
  *
  * <ul>
  *   <li><b>Serializable</b> – filters can be distributed between client and server.</li>
- *   <li><b>Property path aware</b> – supports nested paths via
- *       {@link com.viaoa.object.OAPath}, including many-relationships.</li>
+ *   <li><b>OAPath aware</b> – supports nested paths via
+ *       {@link com.viaoa.path.OAPath}, including many-relationships.</li>
  *   <li><b>Finder-enabled</b> – multi-valued segments automatically generate
- *       {@link com.viaoa.util.OAFinder} instances with embedded filters.</li>
+ *       {@link com.viaoa.find.OAFinder} instances with embedded filters.</li>
  *   <li><b>Consistent comparison semantics</b> – all relational logic uses
  *       {@link com.viaoa.compare.OACompare} for type-safe evaluation.</li>
  *   <li><b>Composable</b> – filters can be combined through logical AND, OR,
@@ -95,7 +95,7 @@
  *
  * <p>
  * The parser converts the expression into a tree of OAFilter objects, enabling
- * powerful declarative filtering directly against the OA Object Graph.
+ * powerful declarative filtering directly against the OA runtime.
  * </p>
  *
  * <h3>Design philosophy</h3>
@@ -115,7 +115,7 @@
  *
  * <p>
  * Together, the filters in this package form a comprehensive selection and
- * rule-evaluation framework used throughout OA to shape object graphs, perform
+ * rule-evaluation framework used throughout OA to shape OA object state, perform
  * searches, enforce constraints, and support dynamic UI behavior.
  * </p>
  */
@@ -131,7 +131,7 @@ For the same input object, resolved property/path values, filter configuration, 
 runtime metadata state, a filter must return the same boolean result.
 Rationale:
 Filters shape Hub membership, in-memory selects, finder traversal, UI lists, validation-style checks, and object
-graph traversal. Non-deterministic predicates create silent false positives or false negatives.
+OA path traversal. Non-deterministic predicates create silent false positives or false negatives.
 Source scope:
 OAFilter, all OA*Filter implementations, OAQueryFilter.isUsed, OAFindNull.
 Related CODEX findings:
@@ -237,7 +237,7 @@ Equality and not-equality filters must use OACompare equality semantics, includi
 scalar value equality, string/case options, number precision options, and date/time comparison behavior.
 Rationale:
 Filter equality must match OA-wide comparison rules used by Hubs, selects, queries, paths, object matching, and
-graph traversal.
+OA path traversal.
 Source scope:
 OAEqualFilter, OANotEqualFilter, OAEqualPathFilter, OACompare.
 Related CODEX findings:
@@ -371,10 +371,10 @@ Filter Runtime / Path Resolution Semantics
 
 FILTER-PATH-002 — Many-Link Existential Semantics
 Contract statement:
-If a property path crosses a many-link, the filter must return true when at least one reachable terminal object or
+If an OAPath crosses a many-link, the filter must return true when at least one reachable terminal object or
 value satisfies the terminal filter, unless a different contract is explicitly documented.
 Rationale:
-OA path filtering over Hubs and object graphs generally means “any reachable child matches.” Applying the condition
+OA path filtering over Hubs and OA object paths generally means “any reachable child matches.” Applying the condition
 to the wrong object or treating existence alone as success produces wrong Hub/query contents.
 Source scope:
 OAFilterDelegate.createFinder, OAFinder integration, OAEqualFilter, OALikeFilter, OABetweenFilter, OANullFilter,
@@ -479,7 +479,7 @@ IN and OAInFilter membership checks must use deterministic OA identity/value mem
 collections, Hubs, object keys, and path-derived values. Empty membership sets must evaluate false.
 Rationale:
 Empty-set membership is mathematically false, and membership is central to query fallback, Hub filtering, object-key
-matching, and graph traversal. Treating empty IN as no filter silently broadens results.
+matching, and OA path traversal. Treating empty IN as no filter silently broadens results.
 Source scope:
 OAInFilter, OAQueryFilter.parseIn, OAQueryFilter.parseCompoundIn, OAFalseFilter sentinel use.
 Related CODEX findings:
@@ -589,7 +589,7 @@ Contract statement:
 Utility-style filters and searches must aggregate nested results correctly and return true only when the documented
 condition is actually found.
 Rationale:
-Diagnostic, validation, and traversal utilities are often used to detect missing values or object graph problems.
+Diagnostic, validation, and traversal utilities are often used to detect missing values or OA object state problems.
 Incorrect boolean aggregation hides or invents matches.
 Source scope:
 OAFindNull.findNull, OAFindNull.foundOne, array/field traversal logic.
@@ -597,17 +597,17 @@ Related CODEX findings:
 OAFindNull array branch previously returned true for arrays with no null elements.
 Suggested unit tests:
 testFindNullReturnsFalseForArrayWithoutNulls, testFindNullReturnsTrueForArrayWithNullElement,
-testFindNullReportsPropertyPathForFoundNull.
+testFindNullReportsPathForFoundNull.
 Spec target section:
 Filter Runtime / Utility Search Semantics
 
 FILTER-INTEGRATION-001 — Cross-Package Filter Compatibility
 Contract statement:
 Filter behavior must remain compatible with OACompare, OAPath, OAFinder, Hub filtering, OASelect/datasource
-pushdown, query parsing, object/cache identity, and graph runtime semantics.
+pushdown, query parsing, object/cache identity, and OA runtime semantics.
 Rationale:
 Filters are a shared selection layer across OA runtime packages. Divergence at package boundaries creates mismatched
-Hub contents, datasource result sets, and object graph traversal behavior.
+Hub contents, datasource result sets, and OA path traversal behavior.
 Source scope:
 All com.viaoa.filter classes, OACompare integration, OAPath/OAFinder integration, HubFilter/OASelect integration,
 OAQueryFilter.

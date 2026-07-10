@@ -51,33 +51,7 @@ import com.viaoa.runtime.OARuntime;
 import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
 
-/*qqqqqqqqqqqqqqqqqq
-CODEX
 
-3. file/class/method: src/main/java/com/viaoa/hub/filter/HubFilter.java:476 addTrigger / src/main/java/com/viaoa/
-     hub/filter/HubFilter.java:410 close
-
-  concrete bug: Triggers created by HubFilter.addTrigger are never retained or removed on close.
-
-  runtime scenario: A HubFilter calls addTrigger, which delegates to hubMaster.addTriggerListener(...). That creates
-  and registers an OATrigger, but no handle is returned or stored. HubFilter.close() removes Hub listeners but
-  explicitly does not remove created triggers. After close, the trigger remains globally registered and still fires
-  into a listener capturing the closed HubFilter.
-
-  why this violates OA/OG trigger semantics: Removing/closing a trigger owner should prevent future eligible
-  executions. This leaves stale trigger registration state, keeps the filter/listener reachable, and continues
-  dispatching closed-filter trigger work.
-
-  minimal fix direction: Make Hub.addTriggerListener return the created OATrigger, store those triggers in HubFilter,
-  and remove them during close().
-
-  suggested CODEX comment location: Around src/main/java/com/viaoa/hub/filter/HubFilter.java:435, where the existing
-  TODO notes created triggers are not removed.
-
-
-
-
-*/
 
 
 /**
@@ -102,25 +76,25 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	 * evaluates and selectively includes in the target Hub.
 	 */
 	protected Hub<TYPE> hubMaster;
-	
+
 	/**
 	 * Weak reference to the filtered Hub, allowing it to be garbage-collected
 	 * without preventing cleanup of this filter.
 	 */
 	protected WeakReference<Hub<TYPE>> weakHub;
-	
+
 	/**
 	 * Indicates whether active-object changes should be shared between
 	 * the master Hub and the filtered Hub.
 	 */
 	private boolean bShareAO;
-	
+
 	/**
 	 * Flag indicating whether the filter has been closed and should no
 	 * longer process events or updates.
 	 */
 	private volatile boolean bClosed;
-	
+
 	/**
 	 * When true, the filter is intended for server-side filtering only;
 	 * client-side filtering still receives updates.
@@ -132,19 +106,19 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	 * listener triggers.
 	 */
 	private static AtomicInteger aiUniqueNameCnt = new AtomicInteger();
-	
+
 	/**
 	 * Name assigned to a calculated dependent property used for monitoring
 	 * multi-level or calculated property changes.
 	 */
 	private volatile String calcDependentPropertyName;
-	
+
 	/**
 	 * List of dependent property names or paths that cause the filter to
 	 * refresh when they change.
 	 */
 	private String[] dependentPropertyNames;
-	
+
 	/**
 	 * Listener registered to monitor dependent properties on the master Hub.
 	 */
@@ -154,12 +128,12 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	 * Debug flag enabling additional diagnostics when true.
 	 */
 	public boolean DEBUG;
-	
+
 	/**
 	 * Listener that monitors the master Hub for changes relevant to filtering.
 	 */
 	private HubListenerAdapter<TYPE> hlHubMaster;
-	
+
 	/**
 	 * Indicates whether a new-list event is being processed to prevent
 	 * recursive or redundant event handling.
@@ -171,37 +145,37 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	 * preventing updates during that process.
 	 */
 	private final AtomicInteger aiClearing = new AtomicInteger();
-	
+
 	/**
 	 * Counter indicating whether the filter is currently processing updates,
 	 * used to suppress reentrant operations.
 	 */
 	private final AtomicInteger aiUpdating = new AtomicInteger();
 
-	
+
 	/**
 	 * Listener monitoring changes in the Hub linked to the filtered Hub.
 	 */
 	private HubListener linkHubListener;
-	
+
 	/**
 	 * The Hub that the filtered Hub is linked to, used for temporary
 	 * additions based on link relationships.
 	 */
 	private Hub<?> hubLink;
-	
+
 	/**
 	 * Temporary object used to hold the current linkHub value when the
 	 * filtered Hub must include it regardless of filter rules.
 	 */
 	protected OAObject objTemp;
-	
+
 	/**
 	 * Indicates whether the filter should refresh when the linked Hub’s
 	 * active object changes.
 	 */
 	private boolean bRefreshOnLinkChange;
-	
+
 	/**
 	 * Internal flag used to prevent recursive active-object updates
 	 * between master and filtered Hubs.
@@ -219,14 +193,14 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	 * multiple sequential filters.
 	 */
 	private int iBlockPos = -1;
-	
+
 	/**
 	 * Tracks the initialization sequence to interrupt and restart
 	 * initialization safely when required.
 	 */
 	private AtomicInteger aiInitializeCount = new AtomicInteger();
-	
-	
+
+
 	/**
 	 * Creates a new HubFilter using the supplied master Hub and target Hub.
 	 *
@@ -254,10 +228,10 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	 * @param hubMaster               the Hub containing all objects
 	 * @param hub                     the Hub that will receive filtered objects
 	 * @param filter                  the filter to apply
-	 * @param dependentPropertyPaths  property paths whose changes trigger refresh
+	 * @param dependentPaths  property paths whose changes trigger refresh
 	 */
-	public HubFilter(Hub<TYPE> hubMaster, Hub<TYPE> hub, OAFilter<TYPE> filter, String... dependentPropertyPaths) {
-		this(hubMaster, hub, false, false, filter, dependentPropertyPaths);
+	public HubFilter(Hub<TYPE> hubMaster, Hub<TYPE> hub, OAFilter<TYPE> filter, String... dependentPaths) {
+		this(hubMaster, hub, false, false, filter, dependentPaths);
 	}
 
 	/**
@@ -305,10 +279,10 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	 * @param hub                    the filtered Hub
 	 * @param bShareAO               true to share active objects
 	 * @param filter                 initial filter
-	 * @param dependentPropertyPaths property paths monitored for changes
+	 * @param dependentPaths property paths monitored for changes
 	 */
-	public HubFilter(Hub<TYPE> hubMaster, Hub<TYPE> hub, boolean bShareAO, OAFilter<TYPE> filter, String... dependentPropertyPaths) {
-		this(hubMaster, hub, bShareAO, false, filter, dependentPropertyPaths);
+	public HubFilter(Hub<TYPE> hubMaster, Hub<TYPE> hub, boolean bShareAO, OAFilter<TYPE> filter, String... dependentPaths) {
+		this(hubMaster, hub, bShareAO, false, filter, dependentPaths);
 	}
 
 	/**
@@ -316,10 +290,10 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	 *
 	 * @param hubMaster              the master Hub
 	 * @param hub                    the filtered Hub
-	 * @param dependentPropertyPaths property paths to monitor
+	 * @param dependentPaths property paths to monitor
 	 */
-	public HubFilter(Hub<TYPE> hubMaster, Hub<TYPE> hub, String... dependentPropertyPaths) {
-		this(hubMaster, hub, false, false, null, dependentPropertyPaths);
+	public HubFilter(Hub<TYPE> hubMaster, Hub<TYPE> hub, String... dependentPaths) {
+		this(hubMaster, hub, false, false, null, dependentPaths);
 	}
 
 	/**
@@ -328,10 +302,10 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	 * @param hubMaster              the master Hub
 	 * @param hub                    the filtered Hub
 	 * @param bShareAO               true to share active objects
-	 * @param dependentPropertyPaths property paths monitored for changes
+	 * @param dependentPaths property paths monitored for changes
 	 */
-	public HubFilter(Hub<TYPE> hubMaster, Hub<TYPE> hub, boolean bShareAO, String... dependentPropertyPaths) {
-		this(hubMaster, hub, bShareAO, false, null, dependentPropertyPaths);
+	public HubFilter(Hub<TYPE> hubMaster, Hub<TYPE> hub, boolean bShareAO, String... dependentPaths) {
+		this(hubMaster, hub, bShareAO, false, null, dependentPaths);
 	}
 
 	/**
@@ -341,10 +315,10 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	 * @param hub                    the filtered Hub
 	 * @param bShareAO               true to share active objects
 	 * @param bRefreshOnLinkChange   true to refresh when link Hub AO changes
-	 * @param dependentPropertyPaths property paths monitored for changes
+	 * @param dependentPaths property paths monitored for changes
 	 */
-	public HubFilter(Hub<TYPE> hubMaster, Hub<TYPE> hub, boolean bShareAO, boolean bRefreshOnLinkChange, String... dependentPropertyPaths) {
-		this(hubMaster, hub, bShareAO, bRefreshOnLinkChange, null, dependentPropertyPaths);
+	public HubFilter(Hub<TYPE> hubMaster, Hub<TYPE> hub, boolean bShareAO, boolean bRefreshOnLinkChange, String... dependentPaths) {
+		this(hubMaster, hub, bShareAO, bRefreshOnLinkChange, null, dependentPaths);
 	}
 
 	/**
@@ -356,10 +330,10 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	 * @param bShareAO               true to share active objects
 	 * @param bRefreshOnLinkChange   true to refresh on link Hub AO change
 	 * @param filter                 an initial filter
-	 * @param dependentPropertyPaths property paths monitored for changes
+	 * @param dependentPaths property paths monitored for changes
 	 */
 	public HubFilter(Hub<TYPE> hubMaster, Hub<TYPE> hub, boolean bShareAO, boolean bRefreshOnLinkChange, OAFilter<TYPE> filter,
-			String... dependentPropertyPaths) {
+			String... dependentPaths) {
 		// note: bObjectCache will allow hubMaster to be null, which will then use the oaObjectCache
 		if (hubMaster == null) {
 			throw new IllegalArgumentException("hubMaster can not be null");
@@ -379,8 +353,8 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 			alFilters.add(filter);
 		}
 		setup();
-		if (dependentPropertyPaths != null) {
-			for (String s : dependentPropertyPaths) {
+		if (dependentPaths != null) {
+			for (String s : dependentPaths) {
 				addProperty(s);
 			}
 		}
@@ -456,7 +430,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 			}
 			hlDependentProperties = null;
 		}
-		//qqqqqqqqqqq
+
 		// todo remove any created triggers
 	}
 
@@ -501,6 +475,10 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 		final String name = "HubFilter" + (aiUniqueNameCnt.incrementAndGet());
 		hubMaster.addTriggerListener(new HubListenerAdapter<TYPE>() {
 			@Override
+			/**
+			 * Handles the Hub property-change event.
+			 * @param e the Hub event
+			 */
 			public void afterPropertyChange(HubEvent<TYPE> e) {
 				if (!name.equalsIgnoreCase(e.getPropertyName())) {
 					return;
@@ -548,6 +526,10 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 		//todo: need to all remove hl on close
 		hub.addHubListener(new HubListenerAdapter<T>() {
 			@Override
+			/**
+			 * Handles the Hub active-object change event.
+			 * @param e the Hub event
+			 */
 			public void afterChangeActiveObject(HubEvent<T> e) {
 				HubFilter.this.refresh();
 			}
@@ -596,11 +578,19 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 		//todo:  need to add remove hl on close
 		HubListener<T> hl = new HubListenerAdapter<T>() {
 			@Override
+			/**
+			 * Handles the Hub active-object change event.
+			 * @param e the Hub event
+			 */
 			public void afterChangeActiveObject(HubEvent<T> e) {
 				HubFilter.this.refresh();
 			}
 
 			@Override
+			/**
+			 * Handles the Hub property-change event.
+			 * @param e the Hub event
+			 */
 			public void afterPropertyChange(HubEvent<T> e) {
 				if (bActiveObjectOnly && e.getObject() != hub.getAO()) {
 					return;
@@ -825,6 +815,10 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 				}
 			}
 
+			/**
+			 * Handles the Hub active-object change event.
+			 * @param e the Hub event
+			 */
 			public void afterChangeActiveObject(HubEvent<TYPE> e) {
 				if (!bShareAO || hubMaster == null) {
 					return;
@@ -903,6 +897,10 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 		}
 
 		linkHubListener = new HubListenerAdapter() {
+			/**
+			 * Handles the Hub active-object change event.
+			 * @param evt the Hub event
+			 */
 			public @Override void afterChangeActiveObject(HubEvent evt) {
 				Hub<TYPE> hub = getHub();
 				if (hub == null || bClosed) {
@@ -982,7 +980,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
 		boolean bWas = false;
 		try {
-			
+
 			if (bServerSideOnly) { // 20120425
 				bWas = srvcOAThreadLocal.getSendSyncMessages();
 				srvcOAThreadLocal.setSendSyncMessages(true); // so that events will go out, even if OAClientThread
@@ -1034,7 +1032,7 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 		} finally {
 			aiUpdating.decrementAndGet();
 			if (bServerSideOnly) {
-				srvcOAThreadLocal.setSendSyncMessages(bWas); 
+				srvcOAThreadLocal.setSendSyncMessages(bWas);
 			}
 		}
 	}
@@ -1089,9 +1087,9 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 		if (hub == null || bClosed) {
 			return;
 		}
-		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
+		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
-		
+
 		boolean bWas = false;
 		if (bServerSideOnly) {
 			bWas = srvcOAThreadLocal.getSendSyncMessages();
@@ -1245,12 +1243,12 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 		if (hub == null || bClosed) {
 			return;
 		}
-	    
+
 		// 20231109 faster way to add with calling contains
 		final OA oa = OARuntime.oa(hub);
 		oa.internal().hubs().addRemove().add(hub, obj, bIsInitialzing);
 		// was:  hub.add(obj);
-		
+
 		if (bShareAO && hubMaster != null) {
 			if (obj == hubMaster.getAO()) {
 				bIgnoreSettingAO = true;
@@ -1587,6 +1585,11 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 		}
 		_addFilter(propPath, new OAFilter() {
 			@Override
+			/**
+			 * Returns whether Used is true for the current Hub context.
+			 *
+			 * @return {@code true} if Used is true
+			 */
 			public boolean isUsed(Object obj) {
 				return obj == null;
 			}
@@ -1602,6 +1605,11 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	public void addNotNullFilter(final String propPath, final Object value) {
 		_addFilter(propPath, new OAFilter() {
 			@Override
+			/**
+			 * Returns whether Used is true for the current Hub context.
+			 *
+			 * @return {@code true} if Used is true
+			 */
 			public boolean isUsed(Object obj) {
 				return obj != null;
 			}
@@ -1616,6 +1624,11 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	public void addEmptyFilter(final String propPath) {
 		_addFilter(propPath, new OAFilter() {
 			@Override
+			/**
+			 * Returns whether Used is true for the current Hub context.
+			 *
+			 * @return {@code true} if Used is true
+			 */
 			public boolean isUsed(Object obj) {
 				return OAString.isEmpty(obj);
 			}
@@ -1630,6 +1643,11 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 	public void addNotEmptyFilter(final String propPath) {
 		_addFilter(propPath, new OAFilter() {
 			@Override
+			/**
+			 * Returns whether Used is true for the current Hub context.
+			 *
+			 * @return {@code true} if Used is true
+			 */
 			public boolean isUsed(Object obj) {
 				return !OAString.isEmpty(obj);
 			}
@@ -1734,6 +1752,11 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 		} else if (OAString.dcount(propPath, '.') == 1) {
 			f = new OAFilter<TYPE>() {
 				@Override
+				/**
+				 * Returns whether Used is true for the current Hub context.
+				 *
+				 * @return {@code true} if Used is true
+				 */
 				public boolean isUsed(TYPE obj) {
 					if (obj == null) {
 						return false;
@@ -1749,6 +1772,11 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 
 			f = new OAFilter() {
 				@Override
+				/**
+				 * Returns whether Used is true for the current Hub context.
+				 *
+				 * @return {@code true} if Used is true
+				 */
 				public boolean isUsed(Object obj) {
 					if (obj == null) {
 						return false;
@@ -1761,6 +1789,11 @@ public class HubFilter<TYPE extends OAObject> extends HubListenerAdapter<TYPE> i
 			final OAFilter fx = f;
 
 			f = new OAFilter() {
+				/**
+				 * Returns whether Used is true for the current Hub context.
+				 *
+				 * @return {@code true} if Used is true
+				 */
 				public boolean isUsed(Object obj) {
 					OAFinder find = new OAFinder(prop);
 					find.addFilter(fx);

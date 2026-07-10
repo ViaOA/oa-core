@@ -140,6 +140,7 @@ public class OADataSourceAuto extends OADataSource {
 	 * {@link NextNumber} objects for autonumbering.
 	 *
 	 * @param hubNextNumber Hub containing NextNumber instances
+	 * @param makeLast true to designate this datasource as last in the chain
 	 */
 	public OADataSourceAuto(Hub<NextNumber> hubNextNumber, boolean makeLast) {
 		this(makeLast);
@@ -147,11 +148,24 @@ public class OADataSourceAuto extends OADataSource {
 		setName("OADataSourceAuto DataSource");
 	}
 
+	/**
+	 * Creates an OADataSourceAuto that uses the specified Hub and is marked as
+	 * the last datasource in the chain.
+	 *
+	 * @param hubNextNumber Hub containing NextNumber instances
+	 */
 	public OADataSourceAuto(Hub hubNextNumber) {
 		this(hubNextNumber, true);
 	}
 	
 
+	/**
+	 * Returns the Hub that stores the {@link NextNumber} sequence objects used by
+	 * this datasource. If no Hub has been supplied, the global Hub is used or a
+	 * new local Hub is created.
+	 *
+	 * @return Hub containing autonumber sequence objects
+	 */
 	public Hub<NextNumber> getNextNumbers() {
 		if (hubNextNumber == null) {
 			hubNextNumber = getGlobalNextNumbers();
@@ -181,10 +195,21 @@ public class OADataSourceAuto extends OADataSource {
 		hubNextNumberGlobal = hubNextNumber;
 	}
 
+	/**
+	 * Sets the minimum starting value used when a class sequence is initialized
+	 * or adjusted.
+	 *
+	 * @param x starting sequence value
+	 */
 	public void setStartingNextNumber(int x) {
 		this.startNextNumber = x;
 	}
 
+	/**
+	 * Returns the configured starting value for class sequences.
+	 *
+	 * @return starting sequence value
+	 */
 	public int getStartingNextNumber() {
 		return this.startNextNumber;
 	}	

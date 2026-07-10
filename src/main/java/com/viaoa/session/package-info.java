@@ -155,7 +155,7 @@ Rationale:
 These flags are graph-context authority signals and must not silently grant access due to missing context or missing
 path data.
 Source scope:
-OAContext adminPropertyPath, superAdminPropertyPath, allowEditProcessedPropertyPath, isAdmin, isSuperAdmin,
+OAContext adminPath, superAdminPath, allowEditProcessedPath, isAdmin, isSuperAdmin,
 getAllowEditProcessed.
 Related CODEX findings:
 No direct CODEX finding; methods expose context-user property-path semantics.
@@ -225,7 +225,7 @@ object match, forward traversal, and reverse/common-master traversal where suppo
 Rationale:
 Context access rules are used to express graph-relative authority, not only class-level permissions.
 Source scope:
-OAUserAccess.UserAccess, getIsInSamePropertyPath, path-based addEnabled/addNotEnabled/addVisible/addNotVisible
+OAUserAccess.UserAccess, getIsInSamePath, path-based addEnabled/addNotEnabled/addVisible/addNotVisible
 methods.
 Related CODEX findings:
 UA-EMPTY-PATH-NO-THROW and UA-REVERSE-PATH-BOUNDS identify missing path-boundary contracts.
@@ -243,7 +243,7 @@ throwing during later access checks.
 Rationale:
 Invalid context policy should not fail unpredictably during unrelated runtime authorization checks.
 Source scope:
-OAUserAccess path-based rule registration and getIsInSamePropertyPath.
+OAUserAccess path-based rule registration and getIsInSamePath.
 Related CODEX findings:
 UA-EMPTY-PATH-NO-THROW identifies delayed failures for empty or scalar property paths.
 Suggested unit tests:
@@ -260,7 +260,7 @@ relationships.
 Rationale:
 Context access checks must be safe for generated model metadata and complex object graphs.
 Source scope:
-OAUserAccess.getIsInSamePropertyPath.
+OAUserAccess.getIsInSamePath.
 Related CODEX findings:
 UA-REVERSE-PATH-BOUNDS identifies reverse traversal bound assumptions.
 Suggested unit tests:

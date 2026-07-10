@@ -34,7 +34,7 @@ class OASelectTest {
     private static final String RAW_STORE_TO_ITEM_PATH = "registers.registerSessions.invoices.invoiceBaskets.lineItems.product.item";
     private static final String GENERATED_STORE_TO_ITEM_PATH = StorePP.registers().registerSessions().invoices()
             .invoiceBaskets().lineItems().product().item().pp();
-    private static final String TEXT_UTIL_STORE_TO_ITEM_PATH = OATextUtil.createPropertyPath(Store.P_Registers,
+    private static final String TEXT_UTIL_STORE_TO_ITEM_PATH = OATextUtil.createPath(Store.P_Registers,
             Register.P_RegisterSessions, RegisterSession.P_Invoices, Invoice.P_InvoiceBaskets,
             InvoiceBasket.P_LineItems, LineItem.P_Product, Product.P_Item);
     private static final String P_CONSTANT_STORE_TO_ITEM_PATH = Store.P_Registers + "." + Register.P_RegisterSessions
@@ -145,13 +145,13 @@ class OASelectTest {
 
         select.setWhereObject(store, GENERATED_STORE_TO_ITEM_PATH);
         assertSame(store, select.getWhereObject());
-        assertEquals(GENERATED_STORE_TO_ITEM_PATH, select.getWhereObjectPropertyPath());
+        assertEquals(GENERATED_STORE_TO_ITEM_PATH, select.getWhereObjectPath());
 
         select.setPropertyFromWhereObject(TEXT_UTIL_STORE_TO_ITEM_PATH);
         assertEquals(TEXT_UTIL_STORE_TO_ITEM_PATH, select.getPropertyFromWhereObject());
 
-        select.setWhereObjectPropertyPath(P_CONSTANT_STORE_TO_ITEM_PATH);
-        assertEquals(P_CONSTANT_STORE_TO_ITEM_PATH, select.getWhereObjectPropertyPath());
+        select.setWhereObjectPath(P_CONSTANT_STORE_TO_ITEM_PATH);
+        assertEquals(P_CONSTANT_STORE_TO_ITEM_PATH, select.getWhereObjectPath());
     }
 
     @Test
@@ -398,10 +398,10 @@ class OASelectTest {
 
         select.setWhereHub(hub, RAW_STORE_TO_ITEM_PATH);
         assertSame(hub, select.getWhereHub());
-        assertEquals(RAW_STORE_TO_ITEM_PATH, select.getWhereHubPropertyPath());
+        assertEquals(RAW_STORE_TO_ITEM_PATH, select.getWhereHubPath());
 
-        select.setWhereHubPropertyPath(TEXT_UTIL_STORE_TO_ITEM_PATH);
-        assertEquals(TEXT_UTIL_STORE_TO_ITEM_PATH, select.getWhereHubPropertyPath());
+        select.setWhereHubPath(TEXT_UTIL_STORE_TO_ITEM_PATH);
+        assertEquals(TEXT_UTIL_STORE_TO_ITEM_PATH, select.getWhereHubPath());
 
         select.setWhereHub(hub);
         assertSame(hub, select.getWhereHub());

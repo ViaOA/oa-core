@@ -24,10 +24,10 @@ class OATextRemainingEdgeTest {
 
     @Test
     void utilCreatePropertyPathDocumentsEmptySegmentBehavior() {
-        assertEquals("", OATextUtil.createPropertyPath((String[]) null));
-        assertEquals("Order..Customer", OATextUtil.createPropertyPath("Order", "", "Customer"));
-        assertEquals("Order:items.active.Customer", OATextUtil.createPropertyPath("Order", ":items.active", "Customer"));
-        assertEquals("(java.lang.String)Order..Customer", OATextUtil.createPropertyPath(String.class, "Order", "", "Customer"));
+        assertEquals("", OATextUtil.createPath((String[]) null));
+        assertEquals("Order..Customer", OATextUtil.createPath("Order", "", "Customer"));
+        assertEquals("Order:items.active.Customer", OATextUtil.createPath("Order", ":items.active", "Customer"));
+        assertEquals("(java.lang.String)Order..Customer", OATextUtil.createPath(String.class, "Order", "", "Customer"));
     }
 
     @Test

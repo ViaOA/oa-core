@@ -82,6 +82,11 @@ public class PojoImportMatch implements java.io.Serializable {
 	 * @return the nested link-one reference, or {@code null} if not defined
 	 */
 	//@JsonIgnore
+	/**
+	 * Returns the one-link reference that supplies this import-match value.
+	 *
+	 * @return mapped metadata reference, or {@code null}
+	 */
 	public PojoLinkOneReference getPojoLinkOneReference() {
 		return pojoLinkOneReference;
 	}
@@ -103,6 +108,11 @@ public class PojoImportMatch implements java.io.Serializable {
 	 * @return the import-match property, or {@code null} if not defined
 	 */
 	// @JsonIgnore
+	/**
+	 * Returns the POJO property that supplies this import-match value.
+	 *
+	 * @return mapped metadata reference, or {@code null}
+	 */
 	public PojoProperty getPojoProperty() {
 		return pojoProperty;
 	}

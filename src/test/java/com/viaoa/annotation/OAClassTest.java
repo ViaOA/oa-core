@@ -37,7 +37,7 @@ class OAClassTest {
         viewProperties = { "one", "two" },
         estimatedTotal = 77L,
         filterClasses = { String.class, Integer.class },
-        rootTreePropertyPaths = { "one", "two" },
+        rootTreePaths = { "one", "two" },
         isProcessed = true,
         softDeleteProperty = "explicit_softDeleteProperty",
         softDeleteReasonProperty = "explicit_softDeleteReasonProperty",
@@ -171,7 +171,7 @@ class OAClassTest {
     void defaultRootTreePropertyPathsMatchesDeclaration() throws Exception {
         OAClass ann = DefaultFixture.class.getAnnotation(OAClass.class);
 
-        assertArrayEquals(new String[0], ann.rootTreePropertyPaths());
+        assertArrayEquals(new String[0], ann.rootTreePaths());
     }
 
     @Test
@@ -271,7 +271,7 @@ class OAClassTest {
         assertArrayEquals(new String[] { "one", "two" }, ann.viewProperties());
         assertEquals(77L, ann.estimatedTotal());
         assertArrayEquals(new Class[] { String.class, Integer.class }, ann.filterClasses());
-        assertArrayEquals(new String[] { "one", "two" }, ann.rootTreePropertyPaths());
+        assertArrayEquals(new String[] { "one", "two" }, ann.rootTreePaths());
         assertEquals(true, ann.isProcessed());
         assertEquals("explicit_softDeleteProperty", ann.softDeleteProperty());
         assertEquals("explicit_softDeleteReasonProperty", ann.softDeleteReasonProperty());

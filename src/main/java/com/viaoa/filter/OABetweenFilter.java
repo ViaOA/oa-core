@@ -30,9 +30,9 @@ import com.viaoa.path.OAPath;
  * the object or on a value obtained through an {@link OAPath}.
  *
  * <p>
- * If the property path resolves through a many-relationship, a nested
+ * If the OAPath resolves through a many-relationship, a nested
  * {@link OAFinder} is automatically constructed so that filtering can be
- * applied to the referenced object graph.
+ * applied to the referenced OA object state.
  * </p>
  *
  * @see com.viaoa.compare.OACompare#isBetween(Object, Object, Object)
@@ -41,13 +41,13 @@ public class OABetweenFilter<T> implements OAFilter {
 	private static Logger LOG = Logger.getLogger(OABetweenFilter.class.getName());
 
 	/**
-	 * Optional property path used to extract a nested value from the object
+	 * Optional OAPath used to extract a nested value from the object
 	 * being evaluated. If {@code null}, the object itself is compared.
 	 */
 	private OAPath pp;
 
 	/**
-	 * Optional finder constructed when the property path traverses a
+	 * Optional finder constructed when the OAPath traverses a
 	 * many-relationship. Used to locate the target object before comparison.
 	 */
 	private OAFinder finder;
@@ -71,9 +71,9 @@ public class OABetweenFilter<T> implements OAFilter {
 
 	/**
 	 * Creates a filter that evaluates whether a value obtained from the given
-	 * property path lies strictly between the supplied bounds.
+	 * OAPath lies strictly between the supplied bounds.
 	 *
-	 * @param pp the property path used to extract the comparison value
+	 * @param pp the OAPath used to extract the comparison value
 	 * @param val1 the lower comparison value
 	 * @param val2 the upper comparison value
 	 */
@@ -84,10 +84,10 @@ public class OABetweenFilter<T> implements OAFilter {
 	}
 
 	/**
-	 * Creates a filter using a string property-path expression. The string is
+	 * Creates a filter using a string OAPath expression. The string is
 	 * converted into an {@link OAPath} unless {@code null}.
 	 *
-	 * @param pp the property path expression, or {@code null}
+	 * @param pp the OAPath expression, or {@code null}
 	 * @param val1 the lower comparison value
 	 * @param val2 the upper comparison value
 	 */
@@ -110,9 +110,9 @@ public class OABetweenFilter<T> implements OAFilter {
 	 * Evaluates whether the supplied object satisfies the strict between
 	 * condition.
 	 * <p>
-	 * On first use, if a property path exists, the method determines whether
+	 * On first use, if an OAPath exists, the method determines whether
 	 * a finder is needed. When a finder is present, the filter operates on the
-	 * first located object in the referenced graph. Otherwise, the comparison
+	 * first located object in the referenced OA object state. Otherwise, the comparison
 	 * is performed on the extracted (or direct) value.
 	 * </p>
 	 *

@@ -57,6 +57,9 @@ import com.viaoa.oa.service.hub.HubParentService;
 import com.viaoa.object.OAObject;
 import com.viaoa.select.OASelect;
 
+/**
+ * Internal facade implementation for Hub operation families exposed through {@code OA.internal().hubs()}.
+ */
 public class HubsOpsImpl implements HubsOps {
 
 	private final HubParentService srvc;
@@ -87,11 +90,21 @@ public class HubsOpsImpl implements HubsOps {
 	private HubStatusOps opsStatus;
 	private HubViewOps opsView;
 
+	/**
+	 * Creates the internal Hub facade backed by a Hub parent service.
+	 *
+	 * @param srvc the Hub parent service that owns the concrete Hub services
+	 */
 	public HubsOpsImpl(HubParentService srvc) {
 		this.srvc = srvc;
 	}
 
 	@Override
+	/**
+	 * Returns the internal Hub auto-match facade.
+	 *
+	 * @return the auto-match operations facade
+	 */
 	public HubAutoMatchOps autoMatch() {
 		if (opsAutomatch != null) return opsAutomatch;
 		opsAutomatch = new HubAutoMatchOps() {
@@ -119,6 +132,11 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal Hub master/detail facade.
+	 *
+	 * @return the detail operations facade
+	 */
 	public HubDetailOps detail() {
 		if (opsDetail != null) return opsDetail;
 		opsDetail = new HubDetailOps() {
@@ -252,14 +270,19 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal Hub filter facade.
+	 *
+	 * @return the filter operations facade
+	 */
 	public HubFilterOps filter() {
 		if (opsFilter != null) return opsFilter;
 		opsFilter = new HubFilterOps() {
 
 			@Override
-			public <T extends OAObject> HubFilter<T> filter(Hub<T> hubMaster, Hub<T> hub, OAFilter<T> filter, String... dependentPropertyPaths) {
+			public <T extends OAObject> HubFilter<T> filter(Hub<T> hubMaster, Hub<T> hub, OAFilter<T> filter, String... dependentPaths) {
 				if (hubMaster == null) return null;
-				HubFilter<T> filterx = new HubFilter<T>(hubMaster, hub, filter, dependentPropertyPaths);
+				HubFilter<T> filterx = new HubFilter<T>(hubMaster, hub, filter, dependentPaths);
 				return filterx;
 			}
 
@@ -274,6 +297,11 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal Hub link facade.
+	 *
+	 * @return the link operations facade
+	 */
 	public HubLinkOps link() {
 		if (opsLink != null) return opsLink;
 		opsLink = new HubLinkOps() {
@@ -342,6 +370,11 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal Hub merge facade.
+	 *
+	 * @return the merge operations facade
+	 */
 	public HubMergeOps merge() {
 		if (opsMerge != null) return opsMerge;
 		opsMerge = new HubMergeOps() {
@@ -361,6 +394,11 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal Hub share facade.
+	 *
+	 * @return the share operations facade
+	 */
 	public HubShareOps share() {
 		if (opsShare != null) return opsShare;
 		opsShare = new HubShareOps() {
@@ -404,13 +442,18 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal Hub view facade.
+	 *
+	 * @return the view operations facade
+	 */
 	public HubViewOps view() {
 		if (opsView != null) return opsView;
 		opsView = new HubViewOps() {
 
 			@Override
-			public <F extends OAObject, G extends OAObject> Hub<OAGroupBy<F, G>> groupBy(Hub<F> hubFrom, Hub<G> hubGrpBy, String propertyPath, boolean createNullList) {
-				HubGroupBy<F, G> hgb = new HubGroupBy<F, G>(hubFrom, hubGrpBy, propertyPath, createNullList);
+			public <F extends OAObject, G extends OAObject> Hub<OAGroupBy<F, G>> groupBy(Hub<F> hubFrom, Hub<G> hubGrpBy, String path, boolean createNullList) {
+				HubGroupBy<F, G> hgb = new HubGroupBy<F, G>(hubFrom, hubGrpBy, path, createNullList);
 				Hub<OAGroupBy<F, G>> hx = hgb.getCombinedHub();
 				return hx;
 			}
@@ -431,8 +474,8 @@ public class HubsOpsImpl implements HubsOps {
 			}
 
 			@Override
-			public <A extends OAObject, B extends OAObject> Hub<OALeftJoin<A, B>> leftJoin(Hub<A> hubLeft, Hub<B> hub, String propertyPath, boolean shareActiveObject) {
-				HubLeftJoin<A, B> hlj = new HubLeftJoin<A, B>(hubLeft, hub, propertyPath, shareActiveObject);
+			public <A extends OAObject, B extends OAObject> Hub<OALeftJoin<A, B>> leftJoin(Hub<A> hubLeft, Hub<B> hub, String path, boolean shareActiveObject) {
+				HubLeftJoin<A, B> hlj = new HubLeftJoin<A, B>(hubLeft, hub, path, shareActiveObject);
 				return hlj.getCombinedHub();
 			}
 		};
@@ -440,6 +483,11 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal Hub copy facade.
+	 *
+	 * @return the copy operations facade
+	 */
 	public HubCopyOps copy() {
 		if (opsCopy != null) return opsCopy;
 		opsCopy = new HubCopyOps() {
@@ -459,6 +507,11 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal Hub combine facade.
+	 *
+	 * @return the combine operations facade
+	 */
 	public HubCombineOps combine() {
 		if (opsCombine != null) return opsCombine;
 		opsCombine = new HubCombineOps() {
@@ -473,6 +526,11 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal Hub active-object facade.
+	 *
+	 * @return the active-object operations facade
+	 */
 	public HubAOOps ao() {
 		if (opsAO != null) return opsAO;
 		opsAO = new HubAOOps() {
@@ -520,6 +578,11 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal Hub data facade.
+	 *
+	 * @return the data operations facade
+	 */
 	public HubDataOps data() {
 		if (opsData != null) return opsData;
 		opsData = new HubDataOps() {
@@ -599,6 +662,11 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal Hub status facade.
+	 *
+	 * @return the status operations facade
+	 */
 	public HubStatusOps status() {
 		if (opsStatus != null)
 			return opsStatus;
@@ -627,6 +695,11 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal Hub root facade.
+	 *
+	 * @return the root operations facade
+	 */
 	public HubRootOps root() {
 		if (opsRoot != null)return opsRoot;
 		opsRoot = new HubRootOps() {
@@ -644,6 +717,11 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal Hub add/remove facade.
+	 *
+	 * @return the add/remove operations facade
+	 */
 	public HubAddRemoveOps addRemove() {
 		if (opsAddRemove != null) return opsAddRemove;
 		opsAddRemove = new HubAddRemoveOps() {
@@ -741,6 +819,11 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal client/server facade for the current operation family.
+	 *
+	 * @return the client/server operations facade
+	 */
 	public HubCSOps cs() {
 		if (opsCS != null) return opsCS;
 
@@ -764,6 +847,11 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal delete facade for the current operation family.
+	 *
+	 * @return the delete operations facade
+	 */
 	public HubDeleteOps delete() {
 		if (opsDelete != null) return opsDelete;
 		opsDelete = new HubDeleteOps() {
@@ -782,6 +870,11 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal Hub event facade.
+	 *
+	 * @return the event operations facade
+	 */
 	public HubEventOps events() {
 		if (opsEvent != null) return opsEvent;
 
@@ -812,18 +905,18 @@ public class HubsOpsImpl implements HubsOps {
 			}
 
 			@Override
-			public <T extends OAObject> void addHubListener(Hub<T> hub, HubListener<T> hl, String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly, boolean bUseBackgroundThread) {
-				srvc.getHubEventService().addHubListener(hub, hl, property, dependentPropertyPaths, bActiveObjectOnly, bUseBackgroundThread);
+			public <T extends OAObject> void addHubListener(Hub<T> hub, HubListener<T> hl, String property, String[] dependentPaths, boolean bActiveObjectOnly, boolean bUseBackgroundThread) {
+				srvc.getHubEventService().addHubListener(hub, hl, property, dependentPaths, bActiveObjectOnly, bUseBackgroundThread);
 			}
 
 			@Override
-			public <T extends OAObject> void addHubListener(Hub<T> hub, HubListener<T> hl, String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly) {
-				srvc.getHubEventService().addHubListener(hub, hl, property, dependentPropertyPaths, bActiveObjectOnly);
+			public <T extends OAObject> void addHubListener(Hub<T> hub, HubListener<T> hl, String property, String[] dependentPaths, boolean bActiveObjectOnly) {
+				srvc.getHubEventService().addHubListener(hub, hl, property, dependentPaths, bActiveObjectOnly);
 			}
 
 			@Override
-			public <T extends OAObject> void addHubListener(Hub<T> hub, HubListener<T> hl, String property, String[] dependentPropertyPaths) {
-				srvc.getHubEventService().addHubListener(hub, hl, property, dependentPropertyPaths);
+			public <T extends OAObject> void addHubListener(Hub<T> hub, HubListener<T> hl, String property, String[] dependentPaths) {
+				srvc.getHubEventService().addHubListener(hub, hl, property, dependentPaths);
 			}
 
 			@Override
@@ -845,18 +938,28 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal find facade for the current operation family.
+	 *
+	 * @return the find operations facade
+	 */
 	public HubFindOps find() {
 		if (opsFind != null) return opsFind;
 		opsFind = new HubFindOps() {
 			@Override
-			public <T extends OAObject> T findFirst(Hub<T> hub, String propertyPath, Object findValue, boolean bSetAO, T lastFoundObject) {
-				return srvc.getHubFindService().findFirst(hub, propertyPath, findValue, bSetAO, lastFoundObject);
+			public <T extends OAObject> T findFirst(Hub<T> hub, String path, Object findValue, boolean bSetAO, T lastFoundObject) {
+				return srvc.getHubFindService().findFirst(hub, path, findValue, bSetAO, lastFoundObject);
 			}
 		};
 		return opsFind;
 	}
 
 	@Override
+	/**
+	 * Returns the internal property facade for the current operation family.
+	 *
+	 * @return the property operations facade
+	 */
 	public HubPropertyOps property() {
 		if (opsProperty != null) return opsProperty;
 		opsProperty = new HubPropertyOps() {
@@ -885,6 +988,11 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal save facade for the current operation family.
+	 *
+	 * @return the save operations facade
+	 */
 	public HubSaveOps save() {
 		if (opsSave != null) return opsSave;
 		opsSave = new HubSaveOps() {
@@ -904,13 +1012,18 @@ public class HubsOpsImpl implements HubsOps {
 //qqqqqqqqqqqqqqqqqqqq	
 	
 	@Override
+	/**
+	 * Returns the internal Hub select facade.
+	 *
+	 * @return the select operations facade
+	 */
 	public HubSelectOps select() {
 		if (opsSelect != null) return opsSelect;
 		opsSelect = new HubSelectOps() {
 
 			@Override
-			public void setSelectWhereHubPropertyPath(Hub<?> hub, String ppFromHub) {
-				srvc.getHubSelectService().setSelectWhereHubPropertyPath(hub, ppFromHub);
+			public void setSelectWhereHubPath(Hub<?> hub, String ppFromHub) {
+				srvc.getHubSelectService().setSelectWhereHubPath(hub, ppFromHub);
 			}
 
 			@Override
@@ -969,8 +1082,8 @@ public class HubsOpsImpl implements HubsOps {
 			}
 
 			@Override
-			public String getSelectWhereHubPropertyPath(Hub<?> hub) {
-				return srvc.getHubSelectService().getSelectWhereHubPropertyPath(hub);
+			public String getSelectWhereHubPath(Hub<?> hub) {
+				return srvc.getHubSelectService().getSelectWhereHubPath(hub);
 			}
 
 			@Override
@@ -1012,6 +1125,11 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal Hub sequence facade.
+	 *
+	 * @return the sequence operations facade
+	 */
 	public HubSequenceOps sequence() {
 		if (opsSequence != null) return opsSequence;
 		opsSequence = new HubSequenceOps() {
@@ -1034,6 +1152,11 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal serialization facade for the current operation family.
+	 *
+	 * @return the serialization operations facade
+	 */
 	public HubSerializeOps serialize() {
 		if (opsSerialize != null) return opsSerialize;
 		opsSerialize = new HubSerializeOps() {
@@ -1050,6 +1173,11 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal Hub size facade.
+	 *
+	 * @return the size operations facade
+	 */
 	public HubSizeOps size() {
 		if (opsSize != null) return opsSize;
 		opsSize = new HubSizeOps() {
@@ -1068,6 +1196,11 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal Hub sort facade.
+	 *
+	 * @return the sort operations facade
+	 */
 	public HubSortOps sort() {
 		if (opsSort != null) return opsSort;
 		opsSort = new HubSortOps() {
@@ -1078,8 +1211,8 @@ public class HubsOpsImpl implements HubsOps {
 			}
 
 			@Override
-			public void sort(Hub<?> hub, String propertyPaths, boolean bAscending, Comparator<?> comp) {
-				srvc.getHubSortService().sort(hub, propertyPaths, bAscending, comp);
+			public void sort(Hub<?> hub, String paths, boolean bAscending, Comparator<?> comp) {
+				srvc.getHubSortService().sort(hub, paths, bAscending, comp);
 			}
 
 			@Override

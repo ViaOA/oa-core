@@ -14,6 +14,10 @@ import com.viaoa.hub.view.HubShareAO;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.object.OAObject;
 
+/**
+ * Manages shared Hub data and propagation across shared Hubs.
+ */
+
 public abstract class HubShareService {
 	private final Logger LOG = Logger.getLogger(HubShareService.class.getName());
 
@@ -179,7 +183,7 @@ public abstract class HubShareService {
 	 */
 	public <T extends OAObject> HubCopy<T> getHubCopy(Hub<T> thisHub) {
 		Hub<T> h = getMainSharedHub(thisHub);
-		HubDataMaster dm = faHub.getHubDataMaster(h); 
+		HubDataMaster dm = faHub.getHubDataMaster(h);
 		if (dm.getMasterObject() != null || dm.getMasterHub() != null) {
 			// filtered hubs will not have a master
 			return null;
@@ -205,7 +209,7 @@ public abstract class HubShareService {
 	 */
 	public <T extends OAObject> HubFilter<T> getHubFilter(Hub<T> thisHub) {
 		Hub<T> h = getMainSharedHub(thisHub);
-		HubDataMaster dm = faHub.getHubDataMaster(h); 
+		HubDataMaster dm = faHub.getHubDataMaster(h);
 		if (dm.getMasterObject() != null || dm.getMasterHub() != null) {
 			// filtered hubs will not have a master
 			return null;
@@ -260,7 +264,7 @@ public abstract class HubShareService {
 			return null;
 		}
 
-		final HubDataUnique<T> datau = faHub.getHubDataUnique(thisHub); 
+		final HubDataUnique<T> datau = faHub.getHubDataUnique(thisHub);
 		if (datau.getSharedHub() != null) {
 			if (bOnlyIfSharedAO && !isUsingSameSharedAO(thisHub, datau.getSharedHub())) {
 				return null;
@@ -290,7 +294,7 @@ public abstract class HubShareService {
 	}
 
 	/**
-	 * Traverses the shared-Hub graph to find the first Hub satisfying the
+	 * Traverses the shared-Hub structure to find the first Hub satisfying the
 	 * given filter.
 	 *
 	 * @param thisHub              starting Hub
@@ -483,8 +487,8 @@ public abstract class HubShareService {
 			if (hubs[i] == thisHub) {
 				continue;
 			}
-			faHub.setHubData(hubs[i], faHub.getHubData(thisHub)); // use same data 
-			faHub.setHubDataMaster(hubs[i], faHub.getHubDataMaster(thisHub)); // use same data 
+			faHub.setHubData(hubs[i], faHub.getHubData(thisHub)); // use same data
+			faHub.setHubDataMaster(hubs[i], faHub.getHubDataMaster(thisHub)); // use same data
 			if (bShareActiveObject) {
 				// all hubs that are shared with the "dHub" need to have dataa shared
 				if (faHub.getHubDataActive(hubs[i]) == daOld) {
@@ -508,7 +512,7 @@ public abstract class HubShareService {
 
 	/**
 	 * Resets AO state in all shared Hubs after a remove-all operation and
-	 * recursively propagates the change through the shared-Hub graph.
+	 * recursively propagates the change through the shared-Hub OA model.
 	 *
 	 * @param thisHub the Hub where the remove-all occurred
 	 */
@@ -645,7 +649,7 @@ public abstract class HubShareService {
 
 	/**
 	 * Core worker that performs the detailed process of attaching
-	 * {@code thisHub} to the shared-Hub graph. Handles recursive-Hub protection,
+	 * {@code thisHub} to the shared-Hub OA model. Handles recursive-Hub protection,
 	 * compatibility checks, data replacement, AO alignment, listener updates,
 	 * and propagation of active-object recalculation.
 	 *
@@ -682,7 +686,7 @@ public abstract class HubShareService {
 		}
 
 		callHubDataIncChangeCount(thisHub);
-		final HubDataUnique<T> datau = faHub.getHubDataUnique(thisHub); 
+		final HubDataUnique<T> datau = faHub.getHubDataUnique(thisHub);
 		final Hub<T> hubOrigSharedHub = datau.getSharedHub();
 		if (hubOrigSharedHub == sharedMasterHub) {
 			if (sharedMasterHub == null) {
@@ -888,7 +892,7 @@ public abstract class HubShareService {
 						obj = datauh.getLinkToGetMethod().invoke(obj, (Object[]) null);
 					}
 
-					
+
 					// 20110110 the link value is in the process of being changed - see srvcHub.getHubDataService().getPos(...)
 					if (newLinkValue != null && newLinkValue != obj) {
 						continue;
@@ -949,6 +953,8 @@ public abstract class HubShareService {
 	 * Returns an array of all of the Hubs that are shared with this Hub.
 	 */
 	/*
+
+
 	public Hub[] getSharedHubs_OLD(Hub thisHub) {
 	    if (faHub.getHubDataUnique(thisHub).vecSharedHub == null) return new Hub[0];
 	    synchronized (faHub.getHubDataUnique(thisHub).vecSharedHub) {
@@ -965,6 +971,8 @@ public abstract class HubShareService {
 	 */
 
 	/*
+
+
 	public void addSharedHub_OLD(Hub thisHub, Hub hub) {
 	    if (faHub.getHubDataUnique(thisHub).vecSharedHub == null) {
 		    synchronized (faHub.getHubData(thisHub)u) {
@@ -978,6 +986,8 @@ public abstract class HubShareService {
 	 * Remove shared Hub from list of shared Hubs.
 	 */
 	/*
+
+
 	public void removeSharedHub_OLD(Hub thisHub, Hub hub) {
 	    if (faHub.getHubDataUnique(thisHub).vecSharedHub == null) return;
 	    synchronized (faHub.getHubDataUnique(thisHub)uvecSharedHub) {
@@ -1015,7 +1025,7 @@ public abstract class HubShareService {
 		}
 
 		int pos;
-		final HubDataUnique<T> datau = faHub.getHubDataUnique(thisHub); 
+		final HubDataUnique<T> datau = faHub.getHubDataUnique(thisHub);
 		synchronized (datau) {
 			if (datau.getWeakSharedHubs() == null) {
 				datau.setWeakSharedHubs(new WeakReference[1]);
@@ -1087,7 +1097,7 @@ public abstract class HubShareService {
 	 */
 	public <T extends OAObject> void _removeSharedHub(Hub<T> sharedHub, Hub<T> hub) {
 		if (sharedHub == null) return;
-		
+
 		final HubDataUnique<T> datauShared = faHub.getHubDataUnique(sharedHub);
 		if (datauShared.getWeakSharedHubs() == null) {
 			return;
@@ -1154,11 +1164,11 @@ public abstract class HubShareService {
 	 */
 	@SuppressWarnings("unchecked")
 	public <T extends OAObject> Hub<T>[] getSharedHubs(Hub<T> thisHub) {
-		final HubDataUnique<T>datau = faHub.getHubDataUnique(thisHub); 
+		final HubDataUnique<T>datau = faHub.getHubDataUnique(thisHub);
 		if (datau.getWeakSharedHubs() == null) {
 			return (Hub[]) EmptyHubs;
 		}
-		
+
 		synchronized (datau) {
 			if (datau.getWeakSharedHubs() == null) {
 				return (Hub[]) EmptyHubs;
@@ -1196,7 +1206,7 @@ public abstract class HubShareService {
 		if (thisHub == null) {
 			return null;
 		}
-		final HubDataUnique<T> datau = faHub.getHubDataUnique(thisHub); 
+		final HubDataUnique<T> datau = faHub.getHubDataUnique(thisHub);
 		return datau.getWeakSharedHubs();
 	}
 
@@ -1212,7 +1222,7 @@ public abstract class HubShareService {
 		if (thisHub == null) {
 			return 0;
 		}
-		final HubDataUnique<T> datau = faHub.getHubDataUnique(thisHub); 
+		final HubDataUnique<T> datau = faHub.getHubDataUnique(thisHub);
 		WeakReference<Hub<T>>[] refs = datau.getWeakSharedHubs();
 		if (refs == null) {
 			return 0;
@@ -1255,18 +1265,107 @@ public abstract class HubShareService {
 		}
 		return null;
 	}
-	
+
+	/**
+	 * Dependency hook used by this service for ObjectHubRemoveHub behavior.
+	 *
+	 * @param oaObj method input
+	 * @param hub method input
+	 * @param bIsOnHubFinalize method input
+	 */
+
 	public abstract <T extends OAObject> void callObjectHubRemoveHub(final T oaObj, Hub<T> hub, boolean bIsOnHubFinalize);
+	/**
+	 * Dependency hook used by this service for HubEventGetHubListeners behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> HubListener<T>[] callHubEventGetHubListeners(Hub<T> thisHub);
+	/**
+	 * Dependency hook used by this service for HubAOSetActiveObject behavior.
+	 *
+	 * @param thisHub method input
+	 * @param object method input
+	 * @param adjustMaster method input
+	 * @param bUpdateLink method input
+	 * @param bForce method input
+	 */
 	public abstract <T extends OAObject> void callHubAOSetActiveObject(Hub<T> thisHub, T object, boolean adjustMaster, boolean bUpdateLink, boolean bForce);
+	/**
+	 * Dependency hook used by this service for HubAOSetActiveObject behavior.
+	 *
+	 * @param thisHub method input
+	 * @param object method input
+	 * @param pos method input
+	 * @param bUpdateLink method input
+	 * @param bForce method input
+	 * @param bCalledByShareHub method input
+	 */
 	public abstract <T extends OAObject> void callHubAOSetActiveObject(final Hub<T> thisHub, T object, int pos, boolean bUpdateLink, boolean bForce, boolean bCalledByShareHub);
+	/**
+	 * Dependency hook used by this service for HubAOSetActiveObject behavior.
+	 *
+	 * @param thisHub method input
+	 * @param pos method input
+	 * @param adjustMaster method input
+	 * @param bUpdateLink method input
+	 * @param bForce method input
+	 */
 	public abstract void callHubAOSetActiveObject(Hub<?> thisHub, int pos, boolean adjustMaster, boolean bUpdateLink, boolean bForce);
+	/**
+	 * Dependency hook used by this service for HubEventClearGetAllListenerCache behavior.
+	 *
+	 * @param hub method input
+	 */
 	public abstract void callHubEventClearGetAllListenerCache(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service for HubEventFireAfterChangeActiveObjectEvent behavior.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 * @param pos method input
+	 * @param bAllShared method input
+	 */
 	public abstract <T extends OAObject> void callHubEventFireAfterChangeActiveObjectEvent(Hub<T> thisHub, T obj, int pos, boolean bAllShared);
+	/**
+	 * Dependency hook used by this service for HubDetailGetLinkInfoFromDetailToMaster behavior.
+	 *
+	 * @param hub method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service for HubDetailGetLinkInfoFromMasterHubToDetail behavior.
+	 *
+	 * @param thisDetailHub method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub<?> thisDetailHub);
+	/**
+	 * Dependency hook used by this service for HubDataIncChangeCount behavior.
+	 *
+	 * @param thisHub method input
+	 */
 	public abstract void callHubDataIncChangeCount(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubDataSetObjectClass behavior.
+	 *
+	 * @param thisHub method input
+	 * @param objClass method input
+	 */
 	public abstract <T extends OAObject> void callHubDataSetObjectClass(Hub<T> thisHub, Class<T> objClass);
+	/**
+	 * Dependency hook used by this service for HubEventFireOnNewListEvent behavior.
+	 *
+	 * @param thisHub method input
+	 * @param bAll method input
+	 */
 	public abstract void callHubEventFireOnNewListEvent(Hub<?> thisHub, boolean bAll);
+	/**
+	 * Dependency hook used by this service for RemoteThreadIsRemoteThread behavior.
+	 *
+	 * @return result value
+	 */
 	public abstract boolean callRemoteThreadIsRemoteThread();
 }

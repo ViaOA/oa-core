@@ -413,7 +413,7 @@ Related CODEX findings:
 Cached method array correctness and class-specific cache behavior reviewed.
 Suggested unit tests:
 testCachedGetterSpecificToClass, testCachedMethodSpecificToParameterTypes,
-testCachedPropertyPathDoesNotCrossClassBoundary.
+testCachedPathDoesNotCrossClassBoundary.
 Spec target section:
 Reflection Runtime / Cache Identity
 
@@ -429,7 +429,7 @@ OAReflect.getMethods, getMethod, cached lookup results, class scanning results.
 Related CODEX findings:
 Cache/reuse behavior reviewed.
 Suggested unit tests:
-testCachedMethodReuseStableAcrossCalls, testCachedPropertyPathReuseThreadSafeByContract,
+testCachedMethodReuseStableAcrossCalls, testCachedPathReuseThreadSafeByContract,
 testCallerMutationDoesNotCorruptCachedMethodArrayIfContractRequiresCopy.
 Spec target section:
 Reflection Runtime / Cache Reuse
@@ -499,7 +499,7 @@ Related CODEX findings:
 False-success wrong-method behavior, empty path toString fallback, and similar setter name risks reviewed.
 Suggested unit tests:
 testAmbiguousMethodDoesNotInvokeWrongMethod, testSimilarSetterNameNotInvokedAsFallback,
-testMalformedPropertyPathDoesNotInvokeToString, testWrongMethodFailureModeByContract.
+testMalformedPathDoesNotInvokeToString, testWrongMethodFailureModeByContract.
 Spec target section:
 Reflection Runtime / False-Success Prevention
 

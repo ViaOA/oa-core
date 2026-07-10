@@ -26,8 +26,8 @@ import com.viaoa.serialize.OAObjectSerializer;
  * Remote interface defining broadcast-style synchronization messages exchanged
  * between server and clients.
  * <p>
- * Methods on this interface represent live updates to the distributed object
- * graph, including:
+ * Methods on this interface represent live updates to the distributed OA
+ * model, including:
  * <ul>
  *   <li>property changes,</li>
  *   <li>hub insert/remove/move operations,</li>
@@ -47,7 +47,7 @@ import com.viaoa.serialize.OAObjectSerializer;
  *   <li>{@code @OARemoteMethod(runInRemoteThread = true)}</li>
  *   <li>{@code isOASync = true} on the interface</li>
  * </ul>
- * ensuring propagation ordering that preserves hub and object graph integrity.
+ * ensuring propagation ordering that preserves hub and OA model integrity.
  *
  * <p>
  * {@code RemoteSyncInterface} is the heart of OA’s distributed sync protocol.
@@ -142,12 +142,12 @@ public interface RemoteSyncInterface {
      * @param objectClass the class of the master object
      * @param objectKey the key identifying the master object
      * @param hubPropertyName the name of the hub property
-     * @param propertyPaths property paths used for sorting
+     * @param paths property paths used for sorting
      * @param bAscending {@code true} for ascending order, {@code false} for descending
      * @param comp optional comparator
      * @return {@code true} if the hub was sorted, otherwise {@code false}
      */
-    boolean sort(Class objectClass, OAObjectKey objectKey, String hubPropertyName, String propertyPaths, boolean bAscending, Comparator comp);
+    boolean sort(Class objectClass, OAObjectKey objectKey, String hubPropertyName, String paths, boolean bAscending, Comparator comp);
 
     /**
      * Clears pending change state for a hub property.
@@ -185,6 +185,5 @@ public interface RemoteSyncInterface {
     void clientDelete(Class objectClass, OAObjectKey objectKey);
 
 
-  //qqqqqqqqqvvv will need a "replace" method, for handling duplicates
 
 }

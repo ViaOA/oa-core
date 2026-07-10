@@ -58,10 +58,10 @@ CODEX
      OATriggerMethodListener.onTrigger
 
   concrete bug: The datasource query computes objWhere for Hub add/insert/remove events, but ignores it for non-empty
-  propertyPathFromRoot.
+  pathFromRoot.
 
   runtime scenario: Root trigger path is something like departments.employees. An employee is added to a department
-  hub. masterObject is the Department, hubEvent.getObject() is the Employee, and propertyPathFromRoot points from root
+  hub. masterObject is the Department, hubEvent.getObject() is the Employee, and pathFromRoot points from root
   to the department-side path. Code correctly sets objWhere = masterObject, but line 184 binds hubEvent.getObject()
   instead.
 
@@ -172,11 +172,11 @@ public class OATriggerMethodListener implements OATriggerListener {
      *
      * @param objRoot               the root object to invoke the method on, or null to search
      * @param hubEvent              the event that caused the trigger
-     * @param propertyPathFromRoot  the path from the root object to the event source
+     * @param pathFromRoot  the path from the root object to the event source
      * @throws Exception if the reflective invocation fails
      */
     @Override
-    public void onTrigger(OAObject objRoot, final HubEvent hubEvent, String propertyPathFromRoot) throws Exception {
+    public void onTrigger(OAObject objRoot, final HubEvent hubEvent, String pathFromRoot) throws Exception {
         if (objRoot != null) {
             method.invoke(objRoot, new Object[] { hubEvent });
             return;
@@ -186,7 +186,7 @@ public class OATriggerMethodListener implements OATriggerListener {
         final OAObject masterObject = hub == null ? null : hub.getMasterObject();
         
         // the reverse property could not be used to get objRoot - need to find root objs and call trigger method
-        final OAFinder finder = new OAFinder(propertyPathFromRoot) {
+        final OAFinder finder = new OAFinder(pathFromRoot) {
             protected boolean isUsed(OAObject obj) {
                 if (obj == hubEvent.getObject()) return true;
                 if (masterObject == obj) return true;
@@ -237,11 +237,11 @@ public class OATriggerMethodListener implements OATriggerListener {
                     objWhere = (OAObject) hubEvent.getObject();
                 }
 
-                if (OAString.isEmpty(propertyPathFromRoot)) {
+                if (OAString.isEmpty(pathFromRoot)) {
                     sel = new OASelect(oi.getForClass(), objWhere, "");
                 }
                 else {
-                    String query = propertyPathFromRoot + " = ?";
+                    String query = pathFromRoot + " = ?";
                     sel = new OASelect(oi.getForClass(), query, new Object[] { hubEvent.getObject() }, "");
                 }
             }

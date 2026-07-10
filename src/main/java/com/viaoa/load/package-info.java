@@ -67,7 +67,7 @@ flags, path metadata, counters, or executor state as a valid load.
 Rationale:
 Root class and path metadata determine traversal correctness; setup failure must be visible and retry-safe.
 Source scope:
-OALoader.setup(Class), propertyPath, linkInfos, recursiveLinkInfos, liRecursiveRoot, public load(...) methods.
+OALoader.setup(Class), path, linkInfos, recursiveLinkInfos, liRecursiveRoot, public load(...) methods.
 Related CODEX findings:
 setup failure leaves abMainThreadRunning true; parsed path state reused across different root classes.
 Suggested unit tests:
@@ -328,7 +328,7 @@ Rationale:
 Callers rely on preload/load to make requested graph state available; unsupported paths must not leave graph state
 missing silently.
 Source scope:
-OAPreLoader._load(...), loadMtoM(...), loadOtoM(...), OALoader.setup(...), propertyPath/linkInfos.
+OAPreLoader._load(...), loadMtoM(...), loadOtoM(...), OALoader.setup(...), path/linkInfos.
 Related CODEX findings:
 OAPreLoader stops at first non-MANY segment; loadMtoM no-op.
 Suggested unit tests:

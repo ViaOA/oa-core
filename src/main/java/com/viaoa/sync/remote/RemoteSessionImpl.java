@@ -27,61 +27,6 @@ import com.viaoa.runtime.OARuntime;
 import com.viaoa.sync.model.ClientInfo;
 
 
-/*qqqqqqqqqqqqq
-CODEX
-
-2. file/class/method
-     src/main/java/com/viaoa/sync/remote/RemoteSessionImpl.java:162
-     RemoteSessionImpl.updateObjectsWithoutHubs(...)
-
-  concrete bug
-  When bIsInHub == false, the method only retains the object if it is already present in the server object cache. If
-  the server weak cache has evicted it, the method silently does nothing.
-
-  runtime scenario
-  A client still references an object outside any hub and reports that state to the server. The server cache no longer
-  contains the object, but the object may still exist in datasource and on the client. The server fails to add it to
-  hmObjectsWithoutHubs, so later saveCache(...) and per-session retention do not include it.
-
-  why this violates OA/OG sync semantics
-  The client is explicitly reporting “I still hold this object outside hubs.” That retention state should not depend
-  solely on a transient weak-cache hit. Silent no-op can let the server lose track of client-held objects and skip
-  later save/retention behavior.
-
-  minimal fix direction
-  Resolve the object from datasource on cache miss, store a key-only retention marker, or make the failure visible/
-  logged so the session does not falsely appear to retain the object.
-
-  suggested CODEX comment location
-  RemoteSessionImpl.updateObjectsWithoutHubs(...), inside the bIsInHub == false branch after cache lookup.
-
-2. file/class/method
-     src/main/java/com/viaoa/sync/remote/RemoteSessionImpl.java:245
-     RemoteSessionImpl.setLock(...)
-
-  concrete bug
-  Distributed lock/unlock resolves the target object only from the server object cache. If the object is not currently
-  cached but can be resolved by datasource/key, lock returns false.
-
-  runtime scenario
-  A client attempts to lock an existing persisted object after the server cache has dropped it. The object identity is
-  valid, but callObjectCacheGet(...) returns null, so the lock is denied without attempting authoritative object
-  resolution.
-
-  why this violates OA/OG sync semantics
-  Distributed lock semantics are identity/key-based, not transient-cache-presence based. A valid remote lock request
-  can fail only because the server weak cache does not currently hold the object.
-
-  minimal fix direction
-  Resolve from datasource on cache miss, or explicitly document that remote locks require server-cache residency and
-  make callers handle that contract.
-
-  suggested CODEX comment location
-  RemoteSessionImpl.setLock(...), around the cache lookup and return false.
-
-
-
-*/
 
 /**
  * Base server-side implementation of {@link RemoteSessionInterface} representing

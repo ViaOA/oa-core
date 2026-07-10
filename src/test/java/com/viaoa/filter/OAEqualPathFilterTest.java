@@ -19,7 +19,7 @@ class OAEqualPathFilterTest {
         OAEqualPathFilter filter = new OAEqualPathFilter(items, com.test.pos.model.oa.Item.P_Name,
                 com.test.pos.model.oa.Item.P_Name);
 
-        assertNotNull(filter.getPropertyPath());
+        assertNotNull(filter.getPath());
         assertTrue(filter.isUsed(graph.item));
         com.test.pos.model.oa.Item other = new com.test.pos.model.oa.Item(2000);
         other.setName("Rotor");
@@ -31,7 +31,7 @@ class OAEqualPathFilterTest {
         FilterTestSupport.PosGraph graph = FilterTestSupport.graph();
         OAEqualPathFilter filter = new OAEqualPathFilter(graph.item, com.test.pos.model.oa.Item.P_Name, com.test.pos.model.oa.Item.P_Name);
 
-        assertNotNull(filter.getPropertyPath());
+        assertNotNull(filter.getPath());
         boolean b = filter.isUsed(graph.item);
         assertTrue(b);
     }

@@ -24,25 +24,23 @@ import com.viaoa.oa.OA;
 import com.viaoa.runtime.OARuntime;
 
 /**
- * Convenience helper for constructing a root {@link OAPath}. This
- * delegates directly to the corresponding {@link OAPath} constructor
- * and is used when parsing a property-path string that begins with a leading
- * class qualifier (for example, {@code "[Customer].orders.item"}). <p>
- *
- * The supplied {@code packageClass} identifies the package context in which
- * the root class name will be resolved. The method performs no additional
- * parsing or validation beyond what {@link OAPath} already provides
- * and simply returns the constructed instance. The class is stateless and
- * entirely thread-safe.
+ * Helper methods for creating and deriving OA property paths.
+ * <p>
+ * This class is stateless. It delegates root-qualified path parsing to {@link OAPath} and can derive a dotted link path
+ * between a Hub object class and a sequence of target classes using OA relationship metadata.
+ * </p>
  */
 public class OAPathDelegate {
 
 	/**
-	 * parse a propertyPath that has a leading "[ClassName]."
-	 * 
-	 * @param packageClass class that the from class is in the same package as.
+	 * Creates a path for text that can include a leading root class qualifier such as {@code [Customer].orders}.
+	 *
+	 * @param sPropPath property path text to parse
+	 * @param packageClass class whose package is used to resolve unqualified root class names
+	 * @return parsed OA path
+	 * @throws Exception if path construction fails
 	 */
-	public static OAPath createRootPropertyPath(String sPropPath, Class packageClass) throws Exception {
+	public static OAPath createRootPath(String sPropPath, Class packageClass) throws Exception {
 		OAPath pp = new OAPath(packageClass, sPropPath);
 		return pp;
 	}
@@ -57,7 +55,7 @@ public class OAPathDelegate {
 	 * @return a dot-delimited property path, or {@code null} if a segment cannot be
 	 *         resolved
 	 */
-	public static String getPropertyPathforClasses(final Hub hub, Class[] classes) {
+	public static String getPathforClasses(final Hub hub, Class[] classes) {
 		if (hub == null || classes == null) {
 			return null;
 		}

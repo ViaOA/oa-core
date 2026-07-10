@@ -40,7 +40,7 @@ import java.lang.annotation.Target;
  *       isXml, isBlob, name/value, etc.</li>
  *   <li><b>POJO integration</b>: {@code noPojo}, {@code pojoKeyPos}.</li>
  *   <li><b>Time-zone handling</b>: {@code ignoreTimeZone},
- *       {@code timeZonePropertyPath}.</li>
+ *       {@code timeZonePath}.</li>
  * </ul>
  *
  * <p>These metadata drive OA’s automatic UI generation, validation,
@@ -342,7 +342,7 @@ public @interface OAProperty {
 	 * Property path used to determine the applicable time zone for this
 	 * property's datetime values.
 	 */
-	String timeZonePropertyPath() default "";
+	String timeZonePath() default "";
 
 	/**
 	 * Indicates that the property's value should be rendered or stored

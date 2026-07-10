@@ -32,67 +32,6 @@ import com.viaoa.comm.multiplexer.OAMultiplexerServer;
 import com.viaoa.io.OAFile;
 
 
-/*qqqqqqqqqqqqqqqqqqq
-CODEX
-
-2. src/main/java/com/viaoa/sync/file/ServerFile.java:317 / uploadFile(Socket)
-
-  Concrete bug: server upload deletes/recreates the destination file before the incoming upload has completed
-  successfully.
-
-  Runtime scenario: a valid OA client uploads shared/report.dat, and the connection drops after the server executes
-  fileSaveAs.delete() / createNewFile() but before all bytes are received. The previous server file is already
-  destroyed and replaced by an empty or partial file.
-
-  Why this violates OA/OG sync semantics: a failed file upload can silently corrupt an existing server-side file. The
-  caller sees transfer failure/logging, but the durable shared file state has already been committed before successful
-  receipt.
-
-  Minimal fix direction: stream to a temporary file in the same directory, then atomically replace/rename to the
-  target only after the full upload completes and the client terminator is received.
-
-  Suggested CODEX comment location: ServerFile.uploadFile(...), around lines 317-337.
-
-  Suggested regression test: testServerUploadFailureDoesNotOverwriteExistingFile()
-
-3. src/main/java/com/viaoa/sync/file/ServerFile.java:124 / start(OAMultiplexerServer)
-
-  Concrete bug: start(...) sets abStart to true before either listener socket is successfully created, but listener
-  startup failures are caught only inside background threads.
-
-  Runtime scenario: upload or download server socket creation fails. The thread logs the exception and exits, but
-  abStart remains true. Later start(...) calls return immediately because compareAndSet(false, true) fails, so file
-  transfer cannot be restarted without an explicit stop().
-
-  Why this violates OA/OG sync semantics: startup can falsely appear completed while one or both file-transfer
-  listeners are dead, and retry is blocked by stale lifecycle state.
-
-  Minimal fix direction: create listener sockets synchronously before marking started, or have listener startup
-  failure clear abStart and close any partially opened socket.
-
-  Suggested CODEX comment location: ServerFile.start(...), around lines 124-156.
-
-
-5. src/main/java/com/viaoa/sync/file/ServerFile.java:207 / stop()
-
-  Concrete bug: upload/download server sockets are closed in one try block; if closing ssUpload throws or it is null,
-  ssDownload is not closed.
-
-  Runtime scenario: file transfer service is partially started or upload socket close fails during shutdown. The catch
-  swallows the exception and skips download socket cleanup.
-
-  Why this violates sync semantics: file transfer shutdown can leave one listener/resource alive after stop reports
-  completion.
-
-  Minimal fix direction: close each socket independently with null checks, then clear fields in finally-style cleanup.
-
-  Suggested CODEX comment location: ServerFile.stop(), around lines 207-216.
-
-  Suggested regression test: testServerFileStopAttemptsBothSocketClosesWhenFirstCloseFails()
-
-
-
-*/
 /**
  * Server-side file transfer service used by {@link com.viaoa.sync.OASyncServer}.
  * <p>
@@ -186,6 +125,18 @@ public class ServerFile {
         if (!abStart.compareAndSet(false, true)) return;
         LOG.fine("Starting");
         Thread t = new Thread(new Runnable() {
+            /**
+             * Runs the server upload listener thread.
+             */
+            /**
+             * Runs the server download listener thread.
+             */
+            /**
+             * Handles one upload socket request.
+             */
+            /**
+             * Handles one download socket request.
+             */
             @Override
             public void run() {
                 try {
@@ -201,6 +152,9 @@ public class ServerFile {
         t.start();
         
         t = new Thread(new Runnable() {
+            /**
+             * Runs the server download listener thread.
+             */
             @Override
             public void run() {
                 try {
@@ -251,6 +205,9 @@ public class ServerFile {
         	try {
 	            final Socket socket = ssDownload.accept();
 	            new Thread(new Runnable() {
+	                /**
+	                 * Handles one download socket request.
+	                 */
 	                public void run() {
 	                    try {
 	                        downloadFile(socket);
@@ -337,12 +294,14 @@ public class ServerFile {
         	try {
 	            final Socket socket = ssUpload.accept();
 	            new Thread(new Runnable() {
+	                /**
+	                 * Handles one upload socket request.
+	                 */
 	                public void run() {
 	                    try {
 	                        uploadFile(socket);
 	                    }
 	                    catch (Exception e) {
-	                        // TODO: handle exception
 	                        LOG.log(Level.WARNING, "ServerFile.fileUpload exception", e);
 	                    }
 	                }

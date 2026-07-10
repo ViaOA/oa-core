@@ -26,34 +26,6 @@ import com.viaoa.object.*;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.serialize.OAObjectSerializer;
 
-/*qqqqqqqqqqqqq
-
-CODEX
-7. src/main/java/com/viaoa/sync/remote/RemoteSyncImpl.java — removeAllFromHub(...)
-     Concrete bug: when the client receives removeAllFromHub for an object it has but whose hub reference is not
-     loaded, getHub returns null and the method sets the property to null.
-     Runtime scenario: server clears a detail hub; client has the master object but has never loaded that hub.
-     Why this violates sync semantics: an unloaded reference can be converted into a loaded-empty/null state,
-     preventing later lazy load from retrieving the real server state.
-     Minimal fix direction: if the client hub is not loaded, do not set the property to null; leave it unloaded, or
-     mark an explicit invalidated/unloaded state.
-     Suggested CODEX comment location: RemoteSyncImpl.removeAllFromHub, around lines 243-248.
-  8. src/main/java/com/viaoa/sync/remote/RemoteSyncImpl.java and RemoteClientImpl.java — getObject(...)
-     Concrete bug: comments say a datasource-reloaded object must use the original GUID, but the GUID reassignment is
-     commented out.
-     Runtime scenario: server cache no longer has an object, sync replay/load resolves it from datasource using
-     business key, and the returned live object has a different runtime GUID than the client/original key.
-     Why this violates sync semantics: GUID identity and business-key identity can drift during replay/sync
-     application, causing filtering, object references, and subsequent sync messages to target different runtime
-     identities.
-     Minimal fix direction: restore/replace GUID reassignment through the current OAObject GUID service, or explicitly
-     prove datasource reload preserves the original GUID before accepting the object.
-     Suggested CODEX comment location: RemoteSyncImpl.getObject, around lines 331-338, and RemoteClientImpl.getObject,
-     around lines 416-420.
-
-
-
-*/
 
 /**
  * Concrete implementation of {@link RemoteSyncInterface} used by both server
@@ -83,7 +55,7 @@ CODEX
  * <h2>Object Resolution</h2>
  * {@code getObject()} loads objects from cache or from the datasource if
  * required (server-side). When an object is refetched after GC, the original
- * GUID is reassigned to preserve identity across the distributed graph.
+ * GUID is reassigned to preserve identity across the distributed OA model.
  *
  * <h2>Hub Refresh and Cleanup</h2>
  * <ul>
@@ -101,7 +73,7 @@ CODEX
  *
  * <p>
  * {@code RemoteSyncImpl} is the concrete engine that applies distributed
- * changes in OA’s executable object-graph model.
+ * changes in OA’s executable OA model model.
  */
 public class RemoteSyncImpl implements RemoteSyncInterface {
 	private static Logger LOG = Logger.getLogger(RemoteSyncImpl.class.getName());
@@ -171,6 +143,10 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		return true;
 	}
 
+	/**
+	 * Adds a newly serialized object to the local OAObject cache.
+	 * @param obj serialized object wrapper
+	 */
 	@Override
 	public void addNewToCache(OAObjectSerializer obj) {
 		Object objx = obj.getObject(); // this will add to OAObjectCache
@@ -312,13 +288,13 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 	 * @param objectClass the class of the master object
 	 * @param objectKey the key identifying the master object
 	 * @param hubPropertyName the name of the hub property
-	 * @param propertyPaths property paths used for sorting
+	 * @param paths property paths used for sorting
 	 * @param bAscending {@code true} for ascending order, {@code false} for descending
 	 * @param comp optional comparator
 	 * @return {@code true} if the hub was sorted, otherwise {@code false}
 	 */
 	@Override
-	public boolean sort(Class objectClass, OAObjectKey objectKey, String hubPropertyName, String propertyPaths, boolean bAscending,
+	public boolean sort(Class objectClass, OAObjectKey objectKey, String hubPropertyName, String paths, boolean bAscending,
 			Comparator comp) {
 		OAObject obj = getObject(objectClass, objectKey, true);
 		if (obj == null) {
@@ -330,7 +306,7 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 			return false;
 		}
 
-		h.sort(propertyPaths, bAscending, comp);
+		h.sort(paths, bAscending, comp);
 		return true;
 	}
 
@@ -362,8 +338,6 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 			if (ds != null) obj = (OAObject) ds.getObject(objectClass, origKey);
 			if (obj != null) {
 				// object must have been GCd, use the original guid
-//qqqqqqqqqqqqqqqqqqqqqqqqqq WAS: 20260121				
-//qqqqq				OAObjectDelegate.reassignGuid(obj, origKey);
 			}
 		}
 		return obj;

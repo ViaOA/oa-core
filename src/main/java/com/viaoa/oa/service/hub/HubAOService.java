@@ -16,14 +16,14 @@ import com.viaoa.object.OAObject;
  CODEX
 
  #1
-  File/Class/Method: src/main/java/com/viaoa/graph/service/hub/HubAOService.java, setActiveObject(...)
+  File/Class/Method: src/main/java/com/viaoa/oa/service/hub/HubAOService.java, setActiveObject(...)
 
   Exact execution path: setActiveObject(...) locks the Hub and immediately writes HubDataActive.activeObject =
   object. It then updates detail hubs and link properties. If callHubDetailUpdateAllDetail(...) or
   callHubLinkUpdateLinkProperty(...) throws, the active object remains changed, but detail/link state and after-
   change event publication do not complete.
 
-  Why it is a correctness bug: the Hub AO becomes authoritative before dependent graph state succeeds. Detail Hubs
+  Why it is a correctness bug: the Hub AO becomes authoritative before dependent OA model state succeeds. Detail Hubs
   can still reflect the previous AO while the master Hub reports the new AO.
 
   Semantic/invariant violated: active-object transitions must atomically update AO, detail hubs, link state, and
@@ -37,6 +37,10 @@ import com.viaoa.object.OAObject;
 
 
 
+ */
+
+/**
+ * Maintains active-object selection and active-position behavior for Hubs.
  */
 
 public abstract class HubAOService {
@@ -99,6 +103,21 @@ public abstract class HubAOService {
 		setActiveObject(thisHub, object, adjustMaster, true, false); // adjMaster, updateLink, force
 	}
 
+	/**
+	 * Sets the activeObject for the supplied Hub context.
+	 *
+	 * @param thisHub method input
+	 * @param object method input
+	 * @return result value
+	 */
+
+	/**
+	 * Resolves an arbitrary object reference as a Hub member and makes it the active object.
+	 *
+	 * @param thisHub Hub whose active object is being updated
+	 * @param object object or key-like value to resolve in the Hub
+	 * @return resolved active object, or {@code null} when no matching object is active
+	 */
 	public <T extends OAObject> T setActiveObject(Hub<T> thisHub, Object object) {
 		return setActiveObject(thisHub, object, true);
 	}
@@ -439,20 +458,116 @@ public abstract class HubAOService {
 		return hl;
 	}
 
-	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi); 
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetReverseLinkInfo behavior.
+	 *
+	 * @param thisLi method input
+	 * @return result value
+	 */
+
+	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi);
+	/**
+	 * Dependency hook used by this service for ObjectReflectGetProperty behavior.
+	 *
+	 * @param oaObj method input
+	 * @param propPath method input
+	 * @return result value
+	 */
 	public abstract Object callObjectReflectGetProperty(OAObject oaObj, String propPath);
+	/**
+	 * Dependency hook used by this service for ObjectReflectSetProperty behavior.
+	 *
+	 * @param oaObj method input
+	 * @param propName method input
+	 * @param value method input
+	 * @param fmt method input
+	 */
 	public abstract void callObjectReflectSetProperty(final OAObject oaObj, String propName, Object value, final String fmt);
+	/**
+	 * Dependency hook used by this service for HubDataGetPos behavior.
+	 *
+	 * @param thisHub method input
+	 * @param object method input
+	 * @param adjustMaster method input
+	 * @param bUpdateLink method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> int callHubDataGetPos(final Hub<T> thisHub, T object, final boolean adjustMaster, final boolean bUpdateLink);
+	/**
+	 * Dependency hook used by this service for HubFindGetRealObject behavior.
+	 *
+	 * @param hub method input
+	 * @param object method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callHubFindGetRealObject(Hub<T> hub, Object object);
+	/**
+	 * Dependency hook used by this service for HubDetailGetLinkInfoFromMasterObjectToDetail behavior.
+	 *
+	 * @param thisDetailHub method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterObjectToDetail(Hub<?> thisDetailHub);
+	/**
+	 * Dependency hook used by this service for HubDetailGetMasterObject behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract OAObject callHubDetailGetMasterObject(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubDataGetObjectAt behavior.
+	 *
+	 * @param thisHub method input
+	 * @param pos method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callHubDataGetObjectAt(Hub<T> thisHub, int pos);
+	/**
+	 * Dependency hook used by this service for HubDetailUpdateAllDetail behavior.
+	 *
+	 * @param thisHub method input
+	 * @param bUpdateLink method input
+	 */
 	public abstract void callHubDetailUpdateAllDetail(Hub<?> thisHub, boolean bUpdateLink);
+	/**
+	 * Dependency hook used by this service for HubLinkUpdateLinkProperty behavior.
+	 *
+	 * @param thisHub method input
+	 * @param fromObject method input
+	 * @param pos method input
+	 */
 	public abstract <T extends OAObject> void callHubLinkUpdateLinkProperty(Hub<T> thisHub, T fromObject, int pos);
+	/**
+	 * Dependency hook used by this service for HubShareGetAllSharedHubs behavior.
+	 *
+	 * @param thisHub method input
+	 * @param filter method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub<T>> filter);
+	/**
+	 * Dependency hook used by this service for HubEventFireAfterChangeActiveObjectEvent behavior.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 * @param pos method input
+	 * @param bAllShared method input
+	 */
 	public abstract <T extends OAObject> void callHubEventFireAfterChangeActiveObjectEvent(Hub<T> thisHub, T obj, int pos, boolean bAllShared);
 
+	/**
+	 * Dependency hook used by this service for ThreadLocalLock behavior.
+	 *
+	 * @param object method input
+	 */
+
 	public abstract void callThreadLocalLock(Object object);
+	/**
+	 * Dependency hook used by this service for ThreadLocalUnlock behavior.
+	 *
+	 * @param object method input
+	 */
 	public abstract void callThreadLocalUnlock(Object object);
 	
 }

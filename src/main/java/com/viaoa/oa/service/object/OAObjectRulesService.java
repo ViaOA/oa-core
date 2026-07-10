@@ -28,17 +28,66 @@ import com.viaoa.runtime.OARuntime;
 import com.viaoa.session.OASessionAccess;
 import com.viaoa.session.OASessionUser;
 
+/**
+ * OA 4.0 object rules engine.
+ * <p>
+ * {@code OAObjectRulesService} evaluates model-rule questions carried by
+ * {@link OAObjectCallback}. The callback {@link Type} defines the semantic
+ * question being asked, and {@link CheckType} values define which rules-engine
+ * stages are active through {@link OAObjectCallback#isUsed(CheckType)}.
+ * </p>
+ *
+ * <p>The primary processing order is:</p>
+ * <ol>
+ *   <li>Session checks</li>
+ *   <li>Metadata and object-state checks</li>
+ *   <li>Object callback methods</li>
+ *   <li>Hub listeners</li>
+ *   <li>SuperAdmin override</li>
+ * </ol>
+ *
+ * <p>Later stages may intentionally refine or override earlier rule responses.
+ * Owner hierarchy processing is a lightweight containment gate for owner
+ * visible/enabled state, not a full secondary rules pipeline.</p>
+ *
+ * <p>Callback context follows the {@link OAObjectCallback} contract:</p>
+ * <ul>
+ *   <li>{@code object} is the callback receiver or target context.</li>
+ *   <li>{@code propertyName} is the member/property on that object.</li>
+ *   <li>{@code value} is the operation operand.</li>
+ *   <li>{@code oldValue} is the previous value when applicable.</li>
+ * </ul>
+ */
 public abstract class OAObjectRulesService {
 	private static final Logger LOG = Logger.getLogger(OAObjectRulesService.class.getName());
 
+	/**
+	 * Creates the rules service.
+	 */
 	public OAObjectRulesService() {
 	}
-	
+
+	/**
+	 * Returns whether an object/member is visible for the supplied Hub/object context.
+	 *
+	 * @param hub Hub context, or {@code null}
+	 * @param obj callback receiver/target context, or {@code null}
+	 * @param name member/property name on {@code obj}, or {@code null}
+	 * @return {@code true} if visible
+	 */
 	public <T extends OAObject> boolean getAllowVisible(Hub<T> hub, T obj, String name) {
 		OAObjectCallback cb = getAllowVisibleObjectCallback(hub, obj, name);
 		return cb == null ? false : cb.getAllowed();
 	}
     @SuppressWarnings("unchecked")
+    /**
+     * Creates and processes an {@link OAObjectCallback} for {@link Type#AllowVisible}.
+     *
+     * @param hub Hub context, or {@code null}
+     * @param oaObj callback receiver/target context, or {@code null}
+     * @param name member/property name on {@code oaObj}, or {@code null}
+     * @return processed callback, or {@code null} when no Hub or object is supplied
+     */
     public <T extends OAObject> OAObjectCallback getAllowVisibleObjectCallback(Hub<T> hub, T oaObj, String name) {
 		if (hub == null && oaObj == null) {
 			return null;
@@ -57,15 +106,45 @@ public abstract class OAObjectRulesService {
 		return objectCallback;
     }
 
-    
+
+	/**
+	 * Returns whether a property change passes rule verification.
+	 *
+	 * @param obj callback receiver/target object
+	 * @param propertyName property being changed
+	 * @param oldValue previous property value
+	 * @param newValue proposed property value
+	 * @return {@code true} if the change is allowed
+	 */
 	public boolean getVerifyPropertyChange(OAObject obj, String propertyName, Object oldValue, Object newValue) {
 		OAObjectCallback cb = getVerifyPropertyChangeObjectCallback(null, obj, propertyName, oldValue, newValue);
 		return cb == null ? false : cb.getAllowed();
 	}
+
+	/**
+	 * Returns whether a property change is allowed by object callback methods only.
+	 *
+	 * @param obj callback receiver/target object
+	 * @param propertyName property being changed
+	 * @param oldValue previous property value
+	 * @param newValue proposed property value
+	 * @return {@code true} if the callback-only check allows the change
+	 */
 	public boolean getVerifyPropertyChangeCallbackOnly(OAObject obj, String propertyName, Object oldValue, Object newValue) {
 		OAObjectCallback cb = getVerifyPropertyChangeObjectCallback(OAObjectCallback.getCallbackOnlyCheckType(), obj, propertyName, oldValue, newValue);
 		return cb == null ? false : cb.getAllowed();
 	}
+
+	/**
+	 * Creates and processes a {@link Type#VerifyPropertyChange} callback.
+	 *
+	 * @param checkTypeOnly optional rules-engine checks to use instead of the type defaults
+	 * @param oaObj callback receiver/target object
+	 * @param propertyName property being changed
+	 * @param oldValue previous property value
+	 * @param newValue proposed property value
+	 * @return processed callback
+	 */
 	public OAObjectCallback getVerifyPropertyChangeObjectCallback(OAObjectCallback.CheckType[] checkTypeOnly, final OAObject oaObj, final String propertyName, final Object oldValue, final Object newValue) 
 	{
 		final OAObjectCallback objectCallback = new OAObjectCallback(Type.VerifyPropertyChange, checkTypeOnly, null, null, oaObj, propertyName, newValue);
@@ -74,21 +153,54 @@ public abstract class OAObjectRulesService {
 		return objectCallback;
 	}
 
+	/**
+	 * Creates and processes a property-change callback using only object callback methods.
+	 *
+	 * @param oaObj callback receiver/target object
+	 * @param propertyName property being changed
+	 * @param oldValue previous property value
+	 * @param newValue proposed property value
+	 * @return processed callback
+	 */
 	public OAObjectCallback getVerifyPropertyChangeCallbackOnlyObjectCallback(final OAObject oaObj, final String propertyName, final Object oldValue, final Object newValue) {
 		return getVerifyPropertyChangeObjectCallback(OAObjectCallback.getCallbackOnlyCheckType(), oaObj, propertyName, oldValue, newValue);
 	}
-	
-	
-	
-	
+
+	/**
+	 * Returns whether an object/member is enabled for the supplied Hub/object context.
+	 *
+	 * @param hub Hub context, or {@code null}
+	 * @param obj callback receiver/target context, or {@code null}
+	 * @param name member/property name on {@code obj}, or {@code null}
+	 * @return {@code true} if enabled
+	 */
 	public <T extends OAObject> boolean getAllowEnabled(Hub<T> hub, T obj, String name) {
 		OAObjectCallback cb = getAllowEnabledObjectCallback(null, hub, obj, name);
 		return cb == null ? false : cb.getAllowed();
 	}
+
+	/**
+	 * Returns whether an object/member is enabled by object callback methods only.
+	 *
+	 * @param hub Hub context, or {@code null}
+	 * @param obj callback receiver/target context, or {@code null}
+	 * @param name member/property name on {@code obj}, or {@code null}
+	 * @return {@code true} if callback-only evaluation allows it
+	 */
 	public <T extends OAObject> boolean getAllowEnabledCallbackOnly(Hub<T> hub, T obj, String name) {
 		OAObjectCallback cb = getAllowEnabledObjectCallback(OAObjectCallback.getCallbackOnlyCheckType(), hub, obj, name);
 		return cb == null ? false : cb.getAllowed();
 	}
+
+	/**
+	 * Creates and processes an {@link Type#AllowEnabled} callback.
+	 *
+	 * @param onlyCheckType optional rules-engine checks to use instead of the type defaults
+	 * @param hub Hub context, or {@code null}
+	 * @param oaObj callback receiver/target context, or {@code null}
+	 * @param name member/property name on {@code oaObj}, or {@code null}
+	 * @return processed callback, or {@code null} when no Hub or object is supplied
+	 */
 	public <T extends OAObject> OAObjectCallback getAllowEnabledObjectCallback(OAObjectCallback.CheckType[] onlyCheckType, final Hub<T> hub, T oaObj, String name) {
 		if (hub == null && oaObj == null) {
 			return null;
@@ -105,6 +217,13 @@ public abstract class OAObjectRulesService {
 		processObjectCallback(objectCallback);
 		return objectCallback;
 	}
+
+	/**
+	 * Creates and processes an {@link Type#AllowEnabled} callback for Hub context.
+	 *
+	 * @param hub Hub context
+	 * @return processed callback
+	 */
 	public OAObjectCallback getAllowEnabledObjectCallback(Hub<? extends OAObject> hub) {
 		final OAObjectCallback objectCallback = new OAObjectCallback(Type.AllowEnabled);
 
@@ -122,7 +241,13 @@ public abstract class OAObjectRulesService {
 		}
 		return objectCallback;
 	}
-	
+
+	/**
+	 * Returns whether an object copy operation is allowed.
+	 *
+	 * @param oaObj object to copy
+	 * @return {@code true} if copying is allowed
+	 */
 	public boolean getAllowCopy(OAObject oaObj) {
 		if (oaObj == null) {
 			return false;
@@ -163,17 +288,33 @@ public abstract class OAObjectRulesService {
 	 *
 	 * @param hub       the hub receiving the object
 	 * @param obj       the object being added
-	 * @param checkType the bitmask of checking options
+	 * @param onlyCheckTypes optional rules-engine checks to use instead of the type defaults
 	 * @return {@code true} if the add operation is allowed; otherwise {@code false}
 	 */
 	public <T extends OAObject> boolean getAllowAdd(Hub<T> hub, T obj, OAObjectCallback.CheckType[] onlyCheckTypes) {
 		OAObjectCallback cb = getAllowAddObjectCallback(hub, obj, onlyCheckTypes);
 		return cb == null ? false : cb.getAllowed();
 	}
+
+	/**
+	 * Returns whether an object can be added to a Hub using default checks.
+	 *
+	 * @param hub Hub receiving the object
+	 * @param obj object being added
+	 * @return {@code true} if add is allowed
+	 */
 	public <T extends OAObject> boolean getAllowAdd(Hub<T> hub, T obj) {
 		OAObjectCallback cb = getAllowAddObjectCallback(hub, obj);
 		return cb == null ? false : cb.getAllowed();
 	}
+
+	/**
+	 * Returns whether an object can be added while excluding processed-state checks.
+	 *
+	 * @param hub Hub receiving the object
+	 * @param obj object being added
+	 * @return {@code true} if add is allowed
+	 */
 	public <T extends OAObject> boolean getAllowAddIgnoreProcessed(Hub<T> hub, T obj) {
 		OAObjectCallback cb = getAllowAddObjectCallback(hub, obj, OAObjectCallback.getAllCheckTypesButProcessed(Type.AllowAdd));
 		return cb == null ? false : cb.getAllowed();
@@ -185,13 +326,21 @@ public abstract class OAObjectRulesService {
 	 *
 	 * @param hub       the hub receiving the object
 	 * @param obj       the object being added
-	 * @param checkType the bitmask of checking options
+	 * @param onlyCheckTypes optional rules-engine checks to use instead of the type defaults
 	 * @return {@code true} if verification succeeds; otherwise {@code false}
 	 */
 	public <T extends OAObject> boolean getVerifyAdd(Hub<T> hub, T obj, OAObjectCallback.CheckType[] onlyCheckTypes) {
 		OAObjectCallback cb = getVerifyAddObjectCallback(hub, obj, onlyCheckTypes);
 		return cb == null ? false : cb.getAllowed();
 	}
+
+	/**
+	 * Returns whether adding an object to a Hub passes verification using default checks.
+	 *
+	 * @param hub Hub receiving the object
+	 * @param obj object being added
+	 * @return {@code true} if verification succeeds
+	 */
 	public <T extends OAObject> boolean getVerifyAdd(Hub<T> hub, T obj) {
 		return getVerifyAdd(hub, obj, null);
 	}
@@ -202,42 +351,90 @@ public abstract class OAObjectRulesService {
 	 *
 	 * @param hub       the hub from which the object may be removed
 	 * @param obj       the object being removed
-	 * @param checkType the bitmask of checking options
+	 * @param onlyCheckTypes optional rules-engine checks to use instead of the type defaults
 	 * @return {@code true} if the remove operation is allowed; otherwise {@code false}
 	 */
 	public <T extends OAObject> boolean getAllowRemove(Hub<T> hub, T obj, OAObjectCallback.CheckType[] onlyCheckTypes) {
 		OAObjectCallback cb = getAllowRemoveObjectCallback(hub, obj, onlyCheckTypes);
 		return cb == null ? false : cb.getAllowed();
 	}
+
+	/**
+	 * Returns whether an object can be removed from a Hub using default checks.
+	 *
+	 * @param hub Hub containing the object
+	 * @param obj object being removed
+	 * @return {@code true} if remove is allowed
+	 */
 	public <T extends OAObject> boolean getAllowRemove(Hub<T> hub, T obj) {
 		return getAllowRemove(hub, obj, null);
 	}
+
+	/**
+	 * Returns whether an object can be removed using object callback methods only.
+	 *
+	 * @param hub Hub containing the object
+	 * @param obj object being removed
+	 * @return {@code true} if callback-only evaluation allows removal
+	 */
 	public <T extends OAObject> boolean getAllowRemoveCallbackOnly(Hub<T> hub, T obj) {
 		return getAllowRemove(hub, obj, OAObjectCallback.getCallbackOnlyCheckType());
 	}
+
+	/**
+	 * Returns whether an object can be removed while excluding processed-state checks.
+	 *
+	 * @param hub Hub containing the object
+	 * @param obj object being removed
+	 * @return {@code true} if remove is allowed
+	 */
 	public <T extends OAObject> boolean getAllowRemoveIgnoreProcessed(Hub<T> hub, T obj) {
 		return getAllowRemove(hub, obj, OAObjectCallback.getAllCheckTypesButProcessed(Type.AllowRemove));
 	}
-    
+
 	/**
 	 * Returns whether removing the specified object from the given hub passes
 	 * verification by evaluating the associated {@link OAObjectCallback}.
 	 *
 	 * @param hub       the hub from which the object is being removed
 	 * @param obj       the object being removed
-	 * @param checkType the bitmask of checking options
+	 * @param onlyCheckTypes optional rules-engine checks to use instead of the type defaults
 	 * @return {@code true} if verification succeeds; otherwise {@code false}
 	 */
 	public <T extends OAObject> boolean getVerifyRemove(Hub<T> hub, T obj, OAObjectCallback.CheckType[] onlyCheckTypes) {
 		OAObjectCallback cb = getVerifyRemoveObjectCallback(hub, obj, onlyCheckTypes);
 		return cb == null ? false : cb.getAllowed();
 	}
+
+	/**
+	 * Returns whether removing an object from a Hub passes verification using default checks.
+	 *
+	 * @param hub Hub containing the object
+	 * @param obj object being removed
+	 * @return {@code true} if verification succeeds
+	 */
 	public <T extends OAObject> boolean getVerifyRemove(Hub<T> hub, T obj) {
 		return getVerifyRemove(hub, obj, null);
 	}
+
+	/**
+	 * Returns whether removing an object passes verification using object callback methods only.
+	 *
+	 * @param hub Hub containing the object
+	 * @param obj object being removed
+	 * @return {@code true} if callback-only verification succeeds
+	 */
 	public <T extends OAObject> boolean getVerifyRemoveCallbackOnly(Hub<T> hub, T obj) {
 		return getVerifyRemove(hub, obj, OAObjectCallback.getCallbackOnlyCheckType());
 	}
+
+	/**
+	 * Returns whether removing an object passes verification while excluding processed-state checks.
+	 *
+	 * @param hub Hub containing the object
+	 * @param obj object being removed
+	 * @return {@code true} if verification succeeds
+	 */
 	public <T extends OAObject> boolean getVerifyRemoveIgnoreProcessed(Hub<T> hub, T obj) {
 		return getVerifyRemove(hub, obj, OAObjectCallback.getAllCheckTypesButProcessed(Type.VerifyRemove));
 	}
@@ -247,29 +444,43 @@ public abstract class OAObjectRulesService {
 	 * evaluating the associated {@link OAObjectCallback}.
 	 *
 	 * @param hub       the hub whose contents may be removed
-	 * @param checkType the bitmask of checking options
+	 * @param onlyCheckTypes optional rules-engine checks to use instead of the type defaults
 	 * @return {@code true} if removing all objects is allowed; otherwise {@code false}
 	 */
 	public boolean getAllowRemoveAll(Hub<? extends OAObject> hub, OAObjectCallback.CheckType[] onlyCheckTypes) {
 		OAObjectCallback cb = getAllowRemoveAllObjectCallback(hub, onlyCheckTypes);
 		return cb == null ? false : cb.getAllowed();
 	}
+
+	/**
+	 * Returns whether all objects can be removed from a Hub using default checks.
+	 *
+	 * @param hub Hub whose objects may be removed
+	 * @return {@code true} if remove-all is allowed
+	 */
 	public boolean getAllowRemoveAll(Hub<? extends OAObject> hub) {
 		return getAllowRemoveAll(hub, null);
 	}
-    
+
 	/**
 	 * Returns whether removing all objects from the given hub passes
 	 * verification by evaluating the associated {@link OAObjectCallback}.
 	 *
 	 * @param hub       the hub whose objects may be removed
-	 * @param checkType the bitmask of checking options
+	 * @param onlyCheckTypes optional rules-engine checks to use instead of the type defaults
 	 * @return {@code true} if verification succeeds; otherwise {@code false}
 	 */
 	public boolean getVerifyRemoveAll(Hub<? extends OAObject> hub, OAObjectCallback.CheckType[] onlyCheckTypes) {
 		OAObjectCallback cb = getVerifyRemoveAllObjectCallback(hub, onlyCheckTypes);
 		return cb == null ? false : cb.getAllowed();
 	}
+
+	/**
+	 * Returns whether removing all objects from a Hub passes verification using default checks.
+	 *
+	 * @param hub Hub whose objects may be removed
+	 * @return {@code true} if verification succeeds
+	 */
 	public boolean getVerifyRemoveAll(Hub<? extends OAObject> hub) {
 		return getVerifyRemoveAll(hub, null);
 	}
@@ -287,27 +498,48 @@ public abstract class OAObjectRulesService {
 		return cb == null ? false : cb.getAllowed();
 	}
 
+	/**
+	 * Returns whether an object can be deleted without Hub context.
+	 *
+	 * @param obj object to delete
+	 * @return {@code true} if delete is allowed
+	 */
 	public <T extends OAObject> boolean getAllowDelete(T obj) {
 		OAObjectCallback cb = getAllowDeleteObjectCallback(obj);
 		return cb == null ? false : cb.getAllowed();
 	}
-	
+
 	/**
 	 * Returns whether deleting the specified object passes verification by
 	 * evaluating the associated {@link OAObjectCallback}.
 	 *
 	 * @param hub       the hub providing contextual rules
 	 * @param obj       the object to delete
-	 * @param checkType the bitmask of checking options
+	 * @param onlyCheckTypes optional rules-engine checks to use instead of the type defaults
 	 * @return {@code true} if verification succeeds; otherwise {@code false}
 	 */
 	public <T extends OAObject> boolean getVerifyDelete(Hub<T> hub, T obj, OAObjectCallback.CheckType[] onlyCheckTypes) {
 		OAObjectCallback cb = getVerifyDeleteObjectCallback(hub, obj, onlyCheckTypes);
 		return cb == null ? false : cb.getAllowed();
 	}
+
+	/**
+	 * Returns whether deleting an object passes verification using default checks.
+	 *
+	 * @param hub Hub context, or {@code null}
+	 * @param obj object to delete
+	 * @return {@code true} if verification succeeds
+	 */
 	public <T extends OAObject> boolean getVerifyDelete(Hub<T> hub, T obj) {
 		return getVerifyDelete(hub, obj, null);
 	}
+
+	/**
+	 * Returns whether deleting an object passes verification without Hub context.
+	 *
+	 * @param obj object to delete
+	 * @return {@code true} if verification succeeds
+	 */
 	public <T extends OAObject> boolean getVerifyDelete(T obj) {
 		return getVerifyDelete(null, obj, null);
 	}
@@ -317,13 +549,20 @@ public abstract class OAObjectRulesService {
 	 * the associated {@link OAObjectCallback}.
 	 *
 	 * @param obj       the object to save
-	 * @param checkType the bitmask of checking options
+	 * @param onlyCheckTypes optional rules-engine checks to use instead of the type defaults
 	 * @return {@code true} if saving is allowed; otherwise {@code false}
 	 */
 	public boolean getAllowSave(OAObject obj, OAObjectCallback.CheckType[] onlyCheckTypes) {
 		OAObjectCallback cb = getAllowSaveObjectCallback(obj, onlyCheckTypes);
 		return cb == null ? false : cb.getAllowed();
 	}
+
+	/**
+	 * Returns whether an object can be saved using default checks.
+	 *
+	 * @param obj object to save
+	 * @return {@code true} if save is allowed
+	 */
 	public boolean getAllowSave(OAObject obj) {
 		return getAllowSave(obj, null);
 	}
@@ -333,13 +572,20 @@ public abstract class OAObjectRulesService {
 	 * evaluating the associated {@link OAObjectCallback}.
 	 *
 	 * @param obj       the object to save
-	 * @param checkType the bitmask of checking options
+	 * @param onlyCheckTypes optional rules-engine checks to use instead of the type defaults
 	 * @return {@code true} if verification succeeds; otherwise {@code false}
 	 */
 	public boolean getVerifySave(OAObject obj, OAObjectCallback.CheckType[] onlyCheckTypes) {
 		OAObjectCallback cb = getVerifySaveObjectCallback(obj, onlyCheckTypes);
 		return cb == null ? false : cb.getAllowed();
 	}
+
+	/**
+	 * Returns whether saving an object passes verification using default checks.
+	 *
+	 * @param obj object to save
+	 * @return {@code true} if verification succeeds
+	 */
 	public boolean getVerifySave(OAObject obj) {
 		return getVerifySave(obj, null);
 	}
@@ -363,13 +609,19 @@ public abstract class OAObjectRulesService {
 
 		return em;
 	}
-	
+
+	/**
+	 * Returns whether an object passes submit-time rules.
+	 *
+	 * @param obj object to submit
+	 * @return {@code true} if submit is allowed
+	 */
 	public boolean getAllowSubmit(OAObject obj) {
 		if (obj == null) return false;
 		OAObjectCallback cb = getAllowSubmitObjectCallback(obj);
 		return cb == null ? false : cb.getAllowed();
 	}
-	
+
 	/**
 	 * Performs recursive submit-rule validation for the specified object,
 	 * evaluating properties and owned links and updating the supplied
@@ -457,7 +709,7 @@ public abstract class OAObjectRulesService {
 			}
 		}
 	}
-	
+
 	/**
 	 * Returns the formatting string for the specified object and property by
 	 * evaluating a {@link OAObjectCallback} of type {@code GetFormat}. The
@@ -478,7 +730,7 @@ public abstract class OAObjectRulesService {
 		callObjectCallbackMethod(em);
 		return em.getFormat();
 	}
-	
+
 	/**
 	 * Returns the tooltip text for the specified object and property by
 	 * evaluating a {@link OAObjectCallback} of type {@code GetToolTip}. The
@@ -499,7 +751,7 @@ public abstract class OAObjectRulesService {
 		callObjectCallbackMethod(em);
 		return em.getToolTip();
 	}
-	
+
 	/**
 	 * Evaluates a {@link OAObjectCallback} of type {@code RenderLabel} to allow
 	 * callback logic to update the given label used for rendering a component.
@@ -577,14 +829,14 @@ public abstract class OAObjectRulesService {
 		processObjectCallback(objectCallback);
 		return objectCallback;
 	}
-	
+
 	/**
 	 * Creates and evaluates an {@link OAObjectCallback} of type
 	 * {@code VerifyCommand} to validate invocation of the specified method.
 	 *
 	 * @param oaObj      the target object
 	 * @param methodName the method to verify
-	 * @param checkType  the bitmask of checking options
+	 * @param onlyCheckTypes optional rules-engine checks to use instead of the type defaults
 	 * @return the resulting callback
 	 */
 	public OAObjectCallback getVerifyCommandObjectCallback(final OAObject oaObj, final String methodName, OAObjectCallback.CheckType[] onlyCheckTypes) {
@@ -593,9 +845,25 @@ public abstract class OAObjectRulesService {
 		processObjectCallback(objectCallback);
 		return objectCallback;
 	}
+
+	/**
+	 * Creates and processes a {@link Type#VerifyCommand} callback using default checks.
+	 *
+	 * @param oaObj callback receiver/target object
+	 * @param methodName command or method name
+	 * @return processed callback, or {@code null} when {@code oaObj} is {@code null}
+	 */
 	public OAObjectCallback getVerifyCommandObjectCallback(final OAObject oaObj, final String methodName) {
 		return getVerifyCommandObjectCallback(oaObj, methodName, null);
 	}
+
+	/**
+	 * Returns whether invoking a command or method passes verification.
+	 *
+	 * @param oaObj callback receiver/target object
+	 * @param methodName command or method name
+	 * @return {@code true} if command verification succeeds
+	 */
 	public boolean getVerifyCommand(final OAObject oaObj, final String methodName) {
 		OAObjectCallback cb = getVerifyCommandObjectCallback(oaObj, methodName, null);
 		return cb == null ? false : cb.getAllowed();
@@ -609,7 +877,7 @@ public abstract class OAObjectRulesService {
 	 *
 	 * @param hub       the hub receiving the object
 	 * @param objAdd    the object being added
-	 * @param checkType the bitmask of checking options
+	 * @param onlyCheckTypes optional rules-engine checks to use instead of the type defaults
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
 	public <T extends OAObject> OAObjectCallback getAllowAddObjectCallback(final Hub<T> hub, T objAdd, final OAObjectCallback.CheckType[] onlyCheckTypes) {
@@ -648,6 +916,14 @@ public abstract class OAObjectRulesService {
 		}
 		return objectCallback;
 	}
+
+	/**
+	 * Creates and processes an {@link Type#AllowAdd} callback using default checks.
+	 *
+	 * @param hub Hub receiving the object
+	 * @param objAdd object being added
+	 * @return processed callback, or {@code null} when {@code hub} is {@code null}
+	 */
 	public <T extends OAObject> OAObjectCallback getAllowAddObjectCallback(final Hub<T> hub, T objAdd) {
 		return getAllowAddObjectCallback(hub, objAdd, null);
 	}
@@ -660,7 +936,7 @@ public abstract class OAObjectRulesService {
 	 *
 	 * @param hub       the hub receiving the object
 	 * @param oaObj     the object being added
-	 * @param checkType the bitmask of checking options
+	 * @param onlyCheckTypes optional rules-engine checks to use instead of the type defaults
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
 	public <T extends OAObject> OAObjectCallback getVerifyAddObjectCallback(final Hub<T> hub, final T oaObj, final OAObjectCallback.CheckType[] onlyCheckTypes) {
@@ -699,11 +975,10 @@ public abstract class OAObjectRulesService {
 		}
 		return objectCallback;
 	}
-	
+
 	/**
 	 * Creates an {@link OAObjectCallback} of type {@code AllowNew} to determine
-	 * whether a new instance of the specified class may be created. Context and
-	 * processed-state rules are evaluated before returning.
+	 * whether a new instance of the specified class may be created. Rules-engine checks are evaluated before returning.
 	 *
 	 * @param clazz the class to evaluate
 	 * @return the resulting callback, or {@code null} if the class is {@code null}
@@ -754,19 +1029,31 @@ public abstract class OAObjectRulesService {
 		}
 		return objectCallback;
 	}
-	
+
+	/**
+	 * Returns whether a new object can be created for a Hub using default checks.
+	 *
+	 * @param hub Hub context
+	 * @return {@code true} if new object creation is allowed
+	 */
 	public boolean getAllowNewObject(final Hub<? extends OAObject> hub) {
 		if (hub == null) return false;
 		OAObjectCallback cb = getAllowNewObjectCallback(hub);
 		return cb == null ? false : cb.isAllowed();
 	}
-	
+
+	/**
+	 * Returns whether a new object can be created for a class using default checks.
+	 *
+	 * @param type object class
+	 * @return {@code true} if new object creation is allowed
+	 */
 	public boolean getAllowNewObject(final Class<? extends OAObject> type) {
 		if (type == null) return false;
 		OAObjectCallback cb = getAllowNewObjectCallback(type);
 		return cb == null ? false : cb.isAllowed();
 	}
-	
+
 	/**
 	 * Creates and evaluates an {@link OAObjectCallback} of type {@code AllowRemove}
 	 * to determine whether the specified object may be removed from the hub.
@@ -775,7 +1062,7 @@ public abstract class OAObjectRulesService {
 	 *
 	 * @param hub       the hub from which the object may be removed
 	 * @param objRemove the object being removed
-	 * @param checkType the bitmask of checking options
+	 * @param onlyCheckTypes optional rules-engine checks to use instead of the type defaults
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
 	public <T extends OAObject> OAObjectCallback getAllowRemoveObjectCallback(final Hub<T> hub, final T objRemove, final OAObjectCallback.CheckType[] onlyCheckTypes) {
@@ -816,7 +1103,14 @@ public abstract class OAObjectRulesService {
 		}
 		return objectCallback;
 	}
-	
+
+	/**
+	 * Creates and processes an {@link Type#AllowRemove} callback using default checks.
+	 *
+	 * @param hub Hub containing the object
+	 * @param objRemove object being removed
+	 * @return processed callback, or {@code null} when {@code hub} is {@code null}
+	 */
 	public <T extends OAObject> OAObjectCallback getAllowRemoveObjectCallback(final Hub<T> hub, final T objRemove) {
 		return getAllowRemoveObjectCallback(hub, objRemove, null);
 	}
@@ -828,7 +1122,7 @@ public abstract class OAObjectRulesService {
 	 *
 	 * @param hub       the hub from which the object is being removed
 	 * @param objRemove the object being removed
-	 * @param checkType the bitmask of checking options
+	 * @param onlyCheckTypes optional rules-engine checks to use instead of the type defaults
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
 	public <T extends OAObject> OAObjectCallback getVerifyRemoveObjectCallback(final Hub<T> hub, final T objRemove, final OAObjectCallback.CheckType[] onlyCheckTypes) {
@@ -866,7 +1160,7 @@ public abstract class OAObjectRulesService {
 			    }
 			}
 		}
-		
+
 		return objectCallback;
 	}
 
@@ -877,7 +1171,7 @@ public abstract class OAObjectRulesService {
 	 * rules may be applied depending on metadata.
 	 *
 	 * @param hub       the hub whose objects may be removed
-	 * @param checkType the bitmask of checking options
+	 * @param onlyCheckTypes optional rules-engine checks to use instead of the type defaults
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
 	public OAObjectCallback getAllowRemoveAllObjectCallback(final Hub<? extends OAObject> hub, final OAObjectCallback.CheckType[] onlyCheckTypes) {
@@ -917,10 +1211,16 @@ public abstract class OAObjectRulesService {
 		}
 		return objectCallback;
 	}
+	/**
+	 * Creates and processes an {@link Type#AllowRemoveAll} callback using default checks.
+	 *
+	 * @param hub Hub whose objects may be removed
+	 * @return processed callback, or {@code null} when {@code hub} is {@code null}
+	 */
 	public OAObjectCallback getAllowRemoveAllObjectCallback(final Hub<? extends OAObject> hub) {
 		return getAllowRemoveAllObjectCallback(hub, null);
 	}
-	
+
 	/**
 	 * Creates and evaluates an {@link OAObjectCallback} of type
 	 * {@code VerifyRemoveAll} to verify whether all objects may be removed
@@ -928,7 +1228,7 @@ public abstract class OAObjectRulesService {
 	 * may be applied depending on metadata.
 	 *
 	 * @param hub       the hub whose objects may be removed
-	 * @param checkType the bitmask of checking options
+	 * @param onlyCheckTypes optional rules-engine checks to use instead of the type defaults
 	 * @return the resulting callback, or {@code null} if the hub is {@code null}
 	 */
 	public OAObjectCallback getVerifyRemoveAllObjectCallback(final Hub<? extends OAObject> hub, final OAObjectCallback.CheckType[] onlyCheckTypes) {
@@ -975,7 +1275,7 @@ public abstract class OAObjectRulesService {
 	 * be saved.
 	 *
 	 * @param oaObj     the object to save
-	 * @param checkType the bitmask of checking options
+	 * @param onlyCheckTypes optional rules-engine checks to use instead of the type defaults
 	 * @return the resulting callback
 	 */
 	public OAObjectCallback getAllowSaveObjectCallback(final OAObject oaObj, final OAObjectCallback.CheckType[] onlyCheckTypes) {
@@ -984,6 +1284,13 @@ public abstract class OAObjectRulesService {
 		processObjectCallback(objectCallback);
 		return objectCallback;
 	}
+
+	/**
+	 * Creates and processes an {@link Type#AllowSave} callback using default checks.
+	 *
+	 * @param oaObj object to save
+	 * @return processed callback, or {@code null} when {@code oaObj} is {@code null}
+	 */
 	public OAObjectCallback getAllowSaveObjectCallback(final OAObject oaObj) {
 		return getAllowSaveObjectCallback(oaObj, null);
 	}
@@ -994,7 +1301,7 @@ public abstract class OAObjectRulesService {
 	 * be saved.
 	 *
 	 * @param oaObj     the object to save
-	 * @param checkType the bitmask of checking options
+	 * @param onlyCheckTypes optional rules-engine checks to use instead of the type defaults
 	 * @return the resulting callback
 	 */
 	public OAObjectCallback getVerifySaveObjectCallback(final OAObject oaObj, final OAObjectCallback.CheckType[] onlyCheckTypes) {
@@ -1003,14 +1310,20 @@ public abstract class OAObjectRulesService {
 		processObjectCallback(objectCallback);
 		return objectCallback;
 	}
+
+	/**
+	 * Creates and processes a {@link Type#VerifySave} callback using default checks.
+	 *
+	 * @param oaObj object to save
+	 * @return processed callback, or {@code null} when {@code oaObj} is {@code null}
+	 */
 	public OAObjectCallback getVerifySaveObjectCallback(final OAObject oaObj) {
 		return getVerifySaveObjectCallback(oaObj, null);
 	}
 
 	/**
 	 * Creates an {@link OAObjectCallback} of type {@code AllowDelete}
-	 * to determine whether the specified object may be deleted. Context
-	 * and processed-state rules are evaluated before returning.
+	 * to determine whether the specified object may be deleted. Rules-engine checks are evaluated before returning.
 	 *
 	 * @param objDelete the object to delete
 	 * @return the resulting callback, or {@code null} if the object or its class is null
@@ -1025,7 +1338,7 @@ public abstract class OAObjectRulesService {
 		processObjectCallback(objectCallback);
 		return objectCallback;
 	}
-	
+
 	/**
 	 * Creates and evaluates an {@link OAObjectCallback} of type
 	 * {@code AllowDelete} to determine whether the specified object
@@ -1081,7 +1394,7 @@ public abstract class OAObjectRulesService {
 	 *
 	 * @param hub       the hub providing contextual rules
 	 * @param objDelete the object to delete
-	 * @param checkType the bitmask of checking options
+	 * @param onlyCheckTypes optional rules-engine checks to use instead of the type defaults
 	 * @return the resulting callback
 	 */
 	public <T extends OAObject> OAObjectCallback getVerifyDeleteObjectCallback(final Hub<T> hub, final T objDelete, final OAObjectCallback.CheckType[] onlyCheckTypes) {
@@ -1115,10 +1428,18 @@ public abstract class OAObjectRulesService {
 		}
 		return objectCallback;
 	}
+
+	/**
+	 * Creates and processes a {@link Type#VerifyDelete} callback using default checks.
+	 *
+	 * @param hub Hub context, or {@code null}
+	 * @param objDelete object to delete
+	 * @return processed callback
+	 */
 	public <T extends OAObject> OAObjectCallback getVerifyDeleteObjectCallback(final Hub<T> hub, final T objDelete) {
 		return getVerifyDeleteObjectCallback(hub, objDelete, null);
 	}
-	
+
 	/**
 	 * Creates a confirmation {@link OAObjectCallback} for a property change
 	 * using an unknown future value. This delegates to
@@ -1179,7 +1500,7 @@ public abstract class OAObjectRulesService {
 		processObjectCallback(objectCallback);
 		return objectCallback;
 	}
-    
+
 	/**
 	 * Creates and evaluates an {@link OAObjectCallback} of type
 	 * {@code SetConfirmForSave} to supply confirmation text for saving
@@ -1273,7 +1594,7 @@ public abstract class OAObjectRulesService {
         return objectCallback;
     }
 
-	
+
     /**
      * Creates an {@link OAObjectCallback} of type {@code SetConfirmForAdd}
      * to supply confirmation text for adding the specified object to the
@@ -1303,17 +1624,21 @@ public abstract class OAObjectRulesService {
 	}
 
 	/**
-	 * Processes the supplied callback by delegating to the internal
-	 * {@code _processObjectCallback} method. After processing, the
-	 * callback is updated to allow all operations when the demo flag
-	 * is enabled, or when the current user is a super-admin.
+	 * Processes an {@link OAObjectCallback} through the OA object rules engine.
+	 * <p>
+	 * The callback {@link Type} supplies the semantic question and its active
+	 * {@link CheckType} stages. The pipeline evaluates session rules, metadata and
+	 * object state, object callback methods, Hub listeners, then SuperAdmin override
+	 * when enabled. Object callback methods and Hub listeners may intentionally
+	 * refine or override earlier allowed/response/throwable results.
+	 * </p>
 	 *
-	 * @param objectCallback the callback to process
+	 * @param cb callback request/response carrier to process
 	 */
 	protected void processObjectCallback(OAObjectCallback cb) {
 		if (cb == null) return;
 		_processObjectCallback(cb);
-		
+
 		if ((!cb.getAllowed() || cb.getThrowable() != null) && cb.isUsed(CheckType.SuperAdminOverride)) {
 			Class<? extends OAObject> c = cb.getCalcClass();
 			if (c != null) {
@@ -1341,7 +1666,7 @@ public abstract class OAObjectRulesService {
 		final Hub<?> hubModelUser;
 		final OASessionUser sessionUser;
 		final OASessionAccess sessionAccess;
-		
+
 		public ProcessInfo(final OAObjectCallback cb) {
 			this.cb = cb;
 			hubThis = cb.getHub();
@@ -1359,7 +1684,17 @@ public abstract class OAObjectRulesService {
 			sessionAccess = (sessionUser == null) ? null : sessionUser.getSessionAccess();
 		}
 	}
-	
+
+	/**
+	 * Runs the main rules pipeline for a callback request.
+	 * <p>
+	 * Session checks run first, followed by metadata/object-state checks, object
+	 * callback methods, and Hub listeners. SuperAdmin override is applied by
+	 * {@link #processObjectCallback(OAObjectCallback)} after this method returns.
+	 * </p>
+	 *
+	 * @param cb callback request/response carrier
+	 */
 	protected void _processObjectCallback(final OAObjectCallback cb) {
 		ProcessInfo pi = new ProcessInfo(cb);
 
@@ -1367,15 +1702,22 @@ public abstract class OAObjectRulesService {
 		if (cb.isAllowed()) {
 			_processObjectCallback_1B(pi);
 		}
-		
+
 		_processObjectCallback_2(pi); // callback
-		
+
 		_processObjectCallback_3(pi); // hublisteners
 	}
-	
+
+	/**
+	 * Applies session access checks for the callback when the corresponding
+	 * {@link CheckType#SessionEnabled} or {@link CheckType#SessionVisible} stage is
+	 * active.
+	 *
+	 * @param pi resolved processing context
+	 */
 	protected void _processObjectCallback_1A(ProcessInfo pi) {
 		OAObjectCallback cb = pi.cb;		
-		
+
 		if (pi.sessionAccess == null) return;
 		boolean bx = true;
 		// checkSessionEnabled
@@ -1386,7 +1728,7 @@ public abstract class OAObjectRulesService {
 				bx = pi.sessionAccess.getEnabled(pi.clazz, pi.propertyName);
 			}
 		}
-		
+
 		// checkSessionVisible
 		if (bx && cb.isUsed(CheckType.SessionVisible)) {
 			if (pi.oaObj != null) {
@@ -1400,7 +1742,17 @@ public abstract class OAObjectRulesService {
 			cb.setResponse("SessionAccess returned false");
 		}
 	}
-	
+
+	/**
+	 * Applies owner, processed, metadata, and ModelUser checks for the callback.
+	 * <p>
+	 * Each stage runs only when enabled by {@link OAObjectCallback#isUsed(CheckType)}.
+	 * This phase can deny the callback, but later object callback and Hub listener
+	 * phases may intentionally refine or override the result.
+	 * </p>
+	 *
+	 * @param pi resolved processing context
+	 */
 	protected void _processObjectCallback_1B(ProcessInfo pi) {
 		final OAObjectCallback cb = pi.cb;		
 		// checkOwner
@@ -1443,7 +1795,7 @@ public abstract class OAObjectRulesService {
 			}
 		}		
 		if (!cb.isAllowed()) return;
-		
+
 		// checkProcessed
 		if (cb.isUsed(CheckType.Processed)) {
 			if (pi.oi.getProcessed()) {
@@ -1451,20 +1803,20 @@ public abstract class OAObjectRulesService {
 			}
 		}
 		if (!cb.isAllowed()) return;
-		
-		
+
+
 		// checkEnabled
 		if (cb.isUsed(CheckType.Enabled)) {
 			String enabledName = null;
 			boolean enabledValue = true;
-			
+
 			enabledName = pi.oi.getEnabledProperty();
 			if (OAStr.isNotEmpty(enabledName)) {
 				enabledValue = pi.oi.getEnabledValue();
 				evaluateObject(cb, enabledName, enabledValue);
 				if (!cb.isAllowed()) return;
 			}
-			
+
 			if (pi.oaObj != null && OAString.isNotEmpty(pi.propertyName)) {
 				OAPropertyInfo pix = pi.oi.getPropertyInfo(pi.propertyName);
 				boolean bIsProcessed = false;
@@ -1498,24 +1850,23 @@ public abstract class OAObjectRulesService {
 						updateEditProcessed(cb);
 					}
 				}
-				
+
 				if (!cb.isAllowed()) return;
 			}		
 		}
 
-		
 		// checkUserEnabled
 		if (cb.isUsed(CheckType.UserEnabled)) {
 			String enabledName = null;
 			boolean enabledValue = true;
-			
+
 			enabledName = pi.oi.getModelUserEnabledProperty();
 			if (OAStr.isNotEmpty(enabledName)) {
 				enabledValue = pi.oi.getModelUserEnabledValue();
 				evaluateUser(cb, enabledName, enabledValue);
 				if (!cb.isAllowed()) return;
 			}
-			
+
 			if (pi.oaObj != null && OAString.isNotEmpty(pi.propertyName)) {
 				OAPropertyInfo pix = pi.oi.getPropertyInfo(pi.propertyName);
 				boolean bIsProcessed = false;
@@ -1547,26 +1898,26 @@ public abstract class OAObjectRulesService {
 					evaluateUser(cb, enabledName, enabledValue);
 				}
 				if (!cb.isAllowed()) return;
-				
+
 				if (bIsProcessed && cb.isUsed(CheckType.Processed)) {
 					updateEditProcessed(cb);
 				}
 				if (!cb.isAllowed()) return;
 			}		
 		}
-		
+
 		// checkVisible
 		if (cb.isUsed(CheckType.Visible)) {
 			String visibleName = null;
 			boolean visibleValue = true;
-			
+
 			visibleName = pi.oi.getVisibleProperty();
 			if (OAStr.isNotEmpty(visibleName)) {
 				visibleValue = pi.oi.getVisibleValue();
 				evaluateObject(cb, visibleName, visibleValue);
 				if (!cb.isAllowed()) return;
 			}
-			
+
 			if (pi.oaObj != null && OAString.isNotEmpty(pi.propertyName)) {
 				OAPropertyInfo pix = pi.oi.getPropertyInfo(pi.propertyName);
 				boolean bIsProcessed = false;
@@ -1598,26 +1949,26 @@ public abstract class OAObjectRulesService {
 					evaluateObject(cb, visibleName, visibleValue);
 				}
 				if (!cb.isAllowed()) return;
-				
+
 				if (bIsProcessed && cb.isUsed(CheckType.Processed)) {
 					updateEditProcessed(cb);
 				}
 				if (!cb.isAllowed()) return;
 			}		
 		}
-		
+
 		// checkUserVisible
 		if (cb.isUsed(CheckType.UserVisible)) {
 			String visibleName = null;
 			boolean visibleValue = true;
-			
+
 			visibleName = pi.oi.getModelUserVisibleProperty();
 			if (OAStr.isNotEmpty(visibleName)) {
 				visibleValue = pi.oi.getModelUserVisibleValue();
 				evaluateUser(cb, visibleName, visibleValue);
 				if (!cb.isAllowed()) return;
 			}
-			
+
 			if (pi.oaObj != null && OAString.isNotEmpty(pi.propertyName)) {
 				OAPropertyInfo pix = pi.oi.getPropertyInfo(pi.propertyName);
 				boolean bIsProcessed = false;
@@ -1649,7 +2000,7 @@ public abstract class OAObjectRulesService {
 					evaluateUser(cb, visibleName, visibleValue);
 				}
 				if (!cb.isAllowed()) return;
-				
+
 				if (bIsProcessed && cb.isUsed(CheckType.Processed)) {
 					updateEditProcessed(cb);
 				}
@@ -1657,7 +2008,17 @@ public abstract class OAObjectRulesService {
 			}		
 		}
 	}
-	
+
+	/**
+	 * Invokes the object callback method stage when {@link CheckType#CallbackMethod}
+	 * is active.
+	 * <p>
+	 * Object/model callback code is allowed to refine or override earlier metadata,
+	 * session, or ModelUser results.
+	 * </p>
+	 *
+	 * @param pi resolved processing context
+	 */
 	protected void _processObjectCallback_2(ProcessInfo pi) {
 		if (pi.oaObj == null) return;
 		OAObjectCallback cb = pi.cb;		
@@ -1666,12 +2027,22 @@ public abstract class OAObjectRulesService {
 			callObjectCallbackMethod(cb);
 		}
 	}
-	
+
+	/**
+	 * Invokes Hub listener participation when {@link CheckType#HubListeners} is
+	 * active.
+	 * <p>
+	 * Hub listeners run after object callback methods and may refine or override
+	 * earlier rule results.
+	 * </p>
+	 *
+	 * @param pi resolved processing context
+	 */
 	protected void _processObjectCallback_3(ProcessInfo pi) {
 		if (pi.oaObj == null) return;
 		OAObjectCallback cb = pi.cb;		
 		final Hub[] hubs = callHubGetHubReferences(pi.oaObj);
-	
+
 		// checkHubListeners
 		if (hubs != null && cb.isUsed(CheckType.HubListeners)) { 
 			for (Hub h : hubs) {
@@ -1684,30 +2055,36 @@ public abstract class OAObjectRulesService {
 	}
 
 	/**
-	 * Evaluates visibility or enabled-state rules for the specified object
-	 * and all of its owners by delegating to the recursive
-	 * {@code _ownerHierProcess} method starting at depth {@code 0}.
+	 * Applies the lightweight owner-hierarchy gate for a callback.
+	 * <p>
+	 * Owner hierarchy processing checks whether the containing owner path is visible
+	 * or enabled enough for the original callback to continue. It does not re-run the
+	 * full original rule type against each owner. {@link Type#AllowVisible} maps to
+	 * owner visibility checks; other rule types map to owner enabled checks.
+	 * </p>
 	 *
-	 * @param objectCallback the callback being updated
-	 * @param oaObj          the target object
-	 * @param propertyName   the property or link name associated with the callback
+	 * @param objectCallback callback request/response carrier being updated
+	 * @param oaObj          target object whose owner chain is checked
+	 * @param propertyName   member/property associated with the original callback
 	 */
 	protected void ownerHierProcess(OAObjectCallback objectCallback, final OAObject oaObj, final String propertyName) {
 		_ownerHierProcess(objectCallback, oaObj, propertyName, null, 0);
 	}
-	
+
 	/**
-	 * Recursively evaluates visibility rules for the specified object and its
-	 * owner hierarchy. Starting from the topmost owner, class-level and
-	 * context-level visibility settings are applied, followed by invocation
-	 * of any object-level callback method. The callback’s allowed state and
-	 * response message may be updated based on these evaluations.
+	 * Recursively applies owner visible/enabled checks from the top owner back down
+	 * to the supplied object.
+	 * <p>
+	 * This is part of the owner gate only. It uses {@link Type#AllowVisible} owner
+	 * semantics for visible requests and {@link Type#AllowEnabled} owner semantics
+	 * for other requests, while preserving the active {@link CheckType} selection.
+	 * </p>
 	 *
-	 * @param objectCallback the callback being updated
-	 * @param oaObj          the current object being evaluated
-	 * @param propertyName   the property or link name associated with the callback
-	 * @param li             the link used when navigating the owner hierarchy
-	 * @param cnter          the recursion depth counter
+	 * @param objectCallback callback request/response carrier being updated
+	 * @param oaObj          current object in the owner chain
+	 * @param propertyName   member/property associated with the current owner step
+	 * @param li             link used while navigating owner hierarchy
+	 * @param cnter          recursion depth counter
 	 */
 	protected void _ownerHierProcess(OAObjectCallback objectCallback, final OAObject oaObj, final String propertyName, final OALinkInfo li, final int cnter) {
 		if (oaObj == null) return;
@@ -1725,12 +2102,12 @@ public abstract class OAObjectRulesService {
 				_ownerHierProcess(objectCallback, objOwner, lix.getName(), lix, cnter + 1);
 			}
 		}
-		
+
 		String pp;
 		boolean b;
 		Object valx;
 		boolean bWasAllowed = objectCallback.getAllowed();
-		
+
 		final OA oa = OARuntime.oa(oaObj);
 		final Hub<?> hub = oa.modelUser().getCalc();
 		final OAObject user = hub == null ? null : hub.getAO();
@@ -1781,7 +2158,7 @@ public abstract class OAObjectRulesService {
 					objectCallback.setResponse(s);
 				}
 			}
-			
+
 			if (bWasAllowed && li != null && objectCallback.isUsed(CheckType.Visible)) {
 				pp = li.getVisibleProperty();
 				if (OAString.isNotEmpty(pp)) {
@@ -1858,7 +2235,7 @@ public abstract class OAObjectRulesService {
 
 			// this can overwrite objectCallback.allowed
 			if (bCheckCallbackMethod) {
-				
+
 				OAObjectCallback objectCallbackX = new OAObjectCallback(Type.AllowEnabled, null, objectCallback);
 
 				if (objectCallback.isUsed(CheckType.CallbackMethod)) {
@@ -1942,7 +2319,7 @@ public abstract class OAObjectRulesService {
 		}
 		_processObjectCallbackForHubListeners(objectCallback, hub, oaObj, propertyName, oldValue, newValue);
 	}
-	
+
 	/**
 	 * Internal helper used to notify hub listeners of a callback event. A
 	 * {@link HubEvent} is created if needed, and each listener is invoked
@@ -1959,7 +2336,7 @@ public abstract class OAObjectRulesService {
 	 */
 	protected <T extends OAObject> void _processObjectCallbackForHubListeners(OAObjectCallback objectCallback, final Hub<T> hub, final T oaObj,
 			final String propertyName, final Object oldValue, final Object newValue) {
-		
+
 		HubListener<T>[] hl = callHubEventGetAllListeners(hub);
 		if (hl == null) {
 			return;
@@ -2303,13 +2680,13 @@ public abstract class OAObjectRulesService {
 
 	/**
 	 * Adds dependent property paths to the supplied {@link HubChangeListener}.
-	 * View-level, context-level, and processed-dependent properties are added
+	 * View-level, ModelUser-level, and processed-dependent properties are added
 	 * using the provided prefix. Null or empty property arrays are ignored.
 	 *
 	 * @param hub                       the hub whose objects are monitored
 	 * @param prefix                    optional property-path prefix
 	 * @param viewDependentProperties   properties affecting visibility
-	 * @param userModelDependentProperties properties affecting context visibility or enabled state
+	 * @param userModelDependentProperties properties affecting ModelUser visibility or enabled state
 	 * @param bProcessed                true to include processed-dependent properties
 	 * @param changeListener            the listener that receives dependent paths
 	 */
@@ -2318,7 +2695,7 @@ public abstract class OAObjectRulesService {
 		String[] viewDependentProperties, String[] userModelDependentProperties,
 		boolean bProcessed, HubChangeListener changeListener) 
 	{
-		
+
 		final OA oa = OARuntime.oa(hub);
 		if (viewDependentProperties != null) {
 			for (String s : viewDependentProperties) {
@@ -2342,34 +2719,39 @@ public abstract class OAObjectRulesService {
 			changeListener.add(hubUser, oa.modelUser().getEditProcessedPropertyName());
 		}
 	}
-	
+
+	/**
+	 * Applies the ModelUser edit-processed rule to a callback when processed-state checks require it.
+	 *
+	 * @param objectCallback callback request/response carrier being updated
+	 */
 	public void updateEditProcessed(OAObjectCallback objectCallback) {
 		if (objectCallback == null) return;
-		
+
 		Class<? extends OAObject> c = objectCallback.getCalcClass();
 		OA oa = OARuntime.oa(c);
-		
+
 		evaluateUser(objectCallback, oa.modelUser().getEditProcessedPropertyName(), true);
 	}
-	
-	protected boolean evaluateUser(OAObjectCallback objectCallback, final String propertyPath, final boolean bMatchValue) {
+
+	protected boolean evaluateUser(OAObjectCallback objectCallback, final String path, final boolean bMatchValue) {
 		if (objectCallback == null) return false;
-		if (OAStr.isEmpty(propertyPath)) return true;
-		
+		if (OAStr.isEmpty(path)) return true;
+
 		final OA oa = OARuntime.oa(objectCallback.getCalcClass());
 		final Hub hub = oa.modelUser().getCalc();
-		
+
 		if (hub == null) {
 			objectCallback.setAllowed(false);
 			String s = "ModelUser Hub is null";
 			objectCallback.setResponse(s);
 			return false;
 		}
-		
+
 		boolean b = false;
 		OAObject objUser = hub.getAO();
 		if (objUser != null) {
-			Object val = objUser.getProperty(propertyPath);
+			Object val = objUser.getProperty(path);
 			b = (OAConv.toBoolean(val) == bMatchValue);
 		}
 
@@ -2377,36 +2759,36 @@ public abstract class OAObjectRulesService {
 
 		objectCallback.setAllowed(false);
 		Class clazz = objectCallback.getCalcClass();
-		
+
 		String s = "Type is "+ objectCallback.getType().name() +", user rule for ";
-		
+
 		if (clazz == null) s += "UnknownClass"; 
 		else s += clazz.getSimpleName();
 		s += ", ";
-		
+
 		if (objUser == null) s += "ModelUser returned null";
-		else s += objUser.getClass().getSimpleName() + "." + propertyPath + " must be " + bMatchValue;
+		else s += objUser.getClass().getSimpleName() + "." + path + " must be " + bMatchValue;
 		objectCallback.setResponse(s);
-			
+
 		return b;
 	}
 
-	protected boolean evaluateObject(OAObjectCallback objectCallback, final String propertyPath, final boolean bMatchValue) {
+	protected boolean evaluateObject(OAObjectCallback objectCallback, final String path, final boolean bMatchValue) {
 		if (objectCallback == null) return false;
-		if (OAStr.isEmpty(propertyPath)) return true;
+		if (OAStr.isEmpty(path)) return true;
 
 		final OAObject obj = objectCallback.getObject(); 
-		
+
 		if (obj == null) {
 			objectCallback.setAllowed(false);
 			String s = "Object is null";
 			objectCallback.setResponse(s);
 			return false;
 		}
-		
+
 		boolean b = false;
 		if (obj != null) {
-			Object val = obj.getProperty(propertyPath);
+			Object val = obj.getProperty(path);
 			b = (OAConv.toBoolean(val) == bMatchValue);
 		}
 
@@ -2414,17 +2796,17 @@ public abstract class OAObjectRulesService {
 
 		objectCallback.setAllowed(false);
 		Class clazz = objectCallback.getCalcClass();
-		
+
 		String s = "Type is "+ objectCallback.getType().name() +", rule for ";
-		
+
 		if (clazz == null) s += "UnknownClass"; 
 		else s += clazz.getSimpleName();
-		s += "." + propertyPath + " must be " + bMatchValue;
+		s += "." + path + " must be " + bMatchValue;
 		objectCallback.setResponse(s);
-			
+
 		return b;
 	}
-	
+
 	protected void processHubOnlyCallback(OAObjectCallback cb, Hub<? extends OAObject> hub, OAObject valueObj) {
 	    if (cb == null || hub == null || !cb.getAllowed()) return;
 
@@ -2439,7 +2821,7 @@ public abstract class OAObjectRulesService {
 		    if (cb.isUsed(CheckType.SessionEnabled)) {
 		        boolean ok = sa.getEnabled(clazz);
 		        if (ok && valueObj != null) ok = sa.getEnabled(valueObj);
-	
+
 		        if (!ok) {
 		            cb.setAllowed(false);
 		            cb.setResponse("SessionAccess returned false");
@@ -2449,7 +2831,7 @@ public abstract class OAObjectRulesService {
 		    if (cb.isUsed(CheckType.SessionVisible)) {
 		        boolean ok = sa.getVisible(clazz);
 		        if (ok && valueObj != null) ok = sa.getVisible(valueObj);
-	
+
 		        if (!ok) {
 		            cb.setAllowed(false);
 		            cb.setResponse("SessionAccess returned false");
@@ -2457,7 +2839,7 @@ public abstract class OAObjectRulesService {
 		        }
 		    }
 	    }
-		    
+
 		if (cb.isUsed(OAObjectCallback.CheckType.UserEnabled)) {
 	        OAObjectInfo oi = callInfoGetObjectInfo(clazz);
 	        evaluateUser(cb, oi.getModelUserEnabledProperty(), oi.getModelUserEnabledValue());
@@ -2475,7 +2857,7 @@ public abstract class OAObjectRulesService {
 		    if (cb.isUsed(CheckType.SessionEnabled)) {
 		        boolean ok = sa.getEnabled(clazz);
 		        if (ok && valueObj != null) ok = sa.getEnabled(valueObj);
-	
+
 		        if (!ok) {
 		            cb.setAllowed(false);
 		            cb.setResponse("SessionAccess returned false");
@@ -2485,7 +2867,7 @@ public abstract class OAObjectRulesService {
 		    if (cb.isUsed(CheckType.SessionVisible)) {
 		        boolean ok = sa.getVisible(clazz);
 		        if (ok && valueObj != null) ok = sa.getVisible(valueObj);
-	
+
 		        if (!ok) {
 		            cb.setAllowed(false);
 		            cb.setResponse("SessionAccess returned false");
@@ -2499,16 +2881,87 @@ public abstract class OAObjectRulesService {
 	        evaluateUser(cb, oi.getModelUserEnabledProperty(), oi.getModelUserEnabledValue());
 	    }
 	}
-	
+
+	/**
+	 * Resolves OA metadata for a model class.
+	 *
+	 * @param clazz model class
+	 * @return object metadata
+	 */
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz);	
+	/**
+	 * Reads a direct property value from an OAObject.
+	 *
+	 * @param oaObj source object
+	 * @param propertyName property name
+	 * @return property value
+	 */
 	public abstract Object callPropertyGetProperty(OAObject oaObj, String propertyName);
+	/**
+	 * Reads a property-path value from an OAObject.
+	 *
+	 * @param oaObj source object
+	 * @param propPath property path
+	 * @return resolved value
+	 */
 	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath);
+	/**
+	 * Returns Hubs that reference an object and can provide Hub listener context.
+	 *
+	 * @param oaObj object whose Hub references are requested
+	 * @return Hub references, or {@code null}
+	 */
 	public abstract <T extends OAObject> Hub<T>[] callHubGetHubReferences(T oaObj);	
+	/**
+	 * Resolves a metadata method by name and parameter class.
+	 *
+	 * @param oi object metadata
+	 * @param methodName method name
+	 * @param classParam expected parameter class
+	 * @return matching method, or {@code null}
+	 */
 	public abstract Method callInfoGetMethod(OAObjectInfo oi, String methodName, final Class<?> classParam);	
+	/**
+	 * Resolves a metadata method by name and argument count.
+	 *
+	 * @param oi object metadata
+	 * @param methodName method name
+	 * @param argumentCount expected argument count
+	 * @return matching method, or {@code null}
+	 */
 	public abstract Method callInfoGetMethod(OAObjectInfo oi, String methodName, int argumentCount);	
+	/**
+	 * Returns the master-to-detail property name for a detail Hub.
+	 *
+	 * @param thisHub Hub to inspect
+	 * @return master-to-detail property name, or {@code null}
+	 */
 	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub<? extends OAObject> thisHub);	
+	/**
+	 * Returns detail-to-master link metadata for a Hub.
+	 *
+	 * @param hub Hub to inspect
+	 * @return detail-to-master link metadata, or {@code null}
+	 */
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<? extends OAObject> hub);
+	/**
+	 * Returns master-Hub-to-detail link metadata for a Hub.
+	 *
+	 * @param hub Hub to inspect
+	 * @return master-to-detail link metadata, or {@code null}
+	 */
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub<? extends OAObject> hub);
+	/**
+	 * Returns Hub listeners that can participate in rules evaluation.
+	 *
+	 * @param hub Hub whose listeners are requested
+	 * @return listener array, or {@code null}
+	 */
 	public abstract <T extends OAObject> HubListener<T>[] callHubEventGetAllListeners(Hub<T> hub);
+	/**
+	 * Returns whether the runtime is currently operating as a sync client.
+	 *
+	 * @return {@code true} for client runtime behavior
+	 */
 	public abstract boolean callSyncIsClient();
 }

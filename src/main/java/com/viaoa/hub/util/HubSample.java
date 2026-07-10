@@ -59,7 +59,7 @@ import com.viaoa.object.OAObject;
  * </ul>
  */
 public class HubSample<T extends OAObject> {
-    
+
 	/**
 	 * The source Hub whose first N elements will be mirrored into the sample Hub.
 	 * All sampling logic uses this Hub as the authoritative ordering and content.
@@ -71,13 +71,13 @@ public class HubSample<T extends OAObject> {
 	 * from {@code hubMaster}. Updated automatically as the master Hub changes.
 	 */
 	protected final Hub<T> hubSample;
-    
+
 	/**
 	 * The maximum number of elements to mirror from {@code hubMaster}
 	 * into {@code hubSample}. Determines the size of the live subset.
 	 */
 	protected final int amtSample;
-    
+
 	/**
 	 * Listener registered on {@code hubMaster} to detect list mutations
 	 * (add, remove, insert, sort, new list) and trigger sample refreshes.
@@ -98,7 +98,7 @@ public class HubSample<T extends OAObject> {
         this.amtSample = sampleAmount;
         setup();
     }
-    
+
     /**
      * Initializes the sampling mechanism by registering a HubListener on
      * {@code hubMaster} and triggering the first sample refresh.
@@ -116,27 +116,51 @@ public class HubSample<T extends OAObject> {
         if (hubMaster == null && hubSample == null) return;
         hubListener = new HubListenerAdapter<T>() {
             @Override
+            /**
+             * Handles the Hub after-add event.
+             * @param e the Hub event
+             */
             public void afterAdd(HubEvent<T> e) {
                 int pos = hubMaster.getPos();
                 if (e.getPos() < amtSample) refresh();
             }
             @Override
+            /**
+             * Handles the Hub after-insert event.
+             * @param e the Hub event
+             */
             public void afterInsert(HubEvent e) {
                 if (e.getPos() < amtSample) refresh();
             }
             @Override
+            /**
+             * Handles the Hub new-list event.
+             * @param e the Hub event
+             */
             public void afterNewList(HubEvent e) {
                 refresh();
             }
             @Override
+            /**
+             * Handles the Hub after-remove event.
+             * @param e the Hub event
+             */
             public void afterRemove(HubEvent e) {
                 if (e.getPos() < amtSample) refresh();
             }
             @Override
+            /**
+             * Handles the Hub after-remove-all event.
+             * @param e the Hub event
+             */
             public void afterRemoveAll(HubEvent e) {
                 refresh();
             }
             @Override
+            /**
+             * Handles the Hub after-sort event.
+             * @param e the Hub event
+             */
             public void afterSort(HubEvent e) {
                 refresh();
             }
@@ -144,7 +168,7 @@ public class HubSample<T extends OAObject> {
         hubMaster.addHubListener(hubListener);
         refresh();
     }
-    
+
     /**
      * Synchronizes {@code hubSample} with the first {@code amtSample} objects
      * in {@code hubMaster}.
@@ -175,7 +199,7 @@ public class HubSample<T extends OAObject> {
             hubSample.remove(amtSample);
         }
     }
-    
+
     /**
      * Detaches the HubListener from {@code hubMaster} to stop further
      * sample updates and prevent resource leaks.
@@ -186,7 +210,7 @@ public class HubSample<T extends OAObject> {
             hubListener = null;
         }
     }
-    
+
     /**
      * Ensures cleanup during garbage collection by calling {@link #close()}
      * before finalization. Invokes superclass finalization afterward.
@@ -198,5 +222,5 @@ public class HubSample<T extends OAObject> {
         close();
         super.finalize();
     }
-    
+
 }

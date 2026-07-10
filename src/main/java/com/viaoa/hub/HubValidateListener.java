@@ -24,7 +24,7 @@ package com.viaoa.hub;
  * <p>Provides a lightweight alternative to external validation frameworks.</p>
  */
 public class HubValidateListener extends HubListenerAdapter {
-    
+
 	/**
 	 * Called before an object is added to the Hub. Subclasses may override
 	 * this method to validate or veto the add operation by throwing an
@@ -56,7 +56,7 @@ public class HubValidateListener extends HubListenerAdapter {
     @Override
     public void beforeDelete(HubEvent e) {
     }
-    
+
     /**
      * Called before an object is removed from the Hub. Subclasses may use
      * this to validate removal conditions or veto the action.
@@ -66,7 +66,7 @@ public class HubValidateListener extends HubListenerAdapter {
     @Override
     public void beforeRemove(HubEvent e) {
     }
-    
+
     /**
      * Called before all objects are removed from the Hub. Provides a hook to
      * validate bulk operations or restrict clearing the Hub entirely.

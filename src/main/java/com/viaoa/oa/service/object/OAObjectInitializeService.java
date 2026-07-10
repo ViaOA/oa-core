@@ -19,7 +19,7 @@ import com.viaoa.session.OASessionUser;
 CODEX
 
 #2
-  File/Class/Method: src/main/java/com/viaoa/graph/service/object/OAObjectInitializeService.java, initialize(...)
+  File/Class/Method: src/main/java/com/viaoa/oa/service/object/OAObjectInitializeService.java, initialize(...)
 
   Exact execution path: with bAddToCache=true, initialize(...) assigns GUID/default links and calls
   callCacheAdd(...), then later runs client-sync initialization and datasource ID assignment. If
@@ -47,6 +47,11 @@ public abstract class OAObjectInitializeService {
 
 	private final OAObject.FriendAccess faObject;
 
+	/**
+	 * Performs OAObjectInitializeService behavior for the OA object service.
+	 *
+	 * @param oaObjectFriendAccess method input
+	 */
 	public OAObjectInitializeService(OAObject.FriendAccess oaObjectFriendAccess) {
     	if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
     	this.faObject = oaObjectFriendAccess;
@@ -229,14 +234,14 @@ public abstract class OAObjectInitializeService {
 					//    fkey, since it uses it's own pkey as the fkey
 
 					// 20190205 set default linkOne
-					if (li.getType() == li.TYPE_ONE && OAString.isNotEmpty(li.getDefaultModelUserPropertyPath())) {
+					if (li.getType() == li.TYPE_ONE && OAString.isNotEmpty(li.getDefaultModelUserPath())) {
 						OA oa = OARuntime.oa(oaObj);
 						
 						Hub<?> hub = oa.modelUser().getCalc();
 						OAObject objx = hub == null ? null : hub.getAO();
 						if (objx != null) {
-							if (!li.getDefaultModelUserPropertyPath().equals(".")) {
-								OAFinder hf = new OAFinder(li.getDefaultModelUserPropertyPath());
+							if (!li.getDefaultModelUserPath().equals(".")) {
+								OAFinder hf = new OAFinder(li.getDefaultModelUserPath());
 								objx = hf.findFirst(objx);
 							}
 							callPropertyUnsafeAddProperty(oaObj, li.getName(), objx);
@@ -290,7 +295,9 @@ public abstract class OAObjectInitializeService {
 	 *
 	 * @param oaObj the object to reinitialize; may be {@code null}.
 	 */
-/*qqqqqqqqqqqqq NOT Used	
+/*qqqqqqqqqqqqq NOT Used
+
+
 	public void setAsNewObject(final OAObject oaObj) {
 		if (oaObj == null) return;
 		callGuidAssignNewGuid(oaObj);
@@ -318,7 +325,9 @@ public abstract class OAObjectInitializeService {
 	 * @param oaObj the object to reset; may be {@code null}.
 	 * @param guid  the GUID to assign.
 	 */
-/*qqqqqqqqqq	
+/*qqqqqqqqqq
+
+
 	protected void _setAsNewObject(final OAObject oaObj, UUID guid) {
 		if (oaObj == null) {
 			return;
@@ -351,7 +360,7 @@ public abstract class OAObjectInitializeService {
 	 * Reassigns the GUID of the specified {@link OAObject} to match the GUID
 	 * contained in the provided {@link OAObjectKey}. This is used when an object
 	 * has been reloaded or reconstructed and must retain its original identity
-	 * within the object graph.
+	 * within the OA model.
 	 *
 	 * <p>If the object already has a GUID equal to the GUID in {@code origKey},
 	 * the method returns immediately with no changes.</p>
@@ -364,7 +373,9 @@ public abstract class OAObjectInitializeService {
 	 * @param obj the object whose GUID is being restored; may be {@code null}.
 	 * @param origKey the key containing the original GUID to apply; must not be {@code null}.
 	 */
-/*qqqqqqqqqq Remove this	
+/*qqqqqqqqqq Remove this
+
+
 	public void reassignGuid(OAObject oaObj, OAObjectKey origKey) {
 		//qqqqqqqqqqqqqqq this is not be a good idea ... objectCache would need to be updated		
 		if (oaObj != null && origKey != null) {
@@ -374,20 +385,105 @@ public abstract class OAObjectInitializeService {
 */
 	
 	public abstract OAObject callCacheAdd(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll);
+	/**
+	 * Dependency hook used by this service to cacheFireAfterLoadEvent.
+	 *
+	 * @param obj method input
+	 */
 	public abstract <T extends OAObject> void callCacheFireAfterLoadEvent(T obj);
+	/**
+	 * Dependency hook used by this service to cacheAddToSelectAllHubs.
+	 *
+	 * @param obj method input
+	 */
 	public abstract void callCacheAddToSelectAllHubs(OAObject obj);
+	/**
+	 * Dependency hook used by this service to dSAssignId.
+	 *
+	 * @param oaObj method input
+	 */
 	public abstract void callDSAssignId(OAObject oaObj);
+	/**
+	 * Dependency hook used by this service to dSGetAssignIdOnCreate.
+	 *
+	 * @param oaObj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callDSGetAssignIdOnCreate(OAObject oaObj);
+	/**
+	 * Dependency hook used by this service to guidGetGuid.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
 	public abstract UUID callGuidGetGuid(OAObject oaObj);
+	/**
+	 * Dependency hook used by this service to guidAssignNewGuid.
+	 *
+	 * @param obj method input
+	 */
 	public abstract void callGuidAssignNewGuid(OAObject obj);
+	/**
+	 * Dependency hook used by this service to guidAssignGuid.
+	 *
+	 * @param obj method input
+	 */
 	public abstract void callGuidAssignGuid(OAObject obj);
+	/**
+	 * Dependency hook used by this service to infoIsOne2One.
+	 *
+	 * @param thisLi method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callInfoIsOne2One(OALinkInfo thisLi);
-	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz); 
-	public abstract void callPropertyUnsafeAddProperty(OAObject oaObj, String name, Object value); 
+	/**
+	 * Dependency hook used by this service to infoGetObjectInfo.
+	 *
+	 * @param clazz method input
+	 * @return result value
+	 */
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz);
+	/**
+	 * Dependency hook used by this service to propertyUnsafeAddProperty.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @param value method input
+	 */
+	public abstract void callPropertyUnsafeAddProperty(OAObject oaObj, String name, Object value);
+	/**
+	 * Dependency hook used by this service to reflectSetProperty.
+	 *
+	 * @param oaObj method input
+	 * @param propName method input
+	 * @param value method input
+	 * @param fmt method input
+	 */
 	public abstract void callReflectSetProperty(final OAObject oaObj, String propName, Object value, final String fmt);
+	/**
+	 * Dependency hook used by this service to syncIsClient.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callSyncIsClient();
-	public abstract void callSyncClientObjectCreated(OAObject obj);	
+	/**
+	 * Dependency hook used by this service to syncClientObjectCreated.
+	 *
+	 * @param obj method input
+	 */
+	public abstract void callSyncClientObjectCreated(OAObject obj);
+	/**
+	 * Dependency hook used by this service to threadLocalIsLoading.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callThreadLocalIsLoading();
+	/**
+	 * Dependency hook used by this service to threadLocalSetLoading.
+	 *
+	 * @param b method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callThreadLocalSetLoading(boolean b);
 }
 

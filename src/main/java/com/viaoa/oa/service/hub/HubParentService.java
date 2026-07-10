@@ -37,7 +37,7 @@ import com.viaoa.sync.remote.RemoteSyncInterface;
 CODEX
 
  #1 — invariant risk
-  File/class/method: src/main/java/com/viaoa/graph/service/hub/HubParentService.java:76, initialize(...)
+  File/class/method: src/main/java/com/viaoa/oa/service/hub/HubParentService.java:76, initialize(...)
   Exact concern: HubParentService.initialize has no “already initialized” guard, while
   OAObjectParentService.initialize does.
   Why it matters: a second initialize call can replace parent service references after child services already exist.
@@ -48,19 +48,19 @@ CODEX
   Suggested test coverage: call HubService.initialize twice and verify the second call fails.
 
 #2 — boundary risk
-  File/class/method: src/main/java/com/viaoa/graph/service/hub/HubParentService.java:113, public child getters; src/
-  main/java/com/viaoa/graph/service/object/OAObjectParentService.java:156, public child getters
+  File/class/method: src/main/java/com/viaoa/oa/service/hub/HubParentService.java:113, public child getters; src/
+  main/java/com/viaoa/oa/service/object/OAObjectParentService.java:156, public child getters
   Exact concern: parent services expose concrete child services through public inherited getters.
   Why it matters: callers with HubService or OAObjectService can bypass the parent orchestration API and call deep
   child services directly. That weakens the “parent owns child services” boundary.
   Minimal fix: make child getters protected/package-private where possible, or explicitly mark them unsupported
   internal wiring.
   Suggested invariant: GRAPH_CHILD_SERVICES_ARE_NOT_PUBLIC_APP_SURFACE
-  Suggested test coverage: architecture test that non-graph packages do not call child-service getters.
+  Suggested test coverage: architecture test that non-OA-runtime packages do not call child-service getters.
 
  #3 — invariant risk
-  File/class/method: src/main/java/com/viaoa/graph/service/hub/HubParentService.java:113, child-service lazy
-  getters; src/main/java/com/viaoa/graph/service/object/OAObjectParentService.java:156, child-service lazy getters
+  File/class/method: src/main/java/com/viaoa/oa/service/hub/HubParentService.java:113, child-service lazy
+  getters; src/main/java/com/viaoa/oa/service/object/OAObjectParentService.java:156, child-service lazy getters
   Exact concern: child service creation is lazy, mutable, and unsynchronized.
   Why it matters: initialization eagerly creates the services, but public getters can still be called before/during
   initialization or concurrently on directly constructed services. That can create duplicate child instances or
@@ -71,7 +71,7 @@ CODEX
   never observes null parent dependencies.
 
 #3 — boundary risk
-  file/class/method: src/main/java/com/viaoa/graph/service/hub/HubParentService.java:540, HubCS remote hooks
+  file/class/method: src/main/java/com/viaoa/oa/service/hub/HubParentService.java:540, HubCS remote hooks
   exact concern: HubCS parent hooks directly call srvcSync.getRemoteSync() / getRemoteClient() without null guards
   across add/remove/insert/move/sort/refresh/clear-changes/delete-all.
   why it matters: Child Hub services already decide whether sync should happen, but the parent boundary should still
@@ -87,9 +87,9 @@ CODEX
 */
 
 /**
- * 
+ *
  * qqqqqqqqqqqq Parent that manages all subservices
- * 
+ *
  */
 public class HubParentService {
 	private final Logger LOG = Logger.getLogger(HubParentService.class.getName());
@@ -128,8 +128,18 @@ public class HubParentService {
 	public HubParentService() {
 		this.faHub = faBridge.getHubFriendAccess();
 	}
-	
-	
+
+
+	/**
+	 * Performs initialize behavior for the Hub service.
+	 *
+	 * @param srvcObjectParent method input
+	 * @param srvcSync method input
+	 * @param srvcThreadLocal method input
+	 * @param srvcRemoteThread method input
+	 */
+
+
 	public void initialize(OAObjectParentService srvcObjectParent, OASyncService srvcSync, OAThreadLocalService srvcThreadLocal, OARemoteThreadService srvcRemoteThread) {
     	if (srvcObjectParent == null) throw new IllegalArgumentException("OAObjectParentService can not be null");
     	if (srvcSync == null) throw new IllegalArgumentException("OASyncService can not be null");
@@ -165,8 +175,15 @@ public class HubParentService {
 		getHubSortService();
 		getHubStatusService();
 	}
-	
-	
+
+
+	/**
+	 * Returns the hubAddRemoveService for the supplied Hub context.
+	 *
+	 * @return result value
+	 */
+
+
 	public HubAddRemoveService getHubAddRemoveService() {
 		if (srvcHubAddRemove != null) return srvcHubAddRemove;
 		
@@ -260,8 +277,8 @@ public class HubParentService {
 				HubParentService.this.getHubDataService().setObjectClass(thisHub, objClass);				
 			}
 			@Override
-			public String callHubSelectGetSelectWhereHubPropertyPath(Hub<?> thisHub) {
-				return HubParentService.this.getHubSelectService().getSelectWhereHubPropertyPath(thisHub);
+			public String callHubSelectGetSelectWhereHubPath(Hub<?> thisHub) {
+				return HubParentService.this.getHubSelectService().getSelectWhereHubPath(thisHub);
 			}
 			@Override
 			public <T extends OAObject> Hub<T> callHubSelectGetSelectWhereHub(Hub<T> thisHub) {
@@ -470,7 +487,13 @@ public class HubParentService {
 		};
 		return srvcHubAddRemove;
 	}
-	
+
+	/**
+	 * Returns the hubAOService for the supplied Hub context.
+	 *
+	 * @return result value
+	 */
+
 	public HubAOService getHubAOService() {
 		if (srvcHubAO != null) return srvcHubAO;
 		
@@ -535,12 +558,24 @@ public class HubParentService {
 		return srvcHubAO;
 	}
 
+	/**
+	 * Returns the hubAutoMatchService for the supplied Hub context.
+	 *
+	 * @return result value
+	 */
+
 	public HubAutoMatchService getHubAutoMatchService() {
 		if (srvcHubAutoMatch != null) return srvcHubAutoMatch;
 		srvcHubAutoMatch = new HubAutoMatchService(faHub) {
 		};
 		return srvcHubAutoMatch;
 	}
+
+	/**
+	 * Returns the hubCSService for the supplied Hub context.
+	 *
+	 * @return result value
+	 */
 
 	public HubCSService getHubCSService() {
 		if (srvcHubCS != null) return srvcHubCS;
@@ -556,10 +591,10 @@ public class HubParentService {
 				return sc.isObjectOnServer(obj);
 			}
 			@Override
-			public boolean callSyncSyncSort(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName, String propertyPaths, boolean bAscending, Comparator<?> comp) {
+			public boolean callSyncSyncSort(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName, String paths, boolean bAscending, Comparator<?> comp) {
 				RemoteSyncInterface rsi = HubParentService.this.srvcSync.getRemoteSync(); 
 				if (rsi == null) return false;
-				return rsi.sort(objectClass, objectKey, hubPropertyName, propertyPaths, bAscending, comp);
+				return rsi.sort(objectClass, objectKey, hubPropertyName, paths, bAscending, comp);
 			}
 			@Override
 			public boolean callThreadLocalGetSendSyncMessages() {
@@ -672,6 +707,12 @@ public class HubParentService {
 		return srvcHubCS;
 	}
 
+	/**
+	 * Returns the hubDataService for the supplied Hub context.
+	 *
+	 * @return result value
+	 */
+
 	public HubDataService getHubDataService() {
 		if (srvcHubData != null) return srvcHubData;
 		
@@ -783,10 +824,19 @@ public class HubParentService {
 		};
 		return srvcHubData;
 	}
-	
-	
-	
-	
+
+
+
+
+	/**
+	 * Returns the hubDeleteService for the supplied Hub context.
+	 *
+	 * @return result value
+	 */
+
+
+
+
 	public HubDeleteService getHubDeleteService() {
 		if (srvcHubDelete != null) return srvcHubDelete;
 		
@@ -864,7 +914,13 @@ public class HubParentService {
 		
 		return srvcHubDelete;
 	}
-	
+
+	/**
+	 * Returns the hubDetailService for the supplied Hub context.
+	 *
+	 * @return result value
+	 */
+
 	public HubDetailService getHubDetailService() {
 		if (srvcHubDetail != null) return srvcHubDetail;
 		srvcHubDetail = new HubDetailService(faHub) {
@@ -938,8 +994,8 @@ public class HubParentService {
 				return HubParentService.this.getHubShareService().getFirstSharedHub(thisHub, filter, bIncludeFilteredHubs, bOnlyIfSharedAO);
 			}
 			@Override
-			public String callHubGetPropertyPathforClasses(Hub<?> hub, Class<? extends OAObject>[] classes) {
-				return OAPathDelegate.getPropertyPathforClasses(hub, classes);
+			public String callHubGetPathforClasses(Hub<?> hub, Class<? extends OAObject>[] classes) {
+				return OAPathDelegate.getPathforClasses(hub, classes);
 			}
 			@Override
 			public <T extends OAObject> void callHubDataSetObjectClass(Hub<T> thisHub, Class<T> objClass) {
@@ -997,7 +1053,13 @@ public class HubParentService {
 		};
 		return srvcHubDetail;
 	}
-	
+
+	/**
+	 * Returns the hubDSService for the supplied Hub context.
+	 *
+	 * @return result value
+	 */
+
 	public HubDSService getHubDSService() {
 		if (srvcHubDS != null) return srvcHubDS;
     	srvcHubDS = new HubDSService(faHub) {
@@ -1017,8 +1079,15 @@ public class HubParentService {
     	};
 		return srvcHubDS;
 	}
-	
-	
+
+
+	/**
+	 * Returns the hubEventService for the supplied Hub context.
+	 *
+	 * @return result value
+	 */
+
+
 	public HubEventService getHubEventService() {
 		if (srvcHubEvent != null) return srvcHubEvent;
 		
@@ -1107,6 +1176,12 @@ public class HubParentService {
 		return srvcHubEvent;
 	}
 
+	/**
+	 * Returns the hubFindService for the supplied Hub context.
+	 *
+	 * @return result value
+	 */
+
 	public HubFindService getHubFindService() {
 		if (srvcHubFind != null) return srvcHubFind;
     	srvcHubFind = new HubFindService() {
@@ -1121,8 +1196,15 @@ public class HubParentService {
     	};
 		return srvcHubFind;
 	}
-	
-	
+
+
+	/**
+	 * Returns the hubLinkService for the supplied Hub context.
+	 *
+	 * @return result value
+	 */
+
+
 	public HubLinkService getHubLinkService() {
 		if (srvcHubLink != null) return srvcHubLink;
     	srvcHubLink = new HubLinkService(faHub) {
@@ -1190,6 +1272,12 @@ public class HubParentService {
 		return srvcHubLink;
 	}
 
+	/**
+	 * Returns the hubMasterService for the supplied Hub context.
+	 *
+	 * @return result value
+	 */
+
 	public HubMasterService getHubMasterService() {
 		if (srvcHubMaster != null) return srvcHubMaster;
 		srvcHubMaster = new HubMasterService(faHub) {
@@ -1205,8 +1293,15 @@ public class HubParentService {
 		
 		return srvcHubMaster;
 	}
-	
-	
+
+
+	/**
+	 * Returns the hubPropertyService for the supplied Hub context.
+	 *
+	 * @return result value
+	 */
+
+
 	public HubPropertyService getHubPropertyService() {
 		if (srvcHubProperty != null) return srvcHubProperty;
 		
@@ -1237,7 +1332,14 @@ public class HubParentService {
 		return srvcHubProperty;
 	}
 
-	
+
+	/**
+	 * Returns the hubRootService for the supplied Hub context.
+	 *
+	 * @return result value
+	 */
+
+
 	public HubRootService getHubRootService() {
 		if (srvcHubRoot != null) return srvcHubRoot;
 		
@@ -1275,6 +1377,12 @@ public class HubParentService {
 		return srvcHubRoot;
 	}
 
+	/**
+	 * Returns the hubSaveService for the supplied Hub context.
+	 *
+	 * @return result value
+	 */
+
 	public HubSaveService getHubSaveService() {
 		if (srvcHubSave != null) return srvcHubSave;
 		
@@ -1311,7 +1419,13 @@ public class HubParentService {
 		
 		return srvcHubSave;
 	}
-	
+
+	/**
+	 * Returns the hubSequenceService for the supplied Hub context.
+	 *
+	 * @return result value
+	 */
+
 	public HubSequenceService getHubSequenceService() {
 		if (srvcHubSequence != null) return srvcHubSequence;
 		srvcHubSequence = new HubSequenceService(faHub) {
@@ -1327,8 +1441,15 @@ public class HubParentService {
 		return srvcHubSequence;
 		
 	}
-	
-	
+
+
+	/**
+	 * Returns the hubSelectService for the supplied Hub context.
+	 *
+	 * @return result value
+	 */
+
+
 	public HubSelectService getHubSelectService() {
 		if (srvcHubSelect != null) return srvcHubSelect;
 		
@@ -1417,7 +1538,14 @@ public class HubParentService {
 		return srvcHubSelect;
 	}
 
-	
+
+	/**
+	 * Returns the hubSerializeService for the supplied Hub context.
+	 *
+	 * @return result value
+	 */
+
+
 	public HubSerializeService getHubSerializeService() {
 		if (srvcHubSerialize != null) return srvcHubSerialize;
 
@@ -1449,6 +1577,12 @@ public class HubParentService {
     	};
 		return srvcHubSerialize;
 	}
+
+	/**
+	 * Returns the hubShareService for the supplied Hub context.
+	 *
+	 * @return result value
+	 */
 
 	public HubShareService getHubShareService() {
 		if (srvcHubShare != null) return srvcHubShare;
@@ -1510,6 +1644,12 @@ public class HubParentService {
 		return srvcHubShare;
 	}
 
+	/**
+	 * Returns the hubSizeService for the supplied Hub context.
+	 *
+	 * @return result value
+	 */
+
 	public HubSizeService getHubSizeService() {
 		if (srvcHubSize != null) return srvcHubSize;
     	srvcHubSize = new HubSizeService(faHub) {
@@ -1539,15 +1679,21 @@ public class HubParentService {
 			}
     	};
 		return srvcHubSize;
-	}	
-	
+	}
+
+	/**
+	 * Returns the hubSortService for the supplied Hub context.
+	 *
+	 * @return result value
+	 */
+
 	public HubSortService getHubSortService() {
 		if (srvcHubSort != null) return srvcHubSort;
 		
     	srvcHubSort = new HubSortService(faHub) {
 			@Override
-			public void callHubCSSort(Hub<?> thisHub, String propertyPaths, boolean bAscending, Comparator<?> comp) {
-				HubParentService.this.getHubCSService().sort(thisHub, propertyPaths, bAscending, comp);				
+			public void callHubCSSort(Hub<?> thisHub, String paths, boolean bAscending, Comparator<?> comp) {
+				HubParentService.this.getHubCSService().sort(thisHub, paths, bAscending, comp);				
 			}
 			@Override
 			public void callHubSelectLoadAllData(Hub<?> thisHub) {
@@ -1580,7 +1726,13 @@ public class HubParentService {
     	};
 		return srvcHubSort;
 	}
-	
+
+	/**
+	 * Returns the hubStatusService for the supplied Hub context.
+	 *
+	 * @return result value
+	 */
+
 	public HubStatusService getHubStatusService() {
 		if (srvcHubStatus != null) return srvcHubStatus;
 		srvcHubStatus = new HubStatusService(faHub) {

@@ -34,7 +34,7 @@ import com.viaoa.object.OAObject;
  * <p><b>Notes:</b> Retains its own AO/order; composes cleanly with sorting and grouping delegates.
  */
 public abstract class FilteredHub<TYPE extends OAObject> extends Hub<TYPE> {
-    
+
 	/**
 	 * Internal HubFilter instance bound to the master Hub. It drives the
 	 * inclusion logic for this FilteredHub by delegating its isUsed evaluation
@@ -51,9 +51,14 @@ public abstract class FilteredHub<TYPE extends OAObject> extends Hub<TYPE> {
      */
     public FilteredHub(Hub<TYPE> hubMaster) {
         super(hubMaster.getObjectClass());
-    
+
         filter = new HubFilter<TYPE>(hubMaster, this) {
             @Override
+            /**
+             * Returns whether Used is true for the current Hub context.
+             *
+             * @return {@code true} if Used is true
+             */
             public boolean isUsed(TYPE object) {
                 return FilteredHub.this.isUsed(object);
             }
@@ -69,7 +74,7 @@ public abstract class FilteredHub<TYPE extends OAObject> extends Hub<TYPE> {
     public HubFilter<TYPE> getFilter() {
         return filter;
     }
-    
+
     /**
      * Registers a property name whose changes should cause the filter to
      * re-evaluate objects. Delegates to {@link HubFilter#addDependentProperty(String)}.
@@ -122,7 +127,7 @@ public abstract class FilteredHub<TYPE extends OAObject> extends Hub<TYPE> {
     public void refresh() {
         getFilter().refresh();
     }
-    
+
     /**
      * Determines whether the specified object should be included in this filtered
      * Hub. Subclasses must implement the predicate logic.

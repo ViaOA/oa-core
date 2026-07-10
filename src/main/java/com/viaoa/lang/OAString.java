@@ -1600,18 +1600,18 @@ public class OAString {
 	 * @param args path segments
 	 * @return the property path string
 	 */
-	public static String createPropertyPath(String... args) {
-		return OATextUtil.createPropertyPath(args);
+	public static String createPath(String... args) {
+		return OATextUtil.createPath(args);
 	}
 
 	/**
-	 * Delegates to {@link #createPropertyPath(String...)}.
+	 * Delegates to {@link #createPath(String...)}.
 	 *
 	 * @param args path segments
 	 * @return the property path string
 	 */
 	public static String cpp(String... args) {
-		return OATextUtil.createPropertyPath(args);
+		return OATextUtil.createPath(args);
 	}
 	
 	/**
@@ -1621,19 +1621,19 @@ public class OAString {
 	 * @param args path segments
 	 * @return the property path string
 	 */
-	public static String createPropertyPath(Class clazz, String... args) {
-		return OATextUtil.createPropertyPath(clazz, args);
+	public static String createPath(Class clazz, String... args) {
+		return OATextUtil.createPath(clazz, args);
 	}
 
 	/**
-	 * Delegates to {@link #createPropertyPath(Class,String...)}.
+	 * Delegates to {@link #createPath(Class,String...)}.
 	 *
 	 * @param clazz the class used as a prefix
 	 * @param args path segments
 	 * @return the property path string
 	 */
 	public static String cpp(Class clazz, String... args) {
-		return createPropertyPath(clazz, args);
+		return createPath(clazz, args);
 	}
 
 	/**

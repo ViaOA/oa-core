@@ -5,6 +5,10 @@ import java.util.logging.Logger;
 import com.viaoa.hub.*;
 import com.viaoa.object.OAObject;
 
+/**
+ * Provides access to Hub master-object state.
+ */
+
 public abstract class HubMasterService {
 	private final Logger LOG = Logger.getLogger(HubMasterService.class.getName());
 
@@ -91,7 +95,22 @@ public abstract class HubMasterService {
 		return thisHub;
 	}
 
+	/**
+	 * Dependency hook used by this service for HubDetailGetDataMaster behavior.
+	 *
+	 * @param thisHub method input
+	 * @param bIncludedFilteredHub method input
+	 * @return result value
+	 */
+
 	public abstract HubDataMaster callHubDetailGetDataMaster(final Hub<?> thisHub, boolean bIncludedFilteredHub);
+	/**
+	 * Dependency hook used by this service for HubLinkGetHubWithLink behavior.
+	 *
+	 * @param thisHub method input
+	 * @param bIncludeCopiedHubs method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> Hub<?> callHubLinkGetHubWithLink(final Hub<T> thisHub, boolean bIncludeCopiedHubs);
 }
 

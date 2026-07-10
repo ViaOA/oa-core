@@ -11,10 +11,16 @@ import com.viaoa.object.*;
 import com.viaoa.path.OAPath;
 import com.viaoa.schedule.OAScheduler;
 
+/**
+ * Creates scheduler instances for object-scoped scheduled work.
+ */
 public abstract class OAObjectSchedulerService {
 	private final Logger LOG = Logger.getLogger(OAObjectSchedulerService.class.getName());
 
 
+	/**
+	 * Performs OAObjectSchedulerService behavior for the OA object service.
+	 */
 	public OAObjectSchedulerService() {
 	}
 
@@ -122,6 +128,12 @@ public abstract class OAObjectSchedulerService {
         }
     }
 
+	/**
+	 * Dependency hook used by this service to infoGetObjectInfo.
+	 *
+	 * @param obj method input
+	 * @return result value
+	 */
 	public abstract OAObjectInfo callInfoGetObjectInfo(OAObject obj); 
 
 }

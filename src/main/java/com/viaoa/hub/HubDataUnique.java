@@ -67,7 +67,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
         }
         return hubDataUniquex;
     }
-    
+
     /**
      * Returns the default position for this Hub.
      *
@@ -98,7 +98,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
         if (hubDataUniquex == null) return false;
         return hubDataUniquex.bNullOnRemove;
     }
-    
+
     /**
      * Sets whether removing the active object should null its reference.
      *
@@ -119,7 +119,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
         if (hubDataUniquex == null) return null;
         return hubDataUniquex.listenerTree;
     }
-    
+
     /**
      * Assigns the listener tree for this Hub.
      *
@@ -140,7 +140,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
         if (hubDataUniquex == null) return null;
         return hubDataUniquex.vecHubDetail;
     }
-    
+
     /**
      * Sets the collection of HubDetail instances for this Hub.
      *
@@ -186,7 +186,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
         if (hubDataUniquex == null) return null;
         return hubDataUniquex.linkToHub;
     }
-    
+
     /**
      * Sets the Hub linked to by this Hub.
      *
@@ -207,7 +207,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
         if (hubDataUniquex == null) return false;
         return hubDataUniquex.linkPos;
     }
-    
+
     /**
      * Sets whether this Hub uses positional linking.
      *
@@ -218,7 +218,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
             getHubDataUniquex().linkPos = linkPos;
         }
     }
-    
+
     /**
      * Returns the property name used for the link-to relationship.
      *
@@ -228,7 +228,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
         if (hubDataUniquex == null) return null;
         return hubDataUniquex.linkToPropertyName;
     }
-    
+
     /**
      * Sets the property name used for the link-to relationship.
      *
@@ -249,7 +249,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
         if (hubDataUniquex == null) return null;
         return hubDataUniquex.linkToGetMethod;
     }
-    
+
     /**
      * Sets the getter method for the link-to property.
      *
@@ -270,7 +270,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
         if (hubDataUniquex == null) return null;
         return hubDataUniquex.linkToSetMethod;
     }
-    
+
     /**
      * Sets the setter method for the link-to property.
      *
@@ -291,7 +291,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
         if (hubDataUniquex == null) return null;
         return hubDataUniquex.linkFromPropertyName;
     }
-    
+
     /**
      * Sets the property name used for the link-from relationship.
      *
@@ -333,7 +333,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
         if (hubDataUniquex == null) return null;
         return hubDataUniquex.hubLinkEventListener;
     }
-    
+
     /**
      * Sets the HubLinkEventListener for this Hub.
      *
@@ -365,7 +365,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
             getHubDataUniquex().sharedHub = sharedHub;
         }
     }
-    
+
     /**
      * Returns the array of weak references to shared Hubs.
      *
@@ -375,7 +375,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
         if (hubDataUniquex == null) return null;
         return hubDataUniquex.weakSharedHubs;
     }
-    
+
     /**
      * Sets the array of weak references to shared Hubs.
      *
@@ -396,7 +396,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
         if (hubDataUniquex == null) return null;
         return hubDataUniquex.addHub;
     }
-    
+
     /**
      * Sets the Hub used for add operations.
      *
@@ -417,7 +417,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
         if (hubDataUniquex == null) return false;
         return hubDataUniquex.bAutoCreate;
     }
-    
+
     /**
      * Sets whether auto-create behavior is enabled for this Hub.
      *
@@ -438,7 +438,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
         if (hubDataUniquex == null) return false;
         return hubDataUniquex.bAutoCreateAllowDups;
     }
-    
+
     /**
      * Sets whether duplicate objects are allowed during auto-create operations.
      *

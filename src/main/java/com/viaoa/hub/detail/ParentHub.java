@@ -55,10 +55,10 @@ public class ParentHub<TYPE extends OAObject> extends DetailHub<TYPE> {
 	 * underlying master/detail linkage mechanics.
 	 *
 	 * @param hubMaster    the master Hub whose active object defines the parent
-	 * @param propertyPath the property path pointing to the parent object
+	 * @param path the property path pointing to the parent object
 	 */
-    public ParentHub(Hub hubMaster, String propertyPath) {
-        super(hubMaster, propertyPath);
+    public ParentHub(Hub hubMaster, String path) {
+        super(hubMaster, path);
     }
 }
 

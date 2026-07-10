@@ -24,10 +24,6 @@ import java.util.*;
 
 import com.viaoa.datetime.OADateTime.DateTimeType;
 
-/* CODEX Review
-  
-
-*/
 
 /**
  * Date-only OA value.

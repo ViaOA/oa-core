@@ -148,12 +148,32 @@ public class OATimeZone {
      * and formatting information.
      */
 	public static class TZ {
+		/**
+		 * IANA or Java timezone identifier.
+		 */
 		public String id;
+		/**
+		 * Formatted UTC offset display value.
+		 */
 		public String utcValue; 
+		/**
+		 * Short timezone display name.
+		 */
 		public String shortName;
+		/**
+		 * Long timezone display name.
+		 */
 		public String longName;
+		/**
+		 * Underlying Java timezone instance.
+		 */
 		public TimeZone timeZone;
 
+		/**
+		 * Returns a combined display string with UTC offset, id, and names.
+		 *
+		 * @return display text for this timezone
+		 */
 		public String getDisplay() {
 			return "(" + utcValue + ") " + id + " (" + longName + "/" + shortName + ")";
 		}

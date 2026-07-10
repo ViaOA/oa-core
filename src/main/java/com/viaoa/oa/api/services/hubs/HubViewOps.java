@@ -6,13 +6,16 @@ import com.viaoa.hub.view.OAGroupBy;
 import com.viaoa.hub.view.OALeftJoin;
 import com.viaoa.object.OAObject;
 
+/**
+ * Public OA Hub view service operations for grouped, flattened, and joined Hub structures.
+ */
 public interface HubViewOps {
 
     /**
      * Creates and maintains a live grouped view from one Hub into another.
      * <p>
      * {@code groupBy(...)} groups the objects in {@code hubFrom} by the objects in
-     * {@code hubGrpBy} using the supplied {@code propertyPath}, and returns a live
+     * {@code hubGrpBy} using the supplied {@code path}, and returns a live
      * {@link Hub} of {@link OAGroupBy} entries.
      * <p>
      * Each {@code OAGroupBy} entry represents one grouping object from
@@ -30,13 +33,13 @@ public interface HubViewOps {
      * @param <G> the model object type used as the grouping object
      * @param hubFrom the source Hub containing objects to group
      * @param hubGrpBy the Hub containing the grouping objects
-     * @param propertyPath the relationship path from source objects to grouping objects
+     * @param path the relationship path from source objects to grouping objects
      * @param createNullList {@code true} to include empty groups for grouping
      *        objects with no matches; {@code false} to include only groups that
      *        currently have matching source objects
      * @return a live Hub of group entries, each with its matching detail Hub
      */
-    <F extends OAObject, G extends OAObject> Hub<OAGroupBy<F, G>> groupBy(Hub<F> hubFrom, Hub<G> hubGrpBy, String propertyPath, boolean createNullList);
+    <F extends OAObject, G extends OAObject> Hub<OAGroupBy<F, G>> groupBy(Hub<F> hubFrom, Hub<G> hubGrpBy, String path, boolean createNullList);
 
     /**
      * Flattens a recursive Hub structure into an existing target Hub.
@@ -102,10 +105,11 @@ public interface HubViewOps {
      *
      * @param hubLeft the primary Hub (left side of the join)
      * @param hubRight the secondary Hub (right side of the join)
-     * @param propertyPath the relationship path from primary objects to the joined objects
-     * @param shareActiveObject 
+     * @param path the relationship path from primary objects to the joined objects
+     * @param shareActiveObject {@code true} if the joined Hub shares active-object behavior;
+     *        {@code false} otherwise
      */
-    <A extends OAObject, B extends OAObject> Hub<OALeftJoin<A, B>> leftJoin(Hub<A> hubLeft, Hub<B> hubRight, String propertyPath, boolean shareActiveObject);
+    <A extends OAObject, B extends OAObject> Hub<OALeftJoin<A, B>> leftJoin(Hub<A> hubLeft, Hub<B> hubRight, String path, boolean shareActiveObject);
     
 }
 

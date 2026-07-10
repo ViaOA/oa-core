@@ -29,7 +29,7 @@ class OAInFilterTest {
 
         OAInFilter filter = new OAInFilter(invoices, com.test.pos.model.oa.Invoice.P_InvoiceBaskets);
 
-        assertNotNull(filter.getPropertyPath());
+        assertNotNull(filter.getPath());
         assertTrue(filter.isUsed(graph.basket));
     }
 
@@ -38,7 +38,7 @@ class OAInFilterTest {
         FilterTestSupport.PosGraph graph = FilterTestSupport.graph();
         OAInFilter filter = new OAInFilter(graph.invoice, com.test.pos.model.oa.Invoice.P_InvoiceBaskets);
 
-        assertNotNull(filter.getPropertyPath());
+        assertNotNull(filter.getPath());
         assertTrue(filter.isUsed(graph.basket));
     }
 

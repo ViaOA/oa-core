@@ -63,7 +63,7 @@ CODEX
  * eligible for GC if no other strong references exist.</p>
  *
  * <p>This design allows the OA framework to maintain a consistent and correct
- * object graph while efficiently supporting distributed, event-driven, and
+ * OA model while efficiently supporting distributed, event-driven, and
  * offline-first application behavior.</p>
  *
  * @see OAObjectCache
@@ -84,7 +84,10 @@ public abstract class OAObjectCacheService {
 	private final LinkedBlockingQueue<SendAddEventInfo> queCacheSendAddEvent = new LinkedBlockingQueue<>();
 
 	private final OAObjectCache objectCache = new OAObjectCache();
-    
+
+	/**
+	 * defaultAddMode state used by this service.
+	 */
 	protected volatile int defaultAddMode = 1;
 	
 	/**
@@ -123,6 +126,12 @@ public abstract class OAObjectCacheService {
 		OAObjectCacheListener<? extends OAObject>[] hls;
 		OAObject obj;
 
+	/**
+	 * Performs SendAddEventInfo behavior for the OA object service.
+	 *
+	 * @param hls method input
+	 * @param obj method input
+	 */
 		public SendAddEventInfo(OAObjectCacheListener<? extends OAObject>[] hls, OAObject obj) {
 			this.hls = hls;
 			this.obj = obj;
@@ -404,6 +413,12 @@ public abstract class OAObjectCacheService {
 	 * @return an array of listeners for the class, or {@code null} if none exist
 	 */
 	@SuppressWarnings("unchecked")
+	/**
+	 * Returns the listeners value.
+	 *
+	 * @param c method input
+	 * @return result value
+	 */
 	public <T extends OAObject> OAObjectCacheListener<T>[] getListeners(final Class<T> c) {
 		if (c == null || aiListenerCount.get() == 0) {
 			return null;
@@ -559,6 +574,8 @@ public abstract class OAObjectCacheService {
 	 * @param callback the callback to be invoked for each cached object
 	 */
 	/*qqqqqqq removed
+
+
 	public void callback(OACallback callback) {
 		visit(callback);
 	}
@@ -572,6 +589,8 @@ public abstract class OAObjectCacheService {
 	 * @param callback the callback invoked for each cached object
 	 */
 	/*qqqqqq removed
+
+
 	public void visit(OACallback<? extends OAObject> callback) {
 		LOG.fine("visit");
 		objectCache.visit(callback);
@@ -932,6 +951,9 @@ public abstract class OAObjectCacheService {
 		}
 		threadCacheSendAddEvent = new Thread(new Runnable() {
 			@Override
+	/**
+	 * Performs run behavior for the OA object service.
+	 */
 			public void run() {
 				final OAThrottle trottle = new OAThrottle(500);
 				int cnt = 0;
@@ -1122,17 +1144,25 @@ public abstract class OAObjectCacheService {
 	 * with default skip-new and exception behavior.
 	 *
 	 * @param fromObject   the object from which to start the search; if null, search starts at the beginning
-	 * @param propertyPath the property path to match
+	 * @param path the property path to match
 	 * @param findObject   the value to compare against
 	 * @return the next matching object in the cache, or {@code null} if none found
 	 */
 	@SuppressWarnings("unchecked")
-	public <T extends OAObject> T findNext(T fromObject, String propertyPath, Object findObject) {
+	/**
+	 * Finds matching OAObjects or references using this service.
+	 *
+	 * @param fromObject method input
+	 * @param path method input
+	 * @param findObject method input
+	 * @return result value
+	 */
+	public <T extends OAObject> T findNext(T fromObject, String path, Object findObject) {
 		if (fromObject == null) {
 			return null;
 		}
 		Class<T> c = (Class<T>) fromObject.getClass();
-		return _find(fromObject, c, propertyPath, findObject, false, true);
+		return _find(fromObject, c, path, findObject, false, true);
 	}
 	
 	/**
@@ -1142,19 +1172,29 @@ public abstract class OAObjectCacheService {
 	 * no match is found. Delegates to the internal {@link #_find(Object, Class, String, Object, boolean, boolean)}.
 	 *
 	 * @param fromObject     the object from which to start the search; if null, search starts at the beginning
-	 * @param propertyPath   the property path to match
+	 * @param path   the property path to match
 	 * @param findObject     the value to compare against
 	 * @param bSkipNew       whether newly added (unsaved) objects should be skipped
 	 * @param bThrowException whether to throw an exception if no matching object is found
 	 * @return the next matching object in the cache, or {@code null} if none found
 	 */
 	@SuppressWarnings("unchecked")
-	public <T extends OAObject> T findNext(T fromObject, String propertyPath, Object findObject, boolean bSkipNew, boolean bThrowException) {
+	/**
+	 * Finds matching OAObjects or references using this service.
+	 *
+	 * @param fromObject method input
+	 * @param path method input
+	 * @param findObject method input
+	 * @param bSkipNew method input
+	 * @param bThrowException method input
+	 * @return result value
+	 */
+	public <T extends OAObject> T findNext(T fromObject, String path, Object findObject, boolean bSkipNew, boolean bThrowException) {
 		if (fromObject == null) {
 			return null;
 		}
 		Class<T> c = (Class<T>) fromObject.getClass();
-		return _find(fromObject, c, propertyPath, findObject, bSkipNew, bThrowException);
+		return _find(fromObject, c, path, findObject, bSkipNew, bThrowException);
 	}
 
 	/**
@@ -1165,19 +1205,28 @@ public abstract class OAObjectCacheService {
 	 *
 	 * @param fromObject   the object from which to start the search; if null, search starts at the beginning
 	 * @param fromClass    the class of objects to search; if null, the class of {@code fromObject} is used
-	 * @param propertyPath the property path to match
+	 * @param path the property path to match
 	 * @param findObject   the value to compare against
 	 * @return the next matching object in the cache, or {@code null} if none found
 	 */
 	@SuppressWarnings("unchecked")
-	public <T extends OAObject> T findNext(T fromObject, Class<T> fromClass, String propertyPath, Object findObject) {
+	/**
+	 * Finds matching OAObjects or references using this service.
+	 *
+	 * @param fromObject method input
+	 * @param fromClass method input
+	 * @param path method input
+	 * @param findObject method input
+	 * @return result value
+	 */
+	public <T extends OAObject> T findNext(T fromObject, Class<T> fromClass, String path, Object findObject) {
 		if (fromObject == null && fromClass == null) {
 			return null;
 		}
 		if (fromClass == null) {
 			fromClass = (Class<T>) fromObject.getClass();
 		}
-		return _find(fromObject, fromClass, propertyPath, findObject, false, true);
+		return _find(fromObject, fromClass, path, findObject, false, true);
 	}
 	
 	/**
@@ -1208,35 +1257,35 @@ public abstract class OAObjectCacheService {
 
 	/**
 	 * Searches the cache for an object of the specified class where the
-	 * property at {@code propertyPath} equals {@code findObject}. Delegates
+	 * property at {@code path} equals {@code findObject}. Delegates
 	 * to the internal {@link #_find(Object, Class, String, Object, boolean, boolean)}
 	 * with default skip-new and exception behavior.
 	 *
 	 * @param clazz        the class of objects to search
-	 * @param propertyPath the property path to match
+	 * @param path the property path to match
 	 * @param findObject   the value to compare against
 	 * @return the first matching object in the cache, or {@code null} if none found
 	 */
-	public <T extends OAObject> T find(Class<T> clazz, String propertyPath, Object findObject) {
-		return _find(null, clazz, propertyPath, findObject, false, true);
+	public <T extends OAObject> T find(Class<T> clazz, String path, Object findObject) {
+		return _find(null, clazz, path, findObject, false, true);
 	}
 	
 	/**
 	 * Searches the cache for an object of the specified class where the
-	 * property at {@code propertyPath} equals {@code findObject}, with
+	 * property at {@code path} equals {@code findObject}, with
 	 * control over skipping new objects and throwing exceptions if no match
 	 * is found. Delegates to the internal
 	 * {@link #_find(Object, Class, String, Object, boolean, boolean)} method.
 	 *
 	 * @param clazz         the class of objects to search
-	 * @param propertyPath  the property path to match
+	 * @param path  the property path to match
 	 * @param findObject    the value to compare against
 	 * @param bSkipNew      whether to skip newly added (unsaved) objects
 	 * @param bThrowException whether to throw an exception if no match is found
 	 * @return the first matching object in the cache, or {@code null} if none found
 	 */
-	public <T extends OAObject> T find(Class<T> clazz, String propertyPath, Object findObject, boolean bSkipNew, boolean bThrowException) {
-		return _find(null, clazz, propertyPath, findObject, bSkipNew, bThrowException);
+	public <T extends OAObject> T find(Class<T> clazz, String path, Object findObject, boolean bSkipNew, boolean bThrowException) {
+		return _find(null, clazz, path, findObject, bSkipNew, bThrowException);
 	}
 
 	/**
@@ -1263,15 +1312,15 @@ public abstract class OAObjectCacheService {
 	 *
 	 * @param fromObject      the object from which to start the search; may be null
 	 * @param clazz           the class of objects to search
-	 * @param propertyPath    the property path to match; may be null
+	 * @param path    the property path to match; may be null
 	 * @param findObject      the value to compare against
 	 * @param bSkipNew        whether to skip newly added (unsaved) objects
 	 * @param bThrowException whether to throw an exception if no match is found
 	 * @return the next matching object in the cache, or {@code null} if none found
 	 */
-	public <T extends OAObject> T _find(T fromObject, Class<T> clazz, String propertyPath, Object findObject, boolean bSkipNew,
+	public <T extends OAObject> T _find(T fromObject, Class<T> clazz, String path, Object findObject, boolean bSkipNew,
 			boolean bThrowException) {
-		return _find(fromObject, clazz, propertyPath, findObject, bSkipNew, bThrowException, 1, null);
+		return _find(fromObject, clazz, path, findObject, bSkipNew, bThrowException, 1, null);
 	}
 	
 	/**
@@ -1291,6 +1340,18 @@ public abstract class OAObjectCacheService {
 		return _find(fromObject, clazz, finder, bSkipNew, bThrowException, 1, null);
 	}
 
+	/**
+	 * Finds matching OAObjects or references using this service.
+	 *
+	 * @param fromObject method input
+	 * @param clazz method input
+	 * @param finder method input
+	 * @param bSkipNew method input
+	 * @param bThrowException method input
+	 * @param fetchAmount method input
+	 * @param alResults method input
+	 * @return result value
+	 */
 	public <T extends OAObject> T find(T fromObject, Class<T> clazz, OAFinder<T, T> finder, boolean bSkipNew, boolean bThrowException, int fetchAmount,
 			List<T> alResults) {
 		return _find(fromObject, clazz, finder, bSkipNew, bThrowException, fetchAmount, alResults);
@@ -1344,7 +1405,7 @@ public abstract class OAObjectCacheService {
 	 *
 	 * @param fromObject      the object from which to start the search; may be null
 	 * @param clazz           the class of objects to search; must not be null
-	 * @param propertyPath    the property path to match; may be null
+	 * @param path    the property path to match; may be null
 	 * @param findValue       the value to compare against
 	 * @param bSkipNew        whether to skip newly added (unsaved) objects
 	 * @param bThrowException whether to throw an exception if no matching object is found
@@ -1353,14 +1414,14 @@ public abstract class OAObjectCacheService {
 	 * @return the last object found in the cache, or {@code null} if none
 	 * @throws IllegalArgumentException if clazz is null or findValue is invalid
 	 */
-	protected <T extends OAObject> T _find(T fromObject, Class<T> clazz, String propertyPath, Object findValue, boolean bSkipNew,
+	protected <T extends OAObject> T _find(T fromObject, Class<T> clazz, String path, Object findValue, boolean bSkipNew,
 			boolean bThrowException, int fetchAmount, List<T> alResults) {
 		if (bDisableCache) {
 			return null;
 		}
-		// LOG.fine("class="+clazz+", propertyPath="+propertyPath+" findObject="+findObject+", bSkipNew="+bSkipNew);
-		if (propertyPath == null || propertyPath.length() == 0) {
-			propertyPath = null;
+		// LOG.fine("class="+clazz+", path="+path+" findObject="+findObject+", bSkipNew="+bSkipNew);
+		if (path == null || path.length() == 0) {
+			path = null;
 			// throw new IllegalArgumentException("HubController.find() property cant be null");
 		}
 		if (clazz == null) {
@@ -1369,19 +1430,19 @@ public abstract class OAObjectCacheService {
 
 		if (findValue instanceof Hub) {
 			throw new IllegalArgumentException(
-					"findValue can not be a Hub, class=" + clazz.getSimpleName() + ", propertyPath=" + propertyPath);
+					"findValue can not be a Hub, class=" + clazz.getSimpleName() + ", path=" + path);
 		}
 
 		// 20140201 replace methods with finder
 		OAFinder<T,T> finder;
 		OAFilter filter = null;
-		if (!OAString.isEmpty(propertyPath)) {
-			OAPath pp = new OAPath(clazz, propertyPath);
+		if (!OAString.isEmpty(path)) {
+			OAPath pp = new OAPath(clazz, path);
 			FinderInfo fi;
 			try {
 				fi = OAFilterDelegate.createFinder(clazz, pp);
 			} catch (Exception e) {
-				throw new RuntimeException("find error with propertyPath", e);
+				throw new RuntimeException("find error with path", e);
 			}
 
 			if (fi != null) {
@@ -1541,19 +1602,84 @@ public abstract class OAObjectCacheService {
 		//qqqqqq not fully used
 	}
 
-	
+
+	/**
+	 * Returns the random value.
+	 *
+	 * @param clazz method input
+	 * @param max method input
+	 * @return result value
+	 */
 	public OAObject getRandom(Class<? extends OAObject> clazz, int max) {
 		return objectCache.getRandom(clazz, max);
 	}	
 
+	/**
+	 * Dependency hook used by this service to keyCreateObjectKey.
+	 *
+	 * @param obj method input
+	 * @return result value
+	 */
 	public abstract OAObjectKey callKeyCreateObjectKey(OAObject obj);
-	public abstract OAObjectInfo callInfoGetObjectInfo(Class<? extends OAObject> clazz);	
-	public abstract OAObjectKey callKeyGetKey(OAObject oaObj);	
-	public abstract OAObjectKey callKeyCreateObjectKey(final Class<? extends OAObject> c, final Object ...ids);	
-	public abstract <T extends OAObject> Hub<T>[] callHubGetHubReferences(T oaObj);	
+	/**
+	 * Dependency hook used by this service to infoGetObjectInfo.
+	 *
+	 * @param clazz method input
+	 * @return result value
+	 */
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class<? extends OAObject> clazz);
+	/**
+	 * Dependency hook used by this service to keyGetKey.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
+	public abstract OAObjectKey callKeyGetKey(OAObject oaObj);
+	/**
+	 * Dependency hook used by this service to keyCreateObjectKey.
+	 *
+	 * @param c method input
+	 * @param ids method input
+	 * @return result value
+	 */
+	public abstract OAObjectKey callKeyCreateObjectKey(final Class<? extends OAObject> c, final Object ...ids);
+	/**
+	 * Dependency hook used by this service to hubGetHubReferences.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
+	public abstract <T extends OAObject> Hub<T>[] callHubGetHubReferences(T oaObj);
+	/**
+	 * Dependency hook used by this service to detailGetLinkInfoFromDetailToMaster.
+	 *
+	 * @param hub method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service to hubSelectRefreshSelect.
+	 *
+	 * @param thisHub method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callHubSelectRefreshSelect(Hub<?> thisHub);
-	public abstract boolean callSyncIsClient();	
-	public abstract void callSyncRemoteServerRefreshCache(Class<? extends OAObject> clazz);	
+	/**
+	 * Dependency hook used by this service to syncIsClient.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
+	public abstract boolean callSyncIsClient();
+	/**
+	 * Dependency hook used by this service to syncRemoteServerRefreshCache.
+	 *
+	 * @param clazz method input
+	 */
+	public abstract void callSyncRemoteServerRefreshCache(Class<? extends OAObject> clazz);
+	/**
+	 * Dependency hook used by this service to threadLocalGetObjectCacheAddMode.
+	 *
+	 * @return result value
+	 */
 	public abstract int callThreadLocalGetObjectCacheAddMode();
 }

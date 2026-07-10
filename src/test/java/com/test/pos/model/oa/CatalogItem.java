@@ -149,7 +149,7 @@ public class CatalogItem extends OAObject {
         displayName = "Vehicle Model Packages", 
         toClass = VehicleModelPackage.class, 
         reverseName = VehicleModelPackage.P_CatalogItems, 
-        selectFromPropertyPath = P_VehicleModels + "." + VehicleModel.P_VehicleModelPackages
+        selectFromPath = P_VehicleModels + "." + VehicleModel.P_VehicleModelPackages
     )
     @OALinkTable(name = "New_45VehicleModelPackage", indexName = "ModelPackageCatalogItem", columns = {"New_45Id"})
     public Hub<VehicleModelPackage> getVehicleModelPackages() {

@@ -64,7 +64,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	 * The concrete class type of objects contained in the source Hub.
 	 */
 	private final Class<F> classFrom;
-	
+
 	/**
 	 * The class of the groupBy key objects. Determined lazily from runtime
 	 * events when not explicitly supplied.
@@ -87,7 +87,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	 * Property-path expression used to extract the grouping value from
 	 * each source object.
 	 */
-	private String propertyPath;
+	private String path;
 
 	/**
 	 * Optional name of a Hub property within the groupBy object used for
@@ -118,7 +118,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	 * while programmatically modifying AO values.
 	 */
 	private volatile boolean bIgnoreAOChange;
-	
+
 	/**
 	 * Indicates whether a separate group should be maintained for objects
 	 * whose grouping value is {@code null}.
@@ -136,16 +136,16 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	 * Hub based on the given property path.
 	 *
 	 * @param hubB the source Hub containing objects to be grouped
-	 * @param propertyPath the property path used to determine grouping
+	 * @param path the property path used to determine grouping
 	 * @param bCreateNullList whether to create a group for {@code null} grouping values
 	 */
-	public HubGroupBy(Hub<F> hubB, String propertyPath, boolean bCreateNullList) {
+	public HubGroupBy(Hub<F> hubB, String path, boolean bCreateNullList) {
 		this.hubGroupBy = null;
 		this.hubFrom = hubB;
 		this.classFrom = hubB.getObjectClass();
 		this.classGroupBy = null;
 
-		this.propertyPath = propertyPath;
+		this.path = path;
 		this.bCreateNullList = bCreateNullList;
 		setup();
 	}
@@ -155,10 +155,10 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	 * using the given property path and enables creation of a null-group list.
 	 *
 	 * @param hubB the source Hub containing objects to be grouped
-	 * @param propertyPath the property path used to determine grouping
+	 * @param path the property path used to determine grouping
 	 */
-	public HubGroupBy(Hub<F> hubB, String propertyPath) {
-		this(hubB, propertyPath, true);
+	public HubGroupBy(Hub<F> hubB, String path) {
+		this(hubB, path, true);
 	}
 
 	/**
@@ -166,16 +166,16 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	 * a property path, and associates each group with a link-many Hub property.
 	 *
 	 * @param hubB the source Hub containing objects to be grouped
-	 * @param propertyPath the property path used for grouping
+	 * @param path the property path used for grouping
 	 * @param hubPropertyName optional name of a Hub property within the groupBy object
 	 */
-	public HubGroupBy(Hub<F> hubB, String propertyPath, String hubPropertyName) {
+	public HubGroupBy(Hub<F> hubB, String path, String hubPropertyName) {
 		this.hubGroupBy = null;
 		this.hubFrom = hubB;
 		this.classFrom = hubB.getObjectClass();
 		this.classGroupBy = null;
 
-		this.propertyPath = propertyPath;
+		this.path = path;
 		this.hubPropertyName = hubPropertyName;
 		this.bCreateNullList = false;
 		setup();
@@ -187,15 +187,15 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	 *
 	 * @param hubFrom the source Hub providing objects to be grouped
 	 * @param hubGrpBy the Hub providing groupBy key objects
-	 * @param propertyPath the property path from source to groupBy
+	 * @param path the property path from source to groupBy
 	 * @param bCreateNullList whether to create a group for {@code null} grouping values
 	 */
-	public HubGroupBy(Hub<F> hubFrom, Hub<G> hubGrpBy, String propertyPath, boolean bCreateNullList) {
+	public HubGroupBy(Hub<F> hubFrom, Hub<G> hubGrpBy, String path, boolean bCreateNullList) {
 		this.hubFrom = hubFrom;
 		this.hubGroupBy = hubGrpBy;
 		this.classFrom = hubFrom.getObjectClass();
 		this.classGroupBy = null;
-		this.propertyPath = propertyPath;
+		this.path = path;
 		this.bCreateNullList = bCreateNullList;
 		setup();
 	}
@@ -206,10 +206,10 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	 *
 	 * @param hubFrom the source Hub providing objects to be grouped
 	 * @param hubGrpBy the Hub providing groupBy key objects
-	 * @param propertyPath the property path from source to groupBy
+	 * @param path the property path from source to groupBy
 	 */
-	public HubGroupBy(Hub<F> hubFrom, Hub<G> hubGrpBy, String propertyPath) {
-		this(hubFrom, hubGrpBy, propertyPath, true);
+	public HubGroupBy(Hub<F> hubFrom, Hub<G> hubGrpBy, String path) {
+		this(hubFrom, hubGrpBy, path, true);
 	}
 
 	/**
@@ -301,6 +301,10 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 
 			hubMaster.addHubListener(new HubListenerAdapter() {
 				@Override
+				/**
+				 * Handles the Hub active-object change event.
+				 * @param e the Hub event
+				 */
 				public void afterChangeActiveObject(HubEvent e) {
 					if (bIgnoreAOChange) {
 						return;
@@ -334,6 +338,10 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 				}
 
 				@Override
+				/**
+				 * Handles the Hub after-add event.
+				 * @param e the Hub event
+				 */
 				public void afterAdd(HubEvent e) {
 					if (classGroupBy == null) {
 						classGroupBy = (Class<G>) e.getObject().getClass();
@@ -358,6 +366,10 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			oa.internal().hubs().data().setObjectClass(hubDetail, classFrom);
 			hubDetail.addHubListener(new HubListenerAdapter() {
 				@Override
+				/**
+				 * Handles the Hub active-object change event.
+				 * @param e the Hub event
+				 */
 				public void afterChangeActiveObject(HubEvent e) {
 					if (bIgnoreAOChange) {
 						return;
@@ -381,12 +393,12 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	 * setup path.
 	 */
 	void setup() {
-		OAPath opp = new OAPath(propertyPath);
+		OAPath opp = new OAPath(path);
 
 		try {
 			opp.setup(classFrom, (hubGroupBy != null));
 		} catch (Exception e) {
-			throw new RuntimeException("PropertyPath setup failed", e);
+			throw new RuntimeException("Path setup failed", e);
 		}
 
 		OALinkInfo[] lis = opp.getLinkInfos();
@@ -405,7 +417,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		}
 
 		// need to have a 2way propPath, one from rootHub, and another from topDown hub
-		String pp1 = OAString.field(propertyPath, ".", 1, posEmpty);
+		String pp1 = OAString.field(path, ".", 1, posEmpty);
 
 		String pp2 = "";
 		for (int i = ms.length - 1; i >= posEmpty; i--) {
@@ -424,7 +436,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		setupSplit();
 	}
 
-	// used by propertyPath that require a split
+	// used by path that require a split
 	private HubGroupBy hgb1;
 	private Hub<OAGroupBy> hubGB1;
 
@@ -447,14 +459,14 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	      .hubB       mrads     appGroups    mrads
 
 	 </code></pre>
-	 * This is used when a propertyPath has a link where one of the createMethod=false. By having the source hub
+	 * This is used when a path has a link where one of the createMethod=false. By having the source hub
 	 * for the leftmost HubB, and must also have the source HubA for the rightmost, two separate hgb can be used to update a 3rd
 	 * hgb. This will set up the listeners for hgb1 & hgb2 to update this.hubCombined.
 	 */
-	
+
 	/**
 	 * Configures grouping when the property path contains a non-contiguous or
-	 * non-navigable segment requiring a two-way split.  
+	 * non-navigable segment requiring a two-way split.
 	 * <p>
 	 * Establishes listeners on both split HubGroupBy instances so changes propagate
 	 * into this combined grouping.
@@ -464,11 +476,19 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		// A.1: listen to hgb1 add/removes and update this.hubCombined
 		hubGB1.addHubListener(new HubListenerAdapter<OAGroupBy>() {
 			@Override
+			/**
+			 * Handles the Hub after-insert event.
+			 * @param e the Hub event
+			 */
 			public void afterInsert(HubEvent e) {
 				afterAdd(e);
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-add event.
+			 * @param e the Hub event
+			 */
 			public void afterAdd(HubEvent e) {
 				OAGroupBy gb1 = (OAGroupBy) e.getObject();
 				if (gb1.getHub().size() == 0) {
@@ -546,11 +566,19 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			Object[] removeObjects;
 
 			@Override
+			/**
+			 * Handles the Hub before-remove-all event.
+			 * @param e the Hub event
+			 */
 			public void beforeRemoveAll(HubEvent e) {
 				removeObjects = hubGB1.toArray();
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-remove-all event.
+			 * @param e the Hub event
+			 */
 			public void afterRemoveAll(HubEvent e) {
 				if (removeObjects != null) {
 					for (Object obj : removeObjects) {
@@ -561,6 +589,10 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-remove event.
+			 * @param e the Hub event
+			 */
 			public void afterRemove(HubEvent e) {
 				OAGroupBy gb1 = (OAGroupBy) e.getObject();
 				if (gb1.getHub().size() == 0) {
@@ -654,11 +686,19 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		Hub<OAObject> hubTemp = new Hub<OAObject>(OAObject.class);
 		HubMerger<OAGroupBy, OAObject> hm1 = new HubMerger<OAGroupBy, OAObject>(hubGB1, hubTemp, OAGroupBy.P_Hub, true) {
 			@Override
+			/**
+			 * Handles the afterInsertRealHub event.
+			 * @param e the Hub event
+			 */
 			protected void afterInsertRealHub(HubEvent e) {
 				afterAddRealHub(e);
 			}
 
 			@Override
+			/**
+			 * Handles the afterAddRealHub event.
+			 * @param e the Hub event
+			 */
 			protected void afterAddRealHub(HubEvent e) {
 				OAGroupBy gb = (OAGroupBy) (e.getHub()).getMasterObject();
 				final OAObject gb1A = gb.getGroupBy();
@@ -725,11 +765,19 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			private Object[] removeAllObjects;
 
 			@Override
+			/**
+			 * Handles the beforeRemoveAllRealHub event.
+			 * @param e the Hub event
+			 */
 			protected void beforeRemoveAllRealHub(HubEvent e) {
 				removeAllObjects = e.getHub().toArray();
 			}
 
 			@Override
+			/**
+			 * Handles the afterRemoveAllRealHub event.
+			 * @param e the Hub event
+			 */
 			protected void afterRemoveAllRealHub(HubEvent e) {
 				if (removeAllObjects == null) {
 					return;
@@ -742,6 +790,10 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			}
 
 			@Override
+			/**
+			 * Handles the afterRemoveRealHub event.
+			 * @param e the Hub event
+			 */
 			protected void afterRemoveRealHub(HubEvent e) {
 				OAGroupBy gb1 = (OAGroupBy) e.getHub().getMasterObject();
 				Object gb1B = e.getObject();
@@ -833,11 +885,19 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		// listen to GB2
 		hubGB2.addHubListener(new HubListenerAdapter() {
 			@Override
+			/**
+			 * Handles the Hub after-insert event.
+			 * @param e the Hub event
+			 */
 			public void afterInsert(HubEvent e) {
 				afterAdd(e);
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-add event.
+			 * @param e the Hub event
+			 */
 			public void afterAdd(HubEvent e) {
 				OAGroupBy gb2 = (OAGroupBy) e.getObject();
 				final OAObject gb2A = gb2.getGroupBy();
@@ -904,11 +964,19 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			Object[] removeObjects;
 
 			@Override
+			/**
+			 * Handles the Hub before-remove-all event.
+			 * @param e the Hub event
+			 */
 			public void beforeRemoveAll(HubEvent e) {
 				removeObjects = hubGB2.toArray();
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-remove-all event.
+			 * @param e the Hub event
+			 */
 			public void afterRemoveAll(HubEvent e) {
 				if (removeObjects != null) {
 					for (Object obj : removeObjects) {
@@ -919,6 +987,10 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-remove event.
+			 * @param e the Hub event
+			 */
 			public void afterRemove(HubEvent e) {
 				OAGroupBy gb2 = (OAGroupBy) e.getObject();
 				remove(gb2);
@@ -1013,11 +1085,19 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		Hub<OAObject> hubTemp2 = new Hub<OAObject>(OAObject.class);
 		HubMerger<OAGroupBy, OAObject> hm2 = new HubMerger<OAGroupBy, OAObject>(hubGB2, hubTemp2, OAGroupBy.P_Hub, true) {
 			@Override
+			/**
+			 * Handles the afterInsertRealHub event.
+			 * @param e the Hub event
+			 */
 			protected void afterInsertRealHub(HubEvent e) {
 				afterAddRealHub(e);
 			}
 
 			@Override
+			/**
+			 * Handles the afterAddRealHub event.
+			 * @param e the Hub event
+			 */
 			protected void afterAddRealHub(HubEvent e) {
 				OAGroupBy gb2 = (OAGroupBy) e.getHub().getMasterObject();
 				final Object gb2A = gb2.getGroupBy();
@@ -1083,11 +1163,19 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			private Object[] removeAllObjects;
 
 			@Override
+			/**
+			 * Handles the beforeRemoveAllRealHub event.
+			 * @param e the Hub event
+			 */
 			protected void beforeRemoveAllRealHub(HubEvent e) {
 				removeAllObjects = e.getHub().toArray();
 			}
 
 			@Override
+			/**
+			 * Handles the afterRemoveAllRealHub event.
+			 * @param e the Hub event
+			 */
 			protected void afterRemoveAllRealHub(HubEvent e) {
 				if (removeAllObjects == null) {
 					return;
@@ -1100,6 +1188,10 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			}
 
 			@Override
+			/**
+			 * Handles the afterRemoveRealHub event.
+			 * @param e the Hub event
+			 */
 			protected void afterRemoveRealHub(HubEvent e) {
 				OAGroupBy gb2 = (OAGroupBy) e.getHub().getMasterObject();
 				Object gb2B = e.getObject();
@@ -1256,6 +1348,10 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	void setupMain() {
 		getCombinedHub().addHubListener(new HubListenerAdapter() {
 			@Override
+			/**
+			 * Handles the Hub active-object change event.
+			 * @param e the Hub event
+			 */
 			public void afterChangeActiveObject(HubEvent e) {
 				if (bIgnoreAOChange) {
 					return;
@@ -1292,11 +1388,19 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		if (hubGroupBy != null) {
 			hubGroupBy.addHubListener(new HubListenerAdapter() {
 				@Override
+				/**
+				 * Handles the Hub after-insert event.
+				 * @param e the Hub event
+				 */
 				public void afterInsert(HubEvent e) {
 					afterAdd(e);
 				}
 
 				@Override
+				/**
+				 * Handles the Hub after-add event.
+				 * @param e the Hub event
+				 */
 				public void afterAdd(HubEvent e) {
 					G a = (G) e.getObject();
 					boolean bFound = false;
@@ -1315,11 +1419,19 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 				Object[] removeObjects;
 
 				@Override
+				/**
+				 * Handles the Hub before-remove-all event.
+				 * @param e the Hub event
+				 */
 				public void beforeRemoveAll(HubEvent e) {
 					removeObjects = hubGroupBy.toArray();
 				}
 
 				@Override
+				/**
+				 * Handles the Hub after-remove-all event.
+				 * @param e the Hub event
+				 */
 				public void afterRemoveAll(HubEvent e) {
 					if (removeObjects != null) {
 						for (Object obj : removeObjects) {
@@ -1330,6 +1442,10 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 				}
 
 				@Override
+				/**
+				 * Handles the Hub after-remove event.
+				 * @param e the Hub event
+				 */
 				public void afterRemove(HubEvent e) {
 					G a = (G) e.getObject();
 					remove(a);
@@ -1345,6 +1461,10 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 				}
 
 				@Override
+				/**
+				 * Handles replacement or refresh of the Hub list.
+				 * @param e the Hub event
+				 */
 				public void onNewList(HubEvent e) {
 					HubGroupBy.this.hubCombined.clear();
 					for (G a : hubGroupBy) {
@@ -1371,11 +1491,19 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 
 		HubListener hl = new HubListenerAdapter() {
 			@Override
+			/**
+			 * Handles the Hub after-insert event.
+			 * @param e the Hub event
+			 */
 			public void afterInsert(HubEvent e) {
 				afterAdd(e);
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-add event.
+			 * @param e the Hub event
+			 */
 			public void afterAdd(HubEvent e) {
 				F b = (F) e.getObject();
 				add(b);
@@ -1384,11 +1512,19 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			Object[] removeObjects;
 
 			@Override
+			/**
+			 * Handles the Hub before-remove-all event.
+			 * @param e the Hub event
+			 */
 			public void beforeRemoveAll(HubEvent e) {
 				removeObjects = hubFrom.toArray();
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-remove-all event.
+			 * @param e the Hub event
+			 */
 			public void afterRemoveAll(HubEvent e) {
 				if (removeObjects == null) return;
 				for (Object obj : removeObjects) {
@@ -1398,12 +1534,20 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-remove event.
+			 * @param e the Hub event
+			 */
 			public void afterRemove(HubEvent e) {
 				F b = (F) e.getObject();
 				remove(b);
 			}
 
 			@Override
+			/**
+			 * Handles the Hub property-change event.
+			 * @param e the Hub event
+			 */
 			public void afterPropertyChange(HubEvent e) {
 				String s = e.getPropertyName();
 				if (!listenPropertyName.equalsIgnoreCase(s)) {
@@ -1413,6 +1557,10 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			}
 
 			@Override
+			/**
+			 * Handles replacement or refresh of the Hub list.
+			 * @param e the Hub event
+			 */
 			public void onNewList(HubEvent e) {
 				try {
 					bIgnoreAOChange = true;
@@ -1430,6 +1578,10 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			}
 
 			@Override
+			/**
+			 * Handles the Hub active-object change event.
+			 * @param e the Hub event
+			 */
 			public void afterChangeActiveObject(HubEvent e) {
 				if (bIgnoreAOChange) {
 					return;
@@ -1481,13 +1633,13 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		};
 
 		boolean b = false;
-		if (propertyPath == null) {
+		if (path == null) {
 			b = true;
-		} else if (propertyPath.indexOf('.') < 0) {
-			// propertyPath could be a hub
+		} else if (path.indexOf('.') < 0) {
+			// path could be a hub
 			final OA oa = OARuntime.oa(classFrom);
 			OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(classFrom);
-			OALinkInfo li = oi.getLinkInfo(propertyPath);
+			OALinkInfo li = oi.getLinkInfo(path);
 			if (li == null || li.getType() == li.ONE) {
 				b = true;
 			}
@@ -1495,11 +1647,11 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		}
 
 		if (b) {
-			listenPropertyName = propertyPath;
-			hubFrom.addHubListener(hl, propertyPath);
+			listenPropertyName = path;
+			hubFrom.addHubListener(hl, path);
 		} else {
 			listenPropertyName = "hubGroupBy" + aiCnt.getAndIncrement();
-			hubFrom.addHubListener(hl, listenPropertyName, new String[] { propertyPath });
+			hubFrom.addHubListener(hl, listenPropertyName, new String[] { path });
 		}
 		addAll();
 	}
@@ -1511,7 +1663,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 	private void addAll() {
 		// this will tell the OASyncClient.getDetail which hub objects are being used
 		final OASiblingHelper<F> siblingHelper = new OASiblingHelper<F>(this.hubFrom);
-		siblingHelper.add(this.propertyPath);
+		siblingHelper.add(this.path);
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		srvcOAThreadLocal.addSiblingHelper(siblingHelper);
 		boolean bWas = srvcOAThreadLocal.getSendSyncMessages();
@@ -1547,7 +1699,7 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		if (b == null) {
 			return null;
 		}
-		Object valueA = b.getProperty(propertyPath);
+		Object valueA = b.getProperty(path);
 
 		ArrayList<OAGroupBy> al = null;
 
@@ -1751,11 +1903,20 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-insert event.
+			 * @param e the Hub event
+			 */
 			public void afterInsert(HubEvent e) {
 				afterAdd(e);
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-remove event.
+			 * @param HubEvent<OAGroupBy<F the event value
+			 * @param e the Hub event
+			 */
 			public void afterRemove(HubEvent<OAGroupBy<F, G>> e) {
 				final OAGroupBy<F, G> gb = e.getObject();
 				OAGroupBy gbFound = null;
@@ -1826,11 +1987,20 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-remove-all event.
+			 * @param HubEvent<OAGroupBy<F the event value
+			 * @param e the Hub event
+			 */
 			public void afterRemoveAll(HubEvent<OAGroupBy<F, G>> e) {
 				rebuild();
 			}
 
 			@Override
+			/**
+			 * Handles replacement or refresh of the Hub list.
+			 * @param e the Hub event
+			 */
 			public void onNewList(HubEvent e) {
 				rebuild();
 			}
@@ -1841,17 +2011,25 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 
 		// set up hubMergers
 
-		//qqqqqq this fails
+
 		//Hub<F> hubTemp1 = new Hub<F>();
 		//qq this works
 		Hub<OAObject> hubTemp1 = new Hub<OAObject>(OAObject.class);
 		HubMerger<OAGroupBy<F, G>, F> hm1 = new HubMerger<OAGroupBy<F, G>, F>(hub1, (Hub<F>) hubTemp1, OAGroupBy.P_Hub, true) {
 			@Override
+			/**
+			 * Handles the afterInsertRealHub event.
+			 * @param e the Hub event
+			 */
 			protected void afterInsertRealHub(HubEvent e) {
 				afterAddRealHub(e);
 			}
 
 			@Override
+			/**
+			 * Handles the afterAddRealHub event.
+			 * @param e the Hub event
+			 */
 			protected void afterAddRealHub(HubEvent e) {
 				final OAGroupBy<F, G> gb = (OAGroupBy<F, G>) e.getHub().getMasterObject();
 				final F objAdd = (F) e.getObject();
@@ -1886,6 +2064,10 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			}
 
 			@Override
+			/**
+			 * Handles the afterRemoveRealHub event.
+			 * @param e the Hub event
+			 */
 			protected void afterRemoveRealHub(HubEvent e) {
 				OAGroupBy<F, G> gb = (OAGroupBy<F, G>) e.getHub().getMasterObject();
 				F objRemove = (F) e.getObject();
@@ -1924,11 +2106,19 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			private Object[] removeAllObjects;
 
 			@Override
+			/**
+			 * Handles the beforeRemoveAllRealHub event.
+			 * @param e the Hub event
+			 */
 			protected void beforeRemoveAllRealHub(HubEvent e) {
 				removeAllObjects = e.getHub().toArray();
 			}
 
 			@Override
+			/**
+			 * Handles the afterRemoveAllRealHub event.
+			 * @param e the Hub event
+			 */
 			protected void afterRemoveAllRealHub(HubEvent e) {
 				if (removeAllObjects == null) {
 					return;
@@ -1945,11 +2135,19 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 		Hub<OAObject> hubTemp2 = new Hub<OAObject>(OAObject.class);
 		HubMerger<OAGroupBy<F, G>, F> hm2 = new HubMerger<OAGroupBy<F, G>, F>(hub2, (Hub<F>) hubTemp2, OAGroupBy.P_Hub, true) {
 			@Override
+			/**
+			 * Handles the afterInsertRealHub event.
+			 * @param e the Hub event
+			 */
 			protected void afterInsertRealHub(HubEvent e) {
 				afterAddRealHub(e);
 			}
 
 			@Override
+			/**
+			 * Handles the afterAddRealHub event.
+			 * @param e the Hub event
+			 */
 			protected void afterAddRealHub(HubEvent e) {
 				final OAGroupBy<F, G> gb = (OAGroupBy<F, G>) e.getHub().getMasterObject();
 				final F objAdd = (F) e.getObject();
@@ -1984,6 +2182,10 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			}
 
 			@Override
+			/**
+			 * Handles the afterRemoveRealHub event.
+			 * @param e the Hub event
+			 */
 			protected void afterRemoveRealHub(HubEvent e) {
 				OAGroupBy<F, G> gb = (OAGroupBy<F, G>) e.getHub().getMasterObject();
 				F objRemove = (F) e.getObject();
@@ -2022,11 +2224,19 @@ public class HubGroupBy<F extends OAObject, G extends OAObject> {
 			private Object[] removeAllObjects;
 
 			@Override
+			/**
+			 * Handles the beforeRemoveAllRealHub event.
+			 * @param e the Hub event
+			 */
 			protected void beforeRemoveAllRealHub(HubEvent e) {
 				removeAllObjects = e.getHub().toArray();
 			}
 
 			@Override
+			/**
+			 * Handles the afterRemoveAllRealHub event.
+			 * @param e the Hub event
+			 */
 			protected void afterRemoveAllRealHub(HubEvent e) {
 				if (removeAllObjects == null) {
 					return;

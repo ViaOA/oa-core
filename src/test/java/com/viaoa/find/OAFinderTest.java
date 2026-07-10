@@ -29,7 +29,7 @@ class OAFinderTest {
     private static final String RAW_STORE_TO_ITEM_PATH = "registers.registerSessions.invoices.invoiceBaskets.lineItems.product.item";
     private static final String GENERATED_STORE_TO_ITEM_PATH = StorePP.registers().registerSessions().invoices()
             .invoiceBaskets().lineItems().product().item().pp();
-    private static final String TEXT_UTIL_STORE_TO_ITEM_PATH = OATextUtil.createPropertyPath(Store.P_Registers,
+    private static final String TEXT_UTIL_STORE_TO_ITEM_PATH = OATextUtil.createPath(Store.P_Registers,
             Register.P_RegisterSessions, RegisterSession.P_Invoices, Invoice.P_InvoiceBaskets,
             InvoiceBasket.P_LineItems, LineItem.P_Product, Product.P_Item);
     private static final String P_CONSTANT_STORE_TO_ITEM_PATH = Store.P_Registers + "." + Register.P_RegisterSessions
@@ -240,7 +240,7 @@ class OAFinderTest {
         HookFinder finder = new HookFinder(GENERATED_STORE_TO_ITEM_PATH);
 
         finder.callSetup(Store.class);
-        assertNotNull(finder.getPropertyPath());
+        assertNotNull(finder.getPath());
         assertEquals(List.of(graph.item), finder.find(graph.store));
 
         assertThrows(RuntimeException.class, () -> new OAFinder<Store, Item>(Store.P_Name).find(graph.store));

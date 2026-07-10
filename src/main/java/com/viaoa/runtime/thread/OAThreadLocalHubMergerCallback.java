@@ -30,5 +30,8 @@ package com.viaoa.runtime.thread;
  * }</pre></p>
  */
 public interface OAThreadLocalHubMergerCallback {
+    /**
+     * Runtime hook called by the owning service implementation.
+     */
     public void callback();
 }

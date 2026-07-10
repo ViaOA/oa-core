@@ -31,7 +31,12 @@ public abstract class OAObjectSerializeService {
 	private static final Logger LOG = Logger.getLogger(OAObjectSerializeService.class.getName());
 
 	private final OAObjectSerializer.FriendAccess faObjectSerializer;
-	
+
+	/**
+	 * Performs OAObjectSerializeService behavior for the OA object service.
+	 *
+	 * @param faObjectSerializer method input
+	 */
     public OAObjectSerializeService(OAObjectSerializer.FriendAccess faObjectSerializer) {
     	if (faObjectSerializer == null) throw new IllegalArgumentException("OAObjectSerializer.FriendAccess can not be null");
     	this.faObjectSerializer = faObjectSerializer;
@@ -148,7 +153,7 @@ public abstract class OAObjectSerializeService {
 	 *
 	 * <p>The method determines whether the object should be added to the cache based
 	 * on {@link OAObjectInfo#bAddToCache}. If a matching instance already exists,
-	 * property and relationship references are merged to preserve graph consistency.</p>
+	 * property and relationship references are merged to preserve OA model consistency.</p>
 	 *
 	 * <p>Key behaviors:</p>
 	 * <ul>
@@ -263,9 +268,15 @@ public abstract class OAObjectSerializeService {
 		return oaObjUse;
 	}
 
-/*qqqqqqq removing	
+/*qqqqqqq removing
+
+
 	public volatile int cntDup; //qqqqq make atomic
+
+
 	public volatile int cntNew;
+
+
 	public volatile int cntSkip; //qqqq is this used?
 */	
 
@@ -597,31 +608,200 @@ public abstract class OAObjectSerializeService {
 		}
 	}
 
-	
-	public abstract void callGuidSetGuid(OAObject oaObj, UUID guid);    
+
+	/**
+	 * Dependency hook used by this service to guidSetGuid.
+	 *
+	 * @param oaObj method input
+	 * @param guid method input
+	 */
+	public abstract void callGuidSetGuid(OAObject oaObj, UUID guid);
+	/**
+	 * Dependency hook used by this service to infoGetObjectInfo.
+	 *
+	 * @param clazz method input
+	 * @return result value
+	 */
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz);
+	/**
+	 * Dependency hook used by this service to propertyUnsafeSetPropertyIfEmpty.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @param value method input
+	 */
 	public abstract void callPropertyUnsafeSetPropertyIfEmpty(OAObject oaObj, String name, Object value);
+	/**
+	 * Dependency hook used by this service to guidGetGuid.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
 	public abstract UUID callGuidGetGuid(OAObject oaObj);
+	/**
+	 * Dependency hook used by this service to guiAssignGuid.
+	 *
+	 * @param obj method input
+	 */
 	public abstract void callGuiAssignGuid(OAObject obj);
-	public abstract OAObjectInfo callInfoGetObjectInfo(OAObject obj); 
+	/**
+	 * Dependency hook used by this service to infoGetObjectInfo.
+	 *
+	 * @param obj method input
+	 * @return result value
+	 */
+	public abstract OAObjectInfo callInfoGetObjectInfo(OAObject obj);
+	/**
+	 * Dependency hook used by this service to cacheAdd.
+	 *
+	 * @param obj method input
+	 * @param bErrorIfExists method input
+	 * @param bAddToSelectAll method input
+	 * @param bSendAddEventInAnotherThread method input
+	 * @return result value
+	 */
 	public abstract OAObject callCacheAdd(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll, boolean bSendAddEventInAnotherThread);
+	/**
+	 * Dependency hook used by this service to getProperties.
+	 *
+	 * @param obj method input
+	 * @return result value
+	 */
 	public abstract Object[] callGetProperties(OAObject obj);
-	public abstract Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef); 
+	/**
+	 * Dependency hook used by this service to propertyGetProperty.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @param bReturnNotExist method input
+	 * @param bConvertWeakRef method input
+	 * @return result value
+	 */
+	public abstract Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef);
+	/**
+	 * Dependency hook used by this service to keyGetKey.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
 	public abstract OAObjectKey callKeyGetKey(OAObject oaObj);
+	/**
+	 * Dependency hook used by this service to keyIsForSameOAObject.
+	 *
+	 * @param clazz method input
+	 * @param ok1 method input
+	 * @param ok2 method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callKeyIsForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey ok1, final OAObjectKey ok2);
-	public abstract Object callPropertySetPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue); 
+	/**
+	 * Dependency hook used by this service to propertySetPropertyCAS.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @param newValue method input
+	 * @param matchValue method input
+	 * @return result value
+	 */
+	public abstract Object callPropertySetPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue);
+	/**
+	 * Dependency hook used by this service to infoGetLinkInfo.
+	 *
+	 * @param oi method input
+	 * @param propertyName method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
+	/**
+	 * Dependency hook used by this service to propertyAttemptPropertyLock.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callPropertyAttemptPropertyLock(OAObject oaObj, String name);
-	public abstract Object callPropertySetPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue, boolean bMustNotExist, boolean bReturnNotExist); 
+	/**
+	 * Dependency hook used by this service to propertySetPropertyCAS.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @param newValue method input
+	 * @param matchValue method input
+	 * @param bMustNotExist method input
+	 * @param bReturnNotExist method input
+	 * @return result value
+	 */
+	public abstract Object callPropertySetPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue, boolean bMustNotExist, boolean bReturnNotExist);
+	/**
+	 * Dependency hook used by this service to propertyReleasePropertyLock.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 */
 	public abstract void callPropertyReleasePropertyLock(OAObject oaObj, String name);
+	/**
+	 * Dependency hook used by this service to infoCacheHub.
+	 *
+	 * @param li method input
+	 * @param hub method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callInfoCacheHub(OALinkInfo li, final Hub<?> hub);
+	/**
+	 * Dependency hook used by this service to cSIsClient.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callCSIsClient();
+	/**
+	 * Dependency hook used by this service to hubSerializeReplaceObject.
+	 *
+	 * @param thisHub method input
+	 * @param objFrom method input
+	 * @param objTo method input
+	 * @return result value
+	 */
 	public abstract int callHubSerializeReplaceObject(Hub<?> thisHub, OAObject objFrom, OAObject objTo);
-	public abstract boolean callHubSerializeIsResolved(Hub<?> thisHub); 
+	/**
+	 * Dependency hook used by this service to hubSerializeIsResolved.
+	 *
+	 * @param thisHub method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
+	public abstract boolean callHubSerializeIsResolved(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service to hubSerializeReplaceMasterObject.
+	 *
+	 * @param thisHub method input
+	 * @param objFrom method input
+	 * @param objTo method input
+	 */
 	public abstract <T extends OAObject> void callHubSerializeReplaceMasterObject(Hub<T> thisHub, T objFrom, T objTo);
+	/**
+	 * Dependency hook used by this service to hubGetAutoMatch.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract HubAutoMatch callHubGetAutoMatch(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service to syncClientIsObjectOnServer.
+	 *
+	 * @param obj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callSyncClientIsObjectOnServer(OAObject obj);
+	/**
+	 * Dependency hook used by this service to syncClientObjectSentToServer.
+	 *
+	 * @param obj method input
+	 */
 	public abstract void callSyncClientObjectSentToServer(OAObject obj);
+	/**
+	 * Dependency hook used by this service to threadLocalGetCurrentObjectSerializer.
+	 *
+	 * @return result value
+	 */
 	public abstract OAObjectSerializer callThreadLocalGetCurrentObjectSerializer();
 
 }

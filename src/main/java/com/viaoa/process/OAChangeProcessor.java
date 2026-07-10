@@ -33,7 +33,7 @@ CODEX
      Production impact: Normal addListener(hub, "property") usage silently misses all matching property changes. That
      can skip refreshes, derived-state updates, sync-related work, or background processing.
      Area: src/main/java/com/viaoa/process/OAChangeProcessor.java:183
-     Minimal hardening: Mirror OAChangeRefresher: call hub.addHubListener(hl, propertyPath) in the simple-property
+     Minimal hardening: Mirror OAChangeRefresher: call hub.addHubListener(hl, path) in the simple-property
      branch before tracking MyListener.
 
 6. OAChangeProcessor / async dispatch
@@ -161,7 +161,7 @@ public abstract class OAChangeProcessor {
     /**
      * Registers a listener on the given {@link Hub} for one or more property paths.
      * <p>
-     * If {@code propertyPaths} is {@code null}, delegates to
+     * If {@code paths} is {@code null}, delegates to
      * {@link #addListener(Hub, String)}.
      * <p>
      * Otherwise, generates a unique listener name and registers a listener that
@@ -169,11 +169,11 @@ public abstract class OAChangeProcessor {
      * that name.
      *
      * @param hub           the hub to monitor
-     * @param propertyPaths property paths to listen for
+     * @param paths property paths to listen for
      */
-    public void addListener(Hub hub, String... propertyPaths) {
+    public void addListener(Hub hub, String... paths) {
         if (hub == null) return;
-        if (propertyPaths == null) {
+        if (paths == null) {
             addListener(hub, (String) null);
         }
         else {
@@ -186,7 +186,7 @@ public abstract class OAChangeProcessor {
                     }
                 }
             };
-            hub.addHubListener(hl, name, propertyPaths);
+            hub.addHubListener(hl, name, paths);
             MyListener ml = new MyListener(hub, hl);
             if (alMyListener == null) alMyListener = new ArrayList<MyListener>();
             alMyListener.add(ml);
@@ -200,17 +200,17 @@ public abstract class OAChangeProcessor {
      * Otherwise registers a generated-path listener similar to the varargs method.
      *
      * @param hub          the hub to monitor
-     * @param propertyPath the property path to listen for
+     * @param path the property path to listen for
      */
-    public void addListener(Hub hub, final String propertyPath) {
+    public void addListener(Hub hub, final String path) {
         if (hub == null) return;
         HubListener hl;
 
-        if (propertyPath != null && propertyPath.indexOf(".") < 0) {
+        if (path != null && path.indexOf(".") < 0) {
             hl = new HubListenerAdapter() {
                 @Override
                 public void afterPropertyChange(HubEvent e) {
-                    if (propertyPath.equalsIgnoreCase(e.getPropertyName())) {
+                    if (path.equalsIgnoreCase(e.getPropertyName())) {
                         onProcess(e);
                     }
                 }
@@ -226,7 +226,7 @@ public abstract class OAChangeProcessor {
                     }
                 }
             };
-            hub.addHubListener(hl, name, new String[] { propertyPath });
+            hub.addHubListener(hl, name, new String[] { path });
         }
 
         MyListener ml = new MyListener(hub, hl);

@@ -33,6 +33,14 @@ import com.viaoa.oa.api.services.hubs.HubViewOps;
 import com.viaoa.oa.service.hub.HubParentService;
 import com.viaoa.object.OAObject;
 
+/**
+ * Public Hub service facade implementation.
+ * <p>
+ * This facade exposes curated Hub service nouns backed by the internal
+ * {@link HubParentService}. It provides the public/advanced Hub operations
+ * available through {@code oa.services().hubs()}.
+ * </p>
+ */
 public class HubsOpsImpl implements HubsOps {
 
 	private final HubParentService srvc;
@@ -51,11 +59,21 @@ public class HubsOpsImpl implements HubsOps {
 	private HubStatusOps opsStatus;
 	private HubRootOps opsRoot;
 	
+	/**
+	 * Creates a Hub service facade backed by the Hub parent service.
+	 *
+	 * @param srvc parent service that owns the Hub service family
+	 */
 	public HubsOpsImpl(HubParentService srvc) {
 		this.srvc = srvc;
 	}
 
 	
+	/**
+	 * Returns automatic Hub matching operations.
+	 *
+	 * @return Hub auto-match operations facade
+	 */
 	@Override
 	public HubAutoMatchOps autoMatch() {
 		if (opsAutomatch != null) return opsAutomatch;
@@ -69,6 +87,11 @@ public class HubsOpsImpl implements HubsOps {
 		return opsAutomatch;
 	}
 	
+	/**
+	 * Returns master/detail Hub operations.
+	 *
+	 * @return Hub detail operations facade
+	 */
 	@Override
 	public HubDetailOps detail() {
 		if (opsDetail != null) return opsDetail;
@@ -87,15 +110,20 @@ public class HubsOpsImpl implements HubsOps {
 		return opsDetail;
 	}
 
+	/**
+	 * Returns Hub filtering operations.
+	 *
+	 * @return Hub filter operations facade
+	 */
 	@Override
 	public HubFilterOps filter() {
 		if (opsFilter != null) return opsFilter;
 		opsFilter = new HubFilterOps() {
 			
 			@Override
-			public <T extends OAObject> HubFilter<T> filter(Hub<T> hubMaster, Hub<T> hub, OAFilter<T> filter, String... dependentPropertyPaths) {
+			public <T extends OAObject> HubFilter<T> filter(Hub<T> hubMaster, Hub<T> hub, OAFilter<T> filter, String... dependentPaths) {
 				if (hubMaster == null) return null;
-				HubFilter<T> filterx = new HubFilter<T>(hubMaster, hub, filter, dependentPropertyPaths);
+				HubFilter<T> filterx = new HubFilter<T>(hubMaster, hub, filter, dependentPaths);
 				return filterx;
 			}
 			
@@ -109,6 +137,11 @@ public class HubsOpsImpl implements HubsOps {
 		return opsFilter;
 	}
 
+	/**
+	 * Returns linked-Hub operations.
+	 *
+	 * @return Hub link operations facade
+	 */
 	@Override
 	public HubLinkOps link() {
 		if (opsLink != null) return opsLink;
@@ -128,6 +161,11 @@ public class HubsOpsImpl implements HubsOps {
 		return opsLink;
 	}
 
+	/**
+	 * Returns Hub merge operations.
+	 *
+	 * @return Hub merge operations facade
+	 */
 	@Override
 	public HubMergeOps merge() {
 		if (opsMerge != null) return opsMerge;
@@ -146,6 +184,11 @@ public class HubsOpsImpl implements HubsOps {
 		return opsMerge;
 	}
 
+	/**
+	 * Returns shared-Hub operations.
+	 *
+	 * @return Hub share operations facade
+	 */
 	@Override
 	public HubShareOps share() {
 		if (opsShare != null) return opsShare;
@@ -159,14 +202,19 @@ public class HubsOpsImpl implements HubsOps {
 		return opsShare;
 	}
 
+	/**
+	 * Returns Hub view/composition operations.
+	 *
+	 * @return Hub view operations facade
+	 */
 	@Override
 	public HubViewOps view() {
 		if (opsView != null) return opsView;
 		opsView = new HubViewOps() {
 			
 			@Override
-			public <F extends OAObject, G extends OAObject> Hub<OAGroupBy<F, G>> groupBy(Hub<F> hubFrom, Hub<G> hubGrpBy, String propertyPath, boolean createNullList) {
-				HubGroupBy<F,G> hgb = new HubGroupBy<F,G>(hubFrom, hubGrpBy, propertyPath, createNullList);
+			public <F extends OAObject, G extends OAObject> Hub<OAGroupBy<F, G>> groupBy(Hub<F> hubFrom, Hub<G> hubGrpBy, String path, boolean createNullList) {
+				HubGroupBy<F,G> hgb = new HubGroupBy<F,G>(hubFrom, hubGrpBy, path, createNullList);
 				Hub<OAGroupBy<F, G>> hx = hgb.getCombinedHub();
 				return hx;
 			}
@@ -187,8 +235,8 @@ public class HubsOpsImpl implements HubsOps {
 			}
 
 			@Override
-			public <A extends OAObject, B extends OAObject> Hub<OALeftJoin<A, B>> leftJoin(Hub<A> hubLeft, Hub<B> hub, String propertyPath, boolean shareActiveObject) {
-				HubLeftJoin<A,B> hlj = new HubLeftJoin<A,B>(hubLeft, hub, propertyPath, shareActiveObject);
+			public <A extends OAObject, B extends OAObject> Hub<OALeftJoin<A, B>> leftJoin(Hub<A> hubLeft, Hub<B> hub, String path, boolean shareActiveObject) {
+				HubLeftJoin<A,B> hlj = new HubLeftJoin<A,B>(hubLeft, hub, path, shareActiveObject);
 				return hlj.getCombinedHub();
 			}
 		};
@@ -196,6 +244,11 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 
+	/**
+	 * Returns Hub copy operations.
+	 *
+	 * @return Hub copy operations facade
+	 */
 	@Override
 	public HubCopyOps copy() {
 		if (opsCopy != null) return opsCopy;
@@ -215,6 +268,11 @@ public class HubsOpsImpl implements HubsOps {
 		return opsCopy;
 	}
 
+	/**
+	 * Returns Hub combine operations.
+	 *
+	 * @return Hub combine operations facade
+	 */
 	@Override
 	public HubCombineOps combine() {
 		if (opsCombine != null) return opsCombine;
@@ -229,6 +287,11 @@ public class HubsOpsImpl implements HubsOps {
 		return opsCombine;
 	}
 
+	/**
+	 * Returns active-object operations.
+	 *
+	 * @return Hub active-object operations facade
+	 */
 	@Override
 	public HubAOOps ao() {
 		if (opsAO != null) return opsAO;
@@ -257,6 +320,11 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 
+	/**
+	 * Returns Hub data-position operations.
+	 *
+	 * @return Hub data operations facade
+	 */
 	@Override
 	public HubDataOps data() {
 		if (opsData != null) return opsData;
@@ -270,6 +338,11 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 
+	/**
+	 * Returns Hub status operations.
+	 *
+	 * @return Hub status operations facade
+	 */
 	@Override
 	public HubStatusOps status() {
 		if (opsStatus != null) return opsStatus;
@@ -283,6 +356,11 @@ public class HubsOpsImpl implements HubsOps {
 	}
 
 
+	/**
+	 * Returns root-Hub operations.
+	 *
+	 * @return Hub root operations facade
+	 */
 	@Override
 	public HubRootOps root() {
 		if (opsRoot != null) return opsRoot;

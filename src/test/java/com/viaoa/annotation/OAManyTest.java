@@ -47,12 +47,12 @@ class OAManyTest {
         sortProperty = "explicit_sortProperty",
         sortAsc = false,
         calcDependentProperties = { "one", "two" },
-        mergerPropertyPath = "explicit_mergerPropertyPath",
+        mergerPath = "explicit_mergerPropertyPath",
         couldBeLarge = true,
         isProcessed = true,
         autoCreateProperty = "explicit_autoCreateProperty",
-        equalPropertyPath = "explicit_equalPropertyPath",
-        selectFromPropertyPath = "explicit_selectFromPropertyPath"
+        equalPath = "explicit_equalPropertyPath",
+        selectFromPath = "explicit_selectFromPropertyPath"
     )
         public String value() { return "value"; }
     }
@@ -241,7 +241,7 @@ class OAManyTest {
     void defaultMergerPropertyPathMatchesDeclaration() throws Exception {
         OAMany ann = DefaultFixture.class.getMethod("value").getAnnotation(OAMany.class);
 
-        assertEquals("", ann.mergerPropertyPath());
+        assertEquals("", ann.mergerPath());
     }
 
     @Test
@@ -269,14 +269,14 @@ class OAManyTest {
     void defaultEqualPropertyPathMatchesDeclaration() throws Exception {
         OAMany ann = DefaultFixture.class.getMethod("value").getAnnotation(OAMany.class);
 
-        assertEquals("", ann.equalPropertyPath());
+        assertEquals("", ann.equalPath());
     }
 
     @Test
     void defaultSelectFromPropertyPathMatchesDeclaration() throws Exception {
         OAMany ann = DefaultFixture.class.getMethod("value").getAnnotation(OAMany.class);
 
-        assertEquals("", ann.selectFromPropertyPath());
+        assertEquals("", ann.selectFromPath());
     }
 
     @Test
@@ -308,11 +308,11 @@ class OAManyTest {
         assertEquals("explicit_sortProperty", ann.sortProperty());
         assertEquals(false, ann.sortAsc());
         assertArrayEquals(new String[] { "one", "two" }, ann.calcDependentProperties());
-        assertEquals("explicit_mergerPropertyPath", ann.mergerPropertyPath());
+        assertEquals("explicit_mergerPropertyPath", ann.mergerPath());
         assertEquals(true, ann.couldBeLarge());
         assertEquals(true, ann.isProcessed());
         assertEquals("explicit_autoCreateProperty", ann.autoCreateProperty());
-        assertEquals("explicit_equalPropertyPath", ann.equalPropertyPath());
-        assertEquals("explicit_selectFromPropertyPath", ann.selectFromPropertyPath());
+        assertEquals("explicit_equalPropertyPath", ann.equalPath());
+        assertEquals("explicit_selectFromPropertyPath", ann.selectFromPath());
     }
 }

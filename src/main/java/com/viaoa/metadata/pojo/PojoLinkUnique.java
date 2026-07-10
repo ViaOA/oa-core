@@ -24,7 +24,7 @@ package com.viaoa.metadata.pojo;
  *       a related type.</li>
  * </ul>
  * This structure supports POJO-key resolution using
- * {@code equalPropertyPath}-based uniqueness on associations.
+ * {@code equalPath}-based uniqueness on associations.
  */
 public class PojoLinkUnique implements java.io.Serializable {
 	private static final long serialVersionUID = 1L;
@@ -77,6 +77,11 @@ public class PojoLinkUnique implements java.io.Serializable {
 	 * @return nested reference metadata, or {@code null} if not defined
 	 */
 	// @JsonIgnore
+	/**
+	 * Returns the one-link reference used as part of this uniqueness rule.
+	 *
+	 * @return mapped metadata reference, or {@code null}
+	 */
 	public PojoLinkOneReference getPojoLinkOneReference() {
 		return pojoLinkOneReference;
 	}
@@ -98,6 +103,11 @@ public class PojoLinkUnique implements java.io.Serializable {
 	 * @return the direct scalar property or {@code null}
 	 */
 	// @JsonIgnore
+	/**
+	 * Returns the POJO property used as part of this uniqueness rule.
+	 *
+	 * @return mapped metadata reference, or {@code null}
+	 */
 	public PojoProperty getPojoProperty() {
 		return pojoProperty;
 	}

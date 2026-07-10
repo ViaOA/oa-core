@@ -76,7 +76,7 @@ class OAPropertyInfoTest {
         info.setSubmit(true);
         info.setObjectStatus(true);
         info.setIgnoreTimeZone(true);
-        info.setTimeZonePropertyPath("tz");
+        info.setTimeZonePath("tz");
         info.setUpper(true);
         info.setLower(true);
         info.setSensitiveData(true);
@@ -119,7 +119,7 @@ class OAPropertyInfoTest {
         assertTrue(info.getObjectStatus());
         assertTrue(info.isObjectStatus());
         assertTrue(info.getIgnoreTimeZone());
-        assertEquals("tz", info.getTimeZonePropertyPath());
+        assertEquals("tz", info.getTimeZonePath());
         assertTrue(info.getUpper());
         assertTrue(info.getIsUpper());
         assertTrue(info.isUpper());

@@ -31,7 +31,7 @@ import com.viaoa.path.OAPath;
  * comparison and values obtained through an {@link OAPath}.
  *
  * <p>
- * If the property path traverses multiple objects, an {@link OAFinder}
+ * If the OAPath traverses multiple objects, an {@link OAFinder}
  * will be dynamically created so the comparison can be applied to the
  * located target object.
  * </p>
@@ -48,13 +48,13 @@ public class OABetweenOrEqualFilter implements OAFilter {
     private Object value1, value2;
     
     /**
-     * Optional property path used to extract the comparison value from the
+     * Optional OAPath used to extract the comparison value from the
      * evaluated object. When {@code null}, the object itself is used.
      */
     private OAPath pp;
     
     /**
-     * Finder created when the property path traverses a multi-object
+     * Finder created when the OAPath traverses a multi-object
      * relationship. Used to locate the target object before comparison.
      */
     private OAFinder finder;
@@ -73,9 +73,9 @@ public class OABetweenOrEqualFilter implements OAFilter {
 
     /**
      * Creates a filter that evaluates whether a value obtained by the given
-     * property path lies between or is equal to the supplied bounds.
+     * OAPath lies between or is equal to the supplied bounds.
      *
-     * @param pp the property path used to extract a comparison value
+     * @param pp the OAPath used to extract a comparison value
      * @param val1 the lower comparison value
      * @param val2 the upper comparison value
      */
@@ -86,10 +86,10 @@ public class OABetweenOrEqualFilter implements OAFilter {
     }
 
     /**
-     * Creates a filter from a string representation of a property path. The
+     * Creates a filter from a string representation of an OAPath. The
      * string is converted into an {@link OAPath} unless it is null.
      *
-     * @param pp the property path expression
+     * @param pp the OAPath expression
      * @param val1 the lower comparison value
      * @param val2 the upper comparison value
      */
@@ -99,7 +99,7 @@ public class OABetweenOrEqualFilter implements OAFilter {
 
     /**
      * Flag indicating whether the filter has performed finder setup for the
-     * current property path.
+     * current OAPath.
      */
     private boolean bSetup;
 
@@ -113,9 +113,9 @@ public class OABetweenOrEqualFilter implements OAFilter {
      * Determines whether the supplied object satisfies the inclusive between
      * condition defined by this filter.
      * <p>
-     * On first evaluation, if a property path is present, the filter checks
+     * On first evaluation, if an OAPath is present, the filter checks
      * whether a finder is required. When a finder exists, the filter evaluates
-     * the first located object in the referenced graph. Otherwise, the value
+     * the first located object in the referenced OA object state. Otherwise, the value
      * is obtained directly and compared.
      * </p>
      *
@@ -151,7 +151,7 @@ public class OABetweenOrEqualFilter implements OAFilter {
     }
 
     /**
-     * Retrieves the value used for comparison. If a property path is defined,
+     * Retrieves the value used for comparison. If an OAPath is defined,
      * it is used to extract the nested value; otherwise, the supplied object
      * is returned unchanged.
      *

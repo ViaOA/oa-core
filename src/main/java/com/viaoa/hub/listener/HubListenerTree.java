@@ -73,7 +73,7 @@ public class HubListenerTree {
 	 * FIRST/NEXT/LAST placement rules.
 	 */
 	private volatile HubListener[] listeners;
-	
+
 	/**
 	 * Root node of the listener dependency tree. Stores the root Hub and forms the
 	 * entry point for routed dependent-property notifications.
@@ -91,9 +91,9 @@ public class HubListenerTree {
 	 * correct ordering when inserting additional listeners.
 	 */
 	private volatile int lastCount; // number of listeners that are set as Last.
-	
-	
-	
+
+
+
 	private class HubListenerTreeNode {
 		/**
 		 * The Hub associated with this tree node, representing the collection on which
@@ -117,30 +117,35 @@ public class HubListenerTree {
 		 * Child nodes representing the next segments in the dependent-property path.
 		 */
 		HubListenerTreeNode[] children;
-		
+
 		/**
 		 * Reference to the parent tree node, used to compute root values and navigate
 		 * upward in the dependency tree.
 		 */
 		HubListenerTreeNode parent;
-		
+
 		/**
 		 * Mapping of original HubListeners to the dependent listeners created for them
 		 * within this subtree node.
 		 */
 		HashMap<HubListener, HubListener[]> hmListener; // list of HubListeners created for a HubListener
-		
+
 		/**
 		 * Cached reverse-link information for the property represented by this node,
 		 * used to compute root values for dependent-property notifications.
 		 */
 		private OALinkInfo liReverse;
-		
+
 		/**
 		 * List of calculated property names dependent on this node’s portion of the path.
 		 */
 		private ArrayList<String> alCalcPropertyNames;
 
+		/**
+		 * Returns the CalcPropertyNames value.
+		 *
+		 * @return the CalcPropertyNames value
+		 */
 		public ArrayList<String> getCalcPropertyNames() {
 			if (alCalcPropertyNames == null) {
 				alCalcPropertyNames = new ArrayList<String>(3);
@@ -230,7 +235,7 @@ public class HubListenerTree {
 					bUseOrig = false;
 					for (OALinkInfo li : lis) {
 						if (li == null || li.getReverseLinkInfo() == null) {
-							// LOG.log(Level.FINE, "Link does not have a reverseLinkInfo, link.toClass="+li.getToClass()+", name="+li.getName()+", pp="+spp+", rootHub="+HubListenerTree.this.root.hub, new Exception("Found HubListenerTree issue qqqqqq"));
+
 							bUseOrig = true;
 							break;
 						}
@@ -279,15 +284,15 @@ public class HubListenerTree {
 				al.toArray(objs);
 			}
 
-			long ts2 = System.currentTimeMillis();//qqqqqqqqq
-			if ((ts2 - ts) > 1000) { //qqqqqqqq should not happen, can be removed
+			long ts2 = System.currentTimeMillis();
+			if ((ts2 - ts) > 1000) {
 				OAPerformance.LOG.fine("fyi: getRootValues took " + (ts2 - ts) + "ms, rootHub=" + HubListenerTree.this.root.hub
 						+ ", propPath=" + spp);
 			}
 			return objs;
 		}
 
-		//qqqqqqqqqq remove
+
 		Object[] getRootValues_ORIG(Object obj, boolean bCanQuit) {
 			if (obj == null) {
 				return new Object[0];
@@ -442,14 +447,26 @@ public class HubListenerTree {
 		}
 	}
 
+	/**
+	 * Creates a Hub helper instance.
+	 */
 	public HubListenerTree(Hub hub) {
 		root.hub = hub;
 	}
 
+	/**
+	 * Returns the HubListeners value.
+	 *
+	 * @return the HubListeners value
+	 */
 	public HubListener[] getHubListeners() {
 		return this.listeners;
 	}
 
+	/**
+	 * Adds a Hub listener registration.
+	 * @param hl the listener parameter
+	 */
 	public void addListener(HubListener hl) {
 		if (hl == null) {
 			return;
@@ -511,6 +528,12 @@ public class HubListenerTree {
 		this.addListener(hl, property, false);
 	}
 
+	/**
+	 * Adds a Hub listener registration.
+	 * @param hl the listener parameter
+	 * @param property the listener parameter
+	 * @param bActiveObjectOnly the listener parameter
+	 */
 	public void addListener(HubListener hl, String property, boolean bActiveObjectOnly) {
 		if (hl == null) {
 			return;
@@ -551,33 +574,54 @@ public class HubListenerTree {
 		addListenerMain(hl, property, calcProps, bActiveObjectOnly, false);
 	}
 
-	public void addListener(HubListener hl, final String property, String[] dependentPropertyPaths) {
+	/**
+	 * Adds a Hub listener registration.
+	 * @param hl the listener parameter
+	 * @param property the listener parameter
+	 * @param dependentPaths the listener parameter
+	 */
+	public void addListener(HubListener hl, final String property, String[] dependentPaths) {
 		if (hl == null) {
 			return;
 		}
-		addListener(hl, property, dependentPropertyPaths, false);
+		addListener(hl, property, dependentPaths, false);
 	}
 
-	public void addListener(HubListener hl, final String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly) {
-		addListener(hl, property, dependentPropertyPaths, bActiveObjectOnly, false);
+	/**
+	 * Adds a Hub listener registration.
+	 * @param hl the listener parameter
+	 * @param property the listener parameter
+	 * @param dependentPaths the listener parameter
+	 * @param bActiveObjectOnly the listener parameter
+	 */
+	public void addListener(HubListener hl, final String property, String[] dependentPaths, boolean bActiveObjectOnly) {
+		addListener(hl, property, dependentPaths, bActiveObjectOnly, false);
 	}
 
+	/**
+	 * Adds a Hub listener registration.
+	 * @param hl the listener parameter
+	 * @param bActiveObjectOnly the listener parameter
+	 */
 	public void addListener(HubListener hl, boolean bActiveObjectOnly) {
 		addListener(hl, null, null, bActiveObjectOnly, false);
 	}
 
-	public void addListener(HubListener hl, final String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly,
+	/**
+	 * Adds a Hub listener registration.
+	 */
+	public void addListener(HubListener hl, final String property, String[] dependentPaths, boolean bActiveObjectOnly,
 			boolean bAllowBackgroundThread) {
 		if (hl == null) {
 			return;
 		}
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
 		try {
 			srvcOAThreadLocal.setHubListenerTree(true);
 			addListener(hl, property, bActiveObjectOnly); // this will check for dependent calcProps
 			// now add the additional dependent properties
-			if (dependentPropertyPaths != null && dependentPropertyPaths.length > 0) {
-				addDependentListeners(property, hl, dependentPropertyPaths, bActiveObjectOnly, bAllowBackgroundThread);
+			if (dependentPaths != null && dependentPaths.length > 0) {
+				addDependentListeners(property, hl, dependentPaths, bActiveObjectOnly, bAllowBackgroundThread);
 			}
 		} finally {
 			srvcOAThreadLocal.setHubListenerTree(false);
@@ -586,19 +630,19 @@ public class HubListenerTree {
 	}
 
 	/**
-	 * @param dependentPropertyPaths
+	 * @param dependentPaths
 	 * @param bActiveObjectOnly      if true, then dependent props only listen to the hub's AO
 	 */
-	private void addListenerMain(HubListener hl, final String property, String[] dependentPropertyPaths, boolean bActiveObjectOnly,
+	private void addListenerMain(HubListener hl, final String property, String[] dependentPaths, boolean bActiveObjectOnly,
 			final boolean bAllowBackgroundThread) {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
 		try {
 			srvcOAThreadLocal.setHubListenerTree(true);
 			this.addListener(hl);
 
-			if (dependentPropertyPaths != null && dependentPropertyPaths.length > 0) {
+			if (dependentPaths != null && dependentPaths.length > 0) {
 				synchronized (root) { // 20200401
-					addDependentListeners(property, hl, dependentPropertyPaths, bActiveObjectOnly, bAllowBackgroundThread);
+					addDependentListeners(property, hl, dependentPaths, bActiveObjectOnly, bAllowBackgroundThread);
 				}
 			}
 		} finally {
@@ -611,7 +655,7 @@ public class HubListenerTree {
 			final String[] dependentPropertyNames, final boolean bActiveObjectOnly, final boolean bAllowBackgroundThread) {
 		//LOG.finer("Hub="+root.hub+", property="+origPropertyName);
 
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
 		// 20120826 check for endless loops
 		if (srvcOAThreadLocal.getHubListenerTreeCount() > 25) {
 			// need to bail out, before stackoverflow
@@ -653,14 +697,26 @@ public class HubListenerTree {
 						// 20150715 propPath is using generics and will have to be retried once data is in it.
 						//    this will now set up a listener to try again
 						final HubListener hl = new HubListenerAdapter() {
+							/**
+							 * Handles the Hub after-add event.
+							 * @param e the Hub event
+							 */
 							public void afterAdd(HubEvent e) {
 								update();
 							}
 
+							/**
+							 * Handles the Hub after-insert event.
+							 * @param e the Hub event
+							 */
 							public void afterInsert(HubEvent e) {
 								update();
 							}
 
+							/**
+							 * Handles replacement or refresh of the Hub list.
+							 * @param e the Hub event
+							 */
 							public void onNewList(HubEvent e) {
 								Hub h = e.getHub();
 								if (h != null && h.size() > 0) {
@@ -798,6 +854,11 @@ public class HubListenerTree {
 								private OASiblingHelper siblingHelper;
 
 								@Override
+								/**
+								 * Returns the SiblingHelper value.
+								 *
+								 * @return the SiblingHelper value
+								 */
 								public OASiblingHelper getSiblingHelper() {
 									if (siblingHelper == null) {
 										siblingHelper = new OASiblingHelper<>(HubListenerTree.this.root.hub);
@@ -807,6 +868,10 @@ public class HubListenerTree {
 								}
 
 								@Override
+								/**
+								 * Handles the beforeRemoveRealHub event.
+								 * @param e the Hub event
+								 */
 								protected void beforeRemoveRealHub(HubEvent e) {
 									// get the parent reference object from the Hub.masterObject, since the
 									//    reference in the object could be null once the remove is done
@@ -817,6 +882,10 @@ public class HubListenerTree {
 								}
 
 								@Override
+								/**
+								 * Handles the afterAddRealHub event.
+								 * @param e the Hub event
+								 */
 								protected void afterAddRealHub(HubEvent e) {
 									super.afterAddRealHub(e);
 									onEvent(e);
@@ -824,12 +893,20 @@ public class HubListenerTree {
 								}
 
 								@Override
+								/**
+								 * Handles the afterRemoveRealHub event.
+								 * @param e the Hub event
+								 */
 								protected void afterRemoveRealHub(HubEvent e) {
 									super.afterRemoveRealHub(e);
 									onEvent(e);
 								}
 
 								@Override
+								/**
+								 * Handles the afterRemoveAllRealHub event.
+								 * @param e the Hub event
+								 */
 								protected void afterRemoveAllRealHub(HubEvent e) {
 									super.afterRemoveAllRealHub(e);
 									onEvent(e);
@@ -870,6 +947,10 @@ public class HubListenerTree {
 							if (OAObject.class.isAssignableFrom(returnClass)) {
 								HubListenerAdapter hl = new HubListenerAdapter() {
 									@Override
+									/**
+									 * Handles the Hub property-change event.
+									 * @param e the Hub event
+									 */
 									public void afterPropertyChange(HubEvent e) {
 										if (!property.equalsIgnoreCase(e.getPropertyName())) {
 											return;
@@ -918,6 +999,11 @@ public class HubListenerTree {
 								OASiblingHelper siblingHelper;
 
 								@Override
+								/**
+								 * Returns the SiblingHelper value.
+								 *
+								 * @return the SiblingHelper value
+								 */
 								public OASiblingHelper getSiblingHelper() {
 									if (siblingHelper == null) {
 										siblingHelper = new OASiblingHelper<>(HubListenerTree.this.root.hub);
@@ -934,7 +1020,7 @@ public class HubListenerTree {
 					}
 					hub = node.hub;
 
-					boolean bx; // might need to have a listener for last hub in propertyPath
+					boolean bx; // might need to have a listener for last hub in path
 
 					if (j == pps.length - 1) {
 						bx = true;
@@ -959,6 +1045,10 @@ public class HubListenerTree {
 						//LOG.finer("creating dependent prop hubListner for Hub");
 						hl = new HubListenerAdapter() {
 							@Override
+							/**
+							 * Handles the Hub after-add event.
+							 * @param e the Hub event
+							 */
 							public void afterAdd(HubEvent e) {
 								if (!srvcOAThreadLocal.isHubMergerChanging()) {
 									Hub h = HubListenerTree.this.root.hub;
@@ -977,12 +1067,20 @@ public class HubListenerTree {
 							}
 
 							@Override
+							/**
+							 * Handles the Hub after-insert event.
+							 * @param e the Hub event
+							 */
 							public void afterInsert(HubEvent e) {
 								afterAdd(e);
 							}
 
 							// 20190120
 							@Override
+							/**
+							 * Handles the Hub before-remove event.
+							 * @param e the Hub event
+							 */
 							public void beforeRemove(HubEvent e) {
 								Hub h = HubListenerTree.this.root.hub;
 								// get the parent reference object from the Hub.masterObject, since the
@@ -996,6 +1094,10 @@ public class HubListenerTree {
 							}
 
 							@Override
+							/**
+							 * Handles the Hub after-remove event.
+							 * @param e the Hub event
+							 */
 							public void afterRemove(HubEvent e) {
 								// ignore if masterHub is adding, removing (newList, clear)
 								if (!srvcOAThreadLocal.isHubMergerChanging()) {
@@ -1014,6 +1116,10 @@ public class HubListenerTree {
 							}
 
 							@Override // 20140423
+							/**
+							 * Handles the Hub after-remove-all event.
+							 * @param e the Hub event
+							 */
 							public void afterRemoveAll(HubEvent e) {
 								if (!srvcOAThreadLocal.isHubMergerChanging()) {
 									final OA oa = OARuntime.oa(root.hub);
@@ -1051,7 +1157,7 @@ public class HubListenerTree {
 					continue;
 				}
 
-				// Add a hub listener to end of propertyPath
+				// Add a hub listener to end of path
 
 				if (hubClass == null) {
 					//LOG.finer("creating dependent prop hubListener, dependProp="+property);
@@ -1059,6 +1165,10 @@ public class HubListenerTree {
 					final HubListenerTreeNode nodeThis = node;
 					HubListener hl = new HubListenerAdapter() {
 						@Override
+						/**
+						 * Handles the Hub property-change event.
+						 * @param e the Hub event
+						 */
 						public void afterPropertyChange(HubEvent e) {
 							String prop = e.getPropertyName();
 							if (prop == null) {
@@ -1106,10 +1216,19 @@ public class HubListenerTree {
 		}
 	}
 
+	/**
+	 * Removes a Hub listener registration.
+	 * @param thisHub the listener parameter
+	 * @param hl the listener parameter
+	 */
 	public void removeListener(Hub thisHub, HubListener hl) {
 		removeListener(hl);
 	}
 
+	/**
+	 * Removes a Hub listener registration.
+	 * @param hl the listener parameter
+	 */
 	public void removeListener(HubListener hl) {
 		if (hl == null) {
 			return;

@@ -19,7 +19,7 @@ class OAComparatorTest {
     void constructorExposesConfiguredValues() {
         OAComparator comparator = new OAComparator(Person.class, "lastName, firstName", true);
 
-        assertEquals("lastName, firstName", comparator.getPropertyPaths());
+        assertEquals("lastName, firstName", comparator.getPaths());
         assertTrue(comparator.getAsc());
     }
 

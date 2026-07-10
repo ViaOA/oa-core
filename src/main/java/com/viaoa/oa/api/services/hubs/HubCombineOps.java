@@ -4,6 +4,9 @@ import com.viaoa.hub.Hub;
 import com.viaoa.hub.view.HubCombined;
 import com.viaoa.object.OAObject;
 
+/**
+ * Public OA Hub combine service operations for maintaining live combined Hub views.
+ */
 public interface HubCombineOps {
 
     /**
@@ -15,7 +18,7 @@ public interface HubCombineOps {
      * combined result.
      * <p>
      * This is used to maintain a single live Hub from multiple source Hubs of the
-     * same object type, allowing application code, UI wiring, or other graph
+     * same object type, allowing application code, UI wiring, or other OA model
      * operations to work with one combined collection.
      *
      * @param <T> the model object type contained by the Hubs

@@ -50,7 +50,7 @@ import com.viaoa.runtime.OARuntime;
  *       </ul>
  *   </li>
  *   <li>Handle special cases for recursive one-to-many links where the
- *       detail Hub can become disconnected from its master Hub.  
+ *       detail Hub can become disconnected from its master Hub.
  *       The {@link #setup()} method installs a listener that reconnects
  *       the master Hub’s active object to the correct parent when
  *       necessary.</li>
@@ -69,7 +69,7 @@ import com.viaoa.runtime.OARuntime;
  * <h3>Design Notes</h3>
  * <ul>
  *   <li>Not serialized with its parent Hub; it is reconstructed when the
- *       Hub graph is re-initialized.</li>
+ *       Hub OA model is re-initialized.</li>
  *   <li>Manages recursive Hub wiring via {@link OAObjectInfoDelegate}
  *       and property-path introspection.</li>
  *   <li>Intended solely for internal OA use; application code should
@@ -158,7 +158,7 @@ public class HubDetail implements java.io.Serializable {
     protected Hub hubDetail;
 
     boolean bIgnoreUpdate;
-    
+
 	/**
 	 * Constructs a new HubDetail instance linking a master hub to its
 	 * corresponding detail hub. Initializes relationship metadata including
@@ -196,7 +196,7 @@ public class HubDetail implements java.io.Serializable {
         this.type = HUBMERGER;
         this.referenceCount = 0;
     }
-    
+
 
     /**
      * Installs recursive master/detail correction logic when the relationship
@@ -221,7 +221,7 @@ public class HubDetail implements java.io.Serializable {
         if (hubMaster == null) return;
         if (hubDetail == null) return;
         if (liMasterToDetail == null) return;
-        
+
 		final OA oa = OARuntime.oa(hubDetail.getOAObjectInfo().getForClass());
         final OALinkInfo liRecursive = oa.internal().objects().info().getRecursiveLinkInfo(hubDetail.getOAObjectInfo(), OALinkInfo.ONE);
         if (liRecursive == null) return;
@@ -229,14 +229,18 @@ public class HubDetail implements java.io.Serializable {
 
         final OALinkInfo liDetailToMaster = liMasterToDetail.getReverseLinkInfo();
         if (liDetailToMaster == null) return;
-        
+
         // 20150920 only if master is a one, not many
         if (liDetailToMaster.getType() != OALinkInfo.ONE) return;
-        
+
         hubDetail.addHubListener(new HubListenerAdapter() {
             @Override
+            /**
+             * Handles the Hub active-object change event.
+             * @param e the Hub event
+             */
             public void afterChangeActiveObject(HubEvent e) {
-                
+
                 Object obj = e.getObject();
                 if (!(obj instanceof OAObject)) return;
 
@@ -255,7 +259,7 @@ public class HubDetail implements java.io.Serializable {
                     if (hubMaster.contains(parent)) break; 
                     obj = objx;
                 }
-                
+
                 if (hubMaster.getAO() == parent) return;
 
                 try {
@@ -269,80 +273,163 @@ public class HubDetail implements java.io.Serializable {
         });
     }
 
-    
+
+	/**
+	 * Returns the DetailHub value.
+	 *
+	 * @return the DetailHub value
+	 */
 	public Hub getDetailHub() {
 		return hubDetail;
 	}
 
+	/**
+	 * Returns the Type value.
+	 *
+	 * @return the Type value
+	 */
 	public int getType() {
 		return type;
 	}
 
+	/**
+	 * Sets the Type value.
+	 * @param type the Type value
+	 */
 	public void setType(int type) {
 		this.type = type;
 	}
 
+	/**
+	 * Returns the Path value.
+	 *
+	 * @return the Path value
+	 */
 	public String getPath() {
 		return path;
 	}
 
+	/**
+	 * Sets the Path value.
+	 * @param path the Path value
+	 */
 	public void setPath(String path) {
 		this.path = path;
 	}
 
+	/**
+	 * Returns the ShareActiveObject value.
+	 *
+	 * @return the ShareActiveObject value
+	 */
 	public boolean getShareActiveObject() {
 		return bShareActiveObject;
 	}
 
+	/**
+	 * Sets the ShareActiveObject value.
+	 * @param bShareActiveObject the ShareActiveObject value
+	 */
 	public void setShareActiveObject(boolean bShareActiveObject) {
 		this.bShareActiveObject = bShareActiveObject;
 	}
 
+	/**
+	 * Returns the ReferenceCount value.
+	 *
+	 * @return the ReferenceCount value
+	 */
 	public int getReferenceCount() {
 		return referenceCount;
 	}
+	/**
+	 * Performs the incrementReferenceCount operation for this Hub component.
+	 */
 	public void incrementReferenceCount() {
 		referenceCount++;
 	}
+	/**
+	 * Performs the decrementReferenceCount operation for this Hub component.
+	 */
 	public void decrementReferenceCount() {
 		referenceCount--;
 	}
 
+	/**
+	 * Sets the ReferenceCount value.
+	 * @param referenceCount the ReferenceCount value
+	 */
 	public void setReferenceCount(int referenceCount) {
 		this.referenceCount = referenceCount;
 	}
 
+	/**
+	 * Returns the MasterToDetailLinkInfo value.
+	 *
+	 * @return the MasterToDetailLinkInfo value
+	 */
 	public OALinkInfo getMasterToDetailLinkInfo() {
 		return liMasterToDetail;
 	}
 
+	/**
+	 * Sets the MasterToDetailLinkInfo value.
+	 * @param liMasterToDetail the MasterToDetailLinkInfo value
+	 */
 	public void setMasterToDetailLinkInfo(OALinkInfo liMasterToDetail) {
 		this.liMasterToDetail = liMasterToDetail;
 	}
 
+	/**
+	 * Returns the HubMaster value.
+	 *
+	 * @return the HubMaster value
+	 */
 	public Hub getHubMaster() {
 		return hubMaster;
 	}
 
+	/**
+	 * Sets the HubMaster value.
+	 * @param hubMaster the HubMaster value
+	 */
 	public void setHubMaster(Hub hubMaster) {
 		this.hubMaster = hubMaster;
 	}
 
+	/**
+	 * Returns the HubDetail value.
+	 *
+	 * @return the HubDetail value
+	 */
 	public Hub getHubDetail() {
 		return hubDetail;
 	}
 
+	/**
+	 * Sets the HubDetail value.
+	 * @param hubDetail the HubDetail value
+	 */
 	public void setHubDetail(Hub hubDetail) {
 		this.hubDetail = hubDetail;
 	}
 
+	/**
+	 * Returns the IgnoreUpdate value.
+	 *
+	 * @return the IgnoreUpdate value
+	 */
 	public boolean getIgnoreUpdate() {
 		return bIgnoreUpdate;
 	}
 
+	/**
+	 * Sets the IgnoreUpdate value.
+	 * @param bIgnoreUpdate the IgnoreUpdate value
+	 */
 	public void setIgnoreUpdate(boolean bIgnoreUpdate) {
 		this.bIgnoreUpdate = bIgnoreUpdate;
 	}
-	
+
 }
-	
+

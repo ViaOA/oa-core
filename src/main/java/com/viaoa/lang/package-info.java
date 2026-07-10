@@ -160,7 +160,7 @@ Related CODEX findings:
 Existing package-info delegates many transformation concerns to text package contracts.
 Suggested unit tests:
 testXmlHtmlJsonEscapeRoundTripByContract(), testJavaIdentifierGenerationProducesLegalIdentifier(),
-testCreatePropertyPathUsesDeterministicSeparator()
+testCreatePathUsesDeterministicSeparator()
 Spec target section:
 Lang Runtime / String Transformation Semantics
 

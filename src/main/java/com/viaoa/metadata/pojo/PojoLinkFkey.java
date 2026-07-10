@@ -69,6 +69,11 @@ public class PojoLinkFkey implements java.io.Serializable {
 	 * @return the property metadata, or {@code null} if not assigned
 	 */
 	// @JsonIgnore
+	/**
+	 * Returns the POJO property that contains the foreign-key value.
+	 *
+	 * @return mapped metadata reference, or {@code null}
+	 */
 	public PojoProperty getPojoProperty() {
 		return pojoProperty;
 	}

@@ -56,21 +56,21 @@ import com.viaoa.runtime.OARuntime;
  *   <li>Ensures that cross-Hub AO synchronization and link-to-property
  *       propagation remain consistent even in many-to-many link configurations.</li>
  *   <li>Implements {@link java.io.Serializable} so that Hub link topology can be
- *       serialized with its parent Hub graph.</li>
+ *       serialized with its parent Hub OA model.</li>
  * </ul>
  */
 public class HubLinkEventListener extends HubListenerAdapter implements java.io.Serializable {
-	
+
 	/**
 	 * The Hub that this listener is monitoring for active-object and property changes.
 	 */
 	Hub linkToHub;
-	
+
 	/**
 	 * The Hub whose active object must stay synchronized with the linked-to Hub.
 	 */
 	Hub fromHub;
-	
+
 	/**
 	 * Flag indicating whether weak Hub references must be updated for many-to-many
 	 * private link configurations.
@@ -79,8 +79,8 @@ public class HubLinkEventListener extends HubListenerAdapter implements java.io.
 
 	private HubInternalBridge faBridge = new HubInternalBridge();
 	private Hub.FriendAccess faHub;
-	
-	
+
+
 	/**
 	 * Constructs a new listener that synchronizes the from-Hub with changes coming
 	 * from the link-to Hub. Determines whether weak Hub references must be updated
@@ -93,7 +93,7 @@ public class HubLinkEventListener extends HubListenerAdapter implements java.io.
 	    this.fromHub = fromHub;
 	    this.linkToHub = linkToHub;  // hub that is linked to, that this HubListener is listening to.
 		final OA oa = OARuntime.oa(fromHub);
-	    
+
 	    // 20130708
         OALinkInfo li = oa.internal().hubs().detail().getLinkInfoFromDetailToMaster(linkToHub);
         if (li != null && li.getPrivateMethod()) {
@@ -103,7 +103,7 @@ public class HubLinkEventListener extends HubListenerAdapter implements java.io.
         }
 		faHub = faBridge.getHubFriendAccess();
 	}
-	
+
 	/**
 	 * Called after the linked-to Hub changes its active object. Updates the
 	 * from-Hub’s active object through {@link HubLinkDelegate#updateLinkedToHub}.
@@ -114,7 +114,7 @@ public class HubLinkEventListener extends HubListenerAdapter implements java.io.
 		final OA oa = OARuntime.oa(fromHub);
 		oa.internal().hubs().link().updateLinkedToHub(fromHub, linkToHub, hubEvent.getObject(), null);
 	}
-	
+
 	/**
 	 * Called after a property on the linked-to Hub’s active object changes.
 	 * If the changed property matches the from-Hub’s link-to property, a link
@@ -131,7 +131,7 @@ public class HubLinkEventListener extends HubListenerAdapter implements java.io.
             }
 	    }
 	}
-	
+
 	// 20130708 check if linkToHub is based on a M2M&private, where the oaObj.weakRefs[] do not have the hub
 	//     if so, then need to add it
 	/**

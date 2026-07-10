@@ -32,7 +32,7 @@ import com.viaoa.runtime.OARuntime;
 /**
  * Weak reference object cache used to maintain a single instance of each
  * OAObject within the current JVM. This provides identity consistency across
- * the object graph while allowing unused objects to be reclaimed by the garbage
+ * the OA runtime while allowing unused objects to be reclaimed by the garbage
  * collector when no longer referenced by the application.
  *
  * <p>The cache is keyed by GUID (Globally Unique Identifier), ensuring that each
@@ -46,7 +46,7 @@ import com.viaoa.runtime.OARuntime;
  * enabling fast and efficient lookup through this cache.</p>
  *
  * <p>This class does not enforce any storage lifetime; it simply provides
- * object identity resolution for the OA Object Graph framework while
+ * object identity resolution for the OA runtime while
  * cooperating with Java GC for scalable memory usage.</p>
  *
  * @see OAObjectCacheDelegate
@@ -318,13 +318,6 @@ import com.viaoa.runtime.OARuntime;
 	 *
 	 * @param callback the callback invoked for each cached object
 	 */
-	/*qqqqqqq remove since generics wont work qqqqqqqqqqqqq
-	public void visit(OACallback<?> callback) {
-		for (Class<? extends OAObject> c : hmOAObjectByGuid.keySet()) {
-			visit(c, callback);
-		}
-	}
-	*/
 
 	/**
 	 * Visits all cached objects of the specified class by invoking the
@@ -405,6 +398,13 @@ import com.viaoa.runtime.OARuntime;
 	    return (ConcurrentHashMap) hmOAObjectByGuid.computeIfAbsent(clazz, k -> new ConcurrentHashMap<>());
 	}
 	
+	/**
+	 * Returns an arbitrary live cached object for the supplied class, sampling from at most the first {@code max} entries.
+	 *
+	 * @param clazz OAObject class to sample
+	 * @param max maximum number of cache entries to consider
+	 * @return a live cached object, or {@code null} if none is available
+	 */
 	public OAObject getRandom(Class<? extends OAObject> clazz, int max) {
 		if (clazz == null) return null;
 		if (max <= 0) return null;

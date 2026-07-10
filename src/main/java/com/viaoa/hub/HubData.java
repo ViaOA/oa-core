@@ -34,7 +34,7 @@ import com.viaoa.select.OASelect;
 
 /**
  * Core internal data holder shared by each Hub instance.
- * 
+ *
  * <p>Encapsulates the Hub’s collection (Vector), identity class, and change
  * tracking counters, and delegates extended state to {@link HubDatax}.
  *
@@ -64,7 +64,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
      * metadata lookup, and optimized behavior when working with OAObjects.
      */
     protected volatile Class<TYPE> objClass;
-    
+
     /**
      * Underlying ordered collection of Hub elements. Stores all objects
      * currently in the Hub and preserves their insertion order.
@@ -77,19 +77,19 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
      * change detection without requiring HubListeners.
      */
     protected volatile transient int changeCount;
-    
+
     /**
      * Tracks whether structural changes have occurred that require refresh or
      * downstream synchronization. Works in conjunction with changeCount.
      */
     protected volatile boolean changed;
-    
+
     /**
      * Lazily created extension object holding optional Hub state such as sort
      * information, change-tracking vectors, metadata, filters, and more.
      */
     protected transient volatile HubDatax hubDatax; // extension
-    
+
     /**
      * Constructs a HubData instance using the specified object class and an
      * initial vector sized according to the provided size parameter.
@@ -113,7 +113,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
 	public HubData(Class<TYPE> objClass) {
 		this(objClass, 5);
 	}
-    
+
 	/**
 	 * Constructs a HubData instance with explicit initial size and increment
 	 * size for the underlying vector.
@@ -128,7 +128,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
         vector = new Vector(size, x);
         this.objClass = objClass;
     }
-	
+
 	/**
 	 * Lazily creates and returns the extended HubDatax instance.
 	 * Thread-safe double-checked initialization.
@@ -146,16 +146,25 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
         return hubDatax;
     }
 
-    //qqqqqq add javadoc
+
+    /**
+     * Returns the Vector value.
+     *
+     * @return the Vector value
+     */
     public Vector<TYPE> getVector() {
         return vector;
     }
-    
-    //qqqqqq add javadoc
+
+
+	/**
+	 * Sets the Vector value.
+	 * @param v the Vector value
+	 */
 	public void setVector(Vector<TYPE> v) {
 		vector = v;
 	}
-    
+
     /**
      * Returns the vector that tracks added objects, or {@code null} if
      * extended data has not been initialized.
@@ -179,7 +188,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
             getHubDatax().vecAdd = vecAdd;
         }
     }
-    
+
     /**
      * Returns the vector that tracks removed objects, or {@code null} if
      * extended data has not been initialized.
@@ -191,7 +200,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
         if (hdx == null) return null;
         return hdx.vecRemove;
     }
-    
+
     /**
      * Sets the vector used to track removed objects. Initializes HubDatax
      * if necessary when a non-null value is supplied.
@@ -203,7 +212,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
             getHubDatax().vecRemove = vecRemove;
         }
     }
-    
+
     /**
      * Returns the property name used for sorting, or {@code null} if no
      * sort is defined.
@@ -251,7 +260,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
             getHubDatax().sortAsc = sortAsc;
         }
     }
-    
+
     /**
      * Returns the listener used for sort operations, or {@code null}
      * if none has been assigned.
@@ -275,7 +284,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
             getHubDatax().sortListener = sortListener;
         }
     }
-    
+
     /**
      * Returns the current OASelect instance associated with this hub,
      * or {@code null} if none exists.
@@ -328,7 +337,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
         if (hdx == null) return false;
         return hdx.refresh;
     }
-    
+
     /**
      * Sets the refresh state. Initializes HubDatax if needed when
      * enabling refresh.
@@ -359,7 +368,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
         if (t == null) return false;
         return (t != Thread.currentThread());
     }
-    
+
     /**
      * Marks this hub as loading all data on the current thread,
      * or clears the state when disabled.
@@ -461,7 +470,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
             getHubDatax().uniquePropertyGetMethod = uniquePropertyGetMethod;
         }
     }
-    
+
     /**
      * Returns whether the hub is marked as disabled.
      *
@@ -472,7 +481,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
         if (hdx == null) return false;
         return hdx.disabled;
     }
-    
+
     /**
      * Sets the disabled flag for the hub. Initializes HubDatax if
      * necessary when enabling the disabled state.
@@ -564,7 +573,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
             getHubDatax().autoSequence = autoSequence;
         }
     }
-    
+
     /**
      * Returns the HubAutoMatch used for automatic matching behavior,
      * or {@code null} if none is defined.
@@ -646,11 +655,11 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
      */
     private void writeObject(java.io.ObjectOutputStream s) throws java.io.IOException{
         s.defaultWriteObject();
-        
+
         HubDatax hdx = hubDatax;
         if (hdx != null && !hdx.shouldSerialize()) hdx = null;
         s.writeObject(hdx);
-        
+
         writeVector(s, vector);
         Vector vec;
         if (hubDatax != null) vec = hubDatax.vecAdd;
@@ -660,7 +669,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
         else vec = null;
         writeVector(s, vec);
     }
-    
+
     /**
      * Custom deserialization routine that restores HubData’s fields,
      * optional HubDatax extension, and internal vectors for add/remove tracking.
@@ -673,10 +682,10 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
         s.defaultReadObject();
         hubDatax = (HubDatax) s.readObject();
         vector = readVector(s);
-        
+
         Vector vec = readVector(s);
         if (vec != null && vec.size() > 0) setVecAdd(vec);
-        
+
         vec = readVector(s);
         if (vec != null && vec.size() > 0) setVecRemove(vec);
     }
@@ -694,13 +703,13 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
             s.writeInt(-1);
             return;
         }
-        
+
         int cap = vec.capacity();
         s.writeInt(cap);
         int max = vec.size();
         s.writeInt(max);
-        
-        
+
+
         int i = 0;
         for (; i<max; i++) {
             Object obj;
@@ -715,9 +724,9 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
         for (; i<max; i++) {
             // write out bogus objects
             s.writeObject(OAMatchNull.instance);
-        }        
+        }
     }
-    
+
     /**
      * Deserializes a vector previously written by {@link #writeVector}.
      * Reconstructs elements in order, skipping {@link OAMatchNull} markers.
@@ -734,7 +743,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
 
         int max = s.readInt();
 
-        // Read in all elements in the proper order. 
+        // Read in all elements in the proper order.
         for (int i=0; i<max; i++) {
             Object obj = s.readObject();
             if (!(obj instanceof OAMatchNull)) vec.addElement(obj);
@@ -753,7 +762,7 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
         if (hdx == null) return null;
         return hdx.selectWhereHub;
     }
-    
+
     /**
      * Sets the hub to be used for select-where filtering. Initializes
      * HubDatax if required.
@@ -772,56 +781,89 @@ public class HubData<TYPE extends OAObject> implements java.io.Serializable {
      *
      * @return the select-where property path, or {@code null}
      */
-    public String getSelectWhereHubPropertyPath() {
+    public String getSelectWhereHubPath() {
         HubDatax hdx = hubDatax;
         if (hdx == null) return null;
-        return hdx.selectWhereHubPropertyPath;
+        return hdx.selectWhereHubPath;
     }
 
+	/**
+	 * Returns the ObjClass value.
+	 *
+	 * @return the ObjClass value
+	 */
 	public Class getObjClass() {
 		return objClass;
 	}
+	/**
+	 * Sets the ObjClass value.
+	 * @param c the ObjClass value
+	 */
 	public void setObjClass(Class c) {
 		objClass = c;
 	}
-    
-    
-    
+
+
+
     /**
      * Sets the property path used for select-where filtering. Initializes
      * HubDatax as needed.
      *
      * @param pp the property path to assign
      */
-    public void setSelectWhereHubPropertyPath(String pp) {
+    public void setSelectWhereHubPath(String pp) {
         if (hubDatax != null || pp != null) {
-            getHubDatax().selectWhereHubPropertyPath = pp;
+            getHubDatax().selectWhereHubPath = pp;
         }
     }
 
-//qqqqqq this should use HubStatusService change methods (todo: make this more protected)    
+
+    /**
+     * Returns the Changed value.
+     *
+     * @return the Changed value
+     */
     public boolean getChanged() {
     	return this.changed;
     }
-    
-//qqqqqq this should use HubStatusService change methods (todo: make this more protected)   
+
+
+    /**
+     * Sets the Changed value.
+     * @param b the Changed value
+     */
     public void setChanged(boolean b) {
     	this.changed = b;
     }
 
+    /**
+     * Returns the ChangeCount value.
+     *
+     * @return the ChangeCount value
+     */
     public int getChangeCount() {
     	return this.changeCount;
     }
+    /**
+     * Sets the ChangeCount value.
+     * @param x the ChangeCount value
+     */
     public void setChangeCount(int x) {
     	this.changeCount = x;
     }
+    /**
+     * Performs the incrementChangeCount operation for this Hub component.
+     */
     public void incrementChangeCount() {
     	this.changeCount++;
     }
-    
 
+
+	/**
+	 * Sets the HubDataxNull value.
+	 */
 	public void setHubDataxNull() {
 		hubDatax = null;
 	}
-	
+
 }

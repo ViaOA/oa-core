@@ -56,204 +56,13 @@ import com.viaoa.sync.remote.RemoteSyncImpl;
 import com.viaoa.sync.remote.RemoteSyncInterface;
 
 
-/*qqqqqqqqq
-CODEX
-
- 1. src/main/java/com/viaoa/sync/OASyncClient.java — stop(boolean), getRemoteServer/getRemoteSession/getRemoteClient/
-     getRemoteSync
-     Concrete bug: stop() clears multiplexerClient and remoteMultiplexerClient, but leaves remoteServerInterface,
-     remoteSessionInterface, remoteClientSyncInterface, remoteSyncInterface, remoteSyncImpl, and remoteCallback
-     intact.
-     Runtime scenario: client disconnects or stops, then reconnects with a new connection id. start() reuses stale
-     remote proxies/session/callback from the old connection instead of resolving them through the new
-     OARemoteMultiplexerClient.
-     Why this violates sync semantics: reconnect/resync can route work through stale session state, causing false
-     success, lost session updates, or stale server-side GUID/session tracking.
-     Minimal fix direction: clear all connection-bound remote proxies/callbacks on stop, and make reconnect force
-     fresh lookup/session creation.
-     Suggested CODEX comment location: OASyncClient.stop(boolean), around lines 695-710.
-  2. src/main/java/com/viaoa/sync/OASyncClient.java — start() / stop(boolean)
-     Concrete bug: if start() fails after the socket/multiplexer starts but before clientInfo.setStarted(true), later
-     stop() returns immediately because isStarted() is false.
-     Runtime scenario: connection succeeds, but remote lookup/session creation/data source creation throws. The client
-     is partially connected, but cleanup is skipped.
-     Why this violates sync semantics: partial startup failure can leave live sockets, stale proxies, or background
-     state that interferes with retry/reconnect.
-     Minimal fix direction: track “starting/connected resources allocated” separately, or make start() cleanup in
-     catch without relying on clientInfo.started.
-     Suggested CODEX comment location: OASyncClient.start(), around lines 239-265, and stop(boolean) line 696.
-  3. src/main/java/com/viaoa/sync/OASyncClient.java — objectCreated(OAObject)
-     Concrete bug: method marks the object GUID in hmNewObjectsNotYetSent before calling
-     RemoteSessionInterface.objectCreated(guid), then silently swallows failure.
-     Runtime scenario: client creates an object while disconnected or during transient remote failure. objectCreated
-     fails, but the GUID remains “not yet sent”.
-     Why this violates sync semantics: isObjectOnServer() can keep returning false indefinitely for an object the
-     server was never told about, creating stale client/server identity state unless later serialization happens to
-     repair it.
-     Minimal fix direction: on failure, either remove the GUID from hmNewObjectsNotYetSent or enqueue a retry with
-     visible/logged failure semantics.
-     Suggested CODEX comment location: OASyncClient.objectCreated, around lines 938-944.
-  4. src/main/java/com/viaoa/sync/OASyncClient.java — startDistributedGCThread()
-     Concrete bug: finalized GUIDs are only sent when exactly 150 have accumulated. Any trailing batch smaller than
-     150 is never sent.
-     Runtime scenario: normal client finalizes 1-149 objects and stays below the batch threshold for a long time.
-     Why this violates sync semantics: server-side hmGuid / retained object tracking never receives those
-     finalizations, causing stale per-client sync filtering and server retention state.
-     Minimal fix direction: flush partial batches on timeout, shutdown, or after a small idle interval; send only the
-     valid count, not the full reusable array.
-     Suggested CODEX comment location: OASyncClient.startDistributedGCThread, around lines 1017-1032.
-  5. src/main/java/com/viaoa/sync/OASyncClient.java — startObjectsWithoutHubsThread()
-     Concrete bug: after repeated remote failures the worker breaks, but queObjectsWithoutHubs remains non-null.
-     Future updates are accepted into a queue with no consumer.
-     Runtime scenario: temporary disconnect or stale RemoteSessionInterface causes repeated failures; worker exits;
-     later hub membership changes still call updateObjectsWithoutHubs.
-     Why this violates sync semantics: server retention state silently stops receiving object-without-hub transitions,
-     which can cause stale retention or premature release assumptions.
-     Minimal fix direction: set queObjectsWithoutHubs = null on terminal worker exit, restart the worker on reconnect,
-     or keep retrying with refreshed remote session.
-     Suggested CODEX comment location: OASyncClient.startObjectsWithoutHubsThread, around lines 1120-1127.
-
-2. src/main/java/com/viaoa/sync/OASyncClient.java:377
-
-  Concrete bug:
-  getDetail(...) catches all exceptions from the remote detail request, logs them, and returns null.
-
-  Runtime scenario:
-  Client lazy-loads a reference/hub/blob from the server. A valid OA remote failure occurs during
-  getRemoteClient().getDetailNow(...). The exception is swallowed, result remains null, and
-  OAObjectCSService.getServerReference(...) / getServerReferenceHub(...) cannot distinguish “server says value is
-  null/not found” from “remote load failed.”
-
-  Why this violates OA/OG sync semantics:
-  A failed remote lazy-load can look like a legitimate null/empty reference to caller code. That creates false-success
-  behavior and can cause object graph state to proceed as if the server had no value.
-
-  Minimal fix direction:
-  Propagate the exception as a runtime failure, or return an explicit failure sentinel that callers do not treat as a
-  legitimate null reference.
-
-  Suggested CODEX comment location:
-  OASyncClient.getDetail(...), catch block around the remote getDetailNow(...) calls.
-
-  Suggested regression test:
-  testClientGetDetailRemoteFailureDoesNotReturnNullAsLegitimateReferenceValue()
-
-
-1. src/main/java/com/viaoa/sync/OASyncClient.java:1092 and src/main/java/com/viaoa/sync/OASyncClient.java:1193
-
-  Concrete bug:
-  The background sync workers cache RemoteSessionInterface rsi in a local variable and never reset it across stop() /
-  reconnect.
-
-  Runtime scenario:
-  Client starts, the distributed-GC or objects-without-hubs thread gets rsi = getRemoteSession(). Client disconnects/
-  stops and later reconnects. stop() does not stop these threads, clear their local cached rsi, or recreate the
-  queues. Later valid finalized-object or no-hub updates are consumed by the old worker and sent through the old
-  session proxy.
-
-  Why this violates OA/OG sync semantics:
-  After reconnect, sync retention/GC updates can be sent to a stale session instead of the current server session.
-  That can silently lose server-side client-reference tracking and contribute to stale object retention or premature
-  cleanup behavior.
-
-  Minimal fix direction:
-  On stop/reconnect, either terminate and recreate these workers/queues, or make each send resolve the current remote
-  session and clear cached rsi after any connection close/error.
-
-  Suggested CODEX comment location:
-  startDistributedGCThread() near the local RemoteSessionInterface rsi, and startObjectsWithoutHubsThread() near its
-  local rsi.
-
-  Suggested regression test:
-  testClientReconnectDoesNotUseStaleRemoteSessionForFinalizedAndNoHubUpdates()
-
-
-2. src/main/java/com/viaoa/sync/OASyncClient.java:805
-
-  Concrete bug:
-  onStopCalled(...) wraps getRemoteSession().sendException(...) and stop() in the same try. If sending the exception/
-  ack back to the server fails, stop() is skipped.
-
-  Runtime scenario:
-  Server calls the client callback to stop a client during a degraded/disconnecting remote session. The client
-  attempts getRemoteSession().sendException(...); that throws because the remote path is already failing. The catch
-  swallows it, and stop() is never called.
-
-  Why this violates OA/OG sync semantics:
-  A server-directed stop can silently fail, leaving the client running with stale sync/remote state after the server
-  believes it has been told to stop.
-
-  Minimal fix direction:
-  Call stop() in a separate finally or separate try so local shutdown happens regardless of whether the server
-  notification succeeds.
-
-  Suggested CODEX comment location:
-  OASyncClient.onStopCalled(...), around the combined try block.
-
-  Suggested regression test:
-  testOnStopCalledStopsClientEvenWhenSendExceptionFails()
-
-
-
->> IMPORTANT to fix
-1. src/main/java/com/viaoa/sync/OASyncClient.java:327 / stop(boolean), isObjectOnServer(...),
-     updateObjectsWithoutHubs(...)
-
-  Concrete bug: hmNewObjectsNotYetSent and hmObjectsWithoutHubs are static client tracking maps and are not cleared on
-  stop/reconnect.
-
-  Runtime scenario: a client disconnects or restarts while either map has entries. A new client/session in the same
-  JVM reuses stale GUID state. isObjectOnServer(...) can report false for a prior-session object, and
-  updateObjectsWithoutHubs(...) can suppress a valid transition because the GUID already exists in the old static map.
-
-  Why this violates OA/OG sync semantics: these are connection/session tracking structures, but their lifetime is JVM-
-  global. Reconnect can inherit old session sync state and silently skip object-created or no-hub retention updates.
-
-  Minimal fix direction: make these maps instance/session scoped, or clear them during authoritative client stop/
-  start/reconnect. The no-hub state should be rebuilt per active connection.
-
-  Suggested CODEX comment location: near the static fields at lines 327 and 334, plus stop(boolean) around line 834.
-
-
-1. file/class/method
-     src/main/java/com/viaoa/sync/OASyncClient.java:1145
-     OASyncClient.objectFinalized(...) / startDistributedGCThread(...)
-     src/main/java/com/viaoa/sync/remote/RemoteSessionImpl.java:194
-     RemoteSessionImpl.objectsFinalized(...)
-
-  concrete bug
-  Finalized GUID messages are delayed and contain only GUIDs, with no generation/epoch check. A stale finalization can
-  remove a GUID from the server session after the same object has already been reloaded/sent back to the client.
-
-  runtime scenario
-  Client drops its last reference to object G; objectFinalized(G) queues the GUID. Before the distributed-GC worker
-  flushes the batch, the client loads/selects/detail-loads the same object again and the server records G in hmGuid.
-  Later the old finalization batch reaches RemoteSessionImpl.objectsFinalized(...), which blindly removes G from
-  hmGuid and hmObjectsWithoutHubs.
-
-  why this violates OA/OG sync semantics
-  hmGuid is the server’s truth for what the client currently has. A stale finalization can make the server believe the
-  client no longer has an object it does have, causing later sync filtering/detail serialization/retention decisions
-  to be wrong.
-
-  minimal fix direction
-  Add a generation/sequence token for client object presence, or make finalization removal conditional on the client
-  not having re-registered the GUID after the finalization was queued. At minimum, CODEX-comment this as a
-  distributed-GC ordering invariant.
-
-  suggested CODEX comment location
-  OASyncClient.objectFinalized(...) where the GUID is queued, and RemoteSessionImpl.objectsFinalized(...) where
-  hmGuid.remove(guid) is unconditional.
-
-
-*/
 
 /**
  * Client-side synchronization endpoint for an OA model.
  * <p>
  * An {@code OASyncClient} establishes a multiplexer connection to an
  * {@link OASyncServer}, obtains remote interfaces for server, session,
- * client, and sync operations, and participates in distributed object graph
+ * client, and sync operations, and participates in distributed OA model
  * synchronization.
  *
  * <h2>Startup Responsibilities</h2>
@@ -296,6 +105,9 @@ CODEX
  * shutdown protocol is added externally.
  */
 public abstract class OASyncClient {
+	/**
+	 * Logger for sync client lifecycle and remote communication diagnostics.
+	 */
 	protected static final Logger LOG = Logger.getLogger(OASyncClient.class.getName());
 
 	/**
@@ -373,7 +185,6 @@ public abstract class OASyncClient {
     private final ConcurrentHashMap<UUID, Boolean> hmIgnoreSibling = new ConcurrentHashMap();
 
     
-//qqqqqqqqqqqqqqqqqq FIX THIS ... cant be static    
     /**
      * Map of object GUIDs that should be temporarily ignored when calculating
      * sibling sets for detail loading, allowing {@code OASiblingHelperDelegate}
@@ -470,6 +281,9 @@ public abstract class OASyncClient {
      */
 	public void startUpdateThread(final int seconds) {
 		Thread t = new Thread(new Runnable() {
+			/**
+			 * Runs client startup work on the background startup thread.
+			 */
 			@Override
 			public void run() {
 				getClientInfo();
@@ -535,8 +349,6 @@ public abstract class OASyncClient {
 			final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 			if (srvcOARemoteThread.isRemoteThread()) {
 				// use annotated version that does not use the msg queue
-				//qqqqq cntDup = OAObjectSerializeDelegate.cntDup;
-				//qqqqq cntNew = OAObjectSerializeDelegate.cntNew;
 				result = getRemoteClient().getDetailNow(cntx, masterObject.getClass(), masterObject.getObjectKey(), propertyName,
 														additionalMasterProperties, siblingKeys, bHasSiblingHelper);
 			} else {
@@ -576,8 +388,6 @@ public abstract class OASyncClient {
 				additionalMasterProperties = oa.internal().objects().reflect().getUnloadedReferences(masterObject, false, propertyName, false);
 
 				try {
-					//qqqqq cntDup = OAObjectSerializeDelegate.cntDup;
-					//qqqqq cntNew = OAObjectSerializeDelegate.cntNew;
 					result = getRemoteClient().getDetailNow(cntx, masterObject.getClass(), masterObject.getObjectKey(), propertyName,
 															additionalMasterProperties, siblingKeys, bHasSiblingHelper);
 				} finally {
@@ -639,8 +449,6 @@ public abstract class OASyncClient {
 				}
 			}
 		} else {
-			//qqqqq cntDup = OAObjectSerializeDelegate.cntDup - cntDup;
-			//qqqqq cntNew = OAObjectSerializeDelegate.cntNew - cntNew;
 		}
 
 		if (result instanceof Hub) {
@@ -658,7 +466,6 @@ public abstract class OASyncClient {
 		}
 
 		if (false) {
-		//qqqqq if (true || OAObjectSerializeDelegate.cntNew - cntNew > 25 || cntx % 100 == 0) {
 
 			ts = System.currentTimeMillis() - ts;
 			String s = "";
@@ -770,16 +577,31 @@ public abstract class OASyncClient {
 	public RemoteClientCallbackInterface getRemoteClientCallback() {
 		if (remoteCallback == null) {
 			remoteCallback = new RemoteClientCallbackInterface() {
+				/**
+				 * Handles a server-requested client stop callback.
+				 * @param title stop message title
+				 * @param msg stop message body
+				 */
 				@Override
 				public void stop(String title, String msg) {
 					OASyncClient.this.onStopCalled(title, msg);
 				}
 
+				/**
+				 * Responds to a server ping callback.
+				 * @param msg ping message
+				 * @return ping response
+				 */
 				@Override
 				public String ping(String msg) {
 					return "client recvd " + msg;
 				}
 
+				/**
+				 * Creates a client-side thread dump for server diagnostics.
+				 * @param msg diagnostic request message
+				 * @return thread dump text
+				 */
 				@Override
 				public String performThreadDump(String msg) {
 					final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
@@ -898,7 +720,6 @@ public abstract class OASyncClient {
 		multiplexerClient = null;
 		remoteMultiplexerClient = null;
 
-//qqqqqqqqqqqqqqq datasource in OARuntime		
 		
 		closeRemoteDataSource();
 	}
@@ -972,11 +793,19 @@ public abstract class OASyncClient {
 			return multiplexerClient;
 		}
 		multiplexerClient = new OAMultiplexerClient(getClientInfo().getServerHostName(), clientInfo.getServerHostPort()) {
+			/**
+			 * Handles a socket exception from the client multiplexer.
+			 * @param e socket exception
+			 */
 			@Override
 			protected void onSocketException(Exception e) {
 				OASyncClient.this.onSocketException(e);
 			}
 
+			/**
+			 * Handles client multiplexer close events.
+			 * @param bError true when the close was caused by an error
+			 */
 			@Override
 			protected void onClose(boolean bError) {
 				OASyncClient.this.onSocketClose(bError);
@@ -1038,6 +867,11 @@ public abstract class OASyncClient {
 			return remoteMultiplexerClient;
 		}
 		remoteMultiplexerClient = new OARemoteMultiplexerClient(getMultiplexerClient()) {
+			/**
+			 * Updates client statistics when a remote thread is created.
+			 * @param totalCount total remote thread count
+			 * @param liveCount current live remote thread count
+			 */
 			@Override
 			protected void onRemoteThreadCreated(int totalCount, int liveCount) {
 				getClientInfo().setRemoteThreadCount(liveCount);
@@ -1051,11 +885,19 @@ public abstract class OASyncClient {
 				}
 			}
 
+			/**
+			 * Updates client statistics after a client-to-server remote invocation.
+			 * @param ri remote request information
+			 */
 			@Override
 			protected void afterInvokeForCtoS(RequestInfo ri) {
 				OASyncClient.this.afterInvokeRemoteMethod(ri);
 			}
 
+			/**
+			 * Updates client statistics after a server-to-client remote invocation.
+			 * @param ri remote request information
+			 */
 			@Override
 			public void afterInvokForStoC(RequestInfo ri) {
 				OASyncClient.this.afterInvokeRemoteMethod(ri);
@@ -1210,6 +1052,18 @@ public abstract class OASyncClient {
 			int cntError;
 			UUID[] guids = new UUID[150];
 
+			/**
+			 * Runs the distributed-GUID finalization worker.
+			 */
+			/**
+			 * Runs the objects-without-Hubs update worker.
+			 */
+			/**
+			 * Runs the objects-without-Hubs update worker.
+			 */
+			/**
+			 * Runs the objects-without-Hubs update worker.
+			 */
 			@Override
 			public void run() {
 				RemoteSessionInterface rsi = null;
@@ -1297,6 +1151,9 @@ public abstract class OASyncClient {
 			long msLastError;
 			int cntError;
 
+			/**
+			 * Runs the objects-without-Hubs update worker.
+			 */
 			@Override
 			public void run() {
 				RemoteSessionInterface rsi = null;
@@ -1361,8 +1218,14 @@ public abstract class OASyncClient {
 	}
 
 
+	/**
+	 * Creates the client-side remote datasource integration.
+	 */
 	protected abstract void createRemoteDataSource();
 
+	/**
+	 * Closes the client-side remote datasource integration.
+	 */
 	protected abstract void closeRemoteDataSource();
 
 

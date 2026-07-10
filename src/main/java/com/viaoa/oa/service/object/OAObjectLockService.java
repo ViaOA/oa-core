@@ -10,9 +10,15 @@ import java.util.logging.Logger;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 
+/**
+ * Coordinates object and property locking for OAObjects.
+ */
 public abstract class OAObjectLockService {
 	private static final Logger LOG = Logger.getLogger(OAObjectLockService.class.getName());
 
+	/**
+	 * Performs OAObjectLockService behavior for the OA object service.
+	 */
 	public OAObjectLockService() {
 	}
 
@@ -32,6 +38,11 @@ public abstract class OAObjectLockService {
 		final Thread thread;
 		boolean done;
 		boolean hasWait;
+	/**
+	 * Performs PropertyLock behavior for the OA object service.
+	 *
+	 * @param thread method input
+	 */
 		public PropertyLock(Thread thread) {
 			this.thread = thread;
 		}
@@ -39,7 +50,7 @@ public abstract class OAObjectLockService {
     
     
     /**
-     * Attempts to acquire a lock for the specified {@link OAObject}.  
+     * Attempts to acquire a lock for the specified {@link OAObject}.
      * <p>
      * If the object’s class is associated with a remote sync session, the
      * lock request is delegated to the {@link RemoteSessionInterface} so
@@ -87,7 +98,7 @@ public abstract class OAObjectLockService {
 	}
 
 	/**
-	 * Releases the lock held for the specified {@link OAObject}.  
+	 * Releases the lock held for the specified {@link OAObject}.
 	 * <p>
 	 * If the object’s class participates in a remote sync session, the
 	 * unlock operation is delegated to the corresponding
@@ -153,6 +164,12 @@ public abstract class OAObjectLockService {
         return (lock != null);
 	}
 
+	/**
+	 * Returns whether lockedByAnotherThread is true.
+	 *
+	 * @param object method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public boolean isLockedByAnotherThread(OAObject object) {
 	    if (object == null) return false;
 
@@ -171,7 +188,7 @@ public abstract class OAObjectLockService {
 	
 	
 	/**
-	 * Attempts to acquire an exclusive lock for the specified property.  
+	 * Attempts to acquire an exclusive lock for the specified property.
 	 * This call will wait if necessary until the lock becomes available.
 	 *
 	 * @param oaObj the target object
@@ -184,7 +201,7 @@ public abstract class OAObjectLockService {
 
 	/**
 	 * Attempts to acquire an exclusive lock for the specified property
-	 * without waiting.  
+	 * without waiting.
 	 * If the lock is already held by another thread, this method returns
 	 * immediately with {@code false}.
 	 *
@@ -197,7 +214,7 @@ public abstract class OAObjectLockService {
 	}
 
 	/**
-	 * Core implementation for acquiring a property-level lock.  
+	 * Core implementation for acquiring a property-level lock.
 	 * Creates or reuses a lock entry and manages waiting behavior, deadlock
 	 * detection, and re-entry checks depending on the supplied flags.
 	 *
@@ -331,6 +348,13 @@ public abstract class OAObjectLockService {
 		return (lock != null);
 	}
 
+	/**
+	 * Returns whether propertyLockedByAnotherThread is true.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public boolean isPropertyLockedByAnotherThread(OAObject oaObj, String name) {
 		if (oaObj == null || name == null) {
 			return false;
@@ -340,10 +364,38 @@ public abstract class OAObjectLockService {
 		return (lock != null && lock.thread != Thread.currentThread());
 	}
 	
+	/**
+	 * Dependency hook used by this service to syncIsClient.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callSyncIsClient();
+	/**
+	 * Dependency hook used by this service to syncIsServer.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callSyncIsServer();
+	/**
+	 * Dependency hook used by this service to syncSetLock.
+	 *
+	 * @param objectClass method input
+	 * @param objectKey method input
+	 * @param bLock method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callSyncSetLock(Class<? extends OAObject> objectClass, OAObjectKey objectKey, boolean bLock);
+	/**
+	 * Dependency hook used by this service to syncIsLocked.
+	 *
+	 * @param objectClass method input
+	 * @param objectKey method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callSyncIsLocked(Class<? extends OAObject> objectClass, OAObjectKey objectKey);
+	/**
+	 * Dependency hook used by this service to remoteThreadStartNextThread.
+	 */
 	public abstract void callRemoteThreadStartNextThread();
 	
 }

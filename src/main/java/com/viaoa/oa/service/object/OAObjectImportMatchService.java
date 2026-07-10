@@ -15,16 +15,22 @@ import com.viaoa.object.OAObject;
 import com.viaoa.path.OAPath;
 import com.viaoa.select.OASelect;
 
+/**
+ * Builds import-match metadata used to match incoming data to existing OAObjects.
+ */
 public abstract class OAObjectImportMatchService {
 	private static final Logger LOG = Logger.getLogger(OAObjectImportMatchService.class.getName());
 
+	/**
+	 * Performs OAObjectImportMatchService behavior for the OA object service.
+	 */
     public OAObjectImportMatchService() {
     }
 	
 	/**
 	 * Defines a single import-match operation used during JSON/POJO import
 	 * when a target OAObject must be located or created without relying on
-	 * primary keys.  
+	 * primary keys.
 	 *
 	 * <p>An ImportMatch bundles together:</p>
 	 * <ul>
@@ -43,6 +49,9 @@ public abstract class OAObjectImportMatchService {
 	 */
 	public static class ImportMatch {
 		
+	/**
+	 * Performs ImportMatch behavior for the OA object service.
+	 */
 		public ImportMatch() {
 			
 		}
@@ -75,13 +84,13 @@ public abstract class OAObjectImportMatchService {
 
 	/**
 	 * Represents a single property/value rule used during an import-match
-	 * resolution.  
+	 * resolution.
 	 *
 	 * <p>Each detail corresponds to one matching criterion, defining:</p>
 	 * <ul>
 	 *   <li>{@code propertyName} — the name used in the POJO or source data.</li>
 	 *   <li>{@code value} — the imported value used for lookup.</li>
-	 *   <li>{@code propertyPath} — the full OA property path to apply when
+	 *   <li>{@code path} — the full OA property path to apply when
 	 *       building search queries or creating required hierarchy objects.</li>
 	 * </ul>
 	 *
@@ -91,6 +100,9 @@ public abstract class OAObjectImportMatchService {
 	 */
 	public static class ImportMatchDetail {
 		
+	/**
+	 * Performs ImportMatchDetail behavior for the OA object service.
+	 */
 		public ImportMatchDetail() {
 			
 		}
@@ -114,7 +126,7 @@ public abstract class OAObjectImportMatchService {
 		 * This path is used both for query-building and for creation of
 		 * any required intermediate hierarchical objects.
 		 */
-		public String propertyPath;
+		public String path;
 	}
 
 	
@@ -161,7 +173,7 @@ public abstract class OAObjectImportMatchService {
 			if (OAString.isNotEmpty(sql)) {
 				sql += " AND ";
 			}
-			sql += imd.propertyPath + " = ?";
+			sql += imd.path + " = ?";
 			params = OAArray.add(Object.class, params, imd.value);
 		}
 
@@ -182,14 +194,14 @@ public abstract class OAObjectImportMatchService {
 		}
 		OAObject objOwner = null; // owner of importMatch.liTo
 
-		// this will add additional matching based on the link rules (ex:  equalPropertyPath)
+		// this will add additional matching based on the link rules (ex:  equalpath)
 		final OAObjectInfo oiTo = importMatch.liTo.getToObjectInfo();
 		final String[] importMatchPropertyNames = oiTo.getImportMatchPropertyNames();
 
 		boolean bWasSearched = false;
 		if (importMatchPropertyNames != null && importMatchPropertyNames.length > 0) {
-			String ppFromObjectEqual = importMatch.liTo.getReverseLinkInfo().getEqualPropertyPath();
-			String ppToObjectEqual = importMatch.liTo.getEqualPropertyPath();
+			String ppFromObjectEqual = importMatch.liTo.getReverseLinkInfo().getEqualPath();
+			String ppToObjectEqual = importMatch.liTo.getEqualPath();
 
 			if (OAString.isNotEmpty(ppFromObjectEqual) && OAString.isNotEmpty(ppToObjectEqual)) {
 				Object val = importMatch.fromObject.getProperty(ppFromObjectEqual);
@@ -252,7 +264,7 @@ public abstract class OAObjectImportMatchService {
 			obj = (OAObject) callReflectCreateNewObject(importMatch.liTo.getToClass());
 
 			for (ImportMatchDetail detail : importMatch.importMatchDetails) {
-				createHierObjects(obj, callInfogetObjectInfo(obj.getClass()), detail.propertyPath, detail.value);
+				createHierObjects(obj, callInfogetObjectInfo(obj.getClass()), detail.path, detail.value);
 			}
 
 			if (objOwner != null) {
@@ -273,13 +285,13 @@ public abstract class OAObjectImportMatchService {
 	 *
 	 * @param objThis       the current object in the traversal.
 	 * @param oiThis        metadata describing objThis.
-	 * @param propertyPath  full path leading to the property to set.
+	 * @param path  full path leading to the property to set.
 	 * @param value         value to assign at the end of the path.
 	 */
-	protected <T extends OAObject> void createHierObjects(final T objThis, final OAObjectInfo oiThis, final String propertyPath,
+	protected <T extends OAObject> void createHierObjects(final T objThis, final OAObjectInfo oiThis, final String path,
 			final Object value) {
 
-		OAPath<T> pp = new OAPath<T>(oiThis.getForClass(), propertyPath);
+		OAPath<T> pp = new OAPath<T>(oiThis.getForClass(), path);
 		OALinkInfo[] linkInfos = pp.getLinkInfos();
 
 		if (linkInfos == null || linkInfos.length == 0) {
@@ -289,12 +301,12 @@ public abstract class OAObjectImportMatchService {
 		final OALinkInfo liNext = linkInfos[0];
 		final OAObjectInfo oiNext = liNext.getToObjectInfo();
 
-		final String propertyPathNext = OAString.field(propertyPath, '.', 2, 999);
+		final String pathNext = OAString.field(path, '.', 2, 999);
 
-		final String sql = propertyPathNext + " = ?";
+		final String sql = pathNext + " = ?";
 		final Object[] params = new Object[] { value };
 
-		OASelect<?> sel = new OASelect<>(oiNext.getForClass(), propertyPathNext + " = ?", params, "");
+		OASelect<?> sel = new OASelect<>(oiNext.getForClass(), pathNext + " = ?", params, "");
 		sel.select();
 		OAObject objNext = sel.next();
 		sel.close();
@@ -322,15 +334,45 @@ public abstract class OAObjectImportMatchService {
 				}
 			}
 
-			createHierObjects(objNext, oiNext, propertyPathNext, value);
+			createHierObjects(objNext, oiNext, pathNext, value);
 		}
 		objThis.setProperty(liNext.getName(), objNext);
 	}
 
+	/**
+	 * Dependency hook used by this service to infogetObjectInfo.
+	 *
+	 * @param clazz method input
+	 * @return result value
+	 */
 	public abstract OAObjectInfo callInfogetObjectInfo(Class<? extends OAObject> clazz);
+	/**
+	 * Dependency hook used by this service to cacheFind.
+	 *
+	 * @param clazz method input
+	 * @param finder method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callCacheFind(Class<T> clazz, OAFinder<T, T> finder); 
+	/**
+	 * Dependency hook used by this service to reflectCreateNewObject.
+	 *
+	 * @param clazz method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callReflectCreateNewObject(Class<T> clazz);
+	/**
+	 * Dependency hook used by this service to threadLocalIsLoading.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callThreadLocalIsLoading();
+	/**
+	 * Dependency hook used by this service to threadLocalSetLoading.
+	 *
+	 * @param b method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callThreadLocalSetLoading(boolean b);
 }
 

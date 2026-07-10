@@ -17,6 +17,10 @@ import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
 
+/**
+ * Computes Hub change and lifecycle status.
+ */
+
 public abstract class HubStatusService {
 	private final Logger LOG = Logger.getLogger(HubStatusService.class.getName());
 
@@ -378,10 +382,10 @@ public abstract class HubStatusService {
 		}
 		return true;
 	}
-    
 
-	
-	
+
+
+
 	/**
 	 * Updates referenceability settings for this hub and its parent objects. If the
 	 * hub is server-side and the object class supports weak referencing, this method
@@ -432,25 +436,124 @@ public abstract class HubStatusService {
 			callObjectPropertySetReferenceable(master, bReferenceable);
 		}
 	}
-	
-	
+
+
+	/**
+	 * Dependency hook used by this service for HubDetailGetDataMaster behavior.
+	 *
+	 * @param thisHub method input
+	 * @param bIncludedFilteredHub method input
+	 * @return result value
+	 */
+
+
 	public abstract HubDataMaster callHubDetailGetDataMaster(final Hub<?> thisHub, boolean bIncludedFilteredHub);
+	/**
+	 * Dependency hook used by this service for HubShareGetMainSharedHub behavior.
+	 *
+	 * @param hub method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> Hub<T> callHubShareGetMainSharedHub(Hub<T> hub);
-	public abstract <T extends OAObject> HubListener<T>[] callHubEventGetAllListeners(Hub<T> thisHub);	
+	/**
+	 * Dependency hook used by this service for HubEventGetAllListeners behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
+	public abstract <T extends OAObject> HubListener<T>[] callHubEventGetAllListeners(Hub<T> thisHub);
+	/**
+	 * Dependency hook used by this service for ThreadLocalIsHubMergerChanging behavior.
+	 *
+	 * @return result value
+	 */
 	public abstract boolean callThreadLocalIsHubMergerChanging();
 
+	/**
+	 * Dependency hook used by this service for HubLinkGetHubWithLink behavior.
+	 *
+	 * @param thisHub method input
+	 * @param bIncludeCopiedHubs method input
+	 * @return result value
+	 */
+
 	public abstract <T extends OAObject> Hub<T> callHubLinkGetHubWithLink(final Hub<T> thisHub, boolean bIncludeCopiedHubs);
+	/**
+	 * Dependency hook used by this service for ObjectChangeGetChanged behavior.
+	 *
+	 * @param oaObj method input
+	 * @param iCascadeRule method input
+	 * @param cascade method input
+	 * @return result value
+	 */
 	public abstract boolean callObjectChangeGetChanged(final OAObject oaObj, int iCascadeRule, OACascade cascade);
-    
+
+	/**
+	 * Dependency hook used by this service for SyncIsClient behavior.
+	 *
+	 * @return result value
+	 */
+
 	public abstract boolean callSyncIsClient();
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetOAObjectInfo behavior.
+	 *
+	 * @param clazz method input
+	 * @return result value
+	 */
 	public abstract OAObjectInfo callObjectInfoGetOAObjectInfo(Class<?> clazz);
+	/**
+	 * Dependency hook used by this service for ObjectInfoIsWeakReferenceable behavior.
+	 *
+	 * @param oi method input
+	 * @return result value
+	 */
 	public abstract boolean callObjectInfoIsWeakReferenceable(OAObjectInfo oi);
+	/**
+	 * Dependency hook used by this service for HubMasterGetMasterObject behavior.
+	 *
+	 * @param hub method input
+	 * @return result value
+	 */
 	public abstract OAObject callHubMasterGetMasterObject(Hub<?> hub);
-	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);	
-	public abstract boolean callObjectPropertySetPropertyWeakRef(OAObject oaObj, String name, boolean bToWeakRef, Object value);				
+	/**
+	 * Dependency hook used by this service for HubDetailGetLinkInfoFromDetailToMaster behavior.
+	 *
+	 * @param hub method input
+	 * @return result value
+	 */
+	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service for ObjectPropertySetPropertyWeakRef behavior.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @param bToWeakRef method input
+	 * @param value method input
+	 * @return result value
+	 */
+	public abstract boolean callObjectPropertySetPropertyWeakRef(OAObject oaObj, String name, boolean bToWeakRef, Object value);
+	/**
+	 * Dependency hook used by this service for ObjectPropertySetReferenceable behavior.
+	 *
+	 * @param obj method input
+	 * @param bReferenceable method input
+	 */
 	public abstract void callObjectPropertySetReferenceable(OAObject obj, boolean bReferenceable);
 
+	/**
+	 * Dependency hook used by this service for HubDataClearHubChanges behavior.
+	 *
+	 * @param thisHub method input
+	 */
+
 	public abstract void callHubDataClearHubChanges(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubDetailGetLinkInfoFromMasterHubToDetail behavior.
+	 *
+	 * @param thisDetailHub method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub<?> thisDetailHub);
 }
 

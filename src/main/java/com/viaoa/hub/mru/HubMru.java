@@ -47,6 +47,10 @@ public class HubMru<T extends OAObject> extends HubCopy<T> {
 
 		HubListener hlHubMaster = new HubListenerAdapter<T>(this, "HubMru", "") {
 			@Override
+			/**
+			 * Handles the Hub active-object change event.
+			 * @param e the Hub event
+			 */
 			public void afterChangeActiveObject(HubEvent<T> e) {
 				updateMru();
 			}

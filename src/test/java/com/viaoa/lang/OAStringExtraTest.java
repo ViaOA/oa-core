@@ -93,8 +93,8 @@ class OAStringExtraTest {
 
     @Test
     void createPropertyPathCurrentlyKeepsEmptySegmentsAndSkipsNullSegments() {
-        assertEquals("customer..address.city", OAString.createPropertyPath("customer", "", null, "address.city"));
-        assertEquals("(java.lang.String)length", OAString.createPropertyPath(String.class, "length"));
+        assertEquals("customer..address.city", OAString.createPath("customer", "", null, "address.city"));
+        assertEquals("(java.lang.String)length", OAString.createPath(String.class, "length"));
     }
 
     @Test

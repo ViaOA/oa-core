@@ -15,9 +15,15 @@ import com.viaoa.lang.OAArray;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 
+/**
+ * Tracks references to empty loaded Hubs for OAObjects.
+ */
 public abstract class OAObjectEmptyHubService {
 	private static final Logger LOG = Logger.getLogger(OAObjectEmptyHubService.class.getName());
 
+	/**
+	 * Performs OAObjectEmptyHubService behavior for the OA object service.
+	 */
     public OAObjectEmptyHubService() {
     }
 	
@@ -82,6 +88,12 @@ public abstract class OAObjectEmptyHubService {
      * @throws Exception if the file cannot be read or deserialized
      */
     @SuppressWarnings("unchecked")
+	/**
+	 * Loads service-managed state from the supplied source.
+	 *
+	 * @param file method input
+	 * @throws Exception when the operation fails
+	 */
     public void load(File file) throws Exception {
         if (file == null || !file.exists()) {
             LOG.fine("file does not exist");
@@ -119,6 +131,12 @@ public abstract class OAObjectEmptyHubService {
         callCacheCallback(new OACallback<OAObject>() {
             int cnt = 0;
             @Override
+	/**
+	 * Updates service-managed state for the supplied input.
+	 *
+	 * @param obj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
             public boolean updateObject(OAObject obj) {
                 if (!(obj instanceof OAObject)) return true;
                 cnt++;
@@ -160,9 +178,40 @@ public abstract class OAObjectEmptyHubService {
         oos.close();
     }
 
+	/**
+	 * Dependency hook used by this service to keyGetKey.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
 	public abstract OAObjectKey callKeyGetKey(OAObject oaObj); 
+	/**
+	 * Dependency hook used by this service to propertySetProperty.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @param value method input
+	 */
 	public abstract void callPropertySetProperty(OAObject oaObj, String name, Object value); 
+	/**
+	 * Dependency hook used by this service to cacheCallback.
+	 *
+	 * @param callback method input
+	 */
 	public abstract void callCacheCallback(OACallback<OAObject> callback); 
+	/**
+	 * Dependency hook used by this service to propertyGetPropertyNames.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
 	public abstract String[] callPropertyGetPropertyNames(OAObject oaObj);
+	/**
+	 * Dependency hook used by this service to reflectIsReferenceHubLoadedAndEmpty.
+	 *
+	 * @param oaObj method input
+	 * @param propertyName method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callReflectIsReferenceHubLoadedAndEmpty(OAObject oaObj, String propertyName);
 }

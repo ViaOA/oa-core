@@ -26,7 +26,7 @@ import com.viaoa.object.OAObject;
  * Metadata describing a calculated property of an OAObject. A calculated
  * property does not store a value directly; instead it is derived on demand
  * using a getter method. Calculated properties are fully integrated into the
- * OA Object Graph and participate in UI binding and change notification.
+ * OA model and participate in UI binding and change notification.
  *
  * <p>Each calculated property may declare a list of dependent properties.
  * When any dependency changes, the calculated property is automatically
@@ -160,7 +160,7 @@ public class OACalcInfo implements java.io.Serializable {
      * <p>The list of dependent property paths is used to determine when this
      * calculated property should be invalidated and refreshed. Any change to a
      * dependent property triggers recalculation, ensuring consistent and current
-     * values throughout the OA Object Graph.</p>
+     * values throughout the OA model.</p>
      *
      * @param name  the name of the calculated property
      * @param props the array of property paths that this calculated property
@@ -246,6 +246,11 @@ public class OACalcInfo implements java.io.Serializable {
     }
     
     
+    /**
+     * Indicates whether this calculated property value contains HTML content.
+     *
+     * @return {@code true} if the value should be treated as HTML
+     */
     public boolean isHtml() {
         return isHtml;
     }
@@ -578,6 +583,11 @@ public class OACalcInfo implements java.io.Serializable {
 	public static final class FriendAccess {
 	}
 	private final static FriendAccess friendAccess = new FriendAccess(); 
+	/**
+	 * Returns the friend-access bridge used by OA metadata infrastructure.
+	 *
+	 * @return friend-access instance
+	 */
 	public static FriendAccess getFriendAccess() {
 		return friendAccess;
 	}

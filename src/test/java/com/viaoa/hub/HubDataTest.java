@@ -48,7 +48,7 @@ class HubDataTest {
         data.setDupAllowAddRemove(true);
         data.setTrackChanges(true);
         data.setSelectWhereHub(whereHub);
-        data.setSelectWhereHubPropertyPath(Register.P_Code);
+        data.setSelectWhereHubPath(Register.P_Code);
         data.setChanged(true);
         data.setChangeCount(4);
 
@@ -68,7 +68,7 @@ class HubDataTest {
         assertTrue(data.isDupAllowAddRemove());
         assertTrue(data.getTrackChanges());
         assertSame(whereHub, data.getSelectWhereHub());
-        assertEquals(Register.P_Code, data.getSelectWhereHubPropertyPath());
+        assertEquals(Register.P_Code, data.getSelectWhereHubPath());
         assertTrue(data.getChanged());
         assertEquals(4, data.getChangeCount());
 

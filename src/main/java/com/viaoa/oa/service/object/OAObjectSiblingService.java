@@ -20,10 +20,16 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.path.OAPath;
 
+/**
+ * Finds sibling objects that can satisfy unresolved references.
+ */
 public abstract class OAObjectSiblingService {
 	private static final Logger LOG = Logger.getLogger(OAObjectSiblingService.class.getName());
 
 
+	/**
+	 * Performs OAObjectSiblingService behavior for the OA object service.
+	 */
 	public OAObjectSiblingService() {
 	}
 
@@ -146,11 +152,11 @@ public abstract class OAObjectSiblingService {
 		 * Used as input when evaluating hubs and reachable objects for
 		 * potential siblings.
 		 */
-		String getDetailPropertyPath;
+		String getDetailPath;
 
-		DetailInfo(OASiblingHelper<?> siblingHelper, String getDetailPropertyPath) {
+		DetailInfo(OASiblingHelper<?> siblingHelper, String getDetailPath) {
 			this.siblingHelper = siblingHelper;
-			this.getDetailPropertyPath = getDetailPropertyPath;
+			this.getDetailPath = getDetailPath;
 		}
 	}
 
@@ -176,12 +182,12 @@ public abstract class OAObjectSiblingService {
 		}
 		final OALinkInfo linkInfo = callInfoGetLinkInfo(mainObject.getClass(), property);
 
-		// set by Finder, HubMerger, HubGroupBy, LoadReferences, etc - where it will be loading from a Root Hub using a PropertyPath
+		// set by Finder, HubMerger, HubGroupBy, LoadReferences, etc - where it will be loading from a Root Hub using a Path
 
 		Hub<?> getDetailHub = null;
-		String getDetailPropertyPath = null;
+		String getDetailPath = null;
 
-		OAPath<?> ppGetDetailPropertyPath = null;
+		OAPath<?> ppGetDetailPath = null;
 
 		// 20180704
 		List<OASiblingHelper<?>> al = callThreadLocalGetSiblingHelpers();
@@ -191,7 +197,7 @@ public abstract class OAObjectSiblingService {
 		if (al != null) {
 			for (OASiblingHelper<?> sh : al) {
 				for (int i = 0;; i++) {
-					String s = sh.getPropertyPath(mainObject, property, i > 0);
+					String s = sh.getPath(mainObject, property, i > 0);
 					if (s == null) {
 						break;
 					}
@@ -220,16 +226,16 @@ public abstract class OAObjectSiblingService {
 			} else {
 				DetailInfo di = alDetailInfo.get(cntDetailInfo);
 				getDetailHub = di.siblingHelper.getHub();
-				getDetailPropertyPath = di.getDetailPropertyPath;
-				ppGetDetailPropertyPath = new OAPath<>(di.siblingHelper.getHub().getObjectClass(), getDetailPropertyPath);
+				getDetailPath = di.getDetailPath;
+				ppGetDetailPath = new OAPath<>(di.siblingHelper.getHub().getObjectClass(), getDetailPath);
 			}
 
 			String ppPrefix = null;
 			boolean bValid = false;
-			if (ppGetDetailPropertyPath != null) {
+			if (ppGetDetailPath != null) {
 				// find property is in the detailPP, and build the ppPrefix from the getDetailHub
 				boolean b = false;
-				for (OALinkInfo li : ppGetDetailPropertyPath.getLinkInfos()) {
+				for (OALinkInfo li : ppGetDetailPath.getLinkInfos()) {
 					if (property.equalsIgnoreCase(li.getName())) {
 						bValid = true;
 						break;
@@ -265,7 +271,7 @@ public abstract class OAObjectSiblingService {
 				if (!bValid) {
 					// see if property is off of the detailPP
 					ppPrefix = null;
-					for (OALinkInfo li : ppGetDetailPropertyPath.getLinkInfos()) {
+					for (OALinkInfo li : ppGetDetailPath.getLinkInfos()) {
 						Class<?> c = li.getToClass();
 						OALinkInfo lix = callInfoGetLinkInfo(c, mainObject.getClass());
 						if (lix != null) {
@@ -338,6 +344,12 @@ public abstract class OAObjectSiblingService {
 				if (ppPrefix != null) {
 					OAFinder f = new OAFinder(ppPrefix) {
 						@Override
+	/**
+	 * Returns whether used is true.
+	 *
+	 * @param obj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 						protected boolean isUsed(OAObject obj) {
 							return obj == mainObject;
 						}
@@ -472,7 +484,7 @@ public abstract class OAObjectSiblingService {
 	 * @param alFoundObjectKey list collecting found sibling keys
 	 * @param hubRoot          the hub to scan
 	 * @param startPosHubRoot  starting hub index for scanning
-	 * @param finderPropertyPath the property path used for scanning
+	 * @param finderPath the property path used for scanning
 	 * @param origProperty     the original property being accessed
 	 * @param linkInfo         metadata describing the property link
 	 * @param mainObject       the object requesting siblings
@@ -483,9 +495,26 @@ public abstract class OAObjectSiblingService {
 	 * @param runCount         recursion/iteration counter
 	 */
 	@SuppressWarnings({"unchecked","rawtypes"})
+	/**
+	 * Finds matching OAObjects or references using this service.
+	 *
+	 * @param alFoundObjectKey method input
+	 * @param hubRoot method input
+	 * @param startPosHubRoot method input
+	 * @param finderPath method input
+	 * @param origProperty method input
+	 * @param linkInfo method input
+	 * @param mainObject method input
+	 * @param hmTypeOneObjKey method input
+	 * @param thread method input
+	 * @param hmIgnore method input
+	 * @param maxAmount method input
+	 * @param msStarted method input
+	 * @param runCount method input
+	 */
 	public void findSiblings(
 			final ArrayList<OAObjectKey> alFoundObjectKey,
-			final Hub<?> hubRoot, final int startPosHubRoot, final String finderPropertyPath, final String origProperty,
+			final Hub<?> hubRoot, final int startPosHubRoot, final String finderPath, final String origProperty,
 			final OALinkInfo linkInfo,
 			final OAObject mainObject,
 			final HashMap<OAObjectKey, OAObject> hmTypeOneObjKey, // for calling thread, refobjs already looked at
@@ -506,8 +535,14 @@ public abstract class OAObjectSiblingService {
 
 		final Class<? extends OAObject> clazz = (linkInfo == null) ? null : linkInfo.getToClass();
 
-		OAFinder f = new OAFinder(finderPropertyPath) {
+		OAFinder f = new OAFinder(finderPath) {
 			@Override
+	/**
+	 * Returns whether used is true.
+	 *
+	 * @param oaObject method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 			protected boolean isUsed(OAObject oaObject) {
 				if (oaObject == mainObject) {
 					return false;
@@ -552,6 +587,12 @@ public abstract class OAObjectSiblingService {
 			}
 
 			@Override
+	/**
+	 * Finds matching OAObjects or references using this service.
+	 *
+	 * @param obj method input
+	 * @param pos method input
+	 */
 			protected void find(Object obj, int pos) {
 				super.find(obj, pos);
 				if (msStarted > 0) {
@@ -616,16 +657,83 @@ public abstract class OAObjectSiblingService {
 		return siblingHub;
 	}
 
+	/**
+	 * Dependency hook used by this service to infoGetLinkInfo.
+	 *
+	 * @param clazz method input
+	 * @param propertyName method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callInfoGetLinkInfo(Class<?> clazz, String propertyName);
+	/**
+	 * Dependency hook used by this service to infoGetLinkInfo.
+	 *
+	 * @param fromClass method input
+	 * @param toClass method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callInfoGetLinkInfo(Class<?> fromClass, Class<?> toClass); 
+	/**
+	 * Dependency hook used by this service to propertyGetProperty.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @param bReturnNotExist method input
+	 * @param bConvertWeakRef method input
+	 * @return result value
+	 */
 	public abstract Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef);
+	/**
+	 * Dependency hook used by this service to cacheGet.
+	 *
+	 * @param clazz method input
+	 * @param ok method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok);
+	/**
+	 * Dependency hook used by this service to hubGetHubReferences.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
 	public abstract Hub[] callHubGetHubReferences(OAObject oaObj); 
+	/**
+	 * Dependency hook used by this service to hubDetailGetLinkInfoFromDetailToMaster.
+	 *
+	 * @param hub method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service to hubDetailGetLinkInfoFromMasterHubToDetail.
+	 *
+	 * @param thisDetailHub method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub<?> thisDetailHub);
+	/**
+	 * Dependency hook used by this service to hubDetailGetLinkInfoFromMasterToDetail.
+	 *
+	 * @param thisDetailHub method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterToDetail(Hub<?> thisDetailHub);
+	/**
+	 * Dependency hook used by this service to threadLocalGetSiblingHelpers.
+	 *
+	 * @return result value
+	 */
 	public abstract List<OASiblingHelper<?>> callThreadLocalGetSiblingHelpers();
+	/**
+	 * Dependency hook used by this service to threadLocalGetAndIncrementGetSiblingCalledCount.
+	 *
+	 * @return result value
+	 */
 	public abstract int callThreadLocalGetAndIncrementGetSiblingCalledCount();
+	/**
+	 * Dependency hook used by this service to threadLocalClearGetSiblingCalledCount.
+	 */
 	public abstract void callThreadLocalClearGetSiblingCalledCount();
 	
 }

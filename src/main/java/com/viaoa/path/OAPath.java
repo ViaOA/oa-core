@@ -40,76 +40,32 @@ import com.viaoa.reflect.OAReflect;
 import com.viaoa.runtime.OARuntime;
 
 
-/*qqqqqqqqqqqqqqqqqqqqq
-CODEX
-4.0 will be renaming to OAPath, moved to com.viaoa.path package
-
-com.viaoa.path
-  OAPath
-  OAPathParser
-  OAPathCompiler
-  OAPathTokenizer
-  OAPathToken
-  OAPathSegment
-  OAPathExpression
-  OACompiledPath
-  OAPathException
-*/
-
 /**
- * Represents a parsed and navigable property path used for traversing OAObject
- * graphs. A property path is a dotted sequence of property names that may span
- * bi-directional link properties, Hubs, and filtered collections. Examples:
- *
+ * Parsed OA property path used to navigate OAObject instances, Hubs, links, calculated properties, and filtered
+ * relationship segments.
+ * <p>
+ * A path is a dotted sequence of model member names, optionally including casts and custom Hub filters. Examples:
+ * </p>
  * <pre>
- *     "customer.address.city"
- *     "orderItems:(OpenItems).product.name"
- *     "((Manager)teamMember).email"
+ *     customer.address.city
+ *     orderItems:OpenItems().product.name
+ *     (Manager)teamMember.email
  * </pre>
+ * <p>
+ * Setup resolves the path against OA metadata and Java accessors, recording the methods, classes, link information,
+ * filter constructors, terminal metadata, and formatting information needed for later evaluation. When traversal reaches
+ * an intermediate Hub, the Hub active object is used to continue the path. Null roots or null intermediate values return
+ * {@code null} for value accessors.
+ * </p>
+ * <p>
+ * Instances are stateful compiled path objects. They are intended to be configured for a compatible root class or Hub and
+ * then reused for read-only path evaluation. Calling setup repeatedly mutates the compiled path state.
+ * </p>
  *
- * <p><b>Core Responsibilities</b></p>
- * <ul>
- *   <li>Parse property path strings into addressable components</li>
- *   <li>Support Hub navigation using {@code getActiveObject()}</li>
- *   <li>Resolve link information and metadata from the OA model</li>
- *   <li>Optionally apply {@link OAFilter} rules (via :Filter syntax)</li>
- *   <li>Extract the final property value from an arbitrary root object</li>
- * </ul>
- *
- * <p><b>Casting and Filtering</b></p>
- * <ul>
- *   <li>Supports casting segments using parentheses:
- *       {@code (Manager).location.city}</li>
- *   <li>Supports optional {@link OAFilter} insertion applied during traversal</li>
- * </ul>
- *
- * <p><b>Behavior</b></p>
- * <ul>
- *   <li>Traversal stops early when encountering {@code null}</li>
- *   <li>Property path resolution is safe for both OAObject and Hub instances</li>
- *   <li>If a Hub is encountered, its active object is used for continuation</li>
- * </ul>
- *
- * <p><b>Thread-safety</b></p>
- * <ul>
- *   <li>Instances are not shared; parsing state is encapsulated and immutable after construction</li>
- * </ul>
- *
- * <p><b>Use Cases</b></p>
- * <ul>
- *   <li>UI binding and screen component expressions</li>
- *   <li>{@code OASelect} and filtering expressions</li>
- *   <li>Metadata inspection and reflection-based automation</li>
- *   <li>Graph navigation for controllers and remote layers</li>
- * </ul>
- *
- * <p>This class is central to the OA Object Graph pattern, enabling declarative
- * references to related objects without requiring explicit navigation code.</p>
- *
+ * @param <TYPE> root OAObject type used by typed value accessors
  * @see com.viaoa.object.OAObject
  * @see com.viaoa.hub.Hub
  * @see com.viaoa.filter.OAFilter
- * @see OAPropertyPathInfo
  */
 public class OAPath<TYPE extends OAObject> {
 
@@ -125,7 +81,7 @@ public class OAPath<TYPE extends OAObject> {
 	 *
 	 * <p>This value is trimmed and parsed during setup.</p>
 	 */
-	private String propertyPath;
+	private String path;
 	
 	/**
 	 * Array of resolved getter or accessor methods corresponding to the property path.
@@ -142,8 +98,7 @@ public class OAPath<TYPE extends OAObject> {
 	private boolean bLastMethodHasHubParam; // true if method requires a Hub param
 
 	/*
-	 * property class. if casting is used, then this will have the casted class. note: if the method returns a Hub, then this will be the
-	 * hub.objectClass
+	 * Resolved property class. If casting is used, then this will have the casted class. If the method returns a Hub, then this uses the Hub object class.
 	 */
 	/**
 	 * Array of resolved classes for each segment in the property path.
@@ -153,7 +108,7 @@ public class OAPath<TYPE extends OAObject> {
 	 */
 	private Class[] classes = new Class[0];
 
-	// flag that is used when data is needed to find the real classes, since generics are being used.
+	// Flag used when data is needed to find the real classes, since generics are being used.
 	/**
 	 * Flag indicating that runtime data is required to fully verify class resolution.
 	 *
@@ -231,10 +186,10 @@ public class OAPath<TYPE extends OAObject> {
 	 *
 	 * <p>This value is lazily created when requested.</p>
 	 */
-	private OAPath revPropertyPathTrue;
-	private OAPath revPropertyPathFalse;
+	private OAPath revPathTrue;
+	private OAPath revPathFalse;
 
-	// the ending propery in the property path will be one of these
+	// The ending property in the property path will be one of these.
 	/**
 	 * Metadata for the final property resolved by the property path.
 	 *
@@ -259,20 +214,20 @@ public class OAPath<TYPE extends OAObject> {
 	/**
 	 * Creates a property path using the supplied property path string.
 	 *
-	 * @param propertyPath the raw property path string to parse
+	 * @param path the raw property path string to parse
 	 */
-	public OAPath(String propertyPath) {
-		this.propertyPath = propertyPath;
+	public OAPath(String path) {
+		this.path = path;
 	}
 
 	/**
 	 * Creates a property path using a starting class and property path string.
 	 *
 	 * @param fromClass    the starting class used to resolve the property path
-	 * @param propertyPath the raw property path string to parse
+	 * @param path the raw property path string to parse
 	 */
-	public OAPath(Class<TYPE> fromClass, String propertyPath) {
-		this(fromClass, propertyPath, false);
+	public OAPath(Class<TYPE> fromClass, String path) {
+		this(fromClass, path, false);
 	}
 
 	/**
@@ -281,11 +236,11 @@ public class OAPath<TYPE extends OAObject> {
 	 * <p>If setup fails and {@code bIgnoreError} is false, an exception is thrown.</p>
 	 *
 	 * @param fromClass     the starting class used to resolve the property path
-	 * @param propertyPath  the raw property path string to parse
+	 * @param path  the raw property path string to parse
 	 * @param bIgnoreError  if true, setup errors are ignored
 	 */
-	public OAPath(Class<TYPE> fromClass, String propertyPath, boolean bIgnoreError) {
-		this.propertyPath = propertyPath;
+	public OAPath(Class<TYPE> fromClass, String path, boolean bIgnoreError) {
+		this.path = path;
 		this.fromClass = fromClass;
 
 		try {
@@ -294,10 +249,10 @@ public class OAPath<TYPE extends OAObject> {
 			try {
 				// setup(fromClass);  // for debugging only
 			} catch (Exception e2) {
-				// TODO: handle exception
+				// Keep the original setup failure as the reported exception.
 			}
 			if (!bIgnoreError) {
-				throw new IllegalArgumentException("cant setup, fromClass=" + fromClass + ", propertyPath=" + propertyPath, e);
+				throw new IllegalArgumentException("cant setup, fromClass=" + fromClass + ", path=" + path, e);
 			}
 		}
 	}
@@ -307,8 +262,8 @@ public class OAPath<TYPE extends OAObject> {
 	 *
 	 * @return the property path string
 	 */
-	public String getPropertyPath() {
-		return this.propertyPath;
+	public String getPath() {
+		return this.path;
 	}
 
 	/**
@@ -331,13 +286,13 @@ public class OAPath<TYPE extends OAObject> {
 	public OAPath getReversePath(final boolean bAllowPrivateLinks) {
 		
 		if (bAllowPrivateLinks) {
-			if (revPropertyPathTrue != null) {
-				return revPropertyPathTrue;
+			if (revPathTrue != null) {
+				return revPathTrue;
 			}
 		}
 		else {
-			if (revPropertyPathFalse != null) {
-				return revPropertyPathFalse;
+			if (revPathFalse != null) {
+				return revPathFalse;
 			}
 		}
 		
@@ -365,10 +320,10 @@ public class OAPath<TYPE extends OAObject> {
 		OAPath ppx = new OAPath(c, pp, bAllowPrivateLinks);
 
 		if (bAllowPrivateLinks) {
-			revPropertyPathTrue = ppx;
+			revPathTrue = ppx;
 		}
 		else {
-			revPropertyPathFalse = ppx;
+			revPathFalse = ppx;
 		}
 		return ppx;
 	}
@@ -405,13 +360,6 @@ public class OAPath<TYPE extends OAObject> {
 
 					if (filterParams != null && i < filterParams.length && OAString.isNotEmpty(filterParams[i])) {
 						s += "(" + filterParams[i] + ")";
-					
-/*qqqqqqqqqqqq
-  - Severity: high
-  - File/class/method: src/main/java/com/viaoa/util/OAPropertyPath.java:361
-  - Finding: Filter params are stored with parentheses, but getPropertyPathLinksOnly() adds another pair. A path like
-    orders:recent(7).item.name can become orders:recent((7)).item.
- */
 					
 					}
 				}
@@ -641,7 +589,7 @@ public class OAPath<TYPE extends OAObject> {
 	}
 
 	/*
-	 * Returns the value of the propertyPath from a base object. Notes: if any of the property's is null, then null is returned. If any of
+	 * Returns the value of the path from a base object. Notes: if any of the property's is null, then null is returned. If any of
 	 * the non-last properties is a Hub, then the AO will be used.
 	 */
 	/**
@@ -847,35 +795,26 @@ public class OAPath<TYPE extends OAObject> {
 	 */
 	public String setup(final Hub hub, Class clazz, final Class substituteClass, final boolean bIgnorePrivateLink) {
 
-/*qqqqqqqqqqqqqqqqqqq		
-	
-Severity: high
-  - Finding: setup() mutates arrays by appending and does not reset state. Calling setup() twice on the same instance
-    duplicates properties/methods/linkInfos/classes and leaves stale end metadata.
-  - Scenario: new OAPropertyPath("a.b").setup(A.class); setup(A.class); yields a corrupted path model.
-		
-*/		
-		
 		bNeedsDataToVerify = false;
 		if (clazz == null) {
 			bNeedsDataToVerify = true;
 			return "Hub.objectClass not set";
 		}
 		this.fromClass = clazz;
-		String propertyPath = this.propertyPath;
-		if (propertyPath == null) {
-			propertyPath = "";
+		String path = this.path;
+		if (path == null) {
+			path = "";
 		} else {
-			propertyPath = propertyPath.trim();
+			path = path.trim();
 		}
 
 		// 20140118 if leading with "[ClassName].", then it is the fromClass
-		int pos = propertyPath.indexOf("[");
+		int pos = path.indexOf("[");
 		if (pos >= 0) {
-			int pos2 = propertyPath.indexOf("].");
+			int pos2 = path.indexOf("].");
 			if (pos2 > 0) {
-				String fromClassName = propertyPath.substring(pos + 1, pos2);
-				propertyPath = propertyPath.substring(pos2 + 2);
+				String fromClassName = path.substring(pos + 1, pos2);
+				path = path.substring(pos2 + 2);
 
 				if (fromClassName.indexOf('.') >= 0) {
 					Class c;
@@ -906,57 +845,48 @@ Severity: high
 		}
 		clazz = this.fromClass;
 
-		String propertyPathClean = propertyPath;
+		String pathClean = path;
 		// a String that uses quotes "" could have special chars ',:()' inside of "" it
-		//qqq todo:  this wont protect against \" - need to create a tokenizer
-		
-/*qqqqqqqqqqqqqqqqqqq		
-Severity: critical
-  - File/class/method: src/main/java/com/viaoa/util/OAPropertyPath.java:851
-  - Finding: Quoted text handling can loop forever. The loop searches for " in propertyPathClean, then rebuilds
-    propertyPathClean with quotes still present, from the original propertyPath, so any path containing quoted filter
-    args can repeatedly rediscover the same quotes.
-
-*/		
+		// This placeholder handling does not escape embedded quote characters.
 		
 		for (int i = 0;; i++) {
-			int p = propertyPathClean.indexOf('\"');
+			int p = pathClean.indexOf('\"');
 			if (p < 0) {
 				break;
 			}
-			int p2 = propertyPathClean.indexOf('\"', p + 1);
+			int p2 = pathClean.indexOf('\"', p + 1);
 			if (p2 < 0) {
 				break;
 			}
 			int x = (p2 - p) - 1;
 			String s = OAString.getRandomString(x, x, false, true, false);
-			propertyPathClean = propertyPath.substring(0, p) + "\"" + s + "\"" + propertyPath.substring(p2 + 1);
+			pathClean = path.substring(0, p) + "\"" + s + "\"" + path.substring(p2 + 1);
 		}
 
 		Class classLast = clazz;
 		int posDot, prevPosDot;
 		posDot = prevPosDot = 0;
 
-		if (OAString.isEmpty(propertyPathClean)) {
+		if (OAString.isEmpty(pathClean)) {
 			posDot = -1;
 		}
 		int cnter = 0;
 		for (; posDot >= 0; prevPosDot = posDot + 1) {
 			cnter++;
 			if (cnter > 50) {
-				throw new RuntimeException("cant parse propertyPath=" + propertyPath + ", class=" + clazz);
+				throw new RuntimeException("cant parse path=" + path + ", class=" + clazz);
 			}
 
-			if (prevPosDot >= propertyPathClean.length()) {
+			if (prevPosDot >= pathClean.length()) {
 				break;
 			}
-			posDot = propertyPathClean.indexOf('.', prevPosDot);
+			posDot = pathClean.indexOf('.', prevPosDot);
 			if (posDot == 0) {
 				continue;
 			}
 
-			int posCast = propertyPathClean.indexOf('(', prevPosDot);
-			int posFilter = propertyPathClean.indexOf(':', prevPosDot);
+			int posCast = pathClean.indexOf('(', prevPosDot);
+			int posFilter = pathClean.indexOf(':', prevPosDot);
 
 			if (posCast >= 0) {
 				if (posFilter > 0 && posCast > posFilter) {
@@ -966,8 +896,8 @@ Severity: critical
 						posCast = -1;
 					} else {
 						// cast could have package name, with '.' in it
-						posDot = propertyPathClean.indexOf(')', posCast + 1);
-						posDot = propertyPathClean.indexOf('.', posDot);
+						posDot = pathClean.indexOf(')', posCast + 1);
+						posDot = pathClean.indexOf('.', posDot);
 					}
 				}
 			}
@@ -980,11 +910,11 @@ Severity: critical
 			String propertyNameClean;
 
 			if (posDot >= 0) {
-				propertyName = propertyPath.substring(prevPosDot, posDot);
-				propertyNameClean = propertyPathClean.substring(prevPosDot, posDot);
+				propertyName = path.substring(prevPosDot, posDot);
+				propertyNameClean = pathClean.substring(prevPosDot, posDot);
 			} else {
-				propertyName = propertyPath.substring(prevPosDot);
-				propertyNameClean = propertyPathClean.substring(prevPosDot);
+				propertyName = path.substring(prevPosDot);
+				propertyNameClean = pathClean.substring(prevPosDot);
 			}
 
 			String castName = null;
@@ -1100,7 +1030,7 @@ Severity: critical
 							// wait to show error
 						} else {
 							return "OAReflect.setup() cant find method. class=" + (clazz == null ? "null" : clazz.getName()) + " prop="
-									+ propertyName + " path=" + propertyPath;
+									+ propertyName + " path=" + path;
 						}
 					}
 				}
@@ -1586,7 +1516,7 @@ Severity: critical
 	}
 
 	/*
-	 * Used when fromObject is already in the propertyPath.
+	 * Used when fromObject is already in the path.
 	 *
 	 * @param fromObject object to start with
 	 * @param startPos   number of properties to skip in the PP, that aligns with fromObject's position in the PP.

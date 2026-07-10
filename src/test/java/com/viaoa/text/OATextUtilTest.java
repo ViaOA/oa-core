@@ -185,10 +185,10 @@ public class OATextUtilTest {
     @Test
     public void createPropertyPathTest() {
         // simple segments
-        assertEquals("Order.Customer", OATextUtil.createPropertyPath("Order", "Customer"));
+        assertEquals("Order.Customer", OATextUtil.createPath("Order", "Customer"));
         // null segment is skipped
-        assertEquals("Order.Customer", OATextUtil.createPropertyPath("Order", null, "Customer"));
+        assertEquals("Order.Customer", OATextUtil.createPath("Order", null, "Customer"));
         // class overload includes class-related path behavior
-        assertNotNull(OATextUtil.createPropertyPath(String.class, "bytes"));
+        assertNotNull(OATextUtil.createPath(String.class, "bytes"));
     }
 }

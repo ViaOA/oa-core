@@ -68,7 +68,7 @@ class PojoDelegateTest {
         PojoProperty prop = new PojoProperty();
         prop.setName(name);
         prop.setUpperName(name.toUpperCase());
-        prop.setPropertyPath(name);
+        prop.setPath(name);
         prop.setJavaType(String.class.getName());
         prop.setKeyPos(keyPos);
         return prop;

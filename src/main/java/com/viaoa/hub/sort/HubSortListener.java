@@ -58,7 +58,7 @@ import com.viaoa.runtime.OAThreadService;
  *   <li>Used exclusively by {@link Hub} and not intended for direct use.</li>
  *   <li>Each client maintains its own sort order; server synchronization
  *       of sorting is intentionally suppressed.</li>
- *   <li>Implements {@link java.io.Serializable} for Hub graph persistence.</li>
+ *   <li>Implements {@link java.io.Serializable} for Hub OA model persistence.</li>
  *   <li>Thread-safe under OA’s single-threaded event model; employs
  *       {@link OAThreadLocalDelegate#callThreadLocalSetSuppressCSMessages(boolean)} to
  *       prevent cross-client event storms.</li>
@@ -67,7 +67,7 @@ import com.viaoa.runtime.OAThreadService;
 public class HubSortListener<TYPE extends OAObject> extends HubListenerAdapter<TYPE> implements java.io.Serializable {
     static final long serialVersionUID = 1L;
     private static Logger LOG = Logger.getLogger(HubSortListener.class.getName()); 
-    
+
     /**
      * Internal identifier used by Hub listener registration to receive
      * notifications when sort-dependent properties change. Generated from
@@ -80,28 +80,28 @@ public class HubSortListener<TYPE extends OAObject> extends HubListenerAdapter<T
      * Each entry represents a dependent property that triggers re-sorting
      * when modified.
      */
-    private String[] sortPropertyPaths;  // parsed sort strings, used as dependent propertyPaths for hubListener
-    
+    private String[] sortPaths;  // parsed sort strings, used as dependent paths for hubListener
+
     /**
      * Original sort property-path string supplied when the listener was
      * created. May contain multiple properties separated by commas or
      * spaces, and may include optional "asc" or "desc" tokens.
      */
-    String propertyPaths;  // orig sort string
-    
+    String paths;  // orig sort string
+
     /**
      * The Hub whose ordering this listener is responsible for maintaining.
      * All property-change and list-change events are evaluated against this
      * Hub instance.
      */
     Hub<TYPE> hub;
-    
+
     /**
      * Comparator used for sorting Hub contents. If null, an OAComparator
      * will be created automatically based on the property paths.
      */
     Comparator<TYPE> comparator;
-    
+
     /**
      * Indicates whether sorting is ascending (true) or descending (false),
      * applied when OAComparator or property-path sorting is used.
@@ -113,11 +113,11 @@ public class HubSortListener<TYPE extends OAObject> extends HubListenerAdapter<T
      * Delegates to the full constructor with no explicit comparator.
      *
      * @param hub           the Hub to keep sorted
-     * @param propertyPaths property path(s) used for sorting
+     * @param paths property path(s) used for sorting
      * @param bAscending    true for ascending order, false for descending
      */
-    public HubSortListener(Hub<TYPE> hub, String propertyPaths, boolean bAscending) {
-        this(hub, null, propertyPaths, bAscending);
+    public HubSortListener(Hub<TYPE> hub, String paths, boolean bAscending) {
+        this(hub, null, paths, bAscending);
     }
 
     /**
@@ -125,10 +125,10 @@ public class HubSortListener<TYPE extends OAObject> extends HubListenerAdapter<T
      * defaulting to ascending sort order.
      *
      * @param hub           the Hub to keep sorted
-     * @param propertyPaths property path(s) used for sorting
+     * @param paths property path(s) used for sorting
      */
-    public HubSortListener(Hub<TYPE> hub, String propertyPaths) {
-        this(hub, null, propertyPaths, true);
+    public HubSortListener(Hub<TYPE> hub, String paths) {
+        this(hub, null, paths, true);
     }
 
     /**
@@ -162,19 +162,19 @@ public class HubSortListener<TYPE extends OAObject> extends HubListenerAdapter<T
      *
      * @param hub           the Hub whose sort order is maintained
      * @param comparator    custom comparator, or null for property-based sorting
-     * @param propertyPaths property-path expression for sorting
+     * @param paths property-path expression for sorting
      * @param bAscending    true for ascending sort, false for descending
      */
-    public HubSortListener(Hub<TYPE> hub, Comparator<TYPE> comparator, String propertyPaths, boolean bAscending) {
+    public HubSortListener(Hub<TYPE> hub, Comparator<TYPE> comparator, String paths, boolean bAscending) {
         this.hub = hub;
         this.comparator = comparator;
-        this.propertyPaths = propertyPaths;
+        this.paths = paths;
         this.bAscending = bAscending;
 
         if (comparator == null) {
-            setupPropertyPaths();
+            setupPaths();
             if (this.comparator == null) {
-                this.comparator = new OAComparator(hub.getObjectClass(), propertyPaths, bAscending);
+                this.comparator = new OAComparator(hub.getObjectClass(), paths, bAscending);
             }
         }
         hub.addHubListener(this); 
@@ -198,7 +198,7 @@ public class HubSortListener<TYPE extends OAObject> extends HubListenerAdapter<T
      * @return array of sort-dependent property paths, or null
      */
     public String[] getPropeties() {
-    	return sortPropertyPaths;
+    	return sortPaths;
     }
 
     /**
@@ -206,17 +206,17 @@ public class HubSortListener<TYPE extends OAObject> extends HubListenerAdapter<T
      * their existence using reflection, builds the internal property list,
      * and registers Hub listeners for dependent-property change events.
      */
-    protected void setupPropertyPaths() {
-    	if (propertyPaths == null) return;
+    protected void setupPaths() {
+    	if (paths == null) return;
 
         final Class<? extends OAObject> clazz = hub.getObjectClass();
 
-    	StringTokenizer st = new StringTokenizer(propertyPaths, ", ", true);
-        
-        sortPropertyPaths = null;
+    	StringTokenizer st = new StringTokenizer(paths, ", ", true);
+
+        sortPaths = null;
         sortPropertyName = null;
         boolean bAllowType = false;
-        
+
         for ( ; st.hasMoreElements() ; ) {
             String prop = (String) st.nextElement();
             if (prop.equals(" ")) {
@@ -243,24 +243,24 @@ public class HubSortListener<TYPE extends OAObject> extends HubListenerAdapter<T
                 LOG.log(Level.WARNING, "error getting method, will continue.  Class="+clazz+", prop="+prop, e);
                 continue;
             }
-            
-            sortPropertyPaths = (String[]) OAArray.add(String.class, sortPropertyPaths, prop);
-            
+
+            sortPaths = (String[]) OAArray.add(String.class, sortPaths, prop);
+
             if (sortPropertyName == null) sortPropertyName = "";
             else sortPropertyName += "_";
             sortPropertyName += prop.toUpperCase();
         }
 
         if (sortPropertyName != null) {
-            if (sortPropertyPaths != null && sortPropertyPaths.length == 1 && sortPropertyName.indexOf('.') < 0) {
+            if (sortPaths != null && sortPaths.length == 1 && sortPropertyName.indexOf('.') < 0) {
                 hub.addHubListener(this, sortPropertyName); // only sorting on one property in the Hub
             }
             else {
-                // use a "dummy" name that with get notified when one of the sortPropertyPaths change
+                // use a "dummy" name that with get notified when one of the sortPaths change
                 //   dont use '.' in name
                 sortPropertyName = "HUBSORT_" + sortPropertyName;  
                 sortPropertyName = sortPropertyName.replace('.', '_');  // cant have '.' in property name
-                hub.addHubListener(this, sortPropertyName, sortPropertyPaths, false, true);
+                hub.addHubListener(this, sortPropertyName, sortPaths, false, true);
             }
         }
     }
@@ -295,7 +295,7 @@ public class HubSortListener<TYPE extends OAObject> extends HubListenerAdapter<T
             }
         }
     }
-    
+
     /**
      * Guard flag used to prevent recursive calls to sortMove during
      * property-change handling. Ensures that sort adjustments occur only
@@ -328,7 +328,12 @@ public class HubSortListener<TYPE extends OAObject> extends HubListenerAdapter<T
             }
         }
     }
-    
+
+    /**
+     * Returns the Comparator value.
+     *
+     * @return the Comparator value
+     */
     public Comparator<TYPE> getComparator() {
     	return comparator;
     }

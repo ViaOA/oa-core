@@ -3,6 +3,9 @@ package com.viaoa.oa.api.services.hubs;
 import com.viaoa.hub.Hub;
 import com.viaoa.object.OAObject;
 
+/**
+ * Public OA Hub detail service operations for relationship navigation and master/detail Hub creation.
+ */
 public interface HubDetailOps {
 
     /**
@@ -17,7 +20,7 @@ public interface HubDetailOps {
      * names (for example, {@code "orders"} or {@code "orders.lineItems"}).
      * <p>
      * This is the primary verb for navigating relationships and creating
-     * master/detail structures within the Object Graph.
+     * master/detail structures within the OA model.
      *
      * @param hub the master Hub
      * @param path the property path used to navigate relationships
@@ -26,6 +29,12 @@ public interface HubDetailOps {
     Hub<?> detail(Hub<?> hub, String path);
 
     
+	/**
+	 * Preloads detail data for the object at a Hub position.
+	 *
+	 * @param thisHub the master Hub
+	 * @param pos the master object position
+	 */
     public <T extends OAObject> void preloadDetailData(final Hub<T> thisHub, final int pos);	
 	
 }

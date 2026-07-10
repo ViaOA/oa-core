@@ -11,6 +11,10 @@ import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.*;
 
+/**
+ * Provides low-level access to Hub storage and membership data.
+ */
+
 public abstract class HubDataService {
 	private final Logger LOG = Logger.getLogger(HubDataService.class.getName());
 
@@ -863,7 +867,15 @@ public abstract class HubDataService {
 	    }
 	}
 
-	
+
+	/**
+	 * Returns the changed for the supplied Hub context.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
+
+
 	public boolean getChanged(Hub<?> thisHub) {
     	return faHub.getHubData(thisHub).getChanged();
 	}
@@ -1115,30 +1127,196 @@ public abstract class HubDataService {
         return bx;
     }
 
+	/**
+	 * Dependency hook used by this service for ObjectKeyGetKey behavior.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
+
 	public abstract OAObjectKey callObjectKeyGetKey(OAObject oaObj);
+	/**
+	 * Dependency hook used by this service for ObjectKeyIsForSameOAObject behavior.
+	 *
+	 * @param clazz method input
+	 * @param ok1 method input
+	 * @param ok2 method input
+	 * @return result value
+	 */
 	public abstract boolean callObjectKeyIsForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey ok1, final OAObjectKey ok2);
+	/**
+	 * Dependency hook used by this service for ObjectReflectGetObject behavior.
+	 *
+	 * @param clazz method input
+	 * @param key method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callObjectReflectGetObject(Class<T> clazz, Object key);
+	/**
+	 * Dependency hook used by this service for ObjectHubAddHub behavior.
+	 *
+	 * @param oaObj method input
+	 * @param hub method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> boolean callObjectHubAddHub(T oaObj, Hub<T> hub);
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetRecursiveLinkInfo behavior.
+	 *
+	 * @param thisOI method input
+	 * @param type method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callObjectInfoGetRecursiveLinkInfo(OAObjectInfo thisOI, int type);
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetReverseLinkInfo behavior.
+	 *
+	 * @param thisLi method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi);
+	/**
+	 * Dependency hook used by this service for ObjectReflectGetProperty behavior.
+	 *
+	 * @param oaObj method input
+	 * @param propPath method input
+	 * @return result value
+	 */
 	public abstract Object callObjectReflectGetProperty(OAObject oaObj, String propPath);
+	/**
+	 * Dependency hook used by this service for ObjectCacheGet behavior.
+	 *
+	 * @param clazz method input
+	 * @param key method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callObjectCacheGet(Class<T> clazz, Object key);
+	/**
+	 * Dependency hook used by this service for ObjectHubIsAlreadyInHub behavior.
+	 *
+	 * @param oaObj method input
+	 * @param hubFind method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> boolean callObjectHubIsAlreadyInHub(T oaObj, Hub<T> hubFind);
+	/**
+	 * Dependency hook used by this service for ObjectKeyCreateObjectKey behavior.
+	 *
+	 * @param c method input
+	 * @param ids method input
+	 * @return result value
+	 */
 	public abstract OAObjectKey callObjectKeyCreateObjectKey(final Class<? extends OAObject> c, final Object ...ids);
+	/**
+	 * Dependency hook used by this service for HubCSClearHubChanges behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract boolean callHubCSClearHubChanges(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubDetailSetPropertyToMasterHub behavior.
+	 *
+	 * @param thisHub method input
+	 * @param detailObject method input
+	 * @param objMaster method input
+	 */
 	public abstract <T extends OAObject> void callHubDetailSetPropertyToMasterHub(Hub<T> thisHub, T detailObject, OAObject objMaster);
+	/**
+	 * Dependency hook used by this service for HubSelectIsMoreData behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract boolean callHubSelectIsMoreData(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubSelectFetchMore behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract int callHubSelectFetchMore(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubFindGetRealObject behavior.
+	 *
+	 * @param hub method input
+	 * @param object method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callHubFindGetRealObject(Hub<T> hub, Object object);
+	/**
+	 * Dependency hook used by this service for HubShareSetSharedHub behavior.
+	 *
+	 * @param thisHub method input
+	 * @param sharedMasterHub method input
+	 * @param shareActiveObject method input
+	 */
 	public abstract <T extends OAObject> void callHubShareSetSharedHub(Hub<T> thisHub, Hub<T> sharedMasterHub, boolean shareActiveObject);
+	/**
+	 * Dependency hook used by this service for HubShareSetSharedHub behavior.
+	 *
+	 * @param thisHub method input
+	 * @param sharedMasterHub method input
+	 * @param shareActiveObject method input
+	 * @param newLinkValue method input
+	 */
 	public abstract <T extends OAObject> void callHubShareSetSharedHub(Hub<T> thisHub, Hub<T> sharedMasterHub, boolean shareActiveObject, Object newLinkValue);
+	/**
+	 * Dependency hook used by this service for HubDetailSetMasterHubActiveObject behavior.
+	 *
+	 * @param thisHub method input
+	 * @param detailObject method input
+	 * @param bUpdateLink method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> boolean callHubDetailSetMasterHubActiveObject(Hub<T> thisHub, T detailObject, boolean bUpdateLink);
+	/**
+	 * Dependency hook used by this service for ThreadLocalLock behavior.
+	 *
+	 * @param object method input
+	 */
 	public abstract void callThreadLocalLock(Object object);
+	/**
+	 * Dependency hook used by this service for ThreadLocalUnlock behavior.
+	 *
+	 * @param object method input
+	 */
 	public abstract void callThreadLocalUnlock(Object object);
+	/**
+	 * Dependency hook used by this service for RemoteThreadStartNextThread behavior.
+	 */
 	public abstract void callRemoteThreadStartNextThread();
+	/**
+	 * Dependency hook used by this service for ThreadLocalIsLoading behavior.
+	 *
+	 * @return result value
+	 */
 	public abstract boolean callThreadLocalIsLoading();
+	/**
+	 * Dependency hook used by this service for SyncIsClient behavior.
+	 *
+	 * @return result value
+	 */
 	public abstract boolean callSyncIsClient();
+	/**
+	 * Dependency hook used by this service for HubDataGetCurrentSize behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract int callHubDataGetCurrentSize(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubShareGetSharedWeakHubSize behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract int callHubShareGetSharedWeakHubSize(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubStatusSetChanged behavior.
+	 *
+	 * @param thisHub method input
+	 * @param b method input
+	 */
 	public abstract void callHubStatusSetChanged(Hub<?> thisHub, boolean b);
 }

@@ -60,25 +60,25 @@ public class HubCombined<TYPE extends OAObject> {
 	 * master hub.
 	 */
 	protected final ArrayList<Hub<TYPE>> alHub = new ArrayList<>();
-	
+
 	/**
 	 * List of listeners attached to each tracked source hub to relay
 	 * changes to the master hub.
 	 */
 	protected ArrayList<HubListener<TYPE>> alHubListener;
-	
+
 	/**
 	 * Listener attached to the master hub to propagate its changes
 	 * back to source hubs when appropriate.
 	 */
 	protected final HubListener<TYPE> hlMaster;
-	
+
 	/**
 	 * Holds the first hub added to the combined collection, used for
 	 * handling add-back behavior and active-object propagation logic.
 	 */
 	protected Hub<TYPE> hubFirst;
-	
+
 	/**
 	 * Flag indicating whether the master hub is currently being
 	 * updated, used to prevent recursive or duplicate event handling.
@@ -104,6 +104,10 @@ public class HubCombined<TYPE extends OAObject> {
 
 		hlMaster = new HubListenerAdapter<TYPE>(this, "HubCombined.hubMaster", "") {
 			@Override
+			/**
+			 * Handles the Hub after-add event.
+			 * @param e the Hub event
+			 */
 			public void afterAdd(HubEvent<TYPE> e) {
 				if (bUpdatingMasterHub) {
 					return;
@@ -127,11 +131,19 @@ public class HubCombined<TYPE extends OAObject> {
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-insert event.
+			 * @param e the Hub event
+			 */
 			public void afterInsert(HubEvent<TYPE> e) {
 				afterAdd(e);
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-remove event.
+			 * @param e the Hub event
+			 */
 			public void afterRemove(HubEvent<TYPE> e) {
 				if (bUpdatingMasterHub) {
 					return;
@@ -143,6 +155,10 @@ public class HubCombined<TYPE extends OAObject> {
 			}
 
 			@Override
+			/**
+			 * Handles the Hub before-remove-all event.
+			 * @param e the Hub event
+			 */
 			public void beforeRemoveAll(HubEvent<TYPE> e) {
 				if (bUpdatingMasterHub) {
 					return;
@@ -221,6 +237,10 @@ public class HubCombined<TYPE extends OAObject> {
 
 		HubListener hl = new HubListenerAdapter(this, "HubCombined.object", "") {
 			@Override
+			/**
+			 * Handles the Hub property-change event.
+			 * @param e the Hub event
+			 */
 			public void afterPropertyChange(HubEvent e) {
 				if (!property.equalsIgnoreCase(e.getPropertyName())) {
 					return;
@@ -255,6 +275,10 @@ public class HubCombined<TYPE extends OAObject> {
 
 		HubListener hl = new HubListenerAdapter<TYPE>() {
 			@Override
+			/**
+			 * Handles the Hub after-add event.
+			 * @param e the Hub event
+			 */
 			public void afterAdd(HubEvent<TYPE> e) {
 				try {
 					bUpdatingMasterHub = true;
@@ -265,11 +289,19 @@ public class HubCombined<TYPE extends OAObject> {
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-insert event.
+			 * @param e the Hub event
+			 */
 			public void afterInsert(HubEvent<TYPE> e) {
 				afterAdd(e);
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-remove event.
+			 * @param e the Hub event
+			 */
 			public void afterRemove(HubEvent<TYPE> e) {
 				TYPE obj = e.getObject();
 				boolean bUsed = false;
@@ -290,11 +322,19 @@ public class HubCombined<TYPE extends OAObject> {
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-remove-all event.
+			 * @param e the Hub event
+			 */
 			public void afterRemoveAll(HubEvent<TYPE> e) {
 				onNewList(e);
 			}
 
 			@Override
+			/**
+			 * Handles replacement or refresh of the Hub list.
+			 * @param e the Hub event
+			 */
 			public void onNewList(HubEvent<TYPE> e) {
 				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 				boolean bWasLoading = srvcOAThreadLocal.setLoading(true);

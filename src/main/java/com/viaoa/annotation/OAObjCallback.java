@@ -23,21 +23,6 @@ import java.lang.annotation.Target;
 
 import com.viaoa.callback.OAObjectCallback;
 
-/*qqqqqqqqqqqqqqqqqqq
-CODEX
-
-1. src/main/java/com/viaoa/annotation/OAObjCallback.java:109 supportedTypes
-     Bug/risk: supportedTypes() is declared as runtime metadata but appears unused by the annotation processing path.
-     Production/runtime impact: a model can declare callback type restrictions, but OAObjectAnnotationService copies
-     enabled/visible/context metadata and never consumes supportedTypes. Runtime callback dispatch can therefore
-     behave broader than the annotation contract implies, causing wrong enabled/visible behavior or callbacks being
-     invoked for unsupported checks.
-     Severity: Medium
-     Minimal hardening: load supportedTypes() into the relevant metadata object or remove/explicitly document it as
-     non-runtime metadata. Add validation that flags non-empty supportedTypes when no consumer exists.
-
-
-*/
 
 /**
  * Declares a method or class-level callback used by {@link OAObjectCallback}
@@ -46,7 +31,7 @@ CODEX
  * <p>The annotation supports:
  * <ul>
  *   <li>Property-based enable/visible rules</li>
- *   <li>Context-based rules tied to surrounding objects</li>
+ *   <li>Model-user based rules tied to generated permission objects</li>
  *   <li>Dependent property paths (triggers recalculation)</li>
  *   <li>Expected callback types (AllowEnabled, AllowVisible, etc.)</li>
  * </ul>
@@ -83,26 +68,26 @@ public @interface OAObjCallback {
 	boolean visibleValue() default true;
 
 	/**
-	 * Property evaluated on the surrounding context object to determine
+	 * Property evaluated on the current model user object to determine
 	 * whether the annotated method or class should be enabled.
 	 */
 	String modelUserEnabledProperty() default "";
 
 	/**
-	 * Specifies the value of {@code contextEnabledProperty} that results
-	 * in the method or class being considered enabled within context.
+	 * Specifies the value of {@code modelUserEnabledProperty} that results
+	 * in the method or class being considered enabled for the current model user.
 	 */
 	boolean modelUserEnabledValue() default true;
 
 	/**
-	 * Property evaluated on the surrounding context object to determine
+	 * Property evaluated on the current model user object to determine
 	 * whether the annotated method or class should be visible.
 	 */
 	String modelUserVisibleProperty() default "";
 
 	/**
-	 * Specifies the value of {@code contextVisibleProperty} that results
-	 * in the method or class being considered visible within context.
+	 * Specifies the value of {@code modelUserVisibleProperty} that results
+	 * in the method or class being considered visible for the current model user.
 	 */
 	boolean modelUserVisibleValue() default true;
 
@@ -113,7 +98,7 @@ public @interface OAObjCallback {
 	String[] viewDependentProperties() default {};
 
 	/**
-	 * Lists context-level properties whose changes should trigger
+	 * Lists model-user level properties whose changes should trigger
 	 * reevaluation of UI state for the annotated element.
 	 */
 	String[] modelUserDependentProperties() default {};

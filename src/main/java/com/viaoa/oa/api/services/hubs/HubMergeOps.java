@@ -4,6 +4,9 @@ import com.viaoa.hub.Hub;
 import com.viaoa.hub.merge.HubMerger;
 import com.viaoa.object.OAObject;
 
+/**
+ * Public OA Hub merge service operations for maintaining live relationship-path merged Hub views.
+ */
 public interface HubMergeOps {
 
     /**

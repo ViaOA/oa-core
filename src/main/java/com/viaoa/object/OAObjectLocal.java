@@ -18,22 +18,14 @@ package com.viaoa.object;
 import com.viaoa.metadata.OAObjectInfo;
 
 /**
- * Base class for transient or local-only {@link OAObject} instances
- * that are excluded from persistence, caching, and initialization.
- *
- * <p>Used for view-model or UI-state objects that still need full
- * Hub and property-change behavior but should never touch a data source.</p>
- *
- * <p><b>Configuration</b> (applied in static initializer):
- * <ul>
- *   <li>{@code setLocalOnly(true)}</li>
- *   <li>{@code setUseDataSource(false)}</li>
- *   <li>{@code setAddToCache(false)}</li>
- *   <li>{@code setInitializeNewObjects(false)}</li>
- * </ul>
- *
- * <p>This provides a lightweight object type for transient logic within
- * an otherwise persistent OA graph.</p>
+ * Base class for transient or local-only {@link OAObject} instances.
+ * <p>
+ * This type is useful for view-model, UI-state, or process-state objects that
+ * need normal OAObject property and Hub behavior but should not be persisted,
+ * cached, or automatically initialized as persistent model objects.
+ * <p>
+ * Its static metadata marks the class as local-only, datasource-disabled,
+ * cache-disabled, and initialization-disabled.
  */
 public class OAObjectLocal extends OAObject {
 

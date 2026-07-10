@@ -66,7 +66,7 @@ public class HubShareAO<TYPE extends OAObject> extends HubListenerAdapter<TYPE> 
 	 * Changes to this Hub’s Active Object may propagate to {@code hub2}.
 	 */
 	private Hub<TYPE> hub1;
-	
+
 	/**
 	 * The second Hub participating in Active Object synchronization.
 	 * Changes to this Hub’s Active Object may propagate to {@code hub1},
@@ -90,7 +90,7 @@ public class HubShareAO<TYPE extends OAObject> extends HubListenerAdapter<TYPE> 
         hub1.addHubListener(this);
         if (!bOneWayOnly) hub2.addHubListener(this);
     }
-	
+
     /**
      * Creates a bidirectional Active Object synchronizer for the two Hubs.
      *
@@ -118,7 +118,7 @@ public class HubShareAO<TYPE extends OAObject> extends HubListenerAdapter<TYPE> 
         if (h == hub1) hub2.setAO(obj);
         else if (h == hub2) hub1.setAO(obj);
     }
-	
+
     /**
      * Detaches this listener from both Hubs, stopping AO synchronization and
      * preventing memory leaks.
@@ -127,7 +127,7 @@ public class HubShareAO<TYPE extends OAObject> extends HubListenerAdapter<TYPE> 
         hub1.removeHubListener(this);
         hub2.removeHubListener(this);
 	}
-	
+
 	/**
 	 * Returns the first Hub participating in synchronization.
 	 *

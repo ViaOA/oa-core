@@ -397,7 +397,7 @@ CODEX
  * <p>
  * The template engine itself performs only simple index scanning and substring
  * slicing. It does <b>not</b> use reflection internally. However, many callers
- * — notably OA-Web and OAPropertyPath-based evaluations — may use reflection
+ * — notably OA-Web and OAPath-based evaluations — may use reflection
  * when resolving template variables. This allows template placeholders to
  * reference dynamic object graph values (e.g. <code>${customer.address.city}</code>)
  * while keeping the template parser extremely lightweight.
@@ -408,7 +408,7 @@ CODEX
  *   <li><b>Deterministic:</b> parsed strictly left-to-right.</li>
  *   <li><b>Flexible:</b> variable resolution is caller-defined.</li>
  *   <li><b>Low overhead:</b> designed for high-throughput scenarios.</li>
- *   <li><b>Integrates cleanly with OAPropertyPath:</b> callers can resolve
+ *   <li><b>Integrates cleanly with OAPath:</b> callers can resolve
  *       variables via reflection-based property path evaluation.</li>
  * </ul>
  *
@@ -1464,7 +1464,7 @@ public class OATemplate<F extends OAObject> {
 	                    final Map<String, Integer> hmPropertyToColumn = new HashMap();
                         int col = 0;
                         for (OAMatrix.Column colx : og.getColumns()) {
-                            String spp = og.getPropertyPathFromRoot(colx, "");
+                            String spp = og.getPathFromRoot(colx, "");
                             hmPropertyToColumn.put(spp, col);
                             col++;
                         }
@@ -1747,7 +1747,7 @@ public class OATemplate<F extends OAObject> {
                     if (colFound != null) {
                         if (colx.getFromColumn() != colFound) continue;
                     }
-                    String sppx = colx.getPropertyPath();
+                    String sppx = colx.getPath();
                     if (OAStr.isEmpty(sppx)) continue;
                     if (sppx.equalsIgnoreCase(li.getName())) {
                         colFound = colx;
@@ -1829,7 +1829,7 @@ public class OATemplate<F extends OAObject> {
 	 * @param width optional max width to truncate the result
 	 * @param fmt optional output format
 	 * @param props external property map for $name resolution
-	 * @param bUseFormat true to apply default format from OAPropertyPath
+	 * @param bUseFormat true to apply default format from OAPath
 	 * @return resolved value as a string, never null
 	 */
 	protected String getValue(OAObject obj, String propertyName, int width, String fmt, OAProperties props, boolean bUseFormat) {

@@ -19,7 +19,7 @@ import java.lang.reflect.*;
 import java.util.IdentityHashMap;
 
 /**
- * Utility for recursively searching an arbitrary object graph for null values.
+ * Utility for recursively searching an arbitrary object structure for null values.
  * The search inspects all non-static, non-transient fields (including private
  * fields) and follows references using reflection. Arrays are traversed by
  * element index. <p>
@@ -59,7 +59,7 @@ public class OAFindNull {
     /**
      * Recursively inspects the given object and its references for null values.
      *
-     * @param propertyPath the current property path being inspected
+     * @param propertyPath the current path being inspected
      * @param obj the current object reference
      * @return true if a null value was found
      * @throws IllegalAccessException if field access fails
@@ -96,7 +96,7 @@ public class OAFindNull {
     /**
      * Inspects all eligible fields of the given object for null values.
      *
-     * @param propertyPath the current property path being inspected
+     * @param propertyPath the current path being inspected
      * @param obj the object whose fields are inspected
      * @return true if a null value was found in any field
      * @throws IllegalAccessException if field access fails
@@ -119,7 +119,7 @@ public class OAFindNull {
     /**
      * Callback invoked when a null value is found at the given property path.
      *
-     * @param propertyPath the property path where a null value was encountered
+     * @param propertyPath the path where a null value was encountered
      * @return true to continue searching, false to stop
      */
     public boolean foundOne(String propertyPath) {

@@ -26,7 +26,7 @@ import com.viaoa.session.OASessionUser;
  * The constructor snapshots the current context from
  * {@link com.viaoa.object.OAThreadLocalDelegate#getContext()}, restores it at
  * the beginning of {@link #run()}, and clears it when the task completes. This
- * ensures that background work has access to the same OAObjectGraph,
+ * ensures that background work has access to the same OA model,
  * user/session information, or other context bound to the originating thread. <p>
  *
  * Also provides utility sleep methods (delay, yield, sleepUntil) that wrap

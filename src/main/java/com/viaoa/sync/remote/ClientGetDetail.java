@@ -33,82 +33,18 @@ import com.viaoa.runtime.OAThreadService;
 import com.viaoa.serialize.OAObjectSerializer;
 
 
-/*qqqqqqqqqqqqqq
-CODEX
-
-1. src/main/java/com/viaoa/sync/remote/ClientGetDetail.java:622
-
-  Concrete bug:
-  shouldSerializeReference(...) decides whether an OAObject reference has already been sent by looking up hmGuid using
-  the owning object’s key:
-
-  OAObjectKey key = ... callObjectKeyGetKey(oaObj);
-  ...
-  UUID guid = key.getGuid();
-  Object objx = hmGuid.get(guid);
-
-  It should be checking the referenceValue object’s GUID.
-
-  Runtime scenario:
-  Server serializes a detail graph where oaObj was already fully sent to the client, but one of its reference
-  properties points to an OAObject the client does not have. Because hmGuid is checked with oaObj’s GUID, the callback
-  can return false and serialize only an OAObjectKey for the reference.
-
-  Why this violates OA/OG sync semantics:
-  The client can receive a reference key for an object it does not have, leaving an unresolved/missing reference after
-  a successful detail response.
-
-  Minimal fix direction:
-  For the non-Hub OAObject reference branch, derive the GUID from referenceValue, not oaObj.
-
-  Suggested CODEX comment location:
-  ClientGetDetail.createOAObjectSerializerCallback().shouldSerializeReference(...), around lines 718-723.
-
-  Suggested regression test:
-  testGetDetailSerializesReferenceObjectWhenOwnerWasPreviouslyFullySentButReferenceIsNewToClient()
-
-
-1. file/class/method
-     src/main/java/com/viaoa/sync/remote/ClientGetDetail.java:200
-     ClientGetDetail.getDetail(...)
-
-  concrete bug
-  When the server cache misses the masterObject, the method reloads it from datasource using masterObjectKey, but does
-  not preserve/reassign the requested GUID.
-
-  runtime scenario
-  Client lazy-loads a detail property for a master object. Server cache has GC’d the master, so
-  ds.getObject(masterClass, masterObjectKey) reloads it. If datasource hydration creates a new runtime GUID, the
-  detail response is built from an object whose GUID no longer matches the client’s requested master key.
-
-  why this violates OA/OG sync semantics
-  Detail loading is keyed by client/server object identity. If the server reload path changes GUID identity,
-  serialized detail data, sibling data, and future sync filtering can refer to a different runtime object identity
-  than the client requested.
-
-  minimal fix direction
-  After datasource reload, preserve the masterObjectKey GUID on the loaded object, or use a cache/datasource path that
-  guarantees GUID preservation.
-
-  suggested CODEX comment location
-  ClientGetDetail.getDetail(...), immediately after masterObject = ds.getObject(masterClass, masterObjectKey).
-
-
-
-
-*/
 
 /**
  * Server-side helper used during {@code RemoteClient.getDetail(...)} operations.
  * <p>
- * {@code ClientGetDetail} is responsible for constructing the object graph that
+ * {@code ClientGetDetail} is responsible for constructing the OA model that
  * should be returned to a client when it requests the value of a reference
  * property or hub (detail) from a master object. It determines:
  * <ul>
  *   <li>the master object and its siblings,</li>
  *   <li>the requested property value,</li>
  *   <li>which additional related objects must be sent so that the client
- *       receives a consistent subset of the object graph,</li>
+ *       receives a consistent subset of the OA model,</li>
  *   <li>how much reference depth should be loaded for master and detail
  *       objects,</li>
  *   <li>what extra data (e.g., sibling values) must accompany the response,</li>
@@ -248,7 +184,6 @@ public class ClientGetDetail {
 		Hub hubHold = new Hub(masterClass);
 		hubHold.add(masterObject);
 		if (siblingKeys != null) {
-	    	//final OA oa = OARuntime.graph(masterClass);
 			for (OAObjectKey key : siblingKeys) {
 				OAObject obj = (OAObject) oa.internal().objects().cache().get(masterClass, key);
 				if (obj != null) {
@@ -415,7 +350,7 @@ public class ClientGetDetail {
 				}
 
 				if (bLoad) {
-					// final OA og2 = OARuntime.graph(obj);
+					// final OA og2 = OARuntime.oa(obj);
 					value = oa.internal().objects().reflect().getProperty(obj, propFromMaster); // load from DS
 				} else if (value instanceof OAObjectKey) {
 					continue;
@@ -507,6 +442,10 @@ public class ClientGetDetail {
 			// keep track of which objects are being sent to client in this serialization
 			HashSet<UUID> hsSendingGuid = new HashSet();
 
+			/**
+			 * Tracks objects after they are serialized for a client detail response.
+			 * @param obj serialized object
+			 */
 			@Override
 			public void afterSerialize(OAObject obj) {
 				final OA oa = OARuntime.oa(obj);
@@ -517,6 +456,10 @@ public class ClientGetDetail {
 			}
 
 			// this will "tell" OAObjectSerializer which reference properties to include with each OAobj
+			/**
+			 * Prepares an object before it is serialized for a client detail response.
+			 * @param obj object about to be serialized
+			 */
 			@Override
 			public void beforeSerialize(final OAObject obj) {
 				// parent object - will send all references

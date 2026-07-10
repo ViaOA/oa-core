@@ -21,64 +21,17 @@ import com.viaoa.sync.remote.RemoteServerInterface;
 import com.viaoa.sync.remote.RemoteSessionInterface;
 import com.viaoa.sync.remote.RemoteSyncInterface;
 
-/*qqqqqqqqq
-CODEX
-
-#4 — invariant risk
-  File/class/method: src/main/java/com/viaoa/graph/service/OASyncService.java:80, createSingleUser/createServer/
-  createClient/start/stop
-  Exact concern: sync lifecycle state is mutable but not synchronized.
-  Why it matters: concurrent role setup can race across bSingleUser, syncServer, syncClient, and bStarted. Sync role
-  must be deterministic for graph runtime, remote, and replication behavior.
-  Minimal fix: synchronize lifecycle methods or use a single lifecycle lock.
-  Suggested invariant: GRAPH_SYNC_ROLE_TRANSITIONS_ARE_ATOMIC
-  Suggested test coverage: concurrent server/client/single-user creation and start/stop leave exactly one valid
-  state.
-
- #5 — bug
-  File/class/method: src/main/java/com/viaoa/graph/service/OASyncService.java:345, getClientInfo()
-  Exact concern: getClientInfo() calls getClient().getClientInfo() with no role guard.
-  Why it matters: valid non-client states produce an NPE instead of a controlled role error or null result.
-  Minimal fix: return null or throw a clear “sync client not configured” exception.
-  Suggested invariant: GRAPH_SYNC_CLIENT_OPS_REQUIRE_CLIENT_ROLE
-  Suggested test coverage: call getClientInfo() in single-user, server, unconfigured, and client modes.
-  
- #6 — bug
-  File/class/method: src/main/java/com/viaoa/graph/service/OASyncService.java:358, saveCache(...)
-  Exact concern: saveCache calls getServer().saveCache(...) with no server guard.
-  Why it matters: valid client/single-user states can NPE through the internal sync API.
-  Minimal fix: guard with isServer() or throw a clear server-role exception.
-  Suggested invariant: GRAPH_SYNC_SERVER_OPS_REQUIRE_SERVER_ROLE
-  Suggested test coverage: saveCache in server mode succeeds; non-server modes fail predictably.  
-  
-5. src/main/java/com/viaoa/graph/service/OASyncService.java:138
-
-  Concrete bug:
-  OASyncService.start() sets bRunning = true only after syncServer.start() or syncClient.start() completes. If startup
-  partially allocates resources and then throws, bRunning remains false, and OASyncService.stop() immediately returns
-  without cleanup.
-
-  Runtime scenario:
-  Server or client startup starts sockets/threads/files, then fails later in the startup sequence. Caller catches the
-  startup exception and calls OASyncService.stop() to clean up. stop() returns because bRunning is false.
-
-  Why this violates sync semantics:
-  Partial startup failure can leave sync/remote resources running while the service reports not running and refuses
-  cleanup.
-
-  Minimal fix direction:
-  Track “starting/resources allocated” separately, or make start() cleanup in its own catch. stop() should be able to
-  clean partially-started server/client resources.
-
-  Suggested CODEX comment location:
-  OASyncService.start() and stop() around the bRunning guard.
-
-  Suggested regression test:
-  testOASyncServiceStopCleansUpAfterPartialStartFailure()
-  
-*/
 
 
+
+/**
+ * Coordinates OA synchronization role and remote access for one OA runtime.
+ * <p>
+ * The service can be configured as server or client, exposes the remote sync
+ * interfaces used by OA services, and provides role/status helpers used by
+ * object, Hub, replication, and datasource paths.
+ * </p>
+ */
 public class OASyncService implements SyncInternalOps, SyncOps {
 	private static final Logger LOG = Logger.getLogger(OASyncService.class.getName());
 	
@@ -119,10 +72,21 @@ public class OASyncService implements SyncInternalOps, SyncOps {
 	private volatile boolean bRunning; 
 	
 	
+	/**
+	 * Creates a synchronization service for an OA runtime.
+	 *
+	 * @param og owning OA runtime
+	 */
 	public OASyncService(OA og) {
 		this.og = og;
 	}
 
+	/**
+	 * Configures this sync service as a server listening on the supplied port.
+	 *
+	 * @param port server port
+	 * @throws RuntimeException if a sync client or server has already been created
+	 */
 	@Override
     public void createServer(int port) {
 		if (syncClient != null) throw new RuntimeException("Sync Client already created");
@@ -131,6 +95,13 @@ public class OASyncService implements SyncInternalOps, SyncOps {
         syncServer.setInvalidConnectionMessage("Invalid connection, must use OAMultiplexer");
     }
 	
+	/**
+	 * Configures this sync service as a client connected to the supplied server.
+	 *
+	 * @param serverName server host name
+	 * @param port server port
+	 * @throws RuntimeException if a sync client or server has already been created
+	 */
 	@Override
     public void createClient(String serverName, int port) {
 		if (syncClient != null) throw new RuntimeException("Sync Client already created");
@@ -156,6 +127,11 @@ public class OASyncService implements SyncInternalOps, SyncOps {
     	};
     }
 	
+	/**
+	 * Starts the configured sync server or client.
+	 *
+	 * @throws Exception when startup fails or the service is already running
+	 */
 	@Override
 	public void start() throws Exception {
 		if (bRunning) throw new Exception("already running");
@@ -171,11 +147,21 @@ public class OASyncService implements SyncInternalOps, SyncOps {
 		bRunning = true;
 	}
 
+	/**
+	 * Returns whether the sync server or client has been started.
+	 *
+	 * @return {@code true} when running
+	 */
 	@Override
 	public boolean isRunning() {
 		return bRunning;
 	}
 	
+	/**
+	 * Stops the active sync server or client when running.
+	 *
+	 * @throws Exception when shutdown fails
+	 */
 	@Override
 	public void stop() throws Exception {
 		if (!bRunning) return;
@@ -361,18 +347,34 @@ public class OASyncService implements SyncInternalOps, SyncOps {
 		return ss == null && sc == null;
 	}
 
+	/**
+	 * Returns whether this service is configured with a sync server.
+	 *
+	 * @return {@code true} when server role is configured
+	 */
 	@Override
 	public boolean isServer() {
 		OASyncServer ss = getServer();
 		return (ss != null);
 	}
 	
+	/**
+	 * Returns whether this service is configured with a sync client.
+	 *
+	 * @return {@code true} when client role is configured
+	 */
 	@Override
 	public boolean isClient() {
 		OASyncClient sc = getClient();
 		return (sc != null);
 	}
 	
+	/**
+	 * Sends an exception to the active remote session, when one is available.
+	 *
+	 * @param msg message describing the client-side exception
+	 * @param ex exception to send
+	 */
 	@Override
 	public void sendException(String msg, Throwable ex) {
 		RemoteSessionInterface rci = getRemoteSession();
@@ -381,6 +383,11 @@ public class OASyncService implements SyncInternalOps, SyncOps {
 		}
 	}
 
+	/**
+	 * Returns sync client information for the active client role.
+	 *
+	 * @return client information, or {@code null} when no client is configured
+	 */
 	@Override
 	public ClientInfo getClientInfo() {
 		OASyncClient sc = getClient(); 
@@ -388,6 +395,11 @@ public class OASyncService implements SyncInternalOps, SyncOps {
 		return sc.getClientInfo();
 	}
 
+	/**
+	 * Updates client information through the active remote session.
+	 *
+	 * @param ci client information to update
+	 */
 	@Override
 	public void updateClientInfo(ClientInfo ci) {
 		RemoteSessionInterface rsi = getRemoteSession();
@@ -396,11 +408,20 @@ public class OASyncService implements SyncInternalOps, SyncOps {
 		}
 	}
 
+	/**
+	 * Requests server-side cache save processing.
+	 *
+	 * @param cascade cascade tracker
+	 * @param iCascadeRule cascade rule to apply
+	 */
 	@Override
 	public void saveCache(OACascade cascade, int iCascadeRule) {
 		getServer().saveCache(cascade, iCascadeRule);		
 	}
 
+	/**
+	 * Performs distributed garbage collection when this service is in server role.
+	 */
 	@Override
 	public void performDGC() {
 		if (isServer()) {
@@ -409,6 +430,12 @@ public class OASyncService implements SyncInternalOps, SyncOps {
 	}
 
 
+	/**
+	 * Requests a remote client refresh for an object.
+	 *
+	 * @param class1 object class
+	 * @param objectKey object key
+	 */
 	@Override
 	public void callRemoteClientRefresh(Class<? extends OAObject> class1, OAObjectKey objectKey) {
 		if (syncClient == null) return;
@@ -420,6 +447,13 @@ public class OASyncService implements SyncInternalOps, SyncOps {
 		}
 	}
 
+	/**
+	 * Requests a remote client refresh for an object link.
+	 *
+	 * @param class1 object class
+	 * @param objectKey object key
+	 * @param linkPropertyName link property to refresh
+	 */
 	@Override
 	public void callRemoteClientRefresh(Class<? extends OAObject> class1, OAObjectKey objectKey, String linkPropertyName) {
 		if (syncClient == null) return;
@@ -431,11 +465,21 @@ public class OASyncService implements SyncInternalOps, SyncOps {
 		}
 	}
 
+	/**
+	 * Sets an existing sync server instance.
+	 *
+	 * @param ss sync server to use
+	 */
 	@Override
 	public void createServer(OASyncServer ss) {
 		syncServer = ss;
 	}
 
+	/**
+	 * Sets an existing sync client instance.
+	 *
+	 * @param sc sync client to use
+	 */
 	@Override
 	public void createClient(OASyncClient sc) {
 		syncClient = sc;

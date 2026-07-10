@@ -23,6 +23,9 @@ CODEX
 public abstract class OAObjectKeyService {
 	private static final Logger LOG = Logger.getLogger(OAObjectKeyService.class.getName());
 
+	/**
+	 * Performs OAObjectKeyService behavior for the OA object service.
+	 */
 	public OAObjectKeyService() {
 	}
 
@@ -143,6 +146,12 @@ public abstract class OAObjectKeyService {
 		return createObjectKey((OAObjectInfo) null, new Object[] {id}, (UUID) null);
 	}
 
+	/**
+	 * Performs createObjectKey behavior for the OA object service.
+	 *
+	 * @param guid method input
+	 * @return result value
+	 */
 	public OAObjectKey createObjectKey(UUID guid) {
 		if (guid == null) return null;
 		return createObjectKey((OAObjectInfo) null, (Object[]) null, guid);
@@ -219,14 +228,35 @@ public abstract class OAObjectKeyService {
 		return false;
 	}
 
+	/**
+	 * Performs hasSameGuid behavior for the OA object service.
+	 *
+	 * @param a method input
+	 * @param b method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public boolean hasSameGuid(final OAObjectKey a, final OAObjectKey b) {
 	    return a != null && b != null && Objects.equals(a.getGuid(), b.getGuid());
 	}
 
+	/**
+	 * Performs hasSameIds behavior for the OA object service.
+	 *
+	 * @param a method input
+	 * @param b method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public boolean hasSameIds(final OAObjectKey a, final OAObjectKey b) {
 	    return a != null && b != null && Arrays.equals(a.getObjectIds(), b.getObjectIds());
 	}
 
+	/**
+	 * Performs guidMatchesButIdsDiffer behavior for the OA object service.
+	 *
+	 * @param a method input
+	 * @param b method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public boolean guidMatchesButIdsDiffer(final OAObjectKey a, final OAObjectKey b) {
 	    if (a == null || b == null) return false;
 	    UUID g1 = a.getGuid(), g2 = b.getGuid();
@@ -538,30 +568,154 @@ public abstract class OAObjectKeyService {
 		return null;
 	}
 
+	/**
+	 * Dependency hook used by this service to cacheGet.
+	 *
+	 * @param clazz method input
+	 * @param ok method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok);
+	/**
+	 * Dependency hook used by this service to cachePropertyKeyValueChanged.
+	 *
+	 * @param obj method input
+	 */
 	public abstract void callCachePropertyKeyValueChanged(OAObject obj);
+	/**
+	 * Dependency hook used by this service to cacheGet.
+	 *
+	 * @param clazz method input
+	 * @param key method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callCacheGet(Class<T> clazz, Object key);
+	/**
+	 * Dependency hook used by this service to cacheRemoveObject.
+	 *
+	 * @param obj method input
+	 */
 	public abstract void callCacheRemoveObject(final OAObject obj); 
 	
+	/**
+	 * Dependency hook used by this service to cSIsSingleUser.
+	 *
+	 * @param obj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callCSIsSingleUser(OAObject obj);
+	/**
+	 * Dependency hook used by this service to cSIsServer.
+	 *
+	 * @param obj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callCSIsServer(OAObject obj);
+	/**
+	 * Dependency hook used by this service to cSIsClient.
+	 *
+	 * @param obj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callCSIsClient(OAObject obj);
 	
 	
+	/**
+	 * Dependency hook used by this service to cSGetServerObject.
+	 *
+	 * @param clazz method input
+	 * @param key method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callCSGetServerObject(Class<T> clazz, OAObjectKey key);
 	
+	/**
+	 * Dependency hook used by this service to dSIsAssigningId.
+	 *
+	 * @param obj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callDSIsAssigningId(OAObject obj);
+	/**
+	 * Dependency hook used by this service to dSAllowIdChange.
+	 *
+	 * @param c method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callDSAllowIdChange(Class<? extends OAObject>  c);
+	/**
+	 * Dependency hook used by this service to dSGetObject.
+	 *
+	 * @param oi method input
+	 * @param clazz method input
+	 * @param key method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callDSGetObject(OAObjectInfo oi, Class<T> clazz, OAObjectKey key);
 
+	/**
+	 * Dependency hook used by this service to infogetObjectInfo.
+	 *
+	 * @param clazz method input
+	 * @return result value
+	 */
 	public abstract OAObjectInfo callInfogetObjectInfo(Class clazz); 
+	/**
+	 * Dependency hook used by this service to infoIsIdProperty.
+	 *
+	 * @param oi method input
+	 * @param propertyName method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callInfoIsIdProperty(OAObjectInfo oi, String propertyName);
+	/**
+	 * Dependency hook used by this service to infoGetPropertyClass.
+	 *
+	 * @param oi method input
+	 * @param propertyName method input
+	 * @return result value
+	 */
 	public abstract Class<? extends OAObject> callInfoGetPropertyClass(OAObjectInfo oi, String propertyName);
+	/**
+	 * Dependency hook used by this service to objectInfoGetPropertyIdValues.
+	 *
+	 * @param obj method input
+	 * @return result value
+	 */
 	public abstract Object[] callObjectInfoGetPropertyIdValues(OAObject obj);
+	/**
+	 * Dependency hook used by this service to reflectIsReferenceObjectLoadedAndNotEmpty.
+	 *
+	 * @param oaObj method input
+	 * @param propertyName method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callReflectIsReferenceObjectLoadedAndNotEmpty(OAObject oaObj, String propertyName);
+	/**
+	 * Dependency hook used by this service to reflectGetProperty.
+	 *
+	 * @param oaObj method input
+	 * @param propPath method input
+	 * @return result value
+	 */
 	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath);
+	/**
+	 * Dependency hook used by this service to threadLocalIsLoading.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callThreadLocalIsLoading();
+	/**
+	 * Dependency hook used by this service to threadLocalGetObjectCacheAddMode.
+	 *
+	 * @return result value
+	 */
 	public abstract int callThreadLocalGetObjectCacheAddMode();
+	/**
+	 * Dependency hook used by this service to isRemoteThread.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callIsRemoteThread();
 	
 }

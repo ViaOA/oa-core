@@ -24,40 +24,7 @@ import com.viaoa.hub.HubListenerAdapter;
 import com.viaoa.object.OAObject;
 import com.viaoa.path.OAPath;
 
-/*qqqqqqqqqqqq
-CODEX
 
-1. file/class/method
-     src/main/java/com/viaoa/hub/index/HubUniqueIndex.java — constructor listener / afterPropertyChange
-  2. exact execution path
-     Create new HubUniqueIndex<>(hub, "department.name"). Initial indexing works through OAPath. Then either:
-
-  - the object’s department reference changes, or
-  - the department object’s name changes.
-
-  The listener only updates when:
-
-  property.equalsIgnoreCase(e.getPropertyName())
-
-  For nested paths, the event name will not be "department.name".
-
-  3. why this is a real correctness bug
-     The class explicitly supports property paths, but nested path changes leave the index stale. get(oldName) can
-     continue returning the object after the path value changed, and get(newName) can return null.
-  4. semantic/invariant violated
-     A live Hub index must remain consistent with the indexed property-path value.
-  5. minimal fix or CODEX/defer recommendation
-     Fix now or CODEX/defer if nested paths are not required yet: register a dependent-property listener for nested
-     paths, or rebuild/update the affected object when any dependency in the path changes.
-  6. suggested regression test
-     Index employees by "department.name", change an employee’s department name or department reference, then verify
-     old key lookup is removed and new key lookup returns the employee.
-
-
-
-
-
-*/
 
 /**
  * Maintains a live, thread-safe unique index for a {@link Hub} based on a single
@@ -73,7 +40,7 @@ CODEX
  * <p>Used to prevent duplicate keys or perform fast lookups by business identifier.</p>
  */
 public class HubUniqueIndex<TYPE extends OAObject> {
-    
+
 	/**
 	 * The Hub instance whose objects are tracked and indexed. All add/remove
 	 * and property-change events originate from this Hub.
@@ -85,31 +52,31 @@ public class HubUniqueIndex<TYPE extends OAObject> {
      * an {@link OAPath} to support nested property references.
      */
     private final String property;
-    
+
     /**
      * Indicates whether String-based keys should preserve case. If false,
      * all String keys are normalized to uppercase for case-insensitive matching.
      */
     private final boolean bCaseSensitive;
-    
+
     /**
      * Internal HubListener that updates the index in response to Hub events
      * including add, remove, insert, new-list, and property changes.
      */
     private final HubListener<TYPE> listener;
-    
+
     /**
      * Concurrent map maintaining the live unique index. Keys represent the
      * property-path value, and values are the corresponding Hub objects.
      */
     private final ConcurrentHashMap<Object, TYPE> hm = new ConcurrentHashMap<Object, TYPE>();
-    
+
     /**
      * Precompiled property path used to extract index key values from Hub
      * objects efficiently and without reflection overhead during updates.
      */
-    private final OAPath<TYPE> propertyPath;
-    
+    private final OAPath<TYPE> path;
+
     /**
      * Creates a case-insensitive unique index for the specified Hub and
      * property path. Delegates to the full constructor with case-sensitivity
@@ -121,7 +88,7 @@ public class HubUniqueIndex<TYPE extends OAObject> {
     public HubUniqueIndex(Hub<TYPE> hub, String prop) {
         this(hub, prop, false);
     }
-    
+
     /**
      * Creates and initializes a unique index for the specified Hub and property.
      * Installs an internal listener to monitor and update the index whenever
@@ -135,10 +102,14 @@ public class HubUniqueIndex<TYPE extends OAObject> {
         this.hub = hub;
         this.property = prop;
         this.bCaseSensitive = bCaseSensitive;
-        this.propertyPath = new OAPath(hub.getObjectClass(), prop);
-        
+        this.path = new OAPath(hub.getObjectClass(), prop);
+
         listener = new HubListenerAdapter<TYPE>() {
             @Override
+            /**
+             * Handles the Hub property-change event.
+             * @param e the Hub event
+             */
             public void afterPropertyChange(HubEvent<TYPE> e) {
                 if (e == null || !property.equalsIgnoreCase(e.getPropertyName())) return;
                 TYPE object = e.getObject();
@@ -148,37 +119,57 @@ public class HubUniqueIndex<TYPE extends OAObject> {
                     if (!HubUniqueIndex.this.bCaseSensitive && old instanceof String) old = ((String)old).toUpperCase(); 
                     hm.remove(old);
                 }
-                
-                Object value = propertyPath.getValue(object);
+
+                Object value = path.getValue(object);
                 if (value != null) {
                     if (!HubUniqueIndex.this.bCaseSensitive && value instanceof String) value = ((String)value).toUpperCase(); 
                     hm.put(value, object);
                 }
             }
             @Override
+            /**
+             * Handles the Hub after-add event.
+             * @param e the Hub event
+             */
             public void afterAdd(HubEvent<TYPE> e) {
                 add(e.getObject());
             }
             @Override
+            /**
+             * Handles the Hub after-insert event.
+             * @param e the Hub event
+             */
             public void afterInsert(HubEvent<TYPE> e) {
                 add(e.getObject());
             }
             @Override
+            /**
+             * Handles the Hub after-remove event.
+             * @param e the Hub event
+             */
             public void afterRemove(HubEvent<TYPE> e) {
                 if (e == null) return;
                 TYPE object = e.getObject();
                 if (object == null) return;
-                Object value = propertyPath.getValue(object);
+                Object value = path.getValue(object);
                 if (value != null) {
                     if (!HubUniqueIndex.this.bCaseSensitive && value instanceof String) value = ((String)value).toUpperCase(); 
                     hm.remove(value);
                 }
             }
             @Override
+            /**
+             * Handles replacement or refresh of the Hub list.
+             * @param e the Hub event
+             */
             public void onNewList(HubEvent<TYPE> e) {
                 HubUniqueIndex.this.onNewList();
             }
             @Override
+            /**
+             * Handles the Hub after-remove-all event.
+             * @param e the Hub event
+             */
             public void afterRemoveAll(HubEvent<TYPE> e) {
                 hm.clear();
             }
@@ -198,7 +189,7 @@ public class HubUniqueIndex<TYPE extends OAObject> {
      */
     private void add(TYPE object) {
         if (object == null) return;
-        Object value = propertyPath.getValue(object);
+        Object value = path.getValue(object);
         if (value != null) {
             if (!HubUniqueIndex.this.bCaseSensitive && value instanceof String) value = ((String)value).toUpperCase(); 
             hm.put(value, object);
@@ -215,7 +206,7 @@ public class HubUniqueIndex<TYPE extends OAObject> {
             add(object);
         }
     }
-    
+
     /**
      * Ensures that index cleanup occurs during garbage collection by invoking
      * {@link #close()}. Delegates finalization to the superclass afterward.
@@ -248,5 +239,5 @@ public class HubUniqueIndex<TYPE extends OAObject> {
         if (!bCaseSensitive && id instanceof String) id = ((String)id).toUpperCase(); 
         return hm.get(id);
     }
-    
+
 }

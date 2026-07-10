@@ -99,7 +99,7 @@ class OAObjectInfoTest {
         assertNull(storeInfo.getHubProperties());
         assertFalse(new OAObjectInfo().hasImportMatchProperties());
         assertNull(new OAObjectInfo().getImportMatchPropertyNames());
-        assertNull(new OAObjectInfo().getImportMatchPropertyPaths());
+        assertNull(new OAObjectInfo().getImportMatchPaths());
     }
 
     @Test
@@ -115,7 +115,7 @@ class OAObjectInfoTest {
         info.setDisplayName("Store Display");
         info.setPluralName("Stores");
         info.setLowerName("store");
-        info.setRootTreePropertyPaths(new String[] { Store.P_Registers });
+        info.setRootTreePaths(new String[] { Store.P_Registers });
         info.addRequired(Store.P_Name);
         info.setLookup(true);
         info.setJsonUsesCapital(true);
@@ -153,7 +153,7 @@ class OAObjectInfoTest {
         assertEquals("Store Display", info.getDisplayName());
         assertEquals("Stores", info.getPluralName());
         assertEquals("store", info.getLowerName());
-        assertArrayEquals(new String[] { Store.P_Registers }, info.getRootTreePropertyPaths());
+        assertArrayEquals(new String[] { Store.P_Registers }, info.getRootTreePaths());
         assertTrue(info.getLookup());
         assertTrue(info.getJsonUsesCapital());
         assertTrue(info.getGuidIsStored());

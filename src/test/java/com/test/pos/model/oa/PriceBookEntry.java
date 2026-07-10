@@ -253,7 +253,7 @@ public class PriceBookEntry extends OAObject {
         displayName = "Item Pack", 
         reverseName = ItemPack.P_PriceBookEntries, 
         allowCreateNew = false, 
-        selectFromPropertyPath = P_Item + "." + Item.P_ItemPacks, 
+        selectFromPath = P_Item + "." + Item.P_ItemPacks, 
         fkeys = {@OAFkey(fromProperty = P_ItemPackId, toProperty = ItemPack.P_Id)}
     )
     public ItemPack getItemPack() {
@@ -281,7 +281,7 @@ public class PriceBookEntry extends OAObject {
     @OAOne(
         reverseName = Product.P_PriceBookEntries, 
         allowCreateNew = false, 
-        selectFromPropertyPath = P_Item + "." + Item.P_Products, 
+        selectFromPath = P_Item + "." + Item.P_Products, 
         fkeys = {@OAFkey(fromProperty = P_ProductId, toProperty = Product.P_Id)}
     )
     public Product getProduct() {

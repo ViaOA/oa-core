@@ -39,6 +39,14 @@ import com.viaoa.object.OAObject;
  * <p>It effectively acts as a “policy object” guiding OA’s generated UI layers.</p>
  */
 //@OAClass (addToCache=false, localOnly=true, useDataSource=false)
+/**
+ * UI and tooling metadata for an OAObject type.
+ * <p>
+ * This model describes display labels, table columns, search behavior, view options, and other generated-application
+ * configuration associated with an OAObject class. It complements {@link OAObjectInfo}, which owns the core runtime
+ * metadata for identity, properties, links, rules, and persistence behavior.
+ * </p>
+ */
 public class OAObjectModel {
 	//was: public class OAObjectModel extends OAObject {
 
@@ -76,7 +84,7 @@ public class OAObjectModel {
 	
 	/**
 	 * Indicates whether hub-based search is permitted. Used for deeper,
-	 * relationship-driven search operations across linked object graphs.
+	 * relationship-driven search operations across linked OA models.
 	 */
 	protected boolean bAllowHubSearch;
 	
@@ -500,18 +508,38 @@ public class OAObjectModel {
 		bAllowDelete = b;
 	}
 
+	/**
+	 * Indicates whether generated UI/search behavior should allow clearing values.
+	 *
+	 * @return {@code true} if clear operations are allowed
+	 */
 	public boolean getAllowClear() {
 		return bAllowClear;
 	}
 
+	/**
+	 * Sets whether generated UI/search behavior should allow clearing values.
+	 *
+	 * @param b {@code true} to allow clear operations
+	 */
 	public void setAllowClear(boolean b) {
 		bAllowClear = b;
 	}
 
+	/**
+	 * Indicates whether recursive navigation/search behavior is allowed.
+	 *
+	 * @return {@code true} if recursive behavior is allowed
+	 */
 	public boolean getAllowRecursive() {
 		return bAllowRecursive;
 	}
 
+	/**
+	 * Sets whether recursive navigation/search behavior is allowed.
+	 *
+	 * @param b {@code true} to allow recursive behavior
+	 */
 	public void setAllowRecursive(boolean b) {
 		bAllowRecursive = b;
 	}

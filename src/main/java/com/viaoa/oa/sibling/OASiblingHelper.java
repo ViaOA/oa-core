@@ -116,7 +116,7 @@ public class OASiblingHelper<TYPE extends OAObject> {
 		nodeRoot.oi = hub.getOAObjectInfo();
 	}
 
-	// tree nodes for propertyPaths from hub
+	// tree nodes for paths from hub
 	protected class Node {
 		public Node(Node parent) {
 			this.nodeParent = parent;
@@ -342,8 +342,8 @@ public class OASiblingHelper<TYPE extends OAObject> {
 	 * @param prop the property name
 	 * @return the property path, or null if none found
 	 */
-	public String getPropertyPath(OAObject obj, String prop) {
-		return getPropertyPath(obj, prop, false);
+	public String getPath(OAObject obj, String prop) {
+		return getPath(obj, prop, false);
 	}
 
 	/**
@@ -356,7 +356,7 @@ public class OASiblingHelper<TYPE extends OAObject> {
 	 * @param bFromLastNode  whether to prioritize the last-found node
 	 * @return the property path, or null if none found
 	 */
-	public String getPropertyPath(OAObject obj, String prop, boolean bFromLastNode) {
+	public String getPath(OAObject obj, String prop, boolean bFromLastNode) {
 		Node node = _findNode(nodeRoot, obj, prop, false, bFromLastNode);
 		if (node == null && !bFromLastNode) {
 			node = _findNode(nodeRoot, obj, prop, true, false);
@@ -377,7 +377,7 @@ public class OASiblingHelper<TYPE extends OAObject> {
 	/**
 	 * Tracks the most recently matched Node during property-path
 	 * resolution. Used to improve search prioritization in
-	 * {@code getPropertyPath(...)} by optionally preferring the
+	 * {@code getPath(...)} by optionally preferring the
 	 * last successfully located Node.
 	 */
 	private Node nodeLastFound;

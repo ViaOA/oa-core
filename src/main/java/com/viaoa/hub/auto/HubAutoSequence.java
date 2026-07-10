@@ -29,26 +29,7 @@ import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
 
 
-/*qqqqqqqqq
-  CODEX
-  1. file/class/method: src/main/java/com/viaoa/hub/auto/HubAutoSequence.java:176 constructor and src/main/java/com/
-     viaoa/hub/auto/HubAutoSequence.java:240 setHub(...)
-  2. exact execution path: construct new HubAutoSequence(hub, badProperty, ...). The constructor calls setHub(hub),
-     which attaches this object as a Hub listener before setPropertyName(badProperty) validates the setter. If
-     validation throws, the caller sees construction fail, but the partially constructed listener remains attached
-     to the Hub.
-  3. why this is a real correctness bug: later unrelated Hub add/insert/sort/new-list events call resequence(),
-     where propertySetMethod is null or invalid, causing unexpected runtime failures from a helper whose
-     construction already failed.
-  4. semantic/invariant violated: HUB_AUTO_SEQUENCE_FAILED_INIT_DOES_NOT_LEAVE_ACTIVE_LISTENER
-  5. minimal fix or CODEX/defer recommendation: resolve and validate the property setter before attaching the
-     listener, or detach the listener in the constructor/setup failure path.
-  6. suggested regression test: attempt to create HubAutoSequence with an invalid property, catch the exception,
-     then add an object to the Hub and verify no stale sequencing listener fires.
-  
-  
-  
- */
+
 
 /**
  * Automatically maintains a numeric sequence property on every object in a {@link Hub},
@@ -95,7 +76,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
      * Useful for debugging and monitoring system-wide sequencing activity.
      */
     public static int autoSequenceHubListenerCount;
-    
+
     /**
      * The Hub whose objects will receive automatically maintained sequence
      * values. A HubListener is attached to this Hub when sequencing is enabled.
@@ -132,7 +113,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
      * pushed to clients using Hub messaging, reducing client-side overhead.
      */
     protected boolean bServerSideOnly;
-    
+
     /**
      * Default constructor. The hub and property name must be set before this
      * instance becomes active for sequencing.
@@ -151,13 +132,13 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
     }
 
     /**
-     * Closes this HubAutoSequence by detaching it from the current hub.  
+     * Closes this HubAutoSequence by detaching it from the current hub.
      * Removes its HubListener and clears internal references.
      */
     public void close() {
         if (hub != null) setHub(null);
     }
-    
+
     /**
      * Constructs a HubAutoSequence using the given Hub, property name, and start
      * number. Sequence numbers are recomputed when objects are added, inserted, or
@@ -170,7 +151,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
     public HubAutoSequence(Hub hub, String propertyName, int startNumber) {
         this(hub,propertyName,startNumber, false, false);
     }
-    
+
     /**
      * Constructs a HubAutoSequence with control over whether sequence values are
      * kept contiguous after removals.
@@ -206,7 +187,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
         setHub(hub);
         setPropertyName(propertyName);
     }
-    
+
 
     /**
      * Constructs a HubAutoSequence using default start number (0) and default
@@ -219,7 +200,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
         setHub(hub);
         setPropertyName(propertyName);
     }
-    
+
     /**
      * Returns the starting sequence number assigned to the first object in the hub.
      *
@@ -238,7 +219,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
         startNumber = i;
         setup();
     }
-    
+
     /**
      * Sets the hub to be sequenced. Removes any existing listener and attaches
      * this instance as a HubListener to the new hub. Triggers setup of the
@@ -249,7 +230,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
     public Hub getHub() {
         return hub;
     }
-    
+
     /**
      * Sets the hub to be sequenced. Removes any existing listener and attaches
      * this instance as a HubListener to the new hub. Triggers setup of the
@@ -291,7 +272,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
         this.propertySetMethod = null;
         setup();
     }
-    
+
     /**
      * Initializes the setter method for the sequence property and triggers
      * resequencing. Validates that the property exists and accepts a numeric
@@ -302,7 +283,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
 
         Class c = hub.getObjectClass();
         if (c == null) return;
-        
+
 		final OA oa = OARuntime.oa(c);
         Method met = oa.internal().objects().info().getMethod(c, "set" + propertyName);
         //was: Method met = OAReflect.getMethod(c, "set"+propertyName);
@@ -321,14 +302,14 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
         propertySetMethod = met;
         resequence(0);
     }
-        
+
     /**
      * Atomic counter used to detect interleaving or overlapping resequence
      * operations. Ensures resequencing is performed consistently even under
      * concurrent Hub events.
      */
     private final AtomicInteger aiResequenceCnt = new AtomicInteger();  // used instead of synchronization
-    
+
     /**
      * Recomputes sequence values for all objects in the hub, beginning at the
      * default starting position.
@@ -338,7 +319,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
     }
 
     private final static ConcurrentHashMap<Object, Object> hmUpdateSeq = new ConcurrentHashMap<>();
-    
+
     /**
      * Recomputes sequence values beginning at the specified starting position.
      * Uses a shared lock to avoid concurrent resequence operations and optionally
@@ -381,7 +362,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
             }
         }
     }
-    
+
     /**
      * Internal implementation of the resequence operation. Assigns sequence
      * numbers to each loaded object using the configured start number. Uses an
@@ -397,7 +378,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
             Object obj = hub.elementAt(i);
             if (obj == null) break;
             if (cnt != aiResequenceCnt.get()) break;
-            
+
             // if this is ClientThread then need to send to other clients
             try {
                 propertySetMethod.invoke(obj, new Object[] { Integer.valueOf(i+startNumber) });
@@ -407,7 +388,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
             }
         }
     }
-    
+
     /**
      * HubListener callback invoked after an insert event. Resequences objects
      * beginning at the inserted position.
@@ -418,7 +399,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
         int pos = e.getPos();
         resequence(pos);
     }
-    
+
     /**
      * HubListener callback invoked after an add event. Resequences objects
      * beginning at the added position.
@@ -463,7 +444,7 @@ public class HubAutoSequence extends HubListenerAdapter implements java.io.Seria
     }
 
     /**
-     * HubListener callback invoked after the hub is sorted.  
+     * HubListener callback invoked after the hub is sorted.
      * Resequences all objects to ensure sequence numbers match the new order.
      *
      * @param e the HubEvent describing the sort

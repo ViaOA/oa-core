@@ -5,6 +5,10 @@ import java.util.logging.Logger;
 import com.viaoa.hub.*;
 import com.viaoa.object.OAObject;
 
+/**
+ * Calculates Hub size and load-complete state.
+ */
+
 public abstract class HubSizeService {
 	private final Logger LOG = Logger.getLogger(HubSizeService.class.getName());
 
@@ -58,10 +62,46 @@ public abstract class HubSizeService {
 		return getSize(thisHub);
 	}
 
+	/**
+	 * Dependency hook used by this service for HubSelectIsMoreData behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
+
 	public abstract boolean callHubSelectIsMoreData(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubSelectIsCounted behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> boolean callHubSelectIsCounted(Hub<T> thisHub);
+	/**
+	 * Dependency hook used by this service for HubDataGetCurrentSize behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract int callHubDataGetCurrentSize(Hub<?> thisHub);
-	public abstract <T extends OAObject> int callHubSelectFetchMore(Hub<T> thisHub);	
+	/**
+	 * Dependency hook used by this service for HubSelectFetchMore behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
+	public abstract <T extends OAObject> int callHubSelectFetchMore(Hub<T> thisHub);
+	/**
+	 * Dependency hook used by this service for HubSelectGetCount behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> int callHubSelectGetCount(Hub<T> thisHub);
-	public abstract void callHubSelectLoadAllData(Hub<?> hub);	
+	/**
+	 * Dependency hook used by this service for HubSelectLoadAllData behavior.
+	 *
+	 * @param hub method input
+	 */
+	public abstract void callHubSelectLoadAllData(Hub<?> hub);
 }

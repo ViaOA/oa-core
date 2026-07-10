@@ -21,26 +21,18 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Lightweight identity holder for OAObject instances. An OAObjectKey represents
- * an entity using a globally unique GUID and optional persistent/business key
- * values (primary key properties).
+ * Lightweight identity holder for {@link OAObject} instances.
+ * <p>
+ * An {@code OAObjectKey} combines an optional runtime GUID with optional
+ * persistent or business key values. The GUID represents runtime identity when
+ * available. Object ID values represent datasource identity and can be used for
+ * unloaded references, foreign-key references, cache lookup, and distributed
+ * messages.
+ * <p>
+ * When both keys are present, GUID equality takes precedence. Otherwise, the
+ * object ID values are compared in order.
  *
- * <p>The GUID is assigned at OAObject creation time and never changes. It defines
- * the universal runtime identity for an object across caching, graph navigation,
- * distributed synchronization, and remote references.</p>
- *
- * <p>Business key values correspond to persistent identity and may be used when
- * the GUID is not yet known (e.g., object referenced only by foreign key in a
- * database). When both GUID and business key are provided, GUID takes precedence
- * for equality and identity resolution.</p>
- *
- * <p>OAObjectKey enables references to objects that are not yet loaded or that
- * exist in remote caches, supporting lazy loading, identity reconciliation,
- * and efficient distributed messaging where only GUIDs are transmitted.</p>
- *
- * @see OAObjectKeyDelegate
  * @see OAObject
- * @see OAObjectCacheDelegate
  */
 public class OAObjectKey implements Serializable, Comparable<Object> {
 	static final long serialVersionUID = 1L;
@@ -171,6 +163,13 @@ public class OAObjectKey implements Serializable, Comparable<Object> {
 	}
 	
 
+	/**
+	 * Compares this key with another key using GUID identity when available,
+	 * otherwise using the normalized object ID values.
+	 *
+	 * @param obj the object to compare
+	 * @return {@code true} if both keys represent the same identity
+	 */
 	@Override
 	public boolean equals(final Object obj) {
 	    if (obj == this) return true;
@@ -188,9 +187,9 @@ public class OAObjectKey implements Serializable, Comparable<Object> {
 	}	
 	
 	/**
-	 * Computes a hash code for this key using only the GUID value.
+	 * Computes a hash code for this key using the GUID when available, otherwise using object ID values.
 	 *
-	 * @return the hash code based on the GUID
+	 * @return the hash code for this key
 	 */
 	@Override
 	public int hashCode() {

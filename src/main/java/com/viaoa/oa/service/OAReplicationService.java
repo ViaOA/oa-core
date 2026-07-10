@@ -6,31 +6,15 @@ import com.viaoa.oa.api.internal.*;
 import com.viaoa.replication.OAReplicationClient;
 import com.viaoa.replication.OAReplicationMaster;
 
-/*qqqqqqqqq
-CODEX
 
- #8 — invariant risk
-  File/class/method: src/main/java/com/viaoa/graph/service/OAReplicationService.java:39, createMaster/createClient;
-  src/main/java/com/viaoa/graph/service/OAReplicationService.java:67, start()
-  Exact concern: replication accepts a raw OASyncServer and is not wired to the owning OASyncService or graph.
-  start() can run with null/foreign sync server state.
-  Why it matters: replication is graph-level distributed behavior and should not be able to bind to the wrong sync
-  server or start before sync is configured.
-  Minimal fix: inject/own OASyncService, validate server role and started state before replication start.
-  Suggested invariant: GRAPH_REPLICATION_USES_OWNING_SYNC_SERVICE
-  Suggested test coverage: replication start without sync server fails; replication cannot use a sync server from
-  another graph.
-
-
-
-*/
 
 
 /**
- * Used with OASyncServer to Replicate with another OASyncServer.
- * 
- * Allows offline support and reconnect with resync support.
- * 
+ * Coordinates OA replication against an {@link OASyncServer}.
+ * <p>
+ * The service can be configured as a replication master or client and then
+ * started to support offline/reconnect replication workflows.
+ * </p>
  */
 public abstract class OAReplicationService implements ReplicationInternalOps, ReplicationOps {
 	private String guid;
@@ -44,36 +28,60 @@ public abstract class OAReplicationService implements ReplicationInternalOps, Re
 	private OAReplicationMaster replMaster;
     private OAReplicationClient replClient;
 
+	/**
+	 * Creates an unconfigured replication service.
+	 */
 	public OAReplicationService() {
 	}
 
 	
+	/**
+	 * Returns the replication transaction log file name.
+	 *
+	 * @return transaction log file name
+	 */
 	@Override
 	public String getLogFileName() {
 		return tLogFileName;
 	}
 
+	/**
+	 * Returns the replication master host name for client mode.
+	 *
+	 * @return master host name, or {@code null} for master mode
+	 */
 	@Override
 	public String getMasterHostName() {
 		return replicationMasterHostName;
 	}
 
+	/**
+	 * Returns the replication master port for client mode.
+	 *
+	 * @return master port, or {@code 0} for master mode
+	 */
 	@Override
 	public int getMasterPort() {
 		return replicationMasterPort;
 	}
 	
+	/**
+	 * Returns the current replication status.
+	 *
+	 * @return replication status
+	 */
 	@Override
 	public Status getStatus() {
 		return status;
 	}
 	
-    /**
-     * Create OAReplication Master
-     * @param guid
-     * @param syncServer
-     * @param tLogFileName
-     */
+	/**
+	 * Configures this service as a replication master.
+	 *
+	 * @param guid replication identifier
+	 * @param syncServer sync server used by replication
+	 * @param tLogFileName transaction log file name
+	 */
 	public void createMaster(String guid, OASyncServer syncServer, String tLogFileName) {
 		this.guid = guid;
 		this.syncServer = syncServer;
@@ -87,12 +95,13 @@ public abstract class OAReplicationService implements ReplicationInternalOps, Re
 
 	
 	/**
-	 * Create OAReplication Client
-	 * @param guid
-	 * @param syncServer
-	 * @param tLogFileName
-	 * @param replicationMasterHostName
-	 * @param replicationMasterPort
+	 * Configures this service as a replication client.
+	 *
+	 * @param guid replication identifier
+	 * @param syncServer sync server used by replication
+	 * @param tLogFileName transaction log file name
+	 * @param replicationMasterHostName replication master host name
+	 * @param replicationMasterPort replication master port
 	 */
 	public void createClient(String guid, OASyncServer syncServer, String tLogFileName, String replicationMasterHostName, int replicationMasterPort) {
 		this.guid = guid;
@@ -104,6 +113,11 @@ public abstract class OAReplicationService implements ReplicationInternalOps, Re
 		this.status = Status.READYTOSTART;
 	}
 	
+	/**
+	 * Starts the configured replication master or client.
+	 *
+	 * @throws Exception when replication startup fails
+	 */
 	@Override
     public void start() throws Exception {
     	if (this.status != Status.READYTOSTART) throw new IllegalStateException("must call create Client or Maste before starting");
@@ -124,6 +138,11 @@ public abstract class OAReplicationService implements ReplicationInternalOps, Re
 		}
     }
 
+	/**
+	 * Stops the running replication master or client.
+	 *
+	 * @throws Exception when replication shutdown fails
+	 */
 	@Override
     public void stop() throws Exception {
     	if (this.status != Status.RUNNING) return;
@@ -139,19 +158,43 @@ public abstract class OAReplicationService implements ReplicationInternalOps, Re
 		}
     }
 
+	/**
+	 * Returns whether this service is configured as replication master.
+	 *
+	 * @return {@code true} when configured as master
+	 */
 	@Override
 	public boolean isMaster() {
 		return (status != Status.UNKNOWN && bIsMaster);
 	}
 	
+	/**
+	 * Returns whether this service is configured as replication client.
+	 *
+	 * @return {@code true} when configured as client
+	 */
 	@Override
 	public boolean isClient() {
 		return (status != Status.UNKNOWN && !bIsMaster);
 	}
 
+	/**
+	 * Configures this service as a replication client using runtime-provided sync wiring.
+	 *
+	 * @param guid replication identifier
+	 * @param tLogFileName transaction log file name
+	 * @param replicationMasterHostName replication master host name
+	 * @param replicationMasterPort replication master port
+	 */
 	@Override
 	public abstract void createClient(String guid, String tLogFileName, String replicationMasterHostName, int replicationMasterPort);
 
+	/**
+	 * Configures this service as a replication master using runtime-provided sync wiring.
+	 *
+	 * @param guid replication identifier
+	 * @param tLogFileName transaction log file name
+	 */
 	@Override
 	public abstract void createMaster(String guid, String tLogFileName);
 

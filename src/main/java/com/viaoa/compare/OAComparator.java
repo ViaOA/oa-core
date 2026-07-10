@@ -94,7 +94,7 @@ CODEX
      “missing direction” handling for the just-completed property. More robustly, parse each comma-separated segment
      independently, trim it, then detect trailing ASC/DESC per segment.
   6. suggested CODEX comment location
-     In OAComparator.init(), near the StringTokenizer(propertyPaths, ", ", true) loop and the prop.equals(" ") branch.
+     In OAComparator.init(), near the StringTokenizer(paths, ", ", true) loop and the prop.equals(" ") branch.
 
 
 
@@ -129,7 +129,7 @@ public class OAComparator implements Comparator {
 	/**
 	 * Comma-separated list of property paths used to extract values for comparison.
 	 */
-	String propertyPaths;
+	String paths;
     
 	/**
 	 * Default sort direction used when no explicit direction is specified
@@ -151,13 +151,13 @@ public class OAComparator implements Comparator {
 	 * Creates a new comparator using the specified class and property paths.
 	 *
 	 * @param clazz the class whose properties will be used for comparison
-	 * @param propertyPaths comma-separated property paths, optionally including
+	 * @param paths comma-separated property paths, optionally including
 	 *        ASC or DESC keywords
 	 * @param bAscending default sort direction
 	 */
-    public OAComparator(Class clazz, String propertyPaths, boolean bAscending) {
+    public OAComparator(Class clazz, String paths, boolean bAscending) {
         this.clazz = clazz;
-        this.propertyPaths = propertyPaths;
+        this.paths = paths;
         this.bAscending = bAscending;
     }
 
@@ -166,8 +166,8 @@ public class OAComparator implements Comparator {
      *
      * @return the property paths
      */
-    public String getPropertyPaths() {
-        return propertyPaths;
+    public String getPaths() {
+        return paths;
     }
 
     /**
@@ -304,7 +304,7 @@ public class OAComparator implements Comparator {
      */
     protected void init() {
         if (clazz == null) return;
-        if (propertyPaths == null || propertyPaths.length() == 0) {
+        if (paths == null || paths.length() == 0) {
             // sort on object itself
             methodss = new Method[0][];
             return;
@@ -312,9 +312,9 @@ public class OAComparator implements Comparator {
 
         ArrayList al = new ArrayList(7);
         ArrayList alAsc = new ArrayList(7);
-        StringTokenizer st = new StringTokenizer(propertyPaths, ", ", true);
+        StringTokenizer st = new StringTokenizer(paths, ", ", true);
         Method[] ms = null;
-        boolean bAllowDesc = propertyPaths.equalsIgnoreCase("desc");
+        boolean bAllowDesc = paths.equalsIgnoreCase("desc");
         for ( ; st.hasMoreElements() ; ) {
             String prop = (String) st.nextElement();
 

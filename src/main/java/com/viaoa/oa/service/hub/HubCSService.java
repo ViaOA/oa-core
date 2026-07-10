@@ -16,7 +16,7 @@ CODEX
 
 
  #5
-  1. file/class/method: src/main/java/com/viaoa/graph/service/hub/HubCSService.java, addToHub(...),
+  1. file/class/method: src/main/java/com/viaoa/oa/service/hub/HubCSService.java, addToHub(...),
      insertInHub(...), removeFromHub(...), moveObjectInHub(...), sort(...), clearHubChanges(...)
   2. exact execution path: synced Hub operation calls the corresponding remote sync method. Several boolean-
      returning remote calls are ignored, and insertInHub(...) returns true after callSyncSyncInsertInHub(...)
@@ -33,7 +33,7 @@ CODEX
 
 
 #6
-  1. file/class/method: src/main/java/com/viaoa/graph/service/hub/HubCSService.java, deleteAll(...)
+  1. file/class/method: src/main/java/com/viaoa/oa/service/hub/HubCSService.java, deleteAll(...)
   2. exact execution path: client calls Hub.deleteAll(...); HubDeleteService.deleteAll(...) calls
      callHubCSDeleteAll(...); HubCSService.deleteAll(...) sees a calculated reverse link that is not server-side
      calc and returns false without sending remote delete; HubDeleteService.deleteAll(...) treats false as
@@ -49,7 +49,7 @@ CODEX
 
 
 #3
-  File/class/method: src/main/java/com/viaoa/graph/service/hub/HubCSService.java:390, deleteAll(...)
+  File/class/method: src/main/java/com/viaoa/oa/service/hub/HubCSService.java:390, deleteAll(...)
 
   Exact changed-code path: callSyncClientDeleteAll(...) result is assigned to b, but ignored; method always returns
   true.
@@ -65,6 +65,10 @@ CODEX
 
 
 */
+
+/**
+ * Coordinates Hub client/server synchronization hooks.
+ */
 
 public abstract class HubCSService {
 	private final Logger LOG = Logger.getLogger(HubCSService.class.getName());
@@ -319,7 +323,14 @@ public abstract class HubCSService {
 	 */
 	public boolean isServer(Hub<?> thisHub) {
         return callSyncIsServer();
-	}		
+	}
+
+	/**
+	 * Returns whether the supplied Hub context is client.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 
 	public boolean isClient(Hub<?> thisHub) {
         return callSyncIsClient();
@@ -341,11 +352,11 @@ public abstract class HubCSService {
 	 * the master object is missing or local-only, or the link is calculated.
 	 *
 	 * @param thisHub       the hub being sorted
-	 * @param propertyPaths the property paths to sort by
+	 * @param paths the property paths to sort by
 	 * @param bAscending    whether sorting is ascending
 	 * @param comp          optional comparator used for sorting
 	 */
-	public void sort(Hub<?> thisHub, String propertyPaths, boolean bAscending, Comparator<?> comp) {
+	public void sort(Hub<?> thisHub, String paths, boolean bAscending, Comparator<?> comp) {
         if (thisHub == null) return;
 		if (callSyncIsSingleUser()) return;
         if (!callThreadLocalGetSendSyncMessages()) return;
@@ -366,7 +377,7 @@ public abstract class HubCSService {
 
     	callSyncSyncSort(objMaster.getClass(), objMaster.getObjectKey(), 
     		callHubDetailGetPropertyFromMasterToDetail(thisHub), 
-            propertyPaths, bAscending, comp);
+    		paths, bAscending, comp);
 	}
 	
 	/**
@@ -464,30 +475,201 @@ public abstract class HubCSService {
         callSyncSyncRefresh(obj.getClass(), obj.getObjectKey(), li.getName());
     }
 
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetReverseLinkInfo behavior.
+	 *
+	 * @param thisLi method input
+	 * @return result value
+	 */
+
 	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi);
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetObjectInfo behavior.
+	 *
+	 * @param obj method input
+	 * @return result value
+	 */
 	public abstract OAObjectInfo callObjectInfoGetObjectInfo(OAObject obj);
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetObjectInfo behavior.
+	 *
+	 * @param c method input
+	 * @return result value
+	 */
 	public abstract OAObjectInfo callObjectInfoGetObjectInfo(Class<? extends OAObject> c);
+	/**
+	 * Dependency hook used by this service for ObjectHubIsInHub behavior.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
 	public abstract boolean callObjectHubIsInHub(OAObject oaObj);
+	/**
+	 * Dependency hook used by this service for HubIsInHubWithMaster behavior.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
 	public abstract boolean callHubIsInHubWithMaster(OAObject oaObj);
+	/**
+	 * Dependency hook used by this service for HubIsInHubWithMaster behavior.
+	 *
+	 * @param oaObj method input
+	 * @param hubIgnore method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> boolean callHubIsInHubWithMaster(T oaObj, Hub<T> hubIgnore);
+	/**
+	 * Dependency hook used by this service for HubDetailGetPropertyFromMasterToDetail behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubDetailGetLinkInfoFromMasterObjectToDetail behavior.
+	 *
+	 * @param thisDetailHub method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterObjectToDetail(Hub<?> thisDetailHub);
+	/**
+	 * Dependency hook used by this service for SyncIsServer behavior.
+	 *
+	 * @return result value
+	 */
 	public abstract boolean callSyncIsServer();
+	/**
+	 * Dependency hook used by this service for SyncIsClient behavior.
+	 *
+	 * @return result value
+	 */
 	public abstract boolean callSyncIsClient();
+	/**
+	 * Dependency hook used by this service for SyncIsSingleUser behavior.
+	 *
+	 * @return result value
+	 */
 	public abstract boolean callSyncIsSingleUser();
+	/**
+	 * Dependency hook used by this service for SyncRemoteSyncRemoveAllFromHub behavior.
+	 *
+	 * @param objectClass method input
+	 * @param objectKey method input
+	 * @param hubPropertyName method input
+	 * @return result value
+	 */
 	public abstract boolean callSyncRemoteSyncRemoveAllFromHub(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName);
-	public abstract boolean callSyncRemoteSyncRemoveFromHub(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName, Class<? extends OAObject> objectClassX, OAObjectKey objectKeyX);	
+	/**
+	 * Dependency hook used by this service for SyncRemoteSyncRemoveFromHub behavior.
+	 *
+	 * @param objectClass method input
+	 * @param objectKey method input
+	 * @param hubPropertyName method input
+	 * @param objectClassX method input
+	 * @param objectKeyX method input
+	 * @return result value
+	 */
+	public abstract boolean callSyncRemoteSyncRemoveFromHub(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName, Class<? extends OAObject> objectClassX, OAObjectKey objectKeyX);
+	/**
+	 * Dependency hook used by this service for SyncClientIsObjectOnServer behavior.
+	 *
+	 * @param obj method input
+	 * @return result value
+	 */
 	public abstract boolean callSyncClientIsObjectOnServer(OAObject obj);
+	/**
+	 * Dependency hook used by this service for SyncSyncInsertInHub behavior.
+	 *
+	 * @param masterObjectClass method input
+	 * @param masterObjectKey method input
+	 * @param hubPropertyName method input
+	 * @param obj method input
+	 * @param pos method input
+	 * @return result value
+	 */
 	public abstract boolean callSyncSyncInsertInHub(Class<? extends OAObject> masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, Object obj, int pos);
+	/**
+	 * Dependency hook used by this service for SyncSyncMoveObjectInHub behavior.
+	 *
+	 * @param objectClass method input
+	 * @param objectKey method input
+	 * @param hubPropertyName method input
+	 * @param posFrom method input
+	 * @param posTo method input
+	 * @return result value
+	 */
 	public abstract boolean callSyncSyncMoveObjectInHub(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName,  int posFrom, int posTo);
-	public abstract boolean callSyncSyncSort(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName, String propertyPaths, boolean bAscending, Comparator<?> comp);
+	/**
+	 * Dependency hook used by this service for SyncSyncSort behavior.
+	 *
+	 * @param objectClass method input
+	 * @param objectKey method input
+	 * @param hubPropertyName method input
+	 * @param paths method input
+	 * @param bAscending method input
+	 * @param comp method input
+	 * @return result value
+	 */
+	public abstract boolean callSyncSyncSort(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName, String paths, boolean bAscending, Comparator<?> comp);
+	/**
+	 * Dependency hook used by this service for SyncClientDeleteAll behavior.
+	 *
+	 * @param objectClass method input
+	 * @param objectKey method input
+	 * @param hubPropertyName method input
+	 * @return result value
+	 */
 	public abstract boolean callSyncClientDeleteAll(Class<? extends OAObject> objectClass, OAObjectKey objectKey, String hubPropertyName);
+	/**
+	 * Dependency hook used by this service for ThreadLocalGetSendSyncMessages behavior.
+	 *
+	 * @return result value
+	 */
 	public abstract boolean callThreadLocalGetSendSyncMessages();
+	/**
+	 * Dependency hook used by this service for SyncSyncClearHubChanges behavior.
+	 *
+	 * @param masterObjectClass method input
+	 * @param masterObjectKey method input
+	 * @param hubPropertyName method input
+	 */
 	public abstract void callSyncSyncClearHubChanges(Class<? extends OAObject> masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName);
+	/**
+	 * Dependency hook used by this service for SyncSyncRefresh behavior.
+	 *
+	 * @param masterObjectClass method input
+	 * @param masterObjectKey method input
+	 * @param hubPropertyName method input
+	 */
 	public abstract void callSyncSyncRefresh(Class<? extends OAObject> masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName);
+	/**
+	 * Dependency hook used by this service for SyncSyncAddToHub behavior.
+	 *
+	 * @param masterObjectClass method input
+	 * @param masterObjectKey method input
+	 * @param hubPropertyName method input
+	 * @param obj method input
+	 * @return result value
+	 */
 	public abstract boolean callSyncSyncAddToHub(Class<? extends OAObject> masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName, Object obj);
-	public abstract boolean callThreadLocalIsLoading();		
+	/**
+	 * Dependency hook used by this service for ThreadLocalIsLoading behavior.
+	 *
+	 * @return result value
+	 */
+	public abstract boolean callThreadLocalIsLoading();
+	/**
+	 * Dependency hook used by this service for RemoteThreadIsRemoteThread behavior.
+	 *
+	 * @return result value
+	 */
 	public abstract boolean callRemoteThreadIsRemoteThread();
-	public abstract void callSyncSyncAddNewToCache(OAObjectSerializer oos);	
-    
+	/**
+	 * Dependency hook used by this service for SyncSyncAddNewToCache behavior.
+	 *
+	 * @param oos method input
+	 */
+	public abstract void callSyncSyncAddNewToCache(OAObjectSerializer oos);
+
 }

@@ -146,7 +146,7 @@ public class LedgerDenominationBundle extends OAObject {
         displayName = "Denomination Bundle", 
         reverseName = DenominationBundle.P_LedgerDenominationBundles, 
         allowCreateNew = false, 
-        selectFromPropertyPath = P_CalcStore + "." + Store.P_CurrencyType + "." + CurrencyType.P_CurrencyDenominations + "." + CurrencyDenomination.P_DenominationBundles, 
+        selectFromPath = P_CalcStore + "." + Store.P_CurrencyType + "." + CurrencyType.P_CurrencyDenominations + "." + CurrencyDenomination.P_DenominationBundles, 
         fkeys = {@OAFkey(fromProperty = P_DenominationBundleId, toProperty = DenominationBundle.P_Id)}
     )
     public DenominationBundle getDenominationBundle() {

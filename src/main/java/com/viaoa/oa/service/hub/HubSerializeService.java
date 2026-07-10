@@ -14,7 +14,7 @@ CODEX
 
 
  #10 — invariant risk
-  file/class/method: src/main/java/com/viaoa/graph/service/hub/HubSerializeService.java:25, _writeObject
+  file/class/method: src/main/java/com/viaoa/oa/service/hub/HubSerializeService.java:25, _writeObject
   exact concern: Hub serialization mutates runtime state by loading all remaining select data before
   defaultWriteObject. Sync messages are suppressed, but normal load/select side effects can still occur.
   why it matters: Serialization should have clear ownership: either it snapshots already-loaded Hub state or
@@ -23,13 +23,17 @@ CODEX
   severity: invariant risk
   minimal fix: Document/test this as intentional, or gate full materialization behind serializer policy. At minimum,
   assert loading does not fire Hub events or sync messages.
-  suggested invariant ID/name: HUB-SER-LOAD-001: Hub serialization materialization is deterministic and side-effect
+  suggested invariant ID/name: HUB-SER-LOGD-001: Hub serialization materialization is deterministic and side-effect
   bounded
   suggested test coverage: Serialize partially loaded Hub; assert loaded count, event count, sync suppression, and
   select state.
 
 
 */
+
+/**
+ * Coordinates Hub serialization and deserialization support.
+ */
 
 public abstract class HubSerializeService {
 	private final Logger LOG = Logger.getLogger(HubSerializeService.class.getName());
@@ -57,6 +61,15 @@ public abstract class HubSerializeService {
 		stream.defaultWriteObject();
 	}
 
+	/**
+	 * Performs replaceObject behavior for the Hub service.
+	 *
+	 * @param thisHub method input
+	 * @param objFrom method input
+	 * @param objTo method input
+	 * @return result value
+	 */
+
 	public <T extends OAObject> int replaceObject(Hub<T> thisHub, T objFrom, T objTo) {
 		if (thisHub == null) return -1;
 		//qqqqq not thread safe
@@ -68,6 +81,14 @@ public abstract class HubSerializeService {
 		if (pos >= 0) vec.setElementAt(objTo, pos);
 		return pos;
 	}
+
+	/**
+	 * Performs replaceMasterObject behavior for the Hub service.
+	 *
+	 * @param thisHub method input
+	 * @param objFrom method input
+	 * @param objTo method input
+	 */
 
 	public <T extends OAObject> void replaceMasterObject(Hub<T> thisHub, T objFrom, T objTo) {
 		if (thisHub == null) return;
@@ -109,11 +130,47 @@ public abstract class HubSerializeService {
 		return thisHub;
 	}
 
+	/**
+	 * Dependency hook used by this service for ObjectHubIsAlreadyInHub behavior.
+	 *
+	 * @param oaObj method input
+	 * @param li method input
+	 * @return result value
+	 */
+
 	public abstract boolean callObjectHubIsAlreadyInHub(OAObject oaObj, OALinkInfo li);
+	/**
+	 * Dependency hook used by this service for ObjectHubAddHub behavior.
+	 *
+	 * @param oaObj method input
+	 * @param hub method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> boolean callObjectHubAddHub(T oaObj, Hub<T> hub);
+	/**
+	 * Dependency hook used by this service for HubSelectIsMoreData behavior.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract boolean callHubSelectIsMoreData(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for HubSelectLoadAllData behavior.
+	 *
+	 * @param thisHub method input
+	 */
 	public abstract void callHubSelectLoadAllData(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service for ThreadLocalGetSendSyncMessages behavior.
+	 *
+	 * @return result value
+	 */
 	public abstract boolean callThreadLocalGetSendSyncMessages();
+	/**
+	 * Dependency hook used by this service for ThreadLocalSetSendSyncMessages behavior.
+	 *
+	 * @param b method input
+	 */
 	public abstract void callThreadLocalSetSendSyncMessages(boolean b);
 }
 

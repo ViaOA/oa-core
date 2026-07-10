@@ -178,7 +178,7 @@ public class Register extends OAObject {
     @OAOne(
         reverseName = Till.P_Register, 
         allowCreateNew = false, 
-        selectFromPropertyPath = P_Store + "." + Store.P_Tills
+        selectFromPath = P_Store + "." + Store.P_Tills
     )
     public Till getTill() {
         if (till == null) {

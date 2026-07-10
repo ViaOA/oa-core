@@ -21,22 +21,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/*qqqqqqqqqqqqqqq
-CODEX
-
-2. OALinkTable — join-table metadata appears unconsumed in oa-core
-     Severity: Medium
-     Execution path: a many-to-many Hub getter is annotated with @OALinkTable(name=..., columns=..., indexName=...).
-     Source search under src/main/java/com/viaoa shows no runtime or verifier consumer for OALinkTable;
-     OAObjectAnnotationService does not load it into OALinkInfo.
-     Why it matters: many-to-many persistence metadata can silently become a no-op in core metadata. If an OA
-     datasource/generator expects runtime metadata to carry this, link-table save/select behavior can be wrong or
-     unavailable.
-     Minimal hardening: either load OALinkTable into link metadata, or explicitly mark it as external datasource/
-     codegen-only and have verifier warn when runtime code is expected to use it.
-     Suggested CODEX comment location: OALinkTable declaration and OAObjectAnnotationService MANY-link load block.
-
-*/
 
 /**
  * Declares the link (join) table used for many-to-many relationships.

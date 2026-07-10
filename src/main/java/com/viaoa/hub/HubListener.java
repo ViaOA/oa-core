@@ -305,8 +305,8 @@ public interface HubListener<T extends OAObject> extends EventListener {
 	/**
 	 * Defines where a listener should be inserted within the Hub's listener list.
 	 *
-	 * FIRST – listener is placed at the beginning  
-	 * NEXT  – listener is placed after the current position  
+	 * FIRST – listener is placed at the beginning
+	 * NEXT  – listener is placed after the current position
 	 * LAST  – listener is placed at the end
 	 */
 	public enum InsertLocation {

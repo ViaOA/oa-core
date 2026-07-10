@@ -28,7 +28,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *   <li>zero or more {@link PojoImportMatch} entries that describe
  *       alternative import-match paths, and</li>
  *   <li>an optional {@link PojoLinkUnique} definition describing a unique
- *       property (possibly reachable via {@code equalPropertyPath})
+ *       property (possibly reachable via {@code equalPath})
  *       that can be used for matching.</li>
  * </ul>
  * The {@link OAObjectPojoLoader} populates this structure based on
@@ -92,6 +92,11 @@ public class PojoLinkOne implements java.io.Serializable {
 	 * @return the unique-property metadata or {@code null} if not defined
 	 */
 	// @JsonIgnore
+	/**
+	 * Returns the unique-link metadata used to resolve this one-link.
+	 *
+	 * @return mapped metadata reference, or {@code null}
+	 */
 	public PojoLinkUnique getPojoLinkUnique() {
 		return pojoLinkUnique;
 	}

@@ -102,6 +102,11 @@ public class PojoLink implements java.io.Serializable {
 	 * @return the link-many metadata, or {@code null} if this link is not many-valued
 	 */
 	//@JsonIgnore
+	/**
+	 * Returns the many-link metadata specialization for this link.
+	 *
+	 * @return mapped metadata reference, or {@code null}
+	 */
 	public PojoLinkMany getPojoLinkMany() {
 		return pojoLinkMany;
 	}
@@ -121,6 +126,11 @@ public class PojoLink implements java.io.Serializable {
 	 * @return the link-one metadata, or {@code null} if this link is not one-valued
 	 */
 	//@JsonIgnore
+	/**
+	 * Returns the one-link metadata specialization for this link.
+	 *
+	 * @return mapped metadata reference, or {@code null}
+	 */
 	public PojoLinkOne getPojoLinkOne() {
 		return pojoLinkOne;
 	}

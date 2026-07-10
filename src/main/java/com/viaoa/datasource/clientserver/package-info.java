@@ -35,14 +35,14 @@ package com.viaoa.datasource.clientserver;
 DSCS-RUNTIME-001 — Client/Server Datasource Authority
 Contract statement:
 com.viaoa.datasource.clientserver defines the client-side datasource proxy contract for server-authoritative OA
-datasource operations across distributed Object Graph runtimes.
+datasource operations across distributed OA runtimes.
 Rationale:
 Client/server datasource behavior is a persistence and loading boundary, not just remote method plumbing. Client
 calls must route to the authoritative server datasource while preserving OA metadata, identity, cache, query, and
 lifecycle semantics.
 Source scope:
 OADataSourceClient, RemoteClientInterface.datasource(...), RemoteClientInterface.datasourceReturnOnQueue(...),
-RemoteClientInterface.datasourceNoReturn(...), OARuntime graph/datasource integration.
+RemoteClientInterface.datasourceNoReturn(...), OARuntime OA/datasource integration.
 Related CODEX findings:
 OADataSourceClient registration path can create a datasource that is not discoverable through the runtime datasource
 registry.
@@ -54,7 +54,7 @@ Datasource Client/Server / Core Responsibility
 
 DSCS-REGISTRY-001 — Runtime Datasource Registration
 Contract statement:
-A client/server datasource created for a graph/package must be discoverable through the runtime datasource registry
+A client/server datasource created for an OA package must be discoverable through the runtime datasource registry
 for classes it supports, or the creation path must fail visibly before selectors/loaders depend on it.
 Rationale:
 OASelect, lazy loading, and datasource lookup depend on runtime datasource discovery. A constructed but unregistered
@@ -73,13 +73,13 @@ Datasource Client/Server / Registration Semantics
 
 DSCS-REMOTE-001 — Remote Client Resolution
 Contract statement:
-OADataSourceClient must resolve and use the active RemoteClientInterface for its graph/package, and stale or missing
+OADataSourceClient must resolve and use the active RemoteClientInterface for its OA package, and stale or missing
 remote clients must fail visibly before datasource work is reported successful.
 Rationale:
 Datasource calls crossing process boundaries depend on the correct active remote endpoint. Stale or null endpoints
 cause lost loads, saves, deletes, or metadata queries.
 Source scope:
-OADataSourceClient.packageName, getRemoteClient(), verifyConnection(), OARuntime.graph(packageName), graph sync
+OADataSourceClient.packageName, getRemoteClient(), verifyConnection(), OARuntime.oa(packageName), OA sync
 remote-client lookup.
 Related CODEX findings:
 Registration and remote routing risks; remote invocation false-success is a cross-package boundary concern.
@@ -150,7 +150,7 @@ Remote datasource iterators must fetch server batches deterministically, apply l
 local cache/read-ahead state for returned objects, and release local iterator resources on exhaustion, remove,
 close, or failure.
 Rationale:
-Iterator state controls lazy loading and cache participation. Leaked or stale iterator state can retain graph
+Iterator state controls lazy loading and cache participation. Leaked or stale iterator state can retain OA runtime
 objects or miss returned records.
 Source scope:
 OADataSourceClient.MyIterator, hasNext(), next(), getMoreFromServer(), remove(), close(), getSiblingHelper(),
@@ -166,7 +166,7 @@ Datasource Client/Server / Iterator Lifecycle
 
 DSCS-CACHE-001 — Client Cache Reconciliation
 Contract statement:
-Objects returned from remote datasource operations must reconcile with the client graph/cache authority before
+Objects returned from remote datasource operations must reconcile with the client OA/cache authority before
 becoming visible as loaded runtime objects.
 Rationale:
 Client/server loading must not create duplicate object instances or bypass cache identity rules.
@@ -190,7 +190,7 @@ Object identity must remain stable across process boundaries. Runtime object ref
 JVMs.
 Source scope:
 OADataSourceClient.count(...), select(...), updateMany2ManyLinks(...), getPropertyBlobValue(...), MyIterator key
-mode, OARuntime graph object-key services.
+mode, OARuntime OA object-key services.
 Related CODEX findings:
 Identity/cache boundary concerns from remote datasource and sync reviews.
 Suggested unit tests:
@@ -231,7 +231,7 @@ OADataSourceClient.save(...), delete(...), deleteAll(...), assignId(...),
 RemoteClientInterface.datasourceReturnOnQueue(...).
 Related CODEX findings:
 User request highlights distinction between datasource operation success, remote invocation success, transport
-success, and semantic Object Graph success.
+success, and semantic OA runtime success.
 Suggested unit tests:
 testQueuedSaveReturnMeansQueuedNotCommitted(), testQueuedDeleteFailureIsObservableByOwnerContract(),
 testAssignIdQueuedBoundaryIsExplicit()
@@ -303,7 +303,7 @@ apply, queued execution, or iterator fetch, the incomplete boundary must be visi
 state, diagnostics, retry state, or explicit contract.
 Rationale:
 Distributed datasource work can fail after local or remote side effects. Partial progress must not be hidden as
-complete Object Graph success.
+complete OA runtime success.
 Source scope:
 OADataSourceClient save/delete/assignId queued calls, select iterator fetching, updateMany2ManyLinks(...),
 getPropertyBlobValue(...), remote datasource response handling.
@@ -342,7 +342,7 @@ Rationale:
 Blob values can be large or lazy-loaded. Incorrect blob resolution or silent failure corrupts persisted data
 visibility.
 Source scope:
-OADataSourceClient.getPropertyBlobValue(...), operation code GET_PROPERTY, OARuntime graph object-key services.
+OADataSourceClient.getPropertyBlobValue(...), operation code GET_PROPERTY, OARuntime OA object-key services.
 Related CODEX findings:
 False-success prevention for failed remote load/blob work is part of requested scope.
 Suggested unit tests:
@@ -360,7 +360,7 @@ relationship.
 Rationale:
 M2M relationship updates affect Hub membership, link-table state, cache, sync, and replication behavior.
 Source scope:
-OADataSourceClient.updateMany2ManyLinks(...), operation code UPDATE_MANY2MANY_LINKS, OARuntime graph object-key
+OADataSourceClient.updateMany2ManyLinks(...), operation code UPDATE_MANY2MANY_LINKS, OARuntime OA object-key
 services.
 Related CODEX findings:
 No direct source CODEX; requested scope includes relationship and save/delete coordination.
@@ -372,11 +372,11 @@ Datasource Client/Server / Relationship Mutation Semantics
 
 DSCS-TL-001 — Runtime Context Restoration
 Contract statement:
-Any ThreadLocal, OAThreadLocal, sync, loading, transaction, security, or graph runtime context set while performing
+Any ThreadLocal, OAThreadLocal, sync, loading, transaction, security, or OA runtime context set while performing
 client/server datasource work must be restored with try/finally by the owning caller or remote operation boundary.
 Rationale:
 Datasource calls can occur inside sync, lazy-load, transaction, serialization, and remote contexts. Leaked context
-can suppress sync, misroute graph work, or corrupt transaction state.
+can suppress sync, misroute OA runtime work, or corrupt transaction state.
 Source scope:
 OADataSourceClient call boundaries, MyIterator fetching, RemoteClientInterface invocation boundaries, higher-level
 sync/remote/datasource callers.
@@ -430,12 +430,12 @@ Datasource Client/Server / Reconnect Semantics
 DSCS-INTEGRATION-001 — Cross-Package Datasource Compatibility
 Contract statement:
 Client/server datasource behavior must remain compatible with datasource, remote, comm, sync, replication,
-transaction, cache, object, Hub, select, query, metadata, graph, serialization, and runtime contracts.
+transaction, cache, object, Hub, select, query, metadata, OA runtime, serialization, and runtime contracts.
 Rationale:
 Distributed datasource calls coordinate persistence authority, object identity, query evaluation, lazy loading,
-cache visibility, and observable graph behavior across packages.
+cache visibility, and observable OA behavior across packages.
 Source scope:
-OADataSourceClient, RemoteClientInterface, OARuntime graph/datasource services, ObjectCacheIterator,
+OADataSourceClient, RemoteClientInterface, OARuntime OA/datasource services, ObjectCacheIterator,
 OASiblingHelper, OAObjectKey, OASelect/OAQuery integration, sync/remote infrastructure.
 Related CODEX findings:
 Registration-path failure, classless/class-specific routing ambiguity, max-length cache concurrency issue all map to

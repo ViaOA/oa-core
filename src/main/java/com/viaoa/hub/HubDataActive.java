@@ -25,20 +25,20 @@ import com.viaoa.object.OAObject;
  * its AO resets to null.</p>
  */
 public class HubDataActive<TYPE extends OAObject> implements java.io.Serializable {
-//qqqqqqqq class was package protected	
+
 	/**
 	 * Serialization identifier used to maintain version compatibility when
 	 * HubDataActive instances are serialized.
 	 */
     static final long serialVersionUID = 1L;  // used for object serialization
-	
+
     /**
      * The current Active Object (AO) for the owning Hub. Shared Hubs share
      * this value if configured to use the same active-object state.
      */
 	protected transient volatile TYPE activeObject;
-	
-	
+
+
 	/**
 	 * Clears the current active object by setting it to {@code null}.
 	 * The {@code eof} parameter is ignored.
@@ -48,7 +48,7 @@ public class HubDataActive<TYPE extends OAObject> implements java.io.Serializabl
 	public void clear(boolean eof) {
 	    activeObject = null;
 	}
-	
+
 	/**
 	 * Clears the current active object by setting it to {@code null}.
 	 */
@@ -56,13 +56,22 @@ public class HubDataActive<TYPE extends OAObject> implements java.io.Serializabl
         activeObject = null;
     }
 
+	/**
+	 * Returns the ActiveObject value.
+	 *
+	 * @return the ActiveObject value
+	 */
 	public TYPE getActiveObject() {
 		return activeObject;
 	}
+	/**
+	 * Sets the ActiveObject value.
+	 * @param obj the ActiveObject value
+	 */
 	public void setActiveObject(TYPE obj) {
 		activeObject = obj;
 	}
-	
-	
+
+
 }
 

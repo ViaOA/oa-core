@@ -30,32 +30,6 @@ import java.util.logging.Logger;
 import com.viaoa.comm.multiplexer.OAMultiplexerClient;
 import com.viaoa.lang.OAString;
 
-/*qqqqqqqqqqq
-CODEX
-
-4. src/main/java/com/viaoa/sync/file/ClientFile.java — download(...)
-     Concrete bug: the local destination file is deleted and recreated before the client reads the server’s status
-     code.
-     Runtime scenario: caller downloads server-report.pdf over an existing local file; server responds file-not-found
-     or illegal directory. Client has already deleted/replaced the local file and returns false.
-     Why this violates OA/OG sync semantics: a failed file sync operation silently destroys the previous local value
-     even though the server did not provide replacement content.
-     Minimal fix direction: read and validate the server status first, then write to a temp file and atomically
-     replace fileSaveAs only after a complete successful download.
-     Suggested CODEX comment location: ClientFile.download, around lines 101-109.
-  5. src/main/java/com/viaoa/sync/file/ClientFile.java and src/main/java/com/viaoa/sync/file/ServerFile.java — file
-     transfer stream cleanup
-     Concrete bug: file/socket streams are not closed in finally/try-with-resources on transfer failure.
-     Runtime scenario: local file open fails during upload, remote socket closes mid-download, or server file read/
-     write throws. The method exits through exception with streams/sockets left open; the peer can remain blocked
-     waiting for protocol completion.
-     Why this violates OA/OG sync semantics: file sync failures can leak resources and leave transfer worker threads
-     blocked, which is observable in normal internal OA use during disconnects or filesystem errors.
-     Minimal fix direction: wrap sockets and file streams in try/finally or try-with-resources, and ensure partial
-     transfer failure closes the socket to unblock the peer.
-     Suggested CODEX comment location: ClientFile.download/upload and ServerFile.downloadFile/uploadFile.
-
-*/
 
 /**
  * Client-side file transfer helper used by {@link com.viaoa.sync.OASyncClient}.

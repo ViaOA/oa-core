@@ -98,11 +98,15 @@ public class HubDataMaster implements java.io.Serializable {
 		return liDetailToMaster;
 	}
 
+	/**
+	 * Sets the DetailToMasterLinkInfo value.
+	 * @param li the DetailToMasterLinkInfo value
+	 */
 	public void setDetailToMasterLinkInfo(OALinkInfo li) {
 		liDetailToMaster = li;;
 	}
-	
-	
+
+
 	/**
 	 * Returns the unique property name associated with the reverse link of the
 	 * detail-to-master relationship.
@@ -164,7 +168,7 @@ public class HubDataMaster implements java.io.Serializable {
 		}
 
 		// 20160623 so that serverRoot wont store changes to objects
-		
+
 		if (!liDetailToMaster.getToObjectInfo().getUseDataSource()) {
 			OADataSource ds = OARuntime.datasource().get(liDetailToMaster.getToClass());
 			if (ds == null) {
@@ -246,7 +250,7 @@ public class HubDataMaster implements java.io.Serializable {
 		s.writeByte(0);
 	}
 
-	
+
 	/**
 	 * Custom deserialization method that restores default fields and reads
 	 * a placeholder byte written during serialization.

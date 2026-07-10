@@ -44,8 +44,8 @@ import com.viaoa.runtime.OARuntime;
  *
  * <p><b>Capabilities</b>:
  * <ul>
- *   <li>Evaluates {@code OAPropertyPath} dynamically using metadata from
- *       {@link OAObjectInfoDelegate}.</li>
+ *   <li>Evaluates {@code OAPath} dynamically using metadata from
+ *       {@link OAObjectInfo}.</li>
  *   <li>Supports predefined filters like {@code OANotEmptyFilter},
  *       {@code OANotNullFilter}, and {@code OAEmptyFilter}.</li>
  *   <li>Includes helper methods such as {@code findFirstTrue()} that
@@ -66,13 +66,13 @@ public class OAHierFinder<F extends OAObject> {
 	 * The raw string form of the property path used to navigate through
 	 * recursive or linked object hierarchies.
 	 */
-	private final String strPropertyPath;
+	private final String strPath;
     
 	/**
 	 * Parsed representation of the property path, produced on first use,
 	 * and used to walk the hierarchy during evaluation.
 	 */
-	private OAPath propertyPath;
+	private OAPath path;
     
 	/**
 	 * The first property value encountered during traversal that satisfies
@@ -91,10 +91,10 @@ public class OAHierFinder<F extends OAObject> {
      * property path. The starting object will be included in evaluation.
      *
      * @param propertyName the property whose value is evaluated
-     * @param propertyPath the hierarchical path used for traversal
+     * @param path the hierarchical path used for traversal
      */
-    public OAHierFinder(String propertyName, String propertyPath) {
-        this(propertyName, propertyPath, true);
+    public OAHierFinder(String propertyName, String path) {
+        this(propertyName, path, true);
     }
     
     /**
@@ -102,13 +102,13 @@ public class OAHierFinder<F extends OAObject> {
      * object should be evaluated.
      *
      * @param propertyName the property whose value is evaluated
-     * @param propertyPath the hierarchical path used for traversal
+     * @param path the hierarchical path used for traversal
      * @param bIncludeFromObject {@code true} to include the starting object
      *                           in evaluation, otherwise {@code false}
      */
-    public OAHierFinder(String propertyName, String propertyPath, boolean bIncludeFromObject) {
+    public OAHierFinder(String propertyName, String path, boolean bIncludeFromObject) {
         this.property = propertyName;
-        this.strPropertyPath = propertyPath;
+        this.strPath = path;
         this.bIncludeFromObject = bIncludeFromObject;
     }
     
@@ -124,7 +124,7 @@ public class OAHierFinder<F extends OAObject> {
         if (fromObject == null) return null;
 
         Class c = fromObject.getClass();
-        if (propertyPath == null) propertyPath = new OAPath(c, strPropertyPath);
+        if (path == null) path = new OAPath(c, strPath);
         
         foundValue = null;
         findFirstValue(fromObject, filter, 0);
@@ -186,6 +186,11 @@ public class OAHierFinder<F extends OAObject> {
     public Object findFirstTrue(F fromObject) {
         Object objx = findFirst(fromObject, new OAFilter() {
             OAConverterBoolean cb = new OAConverterBoolean(); 
+            /**
+             * Evaluates whether a value converts to boolean true.
+             * @param obj value to test
+             * @return true if the value is truthy
+             */
             @Override
             public boolean isUsed(Object obj) {
                 Boolean boo = (Boolean) cb.convert(Boolean.class, obj, null);
@@ -285,7 +290,7 @@ public class OAHierFinder<F extends OAObject> {
         OALinkInfo liRecursive = oa.internal().objects().info().getRecursiveLinkInfo(oi, OALinkInfo.ONE);
         
         if (liRecursive != null) {
-            OALinkInfo[] lis  = propertyPath.getLinkInfos();
+            OALinkInfo[] lis  = path.getLinkInfos();
             if (lis != null && pos < lis.length) {
                 OALinkInfo li = lis[pos];
                 if (li != null) {
@@ -305,9 +310,9 @@ public class OAHierFinder<F extends OAObject> {
         
         if (bRecursiveCheckOnly) return false;
         
-        String[] props = propertyPath.getProperties();
+        String[] props = path.getProperties();
         if (props != null && pos < props.length) {
-            OALinkInfo[] lis  = propertyPath.getLinkInfos();
+            OALinkInfo[] lis  = path.getLinkInfos();
             if (lis != null && pos < lis.length) {
                 final OALinkInfo li = lis[pos];
                 OAObject objx = (OAObject) li.getValue(obj);

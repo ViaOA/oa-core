@@ -36,47 +36,24 @@ import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
 import com.viaoa.runtime.thread.OAThreadLocal;
 
-/*qqqqqqqqqqqqqqqqq
-CODEX
-
-1. file/class/method
-     src/main/java/com/viaoa/find/OAFinder.java / setup(Class) and callers find(F), find(List<F>,F), _find(Hub<F>,F)
-  2. exact execution path
-     A find call initializes alFound/stack, then calls setup(...) before the traversal try/finally. _setup(...)
-     creates propertyPath, initializes linkInfos, methods, cascades, and can append embedded property-path filters to
-     filter. If embedded filter creation throws after any filter was added, the caller-visible exception escapes
-     before the find cleanup finally runs.
-  3. why it is a real finder correctness bug
-     The finder remains reusable but has partial setup state and a partially mutated filter chain. A later retry can
-     search with duplicated or incomplete embedded filters, causing silent false matches/false negatives.
-  4. semantic/invariant violated
-     Failed setup must not leave a finder partially initialized or partially filtered.
-  5. minimal fix or CODEX/defer recommendation
-     Make setup transactional: save propertyPath, linkInfos, recursiveLinkInfos, methods, cascades, liRecursiveRoot,
-     filter, bAddOrFilter, bAddAndFilter, and bSetup before _setup(c), then restore them on failure. Also put
-     setup(...) inside the public find cleanup window, or make setup(...) itself roll back all state it mutates.
-  6. suggested regression test
-     testFinderSetupFailureRollsBackEmbeddedFiltersAndState
-
-*/
 
 
 
 /**
- * Utility for searching the OA Object Graph along a declarative
+ * Utility for searching the OA model along a declarative
  * {@link com.viaoa.path.OAPath}. OAFinder can operate purely
- * in-memory or dynamically lazy-load graph segments with sibling
+ * in-memory or dynamically lazy-load OA model segments with sibling
  * optimization to minimize round-trips to a datasource.
  *
  * <h3>How It Works</h3>
  * <ul>
  *   <li>Start from a root {@link com.viaoa.object.OAObject} or {@link com.viaoa.hub.Hub}</li>
- *   <li>Walk a {@code OAPropertyPath} (links + hubs) using metadata {@code OALinkInfo[]}</li>
+ *   <li>Walk a {@code OAPath} (links + hubs) using metadata {@code OALinkInfo[]}</li>
  *   <li>Apply programmatic filters or parsed SQL-like Object Queries</li>
  *   <li>Return matching target objects with optional max-results cutoff</li>
  * </ul>
  *
- * <h3>Integration with OAPropertyPath</h3>
+ * <h3>Integration with OAPath</h3>
  * {@link com.viaoa.path.OAPath} parses dotted navigation such as:
  * <pre>
  *   "orders.items.product.vendor"
@@ -88,31 +65,31 @@ CODEX
  *   <li>casts (e.g. "(Manager)")</li>
  *   <li>embedded filter directives</li>
  * </ul>
- * OAFinder uses this metadata to safely traverse the Graph without writing
+ * OAFinder uses this metadata to safely traverse the OA model without writing
  * domain-specific traversal code.
  *
  * <h3>Filters</h3>
  * Filters may be added via:
  * <ul>
  *   <li>Programmatic criteria: {@code addEqualFilter()}, {@code addBetweenFilter()}, ...</li>
- *   <li>PropertyPath-embedded filters</li>
+ *   <li>Path-embedded filters</li>
  *   <li><b>Query Filters</b> parsed from SQL-style Object Query strings</li>
  * </ul>
  *
  * <h4>SQL-style Object Queries</h4>
- * Ad-hoc queries over the Object Graph using business-friendly syntax:
+ * Ad-hoc queries over the OA model using business-friendly syntax:
  * <pre>
  *   "user.lastName = 'Smith' AND loginCount >= 3"
  * </pre>
  * The expression is parsed and translated into a composition of
  * {@link com.viaoa.filter.OAFilter} instances. Nested properties can
- * reference full PropertyPaths. Queries are evaluated against in-memory
+ * reference full Paths. Queries are evaluated against in-memory
  * values and may trigger lazy loads when enabled.
  *
  * <h3>Lazy Loading + Sibling Optimization</h3>
  * When scanning from a {@link com.viaoa.hub.Hub} and in lazy-mode, OAFinder
  * registers a sibling fetch helper to proactively prefetch adjacent rows
- * along the current PropertyPath context. This:
+ * along the current Path context. This:
  * <ul>
  *   <li>dramatically reduces round-trips for scrolling lists</li>
  *   <li>optimizes parent/child expansion</li>
@@ -137,7 +114,7 @@ CODEX
  *
  * <h3>Examples</h3>
  *
- * Find by PropertyPath and exact match:
+ * Find by Path and exact match:
  * <pre>{@code
  * OAFinder<Store, Customer> f =
  *     new OAFinder<>(storeHub, StorePP.customers().pp);
@@ -153,7 +130,7 @@ CODEX
  * List<Order> result = f.find(ordersHub);
  * }</pre>
  *
- * Find largest by numeric PropertyPath:
+ * Find largest by numeric Path:
  * <pre>{@code
  * Order biggest =
  *     OAFinder.findLargest(ordersHub, OrderPP.totalAmount().pp);
@@ -177,15 +154,15 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	
 	/**
 	 * The raw property-path expression (string form) defining the navigation
-	 * route for this finder before it is parsed into an OAPropertyPath.
+	 * route for this finder before it is parsed into an OAPath.
 	 */
-	private String strPropertyPath;
+	private String strPath;
 	
 	/**
 	 * Parsed representation of the property path used to navigate through
-	 * the Object Graph during a search.
+	 * the OA model during a search.
 	 */
-	private OAPath<T> propertyPath;
+	private OAPath<T> path;
 
 	/**
 	 * LinkInfo representing the recursive parent link for the root object,
@@ -340,7 +317,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	 * @param propPath the property path to navigate during the search
 	 */
 	public OAFinder(String propPath) {
-		this.strPropertyPath = propPath;
+		this.strPath = propPath;
 	}
 
 	/**
@@ -351,7 +328,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	 */
 	public OAFinder(F fromObject, String propPath) {
 		this.fromObject = fromObject;
-		this.strPropertyPath = propPath;
+		this.strPath = propPath;
 	}
 
 	/**
@@ -377,7 +354,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	 */
 	public OAFinder(Hub<F> fromHub, String propPath, boolean bUseAll) {
 		this.fromHub = fromHub;
-		this.strPropertyPath = propPath;
+		this.strPath = propPath;
 		this.bUseAll = bUseAll;
 	}
 
@@ -545,6 +522,11 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		this.setRoot(hub, true);
 	}
 
+	/**
+	 * Sets the Hub root used by subsequent no-argument find operations.
+	 * @param hub root Hub
+	 * @param bUseAll true to search all Hub members instead of the active object
+	 */
 	public void setRoot(Hub<F> hub, boolean bUseAll) {
 		this.fromHub = hub;
 		this.bUseAll = bUseAll;
@@ -561,6 +543,12 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		return find(hubRoot, true);
 	}
 
+	/**
+	 * Finds matching target objects starting from a Hub root.
+	 * @param hubRoot root Hub
+	 * @param bUseAll true to search all Hub members
+	 * @return matching objects
+	 */
 	public List<T> find(Hub<F> hubRoot, boolean bUseAll) {
 		this.bUseAll = bUseAll;
 		List<T> al = find(hubRoot, null);
@@ -684,7 +672,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 		if (hubRoot != null && !bUseOnlyLoadedData) {
 			siblingHelper = new OASiblingHelper<F>(hubRoot);
-			siblingHelper.add(strPropertyPath);
+			siblingHelper.add(strPath);
 			srvcOAThreadLocal.addSiblingHelper(siblingHelper);
 		}
 		try {
@@ -698,12 +686,16 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		return al;
 	}
 
+	/**
+	 * Returns the current root Hub position from the most recent Hub traversal.
+	 * @return root Hub position, or -1
+	 */
 	public int getRootHubPos() {
 		return this.rootHubPos;
 	}
 
 	/**
-	 * Given the propertyPath, find all of the objects from a Hub, starting after objectLastFound
+	 * Given the path, find all of the objects from a Hub, starting after objectLastFound
 	 */
 	protected List<T> _find(Hub<F> hubRoot, F objectLastUsed) {
 		alFound = new ArrayList<T>();
@@ -749,10 +741,17 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		return al;
 	}
 
+	/**
+	 * Clears all filters configured on this finder.
+	 */
 	public void clearFilters() {
 		filter = null;
 	}
 
+	/**
+	 * Adds a filter to the finder using the current AND/OR composition mode.
+	 * @param filter filter to add
+	 */
 	public void addFilter(OAFilter<T> filter) {
 		if (this.filter == null) {
 			this.filter = filter;
@@ -766,10 +765,18 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		bAddAndFilter = bAddOrFilter = false;
 	}
 
+	/**
+	 * Returns the currently configured root filter.
+	 * @return current filter, or null
+	 */
 	public OAFilter<T> getFilter() {
 		return this.filter;
 	}
 
+	/**
+	 * Sets the root filter used to accept found target objects.
+	 * @param f filter to use
+	 */
 	public void setFilter(OAFilter<T> f) {
 		this.filter = f;
 	}
@@ -792,6 +799,10 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		return (al != null && al.size() > 0);
 	}
 
+	/**
+	 * Finds the first matching target using the configured root.
+	 * @return first matching object, or null
+	 */
 	public T findFirst() {
 		if (fromObject != null) {
 			return findFirst(fromObject);
@@ -835,6 +846,11 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		return obj;
 	}
 
+	/**
+	 * Finds the first matching target starting from a Hub root.
+	 * @param hub root Hub
+	 * @return first matching object, or null
+	 */
 	public T findFirst(Hub<F> hub) {
 		int holdMax = getMaxFound();
 		T obj = null;
@@ -855,6 +871,12 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		return obj;
 	}
 
+	/**
+	 * Finds the next matching target after a previously used root object.
+	 * @param hub root Hub
+	 * @param objectLastUsed last root object used
+	 * @return next matching object, or null
+	 */
 	public T findNext(Hub<F> hub, F objectLastUsed) {
 		int holdMax = getMaxFound();
 		T obj = null;
@@ -876,6 +898,10 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	}
 
 	
+    /**
+	 * Finds the last matching target using the configured root.
+	 * @return last matching object, or null
+	 */
     public T findLast() {
         List<T> al = find();
         if (al == null) return null;
@@ -883,6 +909,11 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
         if (x == 0) return null;
         return al.get(x-1);
     }
+    /**
+	 * Finds the last matching target starting from an object root.
+	 * @param objectRoot root object
+	 * @return last matching object, or null
+	 */
     public T findLast(F objectRoot) {
         List<T> al = find(objectRoot);
         if (al == null) return null;
@@ -890,6 +921,11 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
         if (x == 0) return null;
         return al.get(x-1);
     }
+    /**
+	 * Finds the last matching target starting from a Hub root.
+	 * @param hub root Hub
+	 * @return last matching object, or null
+	 */
     public T findLast(Hub<F> hub) {
         List<T> al = find(hub);
         if (al == null) return null;
@@ -906,9 +942,18 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
         
         boolean bCancel;
         
+		/**
+		 * Creates a comparison filter using a property path.
+		 * @param pp property path used for comparison
+		 */
         public CompareFilter(final String pp) {
             this.pp = pp;
         }
+		/**
+		 * Evaluates whether an object should be used by this comparison filter.
+		 * @param obj object to evaluate
+		 * @return true if the object is accepted
+		 */
         @Override
         public boolean isUsed(final Object obj) {
             if (bCancel) return true;
@@ -928,6 +973,9 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
             }
             return false;
         }
+		/**
+		 * Restores finder state after comparison-filter processing.
+		 */
         protected void cancel() {
             this.bCancel = true;
         }
@@ -935,6 +983,11 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
     }
     
     
+    /**
+	 * Finds the object with the largest value for a property path using the configured root.
+	 * @param pp property path to compare
+	 * @return object with the largest value, or null
+	 */
     public T findLargest(final String pp) {
         CompareFilter compareFilter = new CompareFilter(pp) {
             @Override
@@ -952,12 +1005,18 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	        compareFilter.cancel();
         }
         finally {
-        	this.filter = holdFilter;
+		this.filter = holdFilter;
             this.bAddOrFilter = bHold1;
             this.bAddAndFilter = bHold2;
         }
         return t;
     }
+    /**
+	 * Finds the object with the largest value for a property path starting from an object root.
+	 * @param objectRoot root object
+	 * @param pp property path to compare
+	 * @return object with the largest value, or null
+	 */
     public T findLargest(F objectRoot, String pp) {
         CompareFilter compareFilter = new CompareFilter(pp) {
             @Override
@@ -975,12 +1034,18 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	        compareFilter.cancel();
         }
         finally {
-        	this.filter = holdFilter;
+		this.filter = holdFilter;
             this.bAddOrFilter = bHold1;
             this.bAddAndFilter = bHold2;
         }
         return t;
     }
+    /**
+	 * Finds the object with the largest value for a property path starting from a Hub root.
+	 * @param hub root Hub
+	 * @param pp property path to compare
+	 * @return object with the largest value, or null
+	 */
     public T findLargest(Hub<F> hub, String pp) {
         CompareFilter compareFilter = new CompareFilter(pp) {
             @Override
@@ -998,13 +1063,18 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	        compareFilter.cancel();
         }
         finally {
-        	this.filter = holdFilter;
+		this.filter = holdFilter;
             this.bAddOrFilter = bHold1;
             this.bAddAndFilter = bHold2;
         }
         return t;
     }
     
+    /**
+	 * Finds the object with the smallest value for a property path using the configured root.
+	 * @param pp property path to compare
+	 * @return object with the smallest value, or null
+	 */
     public T findSmallest(final String pp) {
         CompareFilter compareFilter = new CompareFilter(pp) {
             @Override
@@ -1022,12 +1092,18 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	        compareFilter.cancel();
         }
         finally {
-        	this.filter = holdFilter;
+		this.filter = holdFilter;
             this.bAddOrFilter = bHold1;
             this.bAddAndFilter = bHold2;
         }
         return t;
     }
+    /**
+	 * Finds the object with the smallest value for a property path starting from an object root.
+	 * @param objectRoot root object
+	 * @param pp property path to compare
+	 * @return object with the smallest value, or null
+	 */
     public T findSmallest(F objectRoot, String pp) {
         CompareFilter compareFilter = new CompareFilter(pp) {
             @Override
@@ -1045,12 +1121,18 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	        compareFilter.cancel();
         }
         finally {
-        	this.filter = holdFilter;
+		this.filter = holdFilter;
             this.bAddOrFilter = bHold1;
             this.bAddAndFilter = bHold2;
         }
         return t;
     }
+    /**
+	 * Finds the object with the smallest value for a property path starting from a Hub root.
+	 * @param hub root Hub
+	 * @param pp property path to compare
+	 * @return object with the smallest value, or null
+	 */
     public T findSmallest(Hub<F> hub, String pp) {
         CompareFilter compareFilter = new CompareFilter(pp) {
             @Override
@@ -1068,7 +1150,7 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	        compareFilter.cancel();
         }
         finally {
-        	this.filter = holdFilter;
+		this.filter = holdFilter;
             this.bAddOrFilter = bHold1;
             this.bAddAndFilter = bHold2;
         }
@@ -1081,9 +1163,18 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
         final Map<Object, OAObject> hm = new HashMap<>();
         final Map<Object, OAObject> hm2 = new HashMap<>();
         
+		/**
+		 * Creates a duplicate-detection filter using a property path.
+		 * @param pp property path used as the duplicate key
+		 */
         public DuplicateFilter(final String pp) {
             this.pp = pp;
         }
+		/**
+		 * Evaluates whether an object has a duplicate property-path value.
+		 * @param obj object to evaluate
+		 * @return true if the object is part of a duplicate set
+		 */
         @Override
         public boolean isUsed(final Object obj) {
             if (bCancel) return true;
@@ -1102,6 +1193,9 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
             }
             return false;
         }
+		/**
+		 * Restores finder state after duplicate-filter processing.
+		 */
         protected void cancel() {
             this.bCancel = true;
         }
@@ -1139,9 +1233,9 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
     }
     
 	/**
-	 * Given the propertyPath, find all of the objects from a root object.
+	 * Given the path, find all of the objects from a root object.
 	 *
-	 * @param objectRoot starting object to begin navigating through the propertyPath.
+	 * @param objectRoot starting object to begin navigating through the path.
 	 */
 	public List<T> find(F objectRoot) {
 		if (objectRoot == null) {
@@ -1174,10 +1268,18 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		return al;
 	}
 
-	public OAPath getPropertyPath() {
-		return this.propertyPath;
+	/**
+	 * Returns the parsed property path used by this finder.
+	 * @return parsed property path
+	 */
+	public OAPath getPath() {
+		return this.path;
 	}
 
+	/**
+	 * Initializes path, metadata, filters, and cascade state for a root class.
+	 * @param c root class
+	 */
 	protected void setup(Class c) {
 		if (bSetup) {
 			if (cascades == null && linkInfos != null) {
@@ -1199,16 +1301,16 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	
 	
 	private void _setup(Class c) {
-		propertyPath = new OAPath(c, strPropertyPath, false);
+		path = new OAPath(c, strPath, false);
 
-		linkInfos = propertyPath.getLinkInfos();
-		recursiveLinkInfos = propertyPath.getRecursiveLinkInfos();
-		methods = propertyPath.getMethods();
+		linkInfos = path.getLinkInfos();
+		recursiveLinkInfos = path.getRecursiveLinkInfos();
+		methods = path.getMethods();
 
 		int x = linkInfos == null ? 0 : linkInfos.length;
 		if (x < methods.length) {
 			// oafinder is to get from one OAObj/Hub to another, not a property/etc
-			throw new RuntimeException("propertyPath " + strPropertyPath + " must end in an OAObject/Hub");
+			throw new RuntimeException("path " + strPath + " must end in an OAObject/Hub");
 		}
 
 		cascades = new OACascade[linkInfos.length];
@@ -1228,9 +1330,9 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		}
 
 		// match filters
-		String[] names = propertyPath.getFilterNames();
-		Object[][] values = propertyPath.getFilterParamValues();
-		Constructor[] constructors = propertyPath.getFilterConstructors(); // (hub, hub, [params ...])
+		String[] names = path.getFilterNames();
+		Object[][] values = path.getFilterParamValues();
+		Constructor[] constructors = path.getFilterConstructors(); // (hub, hub, [params ...])
 
 		x = names.length;
 		for (int i = 0; i < x; i++) {
@@ -1273,6 +1375,11 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		find(obj, 0);
 	}
 
+	/**
+	 * Traverses an object or Hub at a property-path position.
+	 * @param obj current traversal value
+	 * @param pos property-path position
+	 */
 	protected void find(Object obj, int pos) {
 		if (obj == null || bStop) {
 			return;
@@ -1455,9 +1562,9 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 	}
 
 	/**
-	 * This will be called to create a filter that is in the propertyPaths.
+	 * This will be called to create a filter that is in the paths.
 	 *
-	 * @param name name of the filter in the propertyPath
+	 * @param name name of the filter in the path
 	 */
 	protected HubFilter createHubFilter(String name) {
 		return null;
@@ -1553,87 +1660,186 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		return ss;
 	}
 
+	/**
+	 * Adds a filter that accepts values between two bounds.
+	 * @param pp property path
+	 * @param val1 lower bound
+	 * @param val2 upper bound
+	 */
 	public void addBetweenFilter(String pp, Object val1, Object val2) {
 		addFilter(new OABetweenFilter(pp, val1, val2));
 	}
 
+	/**
+	 * Adds a filter that accepts values between or equal to two bounds.
+	 * @param pp property path
+	 * @param val1 lower bound
+	 * @param val2 upper bound
+	 */
 	public void addBetweenOrEqualFilter(String pp, Object val1, Object val2) {
 		addFilter(new OABetweenOrEqualFilter(pp, val1, val2));
 	}
 
+	/**
+	 * Adds a filter that accepts empty values.
+	 * @param pp property path
+	 */
 	public void addEmptyFilter(String pp) {
 		addFilter(new OAEmptyFilter(pp));
 	}
 
+	/**
+	 * Adds a filter that accepts non-empty values.
+	 * @param pp property path
+	 */
 	public void addNotEmptyFilter(String pp) {
 		addFilter(new OANotEmptyFilter(pp));
 	}
 
 	//20260625  was: <F>	
 	
+	/**
+	 * Adds a query filter using a query string/property expression.
+	 * @param c target class
+	 * @param pp query or property expression
+	 */
 	public void addQueryFilter(Class<T> c, String pp) {
 		addFilter(new OAQueryFilter(c, pp));
 	}
 
+	/**
+	 * Adds a query filter using query text and arguments.
+	 * @param c target class
+	 * @param query query text
+	 * @param args query arguments
+	 */
 	public void addQueryFilter(Class<T> c, String query, Object[] args) {
 		addFilter(new OAQueryFilter(c, query, args));
 	}
 
+	/**
+	 * Adds an equality filter.
+	 * @param pp property path
+	 * @param val value to match
+	 */
 	public void addEqualFilter(String pp, Object val) {
 		addFilter(new OAEqualFilter(pp, val));
 	}
 
+	/**
+	 * Adds an equality filter with optional case-insensitive comparison.
+	 * @param pp property path
+	 * @param matchValue value to match
+	 * @param bIgnoreCase true to ignore string case
+	 */
 	public void addEqualFilter(String pp, Object matchValue, boolean bIgnoreCase) {
 		OAEqualFilter f = new OAEqualFilter(pp, matchValue);
 		f.setIgnoreCase(bIgnoreCase);
 		addFilter(f);
 	}
 
+    /**
+	 * Adds an equality filter using numeric decimal-place comparison.
+	 * @param pp property path
+	 * @param matchValue value to match
+	 * @param decimalPlaces number of decimal places
+	 */
     public void addEqualFilter(String pp, Object matchValue, int decimalPlaces) {
         OAEqualFilter f = new OAEqualFilter(pp, matchValue, decimalPlaces);
         addFilter(f);
     }
 	
+	/**
+	 * Adds a filter that accepts boolean true values.
+	 * @param pp property path
+	 */
 	public void addTrueFilter(String pp) {
 		addFilter(new OAEqualFilter(pp, Boolean.TRUE));
 	}
 
+	/**
+	 * Adds a filter that accepts boolean false values.
+	 * @param pp property path
+	 */
 	public void addFalseFilter(String pp) {
 		addFilter(new OAEqualFilter(pp, Boolean.FALSE));
 	}
 
+	/**
+	 * Adds a filter that accepts null values.
+	 * @param pp property path
+	 */
 	public void addNullFilter(String pp) {
 		addFilter(new OANullFilter(pp));
 	}
 
+	/**
+	 * Adds a filter that accepts non-null values.
+	 * @param pp property path
+	 */
 	public void addNotNullFilter(String pp) {
 		addFilter(new OANotNullFilter(pp));
 	}
 
+	/**
+	 * Adds a greater-than filter.
+	 * @param pp property path
+	 * @param val comparison value
+	 */
 	public void addGreaterFilter(String pp, Object val) {
 		addFilter(new OAGreaterFilter(pp, val));
 	}
 
+	/**
+	 * Adds a greater-than-or-equal filter.
+	 * @param pp property path
+	 * @param val comparison value
+	 */
 	public void addGreaterOrEqualFilter(String pp, Object val) {
 		addFilter(new OAGreaterOrEqualFilter(pp, val));
 	}
 
+	/**
+	 * Adds a less-than filter.
+	 * @param pp property path
+	 * @param val comparison value
+	 */
 	public void addLessFilter(String pp, Object val) {
 		addFilter(new OALessFilter(pp, val));
 	}
 
+	/**
+	 * Adds a less-than-or-equal filter.
+	 * @param pp property path
+	 * @param val comparison value
+	 */
 	public void addLessOrEqualFilter(String pp, Object val) {
 		addFilter(new OALessOrEqualFilter(pp, val));
 	}
 
+	/**
+	 * Adds a string LIKE filter.
+	 * @param pp property path
+	 * @param val pattern or value
+	 */
 	public void addLikeFilter(String pp, Object val) {
 		addFilter(new OALikeFilter(pp, val));
 	}
 
+	/**
+	 * Adds a string NOT LIKE filter.
+	 * @param pp property path
+	 * @param val pattern or value
+	 */
 	public void addNotLikeFilter(String pp, Object val) {
 		addFilter(new OANotLikeFilter(pp, val));
 	}
 
+	/**
+	 * Adds a filter that accepts when either supplied filter accepts.
+	 * @param f1 first filter
+	 * @param f2 second filter
+	 */
 	public void addOrFilter(OAFilter f1, OAFilter f2) {
 		OAOrFilter f = new OAOrFilter(f1, f2);
 		addFilter(f);
@@ -1655,6 +1861,10 @@ public class OAFinder<F extends OAObject, T extends OAObject> {
 		bAddOrFilter = false;
 	}
 
+	/**
+	 * Sets the cascade tracker used for cycle protection.
+	 * @param cascade cascade tracker
+	 */
 	public void setCascade(OACascade cascade) {
 		this.cascade = cascade;
 	}

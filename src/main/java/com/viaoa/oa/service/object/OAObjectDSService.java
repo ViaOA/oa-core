@@ -12,9 +12,15 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
 
+/**
+ * Resolves datasource services and datasource-backed object operations for OAObjects.
+ */
 public abstract class OAObjectDSService {
 	private static final Logger LOG = Logger.getLogger(OAObjectDSService.class.getName());
 	
+	/**
+	 * Performs OAObjectDSService behavior for the OA object service.
+	 */
     public OAObjectDSService() {
     }
 
@@ -122,6 +128,12 @@ public abstract class OAObjectDSService {
 		return OARuntime.datasource().get(obj.getClass());
 	}
 
+	/**
+	 * Returns the dataSource value.
+	 *
+	 * @param c method input
+	 * @return result value
+	 */
 	public OADataSource getDataSource(Class<?> c) {
 		return OARuntime.datasource().get(c);
 	}
@@ -371,9 +383,34 @@ public abstract class OAObjectDSService {
 		return ds.getObject(oaObj.getClass(), callKeyGetKey(oaObj));
 	}
 
+	/**
+	 * Dependency hook used by this service to infoGetObjectInfo.
+	 *
+	 * @param clazz method input
+	 * @return result value
+	 */
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz); 
+	/**
+	 * Dependency hook used by this service to guidGetGuid.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
 	public abstract UUID callGuidGetGuid(OAObject oaObj);
+	/**
+	 * Dependency hook used by this service to keyCreateObjectKey.
+	 *
+	 * @param c method input
+	 * @param ids method input
+	 * @return result value
+	 */
 	public abstract OAObjectKey callKeyCreateObjectKey(final Class<? extends OAObject> c, final Object ...ids);
+	/**
+	 * Dependency hook used by this service to keyGetKey.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
 	public abstract OAObjectKey callKeyGetKey(OAObject oaObj); 
 }
 

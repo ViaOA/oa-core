@@ -31,7 +31,7 @@ public class HubListenerAdapter<T extends OAObject> implements HubListener<T> {
 	 * Optional reference to an associated listener or owner object.
 	 */
 	private Object listener;
-	
+
 	/**
 	 * Optional metadata fields providing a name and description for the listener.
 	 */

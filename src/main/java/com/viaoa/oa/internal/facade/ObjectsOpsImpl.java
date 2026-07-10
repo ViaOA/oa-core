@@ -58,6 +58,9 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.schedule.OAScheduler;
 
+/**
+ * Internal facade implementation for OAObject operation families exposed through {@code OA.internal().objects()}.
+ */
 public class ObjectsOpsImpl implements ObjectsOps {
 
 	private OAObjectParentService srvc;
@@ -89,11 +92,21 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	private OAObjectUniqueOps opsUnique;
 	
 	
+	/**
+	 * Creates the internal OAObject facade backed by an object parent service.
+	 *
+	 * @param srvcObjectInternal the object parent service that owns the concrete object services
+	 */
 	public ObjectsOpsImpl(OAObjectParentService srvcObjectInternal) {
 		this.srvc = srvcObjectInternal;
 	}
 
 	@Override
+	/**
+	 * Returns the internal OAObject annotation facade.
+	 *
+	 * @return the annotation operations facade
+	 */
 	public OAObjectAnnotationOps annotation() {
 		if (opsAnnotation != null) return opsAnnotation;
 		opsAnnotation = new OAObjectAnnotationOps() {
@@ -107,6 +120,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	
 	
 	@Override
+	/**
+	 * Returns the internal OAObject auto-add facade.
+	 *
+	 * @return the auto-add operations facade
+	 */
 	public OAObjectAutoAddOps autoAdd() {
 		if (opsAutoAdd != null) return opsAutoAdd;
 		opsAutoAdd = new OAObjectAutoAddOps() {
@@ -124,6 +142,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	}
 	
 	@Override
+	/**
+	 * Returns the internal OAObject cache facade.
+	 *
+	 * @return the cache operations facade
+	 */
 	public OAObjectCacheOps cache() {
 		if (opsCache != null) return opsCache;
 		
@@ -237,13 +260,18 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal OAObject reflection facade.
+	 *
+	 * @return the reflection operations facade
+	 */
 	public OAObjectReflectOps reflect() {
 		if (opsReflect != null) return opsReflect;
 		
 		opsReflect = new OAObjectReflectOps() {
 			@Override
-			public String getPropertyPathFromMaster(OAObject objParent, Hub<?> hubChild) {
-				return srvc.getOAObjectReflectService().getPropertyPathFromMaster(objParent, hubChild);
+			public String getPathFromMaster(OAObject objParent, Hub<?> hubChild) {
+				return srvc.getOAObjectReflectService().getPropertyFromMaster(objParent, hubChild);
 			}
 
 			@Override
@@ -362,8 +390,8 @@ public class ObjectsOpsImpl implements ObjectsOps {
 			}
 
 			@Override
-			public String getPropertyPathBetweenHubs(Hub<?> hubParent, Hub<?> hubChild) {
-				return srvc.getOAObjectReflectService().getPropertyPathBetweenHubs(hubParent, hubChild);
+			public String getPathBetweenHubs(Hub<?> hubParent, Hub<?> hubChild) {
+				return srvc.getOAObjectReflectService().getPathBetweenHubs(hubParent, hubChild);
 			}
 
 			@Override
@@ -375,6 +403,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal OAObject rules facade backed by {@code OAObjectRulesService}.
+	 *
+	 * @return the rules operations facade
+	 */
 	public OAObjectRulesOps rules() {
 		if (opsCallback != null) return opsCallback;
 		opsCallback = new OAObjectRulesOps() {
@@ -603,6 +636,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 		return opsCallback;
 	}
 
+	/**
+	 * Returns the internal OAObject changed-state facade.
+	 *
+	 * @return the change operations facade
+	 */
 	public OAObjectChangeOps change() {
 		if (opsChange != null) return opsChange;
 		opsChange = new OAObjectChangeOps() {
@@ -615,6 +653,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	}
 	
 	@Override
+	/**
+	 * Returns the internal delete facade for the current operation family.
+	 *
+	 * @return the delete operations facade
+	 */
 	public OAObjectDeleteOps delete() {
 		if (opsDelete != null) return opsDelete;
 		opsDelete = new OAObjectDeleteOps() {
@@ -649,6 +692,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	
 	
 	@Override
+	/**
+	 * Returns the internal client/server facade for the current operation family.
+	 *
+	 * @return the client/server operations facade
+	 */
 	public OAObjectCSOps cs() {
 		if (opsCS != null) return opsCS;
 		opsCS = new OAObjectCSOps() {
@@ -677,6 +725,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal OAObject datasource facade.
+	 *
+	 * @return the datasource operations facade
+	 */
 	public OAObjectDSOps ds() {
 		if (opsDS != null) return opsDS;
 		opsDS = new OAObjectDSOps() {
@@ -700,6 +753,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal OAObject enum facade.
+	 *
+	 * @return the enum operations facade
+	 */
 	public OAObjectEnumOps enumx() {
 		if (opsEnum != null) return opsEnum;
 		opsEnum = new OAObjectEnumOps() {
@@ -712,6 +770,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal OAObject event facade.
+	 *
+	 * @return the event operations facade
+	 */
 	public OAObjectEventOps event() {
 		if (opsEvent != null) return opsEvent;
 		opsEvent = new OAObjectEventOps() {
@@ -740,12 +803,17 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal find facade for the current operation family.
+	 *
+	 * @return the find operations facade
+	 */
 	public OAObjectFindOps find() {
 		if (opsFind != null) return opsFind;
 		opsFind = new OAObjectFindOps() {
 			@Override
-			public OAObject[] find(OAObject base, String propertyPath, Object findValue, boolean bFindAll) {
-				return srvc.getOAObjectFindService().find(base, propertyPath, findValue, bFindAll);
+			public OAObject[] find(OAObject base, String path, Object findValue, boolean bFindAll) {
+				return srvc.getOAObjectFindService().find(base, path, findValue, bFindAll);
 			}
 		};
 		return opsFind;
@@ -753,6 +821,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	
 	
 	@Override
+	/**
+	 * Returns the internal OAObject GUID facade.
+	 *
+	 * @return the GUID operations facade
+	 */
 	public OAObjectGuidOps guid() {
 		if (opsGuid != null) return opsGuid;
 		opsGuid = new OAObjectGuidOps() {
@@ -771,6 +844,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal OAObject Hub-reference facade.
+	 *
+	 * @return the object-Hub operations facade
+	 */
 	public OAObjectHubOps hub() {
 		if (opsHub != null) return opsHub;
 		opsHub = new OAObjectHubOps() {
@@ -804,6 +882,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal OAObject metadata facade.
+	 *
+	 * @return the metadata operations facade
+	 */
 	public OAObjectInfoOps info() {
 		if (opsInfo != null) return opsInfo;
 		opsInfo = new OAObjectInfoOps() {
@@ -912,6 +995,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal OAObject initialization facade.
+	 *
+	 * @return the initialization operations facade
+	 */
 	public OAObjectInitializeOps initialize() {
 		if (opsInitialize != null) return opsInitialize;
 		opsInitialize = new OAObjectInitializeOps() {
@@ -935,6 +1023,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal OAObject key facade.
+	 *
+	 * @return the key operations facade
+	 */
 	public OAObjectKeyOps key() {
 		if (opsKey != null) return opsKey;
 		opsKey = new OAObjectKeyOps() {
@@ -968,6 +1061,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal OAObject lock facade.
+	 *
+	 * @return the lock operations facade
+	 */
 	public OAObjectLockOps lock() {
 		if (opsLock != null) return opsLock;
 		opsLock = new OAObjectLockOps() {
@@ -997,6 +1095,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal property facade for the current operation family.
+	 *
+	 * @return the property operations facade
+	 */
 	public OAObjectPropertyOps property() {
 		if (opsProperty != null) return opsProperty;
 		opsProperty = new OAObjectPropertyOps() {
@@ -1055,6 +1158,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal save facade for the current operation family.
+	 *
+	 * @return the save operations facade
+	 */
 	public OAObjectSaveOps save() {
 		if (opsSave != null) return opsSave;
 		opsSave = new OAObjectSaveOps() {
@@ -1073,6 +1181,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal OAObject scheduler facade.
+	 *
+	 * @return the scheduler operations facade
+	 */
 	public OAObjectSchedulerOps scheduler() {
 		if (opsScheduler != null) return opsScheduler;
 		opsScheduler = new OAObjectSchedulerOps() {
@@ -1086,6 +1199,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal serialization facade for the current operation family.
+	 *
+	 * @return the serialization operations facade
+	 */
 	public OAObjectSerializeOps serialize() {
 		if (opsSerialize != null) return opsSerialize;
 		opsSerialize = new OAObjectSerializeOps() {
@@ -1109,6 +1227,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal OAObject sibling facade.
+	 *
+	 * @return the sibling operations facade
+	 */
 	public OAObjectSiblingOps sibling() {
 		if (opsSibling != null) return opsSibling;
 		opsSibling = new OAObjectSiblingOps() {
@@ -1121,6 +1244,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	}
 
 	@Override
+	/**
+	 * Returns the internal OAObject lifecycle-state facade.
+	 *
+	 * @return the state operations facade
+	 */
 	public OAObjectStateOps state() {
 		if (opsState != null) return opsState;
 		opsState = new OAObjectStateOps() {
@@ -1133,6 +1261,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	}
 	
 	@Override
+	/**
+	 * Returns the internal unique-object facade.
+	 *
+	 * @return the unique operations facade
+	 */
 	public OAObjectUniqueOps unique() {
 		if (opsUnique != null) return opsUnique;
 		opsUnique = new OAObjectUniqueOps() {

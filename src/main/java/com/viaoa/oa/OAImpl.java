@@ -30,89 +30,16 @@ import com.viaoa.reflect.OAReflect;
 import com.viaoa.runtime.OARuntime;
 import com.viaoa.select.OASelect;
 
-/*qqqqqqqqqq
-CODEX
-
-#9 — boundary / ownership risk
-  File/class/method: src/main/java/com/viaoa/graph/OAImpl.java:136, create/get/save/delete/createHub
-  Concern: graph verbs do not verify that the class/object/Hub belongs to the graph instance receiving the call.
-  Why it matters: someGraph.create(ForeignObject.class) can route through this graph’s object services even when
-  OARuntime.graph(ForeignObject.class) would resolve to another graph. That weakens graph ownership invariants.
-  Minimal fix: add graph membership checks for class-based verbs, or document these as convenience delegates that
-  may route by object/class graph.
-  Invariant: GRAPH_VERBS_OPERATE_ON_OWNED_MODEL_TYPES
-  Test coverage: two package graphs; call create/get/save/delete with foreign model classes and verify expected
-  reject or reroute behavior.
-
- #12 — bug / lifecycle risk
-  File/class/method: src/main/java/com/viaoa/graph/OAImpl.java:61, initialize()
-  Concern: bInit is set before service construction and package scanning complete.
-  Why it matters: a partially initialized graph can report initialized if failure occurs after line 63. This is
-  especially risky around package scanning/class loading.
-  Minimal fix: set bInit = true only after all services are initialized and class scanning succeeds.
-  Invariant: GRAPH_INITIALIZED_MEANS_ALL_CORE_SERVICES_READY
-  Test coverage: inject/fake package scan failure and verify wasInitCalled() remains false and no partial graph is
-  exposed.
 
 
-#1 — invariant risk
-  File/class/method: src/main/java/com/viaoa/graph/OAImpl.java:111, initialize()
-  Exact concern: bInit is set before service creation and package class scanning complete.
-  Why it matters: a failed initialization can leave the graph reporting initialized while services/metadata are only
-  partially ready.
-  Minimal fix: set bInit = true only after all services are created, initialized, and package metadata scan
-  succeeds.
-  Suggested invariant: GRAPH_INITIALIZED_MEANS_ALL_SERVICES_READY
-  Suggested test coverage: force class-scan failure and verify wasInitCalled() remains false and graph is not
-  usable.
 
-  #2 — boundary risk
-  File/class/method: src/main/java/com/viaoa/graph/OAImpl.java:107, constructor; src/main/java/com/viaoa/graph/
-  OAImpl.java:111, initialize()
-  Exact concern: OAImpl has a public constructor and public lifecycle method, so callers can bypass OARuntime
-  package ownership and create unregistered graphs.
-  Why it matters: OA 4.0 graph singleton/package ownership assumptions become unenforceable if apps can instantiate
-  implementation graphs directly.
-  Minimal fix: make construction/lifecycle package-owned if possible, or document OAImpl as runtime-internal
-  and test that public access goes through OARuntime.
-  Suggested invariant: GRAPH_INSTANCES_ARE_RUNTIME_OWNED
-  Suggested test coverage: graph created through OARuntime is canonical; direct implementation construction is
-  unsupported or guarded.
-
-  #3 — invariant risk
-  File/class/method: src/main/java/com/viaoa/graph/OAImpl.java:186, create/get/save/delete/createHub/select/
-  info
-  Exact concern: facade verbs do not validate that the class/object/Hub belongs to this graph’s package.
-  Why it matters: graphA.create(ForeignObject.class) can execute through graph A’s services even though runtime
-  ownership belongs to graph B.
-  Minimal fix: add graph-membership checks, or explicitly define these verbs as convenience delegates that may
-  reroute by runtime graph ownership.
-  Suggested invariant: GRAPH_VERBS_OPERATE_ON_OWNED_TYPES
-  Suggested test coverage: two package graphs; invoke verbs with foreign classes/objects/Hubs and verify reject or
-  documented reroute.
-
-  #11 — invariant risk
-  File/class/method: src/main/java/com/viaoa/graph/OAImpl.java:303, combine()
-  Exact concern: combine() creates a HubCombined controller and discards the handle.
-  Why it matters: the combined view has lifecycle behavior, including close/removal of listeners. The facade gives
-  callers no way to manage that lifecycle.
-  Minimal fix: return HubCombined<T> or document that combine() creates an unmanaged live binding.
-  Suggested invariant: GRAPH_LIVE_VIEW_CONTROLLERS_HAVE_EXPLICIT_LIFECYCLE
-  Suggested test coverage: combine creates live updates and can be closed or is documented as graph-owned/unmanaged.
-
-
- #12 — invariant risk
-  File/class/method: src/main/java/com/viaoa/graph/OAImpl.java:358, flatten(Hub)
-  Exact concern: convenience flatten(Hub) creates a HubFlattened controller but returns only the target Hub.
-  Why it matters: like combine, this hides the lifecycle handle for a live binding.
-  Minimal fix: document lifecycle ownership or provide a handle-returning convenience form.
-  Suggested invariant: GRAPH_CONVENIENCE_LIVE_VIEWS_DECLARE_CONTROLLER_OWNERSHIP
-  Suggested test coverage: returned flattened Hub remains live and lifecycle behavior is defined.
-
-
-*/
-
-
+/**
+ * Default OA runtime implementation.
+ * <p>
+ * This class wires the public {@link OA} runtime facade to object, Hub, sync,
+ * replication, trigger, model-user, session-user, service, and internal
+ * operation services for one OA model package.
+ */
 public class OAImpl implements OA {
 	private static Logger LOG = Logger.getLogger(OAImpl.class.getName());
 
@@ -134,16 +61,35 @@ public class OAImpl implements OA {
 	private SessionUserOps srvcSessionUser;
 
     
+	/**
+	 * Creates an OA runtime implementation for a model package.
+	 *
+	 * @param packageName the model package name
+	 */
 	public OAImpl(String packageName) {
 		this.packageName = packageName;
 	}
 
+	/**
+	 * Initializes this OA runtime and wires its service facades.
+	 * <p>
+	 * Repeated calls return without reinitializing an already initialized runtime.
+	 *
+	 * @throws ClassNotFoundException if a model class cannot be loaded
+	 * @throws IOException if model class discovery fails
+	 */
 	public void initialize() throws ClassNotFoundException, IOException {
 		if (bInit) return;
 		_initialize();
 		bInit = true;
 	}
 	
+	/**
+	 * Performs the one-time service construction and facade wiring for this runtime.
+	 *
+	 * @throws ClassNotFoundException if a model class cannot be loaded
+	 * @throws IOException if model class discovery fails
+	 */
 	protected void _initialize() throws ClassNotFoundException, IOException {
 		srvcObjectParent = new OAObjectParentService();
 		srvcHubParent = new HubParentService();
@@ -153,11 +99,25 @@ public class OAImpl implements OA {
 	    srvcOASyncInternal = new OASyncService(this);
 
 	    srvcOAReplicationInternal = new OAReplicationService() {
+			/**
+			 * Creates a replication client using this runtime's sync server.
+			 *
+			 * @param guid the replication identity
+			 * @param tLogFileName the transaction log file name
+			 * @param replicationMasterHostName the replication master host name
+			 * @param replicationMasterPort the replication master port
+			 */
 			@Override
 			public void createClient(String guid, String tLogFileName, String replicationMasterHostName, int replicationMasterPort) {
 				super.createClient(guid, srvcOASyncInternal.getServer(), tLogFileName, replicationMasterHostName, replicationMasterPort);
 			}
 
+			/**
+			 * Creates a replication master using this runtime's sync server.
+			 *
+			 * @param guid the replication identity
+			 * @param tLogFileName the transaction log file name
+			 */
 			@Override
 			public void createMaster(String guid, String tLogFileName) {
 				super.createMaster(guid, srvcOASyncInternal.getServer(), tLogFileName);
@@ -202,67 +162,147 @@ public class OAImpl implements OA {
 		srvcSessionUser = new OASessionUserService(this);
 	}
 
+	/**
+	 * Returns the model package name for this OA runtime.
+	 *
+	 * @return the model package name
+	 */
 	public String getPackageName() {
 		return packageName;
 	}
 
+	/**
+	 * Returns whether {@link #initialize()} has completed for this runtime.
+	 *
+	 * @return {@code true} if initialization has completed
+	 */
 	public boolean wasInitCalled() {
 		return bInit;
 	}
     
+	/**
+	 * Returns synchronization operations for this runtime.
+	 *
+	 * @return the sync operations facade
+	 */
 	@Override
     public SyncOps sync() {
     	return srvcOASyncInternal;
     }
 
+	/**
+	 * Returns replication operations for this runtime.
+	 *
+	 * @return the replication operations facade
+	 */
 	@Override
     public ReplicationOps replication() {
     	return srvcOAReplicationInternal;
     }
 	
+	/**
+	 * Creates a model object through the object services for this runtime.
+	 *
+	 * @param <T> the object type
+	 * @param type the object class
+	 * @return the new object instance
+	 */
 	@Override
 	public <T extends OAObject> T create(Class<T> type) {
 		T obj = internal().objects().reflect().createNewObject(type);
 		return obj;
 	}
 
+	/**
+	 * Creates a Hub for a model object type.
+	 *
+	 * @param <T> the object type
+	 * @param type the object class
+	 * @return the new Hub
+	 */
 	@Override
 	public <T extends OAObject> Hub<T> createHub(Class<T> type) {
 		return new Hub<T>(type);
 	}
 
+	/**
+	 * Saves an object through its OAObject save behavior.
+	 *
+	 * @param obj the object to save
+	 */
 	@Override
 	public void save(OAObject obj) {
 		if (obj != null) obj.save();
 	}
 
+	/**
+	 * Saves all objects in a Hub.
+	 *
+	 * @param hub the Hub whose objects are saved
+	 */
 	@Override
 	public void save(Hub<?> hub) {
 		if (hub != null) hub.saveAll();
 	}
 
+	/**
+	 * Deletes an object through its OAObject delete behavior.
+	 *
+	 * @param obj the object to delete
+	 */
 	@Override
 	public void delete(OAObject obj) {
 		if (obj != null) obj.delete();
 	}
 
+	/**
+	 * Deletes all objects in a Hub.
+	 *
+	 * @param hub the Hub whose objects are deleted
+	 */
 	@Override
 	public void delete(Hub<?> hub) {
 		if (hub != null) hub.deleteAll();
 	}
 
+	/**
+	 * Returns an object by class and key value.
+	 *
+	 * @param <T> the object type
+	 * @param type the object class
+	 * @param key the key value
+	 * @return the matching object, or {@code null}
+	 */
 	@Override
 	public <T extends OAObject> T get(Class<T> type, Object key) {
 		T obj = internal().objects().reflect().getObject(type, key);
 		return obj;
 	}
 
+	/**
+	 * Returns an object by class and OAObjectKey.
+	 *
+	 * @param <T> the object type
+	 * @param type the object class
+	 * @param key the object key
+	 * @return the matching object, or {@code null}
+	 */
 	@Override
 	public <T extends OAObject> T get(Class<T> type, OAObjectKey key) {
 		T obj = internal().objects().reflect().getObject(type, key);
 		return obj;
 	}
 
+	/**
+	 * Selects objects of a class into a new Hub.
+	 *
+	 * @param <T> the object type
+	 * @param type the object class
+	 * @param where optional where clause
+	 * @param orderBy optional order clause
+	 * @param args where-clause arguments
+	 * @return the selected Hub
+	 */
 	@Override
 	public <T extends OAObject> Hub<T> select(Class<T> type, String where, String orderBy, Object... args) {
 		if (type == null) return null;
@@ -271,12 +311,30 @@ public class OAImpl implements OA {
 		return hub;
 	}
 
+	/**
+	 * Selects objects into an existing Hub.
+	 *
+	 * @param hub the Hub to populate
+	 * @param where optional where clause
+	 * @param orderBy optional order clause
+	 * @param args where-clause arguments
+	 */
 	@Override
 	public void select(Hub<?> hub, String where, String orderBy, Object... args) {
 		if (hub == null) return;
 		hub.select(where, args, orderBy);
 	}
 
+	/**
+	 * Creates an OASelect for a class and query options.
+	 *
+	 * @param <T> the object type
+	 * @param type the object class
+	 * @param where optional where clause
+	 * @param orderBy optional order clause
+	 * @param args where-clause arguments
+	 * @return the configured select
+	 */
 	@Override
 	public <T extends OAObject> OASelect<T> getSelect(Class<T> type, String where, String orderBy, Object... args) {
 		OASelect<T> sel = new OASelect<>(type, where, args, orderBy);
@@ -284,18 +342,46 @@ public class OAImpl implements OA {
 	}
 
 
+	/**
+	 * Creates a finder from a source object and relationship path.
+	 *
+	 * @param <F> the source object type
+	 * @param <T> the target object type
+	 * @param obj the source object
+	 * @param toType the target class
+	 * @param path the relationship path
+	 * @return the finder
+	 */
 	@Override
 	public <F extends OAObject, T extends OAObject> OAFinder<F, T> finder(F obj, Class<T> toType, String path) {
 		OAFinder<F, T> finder = new OAFinder<F, T>(obj, path);
 		return finder;
 	}
 
+	/**
+	 * Creates a finder from a Hub and relationship path.
+	 *
+	 * @param <F> the source object type
+	 * @param <T> the target object type
+	 * @param hub the source Hub
+	 * @param toType the target class
+	 * @param path the relationship path
+	 * @param bUseAll {@code true} to use all Hub objects; {@code false} to use the active object
+	 * @return the finder
+	 */
 	@Override
 	public <F extends OAObject, T extends OAObject> OAFinder<F, T> finder(Hub<F> hub, Class<T> toType, String path, boolean bUseAll) {
 		OAFinder<F, T> finder = new OAFinder<F, T>(hub, path, bUseAll);
 		return finder;
 	}
 	
+	/**
+	 * Adds a listener to a Hub.
+	 *
+	 * @param <T> the Hub object type
+	 * @param hub the Hub to observe
+	 * @param hl the listener to add
+	 */
 	@Override
 	public <T extends OAObject> void observe(Hub<T> hub, HubListener<T> hl) {
 		if (hub == null || hl == null) return;
@@ -304,12 +390,24 @@ public class OAImpl implements OA {
 
 
 
+	/**
+	 * Returns metadata for an object class.
+	 *
+	 * @param type the object class
+	 * @return the object metadata
+	 */
 	@Override
 	public OAObjectInfo info(Class<? extends OAObject> type) {
 		OAObjectInfo oi = internal().objects().info().getOAObjectInfo(type);
 		return oi;
 	}
 
+	/**
+	 * Returns metadata for an object instance.
+	 *
+	 * @param obj the object instance
+	 * @return the object metadata
+	 */
 	@Override
 	public OAObjectInfo info(OAObject obj) {
 		Class<?>  c = obj == null ? null : obj.getClass();
@@ -317,6 +415,12 @@ public class OAImpl implements OA {
 		return oi;
 	}
 
+	/**
+	 * Returns metadata for a Hub object class.
+	 *
+	 * @param hub the Hub
+	 * @return the object metadata
+	 */
 	@Override
 	public OAObjectInfo info(Hub<?> hub) {
 		Class<?>  c = hub == null ? null : hub.getObjectClass();
@@ -324,11 +428,21 @@ public class OAImpl implements OA {
 		return oi;
 	}
 
+	/**
+	 * Returns curated public and advanced services.
+	 *
+	 * @return the services facade
+	 */
 	@Override
 	public ServicesOps services() {
 		return srvcServices;
 	}
 
+	/**
+	 * Returns OA-library/runtime internal operations.
+	 *
+	 * @return the internal facade
+	 */
 	@Override
 	public InternalOps internal() {
 		return srvcInternal;
@@ -336,6 +450,9 @@ public class OAImpl implements OA {
 
 	private boolean bClosed;
 	
+	/**
+	 * Closes this runtime.
+	 */
 	@Override
 	public void close() {
 		if (bClosed) return;
@@ -344,16 +461,31 @@ public class OAImpl implements OA {
 		// todo: might need to create & call close on child services		
 	}
 
+	/**
+	 * Returns runtime configuration operations.
+	 *
+	 * @return the configuration facade
+	 */
 	@Override
 	public ConfigOps config() {
 		return srvcConfig;
 	}
 
+	/**
+	 * Returns model-user operations.
+	 *
+	 * @return the model-user facade
+	 */
 	@Override
 	public ModelUserOps modelUser() {
 		return srvcModelUser;
 	}
 
+	/**
+	 * Returns session-user operations.
+	 *
+	 * @return the session-user facade
+	 */
 	@Override
 	public SessionUserOps sessionUser() {
 		return srvcSessionUser;

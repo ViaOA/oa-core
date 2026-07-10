@@ -21,7 +21,7 @@ final class FilterTestSupport {
     static final String SEALED_PACKAGE_PATH = Invoice.P_InvoiceBaskets + "." + InvoiceBasket.P_LineItems + "."
             + LineItem.P_Product + "." + Product.P_SealedPackage;
     static final String GENERATED_ITEM_NAME_PATH = InvoicePP.invoiceBaskets().lineItems().product().item().name();
-    static final String TEXT_UTIL_ITEM_NAME_PATH = OATextUtil.createPropertyPath(Invoice.P_InvoiceBaskets,
+    static final String TEXT_UTIL_ITEM_NAME_PATH = OATextUtil.createPath(Invoice.P_InvoiceBaskets,
             InvoiceBasket.P_LineItems, LineItem.P_Product, Product.P_Item, Item.P_Name);
 
     private FilterTestSupport() {

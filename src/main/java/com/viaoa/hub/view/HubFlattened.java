@@ -40,25 +40,25 @@ import com.viaoa.object.OAObject;
  * </ul>
  */
 public class HubFlattened<TYPE extends OAObject> {
-	
+
 	/**
 	 * The root Hub representing the top of the recursive hierarchy from which all
 	 * descendant objects will be flattened.
 	 */
 	private Hub<TYPE> hubRoot;
-	
+
 	/**
 	 * The target Hub that will contain the non-recursive, flattened collection of
 	 * all descendant objects from the root hierarchy.
 	 */
 	private Hub<TYPE> hubFlat;
-	
+
 	/**
 	 * Link information describing the recursive parent reference used to navigate
 	 * upward in the hierarchy. Identifies the link that makes the model recursive.
 	 */
 	private OALinkInfo liRecursiveToParent;
-	
+
 	/**
 	 * Internal HubMerger used to populate and maintain the flattened Hub by merging
 	 * all descendant objects based on the recursive link structure.
@@ -124,11 +124,19 @@ public class HubFlattened<TYPE extends OAObject> {
 		// make sure that any new object added to hubFlat(from a new command)  has correct link to parent/master
 		HubListener hl = new HubListenerAdapter() {
 			@Override
+			/**
+			 * Handles the Hub after-insert event.
+			 * @param e the Hub event
+			 */
 			public void afterInsert(HubEvent e) {
 				afterAdd(e);
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-add event.
+			 * @param e the Hub event
+			 */
 			public void afterAdd(HubEvent e) {
 				if (e == null) {
 					return;

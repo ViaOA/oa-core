@@ -20,9 +20,9 @@ import java.awt.Color;
 /*qqqqqqqqqqqqq
 CODEX
 
- - file/class/method: OATextUtil.createPropertyPath
+ - file/class/method: OATextUtil.createPath
   - concrete failure scenario: Empty path segments are included, producing invalid OA property paths.
-  - example input: createPropertyPath("Order", "", "Customer")
+  - example input: createPath("Order", "", "Customer")
   - expected result: Order.Customer
   - actual or likely result: Order..Customer
   - why it matters to OA: OAPath/property path construction can generate paths that fail parsing or resolve
@@ -91,7 +91,7 @@ CODEX
  * <ul>
  *   <li>{@link #parseInt(String)} stops parsing on first non-digit after numeric run</li>
  *   <li>{@link #convertToLikeSearch(String)} translates {@code * → %} and ensures a trailing {@code %}</li>
- *   <li>{@link #createPropertyPath(String...)} preserves Hub filter syntax when segment starts with ':'</li>
+ *   <li>{@link #createPath(String...)} preserves Hub filter syntax when segment starts with ':'</li>
  * </ul>
  *
  */
@@ -527,7 +527,7 @@ public class OATextUtil {
 	 * @param args property path segments
 	 * @return dot-delimited path string
 	 */
-	public static String createPropertyPath(String... args) {
+	public static String createPath(String... args) {
 		if (args == null) {
 			return "";
 		}
@@ -556,13 +556,13 @@ public class OATextUtil {
 	/**
 	 * Builds a dot-delimited property path beginning with the simple name
 	 * of {@code clazz}. Remaining segments follow the same rules as
-	 * {@link #createPropertyPath(String...)}.
+	 * {@link #createPath(String...)}.
 	 *
 	 * @param clazz starting class whose simple name is used as prefix
 	 * @param args  additional path segments
 	 * @return property path beginning with the class name
 	 */
-	public static String createPropertyPath(Class clazz, String... args) {
+	public static String createPath(Class clazz, String... args) {
 		if (args == null) {
 			return "";
 		}

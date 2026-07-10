@@ -8,6 +8,10 @@ import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.*;
 
+/**
+ * Maintains root Hub registration and lookup behavior.
+ */
+
 public abstract class HubRootService {
 	private final Logger LOG = Logger.getLogger(HubRootService.class.getName());
 
@@ -181,13 +185,60 @@ public abstract class HubRootService {
 		if (thisHub == null) return;
 		callObjectInfoSetRootHub(faHub.getHubData(thisHub).getObjectInfo(), bIsRoot ? thisHub : null);
 	}
-	
+
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetRecursiveLinkInfo behavior.
+	 *
+	 * @param thisOI method input
+	 * @param type method input
+	 * @return result value
+	 */
+
 	public abstract OALinkInfo callObjectInfoGetRecursiveLinkInfo(OAObjectInfo thisOI, int type);
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetRootHub behavior.
+	 *
+	 * @param thisOI method input
+	 * @param hub method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> Hub<T> callObjectInfoGetRootHub(OAObjectInfo thisOI, Hub<T> hub);
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetReverseLinkInfo behavior.
+	 *
+	 * @param thisLi method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callObjectInfoGetReverseLinkInfo(OALinkInfo thisLi);
+	/**
+	 * Dependency hook used by this service for ObjectReflectGetProperty behavior.
+	 *
+	 * @param oaObj method input
+	 * @param propPath method input
+	 * @return result value
+	 */
 	public abstract Object callObjectReflectGetProperty(OAObject oaObj, String propPath);
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetLinkToOwner behavior.
+	 *
+	 * @param thisOI method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callObjectInfoGetLinkToOwner(OAObjectInfo thisOI);
+	/**
+	 * Dependency hook used by this service for ObjectInfoSetRootHub behavior.
+	 *
+	 * @param thisOI method input
+	 * @param h method input
+	 */
 	public abstract void callObjectInfoSetRootHub(OAObjectInfo thisOI, Hub<?> h);
+	/**
+	 * Dependency hook used by this service for HubShareGetAllSharedHubs behavior.
+	 *
+	 * @param thisHub method input
+	 * @param filter method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub<T>> filter);
 
 }

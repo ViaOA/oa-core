@@ -4,6 +4,9 @@ import com.viaoa.hub.Hub;
 import com.viaoa.hub.merge.HubMerger;
 import com.viaoa.object.OAObject;
 
+/**
+ * Internal live merge operations that collect related objects from a source Hub into a target Hub.
+ */
 public interface HubMergeOps {
 
     /**

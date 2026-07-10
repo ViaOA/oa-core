@@ -47,7 +47,7 @@ calculated-property dependencies, and execution metadata are valid and committed
 Rationale:
 Partial registration can fire callbacks after caller-visible registration failure or leave stale path registrations.
 Source scope:
-OATrigger; OATrigger.getPropertyPaths(); OAObjectInfo.createTrigger/_addTrigger; OATriggerService.addTrigger.
+OATrigger; OATrigger.getPaths(); OAObjectInfo.createTrigger/_addTrigger; OATriggerService.addTrigger.
 Related CODEX findings:
 Current registration mutates while validating paths; package-info notes partial-commit registration risk.
 Suggested unit tests:
@@ -63,12 +63,12 @@ Rationale:
 Removal and dispatch must use the same semantic definition that was registered; mutable arrays can leave stale
 registrations or remove the wrong paths.
 Source scope:
-OATrigger constructors; getPropertyPaths(); getDependentTriggers(); geDependentTriggers();
+OATrigger constructors; getPaths(); getDependentTriggers(); geDependentTriggers();
 setDependentTriggers(...); OAObjectInfo.removeTrigger.
 Related CODEX findings:
-OATrigger stores and returns externally mutable propertyPaths and dependent trigger arrays.
+OATrigger stores and returns externally mutable paths and dependent trigger arrays.
 Suggested unit tests:
-testPropertyPathArrayMutationAfterRegistrationDoesNotAffectRouting,
+testPathArrayMutationAfterRegistrationDoesNotAffectRouting,
 testDependentTriggerArrayMutationDoesNotLeaveStaleRegistration.
 Spec target section:
 Trigger Runtime / Trigger Definition Immutability
@@ -96,7 +96,7 @@ intermediate, reverse-path, and dependent calculated-property registrations owne
 Rationale:
 Stale trigger registrations leak listeners and can fire invalid or closed runtime behavior.
 Source scope:
-OATriggerService.removeTrigger; OAObjectInfo.removeTrigger/_removeTrigger; OATrigger.getPropertyPaths(); OATrigger.
+OATriggerService.removeTrigger; OAObjectInfo.removeTrigger/_removeTrigger; OATrigger.getPaths(); OATrigger.
 getDependentTriggers().
 Related CODEX findings:
 Existing package-info notes removal return value does not prove removal and mutable paths can weaken unregister.
@@ -113,11 +113,11 @@ object properties, links, Hub/detail relationships, and calculated-property depe
 Rationale:
 Wrong path expansion causes missed triggers, wrong-object triggers, or expensive fallback scans.
 Source scope:
-OATrigger.propertyPaths; OAObjectInfo.createTrigger/_addTrigger; OAPath; OAObjectInfo/OALinkInfo integration.
+OATrigger.paths; OAObjectInfo.createTrigger/_addTrigger; OAPath; OAObjectInfo/OALinkInfo integration.
 Related CODEX findings:
 Existing package-info notes empty path and invalid path semantics need explicit contract.
 Suggested unit tests:
-testNestedPropertyPathRegistersIntermediateSegments, testInvalidTriggerPathFailsBeforeRegistration,
+testNestedPathRegistersIntermediateSegments, testInvalidTriggerPathFailsBeforeRegistration,
 testEmptyTriggerPathBehaviorByContract.
 Spec target section:
 Trigger Runtime / Path Binding

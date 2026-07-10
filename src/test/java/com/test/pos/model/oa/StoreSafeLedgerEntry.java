@@ -413,7 +413,7 @@ public class StoreSafeLedgerEntry extends OAObject {
         displayName = "Invoice Payment Checks", 
         toClass = InvoicePaymentCheck.class, 
         reverseName = InvoicePaymentCheck.P_StoreSafeLedgerEntries, 
-        selectFromPropertyPath = P_StoreSafe + "." + StoreSafe.P_InvoicePaymentChecks
+        selectFromPath = P_StoreSafe + "." + StoreSafe.P_InvoicePaymentChecks
     )
     @OALinkTable(name = "StoreSafeLedgerEntryInvoicePaymentCheck", indexName = "InvoicePaymentCheckStoreSafeLedgerEntry", columns = {"StoreSafeLedgerEntryId"})
     public Hub<InvoicePaymentCheck> getInvoicePaymentChecks() {

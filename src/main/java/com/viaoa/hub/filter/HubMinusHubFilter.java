@@ -82,7 +82,7 @@ public class HubMinusHubFilter {
             if (!hubMinus.contains(obj)) hub.add((OAObject) obj);
         }
     }
-    
+
     /**
      * Registers listeners on {@code hubMaster} and {@code hubMinus} to maintain
      * the live difference Hub.
@@ -99,33 +99,65 @@ public class HubMinusHubFilter {
      */
     protected void init() {
         hubMaster.addHubListener( new HubListenerAdapter() {
+            /**
+             * Handles the Hub after-add event.
+             * @param e the Hub event
+             */
             public @Override void afterAdd(HubEvent e) {
                 OAObject obj = e.getObject();
                 if (obj != null && !hubMinus.contains(obj)) hub.add(obj);
             }
+            /**
+             * Handles the Hub after-insert event.
+             * @param e the Hub event
+             */
             public @Override void afterInsert(HubEvent e) {
                 afterAdd(e);
             }
+            /**
+             * Handles the Hub after-remove event.
+             * @param e the Hub event
+             */
             public @Override void afterRemove(HubEvent e) {
                 Object obj = e.getObject();
                 if (obj != null) hub.remove(obj);
             }
+            /**
+             * Handles replacement or refresh of the Hub list.
+             * @param e the Hub event
+             */
             public @Override void onNewList(HubEvent e) {
                 populate();
             }
         });
         hubMinus.addHubListener( new HubListenerAdapter() {
+            /**
+             * Handles the Hub after-add event.
+             * @param e the Hub event
+             */
             public @Override void afterAdd(HubEvent e) {
                 Object obj = e.getObject();
                 if (obj != null && hub.contains(obj)) hub.remove(obj);
             }
+            /**
+             * Handles the Hub after-insert event.
+             * @param e the Hub event
+             */
             public @Override void afterInsert(HubEvent e) {
                 afterAdd(e);
             }
+            /**
+             * Handles the Hub after-remove event.
+             * @param e the Hub event
+             */
             public @Override void afterRemove(HubEvent e) {
                 OAObject obj = e.getObject();
                 if (hubMaster.contains(obj)) hub.add(obj);
             }
+            /**
+             * Handles replacement or refresh of the Hub list.
+             * @param e the Hub event
+             */
             public @Override void onNewList(HubEvent e) {
                 populate();
             }

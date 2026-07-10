@@ -31,26 +31,7 @@ import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
 
 
-/*qqqqqqqqqq
-CODEX
 
- 1. file/class/method: src/main/java/com/viaoa/hub/view/HubLeftJoin.java:106 constructor and src/main/java/com/
-     viaoa/hub/view/HubLeftJoin.java:124 setup()
-  2. exact execution path: create new HubLeftJoin(hubA, hubB, propertyPath, false). Then change the combined Hub AO
-     or hubB AO. setup() always installs AO listeners that propagate AO changes between hubCombined, hubA, and hubB;
-     the stored bSetAO flag is never checked.
-  3. why this is a real correctness bug: the public constructor explicitly offers a “do not synchronize AO” mode,
-     but AO state is still mutated. This can silently change source Hub active objects from a view-only left-join
-     helper.
-  4. semantic/invariant violated: HUB_LEFT_JOIN_BSETAO_FALSE_DOES_NOT_PROPAGATE_ACTIVE_OBJECT
-  5. minimal fix or CODEX/defer recommendation: wrap the AO listener registration and AO propagation bodies with if
-     (bSetAO), or do not install those listeners when bSetAO == false.
-  6. suggested regression test: build a HubLeftJoin with bSetAO=false, set AO on the combined Hub and on hubB, and
-     verify hubA.getAO() / hubB.getAO() / combined.getAO() are not changed by the helper.
-
-
-
-*/
 
 /**
  * Creates a live "left join" view between two {@link Hub}s, conceptually similar
@@ -74,27 +55,27 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 	 * Reference to the left-side Hub containing objects of type A.
 	 */
 	private Hub<A> hubA;
-	
+
 	/**
 	 * Reference to the right-side Hub containing objects of type B.
 	 */
 	private Hub<B> hubB;
-	
+
 	/**
 	 * Hub that stores the combined left-join rows composed of paired A and B objects.
 	 */
 	private Hub<OALeftJoin<A, B>> hubCombined;
-	
+
 	/**
 	 * Property path on right-side objects used to determine the matching left-side value.
 	 */
-	private String propertyPath;
-	
+	private String path;
+
 	/**
 	 * Name of the property used for listening to updates when the join is based on a property path.
 	 */
 	private String listenPropertyName;
-	
+
 	/**
 	 * Flag indicating whether active-object synchronization should occur between the combined Hub and the source Hubs.
 	 */
@@ -110,10 +91,10 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 	 *
 	 * @param hubA left-side Hub containing A objects
 	 * @param hubB right-side Hub containing B objects
-	 * @param propertyPath property path on B used to obtain its associated A value
+	 * @param path property path on B used to obtain its associated A value
 	 */
-	public HubLeftJoin(Hub<A> hubA, Hub<B> hubB, String propertyPath) {
-		this(hubA, hubB, propertyPath, true);
+	public HubLeftJoin(Hub<A> hubA, Hub<B> hubB, String path) {
+		this(hubA, hubB, path, true);
 	}
 
 	/**
@@ -121,14 +102,14 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 	 *
 	 * @param hubA left-side Hub containing A objects
 	 * @param hubB right-side Hub containing B objects
-	 * @param propertyPath property path on B used to obtain its associated A value
+	 * @param path property path on B used to obtain its associated A value
 	 * @param bSetAO flag to enable or disable active-object synchronization
 	 */
-	public HubLeftJoin(Hub<A> hubA, Hub<B> hubB, String propertyPath, boolean bSetAO) {
+	public HubLeftJoin(Hub<A> hubA, Hub<B> hubB, String path, boolean bSetAO) {
 		this.hubA = hubA;
 		this.hubB = hubB;
 		this.bSetAO = bSetAO;
-		this.propertyPath = propertyPath;
+		this.path = path;
 		setup();
 	}
 
@@ -153,6 +134,10 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 	void setup() {
 		getCombinedHub().addHubListener(new HubListenerAdapter<OALeftJoin<A, B>>() {
 			@Override
+			/**
+			 * Handles the Hub active-object change event.
+			 * @param e the Hub event
+			 */
 			public void afterChangeActiveObject(HubEvent e) {
 				// set the active object in hub A&B when hubCombine.AO is changed
 				OALeftJoin obj = (OALeftJoin) e.getObject();
@@ -166,6 +151,11 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 			}
 
 			@Override
+			/**
+			 * Handles the Hub property-change event.
+			 * @param HubEvent<OALeftJoin<A the event value
+			 * @param e the Hub event
+			 */
 			public void afterPropertyChange(HubEvent<OALeftJoin<A, B>> e) {
 				String name = e.getPropertyName();
 				if (OAString.isEmpty(name)) {
@@ -198,11 +188,19 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 
 		hubA.addHubListener(new HubListenerAdapter() {
 			@Override
+			/**
+			 * Handles the Hub after-insert event.
+			 * @param e the Hub event
+			 */
 			public void afterInsert(HubEvent e) {
 				afterAdd(e);
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-add event.
+			 * @param e the Hub event
+			 */
 			public void afterAdd(HubEvent e) {
 				A a = (A) e.getObject();
 				OALeftJoin<A, B> c = new OALeftJoin(a, null);
@@ -210,6 +208,10 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-remove event.
+			 * @param e the Hub event
+			 */
 			public void afterRemove(HubEvent e) {
 				A a = (A) e.getObject();
 				for (;;) {
@@ -222,6 +224,10 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 			}
 
 			@Override
+			/**
+			 * Handles replacement or refresh of the Hub list.
+			 * @param e the Hub event
+			 */
 			public void onNewList(HubEvent e) {
 				hubCombined.clear();
 				for (A a : hubA) {
@@ -239,23 +245,39 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 
 		HubListener hl = new HubListenerAdapter() {
 			@Override
+			/**
+			 * Handles the Hub after-insert event.
+			 * @param e the Hub event
+			 */
 			public void afterInsert(HubEvent e) {
 				afterAdd(e);
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-add event.
+			 * @param e the Hub event
+			 */
 			public void afterAdd(HubEvent e) {
 				B b = (B) e.getObject();
 				add(b);
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-remove event.
+			 * @param e the Hub event
+			 */
 			public void afterRemove(HubEvent e) {
 				B b = (B) e.getObject();
 				remove(b);
 			}
 
 			@Override
+			/**
+			 * Handles the Hub property-change event.
+			 * @param e the Hub event
+			 */
 			public void afterPropertyChange(HubEvent e) {
 				String s = e.getPropertyName();
 				if (!listenPropertyName.equalsIgnoreCase(s)) {
@@ -267,11 +289,15 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 			}
 
 			@Override
+			/**
+			 * Handles replacement or refresh of the Hub list.
+			 * @param e the Hub event
+			 */
 			public void onNewList(HubEvent e) {
-				
+
 				final OA oa = OARuntime.oa(hubCombined);
 				oa.internal().hubs().addRemove().clear(hubCombined, false, false); // 20240403 dont send newList event
-				
+
 				final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
 				boolean bWasLoading = srvcOAThreadLocal.setLoading(true);
 				try {
@@ -290,6 +316,10 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 			}
 
 			@Override
+			/**
+			 * Handles the Hub active-object change event.
+			 * @param e the Hub event
+			 */
 			public void afterChangeActiveObject(HubEvent e) {
 				B b = (B) e.getObject();
 				OALeftJoin lj;
@@ -302,12 +332,12 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 			}
 		};
 
-		if (propertyPath == null || propertyPath.indexOf('.') < 0) {
-			listenPropertyName = propertyPath;
-			hubB.addHubListener(hl, propertyPath);
+		if (path == null || path.indexOf('.') < 0) {
+			listenPropertyName = path;
+			hubB.addHubListener(hl, path);
 		} else {
 			listenPropertyName = "hubCombined" + aiCnt.getAndIncrement();
-			hubB.addHubListener(hl, listenPropertyName, new String[] { propertyPath });
+			hubB.addHubListener(hl, listenPropertyName, new String[] { path });
 		}
 
 		for (B b : hubB) {
@@ -322,7 +352,7 @@ public class HubLeftJoin<A extends OAObject, B extends OAObject> {
 	 * @param b the right-side object being added
 	 */
 	private void add(B b) {
-		Object valueA = b.getProperty(propertyPath);
+		Object valueA = b.getProperty(path);
 
 		boolean bFound = false;
 		OALeftJoin ljEmpty = null;

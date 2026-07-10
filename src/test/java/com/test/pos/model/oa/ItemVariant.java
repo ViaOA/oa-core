@@ -131,7 +131,7 @@ public class ItemVariant extends OAObject {
         displayName = "Item Option Values", 
         toClass = ItemOptionValue.class, 
         reverseName = ItemOptionValue.P_ItemVariants, 
-        selectFromPropertyPath = P_Item + "." + Item.P_ItemOptions + "." + ItemOption.P_ItemOptionValues
+        selectFromPath = P_Item + "." + Item.P_ItemOptions + "." + ItemOption.P_ItemOptionValues
     )
     @OALinkTable(name = "ItemOptionValueItemVariant", indexName = "ItemOptionValueItemVariant", columns = {"ItemVariantId"})
     public Hub<ItemOptionValue> getItemOptionValues() {

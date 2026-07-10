@@ -61,7 +61,7 @@ import com.viaoa.object.OAObject;
  */
 public abstract class HubTrigger<T extends OAObject> extends HubFilter<T> {
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * Creates a HubTrigger that monitors the given master Hub using no filter
      * and no dependent property paths. Delegates to the superclass constructor
@@ -72,7 +72,7 @@ public abstract class HubTrigger<T extends OAObject> extends HubFilter<T> {
     public HubTrigger(Hub<T> hubMaster) {
         super(hubMaster, null);
     }
-    
+
     /**
      * Creates a HubTrigger with an explicit filter and optional dependent
      * property paths. When objects satisfy the filter and enter the filtered
@@ -80,10 +80,10 @@ public abstract class HubTrigger<T extends OAObject> extends HubFilter<T> {
      *
      * @param hubMaster               the Hub being monitored
      * @param filter                  filter determining which objects enter the trigger view
-     * @param dependentPropertyPaths  optional property paths whose changes may affect filtering
+     * @param dependentPaths  optional property paths whose changes may affect filtering
      */
-    public HubTrigger(Hub<T> hubMaster, OAFilter filter, String ... dependentPropertyPaths) {
-        super(hubMaster, null, filter, dependentPropertyPaths);
+    public HubTrigger(Hub<T> hubMaster, OAFilter filter, String ... dependentPaths) {
+        super(hubMaster, null, filter, dependentPaths);
     }
 
     /**
@@ -100,7 +100,7 @@ public abstract class HubTrigger<T extends OAObject> extends HubFilter<T> {
         if (bIsInitialzing) return;
         onTrigger(obj);
     }
-    
+
     /**
      * Removes the object from the filtered view. Delegates entirely to the
      * superclass removal logic without additional trigger behavior.
@@ -111,7 +111,7 @@ public abstract class HubTrigger<T extends OAObject> extends HubFilter<T> {
     protected void removeObject(T obj) {
         super.removeObject(obj);
     }
-    
+
     /**
      * Callback invoked whenever an object newly satisfies the trigger criteria
      * and enters the filtered view. Subclasses implement application-specific

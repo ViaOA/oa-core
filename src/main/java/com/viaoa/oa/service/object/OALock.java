@@ -43,6 +43,9 @@ public class OALock implements java.io.Serializable {
      */
     protected Object object;
     
+	/**
+	 * thread state used by this service.
+	 */
     protected transient Thread thread;
     
     /**
@@ -115,14 +118,29 @@ public class OALock implements java.io.Serializable {
     }
 
     //qqqqqqqqq created, move to FA??
+	/**
+	 * Returns the waitCount value.
+	 *
+	 * @return result value
+	 */
     public int getWaitCount() {
     	return this.waitCnt;
     }
     
+	/**
+	 * Sets the waitCount value.
+	 *
+	 * @param x method input
+	 */
     public void setWaitCount(int x) {
     	this.waitCnt = x;
     }
     
+	/**
+	 * Returns the thread value.
+	 *
+	 * @return result value
+	 */
     public Thread getThread() {
     	return this.thread;
     }

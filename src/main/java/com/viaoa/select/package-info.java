@@ -166,20 +166,20 @@ Select Runtime / Where Semantics
 
 SELECT-WHERE-002 — Where Object And Hub Scope Semantics
 Contract statement:
-whereObject, whereHub active object, and whereObjectPropertyPath must constrain selection to objects related through
+whereObject, whereHub active object, and whereObjectPath must constrain selection to objects related through
 the metadata-defined reverse path, regardless of datasource, finder, cache, or in-memory execution path.
 Rationale:
 Where-object selection scopes detail/object relationships. Ignoring this scope can return matching objects from the
 whole cache or datasource instead of the intended graph branch.
 Source scope:
-OASelect.setWhereObject, setWhereHub, setWhereObjectPropertyPath, setWhereHubPropertyPath, _select datasource and f
+OASelect.setWhereObject, setWhereHub, setWhereObjectPath, setWhereHubPath, _select datasource and f
 inder branches, OADataSource.select/count where-object overloads.
 Related CODEX findings:
-OASelect CODEX notes finder path does not apply whereObject/whereObjectPropertyPath constraints;
-whereObjectPropertyPath is an unvalidated String.
+OASelect CODEX notes finder path does not apply whereObject/whereObjectPath constraints;
+whereObjectPath is an unvalidated String.
 Suggested unit tests:
 testWhereObjectConstrainsDatasourceSelect, testWhereObjectConstrainsFinderSelect,
-testWhereHubActiveObjectConstrainsSelect, testInvalidWhereObjectPropertyPathFailsVisibly.
+testWhereHubActiveObjectConstrainsSelect, testInvalidWhereObjectPathFailsVisibly.
 Spec target section:
 Select Runtime / Graph Scope Semantics
 
@@ -191,13 +191,13 @@ Rationale:
 Loose strings can silently resolve wrong properties, fail only in one execution mode, or be ignored by finder/cache
 paths.
 Source scope:
-OASelect.whereObjectPropertyPath, where/order/sort fields, OASelectFilter, OAQueryFilter, OAPath/datasource/filter
+OASelect.whereObjectPath, where/order/sort fields, OASelectFilter, OAQueryFilter, OAPath/datasource/filter
 integration.
 Related CODEX findings:
-OASelect CODEX notes whereObjectPropertyPath should be an OAPath/OAPropertyPath semantic object resolved against
+OASelect CODEX notes whereObjectPath should be an OAPath/OAPath semantic object resolved against
 metadata.
 Suggested unit tests:
-testSelectOrderPathResolvesMetadataProperty, testWhereObjectPropertyPathValidatedAgainstMetadata,
+testSelectOrderPathResolvesMetadataProperty, testWhereObjectPathValidatedAgainstMetadata,
 testInvalidOrderPathFailsOrUsesDocumentedFallback, testSelectPathSemanticsMatchOAPath.
 Spec target section:
 Select Runtime / Path and Metadata Semantics
@@ -521,7 +521,7 @@ Source scope:
 OASelect, OASelectFilter, OASelectManager, integrations with query/path/datasource/cache/filter/find/hub/runtime
 packages.
 Related CODEX findings:
-Where-object finder bypass, unvalidated whereObjectPropertyPath, max/filter ordering, datasource routing, iterator
+Where-object finder bypass, unvalidated whereObjectPath, max/filter ordering, datasource routing, iterator
 lifecycle, and concurrency notes all illustrate package boundary contracts.
 Suggested unit tests:
 testSelectPreservesQueryPathDatasourceSemantics, testSelectPreservesCacheIdentitySemantics,

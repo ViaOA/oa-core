@@ -34,9 +34,6 @@ import java.util.List;
 
 import com.viaoa.lang.OAStr;
 
-/* CODEX Review
-
-*/
 
 /**
  * Time-only OA value.

@@ -42,20 +42,32 @@ import com.viaoa.object.OAObject;
 @OAClass(addToCache=false, initialize=false, useDataSource=false, localOnly=true)
 public class OAGroupBy<F extends OAObject, G extends OAObject> extends OAObject {
     static final long serialVersionUID = 1L;
-    
+
+    /**
+     * Constant property name used by OA model metadata and generated code for P_GroupBy.
+     */
     public static final String P_GroupBy = "GroupBy"; 
+    /**
+     * Constant property name used by OA model metadata and generated code for P_Hub.
+     */
     public static final String P_Hub = "Hub"; 
+    /**
+     * Constant property name used by OA model metadata and generated code for PROPERTY_GroupBy.
+     */
     public static final String PROPERTY_GroupBy = "GroupBy"; 
+    /**
+     * Constant property name used by OA model metadata and generated code for PROPERTY_Hub.
+     */
     public static final String PROPERTY_Hub = "Hub"; 
     private G groupBy;
     private Hub<F> hub;
-    
+
     /**
      * Creates an empty grouping link object with no group-by value and no Hub.
      */
     public OAGroupBy() {
     }
-    
+
     /**
      * Creates a grouping link object initialized with the specified group-by value.
      *
@@ -64,7 +76,7 @@ public class OAGroupBy<F extends OAObject, G extends OAObject> extends OAObject 
     public OAGroupBy(G groupBy) {
         setGroupBy(groupBy);
     }
-    
+
     /**
      * Returns the group-by object associated with this instance.
      * <p>
@@ -81,7 +93,7 @@ public class OAGroupBy<F extends OAObject, G extends OAObject> extends OAObject 
         }
         return this.groupBy;
     }
-    
+
     /**
      * Sets the group-by object for this instance.
      * <p>
@@ -97,13 +109,13 @@ public class OAGroupBy<F extends OAObject, G extends OAObject> extends OAObject 
         this.groupBy = obj;
         firePropertyChange(P_GroupBy, hold, obj);
     }
-    
+
     /**
      * Returns the Hub of detail objects associated with this group.
      * <p>
      * If the Hub has not yet been resolved, it is retrieved using
      * {@link #getHub(String)} with {@link #PROPERTY_Hub}.
-     * </p> 
+     * </p>
      *
      * @return the Hub containing member/detail objects
      */

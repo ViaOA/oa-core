@@ -37,7 +37,7 @@ import com.viaoa.transaction.OATransaction;
  *
  * <p>This holds lightweight, mutable metadata including:
  * <ul>
- *   <li>Object graph loading and deletion state</li>
+ *   <li>Object OA model loading and deletion state</li>
  *   <li>Serialization modes</li>
  *   <li>User/session context and admin privileges</li>
  *   <li>Hub event traversal depth & suppression flags</li>
@@ -143,6 +143,9 @@ public class OAThreadLocal {
 	 * Used to track OAThreadLocal.startServerOnly and endServerOnly processing.
 	 */
 	protected int cntStartServerOnly;
+	/**
+	 * Runtime state field used by OA services for sendSyncMessagesHold.
+	 */
 	protected boolean sendSyncMessagesHold;
 	
 	/**
@@ -197,214 +200,456 @@ public class OAThreadLocal {
 		this.setThreadName(Thread.currentThread().getName());
 	}
 
+	/**
+	 * Returns the Time value.
+	 *
+	 * @return the Time value
+	 */
 	public long getTime() {
 		return time;
 	}
 
+	/**
+	 * Sets the Time value.
+	 * @param time the Time value
+	 */
 	public void setTime(long time) {
 		this.time = time;
 	}
 
+	/**
+	 * Returns the Transaction value.
+	 *
+	 * @return the Transaction value
+	 */
 	public OATransaction getTransaction() {
 		return transaction;
 	}
 
+	/**
+	 * Sets the Transaction value.
+	 * @param transaction the Transaction value
+	 */
 	public void setTransaction(OATransaction transaction) {
 		this.transaction = transaction;
 	}
 
+	/**
+	 * Returns the Loading value.
+	 *
+	 * @return the Loading value
+	 */
 	public boolean getLoading() {
 		return loading;
 	}
 
+	/**
+	 * Sets the Loading value.
+	 * @param loading the Loading value
+	 */
 	public void setLoading(boolean loading) {
 		this.loading = loading;
 	}
 
+	/**
+	 * Returns the CacheAddMode value.
+	 *
+	 * @return the CacheAddMode value
+	 */
 	public int getCacheAddMode() {
 		return cacheAddMode;
 	}
 
+	/**
+	 * Sets the CacheAddMode value.
+	 * @param cacheAddMode the CacheAddMode value
+	 */
 	public void setCacheAddMode(int cacheAddMode) {
 		this.cacheAddMode = cacheAddMode;
 	}
 
+	/**
+	 * Returns the ObjectSerializers value.
+	 *
+	 * @return the ObjectSerializers value
+	 */
 	public List<OAObjectSerializer> getObjectSerializers() {
 		return alObjectSerializer;
 	}
 
+	/**
+	 * Performs the addObjectSerializer runtime operation.
+	 * @param objectSerializer the operation value
+	 */
 	public void addObjectSerializer(OAObjectSerializer objectSerializer) {
 		if (alObjectSerializer == null) alObjectSerializer = new ArrayList();
 		alObjectSerializer.add(objectSerializer);
 	}
 	
+	/**
+	 * Removes the supplied runtime value.
+	 * @param objectSerializer the value to remove
+	 * @return removal result
+	 */
 	public boolean removeObjectSerializer(OAObjectSerializer objectSerializer) {
 		if (alObjectSerializer == null) return false;
 		return alObjectSerializer.remove(objectSerializer);
 	}
 	
 
+	/**
+	 * Returns the SendSyncMessages value.
+	 *
+	 * @return the SendSyncMessages value
+	 */
 	public boolean getSendSyncMessages() {
 		return sendSyncMessages;
 	}
 
+	/**
+	 * Sets the SendSyncMessages value.
+	 * @param b the SendSyncMessages value
+	 */
 	public void setSendSyncMessages(boolean b) {
 		this.sendSyncMessages = b;
 	}
 
+	/**
+	 * Returns the SendSyncMessagesHold value.
+	 *
+	 * @return the SendSyncMessagesHold value
+	 */
 	public boolean getSendSyncMessagesHold() {
 		return sendSyncMessagesHold;
 	}
 
+	/**
+	 * Sets the SendSyncMessagesHold value.
+	 * @param b the SendSyncMessagesHold value
+	 */
 	public void setSendSyncMessagesHold(boolean b) {
 		this.sendSyncMessagesHold = b;
 	}
 	
+	/**
+	 * Increments the runtime counter and returns the updated value.
+	 *
+	 * @return the updated counter value
+	 */
 	public int incStartServerOnly() {
 		return ++cntStartServerOnly;
 	}
+	/**
+	 * Decrements the runtime counter and returns the updated value.
+	 *
+	 * @return the updated counter value
+	 */
 	public int decStartServerOnly() {
 		if (cntStartServerOnly == 0) return 0; 
 		return --cntStartServerOnly;
 	}
 	
+	/**
+	 * Returns the Deleting value.
+	 *
+	 * @return the Deleting value
+	 */
 	public Object[] getDeleting() {
 		return deleting;
 	}
 
+	/**
+	 * Sets the Deleting value.
+	 * @param deleting the Deleting value
+	 */
 	public void setDeleting(Object[] deleting) {
 		this.deleting = deleting;
 	}
 
+	/**
+	 * Returns the Flags value.
+	 *
+	 * @return the Flags value
+	 */
 	public Object[] getFlags() {
 		return flags;
 	}
 
+	/**
+	 * Sets the Flags value.
+	 * @param flags the Flags value
+	 */
 	public void setFlags(Object[] flags) {
 		this.flags = flags;
 	}
 
+	/**
+	 * Returns the Locks value.
+	 *
+	 * @return the Locks value
+	 */
 	public Object[] getLocks() {
 		return locks;
 	}
 
+	/**
+	 * Sets the Locks value.
+	 * @param locks the Locks value
+	 */
 	public void setLocks(Object[] locks) {
 		this.locks = locks;
 	}
 
+	/**
+	 * Returns the WaitingOnLock value.
+	 *
+	 * @return the WaitingOnLock value
+	 */
 	public boolean getWaitingOnLock() {
 		return bIsWaitingOnLock;
 	}
 
+	/**
+	 * Sets the WaitingOnLock value.
+	 * @param bIsWaitingOnLock the WaitingOnLock value
+	 */
 	public void setWaitingOnLock(boolean bIsWaitingOnLock) {
 		this.bIsWaitingOnLock = bIsWaitingOnLock;
 	}
 
+	/**
+	 * Returns the ThreadName value.
+	 *
+	 * @return the ThreadName value
+	 */
 	public String getThreadName() {
 		return threadName;
 	}
 
+	/**
+	 * Sets the ThreadName value.
+	 * @param threadName the ThreadName value
+	 */
 	public void setThreadName(String threadName) {
 		this.threadName = threadName;
 	}
 
+	/**
+	 * Returns the HubMergerChangingCount value.
+	 *
+	 * @return the HubMergerChangingCount value
+	 */
 	public int getHubMergerChangingCount() {
 		return hubMergerChangingCount;
 	}
 
+	/**
+	 * Increments the runtime counter and returns the updated value.
+	 *
+	 * @return the updated counter value
+	 */
 	public int incHubMergerChangingCount() {
 		return ++this.hubMergerChangingCount;
 	}
+	/**
+	 * Decrements the runtime counter and returns the updated value.
+	 *
+	 * @return the updated counter value
+	 */
 	public int decHubMergerChangingCount() {
 		return --this.hubMergerChangingCount;
 	}
 	
 	
+	/**
+	 * Returns the CompoundUndoableName value.
+	 *
+	 * @return the CompoundUndoableName value
+	 */
 	public String getCompoundUndoableName() {
 		return compoundUndoableName;
 	}
 
+	/**
+	 * Sets the CompoundUndoableName value.
+	 * @param compoundUndoableName the CompoundUndoableName value
+	 */
 	public void setCompoundUndoableName(String compoundUndoableName) {
 		this.compoundUndoableName = compoundUndoableName;
 	}
 
+	/**
+	 * Returns whether CreateUndoablePropertyChanges is active for the current runtime context.
+	 *
+	 * @return {@code true} if CreateUndoablePropertyChanges is active
+	 */
 	public boolean isCreateUndoablePropertyChanges() {
 		return createUndoablePropertyChanges;
 	}
 
+	/**
+	 * Sets the CreateUndoablePropertyChanges value.
+	 * @param createUndoablePropertyChanges the CreateUndoablePropertyChanges value
+	 */
 	public void setCreateUndoablePropertyChanges(boolean createUndoablePropertyChanges) {
 		this.createUndoablePropertyChanges = createUndoablePropertyChanges;
 	}
 
+	/**
+	 * Returns the Status value.
+	 *
+	 * @return the Status value
+	 */
 	public String getStatus() {
 		return status;
 	}
 
+	/**
+	 * Sets the Status value.
+	 * @param status the Status value
+	 */
 	public void setStatus(String status) {
 		this.status = status;
 	}
 
+	/**
+	 * Returns the RequestInfo value.
+	 *
+	 * @return the RequestInfo value
+	 */
 	public RequestInfo getRequestInfo() {
 		return requestInfo;
 	}
 
+	/**
+	 * Sets the RequestInfo value.
+	 * @param requestInfo the RequestInfo value
+	 */
 	public void setRequestInfo(RequestInfo requestInfo) {
 		this.requestInfo = requestInfo;
 	}
 
+	/**
+	 * Returns the NotifyObject value.
+	 *
+	 * @return the NotifyObject value
+	 */
 	public Object getNotifyObject() {
 		return notifyObject;
 	}
 
+	/**
+	 * Sets the NotifyObject value.
+	 * @param notifyObject the NotifyObject value
+	 */
 	public void setNotifyObject(Object notifyObject) {
 		this.notifyObject = notifyObject;
 	}
 
+	/**
+	 * Returns the RecursiveTriggerCount value.
+	 *
+	 * @return the RecursiveTriggerCount value
+	 */
 	public int getRecursiveTriggerCount() {
 		return recursiveTriggerCount;
 	}
 
+	/**
+	 * Increments the runtime counter and returns the updated value.
+	 *
+	 * @return the updated counter value
+	 */
 	public int incRecursiveTriggerCount() {
 		return ++this.recursiveTriggerCount;
 	}
 
+	/**
+	 * Decrements the runtime counter and returns the updated value.
+	 *
+	 * @return the updated counter value
+	 */
 	public int decRecursiveTriggerCount() {
 		return --this.recursiveTriggerCount;
 	}
 
 	
+	/**
+	 * Returns the HubListenerTreeCount value.
+	 *
+	 * @return the HubListenerTreeCount value
+	 */
 	public int getHubListenerTreeCount() {
 		return hubListenerTreeCount;
 	}
 
+	/**
+	 * Increments the runtime counter and returns the updated value.
+	 *
+	 * @return the updated counter value
+	 */
 	public int incHubListenerTreeCount() {
 		return ++this.hubListenerTreeCount;
 	}
+	/**
+	 * Decrements the runtime counter and returns the updated value.
+	 *
+	 * @return the updated counter value
+	 */
 	public int decHubListenerTreeCount() {
 		return --this.hubListenerTreeCount;
 	}
 
 	
+	/**
+	 * Returns the IgnoreTreeListenerProperty value.
+	 *
+	 * @return the IgnoreTreeListenerProperty value
+	 */
 	public String getIgnoreTreeListenerProperty() {
 		return ignoreTreeListenerProperty;
 	}
 
+	/**
+	 * Sets the IgnoreTreeListenerProperty value.
+	 * @param ignoreTreeListenerProperty the IgnoreTreeListenerProperty value
+	 */
 	public void setIgnoreTreeListenerProperty(String ignoreTreeListenerProperty) {
 		this.ignoreTreeListenerProperty = ignoreTreeListenerProperty;
 	}
 
+	/**
+	 * Returns the CalcPropertyEvents value.
+	 *
+	 * @return the CalcPropertyEvents value
+	 */
 	public Tuple3<Hub, OAObject, String>[] getCalcPropertyEvents() {
 		return calcPropertyEvents;
 	}
 
+	/**
+	 * Sets the CalcPropertyEvents value.
+	 * @param Tuple3<Hub the CalcPropertyEvents value
+	 * @param OAObject the CalcPropertyEvents value
+	 * @param calcPropertyEvents the CalcPropertyEvents value
+	 */
 	public void setCalcPropertyEvents(Tuple3<Hub, OAObject, String>[] calcPropertyEvents) {
 		this.calcPropertyEvents = calcPropertyEvents;
 	}
 
+	/**
+	 * Returns the Refreshing value.
+	 *
+	 * @return the Refreshing value
+	 */
 	public int getRefreshing() {
 		return refreshing;
 	}
 
+	/**
+	 * Sets the Refreshing value.
+	 * @param refreshing the Refreshing value
+	 */
 	public void setRefreshing(int refreshing) {
 		this.refreshing = refreshing;
 	}
@@ -442,7 +687,7 @@ public class OAThreadLocal {
 
 	/**
 	 * List of sibling-helper instances used by this thread to compute
-	 * and cache sibling property-path resolutions during object graph
+	 * and cache sibling property-path resolutions during OA model
 	 * navigation.
 	 */
 	public List<OASiblingHelper<?>> alSiblingHelper;
@@ -509,16 +754,30 @@ public class OAThreadLocal {
 	 */
 	public OAThreadLocalHubMergerCallback[] hubMergerCallback;
 
-	//qqqqqqqqqqqqqqqqqqqvvvvvvvvv 20260403
+	/**
+	 * Runtime state field used by OA services for replicationSource.
+	 */
 	public String replicationSource;
 
 	
 	@SuppressWarnings("unchecked")
+	/**
+	 * Returns the ModelUser value.
+	 *
+	 * @param oa the lookup context
+	 *
+	 * @return the ModelUser value
+	 */
 	public <T extends OAObject> Hub<T> getModelUser(OA oa) {
 		if (hmModelUser == null) return null;
 		return (Hub<T>) hmModelUser.get(oa);
 	}
 
+	/**
+	 * Sets the ModelUser value.
+	 * @param oa the ModelUser value
+	 * @param hub the ModelUser value
+	 */
 	public <T extends OAObject> void setModelUser(OA oa, Hub<T> hub) {
 	    if (oa == null) return;
 		if (hmModelUser == null) hmModelUser = new HashMap<>();
@@ -526,14 +785,26 @@ public class OAThreadLocal {
 	    else hmModelUser.put(oa, hub);
 	}	
 
+	/**
+	 * Clears the runtime state tracked by this method.
+	 */
 	public void clearModelUser() {
 		if (hmModelUser != null) hmModelUser.clear();
 	}
 
+	/**
+	 * Returns the SessionUser value.
+	 *
+	 * @return the SessionUser value
+	 */
 	public OASessionUser<?> getSessionUser() {
 		return sessionUser;
 	}
 
+	/**
+	 * Sets the SessionUser value.
+	 * @param su the SessionUser value
+	 */
 	public void setSessionUser(OASessionUser<?> su) {
 		sessionUser = su;
 	}

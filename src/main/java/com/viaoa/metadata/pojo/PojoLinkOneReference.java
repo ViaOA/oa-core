@@ -108,6 +108,11 @@ public class PojoLinkOneReference implements java.io.Serializable {
 	 * @return the link-one metadata or {@code null}
 	 */
 	// @JsonIgnore
+	/**
+	 * Returns the one-link metadata referenced by this mapping entry.
+	 *
+	 * @return mapped metadata reference, or {@code null}
+	 */
 	public PojoLinkOne getPojoLinkOne() {
 		return pojoLinkOne;
 	}

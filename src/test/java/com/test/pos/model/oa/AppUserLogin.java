@@ -22,7 +22,7 @@ import com.test.pos.model.oa.propertypath.*;
     displayProperty = "appUser.displayName",
     filterClasses = {AppUserLoginConnectedFilter.class, AppUserLoginLastDayFilter.class},
     noPojo = true,
-    rootTreePropertyPaths = {
+    rootTreePaths = {
         "[AppUser]."+AppUser.P_AppUserLogins
     }
 )

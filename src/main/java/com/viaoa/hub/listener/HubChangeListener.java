@@ -48,7 +48,7 @@ import com.viaoa.select.OASelect;
  * Use the {@code add*} methods to compose conditions (hub validity/emptiness,
  * AO null/new, property null/empty/not-empty, object-callback enabled/visible,
  * custom {@link com.viaoa.filter.OAFilter}, etc.). The listener internals will
- * attach a shared {@link HubListener} per (hub,propertyPath) and re-use it across
+ * attach a shared {@link HubListener} per (hub,path) and re-use it across
  * rules to minimize overhead. On relevant {@link HubEvent}s, it recomputes and
  * invokes {@code callOnChange()} in subclasses.
  * <p>
@@ -58,26 +58,26 @@ import com.viaoa.select.OASelect;
  * are tracked to aid UI enablement/visibility logic.
  */
 public abstract class HubChangeListener {
-	
+
 	/**
 	 * Array of rule definitions monitored by this listener. Each entry specifies
 	 * a hub, optional property path, comparison logic, and associated listener
 	 * configuration.
 	 */
 	protected HubProp[] hubProps = new HubProp[0];
-	
+
 	/**
 	 * Debug flag enabling diagnostic behavior within the listener’s evaluation
 	 * and event-handling routines when set to true.
 	 */
 	public boolean DEBUG;
-	
+
 	/**
 	 * Reference to the most recently processed HubEvent. Used to prevent
 	 * duplicate processing of the same event instance.
 	 */
 	private HubEvent lastHubEvent;
-	
+
 	/**
 	 * Holds the message describing the cause of the most recent rule failure
 	 * during evaluation. Used to build tooltips and UI feedback.
@@ -102,99 +102,99 @@ public abstract class HubChangeListener {
 		 * Evaluated using active-object-only mode.
 		 */
 		HubValid(true),
-		
+
 		/**
 		 * Comparison type requiring the hub to be not valid.
 		 * Evaluated using active-object-only mode.
 		 */
 		HubNotValid(true),
-		
+
 		/**
 		 * Comparison type requiring the hub to be valid and have
 		 * zero size. Active-object-only mode is disabled.
 		 */
 		HubEmpty(false),
-		
+
 		/**
 		 * Comparison type requiring the hub to be valid and contain
 		 * one or more objects. Active-object-only mode is disabled.
 		 */
 		HubNotEmpty(false),
-		
+
 		/**
 		 * Comparison type requiring the hub's active object to be null.
 		 * Evaluated using active-object-only mode.
 		 */
 		AoNull(true), // hub.activeObject
-		
+
 		/**
 		 * Comparison type requiring the hub's active object to be not null,
 		 * evaluated using active-object-only mode.
 		 */
 		AoNotNull(true),
-		
+
 		/**
 		 * Comparison type requiring the hub's active object to exist and be new.
 		 * Active-object-only mode enabled.
 		 */
 		AoNew(true),
-		
+
 		/**
 		 * Comparison type requiring the hub's active object to exist and not be new.
 		 * Active-object-only mode enabled.
 		 */
 		AoNotNew(true),
-		
+
 		/**
 		 * Comparison type that always evaluates to true.
 		 * Active-object-only mode enabled.
 		 */
 		AlwaysTrue(true),
-		
+
 		/**
 		 * Comparison type that always evaluates to false.
 		 * Active-object-only mode enabled.
 		 */
 		AlwaysFalse(true),
-		
+
 		/**
 		 * Comparison type that evaluates true only when
 		 * OAContext.isSuperAdmin() returns true.
 		 * Active-object-only mode enabled.
 		 */
 		OnlySuperAdmin(true), // OAContext.isSuperAdmin must be true
-		
+
 		/**
 		 * Comparison type requiring the specified property of the
 		 * active object to be null. Active-object-only mode enabled.
 		 */
 		PropertyNull(true),
-		
+
 		/**
 		 * Comparison type requiring the specified property of the
 		 * active object to be not null. Active-object-only mode enabled.
 		 */
 		PropertyNotNull(true),
-		
+
 		/**
 		 * Comparison type requiring the specified property of the
 		 * active object to be empty. Active-object-only mode enabled.
 		 */
 		PropertyEmpty(true),
-		
+
 		/**
 		 * Comparison type requiring the specified property of the
 		 * active object to be non-empty. Active-object-only mode enabled.
 		 */
 		PropertyNotEmpty(true),
-		
+
 		/**
 		 * Comparison type that uses an object callback to determine
 		 * whether the specified property of the active object is enabled.
 		 * Active-object-only mode enabled.
 		 */
 		ObjectCallbackEnabled(true),
-		
+
 		/**
 		 * Comparison type that uses an object callback to determine
 		 * whether the specified property of the active object is visible.
@@ -207,7 +207,10 @@ public abstract class HubChangeListener {
 		 * only the hub's active object rather than all objects.
 		 */
 		private boolean bUseAoOnly;
-		
+
+		/**
+		 * Performs the useAoOnly operation for this Hub component.
+		 */
 		public boolean useAoOnly() {
 			return bUseAoOnly;
 		}
@@ -282,14 +285,14 @@ public abstract class HubChangeListener {
 	 * is null, this behaves like {@link #add(Hub)}.
 	 *
 	 * @param hub          the hub to add
-	 * @param propertyPath the property path to listen to
+	 * @param path the property path to listen to
 	 * @return the created HubProp instance
 	 */
-	public HubProp add(Hub hub, String propertyPath) {
-		if (propertyPath == null) {
+	public HubProp add(Hub hub, String path) {
+		if (path == null) {
 			return add(hub);
 		} else {
-			return add(hub, propertyPath, true, Type.AlwaysTrue, null, true, null);
+			return add(hub, path, true, Type.AlwaysTrue, null, true, null);
 		}
 	}
 
@@ -308,11 +311,11 @@ public abstract class HubChangeListener {
 	 * property path.
 	 *
 	 * @param hub          the hub to test
-	 * @param propertyPath the property path to listen to
+	 * @param path the property path to listen to
 	 * @return the created HubProp instance
 	 */
-	public HubProp addHubValid(Hub hub, String propertyPath) {
-		return add(hub, propertyPath, true, Type.HubValid);
+	public HubProp addHubValid(Hub hub, String path) {
+		return add(hub, path, true, Type.HubValid);
 	}
 
 	/**
@@ -523,6 +526,11 @@ public abstract class HubChangeListener {
 		final OA oa = OARuntime.oa(hub);
 		OAFilter filter = new OAFilter() {
 			@Override
+			/**
+			 * Returns whether Used is true for the current Hub context.
+			 *
+			 * @return {@code true} if Used is true
+			 */
 			public boolean isUsed(Object obj) {
 				OAObjectCallback eq = oa.internal().objects().rules().getAllowAddObjectCallback(hub, null);
 				boolean b = eq.getAllowed();
@@ -561,6 +569,11 @@ public abstract class HubChangeListener {
 		final OA oa = OARuntime.oa(hub);
 		OAFilter filter = new OAFilter() {
 			@Override
+			/**
+			 * Returns whether Used is true for the current Hub context.
+			 *
+			 * @return {@code true} if Used is true
+			 */
 			public boolean isUsed(Object obj) {
 				OAObjectCallback eq = oa.internal().objects().rules().getAllowNewObjectCallback(hub);
 				boolean b = eq.getAllowed();
@@ -602,13 +615,18 @@ public abstract class HubChangeListener {
 		final OA oa = OARuntime.oa(hub);
 		OAFilter filter = new OAFilter() {
 			@Override
+			/**
+			 * Returns whether Used is true for the current Hub context.
+			 *
+			 * @return {@code true} if Used is true
+			 */
 			public boolean isUsed(Object obj) {
 				if (!(obj instanceof OAObject)) {
 					return false;
 				}
 
 				Hub<OAObject> hubX = (Hub) hub;
-				
+
 				OAObjectCallback eq = oa.internal().objects().rules().getAllowDeleteObjectCallback(hubX, (OAObject) obj);
 				boolean b = eq.getAllowed();
 				if (!b) {
@@ -624,7 +642,7 @@ public abstract class HubChangeListener {
 
 		Hub<OAObject> hubX = (Hub) hub;
 		Class classX = hubX.getObjectClass();
-		
+
 		oa.internal().objects().rules().addObjectCallbackChangeListeners(hubX, classX, null, null, this, true);
 
 		Hub<?> hx = hub.getMasterHub();
@@ -654,6 +672,11 @@ public abstract class HubChangeListener {
 		addAoNotNull(hub);
 		OAFilter filter = new OAFilter() {
 			@Override
+			/**
+			 * Returns whether Used is true for the current Hub context.
+			 *
+			 * @return {@code true} if Used is true
+			 */
 			public boolean isUsed(Object obj) {
 				// 20191214
 				if (!(obj instanceof OAObject)) return false;
@@ -706,6 +729,11 @@ public abstract class HubChangeListener {
 		final OA oa = OARuntime.oa(hub);
 		OAFilter filter = new OAFilter() {
 			@Override
+			/**
+			 * Returns whether Used is true for the current Hub context.
+			 *
+			 * @return {@code true} if Used is true
+			 */
 			public boolean isUsed(Object obj) {
 				if (!(obj instanceof OAObject)) return false;
 				OAObjectCallback eq = oa.internal().objects().rules().getAllowCopyObjectCallback((OAObject) obj);
@@ -735,6 +763,11 @@ public abstract class HubChangeListener {
 		final OA oa = OARuntime.oa(hub);
 		OAFilter filter = new OAFilter() {
 			@Override
+			/**
+			 * Returns whether Used is true for the current Hub context.
+			 *
+			 * @return {@code true} if Used is true
+			 */
 			public boolean isUsed(Object obj) {
 				OAObjectCallback eq = oa.internal().objects().rules().getAllowEnabledObjectCallback(hub);
 				boolean b = eq.getAllowed();
@@ -875,12 +908,12 @@ public abstract class HubChangeListener {
 	 * comparison value.
 	 *
 	 * @param hub          the hub to evaluate
-	 * @param propertyPath the property to monitor
+	 * @param path the property to monitor
 	 * @param compareValue the comparison value to apply
 	 * @return the created HubProp instance
 	 */
-	public HubProp add(Hub hub, final String propertyPath, Object compareValue) {
-		return add(hub, propertyPath, true, compareValue, null, true, null);
+	public HubProp add(Hub hub, final String path, Object compareValue) {
+		return add(hub, path, true, compareValue, null, true, null);
 	}
 
 	/**
@@ -910,17 +943,17 @@ public abstract class HubChangeListener {
 	 * enabling comparison logic and providing a comparison value.
 	 *
 	 * @param hub              the hub to evaluate
-	 * @param propertyPath     the property path to monitor
+	 * @param path     the property path to monitor
 	 * @param bUseCompareValue true to use the comparison value
 	 * @param compareValue     the value or rule used for comparison
 	 * @return the created HubProp instance
 	 */
-	public HubProp add(Hub hub, final String propertyPath, boolean bUseCompareValue, Object compareValue) {
+	public HubProp add(Hub hub, final String path, boolean bUseCompareValue, Object compareValue) {
 		Type type = null;
 		if (bUseCompareValue && compareValue instanceof Type) {
 			type = (Type) compareValue;
 		}
-		return this.add(hub, propertyPath, bUseCompareValue, compareValue, null, (type == null ? true : type.bUseAoOnly), null);
+		return this.add(hub, path, bUseCompareValue, compareValue, null, (type == null ? true : type.bUseAoOnly), null);
 	}
 
 	/**
@@ -929,7 +962,7 @@ public abstract class HubChangeListener {
 	 * description.
 	 *
 	 * @param hub              the hub to evaluate
-	 * @param propertyPath     the property path to monitor
+	 * @param path     the property path to monitor
 	 * @param bUseCompareValue true to use the comparison value
 	 * @param compareValue     the comparison value or rule
 	 * @param filter           an optional filter for evaluation
@@ -937,9 +970,9 @@ public abstract class HubChangeListener {
 	 * @param description      a description for the rule
 	 * @return the created HubProp instance
 	 */
-	public HubProp add(Hub hub, final String propertyPath, boolean bUseCompareValue, Object compareValue, OAFilter filter,
+	public HubProp add(Hub hub, final String path, boolean bUseCompareValue, Object compareValue, OAFilter filter,
 			final boolean bAoOnly, String description) {
-		String newPropertyPath;
+		String newPath;
 		String[] props;
 
 		if (bUseCompareValue && compareValue != null) {
@@ -956,15 +989,15 @@ public abstract class HubChangeListener {
 			}
 		}
 
-		if (propertyPath != null && propertyPath.indexOf('.') >= 0) {
-			newPropertyPath = propertyPath.replace('.', '_');
-			props = new String[] { propertyPath };
+		if (path != null && path.indexOf('.') >= 0) {
+			newPath = path.replace('.', '_');
+			props = new String[] { path };
 		} else {
-			newPropertyPath = propertyPath;
+			newPath = path;
 			props = null;
 		}
 
-		final HubProp newHubProp = new HubProp(hub, propertyPath, newPropertyPath, props, bUseCompareValue, compareValue, filter, bAoOnly,
+		final HubProp newHubProp = new HubProp(hub, path, newPath, props, bUseCompareValue, compareValue, filter, bAoOnly,
 				description);
 
 		// see if there is a listener with same hub - and one without a propertyName used
@@ -977,13 +1010,13 @@ public abstract class HubChangeListener {
 		if (bUseCompareValue && compareValue == Type.ObjectCallbackEnabled) {
 			for (HubProp hp : hubProps) {
 				if (hp.bUseCompareValue && hp.compareValue == Type.ObjectCallbackEnabled && hub == hp.hub) {
-					if (OAString.isEmpty(hp.propertyPath)) {
+					if (OAString.isEmpty(hp.path)) {
 						hp.bIgnore = true;
 					} else {
-						if (OAString.isEmpty(propertyPath)) {
+						if (OAString.isEmpty(path)) {
 							return null;
 						}
-						if (hp.propertyPath.equalsIgnoreCase(propertyPath)) {
+						if (hp.path.equalsIgnoreCase(path)) {
 							hp.bIgnore = true;
 						}
 					}
@@ -993,13 +1026,13 @@ public abstract class HubChangeListener {
 		if (bUseCompareValue && compareValue == Type.ObjectCallbackVisible) {
 			for (HubProp hp : hubProps) {
 				if (hp.bUseCompareValue && hp.compareValue == Type.ObjectCallbackVisible && hub == hp.hub) {
-					if (OAString.isEmpty(hp.propertyPath)) {
+					if (OAString.isEmpty(hp.path)) {
 						hp.bIgnore = true;
 					} else {
-						if (OAString.isEmpty(propertyPath)) {
+						if (OAString.isEmpty(path)) {
 							return null;
 						}
-						if (hp.propertyPath.equalsIgnoreCase(propertyPath)) {
+						if (hp.path.equalsIgnoreCase(path)) {
 							hp.bIgnore = true;
 						}
 					}
@@ -1078,8 +1111,8 @@ public abstract class HubChangeListener {
 			if (hp.hub != newHubProp.hub) {
 				continue;
 			}
-			if (newHubProp.propertyPath != null) {
-				if (!newHubProp.propertyPath.equalsIgnoreCase(hp.propertyPath)) {
+			if (newHubProp.path != null) {
+				if (!newHubProp.path.equalsIgnoreCase(hp.path)) {
 					continue;
 				}
 			}
@@ -1092,6 +1125,10 @@ public abstract class HubChangeListener {
 		}
 
 		newHubProp.hubListener = new HubListenerAdapter() {
+			/**
+			 * Handles the Hub active-object change event.
+			 * @param e the Hub event
+			 */
 			public void afterChangeActiveObject(HubEvent e) {
 				if (e == lastHubEvent) {
 					return;
@@ -1101,6 +1138,10 @@ public abstract class HubChangeListener {
 			}
 
 			@Override
+			/**
+			 * Handles the Hub property-change event.
+			 * @param e the Hub event
+			 */
 			public void afterPropertyChange(HubEvent e) {
 				if (e == lastHubEvent) {
 					return;
@@ -1113,6 +1154,10 @@ public abstract class HubChangeListener {
 
 			// linked to hub listener
 			@Override
+			/**
+			 * Handles replacement or refresh of the Hub list.
+			 * @param e the Hub event
+			 */
 			public void onNewList(HubEvent e) {
 				if (e == lastHubEvent) {
 					return;
@@ -1122,6 +1167,10 @@ public abstract class HubChangeListener {
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-add event.
+			 * @param e the Hub event
+			 */
 			public void afterAdd(HubEvent e) {
 				if (e == lastHubEvent) {
 					return;
@@ -1134,7 +1183,7 @@ public abstract class HubChangeListener {
 					if (hp.hub != newHubProp.hub) {
 						continue;
 					}
-					if (!hp.bAoOnly || hp.propertyPath == null) {
+					if (!hp.bAoOnly || hp.path == null) {
 						callOnChange();
 						break;
 					}
@@ -1142,6 +1191,10 @@ public abstract class HubChangeListener {
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-insert event.
+			 * @param e the Hub event
+			 */
 			public void afterInsert(HubEvent e) {
 				if (e == lastHubEvent) {
 					return;
@@ -1154,7 +1207,7 @@ public abstract class HubChangeListener {
 					if (hp.hub != newHubProp.hub) {
 						continue;
 					}
-					if (!hp.bAoOnly || hp.propertyPath == null) {
+					if (!hp.bAoOnly || hp.path == null) {
 						callOnChange();
 						break;
 					}
@@ -1162,6 +1215,10 @@ public abstract class HubChangeListener {
 			}
 
 			@Override
+			/**
+			 * Handles the Hub after-remove event.
+			 * @param e the Hub event
+			 */
 			public void afterRemove(HubEvent e) {
 				if (e == lastHubEvent) {
 					return;
@@ -1174,7 +1231,7 @@ public abstract class HubChangeListener {
 					if (hp.hub != newHubProp.hub) {
 						continue;
 					}
-					if (!hp.bAoOnly || hp.propertyPath == null) {
+					if (!hp.bAoOnly || hp.path == null) {
 						callOnChange();
 						break;
 					}
@@ -1184,7 +1241,7 @@ public abstract class HubChangeListener {
 
 		if (newHubProp.hub != null) {
 			if (newHubProp.props == null) {
-				if (newHubProp.propertyPath == null) {
+				if (newHubProp.path == null) {
 					newHubProp.hub.addHubListener(newHubProp.hubListener);
 				} else {
 					newHubProp.hub.addHubListener(newHubProp.hubListener, newHubProp.listenToPropertyName, newHubProp.bAoOnly);
@@ -1245,7 +1302,7 @@ public abstract class HubChangeListener {
 			if (hp.hub != hub) {
 				continue;
 			}
-			if (!OAString.equals(prop, hp.propertyPath)) {
+			if (!OAString.equals(prop, hp.path)) {
 				continue;
 			}
 			if (hp.hubListener == null) {
@@ -1279,7 +1336,7 @@ public abstract class HubChangeListener {
 		if (hp == null) {
 			return;
 		}
-		remove(hp.hub, hp.propertyPath);
+		remove(hp.hub, hp.path);
 		hubProps = (HubProp[]) OAArray.removeValue(HubProp.class, hubProps, hp);
 	}
 
@@ -1391,67 +1448,67 @@ public abstract class HubChangeListener {
 		 * validity checks, and property evaluations.
 		 */
 		public Hub<?> hub;
-		
+
 		/**
 		 * Original property path used for evaluation. May contain dotted paths that
 		 * are expanded or normalized for listener resolution.
 		 */
-		public String propertyPath; // original propertyPath
-		
+		public String path; // original path
+
 		/**
 		 * Property name used by HubListeners. Dotted paths are replaced with
 		 * underscores to create a listener-friendly identifier.
 		 */
 		public String listenToPropertyName; // name used for listener - in case property path has '.' in it, then this will replace with '_'
-		
+
 		/**
-		 * Expanded array of property paths when the original propertyPath contains
+		 * Expanded array of property paths when the original path contains
 		 * dotted segments. Used to attach listeners to all dependent properties.
 		 */
 		public String[] props;
-		
+
 		/**
 		 * Listener instance attached to the associated hub for monitoring relevant
 		 * HubEvents that may trigger rule evaluation.
 		 */
 		public HubListener hubListener;
-		
+
 		/**
 		 * Comparison value or rule used to evaluate the hub or property when
 		 * bUseCompareValue is true.
 		 */
 		public Object compareValue;
-		
+
 		/**
 		 * Flag indicating whether the compareValue field should participate in
 		 * evaluation logic.
 		 */
 		public boolean bUseCompareValue;
-		
+
 		/**
 		 * Optional filter applied to evaluate the rule. If present, the filter
 		 * overrides comparison logic and is evaluated instead.
 		 */
 		public OAFilter filter;
-		
+
 		/**
 		 * When true, rule evaluation is restricted to the active object of the hub
 		 * rather than iterating through all objects.
 		 */
 		public boolean bAoOnly;
-		
+
 		/**
 		 * Marks this rule as ignored when another rule overrides it. Ignored rules
 		 * are skipped during evaluation.
 		 */
 		public boolean bIgnore; // flag used when another rule overrides this one
-		
+
 		/**
 		 * Failure message specific to this rule instance, set when evaluation does
 		 * not pass. Propagated up to the parent listener.
 		 */
 		public String failureReason;
-		
+
 		/**
 		 * Optional descriptive label used for tooltips or UI reporting of this
 		 * rule’s purpose.
@@ -1465,7 +1522,7 @@ public abstract class HubChangeListener {
 		 * text.
 		 *
 		 * @param h                 the hub associated with this rule
-		 * @param propertyPath      the original property path to evaluate
+		 * @param path      the original property path to evaluate
 		 * @param listenPropertyName the property name used by hub listeners
 		 * @param props             array of property paths when expanded from a dotted path
 		 * @param bUseCompareValue  true to use the compareValue during evaluation
@@ -1474,10 +1531,10 @@ public abstract class HubChangeListener {
 		 * @param bAoOnly           true to evaluate only the active object
 		 * @param description       descriptive label for this rule
 		 */
-		public HubProp(Hub<?> h, String propertyPath, String listenPropertyName, String[] props, boolean bUseCompareValue,
+		public HubProp(Hub<?> h, String path, String listenPropertyName, String[] props, boolean bUseCompareValue,
 				Object compareValue, OAFilter filter, boolean bAoOnly, String description) {
 			this.hub = h;
-			this.propertyPath = propertyPath;
+			this.path = path;
 			this.listenToPropertyName = listenPropertyName;
 			this.props = props;
 			this.bUseCompareValue = bUseCompareValue;
@@ -1564,11 +1621,11 @@ public abstract class HubChangeListener {
 					}
 
 					final OA oa = OARuntime.oa(hub);
-					
+
 					Hub<OAObject> hubx = (Hub) hub;
 				    OAObject valuex = (OAObject) value;
-					
-					OAObjectCallback eq = oa.internal().objects().rules().getAllowEnabledObjectCallback(hubx, valuex, propertyPath);
+
+					OAObjectCallback eq = oa.internal().objects().rules().getAllowEnabledObjectCallback(hubx, valuex, path);
 					b = eq.getAllowed();
 					if (!b) {
 						failureReason = eq.getDisplayResponse();
@@ -1584,7 +1641,7 @@ public abstract class HubChangeListener {
 				return b;
 
 				/*was:
-				OAObjectCallback eq  = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(hub, (OAObject) value, propertyPath, true);
+				OAObjectCallback eq  = OAObjectCallbackDelegate.getAllowEnabledObjectCallback(hub, (OAObject) value, path, true);
 				boolean b = eq.getAllowed();
 				if (!b) {
 				    failureReason = eq.getDisplayResponse();
@@ -1601,22 +1658,15 @@ public abstract class HubChangeListener {
 					if (hub == null) {
 						return true;
 					}
-					return true; //qqqqqqqqqqq needs to be done
-					/*qqqqqqq was:
-					Class cx = hub.getObjectClass();
-					if (!OAObject.class.isAssignableFrom(cx)) return true;
-					OAObjectCallback eq = OAObjectCallbackDelegate.getAllowVisibleObjectCallback(cx, propertyPath);
-					boolean b = eq.getAllowed();
-					if (!b) failureReason = eq.getDisplayResponse();
-					return b;
-					*/
+					return true;
+
 				}
 				final OA oa = OARuntime.oa(hub);
-				
+
 				Hub<OAObject> hubx = (Hub) hub;
 			    OAObject valuex = (OAObject) value;
 
-				OAObjectCallback eq = oa.internal().objects().rules().getAllowVisibleObjectCallback(hubx, valuex, propertyPath);
+				OAObjectCallback eq = oa.internal().objects().rules().getAllowVisibleObjectCallback(hubx, valuex, path);
 				boolean b = eq.getAllowed();
 				if (!b) {
 					failureReason = eq.getDisplayResponse();
@@ -1631,9 +1681,9 @@ public abstract class HubChangeListener {
 				return false;
 			}
 
-			if (propertyPath != null) {
+			if (path != null) {
 				if (value instanceof OAObject) {
-					value = ((OAObject) value).getProperty(propertyPath);
+					value = ((OAObject) value).getProperty(path);
 				}
 			}
 
@@ -1654,7 +1704,7 @@ public abstract class HubChangeListener {
 					return b;
 				}
 
-				//qqqqqqqqqq			qqqqqqqqqqqqqqqqq
+
 				if (compareValue == Type.PropertyEmpty) {
 					b = OAString.isEmpty(value);
 					if (!b) {
@@ -1751,14 +1801,14 @@ public abstract class HubChangeListener {
 				return false;
 			}
 
-			if (this.propertyPath != null) {
-				if (hp.propertyPath == null) {
+			if (this.path != null) {
+				if (hp.path == null) {
 					return false;
 				}
-				if (!this.propertyPath.equalsIgnoreCase(hp.propertyPath)) {
+				if (!this.path.equalsIgnoreCase(hp.path)) {
 					return false;
 				}
-			} else if (hp.propertyPath != null) {
+			} else if (hp.path != null) {
 				return false;
 			}
 			return true;

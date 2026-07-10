@@ -9,11 +9,19 @@ import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
 
+/**
+ * Evaluates changed-state for OAObjects and related Hubs according to cascade rules.
+ */
 public abstract class OAObjectChangeService {
 	private static final Logger LOG = Logger.getLogger(OAObjectChangeService.class.getName());
 
 	private final OAObject.FriendAccess faObject;
 	
+	/**
+	 * Performs OAObjectChangeService behavior for the OA object service.
+	 *
+	 * @param faObject method input
+	 */
 	public OAObjectChangeService(OAObject.FriendAccess faObject) {
     	if (faObject == null) throw new IllegalArgumentException("OAObject.FriendAccess can not be null");
     	this.faObject = faObject;
@@ -51,17 +59,17 @@ public abstract class OAObjectChangeService {
 	 * the object's change status is evaluated according to the cascade rule:</p>
 	 *
 	 * <ul>
-	 *   <li><b>OAObjectInfo.CHANGED_NONE</b>  
+	 *   <li><b>OAObjectInfo.CHANGED_NONE</b>
 	 *       Always returns {@code false}.</li>
 	 *
-	 *   <li><b>OAObjectInfo.CHANGED_LOCAL</b>  
+	 *   <li><b>OAObjectInfo.CHANGED_LOCAL</b>
 	 *       Returns the object's own {@code changedFlag} value.</li>
 	 *
-	 *   <li><b>OAObjectInfo.CHANGED_ALL</b>  
+	 *   <li><b>OAObjectInfo.CHANGED_ALL</b>
 	 *       Performs a recursive scan of related objects using the provided
 	 *       {@link OACascade} instance to track visited objects and prevent loops.</li>
 	 *
-	 *   <li><b>Depth-based rules</b>  
+	 *   <li><b>Depth-based rules</b>
 	 *       Interprets {@code iCascadeRule} as a maximum recursion depth and checks
 	 *       linked objects up to that depth.</li>
 	 * </ul>
@@ -160,12 +168,61 @@ public abstract class OAObjectChangeService {
 		return false;
 	}
 
+	/**
+	 * Dependency hook used by this service to objectInfoGetOAObjectInfo.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
 	public abstract OAObjectInfo callObjectInfoGetOAObjectInfo(OAObject oaObj);
+	/**
+	 * Dependency hook used by this service to objectInfoIsMany2Many.
+	 *
+	 * @param li method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callObjectInfoIsMany2Many(OALinkInfo li);
+	/**
+	 * Dependency hook used by this service to hubStatusGetChanged.
+	 *
+	 * @param hub method input
+	 * @param type method input
+	 * @param cascade method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callHubStatusGetChanged(Hub<?> hub, int type, OACascade cascade);
+	/**
+	 * Dependency hook used by this service to objectReflectGetRawReference.
+	 *
+	 * @param oaObj method input
+	 * @param prop method input
+	 * @return result value
+	 */
 	public abstract Object callObjectReflectGetRawReference(OAObject oaObj, String prop);
+	/**
+	 * Dependency hook used by this service to objectReflectGetProperty.
+	 *
+	 * @param oaObj method input
+	 * @param prop method input
+	 * @return result value
+	 */
     public abstract Object callObjectReflectGetProperty(OAObject oaObj, String prop);
+	/**
+	 * Dependency hook used by this service to objectHubGetChanged.
+	 *
+	 * @param hub method input
+	 * @param cascadeRule method input
+	 * @param cascade method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
     public abstract boolean callObjectHubGetChanged(Hub<?> hub, int cascadeRule, OACascade cascade);	
+	/**
+	 * Dependency hook used by this service to objectReflectIsReferenceNullOrNotLoaded.
+	 *
+	 * @param oaObj method input
+	 * @param prop method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
     public abstract boolean callObjectReflectIsReferenceNullOrNotLoaded(OAObject oaObj, String prop);
 	
 }

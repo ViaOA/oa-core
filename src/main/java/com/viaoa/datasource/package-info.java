@@ -21,7 +21,7 @@
  * models to work seamlessly with any persistence provider, including JDBC,
  * REST services, distributed servers, or in-memory caches.
  * <p>
- * The design goal is to completely decouple business models and object graphs
+ * The design goal is to completely decouple business models and OA runtime state
  * from the underlying storage mechanism, while preserving full CRUD semantics,
  * transaction control, and identity consistency across all backends.
  *
@@ -44,7 +44,7 @@
  * <h2>Design Highlights</h2>
  * <ul>
  *   <li>Supports any persistence type (SQL, REST, distributed, cache, custom).</li>
- *   <li>Object-graph queries automatically translated into native query syntax.</li>
+ *   <li>OA path queries automatically translated into native query syntax.</li>
  *   <li>Full CRUD lifecycle integration with {@link com.viaoa.object.OAObject}.</li>
  *   <li>Thread-safe registration, iteration, and transaction participation.</li>
  *   <li>Zero code changes required when switching DataSource implementations.</li>
@@ -74,7 +74,7 @@ package com.viaoa.datasource;
 
 DS-RUNTIME-001 — Datasource Runtime Authority
 Contract statement:
-com.viaoa.datasource defines the high-level persistence boundary between OA Object Graph runtime state and storage-
+com.viaoa.datasource defines the high-level persistence boundary between OA runtime state and storage-
 backed, remote, generated-key, or cache-backed datasource implementations.
 Rationale:
 Datasources are not simple adapters. They control object loading, selecting, saving, deleting, counting, identity
@@ -168,7 +168,7 @@ Contract statement:
 If read-only or ignore-writes flags are exposed as datasource contracts, normal save/delete/insert/update paths must
 either enforce them consistently or document them as advisory-only implementation hints.
 Rationale:
-Applications must not believe writes are blocked or ignored while normal graph save/delete paths still write.
+Applications must not believe writes are blocked or ignored while normal OA save/delete paths still write.
 Source scope:
 OADataSource.setReadOnly(...), getReadOnly(), setIgnoreWrites(...), getIgnoreWrites(), insert(...), update(...),
 delete(...), save(...), object datasource save/delete gateways.
@@ -215,7 +215,7 @@ Datasource Runtime / Delete Semantics
 
 DS-IDENTITY-001 — Datasource Object Identity
 Contract statement:
-Objects loaded or selected through a datasource must reconcile with graph/cache identity so that the same persistent
+Objects loaded or selected through a datasource must reconcile with OA/cache identity so that the same persistent
 OAObjectKey maps to one authoritative runtime object identity.
 Rationale:
 OA depends on identity stability across Hubs, links, serialization, sync, replication, and query results.
@@ -223,7 +223,7 @@ Source scope:
 OADataSource.getObject(...), select(...), OADataSourceIterator implementations, datasource subpackages, cache/object
 integration.
 Related CODEX findings:
-Existing package-info maps identity concerns to graph/cache invariants and remote select/cache update paths.
+Existing package-info maps identity concerns to OA/cache invariants and remote select/cache update paths.
 Suggested unit tests:
 testDatasourceGetObjectReturnsCachedIdentityForSameKey(), testDatasourceSelectReconcilesObjectsWithCache(),
 testRemoteSelectUpdatesClientObjectIdentityCache()
@@ -272,7 +272,7 @@ propertyFromWhereObject, extraWhere, filter, max, and dirty flags according to O
 contracts.
 Rationale:
 Selects drive Hubs, detail loading, UI, reports, and object traversal; inconsistent interpretation creates wrong
-graph views.
+OA model views.
 Source scope:
 OADataSource select overloads, count overloads, selectPassthru overloads, OADataSourceObjectCache,
 OADataSourceClient, OASelect integration.
@@ -363,7 +363,7 @@ or deleted objects remain visible incorrectly.
 Source scope:
 OADataSource.getObject(...), select(...), save(...), delete(...), datasource subpackages, object/cache services.
 Related CODEX findings:
-Object-cache datasource and remote select identity/cache invariants; graph identity invariants cover broader cache
+Object-cache datasource and remote select identity/cache invariants; OA identity invariants cover broader cache
 authority.
 Suggested unit tests:
 testDatasourceLoadReconcilesWithCache(), testDatasourceDeleteRemovesOrMarksCacheStateByContract(),
@@ -428,7 +428,7 @@ Contract statement:
 Datasource assignId and willCreatePropertyValue behavior must follow OA metadata and generated-key authority
 boundaries, preserving cache identity and avoiding duplicate keys.
 Rationale:
-Generated IDs are persistent identity. Incorrect assignment corrupts cache, object graph links, sync, replication,
+Generated IDs are persistent identity. Incorrect assignment corrupts cache, OA object links, sync, replication,
 and datasource rows.
 Source scope:
 OADataSource.assignId(...), willCreatePropertyValue(...), getAssignIdOnCreate(), setAssignIdOnCreate(...),
@@ -499,7 +499,7 @@ Failed load, select, count, insert, update, save, delete, deleteAll, assign-id, 
 execute, metadata, iterator, or storage operation must be caller-visible or explicitly represented by the method
 contract; silent false-success is not allowed.
 Rationale:
-Datasource failures can otherwise leave object graph, cache, persistence, transaction, sync, or replication state
+Datasource failures can otherwise leave OA runtime, cache, persistence, transaction, sync, or replication state
 divergent.
 Source scope:
 OADataSource abstract and concrete operation contracts, OADataSourceIterator, datasource subpackages, object
@@ -520,7 +520,7 @@ transaction boundary, iterator fetch, or relationship update, the incomplete bou
 safe.
 Rationale:
 Partial persistence progress is common under exceptions, disconnects, corrupt files, and transaction failures. It
-must not masquerade as fully committed Object Graph state.
+must not masquerade as fully committed OA runtime state.
 Source scope:
 OADataSource.save/delete/update/insert/select/count APIs, OADataSourceIterator, clientserver/objectcache/autonumber
 subpackages, transaction integration.
@@ -553,13 +553,13 @@ Datasource Runtime / Null and No-Result Semantics
 
 DS-TL-001 — Runtime Context Restoration
 Contract statement:
-Any ThreadLocal/OAThreadLocal loading, saving, deleting, transaction, sync, replication, security, or graph context
+Any ThreadLocal/OAThreadLocal loading, saving, deleting, transaction, sync, replication, security, or OA runtime context
 set during datasource operations must be restored with try/finally by the owning datasource or caller boundary.
 Rationale:
-Datasource work often occurs inside object graph, sync, transaction, serialization, and remote flows. Context
+Datasource work often occurs inside OA runtime, sync, transaction, serialization, and remote flows. Context
 leakage can misroute operations or suppress required events/sync.
 Source scope:
-OADataSource operation boundaries, datasource subpackages, object/hub graph datasource services, transaction/runtime
+OADataSource operation boundaries, datasource subpackages, object/Hub datasource services, transaction/runtime
 thread services.
 Related CODEX findings:
 ThreadLocal restoration is a cross-package invariant; no direct parent-package mutation noted in source.
@@ -609,15 +609,15 @@ Datasource Runtime / Resource Cleanup
 DS-COMPAT-001 — Cross-Package Datasource Compatibility
 Contract statement:
 Datasource behavior must remain compatible with object, Hub, cache, metadata, select, query, path, transaction,
-serialization, sync, replication, remote, graph/runtime, autonumber, client/server, and object-cache contracts.
+serialization, sync, replication, remote, OA runtime, autonumber, client/server, and object-cache contracts.
 Rationale:
 Datasource is the persistence boundary for executable OA blueprints. It coordinates with nearly every runtime
 package and must preserve each package’s authority.
 Source scope:
 com.viaoa.datasource.*, datasource subpackages, OAObject/Hub/cache/select/query/path/transaction/serialize/sync/
-replication/remote/graph integration.
+replication/remote/OA runtime integration.
 Related CODEX findings:
-Existing package-info notes that production readiness depends on cross-package tests covering graph lifecycle, Hub
+Existing package-info notes that production readiness depends on cross-package tests covering OA lifecycle, Hub
 loading, object identity, sync/replication, and datasource routing together.
 Suggested unit tests:
 testDatasourceRoutingIdentityCacheAndSelectIntegration(), testDatasourceSaveDeleteTransactionSyncIntegration(),

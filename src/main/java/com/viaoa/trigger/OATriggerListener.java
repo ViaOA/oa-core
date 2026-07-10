@@ -36,10 +36,10 @@ public interface OATriggerListener<T extends OAObject> {
 	 *
 	 * @param objRoot              the root object affected by the change
 	 * @param hubEvent             details about the triggering event
-	 * @param propertyPathFromRoot the path from the root object to the event source
+	 * @param pathFromRoot the path from the root object to the event source
 	 * @throws Exception if the listener encounters an error during processing
 	 */
-    public void onTrigger(T objRoot, HubEvent hubEvent, String propertyPathFromRoot) throws Exception;
+    public void onTrigger(T objRoot, HubEvent hubEvent, String pathFromRoot) throws Exception;
 }
 
 

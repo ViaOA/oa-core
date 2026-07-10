@@ -58,11 +58,11 @@ public class DetailHub<TYPE extends OAObject> extends Hub<TYPE> {
 	 *
 	 * @param hubMaster     the master Hub whose active object supplies the detail
 	 *                      collection.
-	 * @param propertyPath  the property path identifying the detail collection to
+	 * @param path  the property path identifying the detail collection to
 	 *                      mirror.
 	 */
-    public DetailHub(Hub hubMaster, String propertyPath) {
-        setMasterHub(hubMaster, null, propertyPath, false, null);
+    public DetailHub(Hub hubMaster, String path) {
+        setMasterHub(hubMaster, null, path, false, null);
     }
 
     /**
@@ -73,13 +73,13 @@ public class DetailHub<TYPE extends OAObject> extends Hub<TYPE> {
      *
      * @param hubMaster           the master Hub whose active object supplies the
      *                            detail collection.
-     * @param propertyPath        the property path identifying the detail
+     * @param path        the property path identifying the detail
      *                            collection to mirror.
      * @param bShareActiveObject  if true, the DetailHub shares the same active
      *                            object as the property’s Hub (when applicable).
      */
-    public DetailHub(Hub hubMaster, String propertyPath, boolean bShareActiveObject) {
-        setMasterHub(hubMaster, null, propertyPath, bShareActiveObject, null);
+    public DetailHub(Hub hubMaster, String path, boolean bShareActiveObject) {
+        setMasterHub(hubMaster, null, path, bShareActiveObject, null);
     }
 
     /**
@@ -91,13 +91,13 @@ public class DetailHub<TYPE extends OAObject> extends Hub<TYPE> {
      *
      * @param hubMaster     the master Hub whose active object supplies the detail
      *                      collection.
-     * @param propertyPath  the property path identifying the detail collection to
+     * @param path  the property path identifying the detail collection to
      *                      mirror.
      * @param selectOrder   the sort order to apply when the detail Hub is created
      *                      or selected.
      */
-    public DetailHub(Hub hubMaster, String propertyPath, String selectOrder) {
-        setMasterHub(hubMaster, null, propertyPath, false, selectOrder);
+    public DetailHub(Hub hubMaster, String path, String selectOrder) {
+        setMasterHub(hubMaster, null, path, false, selectOrder);
     }
 
     /**
@@ -108,15 +108,15 @@ public class DetailHub<TYPE extends OAObject> extends Hub<TYPE> {
      *
      * @param hubMaster           the master Hub whose active object supplies the
      *                            detail collection.
-     * @param propertyPath        the property path identifying the detail
+     * @param path        the property path identifying the detail
      *                            collection to mirror.
      * @param bShareActiveObject  if true, the DetailHub shares the same active
      *                            object as the property’s Hub (when applicable).
      * @param selectOrder         the sort order to apply when the detail Hub is
      *                            created or selected.
      */
-    public DetailHub(Hub hubMaster, String propertyPath, boolean bShareActiveObject, String selectOrder) {
-        setMasterHub(hubMaster, null, propertyPath, bShareActiveObject, selectOrder);
+    public DetailHub(Hub hubMaster, String path, boolean bShareActiveObject, String selectOrder) {
+        setMasterHub(hubMaster, null, path, bShareActiveObject, selectOrder);
     }
 
     /**

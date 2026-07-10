@@ -10,20 +10,26 @@ import com.viaoa.hub.Hub;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
 
+/**
+ * Provides property-path search support starting from an OAObject.
+ */
 public class OAObjectFindService {
 	private static final Logger LOG = Logger.getLogger(OAObjectFindService.class.getName());
 
+	/**
+	 * Performs OAObjectFindService behavior for the OA object service.
+	 */
 	public OAObjectFindService() {
 	}
 
 	
 	/**
-	 * Searches the object graph beginning at the specified {@link OAObject} for
+	 * Searches the OA model beginning at the specified {@link OAObject} for
 	 * objects whose property value matches the supplied {@code findValue}, following
-	 * the navigation defined by the {@code propertyPath}. This method implements
+	 * the navigation defined by the {@code path}. This method implements
 	 * the full recursive search logic for all {@code find(...)} overloads.
 	 *
-	 * <p>The {@code propertyPath} is a dot-separated sequence of property or link
+	 * <p>The {@code path} is a dot-separated sequence of property or link
 	 * names beginning at {@code base}. Each segment may refer to either a simple
 	 * property or a relationship link (one-to-one or one-to-many). The method
 	 * traverses the path step by step and evaluates the final property value(s)
@@ -33,10 +39,10 @@ public class OAObjectFindService {
 	 *
 	 * <h3>Traversal Behavior</h3>
 	 * <ul>
-	 *   <li>If {@code base} is {@code null} or the {@code propertyPath} is empty,
+	 *   <li>If {@code base} is {@code null} or the {@code path} is empty,
 	 *       an empty result array is returned.</li>
-	 *   <li>The method resolves each segment in the {@code propertyPath} using
-	 *       {@link OAPropertyPath} metadata provided by {@code base}'s
+	 *   <li>The method resolves each segment in the {@code path} using
+	 *       {@link OAPath} metadata provided by {@code base}'s
 	 *       {@link OAObjectInfo}.</li>
 	 *   <li>For link segments:
 	 *     <ul>
@@ -64,22 +70,32 @@ public class OAObjectFindService {
 	 *
 	 * @param base         the root object from which the property path traversal
 	 *                     begins; may be {@code null}.
-	 * @param propertyPath the dot-separated property or link path to follow; must
+	 * @param path the dot-separated property or link path to follow; must
 	 *                     not be {@code null}.
 	 * @param findValue    the value to compare against the resolved property value.
 	 * @param bFindAll     if {@code true}, collect all matches; otherwise stop at the first match.
 	 * @return null or an array containing matched values (or objects).
 	 */
-	public OAObject[] find(OAObject base, String propertyPath, Object findValue, boolean bFindAll) {
+	public OAObject[] find(OAObject base, String path, Object findValue, boolean bFindAll) {
 		final OACascade cascade = new OACascade();
-		return _find(base, propertyPath, findValue, bFindAll, cascade);
+		return _find(base, path, findValue, bFindAll, cascade);
 	}
-	protected OAObject[] _find(OAObject base, String propertyPath, Object findValue, boolean bFindAll, final OACascade cascade) {
-		if (base == null || propertyPath == null || propertyPath.length() == 0) {
+	/**
+	 * Performs _find behavior for the OA object service.
+	 *
+	 * @param base method input
+	 * @param path method input
+	 * @param findValue method input
+	 * @param bFindAll method input
+	 * @param cascade method input
+	 * @return result value
+	 */
+	protected OAObject[] _find(OAObject base, String path, Object findValue, boolean bFindAll, final OACascade cascade) {
+		if (base == null || path == null || path.length() == 0) {
 			return null;
 		}
 		if (cascade.wasCascaded(base, true)) return null;
-		StringTokenizer st = new StringTokenizer(propertyPath, ".");
+		StringTokenizer st = new StringTokenizer(path, ".");
 		Object result = base;
 		for (; st.hasMoreTokens();) {
 			String s = st.nextToken();

@@ -31,7 +31,7 @@ import com.viaoa.select.OASelect;
  *
  * <h2>Features</h2>
  * <ul>
- *   <li>Forward-only, read-once iteration of {@link OAObject} results.</li>
+ *   <li>Forward-only, read-once iteration of OA object results.</li>
  *   <li>Optional access to the originating query string or filter.</li>
  *   <li>Safe no-op default implementations for unsupported operations.</li>
  * </ul>

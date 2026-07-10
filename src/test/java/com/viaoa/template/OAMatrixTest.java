@@ -27,7 +27,7 @@ class OAMatrixTest {
 
     private static final String STORE_TO_LINE_ITEMS_PATH = Store.P_Registers + "." + Register.P_RegisterSessions + "."
             + RegisterSession.P_Invoices + "." + Invoice.P_InvoiceBaskets + "." + InvoiceBasket.P_LineItems;
-    private static final String TEXT_UTIL_STORE_TO_LINE_ITEMS_PATH = OATextUtil.createPropertyPath(Store.P_Registers,
+    private static final String TEXT_UTIL_STORE_TO_LINE_ITEMS_PATH = OATextUtil.createPath(Store.P_Registers,
             Register.P_RegisterSessions, RegisterSession.P_Invoices, Invoice.P_InvoiceBaskets,
             InvoiceBasket.P_LineItems);
     private static final String PP_STORE_TO_LINE_ITEMS_PATH = StorePP.registers().registerSessions().invoices()
@@ -64,9 +64,9 @@ class OAMatrixTest {
         OAMatrix.Column root = matrix.addColumn(stores);
         OAMatrix.Column detail = matrix.addDetailColumn(root, Store.P_Registers);
 
-        assertNull(root.getPropertyPath());
+        assertNull(root.getPath());
         assertNull(root.getFromColumn());
-        assertEquals(Store.P_Registers, detail.getPropertyPath());
+        assertEquals(Store.P_Registers, detail.getPath());
         assertSame(root, detail.getFromColumn());
     }
 
@@ -89,16 +89,16 @@ class OAMatrixTest {
 
         OAMatrix raw = new OAMatrix();
         OAMatrix.Column rawRoot = raw.addColumn(stores);
-        assertEquals(STORE_TO_LINE_ITEMS_PATH, raw.addDetailColumn(rawRoot, STORE_TO_LINE_ITEMS_PATH).getPropertyPath());
+        assertEquals(STORE_TO_LINE_ITEMS_PATH, raw.addDetailColumn(rawRoot, STORE_TO_LINE_ITEMS_PATH).getPath());
 
         OAMatrix textUtil = new OAMatrix();
         OAMatrix.Column textRoot = textUtil.addColumn(stores);
         assertEquals(TEXT_UTIL_STORE_TO_LINE_ITEMS_PATH,
-                textUtil.addDetailColumn(textRoot, TEXT_UTIL_STORE_TO_LINE_ITEMS_PATH).getPropertyPath());
+                textUtil.addDetailColumn(textRoot, TEXT_UTIL_STORE_TO_LINE_ITEMS_PATH).getPath());
 
         OAMatrix pp = new OAMatrix();
         OAMatrix.Column ppRoot = pp.addColumn(stores);
-        assertEquals(PP_STORE_TO_LINE_ITEMS_PATH, pp.addDetailColumn(ppRoot, PP_STORE_TO_LINE_ITEMS_PATH).getPropertyPath());
+        assertEquals(PP_STORE_TO_LINE_ITEMS_PATH, pp.addDetailColumn(ppRoot, PP_STORE_TO_LINE_ITEMS_PATH).getPath());
     }
 
     @Test
@@ -142,8 +142,8 @@ class OAMatrixTest {
         OAMatrix.Column sessions = matrix.addDetailColumn(registers, Register.P_RegisterSessions);
 
         assertEquals(Store.P_Registers + "." + Register.P_RegisterSessions + "." + RegisterSession.P_Invoices,
-                matrix.getPropertyPathFromRoot(sessions, RegisterSession.P_Invoices));
-        assertEquals(Store.P_Registers, matrix.getPropertyPathFromRoot(null, Store.P_Registers));
+                matrix.getPathFromRoot(sessions, RegisterSession.P_Invoices));
+        assertEquals(Store.P_Registers, matrix.getPathFromRoot(null, Store.P_Registers));
     }
 
     @Test

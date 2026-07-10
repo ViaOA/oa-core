@@ -22,23 +22,6 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.concurrent.TimeUnit;
 
-/*qqqqqqqqqqqqqqqqqqq
-CODEX
-
-4. OAClassFilter — annotation metadata appears unconsumed by runtime filter discovery
-     Severity: Low/Medium
-     Execution path: a custom filter class is annotated with @OAClassFilter(name=..., query=...,
-     autoRefreshInterval=..., hasInputParams=...). OAPath filter discovery reads @OAClass.filterClasses() and naming
-     conventions, but source search does not show runtime code consuming OAClassFilter values.
-     Why it matters: filter name/query/refresh metadata can silently have no effect. That creates wrong filter binding
-     or stale filtered Hub behavior if users rely on the annotation contract.
-     Minimal hardening: wire OAClassFilter into filter discovery/metadata, or document it as non-runtime/codegen-only
-     and have verifier flag unsupported use.
-     Suggested CODEX comment location: OAClassFilter declaration and OAPath filter resolution around the
-     OAClass.filterClasses() lookup.
-
-
-*/
 
 
 /**
@@ -57,7 +40,7 @@ CODEX
  *   <li>Support for lightweight query expressions.</li>
  * </ul>
  *
- * <p>Used by OAPropertyPath-based queries and Hub filtering systems.</p>
+ * <p>Used by OAPath-based queries and Hub filtering systems.</p>
  */
 @Documented
 @Target(ElementType.TYPE)

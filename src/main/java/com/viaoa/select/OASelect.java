@@ -49,7 +49,7 @@ v4.0
   Severity: high
     Location: src/main/java/com/viaoa/datasource/OASelect.java:1081 finder path, TODO at src/main/java/com/viaoa/
     datasource/OASelect.java:1101
-    Finding: When OASelect uses OAFinder, whereObject / whereObjectPropertyPath relationship constraints are not
+    Finding: When OASelect uses OAFinder, whereObject / whereObjectPath relationship constraints are not
     applied. The code even notes this as a TODO.
     Failure scenario: A select scoped to children of a parent object can return matching objects from the whole cache/
     search hub if finder mode is used.
@@ -57,9 +57,9 @@ v4.0
   Severity: high
     Location: src/main/java/com/viaoa/datasource/OASelect.java:428, src/main/java/com/viaoa/datasource/
     OASelect.java:1116
-    Finding: whereObjectPropertyPath is an unvalidated String. OASelect forwards it to datasource or ignores it in
+    Finding: whereObjectPath is an unvalidated String. OASelect forwards it to datasource or ignores it in
     finder mode.
-    Why it matters: This should be an OAPath/OAPropertyPath semantic object resolved against metadata, not a loose
+    Why it matters: This should be an OAPath/OAPath semantic object resolved against metadata, not a loose
     string.
 
    Severity: medium
@@ -193,7 +193,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	 * Property path used to relate the whereObject (or Hub.AO) to the objects
 	 * selected by this OASelect.
 	 */
-	protected String whereObjectPropertyPath;
+	protected String whereObjectPath;
 
 	/**
 	 * Maximum number of objects to load. Zero means unlimited.
@@ -504,7 +504,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	 */
 	public void setWhereObject(OAObject whereObject, String pp) {
 		this.whereObject = whereObject;
-		this.whereObjectPropertyPath = pp;
+		this.whereObjectPath = pp;
 	}
 
 	/**
@@ -534,7 +534,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	 * @return the whereObject
 	 */
 	public void setPropertyFromWhereObject(String propName) {
-		whereObjectPropertyPath = propName;
+		whereObjectPath = propName;
 	}
 
 	/**
@@ -542,8 +542,8 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	 *
 	 * @param propName the property path from whereObject to the target class
 	 */
-	public void setWhereObjectPropertyPath(String propName) {
-		whereObjectPropertyPath = propName;
+	public void setWhereObjectPath(String propName) {
+		whereObjectPath = propName;
 	}
 
 	/**
@@ -553,7 +553,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	 * @return the property name or null if unspecified
 	 */
 	public String getPropertyFromWhereObject() {
-		return whereObjectPropertyPath;
+		return whereObjectPath;
 	}
 
 	/**
@@ -563,8 +563,8 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	 *
 	 * @return the property path, or null if none has been assigned
 	 */
-	public String getWhereObjectPropertyPath() {
-		return whereObjectPropertyPath;
+	public String getWhereObjectPath() {
+		return whereObjectPath;
 	}
 
 	/**
@@ -960,7 +960,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 					amountCount = ds.countPassthru(where, max);
 				} else {
 					if (whereObject != null) {
-						amountCount = ds.count(clazz, whereObject, whereObjectPropertyPath, max);
+						amountCount = ds.count(clazz, whereObject, whereObjectPath, max);
 					} else {
 						amountCount = ds.count(clazz, where, params, max);
 					}
@@ -1131,7 +1131,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 		}
 
 		if (!bUseFinder && finder != null) {
-			if ((whereHub != null || whereObject != null) && OAString.isNotEmpty(whereObjectPropertyPath)) {
+			if ((whereHub != null || whereObject != null) && OAString.isNotEmpty(whereObjectPath)) {
 				OADataSource ds = getDataSource();
 				bUseFinder = ds == null || !ds.supportsStorage();
 			} else {
@@ -1206,9 +1206,9 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 			}
 			if (whereObjx != null) {
 				if (bCountFirst && amountCount < 0) {
-					amountCount = ds.count(clazz, where, params, whereObjx, whereObjectPropertyPath, null, max);
+					amountCount = ds.count(clazz, where, params, whereObjx, whereObjectPath, null, max);
 				}
-				query = ds.select(	clazz, where, params, order, whereObjx, whereObjectPropertyPath, null, max, getDataSourceFilter(),
+				query = ds.select(	clazz, where, params, order, whereObjx, whereObjectPath, null, max, getDataSourceFilter(),
 									getDirty());
 			} else {
 				if (bPassthru) {
@@ -1566,7 +1566,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	 */
 	public void setWhereHub(Hub hubWhere, String ppFromWhereHub) {
 		setWhereHub(hubWhere);
-		setWhereHubPropertyPath(ppFromWhereHub);
+		setWhereHubPath(ppFromWhereHub);
 	}
 
 	/**
@@ -1595,8 +1595,8 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	 *
 	 * @return the property path, or null if unspecified
 	 */
-	public String getWhereHubPropertyPath() {
-		return this.whereObjectPropertyPath;
+	public String getWhereHubPath() {
+		return this.whereObjectPath;
 	}
 
 	/**
@@ -1605,7 +1605,7 @@ public class OASelect<TYPE extends OAObject> implements Iterable<TYPE>, AutoClos
 	 *
 	 * @param pp the property path from Hub.AO to the target type
 	 */
-	public void setWhereHubPropertyPath(String pp) {
-		this.whereObjectPropertyPath = pp;
+	public void setWhereHubPath(String pp) {
+		this.whereObjectPath = pp;
 	}
 }

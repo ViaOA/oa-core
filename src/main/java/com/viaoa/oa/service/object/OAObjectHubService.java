@@ -12,11 +12,19 @@ import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 
+/**
+ * Tracks Hub references for OAObjects and coordinates object/Hub relationship helpers.
+ */
 public abstract class OAObjectHubService {
 	private static final Logger LOG = Logger.getLogger(OAObjectHubService.class.getName());
 
 	private final OAObject.FriendAccess faObject;
-	
+
+	/**
+	 * Performs OAObjectHubService behavior for the OA object service.
+	 *
+	 * @param faObject method input
+	 */
     public OAObjectHubService(OAObject.FriendAccess faObject) {
     	if (faObject == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
     	this.faObject = faObject;
@@ -31,6 +39,12 @@ public abstract class OAObjectHubService {
     // 20120827 might be used later
     // send event to master object when a change is made to one of its reference hubs
     // called by HubEventDelegate when a change happens to a hub
+	/**
+	 * Fires masterObjectHubChangeEvent notifications.
+	 *
+	 * @param thisHub method input
+	 * @param bRefreshFlag method input
+	 */
     public void fireMasterObjectHubChangeEvent(Hub<?> thisHub, boolean bRefreshFlag) {
         if (thisHub == null) return;
 
@@ -49,6 +63,12 @@ public abstract class OAObjectHubService {
         		prop, thisHub, thisHub, true, true);
     }
 
+	/**
+	 * Returns whether inHub is true.
+	 *
+	 * @param oaObj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public boolean isInHub(OAObject oaObj) {
         if (oaObj == null) return false;
         WeakReference<Hub<?>>[] weakhubs = faObject.getWeakHubs(oaObj);
@@ -61,10 +81,23 @@ public abstract class OAObjectHubService {
         return false;
     }
 
+	/**
+	 * Returns whether inHubWithMaster is true.
+	 *
+	 * @param oaObj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
     public boolean isInHubWithMaster(OAObject oaObj) {
         return isInHubWithMaster(oaObj, null);
     }
-    
+
+	/**
+	 * Returns whether inHubWithMaster is true.
+	 *
+	 * @param oaObj method input
+	 * @param hubToIgnore method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
     public boolean isInHubWithMaster(OAObject oaObj, Hub hubToIgnore) {
         if (oaObj == null) return false;
         
@@ -86,6 +119,13 @@ public abstract class OAObjectHubService {
      * Called by Hub when an OAObject is removed from a Hub.
      */
     @SuppressWarnings("unchecked")
+	/**
+	 * Removes hub state or registration.
+	 *
+	 * @param oaObj method input
+	 * @param hub method input
+	 * @param bIsOnHubFinalize method input
+	 */
     public <T extends OAObject> void removeHub(final T oaObj, Hub<T> hub, boolean bIsOnHubFinalize) {
         if (oaObj == null || hub == null) return;
         WeakReference<Hub<?>>[] weakhubs = faObject.getWeakHubs(oaObj);
@@ -205,6 +245,12 @@ public abstract class OAObjectHubService {
      * Return all Hubs that this object is a member of. Note: could have null values
      */
     @SuppressWarnings("unchecked")
+	/**
+	 * Returns the hubReferences value.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
     public <T extends OAObject> Hub<T>[] getHubReferences(T oaObj) { // Note: this needs to be public
         if (oaObj == null) return null;
 
@@ -221,11 +267,23 @@ public abstract class OAObjectHubService {
         return hubs;
     }
 
+	/**
+	 * Returns the hubReferencesNoCopy value.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
     public <T extends OAObject> WeakReference<Hub<?>>[] getHubReferencesNoCopy(T oaObj) {
         if (oaObj == null) return null;
         return faObject.getWeakHubs(oaObj);
     }
 
+	/**
+	 * Returns the hubReferenceCount value.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
     public int getHubReferenceCount(OAObject oaObj) {
         if (oaObj == null) return 0;
         WeakReference<Hub<?>>[] refs = faObject.getWeakHubs(oaObj);
@@ -236,6 +294,13 @@ public abstract class OAObjectHubService {
         return cnt;
     }
 
+	/**
+	 * Adds hub state or registration.
+	 *
+	 * @param oaObj method input
+	 * @param hub method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
     public <T extends OAObject> boolean addHub(T oaObj, Hub<T> hub) {
         // 20140313 was: addHub(oaObj, hub, true, false);
         return addHub(oaObj, hub, false);
@@ -245,6 +310,14 @@ public abstract class OAObjectHubService {
      * Called by Hub when an OAObject is added to a Hub.
      */
     @SuppressWarnings({"unchecked","rawtypes"})
+	/**
+	 * Adds hub state or registration.
+	 *
+	 * @param oaObj method input
+	 * @param hubOrig method input
+	 * @param bAlwaysAddIfM2M method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
     public <T extends OAObject> boolean addHub(final T oaObj, final Hub<T> hubOrig, final boolean bAlwaysAddIfM2M) {
         if (oaObj == null || hubOrig == null) return false;
         final Hub<T> hub = hubOrig.getRealHub();
@@ -444,6 +517,13 @@ public abstract class OAObjectHubService {
         return false;
     }
 
+	/**
+	 * Returns the hub value.
+	 *
+	 * @param oaObj method input
+	 * @param li method input
+	 * @return result value
+	 */
     public Hub getHub(OAObject oaObj, OALinkInfo li) {
         if (oaObj == null || li == null) return null;
 
@@ -497,22 +577,45 @@ public abstract class OAObjectHubService {
         return false;
     }
 
-    
+
+	/**
+	 * Returns the changed value.
+	 *
+	 * @param thisHub method input
+	 * @param changedRule method input
+	 * @param cascade method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
     public boolean getChanged(Hub<?> thisHub, int changedRule, OACascade cascade) {
         return callHubStatusGetChanged(thisHub, changedRule, cascade);
     }
 
+	/**
+	 * Saves the supplied OAObject using this service.
+	 *
+	 * @param hub method input
+	 * @param iCascadeRule method input
+	 * @param cascade method input
+	 */
     public void saveAll(Hub<?> hub, int iCascadeRule, OACascade cascade) {
         if (hub == null) return; 
         callHubSaveSaveAll(hub, iCascadeRule, cascade); // cascade save and update M2M links
     }
 
+	/**
+	 * Deletes the supplied OAObject or related objects using this service.
+	 *
+	 * @param hub method input
+	 * @param cascade method input
+	 */
     public void deleteAll(Hub<?> hub, OACascade cascade) {
         if (hub == null) return; 
         callHubDeleteDeleteAll(hub, cascade); // cascade delete and update M2M links
     }
 
-/*qqqqqqqq not used    
+/*qqqqqqqq not used
+
+
     public <T extends OAObject> void setMasterObject(Hub<T> hub, T oaObj, OALinkInfo liDetailToMaster) {
         if (callHubDetailGetMasterObject(hub) == null) {
         	callHubDetailSetMasterObject(hub, oaObj, liDetailToMaster);
@@ -535,24 +638,149 @@ public abstract class OAObjectHubService {
     }
 
 
+	/**
+	 * Dependency hook used by this service to cSUpdateObjectsWithoutHubs.
+	 *
+	 * @param obj method input
+	 */
 	public abstract void callCSUpdateObjectsWithoutHubs(OAObject obj);
+	/**
+	 * Dependency hook used by this service to cacheFireAfterPropertyChange.
+	 *
+	 * @param obj method input
+	 * @param origKey method input
+	 * @param propertyName method input
+	 * @param oldValue method input
+	 * @param newValue method input
+	 * @param bLocalOnly method input
+	 * @param bSendEvent method input
+	 */
 	public abstract void callCacheFireAfterPropertyChange(OAObject obj, OAObjectKey origKey, String propertyName, Object oldValue, Object newValue,
 			boolean bLocalOnly, boolean bSendEvent);
-	public abstract void callEventSendHubPropertyChange(final OAObject oaObj, final String propertyName, final Object oldObj, final Object newObj, final OALinkInfo linkInfo); 
+	/**
+	 * Dependency hook used by this service to eventSendHubPropertyChange.
+	 *
+	 * @param oaObj method input
+	 * @param propertyName method input
+	 * @param oldObj method input
+	 * @param newObj method input
+	 * @param linkInfo method input
+	 */
+	public abstract void callEventSendHubPropertyChange(final OAObject oaObj, final String propertyName, final Object oldObj, final Object newObj, final OALinkInfo linkInfo);
+	/**
+	 * Dependency hook used by this service to infoGetObjectInfo.
+	 *
+	 * @param clazz method input
+	 * @return result value
+	 */
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class<? extends OAObject> clazz);
+	/**
+	 * Dependency hook used by this service to infoIsMany2Many.
+	 *
+	 * @param thisLi method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callInfoIsMany2Many(OALinkInfo thisLi);
+	/**
+	 * Dependency hook used by this service to infoGetReverseLinkInfo.
+	 *
+	 * @param thisLi method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callInfoGetReverseLinkInfo(OALinkInfo thisLi);
+	/**
+	 * Dependency hook used by this service to keyGetKey.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
 	public abstract OAObjectKey callKeyGetKey(OAObject oaObj);
+	/**
+	 * Dependency hook used by this service to propertyGetProperty.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @return result value
+	 */
 	public abstract Object callPropertyGetProperty(OAObject oaObj, String name);
+	/**
+	 * Dependency hook used by this service to hubStatusGetChanged.
+	 *
+	 * @param thisHub method input
+	 * @param iCascadeRule method input
+	 * @param cascade method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callHubStatusGetChanged(Hub<?> thisHub, int iCascadeRule, OACascade cascade);
+	/**
+	 * Dependency hook used by this service to hubMasterGetMasterObject.
+	 *
+	 * @param hub method input
+	 * @return result value
+	 */
 	public abstract OAObject callHubMasterGetMasterObject(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service to hubDataContainsDirect.
+	 *
+	 * @param hub method input
+	 * @param obj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callHubDataContainsDirect(Hub<?> hub, Object obj);
+	/**
+	 * Dependency hook used by this service to hubDeleteDeleteAll.
+	 *
+	 * @param thisHub method input
+	 * @param cascade method input
+	 */
 	public abstract void callHubDeleteDeleteAll(Hub<?> thisHub, OACascade cascade);
+	/**
+	 * Dependency hook used by this service to hubDetailSetMasterObject.
+	 *
+	 * @param thisHub method input
+	 * @param masterObject method input
+	 * @param liDetailToMaster method input
+	 */
 	public abstract void callHubDetailSetMasterObject(Hub<?> thisHub, OAObject masterObject, OALinkInfo liDetailToMaster);
+	/**
+	 * Dependency hook used by this service to hubDetailGetPropertyFromMasterToDetail.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service to hubDetailGetLinkInfoFromDetailToMaster.
+	 *
+	 * @param hub method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service to hubDetailGetMasterObject.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract OAObject callHubDetailGetMasterObject(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service to hubSaveSaveAll.
+	 *
+	 * @param thisHub method input
+	 * @param iCascadeRule method input
+	 * @param cascade method input
+	 */
 	public abstract void callHubSaveSaveAll(Hub<?> thisHub, int iCascadeRule, OACascade cascade);
+	/**
+	 * Dependency hook used by this service to syncIsClient.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callSyncIsClient();
+	/**
+	 * Dependency hook used by this service to threadLocalGetSendSyncMessages.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callThreadLocalGetSendSyncMessages();
 }

@@ -10,11 +10,14 @@ import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
 
+/**
+ * Traverses related OAObjects using metadata links and cascade tracking.
+ */
 public abstract class OAObjectRecurseService {
 	private static final Logger LOG = Logger.getLogger(OAObjectRecurseService.class.getName());
 
 	/**
-	 * Convenience method that initiates a recursive traversal of the object graph
+	 * Convenience method that initiates a recursive traversal of the OA model
 	 * starting from the specified {@link OAObject}. This variant simply allocates a
 	 * new {@link OACascade} instance and delegates all traversal logic to
 	 * {@link #recurse(OAObject, OACallback, OACascade)}.
@@ -32,11 +35,11 @@ public abstract class OAObjectRecurseService {
 	}
 
 	/**
-	 * Recursively traverses the reachable object graph beginning at the specified
+	 * Recursively traverses the reachable OA model beginning at the specified
 	 * {@link OAObject}, invoking the provided {@link OACallback} for the root object
 	 * and for each subsequently visited object. The supplied {@link OACascade}
 	 * tracks visited objects to ensure each instance is processed at most once and
-	 * to prevent infinite loops when cycles exist in the graph.
+	 * to prevent infinite loops when cycles exist in the OA model.
 	 *
 	 * <p>If {@code oaObj} is {@code null}, the method returns immediately. Otherwise,
 	 * the object is registered with the {@code cascade} and the callback is invoked
@@ -105,7 +108,20 @@ public abstract class OAObjectRecurseService {
 		}
 	}
 	
+	/**
+	 * Dependency hook used by this service to objectInfoGetOAObjectInfo.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
 	public abstract OAObjectInfo callObjectInfoGetOAObjectInfo(OAObject oaObj);
+	/**
+	 * Dependency hook used by this service to objectReflectGetProperty.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @return result value
+	 */
 	public abstract Object callObjectReflectGetProperty(OAObject oaObj, String name);
 
 }

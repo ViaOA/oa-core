@@ -7,68 +7,65 @@ import java.util.logging.Logger;
 import com.viaoa.datasource.OADataSource;
 import com.viaoa.filter.OAFilter;
 
-/* qqqqqqqqqqqqq
-CODEX
-
-#6 — concurrency risk
-  File/class/method: src/main/java/com/viaoa/runtime/OADataSourceService.java:19
-  Concern: setPosition synchronizes on alDataSource, but register and unregister do not use the same lock.
-  CopyOnWriteArrayList keeps individual operations safe, but the remove/add reorder in setPosition is not atomic
-  relative to concurrent register/unregister.
-  Why it matters: datasource priority is runtime behavior. A concurrent registration/removal can produce unexpected
-  ordering or make setPosition operate against a stale list state.
-  Severity: invariant risk
-  Minimal fix: use a dedicated registry lock for register, unregister, and setPosition, or document that datasource
-  registration order is single-threaded startup-only.
-  Suggested invariant: DATASOURCE_REGISTRY_ORDER_CHANGES_ARE_SERIALIZED
-  Suggested test coverage: concurrent register/unregister/setPosition preserves deterministic final registry order.
-
- #7 — public API risk
-  File/class/method: src/main/java/com/viaoa/runtime/OADataSourceService.java:28, src/main/java/com/viaoa/runtime/
-  OADataSourceService.java:19
-  Concern: datasource registry has no explicit lifecycle/reset API. This overlaps with the previously noted runtime
-  reset problem, but specifically the datasource service has no local way to clear or replace registered
-  datasources.
-  Why it matters: OA 4.0 tests and modular bootstraps need deterministic datasource ownership. Without a clear
-  lifecycle, stale datasource registrations can leak between runtime contexts.
-  Severity: invariant risk
-  Minimal fix: add package/runtime-scoped clearForTest() or runtime reset integration; keep it guarded if needed.
-  Suggested invariant: DATASOURCE_REGISTRY_HAS_EXPLICIT_RUNTIME_LIFECYCLE
-  Suggested test coverage: register multiple datasources, reset runtime, verify registry is empty or intentionally
-  preserved.
 
 
-
-*/
-
-
+/**
+ * Runtime state field used by OA services for {.
+ */
 public class OADataSourceService {
 	private Logger LOG = Logger.getLogger(OADataSourceService.class.getName());
 
 	private final CopyOnWriteArrayList<OADataSource> alDataSource = new CopyOnWriteArrayList<OADataSource>();
 	
 
+	/**
+	 * Creates the runtime service instance.
+	 */
 	public OADataSourceService() {
 	}
 
+	/**
+	 * Registers a datasource with the runtime datasource registry.
+	 * @param ds the datasource to register
+	 */
 	public void register(OADataSource ds) {
 		if (ds != null) alDataSource.addIfAbsent(ds);
 	}
 	
+	/**
+	 * Removes a datasource from the runtime datasource registry.
+	 * @param ds the datasource to remove
+	 */
 	public void unregister(OADataSource ds) {
 		if (ds != null) alDataSource.remove(ds);
 	}
 
 
+	/**
+	 * Returns the All value.
+	 *
+	 * @return the All value
+	 */
 	public OADataSource[] getAll() {
 		return alDataSource.toArray(new OADataSource[alDataSource.size()]);
 	}
 	
 	
+	/**
+	 * Returns an OA runtime instance for the supplied context.
+	 * @param clazz the lookup context
+	 * @return the resolved OA runtime
+	 */
 	public OADataSource get(Class<?> clazz) {
 		return get(clazz, (OAFilter<Class<?>>) null);
 	}
 
+	/**
+	 * Returns an OA runtime instance for the supplied context.
+	 * @param clazz the lookup context
+	 * @param filter the lookup context
+	 * @return the resolved OA runtime
+	 */
 	public OADataSource get(Class<?> clazz, OAFilter<?> filter) {
 		// todo: create mru 
 		OADataSource dsFound = null;
@@ -90,6 +87,11 @@ public class OADataSourceService {
 		return dsFound;
 	}
 	
+	/**
+	 * Sets the Position value.
+	 * @param pos the Position value
+	 * @param ds the Position value
+	 */
 	public void setPosition(int pos, OADataSource ds) {
 		if (ds == null) return;
 		synchronized (alDataSource) {
@@ -112,6 +114,13 @@ public class OADataSourceService {
 		}
 	}
 
+	/**
+	 * Returns the Position value.
+	 *
+	 * @param ds the lookup context
+	 *
+	 * @return the Position value
+	 */
 	public int getPosition(OADataSource ds) {
 		return alDataSource.indexOf(ds);
 	}

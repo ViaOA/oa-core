@@ -118,7 +118,7 @@ public class RefundLineItem extends OAObject {
         displayName = "Line Item", 
         reverseName = LineItem.P_RefundLineItems, 
         allowCreateNew = false, 
-        selectFromPropertyPath = P_RefundInvoice + "." + RefundInvoice.P_Invoice + "." + Invoice.P_InvoiceBaskets + "." + InvoiceBasket.P_LineItems, 
+        selectFromPath = P_RefundInvoice + "." + RefundInvoice.P_Invoice + "." + Invoice.P_InvoiceBaskets + "." + InvoiceBasket.P_LineItems, 
         fkeys = {@OAFkey(fromProperty = P_LineItemId, toProperty = LineItem.P_Id)}
     )
     public LineItem getLineItem() {

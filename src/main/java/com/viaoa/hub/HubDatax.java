@@ -28,7 +28,7 @@ import com.viaoa.select.OASelect;
 
 /**
  * Optional extended state for a {@link HubData} instance.
- * 
+ *
  * <p>Contains auxiliary members that are only allocated when needed, to keep
  * base HubData lightweight.</p>
  *
@@ -50,7 +50,7 @@ public class HubDatax<TYPE extends OAObject> implements java.io.Serializable {
 	static final long serialVersionUID = 1L; // used for object serialization
 
 	/**
-	 * Determines whether extended HubData state is required.  
+	 * Determines whether extended HubData state is required.
 	 * Returns true if any optional fields—such as sorting configuration, unique-property
 	 * settings, change-tracking vectors, listeners, selection state, refresh flag,
 	 * cached properties, select order, auto-sequence/match delegates, or a where-hub
@@ -103,7 +103,7 @@ public class HubDatax<TYPE extends OAObject> implements java.io.Serializable {
 	}
 
 	/**
-	 * Indicates whether this extended HubData state should be serialized.  
+	 * Indicates whether this extended HubData state should be serialized.
 	 * Serialization is required when sorting configuration, sorting direction,
 	 * unique-property settings, or change-tracking are enabled.
 	 *
@@ -150,9 +150,9 @@ public class HubDatax<TYPE extends OAObject> implements java.io.Serializable {
 	 * is enabled for this Hub.
 	 */
 	protected transient HubSortListener<TYPE> sortListener;
-	
+
 	//  info to keep Hub objects sorted when sent to other computers, see HubSerializerDelegate._readResolve - it will set up sorting when received
-	
+
 	/**
 	 * Name of the property used to sort Hub objects; defaults to the
 	 * sort property defined by link information.
@@ -241,7 +241,7 @@ public class HubDatax<TYPE extends OAObject> implements java.io.Serializable {
 	 * Property path from the selectWhereHub to this Hub, defining how
 	 * related objects are navigated for select filtering.
 	 */
-	protected transient String selectWhereHubPropertyPath;
+	protected transient String selectWhereHubPath;
 
 	public static final class FriendAccess {
 		private FriendAccess() {

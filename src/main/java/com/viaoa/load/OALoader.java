@@ -116,8 +116,8 @@ CODEX
      different root class.
   3. runtime scenario
      Caller creates one OALoader instance and calls load(employeeHub), then later calls load(companyHub) with the same
-     property path string but a different root class. setup(...) does not rebuild propertyPath, linkInfos,
-     recursiveLinkInfos, methods, or liRecursiveRoot because propertyPath != null.
+     property path string but a different root class. setup(...) does not rebuild path, linkInfos,
+     recursiveLinkInfos, methods, or liRecursiveRoot because path != null.
   4. why this violates OA/OG load semantics
      Path traversal metadata is class-specific. Reusing stale metadata can traverse the wrong links, skip expected
      links, or use the wrong recursive-link metadata.
@@ -125,7 +125,7 @@ CODEX
      Track the setup root class. If a later setup(c) uses a different class, rebuild the path metadata or fail
      visibly.
   6. suggested CODEX comment location
-     At the if (propertyPath == null) block inside setup(Class c).
+     At the if (path == null) block inside setup(Class c).
 
 
 1. file/class/method
@@ -256,13 +256,13 @@ public class OALoader<F extends OAObject, T extends OAObject> {
     /**
      * Raw string form of the property path to be traversed during loading.
      */
-    private String strPropertyPath;
+    private String strPath;
     
     /**
      * Parsed representation of the property path used to navigate linked and
      * recursive relationships.
      */
-    private OAPath<T> propertyPath;
+    private OAPath<T> path;
 
     /**
      * LinkInfo describing the recursive parent relationship for the root class.
@@ -345,7 +345,7 @@ public class OALoader<F extends OAObject, T extends OAObject> {
      */
     public OALoader(int threadCount, String propPath) {
         this.threadCount = Math.min(threadCount, 50);
-        this.strPropertyPath = propPath;
+        this.strPath = propPath;
     }
 
     
@@ -397,7 +397,7 @@ public class OALoader<F extends OAObject, T extends OAObject> {
 
         this.hubFrom = hubRoot;
         final OASiblingHelper<F> siblingHelper = new OASiblingHelper<F>(hubRoot);
-        siblingHelper.add(OALoader.this.strPropertyPath);
+        siblingHelper.add(OALoader.this.strPath);
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
         srvcOAThreadLocal.addSiblingHelper(siblingHelper); 
         try {
@@ -434,7 +434,7 @@ public class OALoader<F extends OAObject, T extends OAObject> {
         this.hubFrom = new Hub(sel.getSelectClass());
 
         final OASiblingHelper<F> siblingHelper = new OASiblingHelper<F>(this.hubFrom);
-        siblingHelper.add(OALoader.this.strPropertyPath);
+        siblingHelper.add(OALoader.this.strPath);
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
         srvcOAThreadLocal.addSiblingHelper(siblingHelper); 
         try {
@@ -476,7 +476,7 @@ public class OALoader<F extends OAObject, T extends OAObject> {
         hubFrom.add(objectRoot);
 
         final OASiblingHelper<F> siblingHelper = new OASiblingHelper<F>(this.hubFrom);
-        siblingHelper.add(OALoader.this.strPropertyPath);
+        siblingHelper.add(OALoader.this.strPath);
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
         srvcOAThreadLocal.addSiblingHelper(siblingHelper); 
         try {
@@ -584,7 +584,7 @@ public class OALoader<F extends OAObject, T extends OAObject> {
                         public void run() {
                             if (bStop) return;
                             final OASiblingHelper<F> siblingHelper = new OASiblingHelper<F>(OALoader.this.hubFrom);
-                            siblingHelper.add(OALoader.this.strPropertyPath);
+                            siblingHelper.add(OALoader.this.strPath);
                 			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
                             srvcOAThreadLocal.addSiblingHelper(siblingHelper); 
                             try {
@@ -627,7 +627,7 @@ public class OALoader<F extends OAObject, T extends OAObject> {
                             if (bStop) return;
 
                             final OASiblingHelper<F> siblingHelper = new OASiblingHelper<F>(OALoader.this.hubFrom);
-                            siblingHelper.add(OALoader.this.strPropertyPath);
+                            siblingHelper.add(OALoader.this.strPath);
                 			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
                             srvcOAThreadLocal.addSiblingHelper(siblingHelper); 
                             try {
@@ -673,16 +673,16 @@ public class OALoader<F extends OAObject, T extends OAObject> {
         aiVisitCnt.set(0);
         aiNotLoadedCnt.set(0);
         
-        if (propertyPath == null) { 
-        	propertyPath = new OAPath(c, strPropertyPath);
-	        linkInfos = propertyPath.getLinkInfos();
-	        recursiveLinkInfos = propertyPath.getRecursiveLinkInfos();
-	        methods = propertyPath.getMethods();
+        if (path == null) { 
+        	path = new OAPath(c, strPath);
+	        linkInfos = path.getLinkInfos();
+	        recursiveLinkInfos = path.getRecursiveLinkInfos();
+	        methods = path.getMethods();
 
 	        int x = linkInfos == null ? 0 : linkInfos.length; 
 	        if (x != methods.length) {
 	            // oafinder is to get from one OAObj/Hub to another, not a property/etc
-	            throw new RuntimeException("propertyPath " + strPropertyPath + " must end in an OAObject/Hub");
+	            throw new RuntimeException("path " + strPath + " must end in an OAObject/Hub");
 	        }
 
 			final OA oa = OARuntime.oa(c);

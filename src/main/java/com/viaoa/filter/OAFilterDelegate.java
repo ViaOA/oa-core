@@ -25,14 +25,14 @@ import com.viaoa.path.OAPath;
 
 /**
  * Delegate class containing helper methods used internally by OA filter
- * implementations.  These utilities support finder creation, property path
+ * implementations.  These utilities support finder creation, OAPath
  * evaluation, and reusable comparison logic shared across multiple filter
  * subclasses.
  *
  * <p>
  * Although not typically used directly by application-level code,
  * {@code OAFilterDelegate} centralizes the common mechanisms required to
- * evaluate nested property paths, handle many-relationships, and apply
+ * evaluate nested OAPaths, handle many-relationships, and apply
  * finder-based filtering to deeply referenced objects.
  * </p>
  */
@@ -41,28 +41,28 @@ public class OAFilterDelegate {
 	/**
 	 * Container object returned by {@link OAFilterDelegate#createFinder(Class, OAPath)}.
 	 * Holds a generated {@link OAFinder} and the remaining portion of the
-	 * property path that should be applied by the filter after the finder
+	 * OAPath that should be applied by the filter after the finder
 	 * performs its lookup.
 	 */
     static public class FinderInfo {
-    	/**
-    	 * The finder created to traverse Hub-based links in the property path
-    	 * and locate the target object used for further filtering.
-    	 */
+        /**
+         * The finder created to traverse Hub-based links in the OAPath
+         * and locate the target object used for further filtering.
+         */
         public OAFinder finder;
 
         /**
-         * The remaining property-path segment that the calling filter should
+         * The remaining OAPath segment that the calling filter should
          * evaluate after the finder has located the appropriate object.
          */
-        public String pp;  // remaining propertyPath to use by the filter
+        public String pp;  // remaining path to use by the filter
         
         /**
          * Constructs a FinderInfo wrapper containing a finder and the remaining
-         * property-path segment.
+         * OAPath segment.
          *
          * @param f the finder used for Hub-traversal lookup
-         * @param pp the remaining property path to be applied by the filter
+         * @param pp the remaining OAPath to be applied by the filter
          */
         public FinderInfo(OAFinder f, String pp) {
             this.finder = f;
@@ -71,29 +71,29 @@ public class OAFilterDelegate {
     }
     
     /**
-     * Creates a finder for property paths that traverse Hub links. If the
-     * property path includes at least one Hub-returning method, a corresponding
-     * {@link OAFinder} is created and any remaining property-path segment is
+     * Creates a finder for OAPaths that traverse Hub links. If the
+     * OAPath includes at least one Hub-returning method, a corresponding
+     * {@link OAFinder} is created and any remaining OAPath segment is
      * returned for continued filtering.
      *
      * <p>The method performs the following steps:</p>
      * <ul>
-     *   <li>Validates the input class and property path,</li>
+     *   <li>Validates the input class and OAPath,</li>
      *   <li>Ensures the path is initialized for the given class,</li>
      *   <li>Inspects the resolved getter methods for Hub-returning links,</li>
      *   <li>Creates a finder for the Hub-based portion of the path,</li>
-     *   <li>Returns the remaining property-path segment, if any.</li>
+     *   <li>Returns the remaining OAPath segment, if any.</li>
      * </ul>
      *
-     * @param clazz the class defining the starting point of the property path
-     * @param pp the property path to inspect for Hub traversal
+     * @param clazz the class defining the starting point of the OAPath
+     * @param pp the OAPath to inspect for Hub traversal
      * @return a {@link FinderInfo} containing the finder and remaining path,
      *         or {@code null} if no Hub traversal is needed
      */
     public static FinderInfo createFinder(Class clazz, OAPath pp) {
         if (clazz == null || pp == null) return null;
         
-        String s = pp.getPropertyPath();
+        String s = pp.getPath();
         if (s == null || s.indexOf('.') < 0) return null;
 
         if (pp.getFromClass() == null) {
@@ -116,14 +116,14 @@ public class OAFilterDelegate {
         Method m = ms[ms.length-1];
         Class c = m.getReturnType();
         if (c.equals(OAObject.class) || c.equals(Hub.class)) {
-            OAFinder f = new OAFinder(pp.getPropertyPath());
+            OAFinder f = new OAFinder(pp.getPath());
             return new FinderInfo(f, null);
         }
 
-        int dcnt = OAString.dcount(pp.getPropertyPath(), '.');
-        s = OAString.field(pp.getPropertyPath(), '.', 1, dcnt-1);
+        int dcnt = OAString.dcount(pp.getPath(), '.');
+        s = OAString.field(pp.getPath(), '.', 1, dcnt-1);
         OAFinder f = new OAFinder(s);
-        s = OAString.field(pp.getPropertyPath(), '.', dcnt);
+        s = OAString.field(pp.getPath(), '.', dcnt);
         
         return new FinderInfo(f, s);
     }

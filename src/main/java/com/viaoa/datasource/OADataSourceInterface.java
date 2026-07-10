@@ -36,8 +36,8 @@ import com.viaoa.object.OAObjectKey;
  *       {@link com.viaoa.object.OAObject} instances from the underlying store.</li>
  *   <li><b>ID Management:</b> Assign unique identifiers and control
  *       auto-increment or GUID strategies.</li>
- *   <li><b>Query Translation:</b> Convert object‐based filters and property
- *       paths into the native query language (SQL, REST parameters, etc.).</li>
+ *   <li><b>Query Translation:</b> Convert object-based filters and OAPath-style
+ *       property paths into the native query language (SQL, REST parameters, etc.).</li>
  *   <li><b>Transaction Support:</b> Optionally participate in
  *       {@link com.viaoa.transaction.OATransaction} contexts and batching.</li>
  *   <li><b>Configuration:</b> Provide connection details, read‐only flags,
@@ -250,11 +250,11 @@ public interface OADataSourceInterface {
 	void updateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propFromMaster);
 
 	/**
-	 * Selects objects using a property-path query expression and optional
+	 * Selects objects using an OAPath-style query expression and optional
 	 * filtering, ordering, limits, and where-object linkage.
 	 *
 	 * @param selectClass               class of objects to return
-	 * @param queryWhere               property-path query expression
+	 * @param queryWhere               OAPath-style query expression
 	 * @param params                   parameter values for query placeholders
 	 * @param queryOrder               ordering expression
 	 * @param whereObject              reference object for query construction
@@ -299,7 +299,7 @@ public interface OADataSourceInterface {
 	 * linkage, and optional extra where clause.
 	 *
 	 * @param selectClass               class whose objects are counted
-	 * @param queryWhere               property-path query expression
+	 * @param queryWhere               OAPath-style query expression
 	 * @param params                   parameters for the expression
 	 * @param whereObject              reference object for query construction
 	 * @param propertyFromWhereObject  property linking the whereObject

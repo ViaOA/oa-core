@@ -89,7 +89,7 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
      * List of property paths whose changes should cause monitored objects to be
      * re-evaluated for trigger activation.
      */
-    private String[] dependentPropertyPaths;
+    private String[] dependentPaths;
     
     
     /**
@@ -168,9 +168,15 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
         }
         
         cacheListener = new OAObjectCacheListener<T>() {
+            /**
+             * Property changes are handled through dependent-property triggers.
+             */
             @Override
             public void afterPropertyChange(T obj, String propertyName, Object oldValue, Object newValue) {
             }
+            /**
+             * Evaluates a newly cached object and triggers when it matches.
+             */
             @Override
             public void afterAdd(T obj) {
                 if (obj.isLoading()) return;
@@ -182,12 +188,21 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
                     callOnTrigger(obj);
                 }
             }
+            /**
+             * Hub-add events are not used by this cache trigger.
+             */
             @Override
             public void afterAdd(Hub<T> hub, T obj) {
             }
+            /**
+             * Hub-remove events are not used by this cache trigger.
+             */
             @Override
             public void afterRemove(Hub<T> hub, T obj) {
             }
+            /**
+             * Treats a loaded object like a cache add for trigger purposes.
+             */
             @Override
             public void afterLoad(T obj) {
                 afterAdd(obj);
@@ -289,6 +304,12 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
                 srvcOAThreadLocal.setSendSyncMessages(true);
             }
 			oa.internal().objects().cache().visit(clazz, new OACallback() {
+	            /**
+	             * Visits cached objects during trigger refresh.
+	             *
+	             * @param obj cached object being visited
+	             * @return {@code true} to continue traversal
+	             */
 	            @SuppressWarnings("unchecked")
 	            @Override
 	            public boolean updateObject(Object obj) {
@@ -317,7 +338,7 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
     public void addDependentProperty(final String prop) {
         if (prop == null || prop.length() == 0) return;
         
-        dependentPropertyPaths = (String[]) OAArray.add(String.class, dependentPropertyPaths, prop);
+        dependentPaths = (String[]) OAArray.add(String.class, dependentPaths, prop);
         
         // need to recheck in case there was previous changes for the newly added dependentProp that was never checked.  
         setupTrigger();
@@ -337,15 +358,21 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
         }
 
         OATriggerListener<T> triggerListener = new OATriggerListener<T>() {
+            /**
+             * Processes dependent-property trigger events and finds affected root objects when needed.
+             */
             @Override
-            public void onTrigger(final T rootObject, final HubEvent hubEvent, final String propertyPathFromRoot) throws Exception {
+            public void onTrigger(final T rootObject, final HubEvent hubEvent, final String pathFromRoot) throws Exception {
                 if (rootObject == null) {
                     Hub hubx = hubEvent.getHub();
                     final OAObject masterObject = hubx == null ? null : hubx.getMasterObject();
                     
                     // the reverse property could not be used to get objRoot 
                     // - need see if any of the rootObjs + pp used the changed obj
-                    final OAFinder finder = new OAFinder(propertyPathFromRoot) {
+                    final OAFinder finder = new OAFinder(pathFromRoot) {
+                        /**
+                         * Accepts objects that match the event object or its master object.
+                         */
                         protected boolean isUsed(OAObject obj) {
                             if (obj == hubEvent.getObject()) return true;
                             if (masterObject == obj) return true;
@@ -357,6 +384,12 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
             		final OA oa = OARuntime.oa(clazz);
                     
             		oa.internal().objects().cache().visit(clazz, new OACallback() {
+                        /**
+                         * Visits cached objects to find roots affected by the trigger event.
+                         *
+                         * @param obj cached object being visited
+                         * @return {@code true} to continue traversal
+                         */
                         @SuppressWarnings("unchecked")
                         @Override
                         public boolean updateObject(Object obj) {
@@ -381,7 +414,7 @@ public abstract class OAObjectCacheTrigger<T extends OAObject> implements OAFilt
             name = "OAObjectCacheTrigger" + (aiUnique.incrementAndGet());
         }
         
-        trigger = new OATrigger(name, clazz, triggerListener, dependentPropertyPaths, true, false, false, true);
+        trigger = new OATrigger(name, clazz, triggerListener, dependentPaths, true, false, false, true);
 		final OA oa = OARuntime.oa(clazz);
         oa.internal().triggers().addTrigger(trigger);
     }

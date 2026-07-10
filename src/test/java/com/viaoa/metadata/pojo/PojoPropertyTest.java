@@ -15,7 +15,7 @@ class PojoPropertyTest {
 
         prop.setName("name");
         prop.setUpperName("NAME");
-        prop.setPropertyPath("item.name");
+        prop.setPath("item.name");
         prop.setJavaType(String.class.getName());
         prop.setKeyPos(2);
         prop.setPojoImportMatch(im);
@@ -25,7 +25,7 @@ class PojoPropertyTest {
 
         assertEquals("name", prop.getName());
         assertEquals("NAME", prop.getUpperName());
-        assertEquals("item.name", prop.getPropertyPath());
+        assertEquals("item.name", prop.getPath());
         assertEquals(String.class.getName(), prop.getJavaType());
         assertEquals(2, prop.getKeyPos());
         assertSame(im, prop.getPojoImportMatch());

@@ -609,13 +609,13 @@ public class OAStringTest {
     @Test
     public void createPropertyPathTest() {
         // facade delegates to OATextUtil
-        assertEquals(OATextUtil.createPropertyPath("Order", "Customer"), OAString.createPropertyPath("Order", "Customer"));
+        assertEquals(OATextUtil.createPath("Order", "Customer"), OAString.createPath("Order", "Customer"));
     }
 
     @Test
     public void cppTest() {
         // alias delegates to createPropertyPath
-        assertEquals(OAString.createPropertyPath("Order", "Customer"), OAString.cpp("Order", "Customer"));
+        assertEquals(OAString.createPath("Order", "Customer"), OAString.cpp("Order", "Customer"));
     }
 
     @Test

@@ -2,29 +2,17 @@ package com.viaoa.oa.api.internal.objects;
 
 import com.viaoa.object.OAObject;
 
+/**
+ * Internal change-state access for OAObject save and cascade processing.
+ */
 public interface OAObjectChangeOps {
 
 	/**
-	 * Determines whether this object—or linked objects specified by the given
-	 * relationship type—has unsaved changes.
-	 * <p>
-	 * This method delegates entirely to
-	 * {@link OAObjectDelegate#getChanged(OAObject, int)}, which performs the
-	 * actual change-detection logic. The delegate evaluates:
-	 * <ul>
-	 *   <li>whether this object is marked as new,</li>
-	 *   <li>whether this object has local property changes,</li>
-	 *   <li>whether linked objects should be included based on the supplied
-	 *       {@code relationshipType} (e.g., {@code CASCADE_NONE},
-	 *       {@code CASCADE_LINK_RULES}),</li>
-	 *   <li>whether TYPE=MANY and CASCADE=true links should be traversed.</li>
-	 * </ul>
+	 * Returns whether the object has changed state according to the supplied cascade rule.
 	 *
-	 * @param relationshipType the cascade/relationship mode used to determine
-	 *                         whether linked objects participate in change
-	 *                         evaluation
-	 * @return {@code true} if this object or participating linked objects have
-	 *         unsaved changes; {@code false} otherwise
+	 * @param oaObj the object to inspect
+	 * @param cascadeRule the cascade rule used when checking related objects
+	 * @return {@code true} if the object or included related objects have changes
 	 */
 	public boolean getChanged(OAObject oaObj, int cascadeRule);
 	/*qqqqqqqqqqqqqqqqqqqqqq

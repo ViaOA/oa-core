@@ -4,7 +4,6 @@ import com.test.pos.delegate.ModelDelegate;
 import com.test.pos.model.oa.*;
 import com.viaoa.converter.OAConv;
 import com.viaoa.datetime.OADateTime;
-import com.viaoa.session.OAContext;
 
 public class InvoicePaymentDelegate {
 

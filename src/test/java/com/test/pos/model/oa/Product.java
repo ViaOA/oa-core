@@ -242,7 +242,7 @@ public class Product extends OAObject {
         displayName = "Item Pack", 
         reverseName = ItemPack.P_Products, 
         allowCreateNew = false, 
-        selectFromPropertyPath = P_Item + "." + Item.P_ItemPacks, 
+        selectFromPath = P_Item + "." + Item.P_ItemPacks, 
         fkeys = {@OAFkey(fromProperty = P_ItemPackId, toProperty = ItemPack.P_Id)}
     )
     public ItemPack getItemPack() {
@@ -271,7 +271,7 @@ public class Product extends OAObject {
         displayName = "Item Variant", 
         reverseName = ItemVariant.P_Products, 
         allowCreateNew = false, 
-        selectFromPropertyPath = P_Item + "." + Item.P_ItemVariants, 
+        selectFromPath = P_Item + "." + Item.P_ItemVariants, 
         fkeys = {@OAFkey(fromProperty = P_ItemVariantId, toProperty = ItemVariant.P_Id)}
     )
     public ItemVariant getItemVariant() {

@@ -272,13 +272,13 @@ Rationale:
 OA metadata, reflection, property paths, generated source, query support, and runtime binding depend on valid
 identifiers and property names.
 Source scope:
-OATextCode.getPropertyName; OATextUtil.makeJavaIdentifier; OATextUtil.createPropertyPath.
+OATextCode.getPropertyName; OATextUtil.makeJavaIdentifier; OATextUtil.createPath.
 Related CODEX findings:
 OATextCode.getPropertyName JavaBean acronym handling; OATextUtil.makeJavaIdentifier leading-digit identifier;
-OATextUtil.createPropertyPath empty segment.
+OATextUtil.createPath empty segment.
 Suggested unit tests:
 testJavaBeanAcronymPropertyNamePreserved, testMakeJavaIdentifierRejectsInvalidStart,
-testCreatePropertyPathSkipsEmptySegments.
+testCreatePathSkipsEmptySegments.
 Spec target section:
 Text Utilities / Code And Metadata Name Semantics
 
@@ -596,10 +596,10 @@ These helpers feed OA property paths, generated text, IDs, diagnostics, byte/str
 strings, and runtime configuration text.
 Source scope:
 OATextUtil.append, prepend, concat, colorToHex, parseInt, bytesToHex, hexToBytes, getBegin, getEnd, getFirst,
-getLast, createString, createPropertyPath.
+getLast, createString, createPath.
 Related CODEX findings:
 OATextUtil.concat null separator; hexToBytes odd/invalid hex; colorToHex format mismatch; parseInt overflow;
-getBegin/getEnd surrogate split; createPropertyPath empty segment.
+getBegin/getEnd surrogate split; createPath empty segment.
 Suggested unit tests:
 testConcatAppendPrependSeparatorSemantics, testHexRoundTripAndRejectsInvalidHex, testParseIntOverflowByContract,
 testColorToHexMatchesConverterContract, testSubstringHelpersUnicodeBoundaryByContract.
@@ -621,7 +621,7 @@ Format conversion, color hex, date/number validation, JavaBean property-name, an
 boundary risks.
 Suggested unit tests:
 testTextFormattingMatchesConverterBoundary, testColorHexMatchesConverterContract,
-testPropertyNameMatchesJavaBeanContract, testPropertyPathCreationMatchesOAPathContract.
+testPropertyNameMatchesJavaBeanContract, testPathCreationMatchesOAPathContract.
 Spec target section:
 Text Utilities / Cross-Package Boundaries
 

@@ -41,7 +41,7 @@
  *
  * <p>
  * The template engine itself is non-reflective and delegates all property-path
- * resolution to callers (such as OAPropertyPath), enabling the parser to
+ * resolution to callers (such as OAPath), enabling the parser to
  * remain compact while supporting complex object-graph navigation.
  * </p>
  *
@@ -219,7 +219,7 @@ OATemplate.getValue(...), OATemplate.getProperty(...), OAPath usage, OAFinder us
 Related CODEX findings:
 Matrix path-to-column mapping can fail when property paths are missing or misaligned.
 Suggested unit tests:
-templatePropertyPathUsesOaPathSemantics, templateInvalidPropertyPathIsObservableByContract,
+templatePathUsesOaPathSemantics, templateInvalidPathIsObservableByContract,
 templateRuntimeUnavailablePathRendersBlankByContract.
 Spec target section:
 Template Runtime / Path Resolution
@@ -415,7 +415,7 @@ Invalid or wrongly scoped matrix paths should fail predictably during setup rath
 dereferences or wrong row structure.
 Source scope:
 OAMatrix.addDetailColumn(...), OAMatrix.addGroupByColumn(...), OAMatrix.verifyLinkProperty(...),
-OAMatrix.getRootColumn(...), OAMatrix.getPropertyPathFromRoot(...).
+OAMatrix.getRootColumn(...), OAMatrix.getPathFromRoot(...).
 Related CODEX findings:
 addGroupByColumn can validate against the wrong class shape for detail/non-root columns.
 Suggested unit tests:

@@ -12,58 +12,15 @@ import com.viaoa.replication.remote.RemoteMasterRegisterInterface;
 import com.viaoa.sync.model.ClientInfo;
 
 
-/*qqqqqqqqqqqqqqqqqqqqq
-CODEX
-
-5. file/class/method
-     src/main/java/com/viaoa/replication/client/OAReplClientConnection.java:53 start
-
-  concrete bug
-  bIsStarted is set before connection/proxy setup succeeds, and partial startup failure does not clean up opened
-  resources.
-
-  runtime scenario
-  getMultiplexerClient().start() succeeds, then getRemoteMaster() or remote setup fails. The object remains bIsStarted
-  = true, bIsConnected = false; stop() returns early because !bIsConnected, so partial resources can remain open and
-  the instance cannot be safely restarted.
-
-  why this violates OA/OG replication semantics
-  Reconnect/retry after partial connection failure can leak transport state or leave stale replication connection
-  state.
-
-  minimal fix direction
-  Set started/connected only after successful setup, and wrap startup in try/catch that closes any partially opened
-  multiplexer/socket resources.
-
-  suggested CODEX comment location
-  At the top of OAReplClientConnection.start() before bIsStarted = true.
-
-6. file/class/method
-     src/main/java/com/viaoa/replication/client/OAReplClientConnection.java:104 stop
-
-  concrete bug
-  If remoteMaster.setEnabled(false) throws, getMultiplexerClient().close() is skipped.
-
-  runtime scenario
-  Connection is broken while stopping. The remote disable call throws. Because close is after that call and there is
-  no finally, socket/multiplexer cleanup does not run.
-
-  why this violates OA/OG replication semantics
-  Replication disconnect cleanup can leave resources and stale connection state alive, affecting reconnect and worker
-  shutdown behavior.
-
-  minimal fix direction
-  Always close the multiplexer in a finally; treat remote disable as best-effort cleanup.
-
-  suggested CODEX comment location
-  Inside stop() around remoteMaster.setEnabled(false).
-
-  suggested regression test
-  testReplClientConnectionStopClosesMultiplexerWhenRemoteDisableFails
-
-*/
 
 
+/**
+ * Client-side connection to a replication master.
+ * <p>
+ * This class owns the multiplexer connection, remote proxies, client registration handshake, and callbacks used by
+ * {@link com.viaoa.replication.OAReplicationClient} to send and receive replication messages.
+ * </p>
+ */
 public abstract class OAReplClientConnection {
     private static Logger LOG = Logger.getLogger(OAReplClientConnection.class.getName());
 
@@ -85,6 +42,14 @@ public abstract class OAReplClientConnection {
 	
 	private final long initMasterSeq, initClientSeq;
 
+    /**
+     * Creates a replication master connection descriptor.
+     * @param guid client replication identifier
+     * @param masterHostName master host name
+     * @param masterHostPort master port
+     * @param masterSeq last known master sequence
+     * @param clientSeq last known client sequence
+     */
     public OAReplClientConnection(String guid, String masterHostName, int masterHostPort, long masterSeq, long clientSeq) {
     	this.guid = guid;
     	this.masterHostName = masterHostName;
@@ -93,16 +58,32 @@ public abstract class OAReplClientConnection {
     	this.initClientSeq = clientSeq;
     }
 
+    /**
+     * Indicates whether this connection is currently connected.
+     * @return {@code true} when connected
+     */
     public boolean isConnected() {
     	return bIsConnected;
     }
+    /**
+     * Indicates whether this connection has been started.
+     * @return {@code true} when started
+     */
     public boolean isStarted() {
     	return bIsStarted;
     }
+    /**
+     * Indicates whether this connection has been stopped.
+     * @return {@code true} when stopped
+     */
     public boolean isStopped() {
     	return bIsStopped;
     }
     
+    /**
+     * Starts the multiplexer connection and registers with the replication master.
+     * @throws Exception if connection or registration fails
+     */
     public void start() throws Exception {
     	LOG.fine(String.format("starting client guid=%s", guid));
     	if (bIsStarted) throw new Exception("already called, cant start again");
@@ -127,6 +108,10 @@ public abstract class OAReplClientConnection {
         bIsConnected = true;
     }
     
+	/**
+	 * Returns the remote multiplexer client, creating it when needed.
+	 * @return remote multiplexer client
+	 */
 	public OARemoteMultiplexerClient getRemoteMultiplexerClient() {
 		if (remoteMultiplexerClient == null) {
 			remoteMultiplexerClient = new OARemoteMultiplexerClient(getMultiplexerClient());
@@ -134,18 +119,30 @@ public abstract class OAReplClientConnection {
 		return remoteMultiplexerClient;
 	}
     
+	/**
+	 * Returns the underlying multiplexer client, creating it when needed.
+	 * @return multiplexer client
+	 */
 	protected OAMultiplexerClient getMultiplexerClient() {
 		if (multiplexerClient != null) return multiplexerClient;
 
     	LOG.fine(String.format("creating OAMultiplexerClient, serverHostName=%s, port=%d", getClientInfo().getServerHostName(), clientInfo.getServerHostPort()));
 		multiplexerClient = new OAMultiplexerClient(getClientInfo().getServerHostName(), clientInfo.getServerHostPort()) {
 			@Override
-			protected void onSocketException(Exception e) {
+						/**
+			 * Forwards socket exceptions to the owning replication connection.
+			 * @param e socket exception
+			 */
+protected void onSocketException(Exception e) {
 				OAReplClientConnection.this.onSocketException(e);
 			}
 
 			@Override
-			protected void onClose(boolean bError) {
+						/**
+			 * Forwards socket-close events to the owning replication connection.
+			 * @param bError true when the close was caused by an error
+			 */
+protected void onClose(boolean bError) {
 				OAReplClientConnection.this.onSocketClose(bError);
 			}
 		};
@@ -153,6 +150,10 @@ public abstract class OAReplClientConnection {
 	}
     
 
+	/**
+	 * Stops the connection and closes the multiplexer client.
+	 * @throws Exception if shutdown fails
+	 */
 	public void stop() throws Exception {
 		if (bIsStopped || !bIsConnected) return;
 		LOG.fine("stopping connection to Master");
@@ -165,6 +166,10 @@ public abstract class OAReplClientConnection {
 	}
 	
     
+	/**
+	 * Returns client connection metadata, creating it when needed.
+	 * @return client information
+	 */
 	public ClientInfo getClientInfo() {
 		if (clientInfo == null) {
 			clientInfo = new ClientInfo();
@@ -182,6 +187,11 @@ public abstract class OAReplClientConnection {
 		return clientInfo;
 	}
 
+	/**
+	 * Returns the remote master registration proxy.
+	 * @return remote registration proxy
+	 * @throws Exception if lookup fails
+	 */
 	public RemoteMasterRegisterInterface getRemoteMasterRegister() throws Exception {
 		if (remoteMasterRegister == null) {
 			RemoteMasterRegisterInterface reg = (RemoteMasterRegisterInterface) getRemoteMultiplexerClient().lookup(OAReplicationMaster.ReplicationMasterLookupName);
@@ -190,6 +200,11 @@ public abstract class OAReplClientConnection {
 		return remoteMasterRegister;
 	}
 	
+	/**
+	 * Returns the registered remote master session proxy.
+	 * @return remote master session proxy
+	 * @throws Exception if registration fails
+	 */
 	public RemoteMasterInterface getRemoteMaster() throws Exception {
 		if (remoteMaster == null) {
 			remoteMaster = getRemoteMasterRegister().registerClient(guid, getRemoteClient(), this.initMasterSeq, this.initClientSeq);
@@ -197,11 +212,22 @@ public abstract class OAReplClientConnection {
 		return remoteMaster;
 	}
 
+	/**
+	 * Returns the remote client callback proxy exposed to the master.
+	 * @return remote client callback proxy
+	 * @throws Exception if proxy creation fails
+	 */
 	public RemoteClientInterface getRemoteClient() throws Exception {
         if (remoteClient == null) {
         	remoteClient = new RemoteClientInterface() {
 				@Override
-				public void processMessage(long masterSeq, String methodName, Object[] args) {
+								/**
+				 * Forwards a master message to the owning replication connection.
+				 * @param masterSeq master sequence number
+				 * @param methodName remote sync method name
+				 * @param args remote sync method arguments
+				 */
+public void processMessage(long masterSeq, String methodName, Object[] args) {
 					OAReplClientConnection.this.processMessageFromMaster(masterSeq, methodName, args);
 				}
 			};
@@ -209,9 +235,23 @@ public abstract class OAReplClientConnection {
         return remoteClient;
     }
 	
+	/**
+	 * Called when the client socket reports an exception.
+	 * @param e socket exception
+	 */
 	protected abstract void onSocketException(Exception e);
+	/**
+	 * Called when the client socket closes.
+	 * @param bError true when the close was caused by an error
+	 */
 	protected abstract void onSocketClose(boolean bError);
 	
+	/**
+	 * Processes a replication message received from the master.
+	 * @param masterSeq master sequence number
+	 * @param methodName remote sync method name
+	 * @param args remote sync method arguments
+	 */
 	public abstract void processMessageFromMaster(long masterSeq, String methodName, Object[] args);
 }
 

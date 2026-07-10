@@ -80,7 +80,7 @@ CODEX
  * </pre>
  *
  * <p>
- * In OA, filters play a central role in shaping how object graphs, derived
+ * In OA, filters play a central role in shaping how OA object state, derived
  * collections, and queries behave, while keeping the filtering logic isolated,
  * reusable, and testable.
  * </p>
@@ -99,12 +99,11 @@ public interface OAFilter<TYPE> extends Serializable {
 	boolean isUsed(TYPE obj);
 
 	/**
-	 * Callback, that allows a Filter to be called by Select before it is performed, so that the filter can be done by the datasource that
-	 * performs the select/query.
+	 * Allows a filter to participate in an {@link OASelect} before it is executed so that supported filter logic can be pushed down to the datasource.
 	 * <p>
 	 *
-	 * @param select oaselect that is using this select, before it runs the query on the datasource.
-	 * @return true (default) if this filter should still be used from the select results.
+	 * @param select the OASelect that is about to execute against a datasource
+	 * @return true if this filter should still be applied to selected results; false if the datasource fully handled it
 	 */
 	default boolean updateSelect(OASelect<? extends OAObject> select) {
 		return true;

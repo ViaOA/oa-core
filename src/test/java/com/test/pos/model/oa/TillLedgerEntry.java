@@ -399,7 +399,7 @@ public class TillLedgerEntry extends OAObject {
         displayName = "Invoice Payment Checks", 
         toClass = InvoicePaymentCheck.class, 
         reverseName = InvoicePaymentCheck.P_TillLedgerEntries, 
-        selectFromPropertyPath = P_Till + "." + Till.P_InvoicePaymentChecks
+        selectFromPath = P_Till + "." + Till.P_InvoicePaymentChecks
     )
     @OALinkTable(name = "TillLedgerEntryInvoicePaymentCheck", indexName = "InvoicePaymentCheckTillLedgerEntry", columns = {"TillLedgerEntryId"})
     public Hub<InvoicePaymentCheck> getInvoicePaymentChecks() {
@@ -456,7 +456,7 @@ public class TillLedgerEntry extends OAObject {
         displayName = "Register Session", 
         reverseName = RegisterSession.P_TillLedgerEntries, 
         allowCreateNew = false, 
-        selectFromPropertyPath = P_Till + "." + Till.P_Register + "." + Register.P_RegisterSessions, 
+        selectFromPath = P_Till + "." + Till.P_Register + "." + Register.P_RegisterSessions, 
         fkeys = {@OAFkey(fromProperty = P_RegisterSessionId, toProperty = RegisterSession.P_Id)}
     )
     public RegisterSession getRegisterSession() {

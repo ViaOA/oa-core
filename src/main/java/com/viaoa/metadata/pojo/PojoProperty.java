@@ -48,7 +48,7 @@ public class PojoProperty implements java.io.Serializable {
 	 * represents, especially for synthetic properties produced by link-one
 	 * references, unique keys, or import-match definitions.
 	 */
-	protected volatile String propertyPath;
+	protected volatile String path;
 	
 	/**
 	 * Fully qualified Java type name for this property, used when generating
@@ -135,8 +135,8 @@ public class PojoProperty implements java.io.Serializable {
 	 *
 	 * @return the property path or {@code null}
 	 */
-	public String getPropertyPath() {
-		return propertyPath;
+	public String getPath() {
+		return path;
 	}
 
 	/**
@@ -144,8 +144,8 @@ public class PojoProperty implements java.io.Serializable {
 	 *
 	 * @param newValue the new property path
 	 */
-	public void setPropertyPath(String newValue) {
-		this.propertyPath = newValue;
+	public void setPath(String newValue) {
+		this.path = newValue;
 	}
 
 	/**
@@ -275,7 +275,7 @@ public class PojoProperty implements java.io.Serializable {
 		return "PojoProperty [" +
 				"name=" + name +
 				", upperName=" + upperName +
-				", propertyPath=" + propertyPath +
+				", path=" + path +
 				", javaType=" + javaType +
 				"]";
 	}

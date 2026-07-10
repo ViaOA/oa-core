@@ -37,10 +37,10 @@ Contract statement:
 com.viaoa.datasource.objectcache defines the datasource bridge over the live OA object cache, allowing cache-backed
 select/query/load behavior and optional storage-file save/load without external database authority.
 Rationale:
-This package is not generic in-memory collection logic. It exposes live Object Graph cache state through datasource
+This package is not generic in-memory collection logic. It exposes live OA cache state through datasource
 APIs, so cache identity, metadata, query, traversal, and serialization contracts must remain intact.
 Source scope:
-OADataSourceObjectCache, ObjectCacheIterator, OADataSourceAuto superclass integration, OARuntime graph/cache
+OADataSourceObjectCache, ObjectCacheIterator, OADataSourceAuto superclass integration, OARuntime OA/cache
 services.
 Related CODEX findings:
 No direct CODEX comments in package source; package-info is shallow and package behavior implies cache/datasource
@@ -53,7 +53,7 @@ Datasource ObjectCache / Core Responsibility
 
 DSCACHE-AUTHORITY-001 — Cache Versus Datasource Boundary
 Contract statement:
-OADataSourceObjectCache uses the active graph/object cache as its data source and must not claim stronger external
+OADataSourceObjectCache uses the active OA object cache as its data source and must not claim stronger external
 persistence authority than cache state plus explicit storage-file save/load provide.
 Rationale:
 Cache-backed datasource success is not the same as external database persistence success. Runtime callers need clear
@@ -73,13 +73,13 @@ Datasource ObjectCache / Authority Boundary
 DSCACHE-IDENTITY-001 — Cache Identity Consistency
 Contract statement:
 Cache-backed selection and storage load/save must preserve OAObject identity, OAObjectKey semantics, cache
-authority, and duplicate-object prevention for each graph/class.
+authority, and duplicate-object prevention for each OA/class.
 Rationale:
 The object cache is an identity authority. Returning or loading duplicate semantic objects corrupts links, Hub
 membership, sync, replication, and datasource behavior.
 Source scope:
 OADataSourceObjectCache.select(...), ObjectCacheIterator, loadFromStorageFile(...), _loadFromStorageFile(...),
-OAObjectInputStream.resolveObject(...), OARuntime graph object-cache services.
+OAObjectInputStream.resolveObject(...), OARuntime OA object-cache services.
 Related CODEX findings:
 None observed.
 Suggested unit tests:
@@ -106,7 +106,7 @@ Datasource ObjectCache / Insert and Class Tracking
 
 DSCACHE-SELECT-001 — Deterministic Cache Selection
 Contract statement:
-Given the same graph/cache state, metadata, query text, parameters, where-object context, filter, order expression,
+Given the same OA/cache state, metadata, query text, parameters, where-object context, filter, order expression,
 max, and dirty flag, cache-backed selection must produce deterministic eligibility and ordering according to OA
 query/path/filter/comparator contracts.
 Rationale:
@@ -144,17 +144,17 @@ DSCACHE-WHERE-001 — Where-Object Relationship Semantics
 Contract statement:
 whereObject and propertyFromWhereObject selection must resolve relationships using OA metadata/path semantics and
 must return only objects semantically related to the whereObject under the resolved link, reverse link,
-selectFromPropertyPath, equalPropertyPath, or direct property value.
+selectFromPath, equalPath, or direct property value.
 Rationale:
-Relationship-based selection must preserve Object Graph link semantics when the cache is used as a datasource.
+Relationship-based selection must preserve OA link semantics when the cache is used as a datasource.
 Source scope:
-OADataSourceObjectCache.select(...), OAObjectInfo, OALinkInfo, OAPath, OAFinder, OAEqualFilter, OARuntime graph
+OADataSourceObjectCache.select(...), OAObjectInfo, OALinkInfo, OAPath, OAFinder, OAEqualFilter, OARuntime OA
 property access.
 Related CODEX findings:
 None observed.
 Suggested unit tests:
 testSelectFromWhereObjectDirectOneLinkReturnsRelatedObject(), testSelectFromWhereObjectHubLinkReturnsMembers(),
-testSelectFromWhereObjectInvalidPropertyPathFailsVisibly()
+testSelectFromWhereObjectInvalidPathFailsVisibly()
 Spec target section:
 Datasource ObjectCache / Relationship Selection
 
@@ -166,12 +166,12 @@ return an explicit empty iterator by contract.
 Rationale:
 Path resolution drives relationship selection. Confusing invalid metadata with no results hides model errors.
 Source scope:
-OADataSourceObjectCache.select(...), OAPath, OAPath.getReversePropertyPath(), OALinkInfo.getReverseLinkInfo().
+OADataSourceObjectCache.select(...), OAPath, OAPath.getReversePath(), OALinkInfo.getReverseLinkInfo().
 Related CODEX findings:
 None observed.
 Suggested unit tests:
-testValidWherePropertyPathUsesReversePathQuery(), testMissingReversePathReturnsEmptyIteratorByContract(),
-testInvalidWherePropertyPathThrowsMetadataFailure()
+testValidWherePathUsesReversePathQuery(), testMissingReversePathReturnsEmptyIteratorByContract(),
+testInvalidWherePathThrowsMetadataFailure()
 Spec target section:
 Datasource ObjectCache / Path Semantics
 
@@ -200,7 +200,7 @@ because of concurrent cache changes.
 Rationale:
 The object cache is live runtime state and can mutate while selection is in progress.
 Source scope:
-ObjectCacheIterator, OARuntime graph object-cache find service, OADataSourceObjectCache.select(...).
+ObjectCacheIterator, OARuntime OA object-cache find service, OADataSourceObjectCache.select(...).
 Related CODEX findings:
 None observed.
 Suggested unit tests:
@@ -286,7 +286,7 @@ loadFromStorageFile must deserialize cache state through OAObjectInputStream/OAO
 objects with runtime identity, update class visibility for loaded objects, and fail visibly on corrupt or incomplete
 payloads.
 Rationale:
-Storage-file load imports object graph state into the live cache; corrupt or partial loads must not appear as
+Storage-file load imports OA object state into the live cache; corrupt or partial loads must not appear as
 complete cache state.
 Source scope:
 OADataSourceObjectCache.loadFromStorageFile(...), _loadFromStorageFile(...), OAObjectInputStream.resolveObject(...),
@@ -339,7 +339,7 @@ Contract statement:
 Object-cache datasource generated-ID behavior must remain compatible with OADataSourceAuto semantics: ID assignment
 must follow metadata, cache collision checks, and configured assign-on-create/insert lifecycle.
 Rationale:
-In-memory datasource identity still participates in cache keys and object graph identity.
+In-memory datasource identity still participates in cache keys and OA object identity.
 Source scope:
 OADataSourceObjectCache extends OADataSourceAuto, assignId(...), insert(...), insertWithoutReferences(...).
 Related CODEX findings:
@@ -394,7 +394,7 @@ model, and ObjectCacheIterator instance state must be safe for its documented us
 Rationale:
 Object cache selection can run from UI, background, sync, and test threads while the cache is live.
 Source scope:
-ObjectCacheIterator synchronized hasNext()/getNext(), _next(), OADataSourceObjectCache.select(...), graph object-
+ObjectCacheIterator synchronized hasNext()/getNext(), _next(), OADataSourceObjectCache.select(...), OA object-
 cache find/visit services.
 Related CODEX findings:
 None observed.
@@ -407,11 +407,11 @@ Datasource ObjectCache / Concurrency
 DSCACHE-TL-001 — Runtime Context Boundary
 Contract statement:
 Object-cache datasource operations must not leak ThreadLocal/OAThreadLocal loading, serialization, transaction,
-sync, or graph context; any context installed by owning services must be restored with try/finally.
+sync, or OA runtime context; any context installed by owning services must be restored with try/finally.
 Rationale:
 Cache-backed selection and storage can be invoked inside load, serialization, transaction, sync, or test contexts.
 Source scope:
-OADataSourceObjectCache, ObjectCacheIterator, graph/cache/serialization callers.
+OADataSourceObjectCache, ObjectCacheIterator, OA/cache/serialization callers.
 Related CODEX findings:
 No direct ThreadLocal mutation observed; this is a cross-package integration boundary.
 Suggested unit tests:
@@ -423,12 +423,12 @@ Datasource ObjectCache / Runtime Context
 DSCACHE-INTEGRATION-001 — Cross-Package Cache Datasource Compatibility
 Contract statement:
 Object-cache datasource behavior must remain compatible with datasource, cache, object, Hub, select, query, path,
-filter, compare, transaction, serialization, sync, replication, autonumber, and graph/runtime contracts.
+filter, compare, transaction, serialization, sync, replication, autonumber, and OA runtime contracts.
 Rationale:
-This package sits at the boundary between datasource APIs and live cache/graph state. It must preserve package
+This package sits at the boundary between datasource APIs and live cache/OA runtime state. It must preserve package
 authority boundaries while providing deterministic in-memory datasource behavior.
 Source scope:
-OADataSourceObjectCache, ObjectCacheIterator, OADataSourceAuto, OARuntime graph services, OAQueryFilter, OAPath,
+OADataSourceObjectCache, ObjectCacheIterator, OADataSourceAuto, OARuntime OA services, OAQueryFilter, OAPath,
 OAFinder, OAComparator, OAObjectSerializer.
 Related CODEX findings:
 No package-local CODEX comments; cross-package authority and failure contracts apply.

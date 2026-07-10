@@ -41,7 +41,7 @@ CODEX
         datasource writes, or add a CODEX contract comment that these flags are advisory and must be enforced by
         concrete datasource implementations.
       - Suggested test: set read-only/ignore-writes on a registered datasource, save/delete an object through normal
-        OAObject/graph path, verify write is blocked/ignored according to intended contract.
+        OAObject/OA runtime path, verify write is blocked/ignored according to intended contract.
 
 
  */
@@ -58,7 +58,7 @@ CODEX
  * <ul>
  *   <li>Automatic DataSource registration and lookup by model class.</li>
  *   <li>Full CRUD abstraction: insert, update, delete, select, count, execute.</li>
- *   <li>Supports property-path queries translated to native query language.</li>
+ *   <li>Supports OAPath-style property paths translated to native query language.</li>
  *   <li>Transaction and batch-awareness via {@link com.viaoa.transaction.OATransaction}.</li>
  *   <li>Supports chaining multiple DataSources (cache + remote, etc.).</li>
  *   <li>Read-only and ignore-write safety controls.</li>
@@ -209,7 +209,7 @@ public abstract class OADataSource implements OADataSourceInterface {
 	
 	/**
 	 * Resolves an object using metadata from {@link OAObjectInfo} and a generated
-	 * property-path query. Uses {@link #select} to perform the retrieval.
+	 * OAPath-style query. Uses {@link #select} to perform the retrieval.
 	 *
 	 * @param oi object metadata
 	 * @param clazz class of object

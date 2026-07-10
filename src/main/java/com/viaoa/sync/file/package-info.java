@@ -14,37 +14,11 @@
  * limitations under the License.
  */
 /**
- * File upload and download support for OA's synchronization subsystem.
+ * File upload and download support for the OA synchronization subsystem.
  * <p>
- * This package provides a lightweight file-transfer mechanism layered on top
- * of the multiplexer socket used by {@link com.viaoa.sync.OASyncClient} and
- * {@link com.viaoa.sync.OASyncServer}. It enables client applications to:
- * <ul>
- *   <li>download files from a server-controlled directory,</li>
- *   <li>upload files back to the server,</li>
- *   <li>use dedicated multiplexer sockets for high-throughput binary transfer,</li>
- *   <li>enforce directory safety and prevent traversal attacks.</li>
- * </ul>
- *
- * <h2>Classes</h2>
- *
- * <h3>{@link com.viaoa.sync.file.ServerFile}</h3>
- * Runs two background threads:
- * <ul>
- *   <li>one accepting upload sockets,</li>
- *   <li>one accepting download sockets.</li>
- * </ul>
- * Validates file requests, streams binary content, and ensures that clients
- * can only access files within a configured server directory.
- *
- * <h3>{@link com.viaoa.sync.file.ClientFile}</h3>
- * Client-side utility used by {@link com.viaoa.sync.OASyncClient} to
- * upload/download files. Communicates with {@code ServerFile} using a simple
- * block-based binary protocol.
- *
- * <p>
- * The file-transfer mechanism is intentionally simple, efficient, and separate
- * from the normal remote-method queue to avoid interfering with sync message
- * ordering.
+ * {@link com.viaoa.sync.file.ServerFile} accepts upload and download socket requests rooted at a configured server
+ * directory. {@link com.viaoa.sync.file.ClientFile} provides the client-side transfer API used by sync clients. File
+ * transfer uses separate socket paths so binary movement does not interfere with ordered sync remote-method traffic.
+ * </p>
  */
 package com.viaoa.sync.file;

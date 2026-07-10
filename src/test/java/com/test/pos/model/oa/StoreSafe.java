@@ -37,6 +37,7 @@ public class StoreSafe extends OAObject {
     public static final String P_Name = "name";
     public static final String P_CashAmount = "cashAmount";
     public static final String P_PettyCashAmount = "pettyCashAmount";
+    public static final String P_AllowDirectChanges = "allowDirectChanges";
      
     public static final String P_CheckCount = "checkCount";
     public static final String P_TotalCheckAmount = "totalCheckAmount";
@@ -52,6 +53,7 @@ public class StoreSafe extends OAObject {
     protected volatile String name;
     protected volatile double cashAmount;
     protected volatile double pettyCashAmount;
+    protected volatile boolean allowDirectChanges;
      
     // Links to other objects.
     protected transient Hub<BankDeposit> hubBankDeposits;
@@ -70,6 +72,13 @@ public class StoreSafe extends OAObject {
     public StoreSafe(int id) {
         this();
         setId(id);
+    }
+    @OAObjCallback(modelUserEnabledProperty = AppUser.P_TeamMember+"."+TeamMember.P_AccessSafePermission
+    )
+    public void callback(final OAObjectCallback callback) {
+        if (callback == null) return;
+        switch (callback.getType()) {
+        }
     }
 
     @OAProperty(lowerName = "id", isUnique = true, trackPrimitiveNull = false, displayLength = 6)
@@ -120,6 +129,13 @@ public class StoreSafe extends OAObject {
         this.cashAmount = newValue;
         firePropertyChange(P_CashAmount, old, this.cashAmount);
     }
+     
+    @OAObjCallback(enabledProperty = StoreSafe.P_AllowDirectChanges, modelUserEnabledProperty = AppUser.P_TeamMember+"."+TeamMember.P_AccessSafePermission)
+    public void cashAmountCallback(OAObjectCallback callback) {
+        if (callback == null) return;
+        switch (callback.getType()) {
+        }
+    }
 
     @OAProperty(lowerName = "pettyCashAmount", displayName = "Petty Cash Amount", decimalPlaces = 2, isCurrency = true, displayLength = 9, uiColumnLength = 17, isProcessed = true)
     @OAColumn(name = "PettyCashAmount", sqlType = java.sql.Types.NUMERIC)
@@ -131,6 +147,37 @@ public class StoreSafe extends OAObject {
         fireBeforePropertyChange(P_PettyCashAmount, old, newValue);
         this.pettyCashAmount = newValue;
         firePropertyChange(P_PettyCashAmount, old, this.pettyCashAmount);
+    }
+     
+    @OAObjCallback(enabledProperty = StoreSafe.P_AllowDirectChanges, modelUserEnabledProperty = AppUser.P_TeamMember+"."+TeamMember.P_AccessSafePermission)
+    public void pettyCashAmountCallback(OAObjectCallback callback) {
+        if (callback == null) return;
+        switch (callback.getType()) {
+        }
+    }
+
+    @OAProperty(lowerName = "allowDirectChanges", displayName = "Allow Direct Changes", displayLength = 5, uiColumnLength = 20)
+    @OAColumn(name = "AllowDirectChanges", sqlType = java.sql.Types.BOOLEAN)
+    public boolean getAllowDirectChanges() {
+        return allowDirectChanges;
+    }
+    public boolean isAllowDirectChanges() {
+        return getAllowDirectChanges();
+    }
+    public void setAllowDirectChanges(boolean newValue) {
+        boolean old = allowDirectChanges;
+        fireBeforePropertyChange(P_AllowDirectChanges, old, newValue);
+        this.allowDirectChanges = newValue;
+        firePropertyChange(P_AllowDirectChanges, old, this.allowDirectChanges);
+    }
+     
+    @OAObjCallback(modelUserEnabledProperty = AppUser.P_TeamMember+"."+TeamMember.P_AccessSafePermission, 
+        modelUserVisibleProperty = AppUser.P_TeamMember+"."+TeamMember.P_AccessSafePermission
+    )
+    public void allowDirectChangesCallback(OAObjectCallback callback) {
+        if (callback == null) return;
+        switch (callback.getType()) {
+        }
     }
     @OACalculatedProperty(displayName = "Check Count", displayLength = 6, columnLength = 11, properties = {P_InvoicePaymentChecks})
     public int getCheckCount() {
@@ -161,6 +208,14 @@ public class StoreSafe extends OAObject {
             hubBankDeposits = (Hub<BankDeposit>) getHub(P_BankDeposits);
         }
         return hubBankDeposits;
+    }
+    @OAObjCallback(enabledProperty = StoreSafe.P_AllowDirectChanges, modelUserEnabledProperty = AppUser.P_TeamMember+"."+TeamMember.P_AccessSafePermission, 
+    		modelUserVisibleProperty = AppUser.P_TeamMember+"."+TeamMember.P_AccessSafePermission
+    )
+    public void bankDepositsCallback(OAObjectCallback cb) {
+        if (cb == null) return;
+        switch (cb.getType()) {
+        }
     }
 
     @OAMany(
@@ -229,7 +284,9 @@ public class StoreSafe extends OAObject {
         setPrimitiveNull(P_CashAmount, rs.wasNull());
         this.pettyCashAmount = rs.getDouble(5);
         setPrimitiveNull(P_PettyCashAmount, rs.wasNull());
-        int storeFkey = rs.getInt(6);
+        this.allowDirectChanges = rs.getBoolean(6);
+        setPrimitiveNull(P_AllowDirectChanges, rs.wasNull());
+        int storeFkey = rs.getInt(7);
         setFkeyProperty(P_Store, rs.wasNull() ? null : storeFkey);
 
         this.changedFlag = false;

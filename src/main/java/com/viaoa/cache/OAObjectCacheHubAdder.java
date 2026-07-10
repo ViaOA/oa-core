@@ -43,6 +43,9 @@ import com.viaoa.runtime.OARuntime;
 public class OAObjectCacheHubAdder<T extends OAObject> implements OAObjectCacheListener<T> {
     static final long serialVersionUID = 1L;
 
+    /**
+     * Weak reference to the Hub populated from cache events.
+     */
     protected WeakReference<Hub<T>> wfHub;
     private Class<T> clazz;
     private volatile boolean bClosed; 
@@ -76,6 +79,12 @@ public class OAObjectCacheHubAdder<T extends OAObject> implements OAObjectCacheL
         
         // need to get objects that are already loaded 
 		oa.internal().objects().cache().callback(clazz, new OACallback() {
+            /**
+             * Adds an already cached object to the Hub when accepted by {@link #isUsed(OAObject)}.
+             *
+             * @param obj cached object being visited
+             * @return {@code true} to continue cache traversal
+             */
             @Override
             public boolean updateObject(Object obj) {
                 Hub<T> h = wfHub.get();

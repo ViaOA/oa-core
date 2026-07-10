@@ -121,7 +121,7 @@ public class RefundPayment extends OAObject {
         displayName = "Invoice Payment", 
         reverseName = InvoicePayment.P_RefundPayments, 
         allowCreateNew = false, 
-        selectFromPropertyPath = P_RefundInvoice + "." + RefundInvoice.P_Invoice + "." + Invoice.P_InvoicePayments, 
+        selectFromPath = P_RefundInvoice + "." + RefundInvoice.P_Invoice + "." + Invoice.P_InvoicePayments, 
         fkeys = {@OAFkey(fromProperty = P_InvoicePaymentId, toProperty = InvoicePayment.P_Id)}
     )
     public InvoicePayment getInvoicePayment() {

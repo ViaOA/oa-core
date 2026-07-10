@@ -38,20 +38,32 @@ import com.viaoa.object.OAObject;
 @OAClass(addToCache=false, initialize=false, useDataSource=false, localOnly=true)
 public class OALeftJoin<A extends OAObject, B extends OAObject> extends OAObject {
     static final long serialVersionUID = 1L;
-    
+
+    /**
+     * Constant property name used by OA model metadata and generated code for P_A.
+     */
     public static final String P_A = "A"; 
+    /**
+     * Constant property name used by OA model metadata and generated code for P_B.
+     */
     public static final String P_B = "B"; 
+    /**
+     * Constant property name used by OA model metadata and generated code for PROPERTY_A.
+     */
     public static final String PROPERTY_A = "A"; 
+    /**
+     * Constant property name used by OA model metadata and generated code for PROPERTY_B.
+     */
     public static final String PROPERTY_B = "B"; 
     private A a;
     private B b;
-    
+
     /**
      * Creates an empty left-join pair with no left or right objects assigned.
      */
     public OALeftJoin() {
     }
-    
+
     /**
      * Creates a left-join pair initialized with the specified left and
      * right objects.
@@ -63,7 +75,7 @@ public class OALeftJoin<A extends OAObject, B extends OAObject> extends OAObject
         setA(a);
         setB(b);
     }
-    
+
     /**
      * Returns the left-side object associated with this join pair.
      *
@@ -72,7 +84,7 @@ public class OALeftJoin<A extends OAObject, B extends OAObject> extends OAObject
     public A getA() {
         return a;
     }
-    
+
     /**
      * Sets the left-side object for this join pair.
      * <p>
@@ -103,7 +115,7 @@ public class OALeftJoin<A extends OAObject, B extends OAObject> extends OAObject
      * <p>
      * This method fires before- and after-property-change events for
      * property {@code "B"}.
-     * </p> 
+     * </p>
      *
      * @param obj the new right-side object
      */

@@ -5,6 +5,9 @@ import com.viaoa.hub.Hub;
 import com.viaoa.hub.filter.HubFilter;
 import com.viaoa.object.OAObject;
 
+/**
+ * Internal live filtering operations that maintain filtered Hub views.
+ */
 public interface HubFilterOps {
 
     /**
@@ -38,7 +41,7 @@ public interface HubFilterOps {
       * {@code hub} and keeps {@code hubMaster} synchronized with the objects that
       * currently satisfy the filter.
       * <p>
-      * The optional {@code dependentPropertyPaths} identify additional property
+      * The optional {@code dependentPaths} identify additional property
       * paths that affect whether an object matches the filter. Changes to those
       * properties are automatically observed, and the filtered result is updated
       * immediately without requiring any manual refresh.
@@ -50,9 +53,9 @@ public interface HubFilterOps {
       * @param hubMaster the target Hub that receives the filtered objects
       * @param hub the source Hub to filter
       * @param filter the filter used to determine which objects are included
-      * @param dependentPropertyPaths optional property paths that affect filter results
+      * @param dependentPaths optional property paths that affect filter results
       */
-     <T extends OAObject> HubFilter<T> filter(Hub<T> hubMaster, Hub<T> hub, OAFilter<T> filter, String... dependentPropertyPaths);
+     <T extends OAObject> HubFilter<T> filter(Hub<T> hubMaster, Hub<T> hub, OAFilter<T> filter, String... dependentPaths);
 
 
 }

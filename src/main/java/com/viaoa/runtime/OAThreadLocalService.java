@@ -31,110 +31,18 @@ import com.viaoa.transaction.OATransaction;
 import com.viaoa.undo.OAUndoManager;
 
 
-/* qqqqqqqqqqqqq
-CODEX
-
- #2 — invariant risk
-  File/class/method: src/main/java/com/viaoa/runtime/OAThreadLocalService.java:213, src/main/java/com/
-  viaoa/runtime/thread/OAThreadLocal.java:53
-  Exact concern: mutable OAThreadLocal is public and directly exposed.
-  Why it matters: callers can mutate counters/flags directly and bypass OAThreadLocalService global fast-
-  path counters. That can make isLoading, isRefreshing, isSendingEvent, serializer state, sibling-helper
-  state, etc. return wrong answers.
-  Minimal fix: pre-4.0, either restrict direct exposure or clearly mark OAThreadLocal as internal and add
-  tests proving all framework code uses service methods. Longer term, expose read-only/debug access
-  separately.
-  Suggested invariant ID/name: THREAD_LOCAL_STATE_MUTATED_ONLY_BY_SERVICE
-  Suggested test coverage: service counters remain consistent after loading/refreshing/hub-event/sibling-
-  helper enter/exit; no production code mutates fields directly except runtime service.
-
-
-
- #4 — bug
-  File/class/method: src/main/java/com/viaoa/runtime/OAThreadLocalService.java:538
-  Exact concern: endServerOnly() can decrement cntStartServerOnly below zero. Once negative, later
-  startServerOnly() increments to zero and does not save sendSyncMessagesHold, so restore semantics are
-  broken.
-  Why it matters: sendSyncMessages is central to sync/replication behavior. A counter underflow can cause
-  sync messages to remain enabled or disabled incorrectly.
-  Minimal fix: guard underflow. If count is already zero, no-op/log or throw in debug mode. Restore only on
-  transition 1 -> 0.
-  Suggested invariant ID/name: SERVER_ONLY_SCOPE_BALANCED_AND_RESTORES_SEND_SYNC
-  Suggested test coverage: nested start/end restores original value; extra end cannot corrupt future
-  scopes.
-
- #6 — invariant risk
-  File/class/method: src/main/java/com/viaoa/runtime/thread/OARemoteThread.java:79, src/main/java/com/
-  viaoa/runtime/OAThreadLocalService.java:1638, src/main/java/com/viaoa/runtime/
-  OARemoteThreadService.java:83
-  Exact concern: remote request state exists in two places: OARemoteThread.requestInfo and
-  OAThreadLocal.requestInfo. Runtime APIs read different stores.
-  Why it matters: replication currently reads thread-local request info, while remote-thread service reads
-  the thread field. These can diverge.
-  Minimal fix: define one canonical source. Prefer OARemoteThreadService.getRequestInfo() delegating
-  consistently, or have remote thread setup always synchronize both states and reset both.
-  Suggested invariant ID/name: REMOTE_REQUEST_INFO_HAS_SINGLE_CANONICAL_SOURCE
-  Suggested test coverage: client/server remote thread setup exposes same RequestInfo through both APIs;
-  cleanup clears both.
-
-  #7 — bug  (Fixed??)
-  File/class/method: src/main/java/com/viaoa/runtime/OAThreadLocalService.java:1536
-  Exact concern: global aiTotalSiblingHelper decrements before confirming the helper exists in the current
-  thread list.
-  Why it matters: removing a non-present helper can make the global fast-path counter too low or negative.
-  Then getSiblingHelpers() / hasSiblingHelpers() can skip real helpers in other threads.
-  Minimal fix: decrement only if ti.alSiblingHelper.remove(sh) returns true.
-  Suggested invariant ID/name: SIBLING_HELPER_GLOBAL_COUNT_EQUALS_REGISTERED_HELPERS
-  Suggested test coverage: remove non-present helper does not decrement; clear removes exactly list size;
-  helpers in other threads remain discoverable.
-
-  #8 — invariant risk
-  File/class/method: src/main/java/com/viaoa/runtime/OAThreadLocalService.java:314, src/main/java/com/
-  viaoa/runtime/OAThreadLocalService.java:2274, src/main/java/com/viaoa/runtime/
-  OAThreadLocalService.java:1279, src/main/java/com/viaoa/runtime/OAThreadLocalService.java:1794
-  Exact concern: paired counter APIs allow local/global counters to go negative; they log but do not
-  prevent invariant damage.
-  Why it matters: these counters drive fast paths and event suppression. Counter drift can make runtime
-  think no special state exists when it does, or vice versa.
-  Minimal fix: guard decrement when local count is zero; in debug/test mode throw or assert.
-  Suggested invariant ID/name: THREAD_LOCAL_SCOPED_COUNTERS_NEVER_NEGATIVE
-  Suggested test coverage: every scoped counter supports nested enter/exit and rejects/ignores extra exit.
-
- #9 — bug
-  File/class/method: src/main/java/com/viaoa/runtime/OAThreadLocalService.java:1411
-  Exact concern: compound undo is not depth-safe. Calling startUndoable twice overwrites
-  compoundUndoableName; a single endUndoable clears tracking and decrements the global counter once. Extra
-  end can decrement below zero.
-  Why it matters: graph event undo capture is runtime-visible and currently tied into object event service.
-  Nested callers can corrupt undo capture state.
-  Minimal fix: add a compound undo depth counter or reject nested compound scopes.
-  Suggested invariant ID/name: UNDOABLE_SCOPE_IS_BALANCED_AND_DEPTH_SAFE
-  Suggested test coverage: nested compound scopes either work predictably or throw; global counter returns
-  to zero.
-
-#12 — boundary risk
-  File/class/method: src/main/java/com/viaoa/runtime/OAThreadLocalService.java:30 plus com.viaoa.undo use
-  Exact concern: runtime service directly depends on OAUndoManager, which currently depends on
-  javax.swing.undo.
-  Why it matters: runtime itself does not import Swing undo, but it inherits that boundary leak through
-  core undo implementation.
-  Minimal fix: later pre-4.0, introduce OA-native undo contract in core and move Swing adapter out.
-  Suggested invariant ID/name: RUNTIME_UNDO_CONTRACT_IS_UI_NEUTRAL
-  Suggested test coverage: runtime undo capture works without loading Swing undo adapter.
-
-*/
 
 
 /*
-CHATGPT, CODEX / OG 4.0 EVENT TRACKING
+CHATGPT, CODEX / OA 4.0 EVENT TRACKING
 
-Add OG-managed event propagation tracking using OAThreadLocalService.
+Add OA-managed event propagation tracking using OAThreadLocalService.
 
 Goal:
 Event propagation must be measurable, bounded, explainable, and policy-controlled.
 
 Current concern:
-OG centralizes graph semantics, listeners, hub events, reverse-link updates,
+OA centralizes OA model semantics, listeners, hub events, reverse-link updates,
 sync propagation, replication capture, calculated properties, and UI updates.
 This creates event storm and recursive propagation risk.
 
@@ -147,7 +55,7 @@ Add event-frame tracking support:
 - sync-eligible vs suppressed event tracking
 - internal-maintenance vs external/domain event classification
 - timing/measurement hooks
-- optional graph ownership/context tracking
+- optional OA ownership/context tracking
 
 Initial phase:
 MEASUREMENT + LOGGING ONLY.
@@ -182,7 +90,7 @@ EVENT-SYNC-001
 Only authoritative eligible events may emit sync/replication messages.
 
 Important:
-Event propagation is a managed OG runtime behavior,
+Event propagation is a managed OA runtime behavior,
 not an uncontrolled callback side effect.
 */
 
@@ -194,7 +102,7 @@ not an uncontrolled callback side effect.
  * coordinates access to:
  *
  * <ul>
- *   <li>Object graph loading and refresh mode indicators</li>
+ *   <li>Object OA model loading and refresh mode indicators</li>
  *   <li>Distributed sync and remote invocation state</li>
  *   <li>Cache add mode, serialization mode and message suppression</li>
  *   <li>Object delete state tracking</li>
@@ -327,7 +235,7 @@ public class OAThreadLocalService {
 
 	/**
 	 * Timestamp used to throttle diagnostic logging for load-related operations.
-	 * Helps prevent excessive log output when object-graph loading occurs
+	 * Helps prevent excessive log output when OA model loading occurs
 	 * frequently on a given thread.
 	 */
 	private long msLoadingObject;
@@ -341,10 +249,26 @@ public class OAThreadLocalService {
 	private long timeLastStackTrace;
 	private int errorCnt;
 	// used for lock/unlock
+	/**
+	 * Performs the ReentrantReadWriteLock runtime operation.
+	 * @return the operation result
+	 */
 	protected final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
+	/**
+	 * Runtime state field used by OA services for openLockCnt.
+	 */
 	protected volatile int openLockCnt;
+	/**
+	 * Runtime state field used by OA services for lockCnt.
+	 */
 	protected volatile int lockCnt;
+	/**
+	 * Runtime state field used by OA services for unlockCnt.
+	 */
 	protected volatile int unlockCnt;
+	/**
+	 * Runtime state field used by OA services for cntDeadlock.
+	 */
 	protected int cntDeadlock;
 	private long msHubMergerChanging;
 	private long msCreateUndoablePropertyChanges;
@@ -363,10 +287,18 @@ public class OAThreadLocalService {
 	private final ThreadLocal<OAThreadLocal> threadLocal = new ThreadLocal<OAThreadLocal>();
 	
 	
+	/**
+	 * Creates the runtime service instance.
+	 */
 	public OAThreadLocalService() {
 		// this.runtimeX = runtime;
 	}
 
+	/**
+	 * Returns the ThreadLocal value.
+	 *
+	 * @return the ThreadLocal value
+	 */
 	public OAThreadLocal getThreadLocal() {
 		return getThreadLocal(true);
 	}
@@ -388,6 +320,9 @@ public class OAThreadLocalService {
 		return ti;
 	}
 	
+	/**
+	 * Clears the runtime state tracked by this method.
+	 */
 	public void clear() {
 		threadLocal.remove();
 	}
@@ -576,7 +511,9 @@ public class OAThreadLocalService {
 	
 
 	/**
-	 * qqqqqqqqqqq
+	 * Returns the most recently added object serializer for the current thread.
+	 *
+	 * @return current object serializer, or {@code null}
 	 */
 	public OAObjectSerializer getCurrentObjectSerializer() {
 		List<OAObjectSerializer> al = getObjectSerializers();
@@ -588,11 +525,9 @@ public class OAThreadLocalService {
 	
 	
 	/**
-	 * qqqqqqqqqqq
-	 * Returns the current thread's object serializer, or null if serialization
-	 * stripping is not active.
+	 * Returns the current thread's object serializer stack.
 	 *
-	 * @return the serializer or null
+	 * @return serializer stack, or {@code null} if none is active
 	 */
 	public List<OAObjectSerializer> getObjectSerializers() {
 		List<OAObjectSerializer> al;
@@ -607,7 +542,7 @@ public class OAThreadLocalService {
 	/**
 	 * Returns the object serializer assigned to the specified thread-local
 	 * instance.
-	 * qqqqqqqqqqqq
+	 *
 	 * @param ti the thread-local instance
 	 * @return the serializer or null
 	 */
@@ -619,7 +554,7 @@ public class OAThreadLocalService {
 	/**
 	 * Sets the object serializer for the current thread and updates global
 	 * serializer counters.
-	 * qqqqqqqqqqqqqqqq
+	 *
 	 * @param si the serializer to assign, or null to clear it
 	 */
 	public void addObjectSerializer(OAObjectSerializer si) {
@@ -630,7 +565,7 @@ public class OAThreadLocalService {
 	/**
 	 * Assigns the serializer to the specified thread-local instance and updates
 	 * the global serializer counter when transitioning to or from a null state.
-	 * qqqqqqqqqqq
+	 *
 	 * @param ti the thread-local instance
 	 * @param si the serializer to assign
 	 */
@@ -647,7 +582,9 @@ public class OAThreadLocalService {
 	}
 
 	/**
-	 * qqqqqqqqqqqqqqqq
+	 * Removes an object serializer from the current thread.
+	 *
+	 * @param si the serializer to remove
 	 */
 	public void removeObjectSerializer(OAObjectSerializer si) {
 		if (si == null) return;
@@ -655,7 +592,10 @@ public class OAThreadLocalService {
 	}
 	
 	/**
-	 * qqqqqqqqqqq
+	 * Removes an object serializer from a specific thread-local instance.
+	 *
+	 * @param ti the thread-local instance
+	 * @param si the serializer to remove
 	 */
 	protected void removeObjectSerializer(OAThreadLocal ti, OAObjectSerializer si) {
 		if (ti == null || si == null) {
@@ -669,19 +609,40 @@ public class OAThreadLocalService {
 		}
 	}
 	
+	/**
+	 * Returns the SendSyncMessages value.
+	 *
+	 * @return the SendSyncMessages value
+	 */
 	public boolean getSendSyncMessages() {
 		return getSendSyncMessages(getThreadLocal(false));
 	}
 	
+	/**
+	 * Returns the SendSyncMessages value.
+	 *
+	 * @param ti the lookup context
+	 *
+	 * @return the SendSyncMessages value
+	 */
 	public boolean getSendSyncMessages(OAThreadLocal ti) {
 		if (ti == null) return true;
 		return ti.getSendSyncMessages();
 	}
 
+	/**
+	 * Sets the SendSyncMessages value.
+	 * @param b the SendSyncMessages value
+	 */
 	public void setSendSyncMessages(boolean b) {
 		setSendSyncMessages(getThreadLocal(!b), b);
 	}
 
+	/**
+	 * Sets the SendSyncMessages value.
+	 * @param ti the SendSyncMessages value
+	 * @param b the SendSyncMessages value
+	 */
 	public void setSendSyncMessages(OAThreadLocal ti, boolean b) {
 		if (ti == null) return;
 		ti.setSendSyncMessages(b);
@@ -1609,6 +1570,11 @@ public class OAThreadLocalService {
 		startUndoable(getThreadLocal(true), compoundName);
 	}
     
+	/**
+	 * Returns whether CreatingCompoundUndoable is active for the current runtime context.
+	 *
+	 * @return {@code true} if CreatingCompoundUndoable is active
+	 */
 	public boolean isCreatingCompoundUndoable() {
 		OAThreadLocal tl = getThreadLocal(false);
 		if (tl == null) {
@@ -1888,6 +1854,11 @@ public class OAThreadLocalService {
 		return incRecursiveTriggerCount(getThreadLocal(true));
 	}
 
+	/**
+	 * Decrements the runtime counter and returns the updated value.
+	 *
+	 * @return the updated counter value
+	 */
 	public int decRecursiveTriggerCount() {
 		return decRecursiveTriggerCount(getThreadLocal(true));
 	}
@@ -1905,6 +1876,11 @@ public class OAThreadLocalService {
 		return ti.incRecursiveTriggerCount();
 	}
 
+	/**
+	 * Decrements the runtime counter and returns the updated value.
+	 *
+	 * @return the updated counter value
+	 */
 	protected int decRecursiveTriggerCount(OAThreadLocal ti) {
 		if (ti == null) {
 			return 0;
@@ -2084,7 +2060,15 @@ public class OAThreadLocalService {
 
 	
 	
+	/**
+	 * Runtime state field used by OA services for MaxEventDepth.
+	 */
 	protected final int MaxEventDepth = 100;
+	/**
+	 * Returns the MaxEventDepth value.
+	 *
+	 * @return the MaxEventDepth value
+	 */
 	public int getMaxEventDepth() {
 		return MaxEventDepth;
 	}
@@ -2216,28 +2200,52 @@ public class OAThreadLocalService {
 		return false;
 	}
 	
+	/**
+	 * Returns the ModelUserHub value.
+	 *
+	 * @param oa the lookup context
+	 *
+	 * @return the ModelUserHub value
+	 */
 	public Hub<?> getModelUserHub(OA oa) {
 		if (oa == null) return null;
 		OAThreadLocal ti = getThreadLocal(true);
 		return ti.getModelUser(oa);
 	}
 
+	/**
+	 * Sets the ModelUserHub value.
+	 * @param oa the ModelUserHub value
+	 * @param hub the ModelUserHub value
+	 */
 	public void setModelUserHub(OA oa, Hub<?> hub) {
 		if (oa == null) return;
 		OAThreadLocal ti = getThreadLocal(true);
 		ti.setModelUser(oa, hub); 
 	}
 
+	/**
+	 * Clears the runtime state tracked by this method.
+	 */
 	public void clearModelUsers() {
 		OAThreadLocal ti = getThreadLocal(true);
 		ti.clearModelUser(); 
 	}
 	
+	/**
+	 * Returns the SessionUser value.
+	 *
+	 * @return the SessionUser value
+	 */
 	public OASessionUser<?> getSessionUser() {
 		OAThreadLocal ti = getThreadLocal(true);
 		return ti.getSessionUser();
 	}
 	
+	/**
+	 * Sets the SessionUser value.
+	 * @param su the SessionUser value
+	 */
 	public void setSessionUser(OASessionUser<?> su) {
 		OAThreadLocal ti = getThreadLocal(true);
 		ti.setSessionUser(su);
@@ -2291,6 +2299,11 @@ public class OAThreadLocalService {
 		return getIsAdmin(getThreadLocal(false));
 	}
 
+	/**
+	 * Returns the IsAdmin value.
+	 *
+	 * @return the IsAdmin value
+	 */
 	public boolean getIsAdmin() {
 		return getIsAdmin(getThreadLocal(false));
 	}
@@ -2375,6 +2388,13 @@ public class OAThreadLocalService {
 		aiTotalDontAdjustHub.decrementAndGet();
 	}
 
+	/**
+	 * Returns the CanAdjustHub value.
+	 *
+	 * @param hub the lookup context
+	 *
+	 * @return the CanAdjustHub value
+	 */
 	public boolean getCanAdjustHub(Hub<?> hub) {
 		if (hub == null) {
 			return false;
@@ -2605,12 +2625,6 @@ public class OAThreadLocalService {
 		long ms = System.currentTimeMillis();
 		if (ms > msLast + 5000) {
 			LOG.warning(msg);
-			/*qqqqqqq
-			if (ms > msThrottleStackTrace + 30000) {
-			    if (msThrottleStackTrace != 0) LOG.warning("ThreadLocalDelegate.stackTraces\n"+getAllStackTraces());
-			    msThrottleStackTrace = ms;
-			}
-			*/
 		} else {
 			ms = msLast;
 		}
@@ -2668,16 +2682,29 @@ public class OAThreadLocalService {
 	}
 
 
+	/**
+	 * Returns the GetSiblingCalledCount value.
+	 *
+	 * @return the GetSiblingCalledCount value
+	 */
 	public int getGetSiblingCalledCount() {
 		OAThreadLocal tl = getThreadLocal();
 		if (tl == null) return 0;
 		return tl.cntGetSiblingCalled;
 	}
 	
+	/**
+	 * Returns the AndIncrementGetSiblingCalledCount value.
+	 *
+	 * @return the AndIncrementGetSiblingCalledCount value
+	 */
 	public int getAndIncrementGetSiblingCalledCount() {
 		return getThreadLocal(true).cntGetSiblingCalled++;
 	}
 	
+	/**
+	 * Clears the runtime state tracked by this method.
+	 */
 	public void clearGetSiblingCalledCount() {
 		OAThreadLocal tl = getThreadLocal();
 		if (tl == null) return;
@@ -2685,9 +2712,18 @@ public class OAThreadLocalService {
 	}
 
 	
+	/**
+	 * Returns the ReplicationSource value.
+	 *
+	 * @return the ReplicationSource value
+	 */
 	public String getReplicationSource() {
 		return getOAThreadLocal().replicationSource;
 	}
+	/**
+	 * Sets the ReplicationSource value.
+	 * @param src the ReplicationSource value
+	 */
 	public void setReplicationSource(String src) {
 		getOAThreadLocal().replicationSource = src;
 	}

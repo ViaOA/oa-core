@@ -35,7 +35,7 @@ public class StoreSafeLedgerEntryCreateTillLedgerEntryMethod extends OAObject {
         firePropertyChange(P_StoreSafeLedgerEntry, old, this.storeSafeLedgerEntry);
     }
 
-    @OAOne(selectFromPropertyPath = (StoreSafeLedgerEntry.P_StoreSafe+"."+StoreSafe.P_Store+"."+Store.P_Tills))
+    @OAOne(selectFromPath = (StoreSafeLedgerEntry.P_StoreSafe+"."+StoreSafe.P_Store+"."+Store.P_Tills))
     public Till getTill() {
         if (till == null) {
             till = (Till) getObject(P_Till);

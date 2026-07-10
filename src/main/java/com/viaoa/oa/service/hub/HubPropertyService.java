@@ -11,6 +11,10 @@ import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.object.OAObject;
 
+/**
+ * Manages Hub-level named properties and shared Hub metadata.
+ */
+
 public abstract class HubPropertyService {
 	private final Logger LOG = Logger.getLogger(HubPropertyService.class.getName());
 
@@ -221,10 +225,42 @@ public abstract class HubPropertyService {
 		}
 		return true;
 	}
-	
+
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetOAObjectInfo behavior.
+	 *
+	 * @param hub method input
+	 * @return result value
+	 */
+
 	public abstract OAObjectInfo callObjectInfoGetOAObjectInfo(Hub hub);
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetMethod behavior.
+	 *
+	 * @param li method input
+	 * @return result value
+	 */
 	public abstract Method callObjectInfoGetMethod(OALinkInfo li);
+	/**
+	 * Dependency hook used by this service for ObjectInfoGetMethod behavior.
+	 *
+	 * @param clazz method input
+	 * @param methodName method input
+	 * @return result value
+	 */
 	public abstract Method callObjectInfoGetMethod(Class<?> clazz, String methodName);
-	public abstract Object callObjectPropertyGetProperty(OAObject oaObj, String name);			
-	public abstract boolean callThreadLocalIsLoading();			
+	/**
+	 * Dependency hook used by this service for ObjectPropertyGetProperty behavior.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @return result value
+	 */
+	public abstract Object callObjectPropertyGetProperty(OAObject oaObj, String name);
+	/**
+	 * Dependency hook used by this service for ThreadLocalIsLoading behavior.
+	 *
+	 * @return result value
+	 */
+	public abstract boolean callThreadLocalIsLoading();
 }

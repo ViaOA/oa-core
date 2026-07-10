@@ -42,14 +42,14 @@ class OAOneTest {
         isCalculated = true,
         calcDependentProperties = { "one", "two" },
         isProcessed = true,
-        defaultPropertyPath = "explicit_defaultPropertyPath",
-        defaultPropertyPathIsHierarchy = true,
-        defaultPropertyPathCanBeChanged = true,
-        defaultModelUserPropertyPath = "explicit_defaultContextPropertyPath",
+        defaultPath = "explicit_defaultPropertyPath",
+        defaultPathIsHierarchy = true,
+        defaultPathCanBeChanged = true,
+        defaultModelUserPath = "explicit_defaultContextPropertyPath",
         isOneAndOnlyOne = true,
         importMatch = true,
-        equalPropertyPath = "explicit_equalPropertyPath",
-        selectFromPropertyPath = "explicit_selectFromPropertyPath",
+        equalPath = "explicit_equalPropertyPath",
+        selectFromPath = "explicit_selectFromPropertyPath",
         fkeys = { @OAFkey(fromProperty = "from", toProperty = "to", columns = { "col" }) },
         pojoNames = { "one", "two" }
     )
@@ -205,28 +205,28 @@ class OAOneTest {
     void defaultDefaultPropertyPathMatchesDeclaration() throws Exception {
         OAOne ann = DefaultFixture.class.getMethod("value").getAnnotation(OAOne.class);
 
-        assertEquals("", ann.defaultPropertyPath());
+        assertEquals("", ann.defaultPath());
     }
 
     @Test
     void defaultDefaultPropertyPathIsHierarchyMatchesDeclaration() throws Exception {
         OAOne ann = DefaultFixture.class.getMethod("value").getAnnotation(OAOne.class);
 
-        assertEquals(false, ann.defaultPropertyPathIsHierarchy());
+        assertEquals(false, ann.defaultPathIsHierarchy());
     }
 
     @Test
     void defaultDefaultPropertyPathCanBeChangedMatchesDeclaration() throws Exception {
         OAOne ann = DefaultFixture.class.getMethod("value").getAnnotation(OAOne.class);
 
-        assertEquals(false, ann.defaultPropertyPathCanBeChanged());
+        assertEquals(false, ann.defaultPathCanBeChanged());
     }
 
     @Test
     void defaultDefaultContextPropertyPathMatchesDeclaration() throws Exception {
         OAOne ann = DefaultFixture.class.getMethod("value").getAnnotation(OAOne.class);
 
-        assertEquals("", ann.defaultModelUserPropertyPath());
+        assertEquals("", ann.defaultModelUserPath());
     }
 
     @Test
@@ -247,14 +247,14 @@ class OAOneTest {
     void defaultEqualPropertyPathMatchesDeclaration() throws Exception {
         OAOne ann = DefaultFixture.class.getMethod("value").getAnnotation(OAOne.class);
 
-        assertEquals("", ann.equalPropertyPath());
+        assertEquals("", ann.equalPath());
     }
 
     @Test
     void defaultSelectFromPropertyPathMatchesDeclaration() throws Exception {
         OAOne ann = DefaultFixture.class.getMethod("value").getAnnotation(OAOne.class);
 
-        assertEquals("", ann.selectFromPropertyPath());
+        assertEquals("", ann.selectFromPath());
     }
 
     @Test
@@ -295,14 +295,14 @@ class OAOneTest {
         assertEquals(true, ann.isCalculated());
         assertArrayEquals(new String[] { "one", "two" }, ann.calcDependentProperties());
         assertEquals(true, ann.isProcessed());
-        assertEquals("explicit_defaultPropertyPath", ann.defaultPropertyPath());
-        assertEquals(true, ann.defaultPropertyPathIsHierarchy());
-        assertEquals(true, ann.defaultPropertyPathCanBeChanged());
-        assertEquals("explicit_defaultContextPropertyPath", ann.defaultModelUserPropertyPath());
+        assertEquals("explicit_defaultPropertyPath", ann.defaultPath());
+        assertEquals(true, ann.defaultPathIsHierarchy());
+        assertEquals(true, ann.defaultPathCanBeChanged());
+        assertEquals("explicit_defaultContextPropertyPath", ann.defaultModelUserPath());
         assertEquals(true, ann.isOneAndOnlyOne());
         assertEquals(true, ann.importMatch());
-        assertEquals("explicit_equalPropertyPath", ann.equalPropertyPath());
-        assertEquals("explicit_selectFromPropertyPath", ann.selectFromPropertyPath());
+        assertEquals("explicit_equalPropertyPath", ann.equalPath());
+        assertEquals("explicit_selectFromPropertyPath", ann.selectFromPath());
         assertEquals(1, ann.fkeys().length);
         assertArrayEquals(new String[] { "one", "two" }, ann.pojoNames());
     }

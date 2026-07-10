@@ -21,22 +21,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/*qqqqqqqqqqq
-CODEX
-
-5. OAClass.isPreSelect() — annotation value is not loaded into OAObjectInfo
-     Severity: Low
-     Execution path: class declares @OAClass(isPreSelect=true). OAObjectInfo has setPreSelect/getPreSelect, and
-     runtime references getPreSelect() in object event diagnostics, but OAObjectAnnotationService never calls
-     oi.setPreSelect(oaclass.isPreSelect()).
-     Why it matters: annotated preselect metadata is silently lost. Current observed impact is limited, but any
-     runtime path relying on OAObjectInfo.getPreSelect() will see false for annotated classes.
-     Minimal hardening: copy oaclass.isPreSelect() into OAObjectInfo during class annotation processing, or remove/
-     document as unsupported.
-     Suggested CODEX comment location: OAObjectAnnotationService._update, class-level @OAClass load block.
-
-
-*/
 
 /**
  * Class-level metadata describing an {@link OAObject} type and its
@@ -56,11 +40,11 @@ CODEX
  *       {@code sortProperty}, {@code viewProperties}.</li>
  *   <li>Model-driven features: version properties, time-series properties,
  *       freeze property, processed flags.</li>
- *   <li>Graph-navigation hints: {@code rootTreePropertyPaths},
+ *   <li>OA model navigation hints: {@code rootTreePaths},
  *       {@code filterClasses}.</li>
  * </ul>
  *
- * <p>The annotation is central to OA’s “metadata-driven object graph”
+ * <p>The annotation is central to OA’s “metadata-driven OA model”
  * design, enabling the framework to behave generically while preserving
  * domain semantics defined in the OABuilder model.</p>
  */
@@ -69,18 +53,46 @@ CODEX
 @Retention(RetentionPolicy.RUNTIME)
 public @interface OAClass {
 
+	/**
+	 * Short internal name for the model class.
+	 * @return short class name, or empty string
+	 */
 	String shortName() default "";
 
+	/**
+	 * Plural display name for collections of this class.
+	 * @return plural display name, or empty string
+	 */
 	String pluralName() default "";
 
+	/**
+	 * Lowercase metadata name used for normalized lookup.
+	 * @return lowercase class name, or empty string
+	 */
 	String lowerName() default "";
 
+	/**
+	 * Human-readable display name for this class.
+	 * @return display name, or empty string
+	 */
 	String displayName() default "";
 
+	/**
+	 * Description used by generated UI, documentation, or tooling.
+	 * @return class description, or empty string
+	 */
 	String description() default "";
 
+	/**
+	 * Marks this class as lookup/reference data.
+	 * @return {@code true} if this class is lookup data
+	 */
 	boolean isLookup() default false;
 
+	/**
+	 * Marks this class as a preselect candidate for runtime loading behavior.
+	 * @return {@code true} if preselect metadata is enabled
+	 */
 	boolean isPreSelect() default false;
 
 	/** @return flag used to determine if object can be stored to datasource. */
@@ -95,41 +107,105 @@ public @interface OAClass {
 	/** @return if false, then objects are not initialized on creation */
 	boolean initialize() default true;
 
+	/**
+	 * Property used as the default display value for object instances.
+	 * @return display property name, or empty string
+	 */
 	String displayProperty() default "";
 
+	/**
+	 * Property path used for default sorting.
+	 * @return default sort property path, or empty string
+	 */
 	String sortProperty() default "";
 
 	//String[] searchProperties() default {};
+	/**
+	 * Property names or paths commonly shown for this class.
+	 * @return view property names or paths
+	 */
 	String[] viewProperties() default {};
 
+	/**
+	 * Estimated object count used by generated UI, tooling, or runtime hints.
+	 * @return estimated total count
+	 */
 	long estimatedTotal() default 0;
 
+	/**
+	 * Filter classes associated with this model class.
+	 * @return filter classes
+	 */
 	Class[] filterClasses() default {};
 
 	// property path from a root class to this class.
-	String[] rootTreePropertyPaths() default {};
+	/**
+	 * Property paths from root classes to this class.
+	 * @return root tree property paths
+	 */
+	String[] rootTreePaths() default {};
 
 	/** flag to know if this is processed and will require User.editProcessed=true for it to be changed. */
 	boolean isProcessed() default false;
 
+	/**
+	 * Property used to mark soft-deleted objects.
+	 * @return soft-delete property name, or empty string
+	 */
 	String softDeleteProperty() default "";
 
+	/**
+	 * Property used to store a soft-delete reason.
+	 * @return soft-delete reason property name, or empty string
+	 */
 	String softDeleteReasonProperty() default "";
 
+	/**
+	 * Property used for version or optimistic concurrency metadata.
+	 * @return version property name, or empty string
+	 */
 	String versionProperty() default "";
 
+	/**
+	 * Link property associated with version metadata.
+	 * @return version link property name, or empty string
+	 */
 	String versionLinkProperty() default "";
 
+	/**
+	 * Property used for time-series grouping or ordering.
+	 * @return time-series property name, or empty string
+	 */
 	String timeSeriesProperty() default "";
 
+	/**
+	 * Property used to mark objects as frozen/read-only.
+	 * @return freeze property name, or empty string
+	 */
     String freezeProperty() default "";
 	
+	/**
+	 * Marks this class as having a singleton runtime instance.
+	 * @return {@code true} if this class is singleton-scoped
+	 */
 	boolean singleton() default false;
 
+	/**
+	 * Marks this class as a singleton for POJO generation/integration.
+	 * @return {@code true} if POJO singleton metadata is enabled
+	 */
 	boolean pojoSingleton() default false;
 
+	/**
+	 * Suppresses POJO generation or POJO mapping for this class.
+	 * @return {@code true} if POJO support is disabled
+	 */
 	boolean noPojo() default false;
 	
+	/**
+	 * Uses title-case property names in JSON output.
+	 * @return {@code true} if JSON names use an initial capital letter
+	 */
 	boolean jsonUsesCapital() default false;  // JSON names use a capital letter (titled case)
 	
 	

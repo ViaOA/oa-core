@@ -31,17 +31,17 @@ import com.viaoa.undo.OAUndoableEdit;
 CODEX
 
 #6
-  File/Class/Method: src/main/java/com/viaoa/graph/service/object/OAObjectEventService.java, firePropertyChange(...)
+  File/Class/Method: src/main/java/com/viaoa/oa/service/object/OAObjectEventService.java, firePropertyChange(...)
 
   Exact execution path: for link-property changes, firePropertyChange(...) updates the stored property/CAS, sets
   temporary changed state, fires Hub/cache after-property-change events, then later calls updateLink(...). If
   updateLink(...) throws, reverse Hub/detail ownership updates may not complete even though observers and cache
   listeners already saw the property change.
 
-  Why it is a correctness bug: forward reference state and published events can commit before reverse-link graph
+  Why it is a correctness bug: forward reference state and published events can commit before reverse-link OA model
   consistency is established.
 
-  Semantic/invariant violated: link property transitions must update forward and reverse graph state before after-
+  Semantic/invariant violated: link property transitions must update forward and reverse OA model state before after-
   events/sync publication.
 
   Minimal fix: perform updateLink(...) before external after-change/cache publication, or add rollback/explicit
@@ -55,7 +55,7 @@ CODEX
 #1
 
   1. file/class/method
-     src/main/java/com/viaoa/graph/service/object/OAObjectEventService.java:816
+     src/main/java/com/viaoa/oa/service/object/OAObjectEventService.java:816
      OAObjectEventService.updateLink(...)
   2. exact execution path
      A link property changes successfully. firePropertyChange(...) reaches updateLink(...). For a reverse ONE link,
@@ -84,7 +84,7 @@ CODEX
      property context.
   6. suggested regression test
      Create a bidirectional ONE/MANY or ONE/ONE relationship where the reverse setter/listener throws. Set the
-     forward property. Assert the caller gets an exception and the graph does not report a successful forward-only
+     forward property. Assert the caller gets an exception and the OA model does not report a successful forward-only
      relationship transition.
 
 
@@ -97,7 +97,12 @@ public abstract class OAObjectEventService {
 
 	private final OAObject.FriendAccess faObject;
 
-	
+
+	/**
+	 * Performs OAObjectEventService behavior for the OA object service.
+	 *
+	 * @param faObject method input
+	 */
     public OAObjectEventService(OAObject.FriendAccess faObject) {
     	if (faObject == null) throw new IllegalArgumentException("OAObject.FriendAccess can not be null");
     	this.faObject = faObject;
@@ -372,6 +377,8 @@ public abstract class OAObjectEventService {
 
 					/*was:
 					OAFilter<OAObject> filter = new OAFilter<OAObject>() {
+
+
 					    public boolean isUsed(OAObject obj) {
 					        Object objx = obj.getProperty(propertyU);
 					        if (objx == null) return false;
@@ -950,6 +957,12 @@ public abstract class OAObjectEventService {
 					// 20120716
 					OAFilter<Hub<T>> filter = new OAFilter<Hub<T>>() {
 						@Override
+	/**
+	 * Returns whether used is true.
+	 *
+	 * @param h method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 						public boolean isUsed(Hub<T> h) {
 							return h.getAO() == oaObj;
 						}
@@ -1218,65 +1231,465 @@ public abstract class OAObjectEventService {
 	}
 
 
+	/**
+	 * Dependency hook used by this service to objectGetAutoAdd.
+	 *
+	 * @param oaObj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callObjectGetAutoAdd(OAObject oaObj);
+	/**
+	 * Dependency hook used by this service to objectSetAutoAdd.
+	 *
+	 * @param oaObj method input
+	 * @param bEnabled method input
+	 */
 	public abstract void callObjectSetAutoAdd(final OAObject oaObj, boolean bEnabled);
+	/**
+	 * Dependency hook used by this service to cacheGet.
+	 *
+	 * @param clazz method input
+	 * @param ok method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok);
+	/**
+	 * Dependency hook used by this service to cacheFireAfterPropertyChange.
+	 *
+	 * @param obj method input
+	 * @param origKey method input
+	 * @param propertyName method input
+	 * @param oldValue method input
+	 * @param newValue method input
+	 * @param bLocalOnly method input
+	 * @param bSendEvent method input
+	 */
 	public abstract void callCacheFireAfterPropertyChange(OAObject obj, OAObjectKey origKey, String propertyName, Object oldValue, Object newValue, boolean bLocalOnly, boolean bSendEvent);
+	/**
+	 * Dependency hook used by this service to rulesGetAllowSubmitObjectCallback.
+	 *
+	 * @param obj method input
+	 * @return result value
+	 */
 	public abstract OAObjectCallback callRulesGetAllowSubmitObjectCallback(OAObject obj);
+	/**
+	 * Dependency hook used by this service to rulesGetVerifyPropertyChangeCallbackOnlyObjectCallback.
+	 *
+	 * @param oaObj method input
+	 * @param propertyName method input
+	 * @param oldValue method input
+	 * @param newValue method input
+	 * @return result value
+	 */
 	public abstract OAObjectCallback callRulesGetVerifyPropertyChangeCallbackOnlyObjectCallback(final OAObject oaObj, final String propertyName, final Object oldValue, final Object newValue);
+	/**
+	 * Dependency hook used by this service to cSFireBeforePropertyChange.
+	 *
+	 * @param obj method input
+	 * @param propertyName method input
+	 * @param oldValue method input
+	 * @param newValue method input
+	 */
 	public abstract void callCSFireBeforePropertyChange(OAObject obj, String propertyName, Object oldValue, Object newValue);
+	/**
+	 * Dependency hook used by this service to cSIsServer.
+	 *
+	 * @param obj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callCSIsServer(OAObject obj);
+	/**
+	 * Dependency hook used by this service to dSIsAssigningId.
+	 *
+	 * @param obj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callDSIsAssigningId(OAObject obj);
+	/**
+	 * Dependency hook used by this service to hubIsInHub.
+	 *
+	 * @param oaObj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callHubIsInHub(OAObject oaObj);
+	/**
+	 * Dependency hook used by this service to hubGetHubReferences.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> Hub<T>[] callHubGetHubReferences(T oaObj);
-	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz); 
+	/**
+	 * Dependency hook used by this service to infoGetObjectInfo.
+	 *
+	 * @param clazz method input
+	 * @return result value
+	 */
+	public abstract OAObjectInfo callInfoGetObjectInfo(Class<?> clazz);
+	/**
+	 * Dependency hook used by this service to infoGetLinkInfo.
+	 *
+	 * @param oi method input
+	 * @param propertyName method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
+	/**
+	 * Dependency hook used by this service to infoGetReverseLinkInfo.
+	 *
+	 * @param li method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callInfoGetReverseLinkInfo(OALinkInfo li);
+	/**
+	 * Dependency hook used by this service to infoGetRecursiveLinkInfo.
+	 *
+	 * @param oi method input
+	 * @param type method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callInfoGetRecursiveLinkInfo(OAObjectInfo oi, int type);
+	/**
+	 * Dependency hook used by this service to infoGetPropertyInfo.
+	 *
+	 * @param oi method input
+	 * @param propertyName method input
+	 * @return result value
+	 */
 	public abstract OAPropertyInfo callInfoGetPropertyInfo(OAObjectInfo oi, String propertyName);
+	/**
+	 * Dependency hook used by this service to infoGetCalcInfo.
+	 *
+	 * @param thisOI method input
+	 * @param name method input
+	 * @return result value
+	 */
 	public abstract OACalcInfo callInfoGetCalcInfo(OAObjectInfo thisOI, String name);
+	/**
+	 * Dependency hook used by this service to infoGetMethod.
+	 *
+	 * @param oi method input
+	 * @param methodName method input
+	 * @param argumentCount method input
+	 * @return result value
+	 */
 	public abstract Method callInfoGetMethod(OAObjectInfo oi, String methodName, int argumentCount);
+	/**
+	 * Dependency hook used by this service to infoGetLinkToOwner.
+	 *
+	 * @param oi method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callInfoGetLinkToOwner(OAObjectInfo oi);
+	/**
+	 * Dependency hook used by this service to infoGetRootHub.
+	 *
+	 * @param oi method input
+	 * @return result value
+	 */
 	public abstract Hub callInfoGetRootHub(OAObjectInfo oi);
+	/**
+	 * Dependency hook used by this service to keyCreateChangedObjectKey.
+	 *
+	 * @param clazz method input
+	 * @param objKey method input
+	 * @param propertyName method input
+	 * @param newValue method input
+	 * @return result value
+	 */
 	public abstract OAObjectKey callKeyCreateChangedObjectKey(Class<? extends OAObject> clazz, OAObjectKey objKey, String propertyName, Object newValue);
+	/**
+	 * Dependency hook used by this service to keyVerifyKeyChange.
+	 *
+	 * @param oaObj method input
+	 * @param newObjectKey method input
+	 * @return result value
+	 */
 	public abstract String callKeyVerifyKeyChange(final OAObject oaObj, final OAObjectKey newObjectKey);
+	/**
+	 * Dependency hook used by this service to keyIsForSameOAObject.
+	 *
+	 * @param clazz method input
+	 * @param ok1 method input
+	 * @param ok2 method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callKeyIsForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey ok1, final OAObjectKey ok2);
+	/**
+	 * Dependency hook used by this service to keyAfterChangedObjectKeyProperty.
+	 *
+	 * @param oaObj method input
+	 * @param okOrig method input
+	 * @param bVerify method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callKeyAfterChangedObjectKeyProperty(final OAObject oaObj, final OAObjectKey okOrig, boolean bVerify);
+	/**
+	 * Dependency hook used by this service to keyGetKey.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
 	public abstract OAObjectKey callKeyGetKey(OAObject oaObj);
+	/**
+	 * Dependency hook used by this service to propertyGetProperty.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @param bReturnNotExist method input
+	 * @param bConvertWeakRef method input
+	 * @return result value
+	 */
 	public abstract Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef);
+	/**
+	 * Dependency hook used by this service to propertySetPropertyCAS.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @param newValue method input
+	 * @param matchValue method input
+	 * @return result value
+	 */
 	public abstract Object callPropertySetPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue);
+	/**
+	 * Dependency hook used by this service to propertySetPropertyCAS.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @param newValue method input
+	 * @param matchValue method input
+	 * @param bMustNotExist method input
+	 * @param bReturnNotExist method input
+	 * @return result value
+	 */
 	public abstract Object callPropertySetPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue, boolean bMustNotExist, boolean bReturnNotExist);
+	/**
+	 * Dependency hook used by this service to propertyGetProperty.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @return result value
+	 */
 	public abstract Object callPropertyGetProperty(OAObject oaObj, String name);
+	/**
+	 * Dependency hook used by this service to reflectGetPrimitiveNull.
+	 *
+	 * @param oaObj method input
+	 * @param propertyName method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callReflectGetPrimitiveNull(OAObject oaObj, String propertyName);
-	public abstract void callReflectSetPrimitiveNull(OAObject oaObj, String propertyName, boolean bNull);	
+	/**
+	 * Dependency hook used by this service to reflectSetPrimitiveNull.
+	 *
+	 * @param oaObj method input
+	 * @param propertyName method input
+	 * @param bNull method input
+	 */
+	public abstract void callReflectSetPrimitiveNull(OAObject oaObj, String propertyName, boolean bNull);
+	/**
+	 * Dependency hook used by this service to reflectGetProperty.
+	 *
+	 * @param oaObj method input
+	 * @param propPath method input
+	 * @return result value
+	 */
 	public abstract Object callReflectGetProperty(OAObject oaObj, String propPath);
+	/**
+	 * Dependency hook used by this service to reflectSetProperty.
+	 *
+	 * @param oaObj method input
+	 * @param propName method input
+	 * @param value method input
+	 * @param fmt method input
+	 */
 	public abstract void callReflectSetProperty(final OAObject oaObj, String propName, Object value, final String fmt);
+	/**
+	 * Dependency hook used by this service to reflectGetObject.
+	 *
+	 * @param clazz method input
+	 * @param key method input
+	 * @return result value
+	 */
 	public abstract OAObject callReflectGetObject(Class<? extends OAObject> clazz, Object key);
+	/**
+	 * Dependency hook used by this service to reflectIsReferenceHubLoadedAndNotEmpty.
+	 *
+	 * @param oaObj method input
+	 * @param propertyName method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callReflectIsReferenceHubLoadedAndNotEmpty(OAObject oaObj, String propertyName);
+	/**
+	 * Dependency hook used by this service to reflectIsReferenceHubLoaded.
+	 *
+	 * @param oaObj method input
+	 * @param propertyName method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callReflectIsReferenceHubLoaded(OAObject oaObj, String propertyName);
+	/**
+	 * Dependency hook used by this service to uniqueGetUnique.
+	 *
+	 * @param clazz method input
+	 * @param propertyName method input
+	 * @param uniqueKey method input
+	 * @param bAutoCreate method input
+	 * @return result value
+	 */
 	public abstract OAObject callUniqueGetUnique(final Class<? extends OAObject> clazz, final String propertyName, final Object uniqueKey, final boolean bAutoCreate);
+	/**
+	 * Dependency hook used by this service to hubAddRemoveRemove.
+	 *
+	 * @param thisHub method input
+	 * @param obj method input
+	 * @param bForce method input
+	 * @param bSendEvent method input
+	 * @param bDeleting method input
+	 * @param bSetAO method input
+	 * @param bSetPropToMaster method input
+	 * @param bIsRemovingAll method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callHubAddRemoveRemove(final Hub<T> thisHub, Object obj, final boolean bForce,
 			final boolean bSendEvent, final boolean bDeleting, final boolean bSetAO,
 			final boolean bSetPropToMaster, final boolean bIsRemovingAll);
+	/**
+	 * Dependency hook used by this service to hubAOSetActiveObject.
+	 *
+	 * @param thisHub method input
+	 * @param object method input
+	 * @param adjustMaster method input
+	 * @param bUpdateLink method input
+	 * @param bForce method input
+	 */
 	public abstract <T extends OAObject> void callHubAOSetActiveObject(Hub<T> thisHub, T object, boolean adjustMaster, boolean bUpdateLink, boolean bForce);
+	/**
+	 * Dependency hook used by this service to hubDetailGetHubWithMasterHub.
+	 *
+	 * @param thisHub method input
+	 */
 	public abstract <T extends OAObject> Hub<T> callHubDetailGetHubWithMasterHub(final Hub<T> thisHub);
+	/**
+	 * Dependency hook used by this service to hubEventFireBeforePropertyChange.
+	 *
+	 * @param thisHub method input
+	 * @param oaObj method input
+	 * @param propertyName method input
+	 * @param oldValue method input
+	 * @param newValue method input
+	 */
 	public abstract <T extends OAObject> void callHubEventFireBeforePropertyChange(Hub<T> thisHub, T oaObj, String propertyName, Object oldValue, Object newValue);
+	/**
+	 * Dependency hook used by this service to hubEventFireAfterPropertyChange.
+	 *
+	 * @param thisHub method input
+	 * @param oaObj method input
+	 * @param propertyName method input
+	 * @param oldValue method input
+	 * @param newValue method input
+	 * @param linkInfo method input
+	 */
 	public abstract <T extends OAObject> void callHubEventFireAfterPropertyChange(final Hub<T> thisHub, final T oaObj, final String propertyName, final Object oldValue,
 			final Object newValue, final OALinkInfo linkInfo);
+	/**
+	 * Dependency hook used by this service to hubEventFireAfterLoadEvent.
+	 *
+	 * @param thisHub method input
+	 * @param oaObj method input
+	 */
 	public abstract <T extends OAObject> void callHubEventFireAfterLoadEvent(Hub<T> thisHub, T oaObj);
+	/**
+	 * Dependency hook used by this service to hubShareGetAllSharedHubs.
+	 *
+	 * @param thisHub method input
+	 * @param filter method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> Hub<T>[] callHubShareGetAllSharedHubs(Hub<T> thisHub, OAFilter<Hub<T>> filter);
+	/**
+	 * Dependency hook used by this service to syncIsServer.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callSyncIsServer();
+	/**
+	 * Dependency hook used by this service to syncIsClient.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callSyncIsClient();
+	/**
+	 * Dependency hook used by this service to syncIsObjectOnServer.
+	 *
+	 * @param obj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callSyncIsObjectOnServer(OAObject obj);
+	/**
+	 * Dependency hook used by this service to threadLocalIsLoading.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callThreadLocalIsLoading();
+	/**
+	 * Dependency hook used by this service to threadLocalIsDeleting.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callThreadLocalIsDeleting();
+	/**
+	 * Dependency hook used by this service to threadLocalIsDeleting.
+	 *
+	 * @param obj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callThreadLocalIsDeleting(OAObject obj);
+	/**
+	 * Dependency hook used by this service to threadLocalGetCreateUndoablePropertyChanges.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callThreadLocalGetCreateUndoablePropertyChanges();
+	/**
+	 * Dependency hook used by this service to threadLocalSetDeleting.
+	 *
+	 * @param obj method input
+	 * @param b method input
+	 */
 	public abstract void callThreadLocalSetDeleting(Object obj, boolean b);
+	/**
+	 * Dependency hook used by this service to threadLocalAddHubEvent.
+	 *
+	 * @param he method input
+	 */
 	public abstract void callThreadLocalAddHubEvent(HubEvent<?> he);
+	/**
+	 * Dependency hook used by this service to threadLocalRemoveHubEvent.
+	 *
+	 * @param he method input
+	 */
 	public abstract void callThreadLocalRemoveHubEvent(HubEvent<?>  he);
+	/**
+	 * Dependency hook used by this service to remoteThreadIsRemoteThread.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callRemoteThreadIsRemoteThread();
+	/**
+	 * Dependency hook used by this service to remoteThreadStartNextThread.
+	 */
 	public abstract void callRemoteThreadStartNextThread();
+	/**
+	 * Dependency hook used by this service to threadLocalGetSendSyncMessages.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callThreadLocalGetSendSyncMessages();
+	/**
+	 * Dependency hook used by this service to threadLocalSetSendSyncMessages.
+	 *
+	 * @param b method input
+	 */
 	public abstract void callThreadLocalSetSendSyncMessages(boolean b);
 }

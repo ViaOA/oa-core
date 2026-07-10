@@ -40,13 +40,13 @@ public class HubGroupByMerger<F extends OAObject, T extends OAObject> {
 	 * Property path used to locate merger objects from the root Hub.
 	 * If {@code null} or empty, the merger logic operates directly on the root Hub.
 	 */
-	private String mergerPropertyPath;
+	private String mergerPath;
 
 	/**
 	 * Property path from the root objects to the target object that contains
 	 * the grouping Hub used to store merged objects.
 	 */
-	private String groupByPropertyPath;
+	private String groupByPath;
 
 	/**
 	 * Name of the Hub property within the group-by target object
@@ -59,7 +59,7 @@ public class HubGroupByMerger<F extends OAObject, T extends OAObject> {
 	 * property path to reach the object that corresponds to the group-by
 	 * starting position. Used to align merger and group-by resolution paths.
 	 */
-	private int cntAbove; // number of data.parent to go from mergePropertyPath to then use groupByPropertyPath
+	private int cntAbove; // number of data.parent to go from mergePath to then use groupByPath
 
 	/**
 	 * Internal {@link HubMerger} instance used when a merger property path
@@ -75,13 +75,13 @@ public class HubGroupByMerger<F extends OAObject, T extends OAObject> {
 	 * on the root Hub to maintain the grouped Hub structure.
 	 *
 	 * @param hubRoot the root Hub used as the source of objects to be grouped
-	 * @param groupByPropertyPath property path from root objects to the target object
+	 * @param groupByPath property path from root objects to the target object
 	 *                            that owns the grouping Hub
 	 * @param groupByProperty the name of the Hub property within the group-by target
 	 *                        object that stores grouped objects
 	 */
-	public HubGroupByMerger(Hub<F> hubRoot, String groupByPropertyPath, String groupByProperty) {
-		this(hubRoot, null, groupByPropertyPath, groupByProperty);
+	public HubGroupByMerger(Hub<F> hubRoot, String groupByPath, String groupByProperty) {
+		this(hubRoot, null, groupByPath, groupByProperty);
 	}
 
 	/**
@@ -89,27 +89,31 @@ public class HubGroupByMerger<F extends OAObject, T extends OAObject> {
 	 * using the supplied property paths.
 	 *
 	 * @param hubRoot the root Hub used as the source for grouping and merging
-	 * @param mergerPropertyPath property path from the root to merger objects; if empty,
+	 * @param mergerPath property path from the root to merger objects; if empty,
 	 *                           direct add/remove listeners are installed on {@code hubRoot}
-	 * @param groupByPropertyPath property path from root objects to the object containing
+	 * @param groupByPath property path from root objects to the object containing
 	 *                            the grouping Hub
 	 * @param groupByProperty the name of the Hub property within the group-by target object
 	 *                        that stores merged objects
 	 */
-	public HubGroupByMerger(Hub<F> hubRoot, String mergerPropertyPath, String groupByPropertyPath, String groupByProperty) {
-		this.mergerPropertyPath = mergerPropertyPath;
-		this.groupByPropertyPath = groupByPropertyPath;
+	public HubGroupByMerger(Hub<F> hubRoot, String mergerPath, String groupByPath, String groupByProperty) {
+		this.mergerPath = mergerPath;
+		this.groupByPath = groupByPath;
 		this.groupByProperty = groupByProperty;
 
-		final OAPath ppGroupByPropertyPath = new OAPath(hubRoot.getObjectClass(), groupByPropertyPath);
-		Method[] msGroupByPropertyPath = ppGroupByPropertyPath.getMethods();
+		final OAPath ppGroupByPath = new OAPath(hubRoot.getObjectClass(), groupByPath);
+		Method[] msGroupByPath = ppGroupByPath.getMethods();
 
-		if (OAString.isEmpty(mergerPropertyPath)) {
+		if (OAString.isEmpty(mergerPath)) {
 			hubRoot.addHubListener(new HubListenerAdapter() {
 				@Override
+				/**
+				 * Handles the Hub after-add event.
+				 * @param e the Hub event
+				 */
 				public void afterAdd(HubEvent e) {
 					OAObject objFrom = (OAObject) e.getObject();
-					OAObject objTo = (OAObject) ppGroupByPropertyPath.getValue(objFrom);
+					OAObject objTo = (OAObject) ppGroupByPath.getValue(objFrom);
 					if (objTo != null) {
 						Hub hub = (Hub) objTo.getProperty(groupByProperty);
 						hub.add(objFrom);
@@ -117,9 +121,13 @@ public class HubGroupByMerger<F extends OAObject, T extends OAObject> {
 				}
 
 				@Override
+				/**
+				 * Handles the Hub after-remove event.
+				 * @param e the Hub event
+				 */
 				public void afterRemove(HubEvent e) {
 					OAObject objFrom = (OAObject) e.getObject();
-					OAObject objTo = (OAObject) ppGroupByPropertyPath.getValue(objFrom);
+					OAObject objTo = (OAObject) ppGroupByPath.getValue(objFrom);
 					if (objTo != null) {
 						Hub hub = (Hub) objTo.getProperty(groupByProperty);
 						hub.remove(objFrom);
@@ -127,23 +135,26 @@ public class HubGroupByMerger<F extends OAObject, T extends OAObject> {
 				}
 			});
 		} else {
-			final OAPath ppMergerPropertyPath = new OAPath(hubRoot.getObjectClass(), mergerPropertyPath);
-			Method[] msMergerPropertyPath = ppMergerPropertyPath.getMethods();
+			final OAPath ppMergerPath = new OAPath(hubRoot.getObjectClass(), mergerPath);
+			Method[] msMergerPath = ppMergerPath.getMethods();
 
 			int cnt = 0;
-			for (; cnt < msGroupByPropertyPath.length && cnt < msMergerPropertyPath.length; cnt++) {
-				if (!msGroupByPropertyPath[cnt].equals(msMergerPropertyPath[cnt])) {
+			for (; cnt < msGroupByPath.length && cnt < msMergerPath.length; cnt++) {
+				if (!msGroupByPath[cnt].equals(msMergerPath[cnt])) {
 					break;
 				}
 			}
 
 			// find how much of the the groupBy PP is same as merger
-			this.cntAbove = msMergerPropertyPath.length - (cnt + 1);
+			this.cntAbove = msMergerPath.length - (cnt + 1);
 
-			final int groupByPropertyPathStartPos = cnt;
+			final int groupByPathStartPos = cnt;
 
-			hubMerger = new HubMerger(hubRoot, null, mergerPropertyPath, false, null, true, false, false) {
+			hubMerger = new HubMerger(hubRoot, null, mergerPath, false, null, true, false, false) {
 				@Override
+				/**
+				 * Performs the onAddToCombined operation for this Hub component.
+				 */
 				protected void onAddToCombined(Data data, final OAObject obj) {
 					OAObject objFrom = obj;
 					if (cntAbove >= 0) {
@@ -157,7 +168,7 @@ public class HubGroupByMerger<F extends OAObject, T extends OAObject> {
 						}
 					}
 					if (objFrom != null) {
-						OAObject objTo = (OAObject) ppGroupByPropertyPath.getValue(objFrom, groupByPropertyPathStartPos);
+						OAObject objTo = (OAObject) ppGroupByPath.getValue(objFrom, groupByPathStartPos);
 						if (objTo != null) {
 							Hub hub = (Hub) objTo.getProperty(groupByProperty);
 							hub.add(obj);
@@ -166,12 +177,15 @@ public class HubGroupByMerger<F extends OAObject, T extends OAObject> {
 				}
 
 				@Override
+				/**
+				 * Performs the onRemoveFromCombined operation for this Hub component.
+				 */
 				protected void onRemoveFromCombined(Data data, OAObject obj) {
 					for (int i = 0; data != null && i < cntAbove; i++) {
 						data = data.parent;
 					}
 					if (data != null) {
-						OAObject objx = (OAObject) ppGroupByPropertyPath.getValue(data.parentObject);
+						OAObject objx = (OAObject) ppGroupByPath.getValue(data.parentObject);
 						Hub hub = (Hub) objx.getProperty(groupByProperty);
 						hub.remove(obj);
 					}

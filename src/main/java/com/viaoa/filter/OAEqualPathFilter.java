@@ -267,7 +267,7 @@ public class OAEqualPathFilter implements OAFilter {
 	 *
 	 * @return the property path applied to the source object
 	 */
-	public OAPath getPropertyPath() {
+	public OAPath getPath() {
 		return ppFrom;
 	}
 
@@ -367,7 +367,7 @@ public class OAEqualPathFilter implements OAFilter {
 				if (ppRev == null) return true;
 
 				if (!(objFromPPValue instanceof OAObject)) return true;
-				select.setWhereObject((OAObject) objFromPPValue, ppRev.getPropertyPath());
+				select.setWhereObject((OAObject) objFromPPValue, ppRev.getPath());
 				if (bHasFilter) {
 					return true;
 				}

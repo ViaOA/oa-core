@@ -165,7 +165,7 @@ public class RegisterSession extends OAObject {
         displayName = "Team Member", 
         reverseName = TeamMember.P_RegisterSessions, 
         allowCreateNew = false, 
-        selectFromPropertyPath = P_Register + "." + Register.P_Store + "." + Store.P_TeamMembers, 
+        selectFromPath = P_Register + "." + Register.P_Store + "." + Store.P_TeamMembers, 
         fkeys = {@OAFkey(fromProperty = P_TeamMemberId, toProperty = TeamMember.P_Id)}
     )
     public TeamMember getTeamMember() {

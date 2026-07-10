@@ -49,11 +49,19 @@ import com.viaoa.path.OAPath;
 import com.viaoa.reflect.OAReflect;
 import com.viaoa.select.OASelect;
 
+/**
+ * Provides reflection-based OAObject property, link, Hub, and method access.
+ */
 public abstract class OAObjectReflectService {
 	private static final Logger LOG = Logger.getLogger(OAObjectReflectService.class.getName());
 	
 	private final OAObject.FriendAccess faobject;
 		
+	/**
+	 * Performs OAObjectReflectService behavior for the OA object service.
+	 *
+	 * @param oaObjectFriendAccess method input
+	 */
     public OAObjectReflectService(OAObject.FriendAccess oaObjectFriendAccess) {
     	if (oaObjectFriendAccess == null) throw new IllegalArgumentException("OAObjectFriendAccess can not be null");
     	this.faobject = oaObjectFriendAccess;
@@ -303,7 +311,7 @@ public abstract class OAObjectReflectService {
 			return false;
 		}
 
-		// add support for propertyPath
+		// add support for path
 		if (propName.indexOf('.') >= 0) {
 			int pos = propName.lastIndexOf('.');
 			String s = propName.substring(0, pos);
@@ -832,7 +840,7 @@ public abstract class OAObjectReflectService {
 		}
 
 		// 20160811 check to see if hub uses a pp
-		String spp = linkInfo == null ? null : linkInfo.getMergerPropertyPath();
+		String spp = linkInfo == null ? null : linkInfo.getMergerPath();
 		if (OAStr.notEmpty(spp)) {
 			new HubMerger(oaObj, hub, spp);
 		}
@@ -1191,7 +1199,7 @@ public abstract class OAObjectReflectService {
 				}
 			}
 
-			// 20110505 autoMatch propertyPath
+			// 20110505 autoMatch path
 			if (matchProperty != null && matchProperty.length() > 0) {
 				if (hubMatch == null) {
 					String matchHubProperty = linkInfo.getMatchHub();
@@ -2268,7 +2276,7 @@ public abstract class OAObjectReflectService {
 
 		if (objOriginal == null) { // else !null or notExist
 			// it is stored as null value
-			if (!li.getAutoCreateNew() && !li.getCalculated() && OAString.isEmpty(li.getDefaultPropertyPath())) {
+			if (!li.getAutoCreateNew() && !li.getCalculated() && OAString.isEmpty(li.getDefaultPath())) {
 				return null;
 			}
 		}
@@ -2326,9 +2334,9 @@ public abstract class OAObjectReflectService {
 		if (!(obj instanceof OAObjectKey)) {
 			if (obj == OAMatchNotExist.instance || obj == null) {
 				// 20190112
-				String pps = li.getDefaultPropertyPath();
+				String pps = li.getDefaultPath();
 				if (OAString.isNotEmpty(pps)) {
-					if (li.getDefaultPropertyPathIsHierarchy()) {
+					if (li.getDefaultPathIsHierarchy()) {
 						if (pps.toUpperCase().endsWith("." + linkPropertyName.toUpperCase())) {
 							pps = pps.substring(0, (pps.length() - linkPropertyName.length()) - 1);
 						}
@@ -2522,14 +2530,14 @@ public abstract class OAObjectReflectService {
 						setProperty((OAObject) ref, li.getReverseLinkInfo().getName(), oaObj, null);
 					}
 
-					// 20231126 check for equalPropertyPath
-                    String s = li.getEqualPropertyPath();
+					// 20231126 check for equalPath
+                    String s = li.getEqualPath();
                     if (OAString.isNotEmpty(s)) {
                         OAPath pp = new OAPath(oaObj.getClass(), s);
                         final OAObject matchValue = (OAObject) pp.getValue(oaObj);
                         
                         final OALinkInfo liRev = callInfoGetReverseLinkInfo(li);
-                        s = liRev.getEqualPropertyPath();
+                        s = liRev.getEqualPath();
                         if (matchValue != null && OAString.isNotEmpty(s)) {
                             if (s.indexOf('.') < 0) {
                                 ((OAObject) ref).setProperty(s, matchValue);
@@ -2537,12 +2545,12 @@ public abstract class OAObjectReflectService {
                             else {
                                 pp = new OAPath(li.getToClass(), s);
                                 OAPath ppRev = pp.getReversePath();
-                                s = ppRev.getPropertyPath();
+                                s = ppRev.getPath();
                                 s = s.substring(0, s.lastIndexOf('.'));
                                 
                                 Object ref2 = matchValue.getProperty(s); 
                                 if (ref2 instanceof OAObject) {
-                                    s = liRev.getEqualPropertyPath();
+                                    s = liRev.getEqualPath();
                                     s = s.substring(0, s.indexOf('.'));
                                     ((OAObject) ref).setProperty(s, ref2);
                                 }
@@ -2864,17 +2872,17 @@ public abstract class OAObjectReflectService {
 	 * loaded. No property-change events are fired by this method.
 	 *
 	 * @param oaObj         the object whose properties are to be loaded
-	 * @param propertyPaths one or more property names or dotted paths
+	 * @param paths one or more property names or dotted paths
 	 */
-	public void loadProperties(OAObject oaObj, String... propertyPaths) {
-		if (propertyPaths == null) {
+	public void loadProperties(OAObject oaObj, String... paths) {
+		if (paths == null) {
 			return;
 		}
-		if (propertyPaths.length == 0 || oaObj == null) {
+		if (paths.length == 0 || oaObj == null) {
 			return;
 		}
 
-		LoadPropertyNode rootNode = createPropertyTree(propertyPaths);
+		LoadPropertyNode rootNode = createPropertyTree(paths);
 
 		_loadProperties(oaObj, rootNode);
 	}
@@ -2887,17 +2895,17 @@ public abstract class OAObjectReflectService {
 	 * are fired by this method.
 	 *
 	 * @param hub           the Hub whose objects will have properties loaded
-	 * @param propertyPaths one or more property names or dotted paths
+	 * @param paths one or more property names or dotted paths
 	 */
-	public void loadProperties(Hub<?> hub, String... propertyPaths) {
-		if (propertyPaths == null) {
+	public void loadProperties(Hub<?> hub, String... paths) {
+		if (paths == null) {
 			return;
 		}
-		if (propertyPaths.length == 0 || hub == null) {
+		if (paths.length == 0 || hub == null) {
 			return;
 		}
 
-		LoadPropertyNode rootNode = createPropertyTree(propertyPaths);
+		LoadPropertyNode rootNode = createPropertyTree(paths);
 
 		_loadProperties(hub, rootNode);
 	}
@@ -2908,15 +2916,15 @@ public abstract class OAObjectReflectService {
 	 * inserted into the tree so that shared prefixes are merged. The resulting
 	 * structure is used to efficiently load nested properties.
 	 *
-	 * @param propertyPaths one or more property names or dotted paths
+	 * @param paths one or more property names or dotted paths
 	 * @return the root of the constructed property-path tree
 	 */
-	private LoadPropertyNode createPropertyTree(String... propertyPaths) {
+	private LoadPropertyNode createPropertyTree(String... paths) {
 		int x = 0;
 		LoadPropertyNode rootNode = new LoadPropertyNode();
-		for (String propertyPath : propertyPaths) {
+		for (String path : paths) {
 			LoadPropertyNode node = rootNode; // beginning of property paths
-			StringTokenizer st = new StringTokenizer(propertyPath, ".", false);
+			StringTokenizer st = new StringTokenizer(path, ".", false);
 			for (; st.hasMoreTokens();) {
 				String prop = st.nextToken();
 				boolean b = false;
@@ -3017,7 +3025,7 @@ public abstract class OAObjectReflectService {
 	 * OAObject. A new instance is created, and each non-excluded property is
 	 * copied from the source object unless overridden by the callback. The
 	 * hmNew map is used to track objects that have already been copied to
-	 * prevent duplication when copying graphs of related objects.
+	 * prevent duplication when copying related OA objects.
 	 *
 	 * @param oaObj            the source object to copy
 	 * @param excludeProperties property names to exclude from copying
@@ -3090,7 +3098,7 @@ public abstract class OAObjectReflectService {
 	 * current value from the source object is assigned to the destination
 	 * unless the callback overrides the assignment. The hmNew map tracks
 	 * objects already processed to prevent duplicate copying when copying
-	 * object graphs.
+	 * OA models.
 	 *
 	 * @param oaObj            the source object
 	 * @param newObject        the destination object
@@ -3119,7 +3127,7 @@ public abstract class OAObjectReflectService {
 	 * source object is assigned to the destination unless the callback
 	 * overrides or blocks the assignment. The hmNew map tracks objects that
 	 * have already been processed to prevent duplicating work when copying
-	 * object graphs.
+	 * OA models.
 	 *
 	 * @param oaObj            the source object
 	 * @param newObject        the destination object
@@ -3404,6 +3412,12 @@ public abstract class OAObjectReflectService {
 		return false;
 	}
 
+	/**
+	 * Returns the hubObjectClass value.
+	 *
+	 * @param method method input
+	 * @return result value
+	 */
 	public Class<?> getHubObjectClass(Method method) {
 		Class<? extends OAObject> cx = null;
 		Type rt = method.getGenericReturnType();
@@ -3541,7 +3555,7 @@ public abstract class OAObjectReflectService {
 	 * @param hubChild  the child Hub
 	 * @return the property path from parent to child, or null if none exists
 	 */
-	private String getPropertyPathFromMaster(final Hub<?> hubParent, final Hub<?> hubChild) {
+	private String getPathFromMaster(final Hub<?> hubParent, final Hub<?> hubChild) {
 		if (hubParent == null) {
 			return null;
 		}
@@ -3628,7 +3642,7 @@ public abstract class OAObjectReflectService {
 	 * @param hubChild  the child Hub
 	 * @return the property path from the parent to the Hub, or null if none exists
 	 */
-	public String getPropertyPathFromMaster(final OAObject objParent, final Hub<?> hubChild) {
+	public String getPropertyFromMaster(final OAObject objParent, final Hub<?> hubChild) {
 		if (objParent == null) {
 			return null;
 		}
@@ -3782,8 +3796,8 @@ public abstract class OAObjectReflectService {
 	 * @param hubChild  the child Hub
 	 * @return the property path between the two Hubs, or null if none exists
 	 */
-	public String getPropertyPathBetweenHubs(final Hub<?> hubParent, final Hub<?> hubChild) {
-		return getPropertyPathBetweenHubs(null, hubParent, hubChild, true);
+	public String getPathBetweenHubs(final Hub<?> hubParent, final Hub<?> hubChild) {
+		return getPathBetweenHubs(null, hubParent, hubChild, true);
 	}
 
 	/**
@@ -3799,7 +3813,7 @@ public abstract class OAObjectReflectService {
 	 * @param bCheckLink true to check direct link relationships first
 	 * @return the completed property path, or null if none exists
 	 */
-	private String getPropertyPathBetweenHubs(final String propPath, final Hub<?> hubParent, final Hub<?> hubChild, boolean bCheckLink) {
+	private String getPathBetweenHubs(final String propPath, final Hub<?> hubParent, final Hub<?> hubChild, boolean bCheckLink) {
 		if (hubChild == hubParent) {
 			return null;
 		}
@@ -3832,7 +3846,7 @@ public abstract class OAObjectReflectService {
 				if (callHubShareIsUsingSameSharedAO(hubParent, hx, true)) {
 					return s;
 				}
-				s = getPropertyPathBetweenHubs(s, hubParent, hx, true);
+				s = getPathBetweenHubs(s, hubParent, hx, true);
 				if (s != null) {
 					return s;
 				}
@@ -3880,7 +3894,7 @@ public abstract class OAObjectReflectService {
 			return pathFromParent;
 		}
 
-		String sx = getPropertyPathBetweenHubs(pathFromParent, hubParent, hx, false);
+		String sx = getPathBetweenHubs(pathFromParent, hubParent, hx, false);
 		if (sx != null) {
 			return sx;
 		}
@@ -3888,86 +3902,605 @@ public abstract class OAObjectReflectService {
 		return null;
 	}
 	
+	/**
+	 * Dependency hook used by this service to cacheGet.
+	 *
+	 * @param clazz method input
+	 * @param ok method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok);
+	/**
+	 * Dependency hook used by this service to cacheAdd.
+	 *
+	 * @param obj method input
+	 * @return result value
+	 */
 	public abstract OAObject callCacheAdd(OAObject obj);
+	/**
+	 * Dependency hook used by this service to cSCreateCopy.
+	 *
+	 * @param oaObj method input
+	 * @param excludeProperties method input
+	 * @return result value
+	 */
 	public abstract OAObject callCSCreateCopy(OAObject oaObj, String[] excludeProperties);
+	/**
+	 * Dependency hook used by this service to cSIsServer.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callCSIsServer();
+	/**
+	 * Dependency hook used by this service to cSIsClient.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callCSIsClient();
+	/**
+	 * Dependency hook used by this service to cSGetServerObject.
+	 *
+	 * @param clazz method input
+	 * @param key method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callCSGetServerObject(Class<T> clazz, OAObjectKey key);
+	/**
+	 * Dependency hook implemented by the owning OA object service.
+	 *
+	 * @param oaObj method input
+	 * @param linkPropertyName method input
+	 * @return result value
+	 */
 	public abstract Hub<?> getCSGetServerReferenceHub(OAObject oaObj, String linkPropertyName);
+	/**
+	 * Dependency hook used by this service to cSGetServerReferenceBlob.
+	 *
+	 * @param oaObj method input
+	 * @param propertyName method input
+	 * @return result value
+	 */
 	public abstract byte[] callCSGetServerReferenceBlob(OAObject oaObj, String propertyName);
+	/**
+	 * Dependency hook used by this service to cSLoadReferenceHubDataOnServer.
+	 *
+	 * @param thisHub method input
+	 * @param select method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callCSLoadReferenceHubDataOnServer(Hub<?> thisHub, OASelect select);
+	/**
+	 * Dependency hook used by this service to cSGetServerReference.
+	 *
+	 * @param oaObj method input
+	 * @param linkPropertyName method input
+	 * @return result value
+	 */
 	public abstract Object callCSGetServerReference(OAObject oaObj, String linkPropertyName);
+	/**
+	 * Dependency hook used by this service to dSGetObject.
+	 *
+	 * @param clazz method input
+	 * @param key method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callDSGetObject(Class<T> clazz, OAObjectKey key);
+	/**
+	 * Dependency hook used by this service to dSGetObject.
+	 *
+	 * @param oi method input
+	 * @param clazz method input
+	 * @param key method input
+	 * @return result value
+	 */
 	public abstract <T extends OAObject> T callDSGetObject(OAObjectInfo oi, Class<T> clazz, OAObjectKey key);
+	/**
+	 * Dependency hook used by this service to eventFireBeforePropertyChange.
+	 *
+	 * @param oaObj method input
+	 * @param propertyName method input
+	 * @param oldObj method input
+	 * @param newObj method input
+	 * @param bLocalOnly method input
+	 * @param bSetChanged method input
+	 */
 	public abstract void callEventFireBeforePropertyChange(final OAObject oaObj, final String propertyName,
 			Object oldObj, final Object newObj, final boolean bLocalOnly, final boolean bSetChanged);	
+	/**
+	 * Dependency hook used by this service to eventFirePropertyChange.
+	 *
+	 * @param oaObj method input
+	 * @param propertyName method input
+	 * @param oldObj method input
+	 * @param newObj method input
+	 * @param bLocalOnly method input
+	 * @param bSetChanged method input
+	 */
 	public abstract void callEventFirePropertyChange(final OAObject oaObj, final String propertyName, Object oldObj, Object newObj,
 			boolean bLocalOnly, boolean bSetChanged);
+	/**
+	 * Dependency hook used by this service to guidGetGuid.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
 	public abstract UUID callGuidGetGuid(OAObject oaObj);
+	/**
+	 * Dependency hook used by this service to hubGetHub.
+	 *
+	 * @param oaObj method input
+	 * @param li method input
+	 * @return result value
+	 */
 	public abstract Hub<?> callHubGetHub(OAObject oaObj, OALinkInfo li);
+	/**
+	 * Dependency hook used by this service to hubGetHubReferences.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
 	public abstract Hub[] callHubGetHubReferences(OAObject oaObj);
+	/**
+	 * Dependency hook implemented by the owning OA object service.
+	 *
+	 * @param clazz method input
+	 * @return result value
+	 */
 	public abstract OAObjectInfo getOAObjectInfo(Class<?> clazz); 
+	/**
+	 * Dependency hook used by this service to infoGetMethod.
+	 *
+	 * @param oi method input
+	 * @param methodName method input
+	 * @param argumentCount method input
+	 * @return result value
+	 */
 	public abstract Method callInfoGetMethod(OAObjectInfo oi, String methodName, int argumentCount);
+	/**
+	 * Dependency hook used by this service to infoGetMethod.
+	 *
+	 * @param oi method input
+	 * @param methodName method input
+	 * @param classParam method input
+	 * @return result value
+	 */
 	public abstract Method callInfoGetMethod(OAObjectInfo oi, String methodName, final Class<?> classParam); 
+	/**
+	 * Dependency hook used by this service to infoGetLinkInfo.
+	 *
+	 * @param oi method input
+	 * @param propertyName method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName);
+	/**
+	 * Dependency hook used by this service to infoIsPrimitiveNull.
+	 *
+	 * @param oaObj method input
+	 * @param propertyName method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callInfoIsPrimitiveNull(OAObject oaObj, String propertyName); 
+	/**
+	 * Dependency hook used by this service to infoSetPrimitiveNull.
+	 *
+	 * @param oaObj method input
+	 * @param propertyName method input
+	 * @param bSetToNull method input
+	 */
 	public abstract void callInfoSetPrimitiveNull(OAObject oaObj, String propertyName, boolean bSetToNull);
+	/**
+	 * Dependency hook used by this service to infoGetReverseLinkInfo.
+	 *
+	 * @param li method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callInfoGetReverseLinkInfo(OALinkInfo li);
+	/**
+	 * Dependency hook used by this service to infoCacheHub.
+	 *
+	 * @param li method input
+	 * @param hub method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callInfoCacheHub(OALinkInfo li, final Hub<?> hub);
+	/**
+	 * Dependency hook used by this service to infoGetRecursiveLinkInfo.
+	 *
+	 * @param thisOI method input
+	 * @param type method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callInfoGetRecursiveLinkInfo(OAObjectInfo thisOI, int type);
+	/**
+	 * Dependency hook used by this service to infoIsOne2One.
+	 *
+	 * @param thisLi method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callInfoIsOne2One(OALinkInfo thisLi);
+	/**
+	 * Dependency hook used by this service to infoGetLinkInfo.
+	 *
+	 * @param clazz method input
+	 * @param propertyName method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callInfoGetLinkInfo(Class<?> clazz, String propertyName);
+	/**
+	 * Dependency hook used by this service to initializeInitialize.
+	 *
+	 * @param oaObj method input
+	 * @param oi method input
+	 * @param bInitializeNulls method input
+	 * @param bInitializeWithDS method input
+	 * @param bAddToCache method input
+	 * @param bInitializeWithCS method input
+	 * @param bSetChangedToFalse method input
+	 */
 	public abstract void callInitializeInitialize(OAObject oaObj, OAObjectInfo oi, boolean bInitializeNulls,
 			boolean bInitializeWithDS, boolean bAddToCache, boolean bInitializeWithCS, boolean bSetChangedToFalse);
+	/**
+	 * Dependency hook used by this service to keyCreateObjectKey.
+	 *
+	 * @param c method input
+	 * @param ids method input
+	 * @return result value
+	 */
 	public abstract OAObjectKey callKeyCreateObjectKey(final Class<? extends OAObject> c, final Object ...ids);
+	/**
+	 * Dependency hook used by this service to keyGetKey.
+	 *
+	 * @param oaObj method input
+	 * @return result value
+	 */
 	public abstract OAObjectKey callKeyGetKey(OAObject oaObj); 
+	/**
+	 * Dependency hook used by this service to keyIsForSameOAObject.
+	 *
+	 * @param clazz method input
+	 * @param ok1 method input
+	 * @param ok2 method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callKeyIsForSameOAObject(final Class<? extends OAObject> clazz, final OAObjectKey ok1, final OAObjectKey ok2);
+	/**
+	 * Dependency hook used by this service to propertyGetProperty.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @param bReturnNotExist method input
+	 * @param bConvertWeakRef method input
+	 * @return result value
+	 */
 	public abstract Object callPropertyGetProperty(OAObject oaObj, String name, boolean bReturnNotExist, boolean bConvertWeakRef);	
+	/**
+	 * Dependency hook used by this service to propertySetProperty.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @param value method input
+	 */
 	public abstract void callPropertySetProperty(OAObject oaObj, String name, Object value);
+	/**
+	 * Dependency hook used by this service to propertySetPropertyCAS.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @param newValue method input
+	 * @param matchValue method input
+	 * @return result value
+	 */
 	public abstract Object callPropertySetPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue);
+	/**
+	 * Dependency hook used by this service to propertySetPropertyCAS.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @param newValue method input
+	 * @param matchValue method input
+	 * @param bMustNotExist method input
+	 * @param bReturnNotExist method input
+	 * @return result value
+	 */
 	public abstract Object callPropertySetPropertyCAS(OAObject oaObj, String name, Object newValue, Object matchValue, boolean bMustNotExist, boolean bReturnNotExist);
+	/**
+	 * Dependency hook used by this service to lockIsPropertyLocked.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callLockIsPropertyLocked(OAObject oaObj, String name);
+	/**
+	 * Dependency hook used by this service to lockSetPropertyLock.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callLockSetPropertyLock(OAObject oaObj, String name);
+	/**
+	 * Dependency hook used by this service to lockReleasePropertyLock.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 */
 	public abstract void callLockReleasePropertyLock(OAObject oaObj, String name);
+	/**
+	 * Dependency hook used by this service to lockAttemptPropertyLock.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callLockAttemptPropertyLock(OAObject oaObj, String name);
+	/**
+	 * Dependency hook used by this service to propertySetPropertyHubIfNotSet.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @param value method input
+	 */
 	public abstract void callPropertySetPropertyHubIfNotSet(OAObject oaObj, String name, Object value);
+	/**
+	 * Dependency hook used by this service to propertyIsPropertyLoaded.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callPropertyIsPropertyLoaded(OAObject oaObj, String name);
+	/**
+	 * Dependency hook used by this service to propertyUnsafeSetProperty.
+	 *
+	 * @param oaObj method input
+	 * @param name method input
+	 * @param value method input
+	 */
 	public abstract void callPropertyUnsafeSetProperty(OAObject oaObj, String name, Object value);
+	/**
+	 * Dependency hook used by this service to siblingOnGetObjectReference.
+	 *
+	 * @param obj method input
+	 * @param linkPropertyName method input
+	 */
 	public abstract void callSiblingOnGetObjectReference(final OAObject obj, final String linkPropertyName);
+	/**
+	 * Dependency hook used by this service to siblingGetSiblings.
+	 *
+	 * @param mainObject method input
+	 * @param property method input
+	 * @param maxAmount method input
+	 * @param hmIgnore method input
+	 * @return result value
+	 */
 	public abstract OAObjectKey[] callSiblingGetSiblings(final OAObject mainObject, final String property, final int maxAmount,
 			ConcurrentHashMap<UUID, Boolean> hmIgnore);
+	/**
+	 * Dependency hook used by this service to hubGetAutoMatch.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract HubAutoMatch callHubGetAutoMatch(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service to hubGetAutoSequence.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract HubAutoSequence callHubGetAutoSequence(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service to hubSortGetSortListener.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract HubSortListener callHubSortGetSortListener(Hub<?> thisHub);
-	public abstract void callHubSortSort(Hub<?> thisHub, String propertyPaths, boolean bAscending, Comparator comp, boolean bAlreadySortedAndLocalOnly);
+	/**
+	 * Dependency hook used by this service to hubSortSort.
+	 *
+	 * @param thisHub method input
+	 * @param paths method input
+	 * @param bAscending method input
+	 * @param comp method input
+	 * @param bAlreadySortedAndLocalOnly method input
+	 */
+	public abstract void callHubSortSort(Hub<?> thisHub, String paths, boolean bAscending, Comparator comp, boolean bAlreadySortedAndLocalOnly);
+	/**
+	 * Dependency hook used by this service to hubSortGetSortProperty.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract String callHubSortGetSortProperty(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service to hubSortGetSortAsc.
+	 *
+	 * @param thisHub method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callHubSortGetSortAsc(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service to hubSortIsSorted.
+	 *
+	 * @param thisHub method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callHubSortIsSorted(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service to hubMasterGetMasterObject.
+	 *
+	 * @param hub method input
+	 * @return result value
+	 */
 	public abstract OAObject callHubMasterGetMasterObject(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service to hubSelectLoadAllData.
+	 *
+	 * @param thisHub method input
+	 * @param select method input
+	 */
 	public abstract void callHubSelectLoadAllData(Hub<?> thisHub, OASelect select);
+	/**
+	 * Dependency hook used by this service to hubDataResizeToFit.
+	 *
+	 * @param thisHub method input
+	 */
 	public abstract void callHubDataResizeToFit(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service to hubDetailGetPropertyFromDetailToMaster.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract String callHubDetailGetPropertyFromDetailToMaster(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service to hubLinkGetLinkedOnPos.
+	 *
+	 * @param thisHub method input
+	 * @param bIncludeCopiedHubs method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callHubLinkGetLinkedOnPos(final Hub<?> thisHub, boolean bIncludeCopiedHubs);
+	/**
+	 * Dependency hook used by this service to hubLinkGetLinkFromProperty.
+	 *
+	 * @param thisHub method input
+	 * @param bIncludeCopiedHubs method input
+	 * @return result value
+	 */
 	public abstract String callHubLinkGetLinkFromProperty(final Hub<?> thisHub, boolean bIncludeCopiedHubs);
+	/**
+	 * Dependency hook used by this service to hubLinkGetLinkToHub.
+	 *
+	 * @param thisHub method input
+	 * @param bIncludeCopiedHubs method input
+	 * @return result value
+	 */
 	public abstract Hub<?> callHubLinkGetLinkToHub(final Hub<?> thisHub, boolean bIncludeCopiedHubs);
+	/**
+	 * Dependency hook used by this service to hubLinkGetLinkHubPath.
+	 *
+	 * @param thisHub method input
+	 * @param bIncludeCopiedHubs method input
+	 * @return result value
+	 */
 	public abstract String callHubLinkGetLinkHubPath(final Hub<?> thisHub, boolean bIncludeCopiedHubs);
+	/**
+	 * Dependency hook used by this service to hubShareIsUsingSameSharedAO.
+	 *
+	 * @param hub1 method input
+	 * @param hub2 method input
+	 * @param bIncludeFilteredHubs method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callHubShareIsUsingSameSharedAO(Hub<?> hub1, Hub<?> hub2, boolean bIncludeFilteredHubs);
+	/**
+	 * Dependency hook used by this service to hubDetailGetPropertyFromMasterToDetail.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract String callHubDetailGetPropertyFromMasterToDetail(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service to hubLinkGetLinkToProperty.
+	 *
+	 * @param thisHub method input
+	 * @return result value
+	 */
 	public abstract String callHubLinkGetLinkToProperty(Hub<?> thisHub);
+	/**
+	 * Dependency hook used by this service to hubShareIsUsingSameSharedHub.
+	 *
+	 * @param hub1 method input
+	 * @param hub2 method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callHubShareIsUsingSameSharedHub(Hub<?> hub1, Hub<?> hub2);
+	/**
+	 * Dependency hook used by this service to hubDetailGetLinkInfoFromDetailToMaster.
+	 *
+	 * @param hub method input
+	 * @return result value
+	 */
 	public abstract OALinkInfo callHubDetailGetLinkInfoFromDetailToMaster(Hub<?> hub);
+	/**
+	 * Dependency hook used by this service to dSGetDataSource.
+	 *
+	 * @param c method input
+	 * @return result value
+	 */
 	public abstract OADataSource callDSGetDataSource(Class<?> c);
+	/**
+	 * Dependency hook used by this service to syncIsObjectOnServer.
+	 *
+	 * @param obj method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callSyncIsObjectOnServer(OAObject obj);
+	/**
+	 * Dependency hook used by this service to threadLocalIsLoading.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callThreadLocalIsLoading();
+	/**
+	 * Dependency hook used by this service to threadLocalIsDeleting.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callThreadLocalIsDeleting();
+	/**
+	 * Dependency hook used by this service to threadLocalGetObjectCacheAddMode.
+	 *
+	 * @return result value
+	 */
 	public abstract int callThreadLocalGetObjectCacheAddMode();
+	/**
+	 * Dependency hook used by this service to threadLocalAddSiblingHelper.
+	 *
+	 * @param sh method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callThreadLocalAddSiblingHelper(OASiblingHelper sh);
+	/**
+	 * Dependency hook used by this service to threadLocalRemoveSiblingHelper.
+	 *
+	 * @param sh method input
+	 */
 	public abstract void callThreadLocalRemoveSiblingHelper(OASiblingHelper sh);
+	/**
+	 * Dependency hook used by this service to threadLocalSetLoading.
+	 *
+	 * @param b method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callThreadLocalSetLoading(boolean b);
+	/**
+	 * Dependency hook used by this service to threadLocalGetLoading.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callThreadLocalGetLoading();
+	/**
+	 * Dependency hook used by this service to remoteThreadIsRemoteThread.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callRemoteThreadIsRemoteThread();
+	/**
+	 * Dependency hook used by this service to threadLocalGetSendSyncMessages.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callThreadLocalGetSendSyncMessages();
+	/**
+	 * Dependency hook used by this service to threadLocalSetSendSyncMessages.
+	 *
+	 * @param b method input
+	 */
 	public abstract void callThreadLocalSetSendSyncMessages(boolean b);
 }
 

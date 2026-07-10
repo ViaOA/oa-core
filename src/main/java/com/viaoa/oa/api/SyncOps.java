@@ -3,143 +3,112 @@ package com.viaoa.oa.api;
 import com.viaoa.sync.OASyncClient;
 import com.viaoa.sync.OASyncServer;
 
-/*qqqqqqq
-CODEX
-
-
-
-*/
-
-
-
 /**
- * Real-time synchronization operations for an {@link OA}.
+ * Real-time synchronization operations for an OA runtime.
  * <p>
- * {@code SyncOps} manages the runtime layer that allows an Object Graph to
+ * {@code SyncOps} manages the runtime layer that allows OA model state to
  * participate in real-time distributed behavior across connected runtimes.
  * This is typically used for client-to-server synchronization.
  * <p>
- * Through synchronization, changes to objects and Hubs are propagated
- * immediately so that graph state remains consistent across all connected
- * runtimes without requiring manual coordination.
+ * Through synchronization, changes to objects and Hubs are propagated so that
+ * connected runtimes can stay coordinated without manual refresh logic.
  * <p>
- * Synchronization is role-based. A graph can be configured as either a server
+ * Synchronization is role-based. A runtime can be configured as either a server
  * or a client using {@link #createServer(int)} or
  * {@link #createClient(String, int)}, and then started using {@link #start()}.
- * <p>
- * This represents real-time coordination of the Object Graph. For eventual
- * consistency with offline support and server-to-server convergence, see
- * {@link ReplicationOps}.
+ * For persisted master/client convergence, see {@link ReplicationOps}.
  */
 public interface SyncOps {
 
 	 /**
-	  * Configures this graph to operate as a synchronization server.
-	  * <p>
-	  * {@code createServer(...)} sets up the graph to accept connections from
-	  * synchronization clients and coordinate real-time graph state across them.
+	  * Configures this runtime to operate as a synchronization server.
 	  * <p>
 	  * This defines the synchronization role as server but does not start it.
 	  * Call {@link #start()} to begin accepting client connections.
-	  * <p>
-	  * This method may only be called when the graph is not already configured
-	  * or running. Calling it after {@link #createClient(String, int)} or while
-	  * running will result in an error.
 	  *
 	  * @param port the port used to accept client connections
 	  */
 	 void createServer(int port);
 
+	 /**
+	  * Configures this runtime using an existing synchronization server.
+	  *
+	  * @param ss the synchronization server to use
+	  */
 	 void createServer(OASyncServer ss);
 	 
 	 /**
-	  * Configures this graph to operate as a synchronization client.
-	  * <p>
-	  * {@code createClient(...)} sets up the graph to connect to a synchronization
-	  * server and participate in real-time graph state coordination.
+	  * Configures this runtime to operate as a synchronization client.
 	  * <p>
 	  * This defines the synchronization role as client but does not start it.
 	  * Call {@link #start()} to initiate the connection to the server.
-	  * <p>
-	  * This method may only be called when the graph is not already configured
-	  * or running. Calling it after {@link #createServer(int)} or while running
-	  * will result in an error.
 	  *
 	  * @param hostName the server host name or address
 	  * @param serverPort the server port to connect to
 	  */
 	void createClient(String hostName, int serverPort);
 	
+	/**
+	 * Configures this runtime using an existing synchronization client.
+	 *
+	 * @param sc the synchronization client to use
+	 */
 	void createClient(OASyncClient sc);
 	
 	/**
 	 * Starts real-time synchronization for the configured role.
 	 * <p>
-	 * {@code start()} activates the synchronization layer based on the configured
-	 * role. If configured as a server, it begins accepting client connections.
-	 * If configured as a client, it connects to the server and begins
-	 * participating in real-time graph coordination.
-	 * <p>
-	 * Synchronization propagates changes to objects and Hubs immediately across
-	 * connected runtimes so that graph state remains consistent.
-	 * <p>
-	 * This method may only be called after either {@link #createServer(int)} or
-	 * {@link #createClient(String, int)} has been called. Calling it without a
-	 * configured role or while already running will result in an error.
+	 * If configured as a server, this begins accepting client connections. If
+	 * configured as a client, this connects to the server and begins participating
+	 * in synchronized model-state coordination.
+	 *
+	 * @throws Exception if synchronization cannot be started
 	 */
 	void start() throws Exception;
 	
 	/**
-	 * Stops real-time synchronization for this graph.
+	 * Stops real-time synchronization for this runtime.
 	 * <p>
-	 * {@code stop()} deactivates the synchronization layer and terminates any
-	 * active connections or coordination with other runtimes.
-	 * <p>
-	 * If operating as a server, it stops accepting client connections. If operating
-	 * as a client, it disconnects from the server.
-	 * <p>
-	 * After stopping, the graph remains configured for its role and may be started
-	 * again using {@link #start()}.
+	 * If operating as a server, this stops accepting client connections. If
+	 * operating as a client, this disconnects from the server.
+	 *
+	 * @throws Exception if synchronization cannot be stopped
 	 */	
 	void stop() throws Exception;
 
+	/**
+	 * Returns whether the runtime is operating without sync client/server mode.
+	 *
+	 * @return {@code true} if single-user mode is active
+	 */
 	boolean isSingleUser();
 	
 	/**
-	 * Returns whether this graph is configured as a synchronization server.
-	 * <p>
-	 * {@code isServer()} indicates the configured synchronization role, not
-	 * whether synchronization is currently running. Use {@link #isRunning()}
-	 * to determine if synchronization is active.
+	 * Returns whether this runtime is configured as a synchronization server.
 	 *
-	 * @return {@code true} if configured as a server; otherwise {@code false}
+	 * @return {@code true} if configured as a server
 	 */
 	boolean isServer();
 	
 	/**
-	 * Returns whether this graph is configured as a synchronization server.
-	 * <p>
-	 * {@code isServer()} indicates the configured synchronization role, not
-	 * whether synchronization is currently running. Use {@link #isRunning()}
-	 * to determine if synchronization is active.
+	 * Returns whether this runtime is configured as a synchronization client.
 	 *
-	 * @return {@code true} if configured as a server; otherwise {@code false}
+	 * @return {@code true} if configured as a client
 	 */
 	boolean isClient();
 	
 	/**
 	 * Returns whether real-time synchronization is currently active.
-	 * <p>
-	 * {@code isRunning()} indicates whether the synchronization layer has been
-	 * started and is actively coordinating graph state across connected runtimes.
-	 * <p>
-	 * This is independent of the configured role. Use {@link #isServer()} or
-	 * {@link #isClient()} to determine the synchronization role.
 	 *
-	 * @return {@code true} if synchronization is running; otherwise {@code false}
+	 * @return {@code true} if synchronization is running
 	 */
 	boolean isRunning();
 	
+	/**
+	 * Returns the current synchronization connection id.
+	 *
+	 * @return the connection id
+	 */
 	public int getConnectionId();
 }
 

@@ -146,7 +146,7 @@ public class Till extends OAObject {
     @OAOne(
         reverseName = Register.P_Till, 
         allowCreateNew = false, 
-        selectFromPropertyPath = P_Store + "." + Store.P_Registers, 
+        selectFromPath = P_Store + "." + Store.P_Registers, 
         fkeys = {@OAFkey(fromProperty = P_RegisterId, toProperty = Register.P_Id)}
     )
     public Register getRegister() {

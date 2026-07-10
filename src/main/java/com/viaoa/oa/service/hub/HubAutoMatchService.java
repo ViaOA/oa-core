@@ -5,6 +5,10 @@ import com.viaoa.hub.*;
 import com.viaoa.hub.auto.HubAutoMatch;
 import com.viaoa.object.OAObject;
 
+/**
+ * Manages automatic matching between Hubs and related master data.
+ */
+
 public abstract class HubAutoMatchService {
 	private final Logger LOG = Logger.getLogger(HubAutoMatchService.class.getName());
 

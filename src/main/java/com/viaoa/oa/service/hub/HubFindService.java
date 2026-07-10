@@ -7,6 +7,10 @@ import com.viaoa.find.OAFinder;
 import com.viaoa.hub.*;
 import com.viaoa.object.*;
 
+/**
+ * Finds objects within Hubs and related Hub structures.
+ */
+
 public abstract class HubFindService {
 	private final Logger LOG = Logger.getLogger(HubFindService.class.getName());
 
@@ -40,34 +44,49 @@ public abstract class HubFindService {
 	
 	/**
 	 * Finds the first object in the specified {@code Hub} whose property located by
-	 * {@code propertyPath} matches the supplied {@code findValue} using a
+	 * {@code path} matches the supplied {@code findValue} using a
 	 * {@link com.viaoa.filter.OALikeFilter}.
 	 *
 	 * <p>If {@code bSetAO} is {@code true}, the found object is also set as the
 	 * Hub’s active object.</p>
 	 *
 	 * @param thisHub the {@code Hub} to search; may be {@code null}
-	 * @param propertyPath the property path to evaluate for matching
+	 * @param path the property path to evaluate for matching
 	 * @param findValue the value to compare against using a like-filter match
 	 * @param bSetAO if {@code true}, sets the active object to the found object
 	 * @param lastFoundObject the last object found, used by {@link com.viaoa.find.OAFinder#findNext}
 	 * @return the first matching object, or {@code null} if none found
 	 */
 	@SuppressWarnings("unchecked")
-    public <T extends OAObject> T findFirst(Hub<T> thisHub, String propertyPath, final Object findValue, final boolean bSetAO, T lastFoundObject) {
+    public <T extends OAObject> T findFirst(Hub<T> thisHub, String path, final Object findValue, final boolean bSetAO, T lastFoundObject) {
         if (thisHub == null) return null;
         
         OAFinder<T,?> finder = new OAFinder<>();
-        finder.addFilter(new OALikeFilter(propertyPath, findValue));
+        finder.addFilter(new OALikeFilter(path, findValue));
         T foundObj = (T) finder.findNext(thisHub, lastFoundObject);
         
         if (bSetAO) thisHub.setAO(foundObj);
         return foundObj;
 	}
 
+	/**
+	 * Dependency hook used by this service for ObjectCacheGet behavior.
+	 *
+	 * @param clazz method input
+	 * @param key method input
+	 * @return result value
+	 */
+
 	public abstract <T extends OAObject> T callObjectCacheGet(Class<T> clazz, Object key);
-	public abstract <T extends OAObject> T callHubDataGetObject(final Hub<T> thisHub, Object key);	
-    
+	/**
+	 * Dependency hook used by this service for HubDataGetObject behavior.
+	 *
+	 * @param thisHub method input
+	 * @param key method input
+	 * @return result value
+	 */
+	public abstract <T extends OAObject> T callHubDataGetObject(final Hub<T> thisHub, Object key);
+
 }
 
 

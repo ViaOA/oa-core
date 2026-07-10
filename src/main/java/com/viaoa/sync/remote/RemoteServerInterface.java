@@ -127,7 +127,6 @@ public interface RemoteServerInterface {
 	String getDisplayMessage();
 
 	
-//qqqqqqqqqqqq no longer needed qqqqqqqqqqqqqqqqqqq	
 	/**
 	 * Retrieves the next block of object GUIDs.
 	 *

@@ -14,46 +14,11 @@
  * limitations under the License.
  */
 /**
- * Model classes used by the OA synchronization subsystem to describe the
- * state of connected clients and the server instance.
+ * Lightweight model objects used to describe sync client and server runtime state.
  * <p>
- * These classes do not perform synchronization logic themselves; instead,
- * they act as lightweight data carriers for:
- * <ul>
- *   <li>client identity,</li>
- *   <li>server identity,</li>
- *   <li>connection metadata,</li>
- *   <li>lifecycle timestamps,</li>
- *   <li>runtime statistics.</li>
- * </ul>
- *
- * <h2>Classes</h2>
- *
- * <h3>{@link com.viaoa.sync.model.ClientInfo}</h3>
- * Represents a single connected client. Tracks:
- * <ul>
- *   <li>connection ID and creation/disconnect times,</li>
- *   <li>host and network information,</li>
- *   <li>request counts and total request time,</li>
- *   <li>client memory usage,</li>
- *   <li>user identity (userId, userName, location),</li>
- *   <li>sync-thread counts and client version.</li>
- * </ul>
- * Instances of this class are updated by {@code OASyncClient} and
- * {@code OASyncServer} during connection negotiation and runtime.
- *
- * <h3>{@link com.viaoa.sync.model.ServerInfo}</h3>
- * Describes the running {@code OASyncServer} instance. Includes:
- * <ul>
- *   <li>start timestamp,</li>
- *   <li>server host and network metadata,</li>
- *   <li>server version,</li>
- *   <li>flags for start/suspend/discovery state.</li>
- * </ul>
- * Used primarily for diagnostics, discovery, and administrative APIs.
- *
- * <p>
- * Together these model classes provide introspection data for client/server
- * monitoring tools and remote management layers.
+ * {@link com.viaoa.sync.model.ClientInfo} records connection identity, host details, timestamps, request statistics,
+ * memory/thread values, and user-facing identity fields. {@link com.viaoa.sync.model.ServerInfo} records server
+ * startup, host, discovery, and lifecycle state used by diagnostics and administrative APIs.
+ * </p>
  */
 package com.viaoa.sync.model;

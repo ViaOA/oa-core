@@ -6,9 +6,15 @@ import com.viaoa.lang.OAString;
 import com.viaoa.object.OAObject;
 import com.viaoa.select.OASelect;
 
+/**
+ * Resolves or creates unique OAObjects by configured unique property values.
+ */
 public abstract class OAObjectUniqueService {
 	private static final Logger LOG = Logger.getLogger(OAObjectUniqueService.class.getName());
 
+	/**
+	 * Performs OAObjectUniqueService behavior for the OA object service.
+	 */
     public OAObjectUniqueService() {
     }
     
@@ -89,9 +95,43 @@ public abstract class OAObjectUniqueService {
         return oaObj;
     }
 
-	public abstract Object callCacheFind(Class<? extends OAObject> clazz, String propertyPath, Object findObject);
+	/**
+	 * Dependency hook used by this service to cacheFind.
+	 *
+	 * @param clazz method input
+	 * @param path method input
+	 * @param findObject method input
+	 * @return result value
+	 */
+	public abstract Object callCacheFind(Class<? extends OAObject> clazz, String path, Object findObject);
+	/**
+	 * Dependency hook used by this service to reflectCreateNewObject.
+	 *
+	 * @param clazz method input
+	 * @return result value
+	 */
 	public abstract Object callReflectCreateNewObject(Class<?> clazz); 
+	/**
+	 * Dependency hook used by this service to cSIsClient.
+	 *
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callCSIsClient();
+	/**
+	 * Dependency hook used by this service to syncClientGetUnique.
+	 *
+	 * @param clazz method input
+	 * @param propertyName method input
+	 * @param uniqueKey method input
+	 * @param bAutoCreate method input
+	 * @return result value
+	 */
 	public abstract OAObject callSyncClientGetUnique(Class<? extends OAObject> clazz, final String propertyName, Object uniqueKey, boolean bAutoCreate);
+	/**
+	 * Dependency hook used by this service to threadLocalSetLoading.
+	 *
+	 * @param b method input
+	 * @return {@code true} when the operation succeeds or condition is met
+	 */
 	public abstract boolean callThreadLocalSetLoading(boolean b);
 }

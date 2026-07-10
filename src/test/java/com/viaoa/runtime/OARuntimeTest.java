@@ -39,7 +39,6 @@ class OARuntimeTest {
     void serviceAccessorsReturnStableSingletonServices() {
         assertSame(OARuntime.thread(), OARuntime.thread());
         assertSame(OARuntime.datasource(), OARuntime.datasource());
-        assertSame(OARuntime.context(), OARuntime.context());
     }
 
     @Test

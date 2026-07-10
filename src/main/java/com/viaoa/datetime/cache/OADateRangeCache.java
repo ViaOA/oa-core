@@ -20,30 +20,6 @@ import java.util.List;
 
 import com.viaoa.datetime.OADate;
 
-/*qqqqqqqqqqqqq
-CODEX
-
- 1. file/class/method
-     src/main/java/com/viaoa/datetime/cache/OADateRangeCache.java — add(DateRange dateRange) / findMissingGaps(...)
-  2. concrete bug
-     A DateRange with a null list can be added and later treated as a cached/covered range by findMissingGaps, even
-     though getCacheItems skips it and returns no data.
-  3. runtime scenario
-     Caller gets missing gaps, adds a DateRange(begin,end) before populating its list, or accidentally adds a range
-     without data. Future findMissingGaps(begin,end) returns no missing range, but getCacheItems(begin,end) returns
-     nothing for that covered interval.
-  4. why this violates OA/OG datetime semantics
-     This cache’s contract is “missing gaps identify what still needs loading.” A range with no backing data can
-     falsely mark data as loaded, creating silent missing results.
-  5. minimal fix direction
-     Either require DateRange.list to be non-null when adding cached coverage, or document/support “coverage without
-     loaded items” explicitly with a separate marker. Minimal guard: reject or CODEX-comment add(DateRange) when list
-     == null.
-  6. suggested CODEX comment location
-     Above OADateRangeCache.add(DateRange dateRange).
-
-
-*/
 
 /**
  * Helper for caching data that is naturally grouped by date ranges. The cache
@@ -218,28 +194,66 @@ public abstract class OADateRangeCache<T> {
 		return al;
 	}
 
+	/**
+	 * Clears all cached date ranges and their associated items.
+	 */
 	public void clearCache() {
 		alCache.clear();
 	}
 
+	/**
+	 * Inclusive date range and optional cached items for that range.
+	 *
+	 * @param <T> item type stored for the range
+	 */
 	public static class DateRange<T> {
+		/**
+		 * Inclusive begin and end dates for this range.
+		 */
 		protected OADate beginDate, endDate;
+
+		/**
+		 * Cached items associated with this range.
+		 */
 		protected List<T> list;
 
+		/**
+		 * Creates a date range without associated cached items.
+		 *
+		 * @param beginDate inclusive begin date
+		 * @param endDate inclusive end date
+		 */
 		public DateRange(OADate beginDate, OADate endDate) {
 			this.beginDate = beginDate;
 			this.endDate = endDate;
 		}
 
+		/**
+		 * Creates a date range with associated cached items.
+		 *
+		 * @param beginDate inclusive begin date
+		 * @param endDate inclusive end date
+		 * @param list cached items for this range
+		 */
 		public DateRange(OADate beginDate, OADate endDate, List<T> list) {
 			this(beginDate, endDate);
 			this.list = list;
 		}
 
+		/**
+		 * Returns cached items associated with this range.
+		 *
+		 * @return cached items, or {@code null}
+		 */
 		public List<T> getList() {
 			return this.list;
 		}
 
+		/**
+		 * Sets cached items associated with this range.
+		 *
+		 * @param list cached items for this range
+		 */
 		public void setList(List<T> list) {
 			this.list = list;
 		}

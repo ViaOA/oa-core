@@ -30,7 +30,7 @@ import com.viaoa.select.OASelect;
  * <ul>
  *   <li>Encapsulate the predicate used to include or exclude objects
  *       returned from a DataSource.</li>
- *   <li>Provide a lightweight bridge between object-graph filters and
+ *   <li>Provide a lightweight bridge between OA object filters and
  *       native query conditions.</li>
  * </ul>
  *

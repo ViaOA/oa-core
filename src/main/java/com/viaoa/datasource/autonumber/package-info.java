@@ -49,10 +49,10 @@ Contract statement:
 com.viaoa.datasource.autonumber defines lightweight OA generated-identity assignment for OAObjects when a full
 persistence datasource is not responsible for assigning numeric IDs.
 Rationale:
-Auto-number assignment participates in OA object identity, cache keys, object lifecycle, and graph consistency even
+Auto-number assignment participates in OA object identity, cache keys, object lifecycle, and OA consistency even
 though this datasource does not provide storage, selection, query, update, or delete persistence.
 Source scope:
-OADataSourceAuto, NextNumber, OADataSource integration, OAObject identity metadata, OARuntime graph/object services.
+OADataSourceAuto, NextNumber, OADataSource integration, OAObject identity metadata, OARuntime OA/object services.
 Related CODEX findings:
 OADataSourceAuto source notes local/negative-number identity question and concurrent startNextNumber assignment
 risk.
@@ -106,7 +106,7 @@ ID properties and must be marked auto-assign.
 Rationale:
 Assigning generated values to a non-ID or non-auto-assign property corrupts object identity and cache-key behavior.
 Source scope:
-OADataSourceAuto._getNextNumber(...), OARuntime.graph(clazz), OAObjectInfo.getIdProperties(),
+OADataSourceAuto._getNextNumber(...), OARuntime.oa(clazz), OAObjectInfo.getIdProperties(),
 OAPropertyInfo.getAutoAssign(), NextNumber.setProperty(...).
 Related CODEX findings:
 None observed.
@@ -156,7 +156,7 @@ For a given class sequence, each successful generated ID allocation must reserve
 the sequence so that the same value is not allocated twice within the sequence scope.
 Rationale:
 Generated IDs are object identity keys. Duplicate allocation corrupts cache, datasource, sync, replication, and
-graph semantics.
+OA runtime semantics.
 Source scope:
 OADataSourceAuto.assignId(...), OADataSourceAuto.getNextNumber(...), NextNumber.getNext(), NextNumber.setNext(...).
 Related CODEX findings:
@@ -188,13 +188,13 @@ Datasource Autonumber / Starting Sequence Semantics
 
 AUTONUM-CACHE-001 — Cache Collision Avoidance
 Contract statement:
-Before assigning a generated ID, the datasource must avoid assigning a value already present in the active graph/
+Before assigning a generated ID, the datasource must avoid assigning a value already present in the active OA/
 cache for the target class, and must continue allocation until an unused value is found or fail visibly.
 Rationale:
 Object cache identity is authoritative at runtime; generated IDs must not create duplicate cached objects for the
 same class/key.
 Source scope:
-OADataSourceAuto.assignId(...), OARuntime.graph(oaObj), callObjectCacheGetObject(...), OAObject.setProperty(...).
+OADataSourceAuto.assignId(...), OARuntime.oa(oaObj), callObjectCacheGetObject(...), OAObject.setProperty(...).
 Related CODEX findings:
 None observed.
 Suggested unit tests:
@@ -210,7 +210,7 @@ that guard with try/finally on success, failure, and early exit after the guard 
 Rationale:
 OA object services need to distinguish datasource-generated identity assignment from normal user property mutation.
 Source scope:
-OADataSourceAuto.assignId(...), OARuntime.graph(oaObj), callObjectDSSetAssigningId(...), OAObject.setProperty(...).
+OADataSourceAuto.assignId(...), OARuntime.oa(oaObj), callObjectDSSetAssigningId(...), OAObject.setProperty(...).
 Related CODEX findings:
 Current assignment path uses try/finally around the assigning-ID guard.
 Suggested unit tests:
@@ -247,7 +247,7 @@ Rationale:
 Partial progress around identity assignment can create objects whose lifecycle state, cache key, or sync/
 serialization identity does not match their actual property state.
 Source scope:
-OADataSourceAuto.assignId(...), insert(...), insertWithoutReferences(...), OARuntime graph object services.
+OADataSourceAuto.assignId(...), insert(...), insertWithoutReferences(...), OARuntime OA object services.
 Related CODEX findings:
 None directly beyond duplicate assignment risk.
 Suggested unit tests:
@@ -311,13 +311,13 @@ Datasource Autonumber / Null and Unsupported Semantics
 AUTONUM-DISTRIBUTED-001 — Distributed Identity Boundary
 Contract statement:
 Auto-number generated IDs are local datasource identity assignments unless a higher-level datasource, sync,
-replication, or graph authority explicitly defines distributed uniqueness, temporary identity, negative/local
+replication, or OA authority explicitly defines distributed uniqueness, temporary identity, negative/local
 identity, or reconciliation semantics.
 Rationale:
 Distributed OA systems need clear separation between local generated IDs and globally authoritative persistent
 identity to avoid cross-site duplicate keys.
 Source scope:
-OADataSourceAuto, NextNumber, integration with OARuntime graph, cache, sync, replication, and datasource packages.
+OADataSourceAuto, NextNumber, integration with OARuntime OA services, cache, sync, replication, and datasource packages.
 Related CODEX findings:
 Source comment asks “what about local (negative numbers)”, indicating unresolved local/distributed identity
 semantics.
@@ -349,13 +349,13 @@ Datasource Autonumber / Sequence Object Semantics
 AUTONUM-INTEGRATION-001 — Cross-Package Identity Compatibility
 Contract statement:
 Auto-number behavior must remain compatible with OAObjectInfo ID metadata, OAObject property mutation semantics,
-graph/cache key authority, datasource save/insert lifecycle, transaction boundaries, serialization, sync,
+OA/cache key authority, datasource save/insert lifecycle, transaction boundaries, serialization, sync,
 replication, and generated blueprint annotations.
 Rationale:
 Generated identity is cross-cutting runtime state. Assignment must not bypass object metadata, cache indexes,
 transaction semantics, or distributed identity assumptions.
 Source scope:
-OADataSourceAuto, NextNumber, OAObjectInfo, OAPropertyInfo, OARuntime graph object services,
+OADataSourceAuto, NextNumber, OAObjectInfo, OAPropertyInfo, OARuntime OA object services,
 OAObject.setProperty(...), cache/datasource/sync/replication integration.
 Related CODEX findings:
 Concurrent duplicate assignment risk and local/negative identity question both map to identity/cache/datasource

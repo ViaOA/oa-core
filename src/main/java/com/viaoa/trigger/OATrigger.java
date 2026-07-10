@@ -22,20 +22,20 @@ import com.viaoa.object.OAObject;
 CODEX
 
 
-4. file/class/method: src/main/java/com/viaoa/trigger/OATrigger.java:121 OATrigger constructor / getPropertyPaths
+4. file/class/method: src/main/java/com/viaoa/trigger/OATrigger.java:121 OATrigger constructor / getPaths
 
-  concrete bug: propertyPaths is externally mutable after registration, which can leave stale trigger registrations
+  concrete bug: paths is externally mutable after registration, which can leave stale trigger registrations
   behind on unregister.
 
   runtime scenario: Caller constructs a trigger with a String[], registers it, then mutates the original array or the
-  array returned by getPropertyPaths(). Later OAObjectInfo.removeTrigger traverses the current property paths to
+  array returned by getPaths(). Later OAObjectInfo.removeTrigger traverses the current property paths to
   remove trigger registrations from linked OAObjectInfo instances. If the paths changed, linked registrations for the
   original paths can remain and still fire after unregister.
 
   why this violates OA/OG trigger semantics: Removing/unregistering a trigger must prevent future eligible executions.
   External mutation of the trigger’s dependency path array can make unregister incomplete without an obvious failure.
 
-  minimal fix direction: Defensively copy propertyPaths in the constructor and return a copy from getPropertyPaths().
+  minimal fix direction: Defensively copy paths in the constructor and return a copy from getPaths().
   Treat dependent trigger arrays similarly if they are intended to be externally visible.
 
   suggested CODEX comment location: At line 121 and/or line 197.
@@ -81,7 +81,7 @@ public class OATrigger {
 	 * The list of property paths that this trigger monitors relative to the root class.
 	 * Each path represents a dependency that can cause the trigger to fire.
 	 */
-	protected String[] propertyPaths;
+	protected String[] paths;
     
 	/**
 	 * The listener invoked when any monitored property path produces an event.
@@ -126,7 +126,7 @@ public class OATrigger {
      * @param name                         the trigger name
      * @param rootClass                    the root class from which property paths are evaluated
      * @param triggerListener              the listener to invoke when the trigger fires
-     * @param propertyPaths                the property paths that this trigger depends on
+     * @param paths                the property paths that this trigger depends on
      * @param bOnlyUseLoadedData           true to restrict evaluation to already-loaded data
      * @param bServerSideOnly              true to limit execution to the server
      * @param bUseBackgroundThread         true to execute the trigger in a background thread
@@ -136,7 +136,7 @@ public class OATrigger {
         String name,
         Class rootClass,
         OATriggerListener triggerListener,
-        String[] propertyPaths, 
+        String[] paths, 
         final boolean bOnlyUseLoadedData, 
         final boolean bServerSideOnly, 
         final boolean bUseBackgroundThread,
@@ -144,7 +144,7 @@ public class OATrigger {
     {
         this.name = name;
         this.rootClass = rootClass;
-        this.propertyPaths = propertyPaths;
+        this.paths = paths;
         this.triggerListener = triggerListener;
         this.bOnlyUseLoadedData = bOnlyUseLoadedData;
         this.bServerSideOnly = bServerSideOnly;
@@ -159,7 +159,7 @@ public class OATrigger {
      * @param name                         the trigger name
      * @param rootClass                    the root class from which the property path is evaluated
      * @param triggerListener              the listener to invoke when the trigger fires
-     * @param propertyPath                 the dependent property path
+     * @param path                 the dependent property path
      * @param bOnlyUseLoadedData           true to restrict evaluation to already-loaded data
      * @param bServerSideOnly              true to limit execution to the server
      * @param bUseBackgroundThread         true to execute the trigger in a background thread
@@ -169,7 +169,7 @@ public class OATrigger {
         String name,
         Class rootClass,
         OATriggerListener triggerListener,
-        String propertyPath, 
+        String path, 
         final boolean bOnlyUseLoadedData, 
         final boolean bServerSideOnly, 
         final boolean bUseBackgroundThread,
@@ -177,7 +177,7 @@ public class OATrigger {
     {
         this.name = name;
         this.rootClass = rootClass;
-        this.propertyPaths = new String[] {propertyPath};
+        this.paths = new String[] {path};
         this.triggerListener = triggerListener;
         this.bOnlyUseLoadedData = bOnlyUseLoadedData;
         this.bServerSideOnly = bServerSideOnly;
@@ -220,8 +220,8 @@ public class OATrigger {
     	return bUseBackgroundThreadIfNeeded;
     }
 
-	public String[] getPropertyPaths() {
-		return propertyPaths;
+	public String[] getPaths() {
+		return paths;
 	}
 	
 	public String getName() {

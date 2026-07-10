@@ -25,119 +25,6 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
 
-/*qqqqqqqqqqqqqqqqqqq
-CODEX
-
-  3. src/main/java/com/viaoa/sync/remote/RemoteClientImpl.java:140 / src/main/java/com/viaoa/sync/remote/
-     RemoteDataSource.java:536
-
-  Concrete bug:
-  RemoteClientImpl.close() nulls remoteDataSource but does not close or drain active server-side iterators held inside
-  RemoteDataSource.hashIterator.
-
-  Runtime scenario:
-  Client opens a remote datasource select, reads only part of the result set, then disconnects.
-  OASyncServer.onClientDisconnect(...) calls cx.remoteClient.close(). The RemoteDataSource object is dropped without
-  closing/removing active datasource iterators.
-
-  Why this violates sync semantics:
-  Normal disconnect can leak datasource iterator/result resources on the server until GC or datasource timeout. For
-  long-lived server processes, this can leak cursors/connections from ordinary OA client behavior.
-
-  Minimal fix direction:
-  Add RemoteDataSource.close() to remove/close all active iterators where supported, and call it from
-  RemoteClientImpl.close() before nulling the field.
-
-  Suggested CODEX comment location:
-  RemoteClientImpl.close() and RemoteDataSource.hashIterator.
-
-  Suggested regression test:
-  testRemoteClientCloseReleasesActiveRemoteDatasourceIterators()
-
-2. src/main/java/com/viaoa/sync/remote/RemoteClientImpl.java:501 / refresh(Class, OAObjectKey) and src/main/java/
-     com/viaoa/sync/remote/RemoteClientImpl.java:517 / refresh(Class, OAObjectKey, String)
-
-  Concrete bug: client-requested refresh silently no-ops when the server object is not currently in cache.
-
-  Runtime scenario: client calls OAObject.refresh(); server weak cache no longer has the object, but the datasource
-  does. RemoteClientImpl.refresh(...) uses only cache lookup and returns void if missing. Client returns from refresh
-  without updated values and without failure.
-
-  Why this violates sync semantics: refresh is an authoritative server operation. Cache eviction should not turn a
-  valid refresh into silent success/no-op.
-
-  Minimal fix direction: resolve through the same cache-or-datasource path used by other server object operations, or
-  throw/return failure if refresh cannot be applied.
-
-  Suggested CODEX comment location: around both refresh(...) methods.
-
-  Suggested regression test: testClientRefreshLoadsServerObjectWhenEvictedFromCache()
-
-  3. src/main/java/com/viaoa/sync/remote/RemoteClientImpl.java:373 / createCopy(...)
-
-  Concrete bug: remote create-copy uses cache-only lookup and returns null on server cache miss.
-
-  Runtime scenario: client asks to create a copy of an object it still has by key, but the server weak cache has
-  evicted the object. The authoritative datasource can reload it, but createCopy(...) returns null.
-
-  Why this violates sync semantics: client-visible copy behavior depends on transient server cache residency, not
-  object identity/datasource authority.
-
-  Minimal fix direction: use the existing cache-or-datasource object resolution helper before copying, or fail visibly
-  if the source cannot be resolved.
-
-  Suggested CODEX comment location: RemoteClientImpl.createCopy(...), around lines 373-379.
-
-  Suggested regression test: testRemoteCreateCopyReloadsSourceObjectAfterServerCacheEviction()
-
-
-4. src/main/java/com/viaoa/sync/OASyncServer.java:1384 / start()
-
-  Concrete bug: partial server startup failure leaves already-started components running.
-
-  Runtime scenario: request logger and multiplexer start, then remote multiplexer or file service startup throws. The
-  exception is visible, but sockets/threads already started by earlier steps are not stopped, so retry can run against
-  partially live server state.
-
-  Why this violates sync semantics: startup failure becomes retry-hostile and can leave live sync endpoints after
-  caller believes startup failed.
-
-  Minimal fix direction: track completed startup steps and clean them up in a catch block, or stage startup so
-  components become visible only after all required services start.
-
-  Suggested CODEX comment location: OASyncServer.start(), around lines 1384-1390.
-
-  Suggested regression test: testSyncServerStartFailureCleansPreviouslyStartedComponents()
-
-1. file/class/method
-     src/main/java/com/viaoa/sync/remote/RemoteClientImpl.java:294
-     RemoteClientImpl.getRemoteDataSource().setCached(...)
-
-  concrete bug
-  hmGuid.putIfAbsent(guid, false) happens before updateObjectCache(obj). If updateObjectCache fails, the server-side
-  session GUID map can say the client has an object that the client did not successfully receive/retain.
-
-  runtime scenario
-  During remote datasource iteration, RemoteDataSource.datasourceNext(...) calls setCached(oa) before returning the
-  batch. If updateObjectCache(obj) throws, the remote call fails and the client may receive no batch, but hmGuid
-  already contains the object GUID.
-
-  why this violates OA/OG sync semantics
-  Sync filtering depends on hmGuid being truthful. A precommitted GUID can cause later sync/detail serialization to
-  send only references or suppress messages because the server believes the client already has the object.
-
-  minimal fix direction
-  Move hmGuid.putIfAbsent(...) after successful updateObjectCache(obj), or roll it back if updateObjectCache fails.
-
-  suggested CODEX comment location
-  RemoteClientImpl.getRemoteDataSource().setCached(...), around the hmGuid.putIfAbsent call.
-
-
-
-
-
-
-*/
 
 /**
  * Base server-side implementation of {@link RemoteClientInterface}. Each
@@ -155,7 +42,7 @@ CODEX
  *
  * <h2>Detail Loading</h2>
  * Detail loading is delegated to a {@link ClientGetDetail} instance, which
- * manages sibling logic, depth rules, and object-graph serialization.
+ * manages sibling logic, depth rules, and OA model serialization.
  *
  * <h2>Datasource Access</h2>
  * This class exposes a virtual {@link RemoteDataSource} to the client:
@@ -219,6 +106,11 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		this.sessionId = sessionId;
 		this.hmGuid = hmGuid;
 		clientGetDetail = new ClientGetDetail(sessionId, hmGuid) {
+			/**
+			 * Requests server-side background loading for a returned object property.
+			 * @param obj object to load from
+			 * @param property property to load
+			 */
 			@Override
 			protected void loadDataInBackground(OAObject obj, String property) {
 				RemoteClientImpl.this.loadDataInBackground(obj, property);
@@ -333,6 +225,10 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 				if (remoteDataSource == null) {
 					remoteDataSource = new RemoteDataSource() {
 						// used when an object from ds is not already in a hub with master.
+						/**
+						 * Marks a returned object as cached/held by the client session.
+						 * @param obj object cached by the client
+						 */
 						@Override
 						public void setCached(OAObject obj) {
                             if (hmGuid != null) {
@@ -525,7 +421,6 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 			}
 			if (obj != null) {
 				// object must have been GCd, use the original guid
-//qqqqqqqqqqqqqqqqqqqqqqqqq 20260121 WAS: 				
 //qq				og.getOAObjectService().getOAObjectGuidService().reassignGuid(obj, origKey);
 			}
 		}

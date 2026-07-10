@@ -8,9 +8,15 @@ import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.lang.oa.VEnum;
 import com.viaoa.object.OAObject;
 
+/**
+ * Resolves enum metadata for OAObject properties.
+ */
 public abstract class OAObjectEnumService {
 	private static final Logger LOG = Logger.getLogger(OAObjectEnumService.class.getName());
 
+	/**
+	 * Performs OAObjectEnumService behavior for the OA object service.
+	 */
     public OAObjectEnumService() {
     }
 
@@ -38,6 +44,12 @@ public abstract class OAObjectEnumService {
 
 
 	// @OAParentProvided (example = "srvcObject.getOAObjectInfoService().getOAObjectInfo(clazz)")
+	/**
+	 * Dependency hook used by this service to infoGetObjectInfo.
+	 *
+	 * @param clazz method input
+	 * @return result value
+	 */
 	public abstract OAObjectInfo callInfoGetObjectInfo(Class<? extends OAObject> clazz); 
 	
 }

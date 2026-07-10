@@ -255,7 +255,7 @@ property-path events.
 Related CODEX findings:
 OAChangeProcessor.addListener(Hub, String) simple-property branch constructs but does not register a listener.
 Suggested unit tests:
-changeProcessorSimplePropertyListenerFires(), changeProcessorPropertyPathListenerFires(),
+changeProcessorSimplePropertyListenerFires(), changeProcessorPathListenerFires(),
 changeProcessorHubMembershipListenerFiresWhenRequested().
 Spec target section:
 Process Runtime / Event Integration Semantics.

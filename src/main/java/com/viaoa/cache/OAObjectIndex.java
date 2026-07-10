@@ -24,14 +24,6 @@ import com.viaoa.object.OAObject;
 import com.viaoa.object.OAObjectKey;
 import com.viaoa.runtime.OARuntime;
 
-/*qqqqqqqqqqqqqqqqqqqqqq
-CODEX
-
-
-
-*/
-
-
 
 /**
  * Maintains a runtime index of OAObject instances by their primary/business key
@@ -47,7 +39,6 @@ CODEX
  * garbage collected, preserving memory and avoiding stale identity entries.</p>
  *
  * @see OAObjectKey
- * @see OAObjectKeyDelegate#getKey
  * @see OAObjectCache
  */
 public class OAObjectIndex {
@@ -244,6 +235,11 @@ public class OAObjectIndex {
 		hmGuidByIndexKey.clear();
 	}
 
+	/**
+	 * Removes indexed key entries for one OAObject class.
+	 *
+	 * @param clazz OAObject class whose key index should be cleared
+	 */
 	public void clear(Class<? extends OAObject> clazz) {
 		if (clazz == null) return;
 		ConcurrentHashMap<OAObjectIndexKey, UUID> hm = hmGuidByIndexKey.get(clazz);

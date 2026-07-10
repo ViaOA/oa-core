@@ -16,7 +16,7 @@ class OAHierFinderTest {
     private static final AtomicInteger NEXT = new AtomicInteger(5000);
     private static final String RAW_PARENT_PATH = "parentItemCategory";
     private static final String GENERATED_PARENT_PATH = ItemCategoryPP.parentItemCategory().pp();
-    private static final String TEXT_UTIL_PARENT_PATH = OATextUtil.createPropertyPath(ItemCategory.P_ParentItemCategory);
+    private static final String TEXT_UTIL_PARENT_PATH = OATextUtil.createPath(ItemCategory.P_ParentItemCategory);
 
     @Test
     void constructorsIncludeOrSkipStartingObject() {

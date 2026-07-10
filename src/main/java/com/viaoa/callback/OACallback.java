@@ -16,14 +16,23 @@
 package com.viaoa.callback;
 
 /**
- * Callback for methods that "visit" object graphs. see OAObjectCacheService#
+ * Generic visitor callback used by OA traversal operations.
+ * <p>
+ * Implementations receive each object selected by the owning operation and
+ * return whether traversal should continue. The owner defines the traversal
+ * source, ordering, and stop boundary.
+ * </p>
+ *
+ * @param <TYPE> object type supplied to the callback
  */
 public interface OACallback<TYPE> {
 
 	/**
-	 * Invoked while visiting objects in an object graph. Implementations
-	 * can perform processing on the supplied object and control whether
-	 * the visitation should continue.
+	 * Invoked for the current object in an OA traversal.
+	 * <p>
+	 * Returning {@code false} requests that the owning traversal stop according
+	 * to its documented stop rules.
+	 * </p>
 	 *
 	 * @param obj the current object being visited
 	 * @return {@code true} to continue visiting additional objects,

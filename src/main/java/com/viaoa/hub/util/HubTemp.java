@@ -65,19 +65,19 @@ import java.lang.ref.*;
  * </ul>
  */
 public class HubTemp<TYPE extends OAObject> {
-	
+
 	/**
 	 * The temporary Hub instance associated with a single object. Created on
 	 * demand and used to provide a Hub context for operations requiring one.
 	 */
     Hub<TYPE> hub;
-    
+
     /**
      * The underlying object represented by this temporary Hub. Used as the key
      * for cached lookup and identity validation.
      */
     TYPE object;
-    
+
     /**
      * Reference count indicating how many callers currently require this
      * temporary Hub. When decremented to zero, the HubTemp becomes eligible
@@ -91,7 +91,7 @@ public class HubTemp<TYPE extends OAObject> {
      * allowing garbage collection when no longer referenced.
      */
     private static final Map<Class, Map<Object, WeakReference<HubTemp>>> hmClass = new HashMap<>();
-    
+
     /**
      * Retrieves (or lazily creates) the per-class map used to store weak
      * references to HubTemp instances. Thread-safe through synchronization
@@ -114,7 +114,7 @@ public class HubTemp<TYPE extends OAObject> {
         }
         return hm;
     }
-    
+
     /**
      * Creates or retrieves a temporary Hub for the specified object. If a
      * HubTemp already exists for the object, increments its reference count.
@@ -126,9 +126,9 @@ public class HubTemp<TYPE extends OAObject> {
      */
     public static Hub createHub(Object hubObject) {
         if (hubObject == null) return null;
-        
+
         Map<Object, WeakReference<HubTemp>> hm = getMap(hubObject.getClass());
-        
+
         HubTemp ht = null;
         synchronized (hm) {
             WeakReference ref = hm.get(hubObject);
@@ -146,7 +146,7 @@ public class HubTemp<TYPE extends OAObject> {
         }
         return ht.hub;
     }
-    
+
     /**
      * Returns the reference count of the temporary Hub associated with the
      * given object. If no temporary Hub exists or if it has been reclaimed,
@@ -157,7 +157,7 @@ public class HubTemp<TYPE extends OAObject> {
      */
     public static int getCount(Object hubObject) {
         if (hubObject == null) return 0;
-        
+
         Map hm = getMap(hubObject.getClass());
         synchronized (hm) {
             WeakReference ref = (WeakReference) hm.get(hubObject);
@@ -167,7 +167,7 @@ public class HubTemp<TYPE extends OAObject> {
             return ht.cnt;
         }
     }
-    
+
     /**
      * Decrements the reference count of the temporary Hub associated with the
      * specified object. Once the count reaches zero (or the HubTemp has been
@@ -177,10 +177,10 @@ public class HubTemp<TYPE extends OAObject> {
      */
     public static void deleteHub(Object hubObject) {
         if (hubObject == null) return;
-        
+
         Map<Object, WeakReference> hm = getMap(hubObject.getClass());
         if (hm == null) return;
-        
+
         WeakReference<HubTemp> ref;
         synchronized (hm) {
         	ref = hm.get(hubObject); 
@@ -189,7 +189,7 @@ public class HubTemp<TYPE extends OAObject> {
             if (ht == null || (ht.object == hubObject && (--ht.cnt) == 0) ) hm.remove(hubObject);
         }
     }
-    
+
     /**
      * Returns the total number of active temporary Hub entries across all
      * classes in the global cache.
@@ -201,7 +201,7 @@ public class HubTemp<TYPE extends OAObject> {
         for (Class c : hmClass.keySet()) {
             Map h = getMap(c); 
             if (h != null) cnt += h.size();
-        }    
+        }
         return cnt;
     }
 }

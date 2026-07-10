@@ -230,7 +230,7 @@ comparison callers.
 Related CODEX findings: OAObjectCompare key/null/array/property compare findings.
 Suggested unit tests: testOAObjectCompareUsesConfiguredKeyContract(),
 testObjectIdentityCompareDiffersFromPropertyValueCompareByContract(),
-testOAObjectCompareReportsPropertyPathMismatch()
+testOAObjectCompareReportsPathMismatch()
 Spec target section: Compare Runtime / Object Comparison Semantics
 
 COMPARE-COMPARATOR-001 — Comparator Implementations Obey Java Comparator Contract
@@ -249,10 +249,10 @@ COMPARE-COMPARATOR-002 — Comparator Property Path Parsing And Direction Are De
 Contract statement: Comparator property path parsing, multi-column ordering, ascending/descending direction, and
 null placement must be deterministic for the same property path string and class metadata.
 Rationale: Hub sorting and datasource object-cache ordering depend on stable parsed sort configuration.
-Source scope: OAComparator constructor, getPropertyPaths, getAsc, init, methodss/bAscendings.
+Source scope: OAComparator constructor, getPaths, getAsc, init, methodss/bAscendings.
 Related CODEX findings: Order parser spacing issue; lazy init publication race.
 Suggested unit tests: testOAComparatorMultiColumnDescParsingWithSpaces(),
-testOAComparatorDirectionStableAfterInit(), testComparatorPropertyPathParsingDeterministic()
+testOAComparatorDirectionStableAfterInit(), testComparatorPathParsingDeterministic()
 Spec target section: Compare Runtime / Comparator Parsing
 
 COMPARE-THREAD-001 — Shared Comparison Helpers Are Safely Initialized

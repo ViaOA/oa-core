@@ -42,7 +42,7 @@ import com.viaoa.metadata.OAPropertyInfo;
  *   </li>
  * </ul>
  * The key-marking is performed by {@link OAObjectPojoLoader} when the
- * {@link Pojo} graph is created; this delegate only reads the resulting
+ * {@link Pojo} model is created; this delegate only reads the resulting
  * {@code keyPos} flags to answer higher-level questions.
  */
 public class PojoDelegate {

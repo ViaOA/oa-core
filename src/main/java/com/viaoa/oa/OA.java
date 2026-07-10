@@ -12,7 +12,7 @@ import com.viaoa.object.OAObjectKey;
 import com.viaoa.select.OASelect;
 
 /**
- * Object Graph runtime for a model package.
+ * OA runtime for a model package.
  * <p>
  * {@code OA} is the executable runtime for a model-defined blueprint.
  * It operates as a layer above the data source, allowing applications to work
@@ -24,20 +24,20 @@ import com.viaoa.select.OASelect;
  * collections together based on model-defined relationships.
  * <p>
  * Through its verbs, {@code OA} produces and maintains live views into
- * the object graph. These views are automatically kept up to date as objects,
+ * the OA model. These views are automatically kept up to date as objects,
  * relationships, and state change, without requiring manual refresh.
  * <p>
- * {@code OA} also supports distributed object graph behavior through
- * runtime synchronization and replication, allowing live graph state to remain
+ * {@code OA} also supports distributed OA model behavior through
+ * runtime synchronization and replication, allowing live OA model state to remain
  * coordinated across threads, processes, clients, servers, or sites.
  * <p>
  * As the runtime layer for the executable blueprint, {@code OA} manages
- * core graph behavior such as identity, uniqueness, relationships, validation,
+ * core OA runtime behavior such as identity, uniqueness, relationships, validation,
  * policy, security, and blueprint introspection.
  * <p>
  * {@code OA} has two main kinds of verbs:
  * <ul>
- *   <li><b>Core graph verbs</b> used to create, get, select, find, observe,
+ *   <li><b>Core OA runtime verbs</b> used to create, get, select, find, observe,
  *       save, and delete live model objects and collections.</li>
  *   <li><b>Blueprint composition verbs</b> used to create and maintain derived
  *       live structures such as detail Hubs, shared Hubs, merged Hubs,
@@ -50,16 +50,16 @@ import com.viaoa.select.OASelect;
  * In practice, {@code OA} is the entry point into the executable model:
  *
  * <pre>{@code
- * OA oa = OARuntime.createGraph(MyModel.class.getPackage());
+ * OA oa = OARuntime.oa(MyModel.class.getPackage());
  *
- * Hub<Order> orders = og.select(Order.class, "store.region = ?", "SE");
- * Order order = og.get(Order.class, 12345);
+ * Hub<Order> orders = oa.select(Order.class, "store.region = ?", "SE");
+ * Order order = oa.get(Order.class, 12345);
  * OAObjectInfo info = oa.info(Order.class);
  * }</pre>
  *
  * After entering through {@code OA}, developers typically continue working
  * directly with live model objects and Hubs by navigating relationships and
- * composing additional live views using the graph.
+ * composing additional live views using OA runtime services.
  */
 public interface OA {
 
@@ -67,66 +67,66 @@ public interface OA {
 	 * Returns the model package name used to create this {@code OA}.
 	 * <p>
 	 * The package identifies the set of model classes (OAObjects) that define
-	 * the blueprint executed by this graph.
+	 * the blueprint executed by this OA runtime.
 	 * <p>
 	 * Each {@code OA} instance is tied to a specific model package,
 	 * which determines the available object types, relationships, and metadata.
 	 *
-	 * @return the fully qualified package name for this graph's model
+	 * @return the fully qualified package name for this OA runtime's model
 	 */
 	public String getPackageName();
 	
 	/**
-	 * Returns the real-time synchronization operations for this graph.
+	 * Returns the real-time synchronization operations for this OA runtime.
 	 * <p>
 	 * {@code sync()} provides access to the runtime synchronization layer used
-	 * to propagate changes to objects and Hubs immediately across the Object Graph.
+	 * to propagate changes to objects and Hubs immediately across the OA model.
 	 * <p>
-	 * Synchronization keeps live graph state consistent in real time across
+	 * Synchronization keeps live OA model state consistent in real time across
 	 * connected runtimes, between clients and a server. Changes made in
-	 * one part of the graph are automatically reflected in others without requiring
+	 * one part of the OA model are automatically reflected in others without requiring
 	 * manual coordination.
 	 * <p>
-	 * This represents real-time coordination of the graph. For eventual consistency
+	 * This represents real-time coordination of the OA runtime. For eventual consistency
 	 * with offline support and server-to-server synchronization, see
 	 * {@link #replication()}.
 	 *
-	 * @return synchronization operations for this graph
+	 * @return synchronization operations for this OA runtime
 	 */	
 	public SyncOps sync();
 
 	
 	 /**
-	  * Returns the replication operations for this graph.
+	  * Returns the replication operations for this OA runtime.
 	  * <p>
 	  * {@code replication()} provides access to the runtime replication layer used
-	  * to capture, transmit, and apply changes between Object Graph instances.
+	  * to capture, transmit, and apply changes between OA model instances.
 	  * <p>
 	  * Replication supports eventual consistency across distributed runtimes,
 	  * which is server-to-server coordination and offline scenarios. Changes are
-	  * recorded, transmitted, and applied so that graph state converges over time.
+	  * recorded, transmitted, and applied so that OA model state converges over time.
 	  * <p>
-	  * This represents eventual synchronization of the graph with support for
+	  * This represents eventual synchronization of OA model state with support for
 	  * disconnected operation. For real-time synchronization between connected
 	  * runtimes, see {@link #sync()}.
 	  *
-	  * @return replication operations for this graph
+	  * @return replication operations for this OA runtime
 	  */
 	 public ReplicationOps replication();
 	
 
-	// =========== Core graph verbs (CRUD+) ===========
+	// =========== Core OA verbs (CRUD+) ===========
 	
 	 /**
 	  * Creates a new live object instance for the supplied model type.
 	  * <p>
-	  * {@code create(...)} creates an {@link OAObject} that is part of this graph's
-	  * runtime model and is ready to participate in normal object graph behavior,
+	  * {@code create(...)} creates an {@link OAObject} that is part of this OA runtime's
+	  * runtime model and is ready to participate in normal OA model behavior,
 	  * including references, Hub membership, observation, persistence, and other
 	  * model-driven services.
 	  * <p>
 	  * This is the object-level creation verb for the executable blueprint. Use it
-	  * when a new model object should be created through the graph rather than by
+	  * when a new model object should be created through the OA runtime rather than by
 	  * directly calling a constructor.
 	  * <p>
 	  * The returned object is not automatically saved. Persist it using
@@ -144,13 +144,13 @@ public interface OA {
 	  * Creates a new live Hub for the supplied model type.
 	  * <p>
 	  * {@code createHub(...)} creates a {@link Hub} that participates in normal
-	  * object graph behavior, including selection, detail wiring, observation,
-	  * sharing, merging, grouping, and other graph-driven operations.
+	  * OA model behavior, including selection, detail wiring, observation,
+	  * sharing, merging, grouping, and other OA-driven operations.
 	  * <p>
 	  * This is the collection-level creation verb for the executable blueprint.
 	  * <p>
 	  * The returned Hub is empty until populated by application code using standard
-	  * Hub operations (such as add, remove, and iteration) or by graph operations
+	  * Hub operations (such as add, remove, and iteration) or by OA runtime operations
 	  * such as {@link #select(Class, String, String, Object...)},
 	  * {@link #detail(Hub, String)}, {@link #merge(Hub, String)}, or
 	  * {@link #combine(Hub, Hub[])}.
@@ -163,10 +163,10 @@ public interface OA {
 	 <T extends OAObject> Hub<T> createHub(Class<T> type);
 	
 	 /**
-	  * Persists the supplied object using the graph's runtime and data sources.
+	  * Persists the supplied object using the OA runtime's runtime and data sources.
 	  * <p>
 	  * {@code save(...)} writes the current state of the object through the
-	  * Object Graph, applying all model-defined behavior such as relationships,
+	  * OA model, applying all model-defined behavior such as relationships,
 	  * rules, and lifecycle handling.
 	  * <p>
 	  * This is equivalent to calling {@code save()} on the {@link OAObject} itself.
@@ -175,11 +175,11 @@ public interface OA {
 	  * related objects that are configured for cascading (for example, owned or
 	  * dependent objects).
 	  * <p>
-	  * If the object is new, it becomes part of the persistent graph. Its new-state
+	  * If the object is new, it becomes part of the persistent OA runtime. Its new-state
 	  * is cleared, and any model-defined identity value may be assigned.
 	  * <p>
-	  * The object must be part of this graph. Changes made to the object and its
-	  * related graph structure are persisted according to the configured
+	  * The object must be part of this OA runtime. Changes made to the object and its
+	  * related OA model structure are persisted according to the configured
 	  * data sources and runtime policies.
 	  * <p>
 	  * This is the primary persistence verb for individual objects in the
@@ -194,7 +194,7 @@ public interface OA {
 	 * Persists all objects contained in the supplied Hub.
 	 * <p>
 	 * {@code save(...)} writes the current state of each object in the Hub through
-	 * the Object Graph, applying all model-defined behavior such as relationships,
+	 * the OA model, applying all model-defined behavior such as relationships,
 	 * rules, and lifecycle handling.
 	 * <p>
 	 * Save operations may cascade to related objects based on the model's
@@ -208,9 +208,9 @@ public interface OA {
     void save(Hub<?> hub);
 
     /**
-     * Deletes the supplied object from the graph and underlying data sources.
+     * Deletes the supplied object from the OA runtime and underlying data sources.
      * <p>
-     * {@code delete(...)} removes the object through the Object Graph, applying
+     * {@code delete(...)} removes the object through the OA model, applying
      * all model-defined behavior such as relationships, rules, and lifecycle
      * handling.
      * <p>
@@ -224,7 +224,7 @@ public interface OA {
      * cleared according to the model, and the object is removed from any Hubs
      * in which it participates.
      * <p>
-     * The object must be part of this graph.
+     * The object must be part of this OA runtime.
      *
      * @param obj the object to delete
      */
@@ -234,11 +234,11 @@ public interface OA {
     /**
      * Deletes all objects contained in the supplied Hub.
      * <p>
-     * {@code delete(...)} removes each object in the Hub through the Object Graph,
+     * {@code delete(...)} removes each object in the Hub through the OA model,
      * applying all model-defined behavior such as relationships, rules, and
      * lifecycle handling.
      * <p>
-     * Each deleted object is removed from the graph, including its relationships
+     * Each deleted object is removed from the OA runtime, including its relationships
      * and collections. References to deleted objects from other objects are
      * cleared according to the model, and deleted objects are removed from any
      * Hubs in which they participate.
@@ -259,12 +259,12 @@ public interface OA {
     /**
      * Returns the object of the specified type for the given identity key.
      * <p>
-     * {@code get(...)} locates a single object in the Object Graph using its
+     * {@code get(...)} locates a single object in the OA model using its
      * identity (for example, primary key or unique identifier). The returned
-     * object is a live instance that participates fully in the graph, including
+     * object is a live instance that participates fully in the OA runtime, including
      * relationships, Hub membership, observation, and persistence.
      * <p>
-     * If the object is not already present in the graph, it may be loaded through
+     * If the object is not already present in the OA runtime, it may be loaded through
      * the configured data sources.
      * <p>
      * This is the primary verb for retrieving a single object by identity.
@@ -280,12 +280,12 @@ public interface OA {
     /**
      * Returns the object of the specified type for the given object key.
      * <p>
-     * {@code get(...)} locates a single object in the Object Graph using its
+     * {@code get(...)} locates a single object in the OA model using its
      * {@link OAObjectKey}. The returned object is a live instance that participates
-     * fully in the graph, including relationships, Hub membership, observation,
+     * fully in the OA runtime, including relationships, Hub membership, observation,
      * and persistence.
      * <p>
-     * If the object is not already present in the graph, it may be loaded through
+     * If the object is not already present in the OA runtime, it may be loaded through
      * the configured data sources.
      * <p>
      * This is the object-key form of {@link #get(Class, Object)} and is used when
@@ -301,17 +301,17 @@ public interface OA {
     /**
      * Selects objects of the supplied model type and returns them in a live Hub.
      * <p>
-     * {@code select(...)} queries the Object Graph for objects of the requested
+     * {@code select(...)} queries the OA model for objects of the requested
      * type using the supplied selection criteria and ordering, and returns the
-     * results in a {@link Hub}. The returned Hub is a live graph structure whose
-     * objects participate fully in normal object graph behavior, including
+     * results in a {@link Hub}. The returned Hub is a live OA model structure whose
+     * objects participate fully in normal OA model behavior, including
      * relationships, observation, and persistence.
      * <p>
      * The {@code where} expression is used to define the selection criteria, and
      * may include object property paths. The optional {@code orderBy} expression
      * defines the ordering of the selected objects.
      * <p>
-     * Selection may use the graph runtime, configured data sources, or both,
+     * Selection may use the OA runtime, configured data sources, or both,
      * depending on the model, runtime state, and query requirements.
      * <p>
      * This is the primary verb for querying a model type and obtaining a live
@@ -339,7 +339,7 @@ public interface OA {
      * ordering of the selected objects.
      * <p>
      * This method does not keep the Hub synchronized with later changes that would
-     * affect the selection results. For live graph-based searching or continuously
+     * affect the selection results. For live OA model-based searching or continuously
      * updated matching behavior, use the appropriate find/filter mechanisms instead.
      *
      * @param targetHub the Hub to populate with the selected objects
@@ -377,7 +377,7 @@ public interface OA {
      * Creates an {@link OAFinder} that traverses the supplied path starting from
      * a single source object.
      * <p>
-     * {@code finder(...)} is the graph-traversal/search verb for navigating live
+     * {@code finder(...)} is the OA model traversal/search verb for navigating live
      * object relationships in memory. Unlike {@link #select(Class, String, String, Object...)},
      * it does not represent a query result set. Instead, it follows the supplied
      * relationship path from the source object and allows application code to work
@@ -399,7 +399,7 @@ public interface OA {
      * Creates an {@link OAFinder} that traverses the supplied path starting from
      * either the active object or all objects in the source Hub.
      * <p>
-     * {@code finder(...)} is the graph-traversal/search verb for navigating live
+     * {@code finder(...)} is the OA model traversal/search verb for navigating live
      * object relationships in memory. Unlike {@link #select(Class, String, String, Object...)},
      * it does not represent a query result set. Instead, it follows the supplied
      * relationship path from the source object(s) and allows application code to
@@ -427,13 +427,13 @@ public interface OA {
     /**
      * Adds a listener to the supplied Hub so that changes to the Hub can be observed.
      * <p>
-     * {@code observe(...)} is the graph-level verb for Hub observation. It registers
+     * {@code observe(...)} is the OA runtime-level verb for Hub observation. It registers
      * the supplied {@link HubListener} with the Hub so that application code can
      * react to changes in the Hub, its active object, and the objects it contains.
      * <p>
      * This is equivalent to calling {@code addListener(...)} on the {@link Hub}.
      * <p>
-     * Observation is a live runtime feature of the Object Graph. It is commonly used
+     * Observation is a live runtime feature of the OA model. It is commonly used
      * for UI wiring, runtime coordination, and other behavior that depends on Hub
      * changes as the executable blueprint is running.
      *
@@ -451,7 +451,7 @@ public interface OA {
      * Returns the blueprint metadata for the supplied model object type.
      * <p>
      * {@code info(...)} provides access to the runtime metadata that defines how
-     * the supplied {@link OAObject} type participates in the Object Graph,
+     * the supplied {@link OAObject} type participates in the OA model,
      * including its properties, relationships, methods, and other model-defined
      * structure.
      * <p>
@@ -468,7 +468,7 @@ public interface OA {
      * Returns the blueprint metadata for the supplied model object instance.
      * <p>
      * {@code info(...)} provides access to the runtime metadata that defines how
-     * the supplied {@link OAObject} participates in the Object Graph, including
+     * the supplied {@link OAObject} participates in the OA model, including
      * its properties, relationships, methods, and other model-defined structure.
      * <p>
      * This is the object-instance form of {@link #info(Class)} and is commonly used
@@ -486,7 +486,7 @@ public interface OA {
      * <p>
      * {@code info(...)} provides access to the runtime metadata that defines how
      * the objects contained in the supplied {@link Hub} participate in the
-     * Object Graph, including their properties, relationships, methods, and other
+     * OA model, including their properties, relationships, methods, and other
      * model-defined structure.
      * <p>
      * This is the Hub form of {@link #info(Class)} and is commonly used when
@@ -499,23 +499,23 @@ public interface OA {
     OAObjectInfo info(Hub<?> hub);
 
     /**
-     * Returns the curated advanced service surface for this Object Graph.
+     * Returns the curated advanced service surface for this OA model.
      * <p>
      * The top-level {@code OA} methods are intentionally small,
-     * application-facing verbs for common graph work. {@code services()} is the
+     * application-facing verbs for common OA model work. {@code services()} is the
      * controlled public escape hatch for advanced operations that are still part
-     * of the supported Object Graph API, but are too service-specific for the
-     * top-level graph shape.
+     * of the supported OA model API, but are too service-specific for the
+     * top-level OA runtime shape.
      * <p>
      * The returned object exposes public service contracts from
-     * {@code com.viaoa.graph.api.services.*}. It is not a direct handle to the
-     * internal implementation services under {@code com.viaoa.graph.service.*},
-     * {@code com.viaoa.graph.service.object.*}, or
-     * {@code com.viaoa.graph.service.hub.*}. Internal services remain free to
+     * {@code com.viaoa.OA runtime.api.services.*}. It is not a direct handle to the
+     * internal implementation services under {@code com.viaoa.OA runtime.service.*},
+     * {@code com.viaoa.OA runtime.service.object.*}, or
+     * {@code com.viaoa.OA runtime.service.hub.*}. Internal services remain free to
      * expose broader runtime machinery without making those methods part of the
-     * public Object Graph contract.
+     * public OA model contract.
      *
-     * @return the advanced public service facade for this graph
+     * @return the advanced public service facade for this OA runtime
      */
     ServicesOps services();
 

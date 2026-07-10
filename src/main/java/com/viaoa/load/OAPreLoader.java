@@ -166,7 +166,7 @@ public class OAPreLoader {
 	 * preloaded. When non-empty, it is parsed into link metadata using
 	 * {@link OAPath}.
 	 */
-	private String strPropertyPath;
+	private String strPath;
 
 	/**
 	 * Constructs a new preloader configured to load the object graph defined
@@ -184,7 +184,7 @@ public class OAPreLoader {
 	 */
 	public OAPreLoader(Class classFrom, String propPath) {
 		this.classFrom = classFrom;
-		this.strPropertyPath = propPath;
+		this.strPath = propPath;
 	}
 
 	/**
@@ -210,12 +210,12 @@ public class OAPreLoader {
 			return null;
 		}
 
-		OAPath propertyPath = null;
+		OAPath path = null;
 		OALinkInfo[] linkInfos = null;
 
-		if (OAString.isNotEmpty(strPropertyPath)) {
-			propertyPath = new OAPath(classFrom, strPropertyPath);
-			linkInfos = propertyPath.getLinkInfos();
+		if (OAString.isNotEmpty(strPath)) {
+			path = new OAPath(classFrom, strPath);
+			linkInfos = path.getLinkInfos();
 		}
 		List<?> al = null;
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
