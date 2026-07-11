@@ -153,6 +153,11 @@ public abstract class OAObjectRulesService {
 		return objectCallback;
 	}
 
+	public OAObjectCallback getVerifyPropertyChangeObjectCallback(final OAObject oaObj, final String propertyName, final Object oldValue, final Object newValue) 
+	{
+		return getVerifyPropertyChangeObjectCallback(null, oaObj, propertyName, oldValue, newValue);
+	}
+	
 	/**
 	 * Creates and processes a property-change callback using only object callback methods.
 	 *

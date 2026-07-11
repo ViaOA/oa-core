@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.viaoa.annotation.OAMany;
 import com.viaoa.cache.OAObjectCacheListener;
 import com.viaoa.callback.OACallback;
+import com.viaoa.callback.OACallbackLabel;
 import com.viaoa.callback.OACopyCallback;
 import com.viaoa.callback.OAObjectCallback;
 import com.viaoa.cascade.OACascade;
@@ -631,6 +632,31 @@ public class ObjectsOpsImpl implements ObjectsOps {
 			public void onObjectCallbackModel(Class<? extends OAObject> clazz, String property, OAObjectModel model) {
 				srvc.getOAObjectRulesService().onObjectCallbackModel(clazz, property, model);
 				
+			}
+
+			@Override
+			public OAObjectCallback getVerifyPropertyChangeObjectCallback(OAObject obj, String propertyName, Object oldValue, Object newValue) {
+				return srvc.getOAObjectRulesService().getVerifyPropertyChangeObjectCallback(obj, propertyName, oldValue, newValue);
+			}
+
+			@Override
+			public <T extends OAObject> OAObjectCallback getVerifyAddObjectCallback(Hub<T> hub, T objAdd) {
+				return srvc.getOAObjectRulesService().getVerifyAddObjectCallback(hub, objAdd, null);
+			}
+
+			@Override
+			public <T extends OAObject> OAObjectCallback getVerifyRemoveObjectCallback(Hub<T> hub, T obj) {
+				return srvc.getOAObjectRulesService().getVerifyRemoveObjectCallback(hub, obj, null);
+			}
+
+			@Override
+			public void updateLabel(OAObject obj, String propertyName, OACallbackLabel lbl) {
+				srvc.getOAObjectRulesService().updateLabel(obj, propertyName, lbl);
+			}
+
+			@Override
+			public void renderLabel(OAObject obj, String propertyName, OACallbackLabel lbl) {
+				srvc.getOAObjectRulesService().renderLabel(obj, propertyName, lbl);
 			}
 		};
 		return opsCallback;

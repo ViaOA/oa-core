@@ -1,5 +1,6 @@
 package com.viaoa.oa.api.internal.objects;
 
+import com.viaoa.callback.OACallbackLabel;
 import com.viaoa.callback.OAObjectCallback;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.listener.HubChangeListener;
@@ -45,6 +46,9 @@ public interface OAObjectRulesOps {
 	 * @return {@code true} if the callback allows the change
 	 */
 	public boolean getVerifyPropertyChangeCallbackOnly(OAObject obj, String propertyName, Object oldValue, Object newValue);
+
+	public OAObjectCallback getVerifyPropertyChangeObjectCallback(OAObject obj, String propertyName, Object oldValue, Object newValue);
+	
 	/**
 	 * Creates and processes a callback-only VerifyPropertyChange rule callback.
 	 *
@@ -135,6 +139,10 @@ public interface OAObjectRulesOps {
 	 * @return the processed callback
 	 */
 	public <T extends OAObject> OAObjectCallback getAllowAddObjectCallback(Hub<T> hub, T objAdd);
+
+
+	public <T extends OAObject> OAObjectCallback getVerifyAddObjectCallback(Hub<T> hub, T objAdd);
+	
 	/**
 	 * Adds listeners for metadata dependencies that can change object-rule callback results.
 	 *
@@ -345,7 +353,10 @@ public interface OAObjectRulesOps {
 	 * @return {@code true} if remove verifies
 	 */
 	public <T extends OAObject> boolean getVerifyRemove(Hub<T> hub, T obj);
-	/**
+
+	public <T extends OAObject> OAObjectCallback getVerifyRemoveObjectCallback(Hub<T> hub, T obj);
+/**
+	 * 
 	 * Runs only callback/listener checks for VerifyRemove.
 	 *
 	 * @param hub the Hub losing the object
@@ -376,5 +387,10 @@ public interface OAObjectRulesOps {
 	 * @return {@code true} if delete is allowed
 	 */
 	public <T extends OAObject> boolean getAllowDelete(T obj);
+
+	void updateLabel(OAObject obj, String propertyName, OACallbackLabel lbl);
+
+	void renderLabel(OAObject obj, String propertyName, OACallbackLabel lbl);
+
 }
 
