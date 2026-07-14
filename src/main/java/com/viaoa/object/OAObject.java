@@ -2042,6 +2042,12 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		return oa.internal().objects().reflect().getReferenceHub(this, linkPropertyName, null, false, null);
 	}
 
+	protected <T extends OAObject> Hub<T> getHub(Class<T> type, String linkPropertyName) {
+		OA oa = OARuntime.oa(this);
+		return oa.internal().objects().reflect().getReferenceHub(this, linkPropertyName, null, false, null);
+	}
+	
+	
 	/**
 	 * Assigns a {@link Hub} to the specified link property.
 	 * <p>

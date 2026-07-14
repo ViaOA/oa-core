@@ -1,5 +1,9 @@
 package com.viaoa.oa.api.internal.objects;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 import com.viaoa.callback.OACopyCallback;
 import com.viaoa.cascade.OACascade;
 import com.viaoa.hub.Hub;
@@ -36,6 +40,11 @@ public interface OAObjectReflectOps {
 	 * @return the copied object
 	 */
 	public OAObject createCopy(OAObject oaObj, String[] excludeProperties);
+	
+	public OAObject _createCopy(OAObject oaObj, String[] excludeProperties, OACopyCallback copyCallback, Map<UUID, OAObject> hmNew);
+	
+	public OAObject createCopy(OAObject oaObj, String[] excludeProperties, OACopyCallback copyCallback);
+	
 	/**
 	 * Copies values from one object into another.
 	 *
@@ -45,6 +54,7 @@ public interface OAObjectReflectOps {
 	 * @param copyCallback copy callback used during copy processing
 	 */
 	public void copyInto(OAObject oaObj, OAObject newObject, String[] excludeProperties, OACopyCallback copyCallback);
+	
 	/**
 	 * Returns a reference Hub for a link property.
 	 *
@@ -235,4 +245,8 @@ public interface OAObjectReflectOps {
 	 * @return the property path, or {@code null}
 	 */
 	public String getPathBetweenHubs(final Hub<?> hubParent, final Hub<?> hubChild);
+	
+	public <T extends OAObject> void _copyInto(final T oaObj, final T newObject, final String[] excludeProperties,
+			final OACopyCallback copyCallback, final Map<UUID, OAObject> hmNew);
+
 }

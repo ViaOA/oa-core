@@ -1,5 +1,9 @@
 package com.viaoa.oa.api.internal;
 
+import java.util.Map;
+import java.util.UUID;
+
+import com.viaoa.callback.OACopyCallback;
 import com.viaoa.oa.api.internal.objects.OAObjectAnnotationOps;
 import com.viaoa.oa.api.internal.objects.OAObjectAutoAddOps;
 import com.viaoa.oa.api.internal.objects.OAObjectCSOps;
@@ -18,6 +22,7 @@ import com.viaoa.oa.api.internal.objects.OAObjectInitializeOps;
 import com.viaoa.oa.api.internal.objects.OAObjectKeyOps;
 import com.viaoa.oa.api.internal.objects.OAObjectLockOps;
 import com.viaoa.oa.api.internal.objects.OAObjectPropertyOps;
+import com.viaoa.oa.api.internal.objects.OAObjectRecurseOps;
 import com.viaoa.oa.api.internal.objects.OAObjectReflectOps;
 import com.viaoa.oa.api.internal.objects.OAObjectSaveOps;
 import com.viaoa.oa.api.internal.objects.OAObjectSchedulerOps;
@@ -25,6 +30,7 @@ import com.viaoa.oa.api.internal.objects.OAObjectSerializeOps;
 import com.viaoa.oa.api.internal.objects.OAObjectSiblingOps;
 import com.viaoa.oa.api.internal.objects.OAObjectStateOps;
 import com.viaoa.oa.api.internal.objects.OAObjectUniqueOps;
+import com.viaoa.object.OAObject;
 
 /**
  * Internal OAObject operation families exposed through {@code OA.internal().objects()}.
@@ -205,5 +211,8 @@ public interface ObjectsOps {
 	 * @return the unique operations facade
 	 */
 	public OAObjectUniqueOps unique();
+
+
+	public OAObjectRecurseOps recurse();
 
 }

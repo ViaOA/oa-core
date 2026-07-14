@@ -69,6 +69,9 @@ public interface OAObjectInfoOps {
 	 * @return the link metadata
 	 */
 	public OALinkInfo getLinkInfo(OAObjectInfo oi, String propertyName);
+
+	public OALinkInfo getLinkInfo(Class<? extends OAObject> fromClass, Class<? extends OAObject> toClass);
+	
 	/**
 	 * Returns OA metadata for an object instance.
 	 *

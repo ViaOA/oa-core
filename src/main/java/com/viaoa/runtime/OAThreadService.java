@@ -124,7 +124,7 @@ public class OAThreadService {
 	public boolean isRemoteThread() {
 		return getRemoteThreadService().isRemoteThread();
 	}
-	
+
 	/**
 	 * Returns whether UIThread is active for the current runtime context.
 	 *

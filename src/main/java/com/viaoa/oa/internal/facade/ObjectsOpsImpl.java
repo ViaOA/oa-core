@@ -6,7 +6,9 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -47,6 +49,7 @@ import com.viaoa.oa.api.internal.objects.OAObjectInitializeOps;
 import com.viaoa.oa.api.internal.objects.OAObjectKeyOps;
 import com.viaoa.oa.api.internal.objects.OAObjectLockOps;
 import com.viaoa.oa.api.internal.objects.OAObjectPropertyOps;
+import com.viaoa.oa.api.internal.objects.OAObjectRecurseOps;
 import com.viaoa.oa.api.internal.objects.OAObjectReflectOps;
 import com.viaoa.oa.api.internal.objects.OAObjectSaveOps;
 import com.viaoa.oa.api.internal.objects.OAObjectSchedulerOps;
@@ -91,6 +94,7 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	private OAObjectSiblingOps opsSibling;
 	private OAObjectStateOps opsState;
 	private OAObjectUniqueOps opsUnique;
+	private OAObjectRecurseOps opsRecurse;
 	
 	
 	/**
@@ -295,6 +299,12 @@ public class ObjectsOpsImpl implements ObjectsOps {
 				return srvc.getOAObjectReflectService().createCopy(oaObj, excludeProperties);
 			}
 
+			public OAObject _createCopy(OAObject oaObj, String[] excludeProperties, OACopyCallback copyCallback,
+					Map<UUID, OAObject> hmNew) {
+				return srvc.getOAObjectReflectService()._createCopy(oaObj, excludeProperties, copyCallback, hmNew);
+			}
+			
+			
 			@Override
 			public void copyInto(OAObject oaObj, OAObject newObject, String[] excludeProperties, OACopyCallback copyCallback) {
 				srvc.getOAObjectReflectService().copyInto(oaObj, newObject, excludeProperties, copyCallback);
@@ -398,6 +408,16 @@ public class ObjectsOpsImpl implements ObjectsOps {
 			@Override
 			public int loadAllReferences(OAObject obj, int maxLevelsToLoad, int additionalOwnedLevelsToLoad, boolean bIncludeCalc, OACascade cascade, int maxRefsToLoad) {
 				return srvc.getOAObjectReflectService().loadAllReferences(obj, maxLevelsToLoad, additionalOwnedLevelsToLoad, bIncludeCalc, cascade, maxRefsToLoad);
+			}
+
+			@Override
+			public <T extends OAObject> void _copyInto(T oaObj, T newObject, String[] excludeProperties, OACopyCallback copyCallback, Map<UUID, OAObject> hmNew) {
+				srvc.getOAObjectReflectService()._copyInto(oaObj, newObject, excludeProperties, copyCallback, hmNew);
+			}
+
+			@Override
+			public OAObject createCopy(OAObject oaObj, String[] excludeProperties, OACopyCallback copyCallback) {
+				return srvc.getOAObjectReflectService().createCopy(oaObj, excludeProperties, copyCallback);
 			}
 		};
 		return opsReflect;
@@ -1016,6 +1036,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 			public Class<? extends OAObject>[] getAllClasses() {
 				return srvc.getOAObjectInfoService().getAllClasses();
 			}
+
+			@Override
+			public OALinkInfo getLinkInfo(Class<? extends OAObject> fromClass, Class<? extends OAObject> toClass) {
+				return srvc.getOAObjectInfoService().getLinkInfo(fromClass, toClass);
+			}
 		};
 		return opsInfo;
 	}
@@ -1295,13 +1320,24 @@ public class ObjectsOpsImpl implements ObjectsOps {
 	public OAObjectUniqueOps unique() {
 		if (opsUnique != null) return opsUnique;
 		opsUnique = new OAObjectUniqueOps() {
-			
 			@Override
 			public OAObject getUnique(final Class<? extends OAObject> clazz, final String propertyName, final Object uniqueKey, final boolean bAutoCreate) {
 				return srvc.getOAObjectUniqueService().getUnique(clazz, propertyName, uniqueKey, bAutoCreate);
 			}
 		};
 		return opsUnique;
+	}
+
+	@Override
+	public OAObjectRecurseOps recurse() {
+		if (opsRecurse != null) return opsRecurse;
+		opsRecurse = new OAObjectRecurseOps() {
+			@Override
+			public <T extends OAObject> void recurse(T oaObj, OACallback<OAObject> callback, OACascade cascade) {
+				srvc.getOAObjectRecurseService().recurse(oaObj, callback, cascade);
+			}
+		};
+		return opsRecurse;
 	}
 
 }

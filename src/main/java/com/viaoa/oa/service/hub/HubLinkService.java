@@ -135,7 +135,7 @@ public abstract class HubLinkService {
 						c = OAReflect.getPrimitiveClassWrapper(c);
 					}
 					if (!c.equals(verifyClass)) {
-						throw new RuntimeException("property is wrong class, property=" + propertyTo + ", class=" + c);
+						throw new RuntimeException("property is wrong class, property=" + propertyTo + ", class=" + c.getName());
 					}
 				}
 			}
