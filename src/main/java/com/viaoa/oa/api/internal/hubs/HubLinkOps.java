@@ -62,7 +62,7 @@ public interface HubLinkOps {
 	 * @param linkToHub the target Hub
 	 * @param obj the object that changed
 	 */
-	public <T extends OAObject> void updateLinkedToHub(Hub<T> hub, Hub<?> linkToHub, T obj);
+	public <T extends OAObject, U extends OAObject> void updateLinkedFromHub(Hub<T> fromHub, Hub<U> linkToHub, U linkToObject);
 	/**
 	 * Updates the Hub linked to another Hub for an object/property change.
 	 *
@@ -71,8 +71,10 @@ public interface HubLinkOps {
 	 * @param obj the object that changed
 	 * @param changedPropName the changed property name
 	 */
-	public <T extends OAObject> void updateLinkedToHub(Hub<T> hub, Hub<?> linkToHub, T obj, String changedPropName);
-	public <T extends OAObject, U extends OAObject> Object getPropertyValueInLinkedToHub(Hub<T> hub, U linkObject); // returns OAOject, null, or int (position)
+	public <T extends OAObject, U extends OAObject> void updateLinkedFromHub(final Hub<T> fromHub, Hub<U> linkToHub, final U linkToObject, final String changedPropName);
+	
+	public <T extends OAObject, U extends OAObject> Object getPropertyValueInLinkedToHub(Hub<T> hubFrom, U objLinkToHub);
+	
 	/**
 	 * Returns whether a Hub is linked by position.
 	 *

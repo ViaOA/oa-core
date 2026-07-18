@@ -10,6 +10,7 @@ import com.viaoa.compare.OACompare;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.hub.*;
 import com.viaoa.hub.link.HubLinkEventListener;
+import com.viaoa.lang.OAStr;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
@@ -277,19 +278,19 @@ public abstract class HubLinkService {
 	 * Updates the linked-to property for the active object based on changes
 	 * from the linked-from Hub.
 	 *
-	 * @param thisHub    the Hub owning the linked property
-	 * @param fromObject the source object whose value is being applied
+	 * @param hubFrom    the Hub owning the linked property
+	 * @param objFrom the source object whose value is being applied
 	 * @param pos        location index when linking by position
 	 */
-	public <T extends OAObject> void updateLinkProperty(Hub<T> thisHub, T fromObject, int pos) {
-		Hub<?> h = faHub.getHubDataUnique(thisHub).getLinkToHub();
+	public <T extends OAObject> void updateLinkedToHubProperty(Hub<T> hubFrom, T objFrom, int pos) {
+		Hub<?> h = faHub.getHubDataUnique(hubFrom).getLinkToHub();
 		if (h == null || faHub.getHubDataUnique(h).isUpdatingActiveObject()) {
 			return;
 		}
 		try {
-			_updateLinkProperty(thisHub, fromObject, pos);
+			_updateLinkedToHubProperty(hubFrom, objFrom, pos);
 		} catch (Exception e) {
-			throw new RuntimeException("updateLinkProperty, hub=" + thisHub + ", fromObject=" + fromObject, e);
+			throw new RuntimeException("updateLinkProperty, hub=" + hubFrom + ", fromObject=" + objFrom, e);
 		}
 	}
 
@@ -297,16 +298,17 @@ public abstract class HubLinkService {
 	 * Internal method that performs the actual update of the linked-to property.
 	 * Handles auto-create logic, property forwarding, and positional updates.
 	 *
-	 * @param thisHub    the Hub owning the link
-	 * @param fromObject the object providing the new value
+	 * @param hubFrom    the Hub owning the link
+	 * @param objFrom the object providing the new value
 	 * @param pos        positional index when applicable
 	 * @throws Exception if reflection or setter invocation fails
 	 */
-	private <T extends OAObject, U extends OAObject> void _updateLinkProperty(Hub<T> thisHub, T fromObject, int pos) throws Exception {
+	private <T extends OAObject, U extends OAObject> void _updateLinkedToHubProperty(final Hub<T> hubFrom, final T objFrom, final int pos) throws Exception {
 		OAObject linkToObject = null;
-		if (faHub.getHubDataUnique(thisHub).isAutoCreate()) {
+		final HubDataUnique<T> datau = faHub.getHubDataUnique(hubFrom);
+		if (datau.isAutoCreate()) {
 			boolean bOne = false; // is there only supposed to be one object in hub
-			HubDataMaster dm = callHubDetailGetDataMaster(thisHub);
+			HubDataMaster dm = callHubDetailGetDataMaster(hubFrom);
 			if (dm != null && dm.getDetailToMasterLinkInfo() != null) {
 				OALinkInfo liRev = callObjectInfoGetReverseLinkInfo(dm.getDetailToMasterLinkInfo());
 				if (liRev != null) {
@@ -314,79 +316,80 @@ public abstract class HubLinkService {
 				}
 			}
 
-			if (fromObject == null) {
-				if (!bOne || thisHub.getCurrentSize() == 0) {
+			if (objFrom == null) {
+				if (!bOne || hubFrom.getCurrentSize() == 0) {
 					return;
 				}
 				// ?? set reference to null and delete/remove object from hub
 				return;
 			}
-			if (!bOne || thisHub.getSize() == 0) {
-				if (!faHub.getHubDataUnique(thisHub).isAutoCreateAllowDups()) { // 20110809 added flag, was: always did this check
+			if (!bOne || hubFrom.getSize() == 0) {
+				if (!datau.isAutoCreateAllowDups()) { // 20110809 added flag, was: always did this check
 					// see if object already exists
 					for (int i = 0;; i++) {
-						OAObject obj = faHub.getHubDataUnique(thisHub).getLinkToHub().elementAt(i);
+						OAObject obj = datau.getLinkToHub().elementAt(i);
 						if (obj == null) {
 							break;
 						}
-						Object obj2 = faHub.getHubDataUnique(thisHub).getLinkToGetMethod().invoke(obj, (Object[]) null);
-						if (obj2 == fromObject) {
-							faHub.getHubDataUnique(thisHub).getLinkToHub().setAO(obj);
+						Object obj2 = datau.getLinkToGetMethod().invoke(obj, (Object[]) null);
+						if (obj2 == objFrom) {
+							datau.getLinkToHub().setAO(obj);
 							return;
 						}
 					}
 				}
 				// create new object and link to it
-				Class<? extends OAObject> c = faHub.getHubDataUnique(thisHub).getLinkToHub().getObjectClass();
+				Class<? extends OAObject> c = datau.getLinkToHub().getObjectClass();
 				Constructor constructor = c.getConstructor(new Class[] {});
 				linkToObject = (OAObject) constructor.newInstance(new Object[] {});
 
-				if (fromObject == null && faHub.getHubDataUnique(thisHub).getLinkToSetMethod().getParameterTypes()[0].isPrimitive()) {
-					((OAObject) linkToObject).setNull(faHub.getHubDataUnique(thisHub).getLinkToPropertyName());
+				if (objFrom == null && datau.getLinkToSetMethod().getParameterTypes()[0].isPrimitive()) {
+					((OAObject) linkToObject).setNull(datau.getLinkToPropertyName());
 				} else {
-					faHub.getHubDataUnique(thisHub).getLinkToSetMethod().invoke(linkToObject, new Object[] { fromObject });
+					datau.getLinkToSetMethod().invoke(linkToObject, new Object[] { objFrom });
 				}
 
-				if (faHub.getHubDataUnique(thisHub).getLinkToHub().getObject(linkToObject) == null) {
-					((Hub<U>)faHub.getHubDataUnique(thisHub).getLinkToHub()).add((U) linkToObject);
+				if (datau.getLinkToHub().getObject(linkToObject) == null) {
+					((Hub<U>)datau.getLinkToHub()).add((U) linkToObject);
 				}
-				faHub.getHubDataUnique(thisHub).getLinkToHub().setAO(linkToObject);
+				datau.getLinkToHub().setAO(linkToObject);
 				return;
 			}
 		}
 
 		if (linkToObject == null) {
-			linkToObject = faHub.getHubDataUnique(thisHub).getLinkToHub().getActiveObject();
+			linkToObject = datau.getLinkToHub().getActiveObject();
 		}
 		if (linkToObject != null) {
-			Object obj = faHub.getHubDataUnique(thisHub).getLinkToGetMethod().invoke(linkToObject, (Object[]) null);
-			if (faHub.getHubDataUnique(thisHub).isLinkPos()) { // allow number returned to set pos of active object, set by setLinkOnPos()
+			Object obj = datau.getLinkToGetMethod().invoke(linkToObject, (Object[]) null);
+			if (datau.isLinkPos()) { // allow number returned to set pos of active object, set by setLinkOnPos()
 				if (obj instanceof Number) {
 					int x = ((Number) obj).intValue();
 					// need to check to see if prop value is null
 					boolean b = false;
 					if (x == pos && linkToObject instanceof OAObject) {
-						b = (pos != -1) && ((OAObject) linkToObject).isNull(faHub.getHubDataUnique(thisHub).getLinkToPropertyName());
+						b = (pos != -1) && ((OAObject) linkToObject).isNull(datau.getLinkToPropertyName());
 					}
 					if (x != pos || b) {
-						faHub.getHubDataUnique(thisHub).getLinkToSetMethod().invoke(linkToObject, new Object[] { Integer.valueOf(pos) });
+						datau.getLinkToSetMethod().invoke(linkToObject, new Object[] { Integer.valueOf(pos) });
 						if (pos == -1 && linkToObject instanceof OAObject) { // 20131101 setting to null
-							((OAObject) linkToObject).setNull(faHub.getHubDataUnique(thisHub).getLinkToPropertyName());
+							((OAObject) linkToObject).setNull(datau.getLinkToPropertyName());
 						}
 					}
 				}
 			} else {
-				if (fromObject != null && faHub.getHubDataUnique(thisHub).getLinkFromGetMethod() != null) {
+				Object value = objFrom;
+				if (objFrom != null && datau.getLinkFromGetMethod() != null) {
 					// if linking a property to another property
-					fromObject = (T) faHub.getHubDataUnique(thisHub).getLinkFromGetMethod().invoke(fromObject, null);
+					value = datau.getLinkFromGetMethod().invoke(objFrom, null);
 				}
 
-				if (obj != null || fromObject != null) {
-					if ((obj == null || fromObject == null) || (!obj.equals(fromObject))) {
-						if (fromObject == null && faHub.getHubDataUnique(thisHub).getLinkToSetMethod().getParameterTypes()[0].isPrimitive()) {
-							((OAObject) linkToObject).setNull(faHub.getHubDataUnique(thisHub).getLinkToPropertyName());
+				if (obj != null || value != null) {
+					if ((obj == null || value == null) || (!obj.equals(value))) {
+						if (value == null && datau.getLinkToSetMethod().getParameterTypes()[0].isPrimitive()) {
+							((OAObject) linkToObject).setNull(datau.getLinkToPropertyName());
 						} else {
-							faHub.getHubDataUnique(thisHub).getLinkToSetMethod().invoke(linkToObject, new Object[] { fromObject });
+							datau.getLinkToSetMethod().invoke(linkToObject, new Object[] { value });
 						}
 					}
 				}
@@ -395,76 +398,70 @@ public abstract class HubLinkService {
 	}
 
 	/**
-	 * Retrieves the value of the linked-to property for the given object.
+	 * Retrieves the hubFrom.object of the linked-to OAObject.
 	 *
-	 * @param thisHub    the Hub whose linking configuration defines the lookup
-	 * @param linkObject the object whose linked property value is requested
-	 * @return the linked property value, or null if none
+	 * @param hubFrom    the Hub whose linking configuration defines the lookup
+	 * @param linkToObject the object whose linked property value is requested
+	 * @return the fromLink OAObject, or null if none
 	 */
-	public <T extends OAObject> Object getPropertyValueInLinkedToHub(Hub<T> thisHub, OAObject linkObject) {
-		Hub<T> h = getHubWithLink(thisHub, true);
+	public <T extends OAObject> T getLinkFromHubObjectForLinkToHubObject(final Hub<T> hubFrom, final OAObject linkToObject) {
+		Hub<T> h = getHubWithLink(hubFrom, true);
 		if (h == null) {
 			return null;
 		}
-		return _getPropertyValueInLinkedToHub(h, linkObject);
+		return _getLinkFromHubObjectForLinktoHubObject(h, linkToObject);
 	}
 
 	/**
 	 * Internal helper used to extract the linked-to property value using the
 	 * configured getter or positional logic.
 	 *
-	 * @param thisHub    the Hub whose link configuration applies
-	 * @param linkObject the object to inspect
-	 * @return the resolved linked-to value, or null
+	 * @param hubFrom    the Hub whose link configuration applies
+	 * @param linkToObjectOrig the hubTo object 
+	 * @return the resolved hubFrom object, or null
 	 */
-	private <T extends OAObject> Object _getPropertyValueInLinkedToHub(final Hub<T> thisHub, final OAObject linkObjectOrig) {
+	private <T extends OAObject> T _getLinkFromHubObjectForLinktoHubObject(final Hub<T> hubFrom, OAObject linkToObject) {
+		final HubDataUnique<T> datauFromHub = faHub.getHubDataUnique(hubFrom);
 		
-		// example: hubDept linked to hubEmp.dept ...thisHub=hubDept, linkObjectOrig=Emp   return=emp.dept
-		
-		Object linkObject = linkObjectOrig;
-		
-		if (faHub.getHubDataUnique(thisHub).getLinkToGetMethod() == null) {
-			return linkObject;
+		if (datauFromHub.getLinkToGetMethod() == null) {
+			return null;
 		}
+
+		Object value = linkToObject;
 		try {
-			if (linkObject != null) {
-				if (linkObject instanceof OAObject) {
-					OAObject oa = (OAObject) linkObject;
-					if (oa.isNull(faHub.getHubDataUnique(thisHub).getLinkToPropertyName())) {
-						linkObject = null;
+			if (linkToObject != null) {
+				if (linkToObject instanceof OAObject) {
+					if (linkToObject.isNull(datauFromHub.getLinkToPropertyName())) {
+						return null;
 					}
 				}
-				if (linkObject != null) {
-					linkObject = faHub.getHubDataUnique(thisHub).getLinkToGetMethod().invoke(linkObject, (Object[]) null);
+				if (linkToObject != null) {
+					value = datauFromHub.getLinkToGetMethod().invoke(linkToObject, (Object[]) null);
 				}
 			}
-			if (faHub.getHubDataUnique(thisHub).isLinkPos()) {
+			
+			if (datauFromHub.isLinkPos()) {
 				int x = -1;
-				if (linkObject != null && linkObject instanceof Number) {
-					x = ((Number) linkObject).intValue();
+				if (linkToObject != null && value instanceof Number) {
+					x = ((Number) value).intValue();
 				}
-				return thisHub.elementAt(x);
+				return hubFrom.getAt(x);
 			}
 
-			if (faHub.getHubDataUnique(thisHub).getLinkFromGetMethod() != null) {
+			if (datauFromHub.getLinkFromGetMethod() != null) {
 				// if linking a property to another property, need to find which object has matching property
-				for (int i = 0;; i++) {
-					Object obj = thisHub.elementAt(i);
-					if (obj == null) {
-						linkObject = null;
-						break;
-					}
-					Object obj2 = faHub.getHubDataUnique(thisHub).getLinkFromGetMethod().invoke(obj, (Object[]) null);
-					if ((linkObject == obj2) || (obj2 != null && obj2.equals(linkObject))) {
-						linkObject = obj;
-						break;
+				for (T obj : hubFrom) {
+					Object obj2 = datauFromHub.getLinkFromGetMethod().invoke(obj, (Object[]) null);
+					if (OACompare.isEqual(obj2, value)) {
+						return obj;
 					}
 				}
+				return null;
 			}
 		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
-		return linkObject;
+		return (T) value;
 	}
 
 	/**
@@ -485,8 +482,9 @@ public abstract class HubLinkService {
 	 * @return the link-to property name, or null if none
 	 */
 	public <T extends OAObject> String getLinkToProperty(final Hub<T> thisHub, boolean bIncludeCopiedHubs) {
-		if (faHub.getHubDataUnique(thisHub).getLinkToPropertyName() != null) {
-			return faHub.getHubDataUnique(thisHub).getLinkToPropertyName();
+		final HubDataUnique datau = faHub.getHubDataUnique(thisHub);
+		if (datau.getLinkToPropertyName() != null) {
+			return datau.getLinkToPropertyName();
 		}
 		if (!bIncludeCopiedHubs) {
 			return null;
@@ -527,8 +525,9 @@ public abstract class HubLinkService {
 	 * @return the link-from property name, or null if none
 	 */
 	public <T extends OAObject> String getLinkFromProperty(final Hub<T> thisHub, boolean bIncludeCopiedHubs) {
-		if (faHub.getHubDataUnique(thisHub).getLinkFromPropertyName() != null) {
-			return faHub.getHubDataUnique(thisHub).getLinkFromPropertyName();
+		final HubDataUnique datau = faHub.getHubDataUnique(thisHub);
+		if (datau.getLinkFromPropertyName() != null) {
+			return datau.getLinkFromPropertyName();
 		}
 		if (!bIncludeCopiedHubs) {
 			return null;
@@ -559,8 +558,9 @@ public abstract class HubLinkService {
 	 * @return the linked-to Hub, or null if none
 	 */
 	public <T extends OAObject> Hub<?> getLinkToHub(final Hub<T> thisHub, boolean bIncludeCopiedHubs) {
-		if (faHub.getHubDataUnique(thisHub).getLinkToHub() != null) {
-			return faHub.getHubDataUnique(thisHub).getLinkToHub();
+		final HubDataUnique datau = faHub.getHubDataUnique(thisHub);
+		if (datau.getLinkToHub() != null) {
+			return datau.getLinkToHub();
 		}
 		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub<T>>() {
 			@Override
@@ -585,7 +585,8 @@ public abstract class HubLinkService {
 	 * @return the linked-to Hub, or null
 	 */
 	public <T extends OAObject> Hub<T> getHubWithLink(final Hub<T> thisHub, boolean bIncludeCopiedHubs) {
-		if (faHub.getHubDataUnique(thisHub).getLinkToHub() != null) {
+		final HubDataUnique datau = faHub.getHubDataUnique(thisHub);
+		if (datau.getLinkToHub() != null) {
 			return thisHub;
 		}
 		Hub<T> hubx = callHubShareGetFirstSharedHub(thisHub, new OAFilter<Hub<T>>() {
@@ -618,7 +619,8 @@ public abstract class HubLinkService {
 	 * @return true if any Hub uses positional linking; otherwise false
 	 */
 	public <T extends OAObject> boolean getLinkHubOnPos(final Hub<T> thisHub, boolean bIncludeCopiedHubs) {
-		if (faHub.getHubDataUnique(thisHub).isLinkPos()) {
+		final HubDataUnique datau = faHub.getHubDataUnique(thisHub);
+		if (datau.isLinkPos()) {
 			return true;
 		}
 		if (!bIncludeCopiedHubs) {
@@ -659,8 +661,9 @@ public abstract class HubLinkService {
 	 * @return the link-to setter method, or null if none found
 	 */
 	public <T extends OAObject> Method getLinkSetMethod(final Hub<T> thisHub, boolean bIncludeCopiedHubs) {
-		if (faHub.getHubDataUnique(thisHub).getLinkToSetMethod() != null) {
-			return faHub.getHubDataUnique(thisHub).getLinkToSetMethod();
+		final HubDataUnique datau = faHub.getHubDataUnique(thisHub);
+		if (datau.getLinkToSetMethod() != null) {
+			return datau.getLinkToSetMethod();
 		}
 		if (!bIncludeCopiedHubs) {
 			return null;
@@ -703,8 +706,9 @@ public abstract class HubLinkService {
 	 * @return the getter method, or null if not found
 	 */
 	public <T extends OAObject> Method getLinkGetMethod(final Hub<T> thisHub, boolean bIncludeCopiedHubs) {
-		if (faHub.getHubDataUnique(thisHub).getLinkToGetMethod() != null) {
-			return faHub.getHubDataUnique(thisHub).getLinkToGetMethod();
+		final HubDataUnique datau = faHub.getHubDataUnique(thisHub);
+		if (datau.getLinkToGetMethod() != null) {
+			return datau.getLinkToGetMethod();
 		}
 		if (!bIncludeCopiedHubs) {
 			return null;
@@ -747,8 +751,9 @@ public abstract class HubLinkService {
 	 * @return the link-to property path, or null if none exists
 	 */
 	public <T extends OAObject> String getLinkHubPath(final Hub<T> thisHub, boolean bIncludeCopiedHubs) {
-		if (faHub.getHubDataUnique(thisHub).getLinkToPropertyName() != null) {
-			return faHub.getHubDataUnique(thisHub).getLinkToPropertyName();
+		final HubDataUnique datau = faHub.getHubDataUnique(thisHub);
+		if (datau.getLinkToPropertyName() != null) {
+			return datau.getLinkToPropertyName();
 		}
 		if (!bIncludeCopiedHubs) {
 			return null;
@@ -778,10 +783,10 @@ public abstract class HubLinkService {
 	 *
 	 * @param fromHub   the Hub receiving the update
 	 * @param linkToHub the Hub providing the linked value
-	 * @param obj       the new value used for updating
+	 * @param linkToObject       the new value used for updating
 	 */
-	public <T extends OAObject> void updateLinkedToHub(Hub<T> fromHub, Hub<?> linkToHub, T obj) {
-		updateLinkedToHub(fromHub, linkToHub, obj, (String) null);
+	public <T extends OAObject, U extends OAObject> void updateLinkedFromHub(Hub<T> fromHub, Hub<U> linkToHub, U linkToObject) {
+		updateLinkedFromHub(fromHub, linkToHub, linkToObject, (String) null);
 	}
 
 	/**
@@ -794,86 +799,77 @@ public abstract class HubLinkService {
 	 * @param obj             the new value to apply
 	 * @param changedPropName the property that triggered the update, or null
 	 */
-	public <T extends OAObject, U extends OAObject> void updateLinkedToHub(final Hub<T> fromHub, Hub<?> linkToHub, final U objOrig, String changedPropName) {
+	public <T extends OAObject, U extends OAObject> void updateLinkedFromHub(final Hub<T> fromHub, Hub<U> linkToHub, final U linkToObject, final String changedPropName) {
 		if (fromHub == null) {
 			return;
 		}
 		
-		if (faHub.getHubDataUnique(fromHub).isAutoCreate()) {
+		final HubDataUnique datau = faHub.getHubDataUnique(fromHub);
+		if (datau.isAutoCreate()) {
 			return;
 		}
 
-		Object obj = getPropertyValueInLinkedToHub(fromHub, objOrig); // link property value
+		final T objLinkedFromObject = getLinkFromHubObjectForLinkToHubObject(fromHub, linkToObject);
+		
 		if (faHub.getHubDataUnique(fromHub).isLinkPos()) {
-			callHubAOSetActiveObject(fromHub, (T) obj, false, false, false); // adjustMaster, bUpdateLink, force
-		} else if (obj == null && faHub.getHubDataUnique(fromHub).getLinkFromGetMethod() != null && faHub.getHubDataUnique(fromHub).getLinkToGetMethod() != null) { // 20170919 link from prop to prop
+			callHubAOSetActiveObject(fromHub, (T) objLinkedFromObject, false, false, false); // adjustMaster, bUpdateLink, force
+		} 
+		else if (objLinkedFromObject == null && datau.getLinkFromGetMethod() != null && datau.getLinkToGetMethod() != null) {
 			callHubAOSetActiveObject(fromHub, null, false, false, false); // adjustMaster, bUpdateLink, force
-		} else {
-			// see if master can be set to null (flag)
-			// see if this hub is linked to a master (bForce)
-
-			if (obj != null && faHub.getHubDataUnique(fromHub).getLinkFromGetMethod() == null) {
-				// 20200121
+		} 
+		else {
+			// see if master can be adjusted
+			if (objLinkedFromObject != null && !fromHub.contains(objLinkedFromObject)) {
 				callThreadLocalAddDontAdjustHub(linkToHub);
 				try {
-					callHubDataGetPos(fromHub, (T) obj, true, false); // adjust master, bUpdateLink
+					callHubDataGetPos(fromHub, objLinkedFromObject, true, false); // adjust master, bUpdateLink
 				} finally {
 					callThreadLocalRemoveDontAdjustHub(linkToHub);
 				}
-			} else {
-				if (changedPropName == null) {
-					// Update Master/Detail hubs for the LinkedFromHub
-					// if none of the master hubs have links or details, then set their
-					// activeObject to null
-					Hub<?> h = fromHub;
-					for (; h != null;) {
-						if (!faHub.getHubData(h).isDupAllowAddRemove() && h.getSize() == 1) {
-							break; // detail hub using an object instead of a Hub
-						}
-
-						Hub<?>[] hubs = callHubShareGetAllSharedHubs(h);
-						int flag = 0;
-						for (int i = 0; i < hubs.length && flag != 5; i++) {
-							if (hubs[i] == fromHub) {
-								continue;
-							}
-							if (hubs[i] == fromHub.getLinkHub(false)) {
-								flag = 5; // this hub is linked to hubs[i]
-							} else if ((hubs[i].getLinkHub(false) != null)
-									|| ( faHub.getHubDataUnique(hubs[i]).getVecHubDetail() != null && faHub.getHubDataUnique(hubs[i]).getVecHubDetail().size() > 1)) {
-								if (faHub.getHubDataMaster(hubs[i]) == faHub.getHubDataMaster(h)) {
-									flag = 5; // || (hubs[i] == h) flag = 5;
-								} else if (hubs[i].getMasterHub() == h.getMasterHub()) {
-									flag = 1;
-								}
-							}
-						}
-						if (flag < 2 && h != fromHub) {
-							callHubAOSetActiveObject(h, null, -1, false, false, false); // bUpdateLink, force,bCalledByShareHub
-						}
-						if (flag != 0) {
-							break;
-						}
-
-						HubDataMaster dm = callHubDetailGetDataMaster(h);
-						h = dm.getMasterHub();
+			} 
+			else if (OAStr.isEmpty(changedPropName)) {
+				// Update Master/Detail hubs for the LinkedFromHub
+				// if none of the master hubs have links or details, then set their activeObject to null
+				Hub<?> h = fromHub;
+				for (; h != null;) {
+					if (!faHub.getHubData(h).isDupAllowAddRemove() && h.getSize() == 1) {
+						break; // detail hub using an object instead of a Hub
 					}
+
+					Hub<?>[] hubs = callHubShareGetAllSharedHubs(h);
+					int flag = 0;
+					for (int i = 0; i < hubs.length && flag != 5; i++) {
+						if (hubs[i] == fromHub) {
+							continue;
+						}
+						if (hubs[i] == fromHub.getLinkHub(false)) {
+							flag = 5; // this hub is linked to hubs[i]
+						} else if ((hubs[i].getLinkHub(false) != null)
+								|| ( faHub.getHubDataUnique(hubs[i]).getVecHubDetail() != null && faHub.getHubDataUnique(hubs[i]).getVecHubDetail().size() > 1)) {
+							if (faHub.getHubDataMaster(hubs[i]) == faHub.getHubDataMaster(h)) {
+								flag = 5; // || (hubs[i] == h) flag = 5;
+							} else if (hubs[i].getMasterHub() == h.getMasterHub()) {
+								flag = 1;
+							}
+						}
+					}
+					if (flag < 2 && h != fromHub) {
+						callHubAOSetActiveObject(h, null, -1, false, false, false); // bUpdateLink, force,bCalledByShareHub
+					}
+					if (flag != 0) {
+						break;
+					}
+
+					HubDataMaster dm = callHubDetailGetDataMaster(h);
+					h = dm.getMasterHub();
 				}
 			}
 
-			/* MIGHT not need this new change (reverted to previous
-			 ** ==> use the hubEvent.newList to get the change
-			// 20110808 if AO is not changing in fromHub then need to set force=true so that the fromHub hub listeners will
-			//    be notified.  Example:  if masterHub.ao was null, fromHub.ao=null and fromHub was invalid (because masterHub.ao=null)
-			//                           then if masterHub.ao is not null, but fromHub.ao was still null (but now is valid)
-			callHubAOSetActiveObject(fromHub, obj,false,false,true); // adjustMaster, bUpdateLink, force
-			*/
-			///* was:   was checking to see if bForce should be used
 
 			// check for self referring links, where a link is based on master/details that then also have a link back to this hub.
 			boolean bForce = false;
 			Hub h = fromHub;
-			ArrayList<Hub<?>> al = null;
+			List<Hub<?>> al = null;
 			for (int i = 0; !bForce; i++) {
 				// 20120717 endless loop caused by recursive hubs
 				if (i > 5) {
@@ -886,7 +882,7 @@ public abstract class HubLinkService {
 					break;
 				}
 				HubDataMaster dm = callHubDetailGetDataMaster(h);
-				// 20110805 recursive hubs could be changing, where a hub could be now sharing the same hub as it's detailHubs
+				// recursive hubs could be changing, where a hub could be now sharing the same hub as it's detailHubs
 				if (dm.getMasterHub() == h) {
 					break;
 				}
@@ -903,12 +899,12 @@ public abstract class HubLinkService {
 			//             if linkToHub.AO is changed to != null, but fromHub.AO is still null, then need to set bForce=true
 			//                so listeners will be notified of the change
 			// ex: in SalesOrder there is a hubCustomer linked to it that needs to know when SalesOrder.AO is not null
-			if (fromHub.getAO() == null && obj == null) {
+			if (fromHub.getAO() == null && objLinkedFromObject == null) {
 				bForce = true;
 			}
 
 			// finally :), change the active object in the from hub.
-			callHubAOSetActiveObject(fromHub, (T) obj, false, false, bForce); // adjustMaster, bUpdateLink, force
+			callHubAOSetActiveObject(fromHub, (T) objLinkedFromObject, false, false, bForce); // adjustMaster, bUpdateLink, force
 		}
 	}
 

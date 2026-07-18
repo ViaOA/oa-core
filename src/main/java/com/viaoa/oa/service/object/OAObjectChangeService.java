@@ -91,8 +91,12 @@ public abstract class OAObjectChangeService {
 	public boolean getChanged(final OAObject oaObj, int iCascadeRule, OACascade cascade) {
 		if (oaObj == null) return false;
 		
-		if (faObject.getChangedFlag(oaObj)) return true;
-		if (faObject.getNewFlag(oaObj)) return true;
+		if (faObject.getChangedFlag(oaObj)) {
+			return true;
+		}
+		if (faObject.getNewFlag(oaObj)) {
+			return true;
+		}
 
 		if (iCascadeRule == oaObj.CASCADE_NONE) {
 			return false;

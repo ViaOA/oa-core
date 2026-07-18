@@ -537,7 +537,7 @@ public abstract class HubAOService {
 	 * @param fromObject method input
 	 * @param pos method input
 	 */
-	public abstract <T extends OAObject> void callHubLinkUpdateLinkProperty(Hub<T> thisHub, T fromObject, int pos);
+	public abstract <T extends OAObject> void callHubLinkUpdateLinkProperty(Hub<T> hubFrom, T objFrom, int pos);
 	/**
 	 * Dependency hook used by this service for HubShareGetAllSharedHubs behavior.
 	 *

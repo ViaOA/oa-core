@@ -523,8 +523,8 @@ public class HubParentService {
 				return HubParentService.this.getHubShareService().getAllSharedHubs(thisHub, filter);
 			}
 			@Override
-			public <T extends OAObject> void callHubLinkUpdateLinkProperty(Hub<T> thisHub, T fromObject, int pos) {
-				HubParentService.this.getHubLinkService().updateLinkProperty(thisHub, fromObject, pos);				
+			public <T extends OAObject> void callHubLinkUpdateLinkProperty(Hub<T> hubFrom, T objFrom, int pos) {
+				HubParentService.this.getHubLinkService().updateLinkedToHubProperty(hubFrom, objFrom, pos);				
 			}
 			@Override
 			public <T extends OAObject> T callHubFindGetRealObject(Hub<T> hub, Object object) {

@@ -326,18 +326,18 @@ public class HubsOpsImpl implements HubsOps {
 			}
 
 			@Override
-			public <T extends OAObject> void updateLinkedToHub(Hub<T> hub, Hub<?> linkToHub, T obj) {
-				srvc.getHubLinkService().updateLinkedToHub(hub, linkToHub, obj);
+			public <T extends OAObject, U extends OAObject> void updateLinkedFromHub(Hub<T> fromHub, Hub<U> linkToHub, U linkToObject) {
+				srvc.getHubLinkService().updateLinkedFromHub(fromHub, linkToHub, linkToObject);
 			}
 
 			@Override
-			public <T extends OAObject> void updateLinkedToHub(Hub<T> hub, Hub<?> linkToHub, T obj, String changedPropName) {
-				srvc.getHubLinkService().updateLinkedToHub(hub, linkToHub, obj, changedPropName);
+			public <T extends OAObject, U extends OAObject> void updateLinkedFromHub(final Hub<T> fromHub, Hub<U> linkToHub, final U linkToObject, final String changedPropName) {
+				srvc.getHubLinkService().updateLinkedFromHub(fromHub, linkToHub, linkToObject, changedPropName);
 			}
 
 			@Override
-			public <T extends OAObject, U extends OAObject> Object getPropertyValueInLinkedToHub(Hub<T> hub, U linkObject) {
-				return srvc.getHubLinkService().getPropertyValueInLinkedToHub(hub, linkObject);
+			public <T extends OAObject, U extends OAObject> Object getPropertyValueInLinkedToHub(Hub<T> hubFrom, U objLinkToHub) {
+				return srvc.getHubLinkService().getLinkFromHubObjectForLinkToHubObject(hubFrom, objLinkToHub);
 			}
 
 			@Override

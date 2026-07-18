@@ -3659,7 +3659,7 @@ public abstract class OAObjectReflectService {
 		}
 		String fromProp = callHubLinkGetLinkFromProperty(hubChild, true);
 		if (fromProp != null) {
-			b = true;
+			// b = true;
 			//return fromProp;
 		}
 

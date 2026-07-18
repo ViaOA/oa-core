@@ -39,7 +39,7 @@ import com.viaoa.runtime.OARuntime;
  * <h3>Responsibilities</h3>
  * <ul>
  *   <li>Listen for {@code afterChangeActiveObject} events on the linked-to Hub
- *       and call {@link HubLinkDelegate#updateLinkedToHub} to realign the
+ *       and call {@link HubLinkService#updateLinkedFromHub} to realign the
  *       linking Hub’s AO.</li>
  *   <li>Listen for {@code afterPropertyChange} on the target object’s link
  *       property and update the "from" Hub if the relationship property was
@@ -106,13 +106,13 @@ public class HubLinkEventListener extends HubListenerAdapter implements java.io.
 
 	/**
 	 * Called after the linked-to Hub changes its active object. Updates the
-	 * from-Hub’s active object through {@link HubLinkDelegate#updateLinkedToHub}.
+	 * from-Hub’s active object through {@link HubLinkService#updateLinkedFromHub}.
 	 *
 	 * @param hubEvent the event containing the new active object
 	 */
 	public @Override void afterChangeActiveObject(HubEvent hubEvent) {
 		final OA oa = OARuntime.oa(fromHub);
-		oa.internal().hubs().link().updateLinkedToHub(fromHub, linkToHub, hubEvent.getObject(), null);
+		oa.internal().hubs().link().updateLinkedFromHub(fromHub, linkToHub, hubEvent.getObject(), null);
 	}
 
 	/**
@@ -127,7 +127,7 @@ public class HubLinkEventListener extends HubListenerAdapter implements java.io.
 	    	String prop = hubEvent.getPropertyName(); 
             if (prop != null && prop.equalsIgnoreCase(faHub.getHubDataUnique(fromHub).getLinkToPropertyName())) {
         		final OA oa = OARuntime.oa(fromHub);
-            	oa.internal().hubs().link().updateLinkedToHub(fromHub, linkToHub, hubEvent.getObject(), prop);
+            	oa.internal().hubs().link().updateLinkedFromHub(fromHub, linkToHub, hubEvent.getObject(), prop);
             }
 	    }
 	}
@@ -153,7 +153,7 @@ public class HubLinkEventListener extends HubListenerAdapter implements java.io.
             }
 	    }
 		final OA oa = OARuntime.oa(fromHub);
-        oa.internal().hubs().link().updateLinkedToHub(fromHub, linkToHub, linkToHub.getAO(), null);
+        oa.internal().hubs().link().updateLinkedFromHub(fromHub, linkToHub, linkToHub.getAO(), null);
 	}
 }
 
