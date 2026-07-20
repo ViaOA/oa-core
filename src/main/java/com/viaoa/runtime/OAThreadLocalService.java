@@ -370,7 +370,7 @@ public class OAThreadLocalService {
 	 * Returns whether the specified thread-local instance is in a loading state.
 	 *
 	 * @param ti the thread-local instance
-	 * @return true if loading is greater than zero
+	 * @return value of loading
 	 */
 	public boolean isLoading() {
 		boolean b;
@@ -387,7 +387,7 @@ public class OAThreadLocalService {
 	 * Returns whether the specified thread-local instance is in a loading state.
 	 *
 	 * @param ti the thread-local instance
-	 * @return true if loading is greater than zero
+	 * @return true if loading
 	 */
 	protected boolean isLoading(OAThreadLocal ti) {
 		if (ti == null) {
@@ -400,7 +400,7 @@ public class OAThreadLocalService {
 	 * Updates the loading flag for the current thread and returns the previous
 	 * loading state.
 	 *
-	 * @param b true to increase the loading count, false to decrease it
+	 * @param b set the loading state
 	 * @return previous loading flag before the update
 	 */
 	public boolean setLoading(boolean b) {
@@ -409,11 +409,11 @@ public class OAThreadLocalService {
 	}
 	
 	/**
-	 * Updates the loading count for the specified thread-local instance and the
-	 * global loading counter. Logs throttled warnings when limits are exceeded.
+	 * Updates the loading state for the specified thread-local instance. 
+	 * Logs throttled warnings when limits are exceeded.
 	 *
 	 * @param ti the thread-local instance
-	 * @param b  true to increment loading, false to decrement it
+	 * @param b set the loading state
 	 * @return previous loading state
 	 */
 	protected boolean setLoading(OAThreadLocal ti, boolean b) {

@@ -633,7 +633,9 @@ public abstract class OAObjectEventService {
 					if (oldObj instanceof OAObjectKey) {
 						if (callSyncIsClient()) { // 20151117 dont get from server if this is client
 							OAObject objx = callCacheGet(linkInfo.getToClass(), (OAObjectKey) oldObj);
-							callPropertySetPropertyCAS(objx, revLinkInfo.getName(), null, oaObj);
+							if (objx != null) {
+								callPropertySetPropertyCAS(objx, revLinkInfo.getName(), null, oaObj);
+							}
 						}
 					}
 				}

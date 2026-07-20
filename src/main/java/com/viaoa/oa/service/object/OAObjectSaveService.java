@@ -175,18 +175,19 @@ public abstract class OAObjectSaveService {
 	}
 
 	private <T extends OAObject> void save(final T oaObj, int iCascadeRule, OACascade cascade, boolean bIsFirst, boolean bCheckDepth) {
-		if (callThreadLocalIsDeleting()) {
-			return;
-		}
-
-		if (cascade.wasCascaded(oaObj, true)) {
-			return;
-		}
 
 		if (bCheckDepth && cascade.getDepth() > 50) {
 			if (!cascade.wasCascaded(oaObj, false)) {
 				cascade.addToOverflow(oaObj); // add to overflow, (tail recursion)
 			}
+			return;
+		}
+		
+		if (callThreadLocalIsDeleting()) {
+			return;
+		}
+
+		if (cascade.wasCascaded(oaObj, true)) {
 			return;
 		}
 		

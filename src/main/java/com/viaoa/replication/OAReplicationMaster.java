@@ -341,27 +341,31 @@ public class OAReplicationMaster extends OAReplicationBase {
 			// invoke client changes on master.
 			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
 			srvcOAThreadLocal.setReplicationSource(this.guid);
-			for (int i = 0;; i++) {
-				try {
-					ClientMsg cm = alClientMsg.poll();
-					if (cm == null)
+			try {
+				for (int i = 0;; i++) {
+					try {
+						ClientMsg cm = alClientMsg.poll();
+						if (cm == null)
+							break;
+	
+						if (cm.clientSeq <= lastProcessedClientSeq)
+							continue;
+	
+						Method method = getMethod(cm.methodName);
+						LOG.fine("invoking message from Client.session=" + sessionId + ", method=" + method.getName());
+						method.invoke(syncServer.getRemoteSyncImpl(), cm.args);
+	
+						lastProcessedClientSeq = cm.clientSeq;
+						lastProcessedMasterSeq = cm.masterSeq;
+					} catch (Exception ex) {
+						LOG.log(Level.WARNING, "exception invoking client message", ex);
 						break;
-
-					if (cm.clientSeq <= lastProcessedClientSeq)
-						continue;
-
-					Method method = getMethod(cm.methodName);
-					LOG.fine("invoking message from Client.session=" + sessionId + ", method=" + method.getName());
-					method.invoke(syncServer.getRemoteSyncImpl(), cm.args);
-
-					lastProcessedClientSeq = cm.clientSeq;
-					lastProcessedMasterSeq = cm.masterSeq;
-				} catch (Exception ex) {
-					LOG.log(Level.WARNING, "exception invoking client message", ex);
-					break;
+					}
 				}
 			}
-			srvcOAThreadLocal.setReplicationSource(null);
+			finally {
+				srvcOAThreadLocal.setReplicationSource(null);
+			}
 
 			// send master server msgs to client
 			final int x = alListReplTLog.size();
