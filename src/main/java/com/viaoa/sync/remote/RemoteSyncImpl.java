@@ -102,7 +102,7 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		OAObject obj = getObject(objectClass, origKey, true);
 		final OA oa = OARuntime.oa(objectClass);
 		if (obj == null) {
-			if (oa.internal().sync().isServer()) {
+			if (oa.sync().isServer()) {
 				if (throttlePropertyChangeError.check()) {
 					LOG.warning("Object not found, class=" + objectClass + ", key=" + origKey + ", propName=" + propertyName);
 				}
@@ -247,7 +247,7 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 
 		Hub h = getHub(obj, hubPropertyName);
 		if (h == null) {
-			if (!oa.internal().sync().isServer()) {
+			if (!oa.sync().isServer()) {
                 oa.internal().objects().property().setProperty(obj, hubPropertyName, null);
 			}
 			return false;
@@ -333,7 +333,7 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		final OA oa = OARuntime.oa(objectClass);
 		OAObject obj = (OAObject) oa.internal().objects().cache().get(objectClass, origKey);
 
-		if (obj == null && oa.internal().sync().isServer()) {
+		if (obj == null && oa.sync().isServer()) {
 			OADataSource ds = OARuntime.datasource().get(objectClass);
 			if (ds != null) obj = (OAObject) ds.getObject(objectClass, origKey);
 			if (obj != null) {
@@ -357,7 +357,7 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 		}
 		final OA oa = OARuntime.oa((OAObject) obj);
 		boolean bWasLoaded = oa.internal().objects().reflect().isReferenceHubLoaded(obj, hubPropertyName);
-		if (!bWasLoaded && !oa.internal().sync().isServer()) {
+		if (!bWasLoaded && !oa.sync().isServer()) {
 			return null;
 		}
 		Object objx = oa.internal().objects().reflect().getProperty(obj, hubPropertyName);
@@ -402,7 +402,7 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 	@Override
 	public void refresh(Class masterObjectClass, OAObjectKey masterObjectKey, String hubPropertyName) {
 		final OA oa = OARuntime.oa(masterObjectClass);
-		if (oa.internal().sync().isServer()) {
+		if (oa.sync().isServer()) {
 			return;
 		}
 
@@ -434,7 +434,7 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
             return;
         }
 		final OA oa = OARuntime.oa(objectClass);
-        if (!oa.internal().sync().isServer()) return;
+        if (!oa.sync().isServer()) return;
         oa.internal().objects().delete().syncServerDelete(obj);
     }
 	
@@ -452,7 +452,7 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
             return;
         }
 		final OA oa = OARuntime.oa(objectClass);
-        if (!oa.internal().sync().isClient()) return;
+        if (!oa.sync().isClient()) return;
         oa.internal().objects().delete().syncClientDelete(obj);
     }
 

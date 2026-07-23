@@ -286,7 +286,7 @@ public abstract class HubDataService {
 	        boolean b = (obj instanceof OAObject);	        
             if (b) {
                 b = (faHub.getHubDataMaster(thisHub).getTrackChanges() || faHub.getHubData(thisHub).getTrackChanges());
-                if (!b && !callSyncIsClient()) {
+                if (!b && !callSyncIsSingleUserOrServer()) {
                     if ( ((OAObject) obj).isChanged()) {
                         if (faHub.getHubDataMaster(thisHub).getMasterObject() != null) {
                             // could be ServerRoot
@@ -1297,7 +1297,7 @@ public abstract class HubDataService {
 	 *
 	 * @return result value
 	 */
-	public abstract boolean callSyncIsClient();
+	public abstract boolean callSyncIsSingleUserOrServer();
 	/**
 	 * Dependency hook used by this service for HubDataGetCurrentSize behavior.
 	 *

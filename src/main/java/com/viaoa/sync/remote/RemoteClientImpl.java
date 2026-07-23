@@ -389,7 +389,7 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		if (h == null) {
 			// store null so that it can be an empty hub if needed (and wont have to get from server)
 			final OA oa = OARuntime.oa(objectClass);
-			if (!oa.internal().sync().isServer()) {
+			if (!oa.sync().isServer()) {
 				oa.internal().objects().property().setPropertyCAS(obj, hubPropertyName, null, null, true, false);
 			}
 			return false;
@@ -413,7 +413,7 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	private OAObject getObject(Class objectClass, OAObjectKey origKey) {
 		final OA oa = OARuntime.oa(objectClass);
 		OAObject obj = (OAObject) oa.internal().objects().cache().get(objectClass, origKey);
-		if (obj == null && oa.internal().sync().isServer()) {
+		if (obj == null && oa.sync().isServer()) {
 			
 			OADataSource ds = OARuntime.datasource().get(objectClass);
 			if (ds != null) {
@@ -444,7 +444,7 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 		}
 		final OA oa = OARuntime.oa(obj);
 		boolean bWasLoaded = oa.internal().objects().reflect().isReferenceHubLoaded(obj, hubPropertyName);
-		if (!bWasLoaded && !oa.internal().sync().isServer()) {
+		if (!bWasLoaded && !oa.sync().isServer()) {
 			return null;
 		}
 		Object objx = oa.internal().objects().reflect().getProperty(obj, hubPropertyName);

@@ -1753,7 +1753,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 
 		final OA oa = OARuntime.oa(fromObject);
 		if (ti.trigger.getServerSideOnly()) {
-			if (oa.internal().sync().isClient()) return;
+			if (oa.sync().isClient()) return;
 		}
 
 		String s = "";
@@ -1802,12 +1802,10 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		final OA oa = OARuntime.oa(fromObject);
 
 		if (ti.trigger.getServerSideOnly()) {
-			if (oa.internal().sync().isClient()) {
+			if (oa.sync().isClient()) {
 				return;
 			}
 		}
-
-		
 		
 		boolean b = false;
 		if (!ti.trigger.getUseBackgroundThread() && ti.trigger.getUseBackgroundThreadIfNeeded() && OARuntime.thread().isUIThread()) {
@@ -1815,7 +1813,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 			if (ti.bNoReverseFinder) {
 				b = true;
 			} else if (ti.bReverseHasMany) {
-				if (oa.internal().sync().isServer()) {
+				if (oa.sync().isSingleUserOrServer()) {
 					OADataSource ds = OARuntime.datasource().get(thisClass);
 					b = (ds != null && ds.supportsStorage()); // might have to go to ds
 				} else {
@@ -1941,7 +1939,7 @@ public class OAObjectInfo { //implements java.io.Serializable {
 			// see if all of the data is already loaded, so that a reverse pp + finder can be used.
 			final OA oa = OARuntime.oa(fromObject);
 			boolean b = false;
-			if (oa.internal().sync().isServer()) {
+			if (oa.sync().isSingleUserOrServer()) {
 				OADataSource ds = OARuntime.datasource().get(thisClass);
 				b = (ds == null || !ds.supportsStorage()); // server must have all data loaded
 			}

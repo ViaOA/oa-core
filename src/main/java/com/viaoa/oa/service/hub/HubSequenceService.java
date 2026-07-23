@@ -35,7 +35,7 @@ public abstract class HubSequenceService {
 		// 20091030 only set for server for detail hubs
 		boolean bServerOnly = false;
 		if (thisHub.getMasterObject() != null) {
-			if (callHubCSIsClient(thisHub)) {
+			if (callHubCSIsClient()) {
 				return; // only set up for server
 			}
 			bServerOnly = true;
@@ -81,7 +81,7 @@ public abstract class HubSequenceService {
 	 * @return result value
 	 */
 
-	public abstract boolean callHubCSIsClient(Hub<?> thisHub);
+	public abstract boolean callHubCSIsClient();
 	/**
 	 * Dependency hook used by this service for HubSortCancelSort behavior.
 	 *

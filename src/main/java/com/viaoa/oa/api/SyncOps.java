@@ -97,6 +97,10 @@ public interface SyncOps {
 	 */
 	boolean isClient();
 	
+	boolean isSingleUserOrServer();
+	
+	boolean isClientOrServer();
+	
 	/**
 	 * Returns whether real-time synchronization is currently active.
 	 *

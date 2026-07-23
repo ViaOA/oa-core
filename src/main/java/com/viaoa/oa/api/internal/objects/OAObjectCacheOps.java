@@ -110,6 +110,8 @@ public interface OAObjectCacheOps {
 	 */
 	public void removeAllObjects(Class<? extends OAObject> clazz);
 
+	public void removeAllObjects();
+	
 	/**
 	 * Finds cached objects using a finder, filter, or property-path search.
 	 *

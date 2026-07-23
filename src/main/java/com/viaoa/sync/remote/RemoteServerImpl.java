@@ -159,7 +159,7 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 		final OA oa = OARuntime.oa(objectClass);
 		OAObject obj = (OAObject) oa.internal().objects().cache().getObject(objectClass, objectKey);
 		if (obj == null) {
-			if (oa.internal().sync().isServer()) {
+			if (oa.sync().isServer()) {
 				OADataSource ds = OARuntime.datasource().get(objectClass);
 				if (ds != null) obj = ds.getObject(objectClass, objectKey);
 			}
@@ -178,7 +178,7 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 		final OA oa = OARuntime.oa(objectClass);
 		OAObject obj = (OAObject) oa.internal().objects().cache().getObject(objectClass, objectKey.getObjectIds());
 		if (obj == null) {
-			if (oa.internal().sync().isServer()) {
+			if (oa.sync().isServer()) {
 				OADataSource ds = OARuntime.datasource().get(objectClass);
 				if (ds != null) obj = (OAObject) ds.getObject(objectClass, objectKey);
 			}

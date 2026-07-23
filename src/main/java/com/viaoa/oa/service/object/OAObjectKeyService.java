@@ -477,7 +477,7 @@ public abstract class OAObjectKeyService {
 			if (oi == null) {
 				oi = callInfogetObjectInfo(oaObj.getClass());
 			}
-			if (!oi.getLocalOnly() && callCSIsClient(oaObj)) {
+			if (!oi.getLocalOnly() && callSyncIsClient()) {
 				// check on server.  If server has same object as this, resolve() will return this object
 				objInCache = callCSGetServerObject(oaObj.getClass(), newObjectKey);
 			}
@@ -598,26 +598,11 @@ public abstract class OAObjectKeyService {
 	public abstract void callCacheRemoveObject(final OAObject obj); 
 	
 	/**
-	 * Dependency hook used by this service to cSIsSingleUser.
-	 *
-	 * @param obj method input
-	 * @return {@code true} when the operation succeeds or condition is met
-	 */
-	public abstract boolean callCSIsSingleUser(OAObject obj);
-	/**
-	 * Dependency hook used by this service to cSIsServer.
-	 *
-	 * @param obj method input
-	 * @return {@code true} when the operation succeeds or condition is met
-	 */
-	public abstract boolean callCSIsServer(OAObject obj);
-	/**
 	 * Dependency hook used by this service to cSIsClient.
 	 *
-	 * @param obj method input
 	 * @return {@code true} when the operation succeeds or condition is met
 	 */
-	public abstract boolean callCSIsClient(OAObject obj);
+	public abstract boolean callSyncIsClient();
 	
 	
 	/**

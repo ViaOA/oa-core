@@ -74,24 +74,6 @@ public interface SyncInternalOps {
 	 */
 	public void performDGC();
 	
-	/**
-	 * Returns whether the runtime is operating as a sync server.
-	 *
-	 * @return {@code true} if server-side
-	 */
-	public boolean isServer();
-	/**
-	 * Returns whether the runtime is operating as a sync client.
-	 *
-	 * @return {@code true} if client-side
-	 */
-	public boolean isClient();
-	/**
-	 * Returns whether the runtime is operating without client/server sync.
-	 *
-	 * @return {@code true} if single-user
-	 */
-	public boolean isSingleUser();
 	
 	/**
 	 * Requests a remote client refresh for an object key.

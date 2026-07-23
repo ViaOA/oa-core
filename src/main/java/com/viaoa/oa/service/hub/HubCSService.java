@@ -316,27 +316,6 @@ public abstract class HubCSService {
 	}
 
 	/**
-	 * Determines whether the specified hub is operating on the server.
-	 *
-	 * @param h the hub to check
-	 * @return {@code true} if this is the server; otherwise {@code false}
-	 */
-	public boolean isServer(Hub<?> thisHub) {
-        return callSyncIsServer();
-	}
-
-	/**
-	 * Returns whether the supplied Hub context is client.
-	 *
-	 * @param thisHub method input
-	 * @return result value
-	 */
-
-	public boolean isClient(Hub<?> thisHub) {
-        return callSyncIsClient();
-	}		
-	
-	/**
 	 * Returns whether the current thread is executing as a remote
 	 * synchronization thread.
 	 *

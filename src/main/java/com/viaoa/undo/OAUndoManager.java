@@ -643,7 +643,7 @@ public class OAUndoManager extends UndoManager {
 		}
 
 		final OA oa = OARuntime.oa();
-		if (!oa.internal().sync().isSingleUser()) {
+		if (!oa.sync().isSingleUser()) {
 			final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
 			if (srvcOARemoteThread.isRemoteThread()) {
 				return true;

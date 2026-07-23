@@ -45,39 +45,6 @@ public abstract class OAObjectCSService {
 	public OAObjectCSService() {
 	}
 
-	/**
-	 * Determines whether this runtime is operating in server or standalone mode.
-	 *
-	 * @return {@code true} if running as a server or standalone runtime;
-	 *         {@code false} if running as a client
-	 */
-	public boolean isServer(OAObject obj) {
-		//qqqqqqq obj not used, remove qqqqq todo:
-		return callSyncIsServer();
-	}
-
-	/**
-	 * Returns whether client is true.
-	 *
-	 * @param obj method input
-	 * @return {@code true} when the operation succeeds or condition is met
-	 */
-	public boolean isClient(OAObject obj) {
-		//qqqqqqq obj not used, remove qqqqq todo:
-		return callSyncIsClient();
-	}
-
-	/**
-	 * Returns whether singleUser is true.
-	 *
-	 * @param obj method input
-	 * @return {@code true} when the operation succeeds or condition is met
-	 */
-	public boolean isSingleUser(OAObject obj) {
-		//qqqqqqq obj not used, remove qqqqq todo:
-		return callSyncIsSingleUser();
-	}
-
 	
 	/**
 	 * Determines whether this runtime is operating in workstation (client) mode for

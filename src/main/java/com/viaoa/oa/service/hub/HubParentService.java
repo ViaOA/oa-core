@@ -806,8 +806,8 @@ public class HubParentService {
 				return HubParentService.this.srvcThreadLocal.isLoading();
 			}
 			@Override
-			public boolean callSyncIsClient() {
-				return HubParentService.this.srvcSync.isClient();
+			public boolean callSyncIsSingleUserOrServer() {
+				return HubParentService.this.srvcSync.isSingleUserOrServer();
 			}
 			@Override
 			public int callHubDataGetCurrentSize(Hub<?> thisHub) {
@@ -1430,8 +1430,8 @@ public class HubParentService {
 		if (srvcHubSequence != null) return srvcHubSequence;
 		srvcHubSequence = new HubSequenceService(faHub) {
 			@Override
-			public boolean callHubCSIsClient(Hub<?> thisHub) {
-				return HubParentService.this.getHubCSService().isClient(thisHub);
+			public boolean callHubCSIsClient() {
+				return HubParentService.this.getHubCSService().callSyncIsClient();
 			}
 			@Override
 			public void callHubSortCancelSort(Hub<?> hub) {
@@ -1448,8 +1448,6 @@ public class HubParentService {
 	 *
 	 * @return result value
 	 */
-
-
 	public HubSelectService getHubSelectService() {
 		if (srvcHubSelect != null) return srvcHubSelect;
 		

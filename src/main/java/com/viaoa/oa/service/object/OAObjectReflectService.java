@@ -672,7 +672,7 @@ public abstract class OAObjectReflectService {
 
 		T oaObj = callCacheGet(clazz, (OAObjectKey) key);
 		if (oaObj == null) {
-			if (callCSIsClient() && (oi == null || !oi.getLocalOnly())) {
+			if (callSyncIsClient() && (oi == null || !oi.getLocalOnly())) {
 				oaObj = callCSGetServerObject(clazz, (OAObjectKey) key);
 			} else {
 				oaObj = callDSGetObject(clazz, (OAObjectKey) key);
@@ -748,7 +748,7 @@ public abstract class OAObjectReflectService {
 				}
 			}
 
-			if (!callCSIsClient()) {
+			if (!callSyncIsClient()) {
 				// 20150130 the same thread that is loading it could be accessing it again. (ex: matching and hubmerger during getReferenceHub)
 				if (callLockIsPropertyLocked(oaObj, linkPropertyName)) {
 					return (Hub<T>) hub;
@@ -886,7 +886,7 @@ public abstract class OAObjectReflectService {
 			boolean bSequence, Hub<?> hubMatch, final OAObjectInfo oi, final OALinkInfo linkInfo, final List<OAObject> alSiblinkLock ) {
 
 		Object propertyValue = callPropertyGetProperty(oaObj, linkPropertyName, true, true);
-		final boolean bIsClient = callCSIsClient();
+		final boolean bIsClient = callSyncIsClient();
 		// dont get calcs from server, calcs are maintained locally, events are not sent
 		boolean bIsCalc = (linkInfo != null && linkInfo.getCalculated());
 		boolean bIsServerSideCalc = (linkInfo != null && linkInfo.getServerSideCalc());
@@ -1544,7 +1544,7 @@ public abstract class OAObjectReflectService {
 		}
 		OAObjectInfo io = getOAObjectInfo(obj.getClass());
 		List<OALinkInfo> al = io.getLinkInfos();
-		boolean bIsClient = callCSIsClient();
+		boolean bIsClient = callSyncIsClient();
 		for (OALinkInfo li : al) {
 			if (li == null) {
 				continue;
@@ -2232,7 +2232,7 @@ public abstract class OAObjectReflectService {
 				return null;
 			}
 
-			if (callCSIsClient()) {
+			if (callSyncIsClient()) {
 				val = callCSGetServerReferenceBlob(oaObj, propertyName);
 			} else {
 				OADataSource ds = callDSGetDataSource(oaObj.getClass());
@@ -2325,7 +2325,7 @@ public abstract class OAObjectReflectService {
 			return null;
 		}
 
-		final boolean bIsClient = callCSIsClient();
+		final boolean bIsClient = callSyncIsClient();
 		final boolean bIsCalc = li != null && li.getCalculated();
 
 		Object ref = null;
@@ -3047,7 +3047,7 @@ public abstract class OAObjectReflectService {
 		// run on server only - otherwise objects can not be updated, since setLoadingObject is true
 		OAObjectInfo oi = getOAObjectInfo(oaObj.getClass());
 		if (!oi.getLocalOnly()) {
-			if (callCSIsClient()) {
+			if (callSyncIsClient()) {
 				// 20130505 needs to be put in msg queue
 				newObject = callCSCreateCopy(oaObj, excludeProperties);
 				return newObject;
@@ -3925,18 +3925,13 @@ public abstract class OAObjectReflectService {
 	 * @return result value
 	 */
 	public abstract OAObject callCSCreateCopy(OAObject oaObj, String[] excludeProperties);
-	/**
-	 * Dependency hook used by this service to cSIsServer.
-	 *
-	 * @return {@code true} when the operation succeeds or condition is met
-	 */
-	public abstract boolean callCSIsServer();
+
 	/**
 	 * Dependency hook used by this service to cSIsClient.
 	 *
 	 * @return {@code true} when the operation succeeds or condition is met
 	 */
-	public abstract boolean callCSIsClient();
+	public abstract boolean callSyncIsClient();
 	/**
 	 * Dependency hook used by this service to cSGetServerObject.
 	 *

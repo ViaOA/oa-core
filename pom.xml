@@ -78,13 +78,6 @@ qqqqqq -->
     <!-- <dependency> <groupId>com.microsoft.sqlserver</groupId> <artifactId>mssql-jdbc</artifactId> 
       <version>6.4.0.jre8</version> <scope>test</scope> </dependency> -->
 
-<!-- qqqqqqqqqqqqqqqqqqqqqqqqq testing only 
-    <dependency>
-    	<groupId>com.oreillyauto.pos</groupId>
-    	<artifactId>oapos</artifactId>
-    	<version>0.0.1</version>
-    </dependency>
--->    
   </dependencies>
 
 

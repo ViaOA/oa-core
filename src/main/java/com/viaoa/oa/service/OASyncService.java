@@ -369,6 +369,23 @@ public class OASyncService implements SyncInternalOps, SyncOps {
 		return (sc != null);
 	}
 	
+	@Override
+	public boolean isSingleUserOrServer() {
+		OASyncServer ss = getServer();
+		if (ss != null) return true;
+		OASyncClient sc = getClient();
+		return sc == null;
+	}
+
+	@Override
+	public boolean isClientOrServer() {
+		OASyncServer ss = getServer();
+		if (ss != null) return true;
+		OASyncClient sc = getClient();
+		return sc != null;
+	}
+	
+	
 	/**
 	 * Sends an exception to the active remote session, when one is available.
 	 *

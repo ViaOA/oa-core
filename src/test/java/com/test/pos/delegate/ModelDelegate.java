@@ -137,6 +137,14 @@ public class ModelDelegate {
 //qqqqqqqqqqqqqqqqq Custom
 	public static TeamMember getCurrentTeamMember() {
 		Hub<AppUser> hubAppUser = (Hub<AppUser>) OARuntime.oa(TeamMember.class).modelUser().getCurrent();
+		if (hubAppUser == null) {
+			hubAppUser = new Hub<>(AppUser.class);
+			OARuntime.oa(TeamMember.class).modelUser().setCurrent(hubAppUser);
+			AppUser au = new AppUser();
+			hubAppUser.add(au);
+			hubAppUser.setPos(0);
+		}
+		
 		
 		AppUser appUser = hubAppUser.getAO();
 		

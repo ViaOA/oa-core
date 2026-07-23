@@ -832,16 +832,6 @@ public class HubsOpsImpl implements HubsOps {
 			public void sendRefresh(Hub<?> hub) {
 				srvc.getHubCSService().sendRefresh(hub);
 			}
-
-			@Override
-			public boolean isServer(Hub<?> hub) {
-				return srvc.getHubCSService().isServer(hub);
-			}
-
-			@Override
-			public boolean isClient(Hub<?> hub) {
-				return srvc.getHubCSService().isClient(hub);
-			}
 		};
 		return opsCS;
 	}

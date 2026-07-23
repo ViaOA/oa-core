@@ -173,7 +173,7 @@ public abstract class OAObjectEventService {
 		if (bIsLoading) {
 			if (!callHubIsInHub(oaObj)) { // 20110719: could be in the OAObjectCache.SelectAllHubs
 				// no listeners, need to load quick as possible
-				if (callSyncIsServer()) { // 20150604 if client, then it needs to send prop change to server
+				if (!callSyncIsClient()) { // 20150604 if client, then it needs to send prop change to server
 					return;
 				}
 				if (!callSyncIsObjectOnServer(oaObj)) return;
@@ -338,6 +338,7 @@ public abstract class OAObjectEventService {
 
 		if (linkInfo == null && !callRemoteThreadIsRemoteThread()) {
 			OAPropertyInfo propInfo = callInfoGetPropertyInfo(oi, propertyU);
+			/* 20260720 commented out, not sure why this is here.  A property that isSubmit=true will not pass until it's value is set ... this is the 'before' set
 			if (!bIsLoading && propInfo != null && propInfo.getIsSubmit() && newObj != null) {
 				if (OAConv.toBoolean(newObj)) {
 					OAObjectCallback eq = callRulesGetAllowSubmitObjectCallback(oaObj);
@@ -347,6 +348,7 @@ public abstract class OAObjectEventService {
 					}
 				}
 			}
+			*/
 
 			if (propInfo != null) {
 				if (propInfo.getId() && !callDSIsAssigningId(oaObj)) {
@@ -357,7 +359,7 @@ public abstract class OAObjectEventService {
 					}
 				}
 
-				if (newObj instanceof OADateTime) { // 20191222
+				if (newObj instanceof OADateTime) {
 					if (propInfo.getIgnoreTimeZone()) {
 						// 20260603 no longer in OADateTime
 						// ((OADateTime) newObj).setIgnoreTimeZone(true);
@@ -365,54 +367,13 @@ public abstract class OAObjectEventService {
 				}
 
 				if (propInfo.getUnique() && newObj != null && !propInfo.getId() && !callDSIsAssigningId(oaObj)) {
-
 					if (!bIsLoading) { // 20221219
-						// 20180629
 						OAObject obj = callUniqueGetUnique(oaObj.getClass(), propertyName, newObj, false);
 						if (obj != null && obj != oaObj) {
 							throw new RuntimeException("property is unique, and value already assigned to another object. Class="
 									+ oaObj.getClass().getSimpleName() + ", property=" + propertyName + ", value=" + newObj);
 						}
 					}
-
-					/*was:
-					OAFilter<OAObject> filter = new OAFilter<OAObject>() {
-
-
-					    public boolean isUsed(OAObject obj) {
-					        Object objx = obj.getProperty(propertyU);
-					        if (objx == null) return false;
-					        return objx.equals(newObj);
-					    }
-					};
-					OADataSource ds = OADataSource.getDataSource(oaObj.getClass(), filter);
-
-					if (ds != null && (!(ds instanceof OADataSourceObjectCache))) {
-					    Iterator it = ds.select(oaObj.getClass(), propertyU+" = ?", new Object[] {newObj}, null, null, null, null, 2, filter, false);
-					    try {
-					        for ( ;it != null && it.hasNext(); ) {
-					            Object objx = it.next();
-					            if (objx != oaObj) {
-					                throw new RuntimeException("property is unique, and value is assigned to another object.");
-					            }
-					        }
-					    }
-					    finally {
-					        if (it != null) it.remove();
-					    }
-					}
-					else if (!propInfo.getId()) {
-					    Object objLast = null;
-					    for (;;) {
-					        Object objx = srvcObject.getOAObjectCacheService().findNext(objLast, oaObj.getClass(), propertyU, newObj);
-					        if (objx == null) break;
-					        if (objx != oaObj) {
-					            throw new RuntimeException("property is unique, and value is assigned to another object.");
-					        }
-					        objLast = objx;
-					    }
-					}
-					*/
 				}
 			}
 		}
@@ -1151,7 +1112,7 @@ public abstract class OAObjectEventService {
 		
 		if (oldObj instanceof OAObject && !bOldIsKeyOnly) {
 			try {
-				if (callCSIsServer(oaObj)
+				if (callSyncIsServer()
 						|| callReflectIsReferenceHubLoaded((OAObject) oldObj, revLinkInfo.getName())) {
 					obj = callReflectGetProperty((OAObject) oldObj, revLinkInfo.getName());
 					if (obj instanceof Hub) {
@@ -1168,7 +1129,7 @@ public abstract class OAObjectEventService {
 
 		if (newObj != null && newObj instanceof OAObject) {
 			try {
-				if (callCSIsServer(oaObj)
+				if (callSyncIsServer()
 						|| callReflectIsReferenceHubLoaded((OAObject) newObj, revLinkInfo.getName())) {
 					hub = (Hub) callReflectGetProperty((OAObject) newObj, revLinkInfo.getName());
 
@@ -1293,13 +1254,6 @@ public abstract class OAObjectEventService {
 	 * @param newValue method input
 	 */
 	public abstract void callCSFireBeforePropertyChange(OAObject obj, String propertyName, Object oldValue, Object newValue);
-	/**
-	 * Dependency hook used by this service to cSIsServer.
-	 *
-	 * @param obj method input
-	 * @return {@code true} when the operation succeeds or condition is met
-	 */
-	public abstract boolean callCSIsServer(OAObject obj);
 	/**
 	 * Dependency hook used by this service to dSIsAssigningId.
 	 *

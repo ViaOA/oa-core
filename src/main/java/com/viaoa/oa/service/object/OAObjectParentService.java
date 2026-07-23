@@ -985,6 +985,10 @@ public class OAObjectParentService {
 				return OAObjectParentService.this.srvcSync.isServer();
 			}
 
+			public boolean callSyncIsSingleUserOrServer() {
+				return OAObjectParentService.this.srvcSync.isSingleUserOrServer();
+			}
+			
 			@Override
 			/**
 			 * Performs callHubCSRemoveAllFromHub behavior for the OA object service.
@@ -2128,17 +2132,6 @@ public class OAObjectParentService {
 
 			@Override
 			/**
-			 * Performs callCSIsServer behavior for the OA object service.
-			 *
-			 * @param obj method input
-			 * @return {@code true} when the operation succeeds or condition is met
-			 */
-			public boolean callCSIsServer(OAObject obj) {
-				return OAObjectParentService.this.getOAObjectCSService().callSyncIsServer();
-			}
-
-			@Override
-			/**
 			 * Performs callCSFireBeforePropertyChange behavior for the OA object service.
 			 *
 			 * @param obj          method input
@@ -2172,7 +2165,6 @@ public class OAObjectParentService {
 				OAObjectParentService.this.srvcThreadLocal.setSendSyncMessages(b);
 			}
 		};
-
 		return srvcOAObjectEvent;
 	}
 
@@ -2979,35 +2971,13 @@ public class OAObjectParentService {
 
 			@Override
 			/**
-			 * Performs callCSIsSingleUser behavior for the OA object service.
-			 *
-			 * @param obj method input
-			 * @return {@code true} when the operation succeeds or condition is met
-			 */
-			public boolean callCSIsSingleUser(OAObject obj) {
-				return OAObjectParentService.this.getOAObjectCSService().isSingleUser(obj);
-			}
-
-			@Override
-			/**
-			 * Performs callCSIsServer behavior for the OA object service.
-			 *
-			 * @param obj method input
-			 * @return {@code true} when the operation succeeds or condition is met
-			 */
-			public boolean callCSIsServer(OAObject obj) {
-				return OAObjectParentService.this.getOAObjectCSService().isServer(obj);
-			}
-
-			@Override
-			/**
 			 * Performs callCSIsClient behavior for the OA object service.
 			 *
 			 * @param obj method input
 			 * @return {@code true} when the operation succeeds or condition is met
 			 */
-			public boolean callCSIsClient(OAObject obj) {
-				return OAObjectParentService.this.getOAObjectCSService().isClient(obj);
+			public boolean callSyncIsClient() {
+				return OAObjectParentService.this.srvcSync.isClient();
 			}
 
 			@Override
@@ -3036,23 +3006,8 @@ public class OAObjectParentService {
 
 		srvcOAObjectLock = new OAObjectLockService() {
 			@Override
-			/**
-			 * Performs callSyncIsServer behavior for the OA object service.
-			 *
-			 * @return {@code true} when the operation succeeds or condition is met
-			 */
-			public boolean callSyncIsServer() {
-				return OAObjectParentService.this.srvcSync.isServer();
-			}
-
-			@Override
-			/**
-			 * Performs callSyncIsClient behavior for the OA object service.
-			 *
-			 * @return {@code true} when the operation succeeds or condition is met
-			 */
-			public boolean callSyncIsClient() {
-				return OAObjectParentService.this.srvcSync.isClient();
+			public boolean callSyncIsClientOrServer() {
+				return OAObjectParentService.this.srvcSync.isClientOrServer();
 			}
 
 			@Override
@@ -3097,32 +3052,6 @@ public class OAObjectParentService {
 		return srvcOAObjectLock;
 	}
 
-	/*
-	 * qqqqqqq
-	 * 
-	 * 
-	 * public OAObjectLogService getOAObjectLogService() { if (srvcOAObjectLog !=
-	 * null) return srvcOAObjectLog; srvcOAObjectLog = new OAObjectLogService() {
-	 * 
-	 * @Override
-	 * 
-	 * 
-	 * public OAObjectInfo callInfoGetObjectInfo(Class clazz) { return
-	 * OAObjectParentService.this.getOAObjectInfoService().getOAObjectInfo(clazz); }
-	 * 
-	 * @Override
-	 * 
-	 * 
-	 * public OALinkInfo callInfoGetReverseLinkInfo(OALinkInfo li) { return
-	 * OAObjectParentService.this.getOAObjectInfoService().getReverseLinkInfo(li); }
-	 * 
-	 * @Override
-	 * 
-	 * 
-	 * public OALinkInfo callInfoGetLinkInfo(OAObjectInfo oi, String propertyName) {
-	 * return OAObjectParentService.this.getOAObjectInfoService().getLinkInfo(oi,
-	 * propertyName); } }; return srvcOAObjectLog; }
-	 */
 
 	public OAObjectPropertyService getOAObjectPropertyService() {
 		if (srvcOAObjectProperty != null)
@@ -3145,8 +3074,8 @@ public class OAObjectParentService {
 			 *
 			 * @return {@code true} when the operation succeeds or condition is met
 			 */
-			public boolean callSyncIsServer() {
-				return OAObjectParentService.this.srvcSync.isServer();
+			public boolean callSyncIsClient() {
+				return OAObjectParentService.this.srvcSync.isClient();
 			}
 
 			@Override
@@ -4087,22 +4016,12 @@ public class OAObjectParentService {
 
 			@Override
 			/**
-			 * Performs callCSIsServer behavior for the OA object service.
-			 *
-			 * @return {@code true} when the operation succeeds or condition is met
-			 */
-			public boolean callCSIsServer() {
-				return OAObjectParentService.this.getOAObjectCSService().callSyncIsServer();
-			}
-
-			@Override
-			/**
 			 * Performs callCSIsClient behavior for the OA object service.
 			 *
 			 * @return {@code true} when the operation succeeds or condition is met
 			 */
-			public boolean callCSIsClient() {
-				return OAObjectParentService.this.getOAObjectCSService().callSyncIsClient();
+			public boolean callSyncIsClient() {
+				return OAObjectParentService.this.srvcSync.isClient();
 			}
 
 			@Override
@@ -4204,8 +4123,8 @@ public class OAObjectParentService {
 			 * @param obj method input
 			 * @return {@code true} when the operation succeeds or condition is met
 			 */
-			public boolean callCSIsClient(OAObject obj) {
-				return OAObjectParentService.this.getOAObjectCSService().isClient(obj);
+			public boolean callSyncIsClient() {
+				return OAObjectParentService.this.srvcSync.isClient();
 			}
 
 			@Override
@@ -4655,8 +4574,8 @@ public class OAObjectParentService {
 			 *
 			 * @return {@code true} when the operation succeeds or condition is met
 			 */
-			public boolean callCSIsClient() {
-				return OAObjectParentService.this.getOAObjectCSService().callSyncIsClient();
+			public boolean callSyncIsClient() {
+				return OAObjectParentService.this.srvcSync.isClient();
 			}
 
 			@Override
@@ -5013,8 +4932,8 @@ public class OAObjectParentService {
 			 *
 			 * @return {@code true} when the operation succeeds or condition is met
 			 */
-			public boolean callCSIsClient() {
-				return OAObjectParentService.this.getOAObjectCSService().callSyncIsClient();
+			public boolean callSyncIsClient() {
+				return OAObjectParentService.this.srvcSync.isClient();
 			}
 		};
 		return srvcOAObjectUnique;

@@ -95,7 +95,7 @@ public abstract class OAObjectSerializeService {
 		in.defaultReadObject();
 		
 		final OAObjectInfo oi = callInfoGetObjectInfo(oaObj.getClass());
-		final boolean bIsClient = callCSIsClient();
+		final boolean bIsClient = callSyncIsClient();
 
 		// read properties
 		for (;;) {
@@ -405,14 +405,14 @@ public abstract class OAObjectSerializeService {
 		}
 		
 		final OAObjectInfo oi = callInfoGetObjectInfo(oaObj);
-		final boolean bIsClient = callCSIsClient();
+		final boolean bIsClient = callSyncIsClient();
 		final boolean bIsObjectOnServer = !bIsClient || callSyncClientIsObjectOnServer(oaObj);
 
 		
 		if (stream instanceof RemoteObjectOutputStream) {
 			if (!bIsObjectOnServer) {
 				stream.writeByte((byte) 2);
-			} else if (callCSIsClient()) {
+			} else if (callSyncIsClient()) {
 				// only need to send key to the server
 				stream.writeByte((byte) 1);
 				stream.writeObject(oaObj.getObjectKey());
@@ -752,7 +752,7 @@ public abstract class OAObjectSerializeService {
 	 *
 	 * @return {@code true} when the operation succeeds or condition is met
 	 */
-	public abstract boolean callCSIsClient();
+	public abstract boolean callSyncIsClient();
 	/**
 	 * Dependency hook used by this service to hubSerializeReplaceObject.
 	 *

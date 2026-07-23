@@ -741,7 +741,7 @@ public abstract class OAObjectDeleteService {
 		if (oaObj == null) {
 			return;
 		}
-		if (callSyncIsServer()) {
+		if (callSyncIsSingleUserOrServer()) {
 			callDSDelete(oaObj);
 		}
 		oaObj.afterDelete();
@@ -1027,6 +1027,9 @@ public abstract class OAObjectDeleteService {
 	 * @return {@code true} when the operation succeeds or condition is met
 	 */
 	public abstract boolean callSyncIsServer();
+
+	public abstract boolean callSyncIsSingleUserOrServer();
+	
 	/**
 	 * Dependency hook used by this service to syncIsClient.
 	 *

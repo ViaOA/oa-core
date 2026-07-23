@@ -39,8 +39,8 @@ public final class OARuntime {
 	private final Map<String, RuntimeException> hmPackageNameException = new ConcurrentHashMap<>();
 	private final Map<Class<?>, Class<?>> hmClassHelper = new ConcurrentHashMap<>();
 
-	private OA oaCatchAll;
-	private OA oaDefault;
+	private volatile OA oaCatchAll;
+	private volatile OA oaDefault;
 
 	private final OADataSourceService srvcDataSource = new OADataSourceService();
 	private final OAThreadService srvcThread = new OAThreadService();
@@ -125,6 +125,10 @@ public final class OARuntime {
 				 */
 				public void close() {
 					super.close();
+					if (this == oaDefault) oaDefault = null;
+					if (this == oaCatchAll) {
+						runtime.oaCatchAll = (OAImpl) runtime.createOAInternal("");
+					}
 					hmPackageNameOAHelper.clear();
 					hmPackageNameOA.remove(pkgName);
 				}

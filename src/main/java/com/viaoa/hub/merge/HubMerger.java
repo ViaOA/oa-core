@@ -1431,7 +1431,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                         hubCombined.setSharedHub(hub, bShareActiveObject);
                     }
                 } else {
-                    if (oa.internal().sync().isClient()) {
+                    if (oa.sync().isClient()) {
                         // preload, so that any getDetail will be more efficient
                         for (int i = 0;; i++) {
                             OAObject obj = (OAObject) hub.elementAt(i);
@@ -1466,7 +1466,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
                     Hub hubx = null;
                     //if (!bCreatedFromOneObject) hubx = srvcOAThreadLocal.setGetDetailHub(hub);
                     try {
-                        if (oa.internal().sync().isClient()) {
+                        if (oa.sync().isClient()) {
                             // preload, so that any getDetail will be more efficient
                             for (int i = 0;; i++) {
                                 OAObject obj = (OAObject) hub.elementAt(i);
@@ -2174,7 +2174,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             }
 
     		final OA oa = OARuntime.oa(HubMerger.this.getRootHub());
-            if (oa.internal().sync().isServer()) {
+            if (oa.sync().isServer()) {
                 _onNewList();
                 return;
             }
@@ -2416,7 +2416,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         @Override
         public void afterNewList(HubEvent hubEvent) {
     		final OA oa = OARuntime.oa(HubMerger.this.getRootHub());
-            if ((hub != hubRoot) || oa.internal().sync().isServer()) {
+            if ((hub != hubRoot) || oa.sync().isServer()) {
                 return;
             }
 

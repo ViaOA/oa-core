@@ -2588,15 +2588,6 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		return b;
 	}
 
-/**
-	 * Determines whether this object is executing in a client context.
-	 * <p>
-	 * This is the logical inverse of {@link #isServer()}, and returns
-	 * {@code true} when the OA Sync framework identifies the class
-	 * associated with this object as running on a client node.
-	 *
-	 * @return {@code true} if running on a client; {@code false} otherwise
-	 */
 	/**
 	 * Determines whether the current thread is an OA remote thread, used to process
 	 * OASync messages.
@@ -2881,7 +2872,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		final OA oa = OARuntime.oa(hub);
 		
 		final OARemoteThreadService srvcOARemoteThread = ((OAThreadService) OARuntime.thread()).getRemoteThreadService();  
-		if (!oa.internal().sync().isClient() || srvcOARemoteThread.isRemoteThread()) {
+		if (!oa.sync().isClient() || srvcOARemoteThread.isRemoteThread()) {
 			throw new RuntimeException("method " + mname + ", isRemoable=false, thread=" + Thread.currentThread());
 		}
 
@@ -3019,7 +3010,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *   <li>the object is executing on the server rather than a client.</li>
 	 * </ul>
 	 * <p>
-	 * This method delegates part of its logic to {@link #isClient()} to ensure
+	 * This method delegates part of its logic to OA.sync().isClient() to ensure
 	 * that only client-side threads that are not remote threads may initiate
 	 * remote calls.
 	 *
@@ -3031,7 +3022,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 			return false;
 		}
 		final OA oa = OARuntime.oa(this);
-		return oa.internal().sync().isClient();
+		return oa.sync().isClient();
 	}
 
 
@@ -3054,7 +3045,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		}
 		final Class clazz = hub.getObjectClass();
 		final OA oa = OARuntime.oa(clazz);
-		if (!oa.internal().sync().isClient()) {
+		if (!oa.sync().isClient()) {
 			return false;
 		}
 		return true;
@@ -3161,7 +3152,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * <ul>
 	 *   <li>Returns {@code false} immediately if the object is currently loading.</li>
 	 *   <li>Returns {@code false} if the object's class is not executing on the server,
-	 *       as determined by {@link OASyncDelegate#isServer(Class)}.</li>
+	 *       as determined by OA.sync().isServer().</li>
 	 * </ul>
 	 * <p>
 	 * If both checks pass, this method enables remote-message sending for the current
@@ -3177,7 +3168,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 			return false;
 		}
 		final OA oa = OARuntime.oa(this);
-		if (!oa.internal().sync().isServer()) {
+		if (oa.sync().isClient()) {
 			return false;
 		}
 
@@ -3205,7 +3196,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 			return;
 		}
 		final OA oa = OARuntime.oa(this);
-		if (!oa.internal().sync().isServer()) {
+		if (oa.sync().isClient()) {
 			return;
 		}
 
@@ -4032,5 +4023,4 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	public OA getOA() {
 		return OARuntime.oa(this);
 	}
-	
 }

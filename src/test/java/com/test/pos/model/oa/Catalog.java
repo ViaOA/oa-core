@@ -79,7 +79,8 @@ public class Catalog extends OAObject {
     @OAMany(
         displayName = "Catalog Categories", 
         toClass = CatalogCategory.class, 
-        recursive = false, 
+        owner = true,
+        recursive = true, 
         reverseName = CatalogCategory.P_Catalog
     )
     public Hub<CatalogCategory> getCatalogCategories() {

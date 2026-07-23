@@ -71,7 +71,7 @@ public abstract class OAObjectLockService {
 	public boolean lock(OAObject object) {
 	    if (object == null) throw new IllegalArgumentException("object can not be null");
 
-	    if (callSyncIsServer() || callSyncIsClient()) {
+	    if (callSyncIsClientOrServer()) {
 	    	// locks will be under RemoteSessionImpl.hashLock
 	    	return callSyncSetLock(object.getClass(), object.getObjectKey(), true);
 	    }
@@ -117,7 +117,7 @@ public abstract class OAObjectLockService {
 	public boolean unlock(OAObject object) {
 	    if (object == null) return false;
 
-	    if (callSyncIsServer() || callSyncIsClient()) {
+	    if (callSyncIsClientOrServer()) {
 	    	// locks will be under RemoteSessionImpl.hashLock
 	    	return callSyncSetLock(object.getClass(), object.getObjectKey(), false);
 	    }
@@ -152,7 +152,7 @@ public abstract class OAObjectLockService {
 	public boolean isLocked(OAObject object) {
 	    if (object == null) return false;
 
-	    if (callSyncIsServer() || callSyncIsClient()) {
+	    if (callSyncIsClientOrServer()) {
 	    	// locks will be under RemoteSessionImpl.hashLock
 	    	return callSyncIsLocked(object.getClass(), object.getObjectKey());
 	    }
@@ -173,7 +173,7 @@ public abstract class OAObjectLockService {
 	public boolean isLockedByAnotherThread(OAObject object) {
 	    if (object == null) return false;
 
-	    if (callSyncIsServer() || callSyncIsClient()) {
+	    if (callSyncIsClientOrServer()) {
 	    	// locks will be under RemoteSessionImpl.hashLock
 	    	return callSyncIsLocked(object.getClass(), object.getObjectKey());
 	    }
@@ -364,18 +364,8 @@ public abstract class OAObjectLockService {
 		return (lock != null && lock.thread != Thread.currentThread());
 	}
 	
-	/**
-	 * Dependency hook used by this service to syncIsClient.
-	 *
-	 * @return {@code true} when the operation succeeds or condition is met
-	 */
-	public abstract boolean callSyncIsClient();
-	/**
-	 * Dependency hook used by this service to syncIsServer.
-	 *
-	 * @return {@code true} when the operation succeeds or condition is met
-	 */
-	public abstract boolean callSyncIsServer();
+	public abstract boolean callSyncIsClientOrServer();
+	
 	/**
 	 * Dependency hook used by this service to syncSetLock.
 	 *

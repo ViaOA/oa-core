@@ -24,13 +24,7 @@ public interface OAObjectCSOps {
 	 * @return the resolved server reference Hub
 	 */
 	public <T extends OAObject> Hub<T> getServerReferenceHub(T oaObj, String linkPropertyName);
-	/**
-	 * Returns whether the object is known to be server-backed in the current runtime.
-	 *
-	 * @param oaObj the object to inspect
-	 * @return {@code true} when the object is server-backed
-	 */
-	public boolean isServer(OAObject oaObj);
+
 	/**
 	 * Updates tracking for objects that are not currently referenced by Hubs.
 	 *

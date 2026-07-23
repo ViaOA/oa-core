@@ -154,7 +154,7 @@ public abstract class OAObjectSaveService {
     	}
 		
 		
-		if (bSync && callCSIsClient(oaObj)) {
+		if (bSync && callSyncIsClient()) {
 			callCSServerSave(oaObj, iCascadeRule);
 			return;
 		}
@@ -474,7 +474,7 @@ public abstract class OAObjectSaveService {
 	 * @param oaOjb method input
 	 * @return {@code true} when the operation succeeds or condition is met
 	 */
-	public abstract boolean callCSIsClient(OAObject oaOjb); 
+	public abstract boolean callSyncIsClient(); 
 	/**
 	 * Dependency hook used by this service to cSServerSave.
 	 *

@@ -806,7 +806,7 @@ public abstract class OAObjectPropertyService {
 		if (obj == null) {
 			return;
 		}
-		if (!callSyncIsServer()) {
+		if (callSyncIsClient()) {
 			return;
 		}
 		if (cascade != null && cascade.wasCascaded(obj, true)) {
@@ -945,10 +945,6 @@ public abstract class OAObjectPropertyService {
 	 * @return result value
 	 */
 	public abstract OAObjectKey callKeyGetKey(OAObject oaObj);
-	/**
-	 * Dependency hook used by this service to syncIsServer.
-	 *
-	 * @return {@code true} when the operation succeeds or condition is met
-	 */
-	public abstract boolean callSyncIsServer();
+
+	public abstract boolean callSyncIsClient();
 }

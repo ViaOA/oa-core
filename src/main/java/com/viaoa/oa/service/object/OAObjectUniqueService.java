@@ -59,7 +59,7 @@ public abstract class OAObjectUniqueService {
         if (oaObj != null) return oaObj;
         
         // not found
-        if (callCSIsClient()) {
+        if (callSyncIsClient()) {
             try {
             	oaObj = callSyncClientGetUnique(clazz, propertyName, uniqueKey, bAutoCreate);
                 return oaObj;
@@ -116,7 +116,7 @@ public abstract class OAObjectUniqueService {
 	 *
 	 * @return {@code true} when the operation succeeds or condition is met
 	 */
-	public abstract boolean callCSIsClient();
+	public abstract boolean callSyncIsClient();
 	/**
 	 * Dependency hook used by this service to syncClientGetUnique.
 	 *

@@ -227,6 +227,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 			}
 
 			@Override
+			public void removeAllObjects() {
+				srvc.getOAObjectCacheService().removeAllObjects();
+			}
+			
+			@Override
 			public <T extends OAObject> T find(T fromObject, Class<T> clazz, OAFilter<T> filter, boolean bSkipNew, boolean bThrowException, int fetchAmount, List<T> alResults) {
 				return srvc.getOAObjectCacheService().find(fromObject, clazz, filter, bSkipNew, bThrowException, fetchAmount, alResults);
 			}
@@ -755,11 +760,6 @@ public class ObjectsOpsImpl implements ObjectsOps {
 			@Override
 			public void objectFinalized(UUID guid) {
 				srvc.getOAObjectCSService().objectFinalized(guid);
-			}
-			
-			@Override
-			public boolean isServer(OAObject oaObj) {
-				return srvc.getOAObjectCSService().isServer(oaObj);
 			}
 			
 			@Override
