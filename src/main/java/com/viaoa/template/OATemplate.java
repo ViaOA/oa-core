@@ -1725,7 +1725,7 @@ public class OATemplate<F extends OAObject> {
   
             String s = cn.arg1;
             if (OAStr.isEmpty(s)) continue;
-            if (s.charAt(0) == '$') continue;
+            if (s.contains("$")) continue;
             
             // make columns for pp
             OAPath pp = new OAPath(hub.getObjectClass(), cn.arg1);

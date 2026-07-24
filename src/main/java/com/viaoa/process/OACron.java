@@ -15,55 +15,13 @@
  */
 package com.viaoa.process;
 
+import java.time.DayOfWeek;
 import java.util.Arrays;
-import java.util.Calendar;
-
 import com.viaoa.converter.OAConv;
 import com.viaoa.datetime.OADate;
 import com.viaoa.datetime.OADateTime;
-import com.viaoa.hub.HubEvent;
 import com.viaoa.lang.OAArray;
 import com.viaoa.lang.OAString;
-
-/*qqqqqqqqqqqqqqqq
-CODEX
-
-5. OACron / findNext and private search methods
-     Severity: Medium
-     Bug/risk: findNext(OADateTime) stores the input in mutable instance field dtFrom, and all private search methods
-     read that field. Concurrent calls on the same OACron can interleave and compute a result using another caller’s
-     start time.
-     Production impact: A cron used by both scheduled processing and manual/status calls can return wrong next
-     execution times, causing missed or duplicate scheduling decisions.
-     Area: src/main/java/com/viaoa/process/OACron.java:475
-     Minimal hardening: Make the search state local by passing dtFrom through helper methods, or synchronize findNext.
-
-2. OACron / getInts silently broadens invalid cron fields into wildcard schedules
-     Severity: High
-     Bug/risk: getInts treats any field containing * as wildcard without validating the rest of the field. It also
-     treats reversed ranges such as 10-5 as an empty parsed array without setting bValid = false; empty array means
-     “all values.”
-     Runtime scenario: A cron field like 10-5 for minutes becomes every minute. A typo like 1,* or *x becomes wildcard
-     instead of invalid.
-     Production impact: Misconfigured jobs can run far more often than intended, silently. For production background
-     workflows, that can create duplicate processing, load spikes, or repeated side effects.
-     Area: src/main/java/com/viaoa/process/OACron.java:725, src/main/java/com/viaoa/process/OACron.java:746
-     Minimal hardening: Only accept * when the trimmed field equals "*". Mark reversed ranges invalid unless
-     explicitly supported. If parsing produces no values for a non-wildcard field, mark invalid.
-  3. OACron / enabled and last-run state are cross-thread mutable without visibility guarantees
-     Severity: Medium
-     Bug/risk: bEnabled and dtLast are written/read across scheduler, worker, and caller threads but are not volatile
-     or synchronized. OACronProcessor.runThread() reads cron.getEnabled() while application code can call
-     setEnabled(false) concurrently. Worker threads call setLast, while monitoring code can read getLast.
-     Production impact: Disabling a cron may not be observed promptly by the scheduler thread, and last-run monitoring
-     can see stale state. That can produce an unexpected extra execution or misleading runtime status.
-     Area: src/main/java/com/viaoa/process/OACron.java:196, src/main/java/com/viaoa/process/OACron.java:432, src/main/
-     java/com/viaoa/process/OACron.java:789
-     Minimal hardening: Make bEnabled and dtLast volatile, or synchronize cron state access. If richer lifecycle is
-     added, use explicit job state.
-
-
-*/
 
 
 /**
@@ -72,8 +30,8 @@ CODEX
         *     *     *   *    *        command to be executed
         -     -     -   -    -
         |     |     |   |    |
-        |     |     |   |    +----- day of week (0-6) (Sunday=0) - *Java: 1-7 (Sunday=1)
-        |     |     |   +---------- month (1-12) - Java: 0-11    
+        |     |     |   |    +----- day of week (0-7) (Sunday=0 or 7) - *Java: 1-7 (Monday 1, Sunday=7)
+        |     |     |   +---------- month (1-12)    
         |     |     +-------------- day of month (1-31), also allows "last"
         |     +-------------------- hour (0 - 23)
         +-------------------------- min (0 - 59)
@@ -262,12 +220,12 @@ public abstract class OACron {
                 if (x < 1 || x > 31) bValid = false;
             }
             for (int x : daysOfWeek) {
-                if (x < 0 || x > 6) bValid = false;
+                if (x < 0 || x > 7) bValid = false;
             }
             
             if (months == null || months.length == 0) { // any month
                 months = new int[12];
-                for (int i=0; i<12; i++) months[i] = i+1; // store as cron month is 1-12, java is 0-11
+                for (int i=0; i<12; i++) months[i] = i+1; // store as cron month is 1-12
             }
             for (int x : months) {
                 if (x < 1 || x > 12) bValid = false;
@@ -376,7 +334,7 @@ public abstract class OACron {
                     description += "Invalid:"+x;
                 }
                 else {
-                    OADate d = new OADate(2017, x-1, 1);
+                    OADate d = new OADate(2017, x, 1);
                     description += d.toString("MMM");
                 }
             }
@@ -389,7 +347,7 @@ public abstract class OACron {
             for (int i=0; i<monthDays.length; i++) {
                 x = monthDays[i];
                 if (i > 0) description += " or ";
-                if (x < 0 || x > 31) description += "Invalid:"+x;
+                if (x < 1 || x > 31) description += "Invalid:"+x;
                 else description += ""+x;
             }
             if (bIncludeLastDayOfMonth) {
@@ -403,19 +361,13 @@ public abstract class OACron {
             else description += "when";
             description += " day of week is ";
 
-
             for (int i=0; i<daysOfWeek.length; i++) {
-                x = daysOfWeek[i];
+                int javaDayOfWeek = daysOfWeek[i];
+                if (javaDayOfWeek == 0) javaDayOfWeek = 7;
                 if (i > 0) description += " or ";
-                if (x < 0 || x > 6) description += "Invalid:"+x;
+                if (javaDayOfWeek <= 0 || javaDayOfWeek > 7) description += "Invalid:"+daysOfWeek[i];
                 else {
-                    String s;
-                    for (int j=0; j<7; j++) {
-                        OADate d = new OADate(2017, 0, 1+j);
-                        if (d.getDayOfWeek().getValue() != x+1) continue;
-                        description += d.toString("EEE");
-                        break;
-                    }
+                	description += DayOfWeek.of(javaDayOfWeek).name();
                 }
             }
         }
@@ -538,8 +490,6 @@ public abstract class OACron {
         for (int i=0; ;i++) {
             if (i > 0) dtCheck = dtCheck.plusYears(1);
             for (int m : months) {
-                m--; // cron month is 1-12, java is 0-11
-
                 if (i == 0 && m < dtFrom.getMonthValue()) continue;
 
                 dtCheck = dtCheck.withDayOfMonth(1);
@@ -602,7 +552,8 @@ public abstract class OACron {
         return dtFound;
     }
 
-    // Java Sunday=1, cron Sunday=0
+    // cron Sunday=0 or 7
+    // Java.time Monday=1 .. Sunday=7
     /**
      * Determines the next matching day-of-month within the supplied range.
      * Handles explicit day values as well as optional "last day" logic,
@@ -624,26 +575,28 @@ public abstract class OACron {
             }
         }
         else {
-            int fromDayOfWeek = dtCheck.getDayOfWeek().getValue();
-            OADateTime dtHold = dtCheck;
+            final OADateTime dtHold = dtCheck;
 
-            int fromWd = dtHold.getDayOfWeek().getValue();
+            final int fromWdJava = dtCheck.getDayOfWeek().getValue();
+            final int fromWdCron = fromWdJava == 7 ? 0 : fromWdJava;
+            
             for (int i=0; i<2; i++) {
-                for (int wd : daysOfWeek) {
-                    wd++;  // cron day is 0 based, java 1 based
-
+                for (int wdCron : daysOfWeek) {
+                	if (wdCron == 7) wdCron = 0; // cron Sunday can be 0 or 7
                     int diff;
                     if (i > 0) {
-                        if (wd != fromWd) continue;
+                        if (wdCron != fromWdCron) continue;
                         diff = 7;
                     }
                     else {
-                        if (fromWd > wd) diff = (wd+7) - fromWd;
-                        else diff = wd - fromWd;
+                        if (fromWdCron > wdCron) diff = (wdCron+7) - fromWdCron;
+                        else diff = wdCron - fromWdCron;
                     }
 
-                    if (diff != 0) dtCheck = dtHold.plusDays(diff);
-                    dtCheck = dtCheck.withoutTime();
+                    if (diff != 0) {
+                    	dtCheck = dtHold.plusDays(diff);
+                        dtCheck = dtCheck.withoutTime();
+                    }
 
                     if (dtTo != null && dtTo.compareTo(dtCheck) <= 0) continue;
 

@@ -241,12 +241,10 @@ public class OATextLineWrap {
     /**
      * Sets the maximum number of output rows.
      *
-     * @param v number of rows allowed; must be > 0
-     * @throws IllegalArgumentException if v is less than 1
+     * @param maxRows number of rows allowed; 0 for unlimited
      */
-    public void setMaxRows(int v) {
-        if (v < 1) throw new IllegalArgumentException("maxRows must be > 0");
-        this.maxRows = v;
+    public void setMaxRows(int maxRows) {
+        this.maxRows = maxRows;
     }
 
     /**
@@ -255,8 +253,8 @@ public class OATextLineWrap {
      * @param v maximum number of rows
      * @return this instance for chaining
      */
-    public OATextLineWrap withMaxRows(int v) {
-        setMaxRows(v);
+    public OATextLineWrap withMaxRows(int maxRows) {
+        setMaxRows(maxRows);
         return this;
     }
 
