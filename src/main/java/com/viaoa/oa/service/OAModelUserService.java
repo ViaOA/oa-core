@@ -66,7 +66,7 @@ public class OAModelUserService implements ModelUserOps {
 	 */
 	@Override
 	public Hub<?> getCurrent() {
-		return OARuntime.thread().getThreadLocalService().getModelUserHub(oa);
+		return OARuntime.thread().getThreadLocalService().getModelUser(oa);
 	}
 	/**
 	 * Sets the thread-local ModelUser Hub for this OA runtime.
@@ -76,7 +76,7 @@ public class OAModelUserService implements ModelUserOps {
 	@Override
 	public void setCurrent(Hub<?> hub) {
 //qqqq verify with modelUserClass, hubDefaultModelUser, getCurrent 		
-		OARuntime.thread().getThreadLocalService().setModelUserHub(oa, hub);
+		OARuntime.thread().getThreadLocalService().setModelUser(oa, hub);
 	}
 	/**
 	 * Returns the effective ModelUser Hub, using thread-local state first and the default Hub second.

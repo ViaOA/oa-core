@@ -4,13 +4,7 @@ import java.util.logging.Logger;
 
 import javax.swing.SwingUtilities;
 
-import com.viaoa.hub.Hub;
-import com.viaoa.oa.OA;
-import com.viaoa.object.OAObject;
-import com.viaoa.session.OASessionUser;
 import com.viaoa.transaction.OATransaction;
-
-
 
 /**
  * Runtime state field used by OA services for {.
@@ -55,27 +49,6 @@ public class OAThreadService {
 		return srvcRemoteThread;
 	}
 	
-	
-	/**
-	 * Returns the ModelUserHub value.
-	 *
-	 * @param oa the lookup context
-	 *
-	 * @return the ModelUserHub value
-	 */
-	public Hub<?> getModelUserHub(OA oa) {
-		Hub<?> hub = srvcThreadLocal.getModelUserHub(oa);
-		return hub;
-	}
-
-	/**
-	 * Sets the ModelUserHub value.
-	 * @param oa the ModelUserHub value
-	 * @param hub the ModelUserHub value
-	 */
-	public void setModelUserHub(OA oa, Hub<?> hub) {
-		srvcThreadLocal.setModelUserHub(oa, hub);
-	}
 	
 	/**
 	 * Returns whether Admin is active for the current runtime context.

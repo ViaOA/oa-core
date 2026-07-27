@@ -2207,10 +2207,10 @@ public class OAThreadLocalService {
 	 *
 	 * @return the ModelUserHub value
 	 */
-	public Hub<?> getModelUserHub(OA oa) {
+	public Hub<?> getModelUser(OA oa) {
 		if (oa == null) return null;
-		OAThreadLocal ti = getThreadLocal(true);
-		return ti.getModelUser(oa);
+		OAThreadLocal ti = getThreadLocal(false);
+		return ti == null ? null : ti.getModelUser(oa);
 	}
 
 	/**
@@ -2218,7 +2218,7 @@ public class OAThreadLocalService {
 	 * @param oa the ModelUserHub value
 	 * @param hub the ModelUserHub value
 	 */
-	public void setModelUserHub(OA oa, Hub<?> hub) {
+	public void setModelUser(OA oa, Hub<?> hub) {
 		if (oa == null) return;
 		OAThreadLocal ti = getThreadLocal(true);
 		ti.setModelUser(oa, hub); 
@@ -2228,8 +2228,8 @@ public class OAThreadLocalService {
 	 * Clears the runtime state tracked by this method.
 	 */
 	public void clearModelUsers() {
-		OAThreadLocal ti = getThreadLocal(true);
-		ti.clearModelUser(); 
+		OAThreadLocal ti = getThreadLocal(false);
+		if (ti != null) ti.clearModelUser(); 
 	}
 	
 	/**
@@ -2237,18 +2237,25 @@ public class OAThreadLocalService {
 	 *
 	 * @return the SessionUser value
 	 */
-	public OASessionUser<?> getSessionUser() {
-		OAThreadLocal ti = getThreadLocal(true);
-		return ti.getSessionUser();
+	public OASessionUser<?> getSessionUser(OA oa) {
+		if (oa == null) return null;
+		OAThreadLocal ti = getThreadLocal(false);
+		return ti == null ? null : ti.getSessionUser(oa);
 	}
 	
 	/**
 	 * Sets the SessionUser value.
 	 * @param su the SessionUser value
 	 */
-	public void setSessionUser(OASessionUser<?> su) {
+	public void setSessionUser(OA oa, OASessionUser<?> su) {
+		if (oa == null) return;
 		OAThreadLocal ti = getThreadLocal(true);
-		ti.setSessionUser(su);
+		ti.setSessionUser(oa, su);
+	}
+	
+	public void clearSessionUsers() {
+		OAThreadLocal ti = getThreadLocal(false);
+		if (ti != null) ti.clearSessionUser();
 	}
 	
 	/**
@@ -2331,12 +2338,17 @@ public class OAThreadLocalService {
 		OAThreadLocal tlCurrent = getThreadLocal(true);
 		if (tlHold == null) {
 			tlCurrent.isAdmin = false;
-			tlCurrent.setSessionUser(null);
+			tlCurrent.clearSessionUser();
 			tlCurrent.clearModelUser();
 		}
 		else {
 			tlCurrent.isAdmin = tlHold.isAdmin;
-			tlCurrent.setSessionUser(tlHold.getSessionUser());
+			
+			if (tlHold.hmSessionUser != null) {
+				for (OA oax : tlHold.hmSessionUser.keySet()) {
+					tlCurrent.setSessionUser(oax, tlHold.getSessionUser(oax));
+				}
+			}
 			if (tlHold.hmModelUser != null) {
 				for (OA oax : tlHold.hmModelUser.keySet()) {
 					tlCurrent.setModelUser(oax, tlHold.getModelUser(oax));

@@ -17,16 +17,16 @@
  * Provides the core context and permission-management subsystem for OA-based
  * applications. <p>
  *
- * The classes in this package define how an application's thread-local context
- * is associated with a logged-in OAObject, a Hub representing the active user,
- * and an {@link com.viaoa.session.OASessionAccess.OAContextAccess} instance that governs visibility
+ * The classes in this package define how an application's current session user
+ * is associated with either a fixed OAObject or the active object of a Hub, and
+ * how an {@link com.viaoa.session.OASessionAccess} instance governs visibility
  * and enabled/disabled access across an OAObject graph. <p>
  *
  * Features include:
  * <ul>
- *   <li>Thread-local context identity.</li>
- *   <li>Context-bound user object and user Hub.</li>
- *   <li>Context-specific permission rules using OAUserAccess.</li>
+ *   <li>Runtime-owned current session-user identity.</li>
+ *   <li>Session-bound user object and user Hub.</li>
+ *   <li>Session-specific permission rules using OASessionAccess.</li>
  *   <li>Admin, super-admin, and “edit processed” rule resolution.</li>
  *   <li>Property-path–based inclusion testing for complex graphs.</li>
  * </ul>

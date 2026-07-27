@@ -711,7 +711,7 @@ public class OAThreadLocal {
 	 */
 	public Map<OA, Hub<?>> hmModelUser;
 
-	private OASessionUser<?> sessionUser;
+	public Map<OA, OASessionUser<?>> hmSessionUser;
 
 	/**
 	 * Flag used by OAContext to automatically grant admin privileges
@@ -797,17 +797,25 @@ public class OAThreadLocal {
 	 *
 	 * @return the SessionUser value
 	 */
-	public OASessionUser<?> getSessionUser() {
-		return sessionUser;
+	public OASessionUser<?> getSessionUser(OA oa) {
+	    if (oa == null) return null;
+	    if (hmSessionUser == null) return null;
+	    return hmSessionUser.get(oa);
 	}
 
 	/**
 	 * Sets the SessionUser value.
 	 * @param su the SessionUser value
 	 */
-	public void setSessionUser(OASessionUser<?> su) {
-		sessionUser = su;
+	public void setSessionUser(OA oa, OASessionUser<?> su) {
+	    if (oa == null) return;
+	    if (hmSessionUser == null) hmSessionUser = new HashMap<>();
+	    if (su == null) hmSessionUser.remove(oa);
+	    else hmSessionUser.put(oa, su);
 	}
 
+	public void clearSessionUser() {
+	    if (hmSessionUser != null) hmSessionUser.clear();
+	}
 	
 }

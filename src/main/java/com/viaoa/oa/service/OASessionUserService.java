@@ -32,7 +32,7 @@ public class OASessionUserService implements SessionUserOps {
 	 */
 	@Override
 	public OASessionUser<?> get() {
-		return OARuntime.thread().getThreadLocalService().getSessionUser();
+		return OARuntime.thread().getThreadLocalService().getSessionUser(oa);
 	}
 
 	/**
@@ -42,7 +42,7 @@ public class OASessionUserService implements SessionUserOps {
 	 */
 	@Override
 	public void set(OASessionUser<?> su) {
-		OARuntime.thread().getThreadLocalService().setSessionUser(su);
+		OARuntime.thread().getThreadLocalService().setSessionUser(oa, su);
 	}
 
 }
