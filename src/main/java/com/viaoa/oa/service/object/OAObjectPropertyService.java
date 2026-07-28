@@ -93,7 +93,7 @@ public abstract class OAObjectPropertyService {
 				if (li == null) {
 					return false;
 				}
-				Object objz = callCacheGet(li.getToClass(), (OAObjectKey) objx);
+				Object objz = callCacheGetUsingKey(li.getToClass(), (OAObjectKey) objx);
 				return (objz != null);
 			}
 			return true; // real value is null (/does not exist)
@@ -898,7 +898,7 @@ public abstract class OAObjectPropertyService {
 	 * @param ok method input
 	 * @return result value
 	 */
-	public abstract <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok);
+	public abstract <T extends OAObject> T callCacheGetUsingKey(Class<T> clazz, Object key);
 	/**
 	 * Dependency hook used by this service to hubSetMasterObject.
 	 *

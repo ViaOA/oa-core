@@ -949,7 +949,7 @@ public abstract class HubDataService {
         
         if (!(obj instanceof OAObject)) {
             // oaObjectKey, or Id value
-            obj = callObjectCacheGet(hub.getObjectClass(), obj);
+            obj = callObjectCacheGetUsingKey(hub.getObjectClass(), obj);
             if (obj == null) return false;
         }        
         
@@ -1190,7 +1190,7 @@ public abstract class HubDataService {
 	 * @param key method input
 	 * @return result value
 	 */
-	public abstract <T extends OAObject> T callObjectCacheGet(Class<T> clazz, Object key);
+	public abstract <T extends OAObject> T callObjectCacheGetUsingKey(Class<T> clazz, Object key);
 	/**
 	 * Dependency hook used by this service for ObjectHubIsAlreadyInHub behavior.
 	 *

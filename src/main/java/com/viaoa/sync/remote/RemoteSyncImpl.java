@@ -331,7 +331,7 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 			return null;
 		}
 		final OA oa = OARuntime.oa(objectClass);
-		OAObject obj = (OAObject) oa.internal().objects().cache().get(objectClass, origKey);
+		OAObject obj = (OAObject) oa.internal().objects().cache().getUsingKey(objectClass, origKey);
 
 		if (obj == null && oa.sync().isServer()) {
 			OADataSource ds = OARuntime.datasource().get(objectClass);

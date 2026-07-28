@@ -398,7 +398,7 @@ public abstract class RemoteDataSource {
 		
 		OAObjectKey key = oa.internal().objects().key().createObjectKey(objectClass, obj);
 
-		OAObject objNew = (OAObject) oa.internal().objects().cache().get(objectClass, key);
+		OAObject objNew = (OAObject) oa.internal().objects().cache().getUsingKey(objectClass, key);
 		if (objNew == null) {
 			OADataSource ds = OARuntime.datasource().get(objectClass);
 			if (ds != null) objNew = ds.getObject(objectClass, key);

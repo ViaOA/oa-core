@@ -561,7 +561,7 @@ public abstract class OAObjectSiblingService {
 						return false;
 					}
 					hmTypeOneObjKey.put((OAObjectKey) propertyValue, null);
-					if (callCacheGet(clazz, (OAObjectKey) propertyValue) != null) {
+					if (callCacheGetUsingKey(clazz, (OAObjectKey) propertyValue) != null) {
 						return false;
 					}
 				} else if (linkInfo != null) {
@@ -690,7 +690,7 @@ public abstract class OAObjectSiblingService {
 	 * @param ok method input
 	 * @return result value
 	 */
-	public abstract <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok);
+	public abstract <T extends OAObject> T callCacheGetUsingKey(Class<T> clazz, OAObjectKey ok);
 	/**
 	 * Dependency hook used by this service to hubGetHubReferences.
 	 *

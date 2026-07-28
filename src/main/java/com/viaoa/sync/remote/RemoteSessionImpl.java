@@ -164,7 +164,7 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	    }
 	    else {
 			final OA oa = OARuntime.oa(c);
-    	    OAObject obj = (OAObject) oa.internal().objects().cache().get(c, ok);
+    	    OAObject obj = (OAObject) oa.internal().objects().cache().getUsingKey(c, ok);
     	    if (obj != null) {
                 UUID guid = ok.getGuid();
                 hmObjectsWithoutHubs.put(guid, obj);
@@ -214,7 +214,7 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	@Override
 	public boolean setLock(Class objectClass, OAObjectKey objectKey, boolean bLock) {
 		final OA oa = OARuntime.oa(objectClass);
-		OAObject obj = (OAObject) oa.internal().objects().cache().get(objectClass, objectKey);
+		OAObject obj = (OAObject) oa.internal().objects().cache().getUsingKey(objectClass, objectKey);
 		if (obj == null) {
 			return false;
 		}
@@ -274,7 +274,7 @@ public abstract class RemoteSessionImpl implements RemoteSessionInterface {
 	@Override
 	public boolean isLockedByThisClient(Class objectClass, OAObjectKey objectKey) {
 		final OA oa = OARuntime.oa(objectClass);
-		Object obj = oa.internal().objects().cache().get(objectClass, objectKey);
+		Object obj = oa.internal().objects().cache().getUsingKey(objectClass, objectKey);
 		if (obj == null) {
 			return false;
 		}

@@ -746,8 +746,8 @@ public class HubParentService {
 				return HubParentService.this.srvcObjectParent.getOAObjectReflectService().getProperty(oaObj, propPath);
 			}
 			@Override
-			public <T extends OAObject> T callObjectCacheGet(Class<T> clazz, Object key) {
-				return HubParentService.this.srvcObjectParent.getOAObjectCacheService().get(clazz, key);
+			public <T extends OAObject> T callObjectCacheGetUsingKey(Class<T> clazz, Object key) {
+				return HubParentService.this.srvcObjectParent.getOAObjectCacheService().getUsingKey(clazz, key);
 			}
 			@Override
 			public <T extends OAObject> boolean callObjectHubIsAlreadyInHub(T oaObj, Hub<T> hubFind) {
@@ -1186,8 +1186,8 @@ public class HubParentService {
 		if (srvcHubFind != null) return srvcHubFind;
     	srvcHubFind = new HubFindService() {
 			@Override
-			public <T extends OAObject> T callObjectCacheGet(Class<T> clazz, Object key) {
-				return HubParentService.this.srvcObjectParent.getOAObjectCacheService().get(clazz, key);
+			public <T extends OAObject> T callObjectCacheGetUsingKey(Class<T> clazz, Object key) {
+				return HubParentService.this.srvcObjectParent.getOAObjectCacheService().getUsingKey(clazz, key);
 			}
 			@Override
 			public <T extends OAObject> T callHubDataGetObject(Hub<T> thisHub, Object key) {

@@ -210,7 +210,7 @@ public abstract class OAObjectKeyService {
 		if (g1 == null && g2 == null) return false;
 		
 		if (g1 != null && ids1 == null) {
-			T objx = callCacheGet(clazz, g1);
+			T objx = callCacheGetUsingGuid(clazz, g1);
 			if (objx == null) return false;
 			OAObjectKey okx = objx.getObjectKey();
 			if (okx.hasValidObjectIds()) {
@@ -218,7 +218,7 @@ public abstract class OAObjectKeyService {
 			}
 		}
 		else if (g2 != null && ids2 == null) {
-			T objx = callCacheGet(clazz, g2);
+			T objx = callCacheGetUsingGuid(clazz, g2);
 			if (objx == null) return false;
 			OAObjectKey okx = objx.getObjectKey();
 			if (okx.hasValidObjectIds()) {
@@ -280,7 +280,7 @@ public abstract class OAObjectKeyService {
 	public <T extends OAObject> OAObject getOAObject(Class<T> c, OAObjectKey key) {
 		if (c == null || key == null) return null;
 
-		OAObject obj = callCacheGet(c, key);
+		OAObject obj = callCacheGetUsingKey(c, key);
 		if (obj != null) return obj;
 		OAObjectInfo oi = callInfogetObjectInfo(c);
 		obj = callDSGetObject(oi, c, key);
@@ -472,7 +472,7 @@ public abstract class OAObjectKeyService {
 			}
 		}
 		
-		OAObject objInCache = callCacheGet(oaObj.getClass(), newObjectKey.getObjectIds());
+		OAObject objInCache = callCacheGetUsingKey(oaObj.getClass(), newObjectKey.getObjectIds());
 		if ((objInCache == null || objInCache == oaObj)) {
 			if (oi == null) {
 				oi = callInfogetObjectInfo(oaObj.getClass());
@@ -575,21 +575,17 @@ public abstract class OAObjectKeyService {
 	 * @param ok method input
 	 * @return result value
 	 */
-	public abstract <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok);
+	public abstract <T extends OAObject> T callCacheGetUsingKey(Class<T> clazz, Object obj);
+	
+	public abstract <T extends OAObject> T callCacheGetUsingGuid(Class<T> clazz, UUID guid);
+	
 	/**
 	 * Dependency hook used by this service to cachePropertyKeyValueChanged.
 	 *
 	 * @param obj method input
 	 */
 	public abstract void callCachePropertyKeyValueChanged(OAObject obj);
-	/**
-	 * Dependency hook used by this service to cacheGet.
-	 *
-	 * @param clazz method input
-	 * @param key method input
-	 * @return result value
-	 */
-	public abstract <T extends OAObject> T callCacheGet(Class<T> clazz, Object key);
+
 	/**
 	 * Dependency hook used by this service to cacheRemoveObject.
 	 *

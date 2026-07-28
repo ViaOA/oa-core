@@ -1,6 +1,7 @@
 package com.viaoa.oa.api.internal.objects;
 
 import java.util.List;
+import java.util.UUID;
 
 import com.viaoa.cache.OAObjectCacheListener;
 import com.viaoa.callback.OACallback;
@@ -82,15 +83,9 @@ public interface OAObjectCacheOps {
 	 * @param objectKey the object key
 	 * @return the cached object, or {@code null}
 	 */
-	public <T extends OAObject> T get(Class<T> clazz, OAObjectKey objectKey);
-	/**
-	 * Finds a cached object using the supplied class and key-compatible value.
-	 *
-	 * @param clazz the object class
-	 * @param object the key value or key-compatible object
-	 * @return the cached object, or {@code null}
-	 */
-	public <T extends OAObject> T getObject(Class<T> clazz, Object object);
+	public <T extends OAObject> T getUsingKey(Class<T> clazz, Object key);
+
+	public <T extends OAObject> T getUsingGuid(Class<T> clazz, UUID guid);
 	/**
 	 * Removes an object from the cache.
 	 *

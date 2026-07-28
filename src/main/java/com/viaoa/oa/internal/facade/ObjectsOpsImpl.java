@@ -202,15 +202,16 @@ public class ObjectsOpsImpl implements ObjectsOps {
 			}
 
 			@Override
-			public <T extends OAObject> T get(Class<T> clazz, OAObjectKey objectKey) {
-				return srvc.getOAObjectCacheService().get(clazz, objectKey);
+			public <T extends OAObject> T getUsingKey(Class<T> clazz, Object key) {
+				return srvc.getOAObjectCacheService().getUsingKey(clazz, key);
 			}
 
 			@Override
-			public <T extends OAObject> T getObject(Class<T> clazz, Object object) {
-				return srvc.getOAObjectCacheService().getObject(clazz, object);
+			public <T extends OAObject> T getUsingGuid(Class<T> clazz, UUID guid) {
+				return srvc.getOAObjectCacheService().getUsingKey(clazz, guid);
 			}
 
+			
 			@Override
 			public void removeObject(OAObject oaObj) {
 				srvc.getOAObjectCacheService().removeObject(oaObj);

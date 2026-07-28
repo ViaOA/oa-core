@@ -429,7 +429,7 @@ public abstract class OASyncClient {
 					}
 
 					final OA oa = OARuntime.oa(masterObject);
-					OAObject obj = oa.internal().objects().cache().getObject(masterObject.getClass(), entry.getKey());
+					OAObject obj = oa.internal().objects().cache().getUsingKey(masterObject.getClass(), entry.getKey());
 					if (obj == null) {
 						continue;
 					}

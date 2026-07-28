@@ -350,7 +350,7 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	@Override
 	public OAObject createCopy(Class objectClass, OAObjectKey objectKey, String[] excludeProperties) {
 		final OA oa = OARuntime.oa(objectClass);
-		OAObject obj = (OAObject) oa.internal().objects().cache().getObject(objectClass, objectKey);
+		OAObject obj = (OAObject) oa.internal().objects().cache().getUsingKey(objectClass, objectKey);
 		if (obj == null) {
 			return null;
 		}
@@ -412,7 +412,7 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	 */
 	private OAObject getObject(Class objectClass, OAObjectKey origKey) {
 		final OA oa = OARuntime.oa(objectClass);
-		OAObject obj = (OAObject) oa.internal().objects().cache().get(objectClass, origKey);
+		OAObject obj = (OAObject) oa.internal().objects().cache().getUsingKey(objectClass, origKey);
 		if (obj == null && oa.sync().isServer()) {
 			
 			OADataSource ds = OARuntime.datasource().get(objectClass);
@@ -477,7 +477,7 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	@Override
 	public void refresh(Class objectClass, OAObjectKey objectKey) {
 		final OA oa = OARuntime.oa(objectClass);
-		OAObject obj = (OAObject) oa.internal().objects().cache().get(objectClass, objectKey);
+		OAObject obj = (OAObject) oa.internal().objects().cache().getUsingKey(objectClass, objectKey);
 		if (obj != null) {
 			obj.refresh();
 		}
@@ -493,7 +493,7 @@ public abstract class RemoteClientImpl implements RemoteClientInterface {
 	@Override
 	public void refresh(Class objectClass, OAObjectKey objectKey, String propertyName) {
 		final OA oa = OARuntime.oa(objectClass);
-		OAObject obj = (OAObject) oa.internal().objects().cache().get(objectClass, objectKey);
+		OAObject obj = (OAObject) oa.internal().objects().cache().getUsingKey(objectClass, objectKey);
 		if (obj != null) {
 			obj.refresh(propertyName);
 		}

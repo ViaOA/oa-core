@@ -911,7 +911,7 @@ public class OASyncServer {
 			            //see if this client has the hub loaded by looking at an object in it
 			            Class c = (Class) ri.args[0];
 						final OA oa = OARuntime.oa(c);
-			            OAObject obj = (OAObject) oa.internal().objects().cache().get(c, ok);
+			            OAObject obj = (OAObject) oa.internal().objects().cache().getUsingKey(c, ok);
 			            Object objx = oa.internal().objects().property().getProperty(obj, (String) ri.args[2]);
 			            if (objx instanceof Hub) {
 			                Hub hub = (Hub) objx;
@@ -942,7 +942,7 @@ public class OASyncServer {
 			            //see if this client has the hub loaded by looking at an object in it
 			            Class c = (Class) ri.args[0];
 						final OA oa = OARuntime.oa(c);
-			            OAObject obj = (OAObject) oa.internal().objects().cache().get(c, ok);
+			            OAObject obj = (OAObject) oa.internal().objects().cache().getUsingKey(c, ok);
 			            Object objx = oa.internal().objects().property().getProperty(obj, (String) ri.args[2]);
 			            if (objx instanceof Hub) {
 			                Hub hub = (Hub) objx;

@@ -185,7 +185,7 @@ public class ClientGetDetail {
 		hubHold.add(masterObject);
 		if (siblingKeys != null) {
 			for (OAObjectKey key : siblingKeys) {
-				OAObject obj = (OAObject) oa.internal().objects().cache().get(masterClass, key);
+				OAObject obj = (OAObject) oa.internal().objects().cache().getUsingKey(masterClass, key);
 				if (obj != null) {
 					hubHold.add(obj);
 				}
@@ -333,7 +333,7 @@ public class ClientGetDetail {
 			final OA oa = OARuntime.oa(clazz);
 
 			for (OAObjectKey key : siblingKeys) {
-				OAObject obj = (OAObject) oa.internal().objects().cache().get(clazz, key);
+				OAObject obj = (OAObject) oa.internal().objects().cache().getUsingKey(clazz, key);
 				if (obj == null) {
 					continue;
 				}
@@ -600,7 +600,7 @@ public class ClientGetDetail {
 				if (siblingKeys != null) {
 					k = ((OAObject) object).getObjectKey();
 					for (OAObjectKey k2 : siblingKeys) {
-						if (k.getGuid() == k2.getGuid()) {
+						if (k.getGuid().equals(k2.getGuid())) {
 							return k;
 						}
 					}

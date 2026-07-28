@@ -670,7 +670,7 @@ public abstract class OAObjectReflectService {
 			key = callKeyCreateObjectKey(clazz, key);
 		}
 
-		T oaObj = callCacheGet(clazz, (OAObjectKey) key);
+		T oaObj = callCacheGetUsingKey(clazz, (OAObjectKey) key);
 		if (oaObj == null) {
 			if (callSyncIsClient() && (oi == null || !oi.getLocalOnly())) {
 				oaObj = callCSGetServerObject(clazz, (OAObjectKey) key);
@@ -967,7 +967,7 @@ public abstract class OAObjectReflectService {
 		OASelect<?> select = null;
 		//String sibIds = null;
 		OAObjectKey[] siblingKeys = null;
-		HashMap<OAObjectKey, Hub<?>> hmSiblingHub = null;
+		HashMap<UUID, Hub<?>> hmSiblingHub = null;
 		final String matchProperty = linkInfo == null ? null : linkInfo.getMatchProperty();
 
 		if (hub != null) {
@@ -1034,7 +1034,7 @@ public abstract class OAObjectReflectService {
 						alOk.add(oaObj.getObjectKey());
 
 						for (OAObjectKey keyx : siblingKeys) {
-							OAObject objx = callCacheGet(oaObj.getClass(), keyx);
+							OAObject objx = callCacheGetUsingKey(oaObj.getClass(), keyx);
 							if (objx == null) {
 								continue;
 							}
@@ -1043,7 +1043,7 @@ public abstract class OAObjectReflectService {
 							}
 							alSiblinkLock.add(objx);
 							alOk.add(keyx);
-							hmSiblingHub.put(keyx, new Hub(linkClass, objx, liReverse, false));
+							hmSiblingHub.put(keyx.getGuid(), new Hub(linkClass, objx, liReverse, false));
 						}
 
 						select.setWhere(rli.getName() + " IN (?)");
@@ -1134,6 +1134,7 @@ public abstract class OAObjectReflectService {
 						OAObject objx = select.next();
 						// find masterObj to put it in
 						Object valx = callPropertyGetProperty(objx, rli.getName(), false, false);
+Object hold = valx;//qqqqqqq						
 						if (valx instanceof OAObject) {
 							valx = ((OAObject) valx).getObjectKey();
 						}
@@ -1144,11 +1145,19 @@ public abstract class OAObjectReflectService {
 						if (callKeyIsForSameOAObject(null, okx, oaObj.getObjectKey())) {
 							hub.add(objx);
 						} else if (hmSiblingHub != null) {
-							Hub hx = hmSiblingHub.get(okx);
+							UUID guidx = okx.getGuid();
+							if (guidx == null) {
+								OAObject objx2 = callCacheGetUsingKey(oaObj.getClass(), okx);
+								guidx = objx2.getObjectKey().getGuid();
+							}
+							Hub hx = hmSiblingHub.get(guidx);
 							if (hx != null) {
 								hx.add(objx);
 							} else {
 								// LOG.warn
+//qqqqqqqqq no guid, find guid qqqqqqqqqqqqqq
+								int xx = 4;
+								xx++;
 							}
 						}
 					}
@@ -1174,7 +1183,7 @@ public abstract class OAObjectReflectService {
 						hub.setAutoSequence(seqProperty); // server will keep autoSequence property updated - clients dont need autoSeq (server side managed)
 						if (hmSiblingHub != null) {
 							// need to loop thru and set Hubs for siblings
-							for (Entry<OAObjectKey, Hub<?>> entry : hmSiblingHub.entrySet()) {
+							for (Entry<UUID, Hub<?>> entry : hmSiblingHub.entrySet()) {
 								Hub<?> hx = entry.getValue();
 								hx.setAutoSequence(seqProperty, 0, false); // server will keep autoSequence property updated - clients dont need autoSeq (server side managed)
 							}
@@ -1191,7 +1200,7 @@ public abstract class OAObjectReflectService {
 
 					if (hmSiblingHub != null) {
 						// need to loop thru and set Hubs for siblings
-						for (Entry<OAObjectKey, Hub<?>> entry : hmSiblingHub.entrySet()) {
+						for (Entry<UUID, Hub<?>> entry : hmSiblingHub.entrySet()) {
 							Hub<?> hx = entry.getValue();
 							callHubSortSort(hx, sortOrder, bSortAsc, null, true);
 						}
@@ -1264,9 +1273,9 @@ public abstract class OAObjectReflectService {
 
 		if (hmSiblingHub != null) {
 			// need to loop thru and set Hubs for siblings
-			for (Entry<OAObjectKey, Hub<?>> entry : hmSiblingHub.entrySet()) {
-				OAObjectKey ok = entry.getKey();
-				OAObject obj = callCacheGet(oaObj.getClass(), ok);
+			for (Entry<UUID, Hub<?>> entry : hmSiblingHub.entrySet()) {
+				UUID uuid = entry.getKey();
+				OAObject obj = callCacheGetUsingGuid(oaObj.getClass(), uuid);
 				if (obj == null) {
 					continue;
 				}
@@ -1329,7 +1338,7 @@ public abstract class OAObjectReflectService {
 			}
 
 			if (obj instanceof OAObjectKey) {
-				obj = callCacheGet(li.getToClass(), (OAObjectKey) obj);
+				obj = callCacheGetUsingKey(li.getToClass(), (OAObjectKey) obj);
 			}
 
 			if (obj instanceof OAObject) {
@@ -1414,7 +1423,7 @@ public abstract class OAObjectReflectService {
 					al.add(property);
 				}
 			} else if (value instanceof OAObjectKey) {
-				if (callCacheGet(li.getToClass(), (OAObjectKey) value) == null) {
+				if (callCacheGetUsingKey(li.getToClass(), (OAObjectKey) value) == null) {
 					if (al == null) {
 						al = new ArrayList<String>();
 					}
@@ -2159,7 +2168,7 @@ public abstract class OAObjectReflectService {
 					currentRefsLoaded++;
 				}
 			} else if (objx instanceof OAObjectKey) { // not loaded from ds
-				if (callCacheGet(li.getToClass(), (OAObjectKey) objx) == null) {
+				if (callCacheGetUsingKey(li.getToClass(), (OAObjectKey) objx) == null) {
 					currentRefsLoaded++;
 				}
 			}
@@ -2439,7 +2448,7 @@ public abstract class OAObjectReflectService {
 				return null;
 			}
 
-			ref = callCacheGet(li.getToClass(), key);
+			ref = callCacheGetUsingKey(li.getToClass(), key);
 
 			if (ref == null) {
 				if (bIsClient && !bIsCalc && !oi.getLocalOnly()) {
@@ -2457,7 +2466,7 @@ public abstract class OAObjectReflectService {
 						alOk.add(key);
 
 						for (OAObjectKey keyx : siblingKeys) {
-							OAObject objx = callCacheGet(oaObj.getClass(), keyx);
+							OAObject objx = callCacheGetUsingKey(oaObj.getClass(), keyx);
 							if (objx == null) {
 								continue;
 							}
@@ -2630,7 +2639,7 @@ public abstract class OAObjectReflectService {
 				return true;
 			}
 
-			Object objFound = callCacheGet(li.getToClass(), (OAObjectKey) obj);
+			Object objFound = callCacheGetUsingKey(li.getToClass(), (OAObjectKey) obj);
 			if (objFound != null) {
 				callPropertySetPropertyCAS(oaObj, propertyName, objFound, obj);
 				return true;
@@ -2694,7 +2703,7 @@ public abstract class OAObjectReflectService {
 				return true;
 			}
 
-			Object objFound = callCacheGet(li.getToClass(), (OAObjectKey) obj);
+			Object objFound = callCacheGetUsingKey(li.getToClass(), (OAObjectKey) obj);
 			if (objFound != null) {
 				callPropertySetPropertyCAS(oaObj, propertyName, objFound, obj);
 				return true;
@@ -3909,7 +3918,10 @@ public abstract class OAObjectReflectService {
 	 * @param ok method input
 	 * @return result value
 	 */
-	public abstract <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok);
+	public abstract <T extends OAObject> T callCacheGetUsingKey(Class<T> clazz, Object key);
+
+	public abstract <T extends OAObject> T callCacheGetUsingGuid(Class<T> clazz, UUID guid);
+
 	/**
 	 * Dependency hook used by this service to cacheAdd.
 	 *

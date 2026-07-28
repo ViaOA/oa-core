@@ -2110,8 +2110,8 @@ public class OAObjectParentService {
 			 * @param ok    method input
 			 * @return result value
 			 */
-			public <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok) {
-				return OAObjectParentService.this.getOAObjectCacheService().get(clazz, ok);
+			public <T extends OAObject> T callCacheGetUsingKey(Class<T> clazz, OAObjectKey ok) {
+				return OAObjectParentService.this.getOAObjectCacheService().getUsingKey(clazz, ok);
 			}
 
 			@Override
@@ -2953,8 +2953,8 @@ public class OAObjectParentService {
 			 * @param key   method input
 			 * @return result value
 			 */
-			public <T extends OAObject> T callCacheGet(Class<T> clazz, Object key) {
-				return OAObjectParentService.this.getOAObjectCacheService().get(clazz, key);
+			public <T extends OAObject> T callCacheGetUsingKey(Class<T> clazz, Object key) {
+				return OAObjectParentService.this.getOAObjectCacheService().getUsingKey(clazz, key);
 			}
 
 			@Override
@@ -2965,8 +2965,8 @@ public class OAObjectParentService {
 			 * @param ok    method input
 			 * @return result value
 			 */
-			public <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok) {
-				return OAObjectParentService.this.getOAObjectCacheService().get(clazz, ok);
+			public <T extends OAObject> T callCacheGetUsingGuid(Class<T> clazz, UUID guid) {
+				return OAObjectParentService.this.getOAObjectCacheService().getUsingGuid(clazz, guid);
 			}
 
 			@Override
@@ -3145,8 +3145,8 @@ public class OAObjectParentService {
 			 * @param ok    method input
 			 * @return result value
 			 */
-			public <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok) {
-				return OAObjectParentService.this.getOAObjectCacheService().get(clazz, ok);
+			public <T extends OAObject> T callCacheGetUsingKey(Class<T> clazz, Object id) {
+				return OAObjectParentService.this.getOAObjectCacheService().getUsingKey(clazz, id);
 			}
 		};
 		return srvcOAObjectProperty;
@@ -3241,7 +3241,6 @@ public class OAObjectParentService {
 			 */
 			public void callThreadLocalRemoveSiblingHelper(OASiblingHelper sh) {
 				OAObjectParentService.this.srvcThreadLocal.removeSiblingHelper(sh);
-				;
 			}
 
 			@Override
@@ -3986,10 +3985,14 @@ public class OAObjectParentService {
 			 * @param ok    method input
 			 * @return result value
 			 */
-			public <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok) {
-				return OAObjectParentService.this.getOAObjectCacheService().get(clazz, ok);
+			public <T extends OAObject> T callCacheGetUsingKey(Class<T> clazz, Object key) {
+				return OAObjectParentService.this.getOAObjectCacheService().getUsingKey(clazz, key);
 			}
 
+			public <T extends OAObject> T callCacheGetUsingGuid(Class<T> clazz, UUID guid) {
+				return OAObjectParentService.this.getOAObjectCacheService().getUsingGuid(clazz, guid);
+			}
+			
 			@Override
 			/**
 			 * Performs callCacheAdd behavior for the OA object service.
@@ -4799,8 +4802,8 @@ public class OAObjectParentService {
 			 * @param ok    method input
 			 * @return result value
 			 */
-			public <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok) {
-				return OAObjectParentService.this.getOAObjectCacheService().get(clazz, ok);
+			public <T extends OAObject> T callCacheGetUsingKey(Class<T> clazz, OAObjectKey ok) {
+				return OAObjectParentService.this.getOAObjectCacheService().getUsingKey(clazz, ok);
 			}
 		};
 		return srvcOAObjectSibling;

@@ -32,7 +32,7 @@ public abstract class HubFindService {
 	@SuppressWarnings("unchecked")
 	public <T extends OAObject> T getRealObject(Hub<T> hub, Object object) {
 		if (object != null && !object.getClass().equals(hub.getObjectClass())) {
-			T objx = callObjectCacheGet(hub.getObjectClass(), object);
+			T objx = callObjectCacheGetUsingKey(hub.getObjectClass(), object);
 			if (objx != null) {
 				return objx;
 			}
@@ -77,7 +77,7 @@ public abstract class HubFindService {
 	 * @return result value
 	 */
 
-	public abstract <T extends OAObject> T callObjectCacheGet(Class<T> clazz, Object key);
+	public abstract <T extends OAObject> T callObjectCacheGetUsingKey(Class<T> clazz, Object key);
 	/**
 	 * Dependency hook used by this service for HubDataGetObject behavior.
 	 *

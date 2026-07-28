@@ -127,7 +127,7 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 		final boolean bWas = srvcOAThreadLocal.getSendSyncMessages();
 		try {
 			srvcOAThreadLocal.setSendSyncMessages(true);
-			OAObject obj = (OAObject) oa.internal().objects().cache().getObject(objectClass, objectKey);
+			OAObject obj = (OAObject) oa.internal().objects().cache().getUsingKey(objectClass, objectKey);
 			if (obj != null) {
 				obj.save(iCascadeRule);
 				bResult = true;
@@ -157,7 +157,7 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 	@Override
 	public OAObject getObject(Class objectClass, OAObjectKey objectKey) {
 		final OA oa = OARuntime.oa(objectClass);
-		OAObject obj = (OAObject) oa.internal().objects().cache().getObject(objectClass, objectKey);
+		OAObject obj = (OAObject) oa.internal().objects().cache().getUsingKey(objectClass, objectKey);
 		if (obj == null) {
 			if (oa.sync().isServer()) {
 				OADataSource ds = OARuntime.datasource().get(objectClass);
@@ -176,7 +176,7 @@ public abstract class RemoteServerImpl implements RemoteServerInterface {
 	@Override
 	public OAObject getObjectUsingPkey(Class objectClass, OAObjectKey objectKey) {
 		final OA oa = OARuntime.oa(objectClass);
-		OAObject obj = (OAObject) oa.internal().objects().cache().getObject(objectClass, objectKey.getObjectIds());
+		OAObject obj = (OAObject) oa.internal().objects().cache().getUsingKey(objectClass, objectKey.getObjectIds());
 		if (obj == null) {
 			if (oa.sync().isServer()) {
 				OADataSource ds = OARuntime.datasource().get(objectClass);

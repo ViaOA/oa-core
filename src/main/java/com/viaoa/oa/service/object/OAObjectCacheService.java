@@ -38,13 +38,6 @@ import com.viaoa.path.OAPath;
 import com.viaoa.runtime.OARuntime;
 
 
-/*qqqqqqqqqqqqqq
-CODEX
-
-
-
-*/
-
 /**
  * Internal service responsible for managing the OA OAObject cache,
  * ensuring global identity consistency and fast lookup by either GUID or
@@ -1016,33 +1009,6 @@ public abstract class OAObjectCacheService {
 	}
 	
 	/**
-	 * Retrieves an object from the cache based on its object ID property value.
-	 * This is a convenience wrapper around {@link #get(Class, Object)}.
-	 *
-	 * @param clazz the class of the object to retrieve
-	 * @param key   the object ID, an array of IDs, or an {@link OAObjectKey} representing the object
-	 * @return the cached object matching the key, or {@code null} if not found
-	 * @see OAObjectKey#OAObjectKey
-	 * @see OAObject#equals
-	 */
-	public <T extends OAObject> T getObject(Class<T> clazz, Object key) {
-		return get(clazz, key);
-	}
-
-	/**
-	 * Retrieves an object from the cache using an integer ID. This method
-	 * delegates to {@link #get(Class, Object)} by wrapping the integer in
-	 * an {@link Integer} object.
-	 *
-	 * @param clazz the class of the object to retrieve
-	 * @param id    the integer ID of the object
-	 * @return the cached object matching the ID, or {@code null} if not found
-	 */
-	public <T extends OAObject> T get(Class<T> clazz, int id) {
-		return get(clazz, Integer.valueOf(id));
-	}
-
-	/**
 	 * Retrieves an object from the cache based on the provided key. If the key
 	 * is not an {@link OAObjectKey}, it is converted appropriately. Delegates
 	 * to {@link #get(Class, OAObjectKey)} for the final retrieval.
@@ -1051,7 +1017,7 @@ public abstract class OAObjectCacheService {
 	 * @param key   the object, key value, array of key values, or {@link OAObjectKey}
 	 * @return the cached object matching the key, or {@code null} if not found
 	 */
-	public <T extends OAObject> T get(Class<T> clazz, Object key) {
+	public <T extends OAObject> T getUsingKey(Class<T> clazz, Object key) {
 		if (!(key instanceof OAObjectKey)) {
 			if (key instanceof OAObject) {
 				key = callKeyGetKey((OAObject) key);
@@ -1059,69 +1025,16 @@ public abstract class OAObjectCacheService {
 				key = callKeyCreateObjectKey(clazz, key);
 			}
 		}
-		OAObject obj = null;
 		final OAObjectKey ok = (OAObjectKey) key;
-		return get(clazz, ok);
-	}
 
-	/**
-	 * Retrieves an object from the cache using its {@link OAObjectKey}. If either
-	 * the class or key is null, {@code null} is returned. Delegates directly
-	 * to the underlying {@link OAObjectCache} to fetch the object.
-	 *
-	 * @param clazz the class of the object to retrieve
-	 * @param ok    the {@link OAObjectKey} representing the object's identity
-	 * @return the cached object matching the key, or {@code null} if not found
-	 */
-	public <T extends OAObject> T get(Class<T> clazz, OAObjectKey ok) {
-		if (clazz == null || ok == null) return null;
-		OAObject obj = objectCache.getObject(clazz, ok); 
-		return (T) obj;
-	}
-	
-	//qqqqqq remove this method ??
-	/**
-	 * Retrieves an object from the cache by its GUID. This method returns the
-	 * object if it exists in the cache; it does not create a new instance.
-	 *
-	 * @param clazz the class of the object to retrieve
-	 * @param guid  the globally unique identifier of the object
-	 * @return the cached object matching the GUID, or {@code null} if not found
-	 */
-	public <T extends OAObject> T getNewObjectUsingGuid(Class<T> clazz, UUID guid) {
-		T obj = objectCache.getObject(clazz, guid); 
+		T obj = objectCache.getObject(clazz, ok); 
 		return obj;
 	}
 
-	/**
-	 * Retrieves an object from the cache based on its GUID. Delegates directly
-	 * to the underlying {@link OAObjectCache} for the lookup.
-	 *
-	 * @param clazz the class of the object to retrieve
-	 * @param guid  the globally unique identifier of the object
-	 * @return the cached object matching the GUID, or {@code null} if not found
-	 */
 	public <T extends OAObject> T getUsingGuid(Class<T> clazz, UUID guid) {
-		T obj = objectCache.getObject(clazz, guid); 
-		return obj;
-	}
-
-	/**
-	 * Retrieves the cached instance of the specified object based on its
-	 * current key values. If caching is disabled or the object is null,
-	 * {@code null} is returned.
-	 *
-	 * @param obj the object whose cached instance is requested
-	 * @return the cached object matching the key, or {@code null} if not found or caching is disabled
-	 */
-	public Object get(OAObject obj) {
-		if (bDisableCache) {
-			return null;
-		}
-		if (obj == null) {
-			return null;
-		}
-		return get(obj.getClass(), callKeyGetKey((OAObject) obj));
+		if (clazz == null || guid == null) return null;
+		OAObject obj = objectCache.getObject(clazz, guid); 
+		return (T) obj;
 	}
 
 	/**

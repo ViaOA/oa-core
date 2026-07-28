@@ -376,7 +376,7 @@ public class OADataSourceAuto extends OADataSource {
 			}
 			// 20141201
 			final OA oa = OARuntime.oa(oaObj);
-			Object test = oa.internal().objects().cache().getObject(oaObj.getClass(), id);
+			Object test = oa.internal().objects().cache().getUsingKey(oaObj.getClass(), id);
 			//was: Object test = OAObjectReflectDelegate.getObject(oaObj.getClass(), id);
 			if (test == null) {
 				break;

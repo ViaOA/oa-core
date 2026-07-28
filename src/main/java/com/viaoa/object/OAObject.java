@@ -3491,7 +3491,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	    final String linkName = linkInfo.getName();
 	    String linkToPropertyName = fi.getToPropertyInfo().getName();
 
-		OA oa = OARuntime.oa(this);
+		final OA oa = OARuntime.oa(this);
         final Object oldValue = oa.internal().objects().property().getProperty(this, linkName, false, true);
 		
 		if (newValue == null) {

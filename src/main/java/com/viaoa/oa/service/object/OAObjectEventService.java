@@ -508,7 +508,7 @@ public abstract class OAObjectEventService {
 				}
 			}
 			if (!b) {
-				Object objx = callCacheGet(linkInfo.getToClass(), (OAObjectKey) oldObj);
+				Object objx = callCacheGetUsingKey(linkInfo.getToClass(), (OAObjectKey) oldObj);
 				if (objx != null) {
 					oldObj = objx;
 				}
@@ -593,7 +593,7 @@ public abstract class OAObjectEventService {
 				if (revLinkInfo.getType() == OALinkInfo.ONE) {
 					if (oldObj instanceof OAObjectKey) {
 						if (callSyncIsClient()) { // 20151117 dont get from server if this is client
-							OAObject objx = callCacheGet(linkInfo.getToClass(), (OAObjectKey) oldObj);
+							OAObject objx = callCacheGetUsingKey(linkInfo.getToClass(), (OAObjectKey) oldObj);
 							if (objx != null) {
 								callPropertySetPropertyCAS(objx, revLinkInfo.getName(), null, oaObj);
 							}
@@ -845,7 +845,7 @@ public abstract class OAObjectEventService {
 				if (m != null) {
 					if (oldObj instanceof OAObjectKey) {
 						if (callSyncIsClient()) { // 20151117 dont get from server if this is client
-							oldObj = callCacheGet(linkInfo.getToClass(), (OAObjectKey) oldObj);
+							oldObj = callCacheGetUsingKey(linkInfo.getToClass(), (OAObjectKey) oldObj);
 						} else {
 							oldObj = callReflectGetObject(linkInfo.getToClass(), (OAObjectKey) oldObj);
 						}
@@ -1215,7 +1215,7 @@ public abstract class OAObjectEventService {
 	 * @param ok method input
 	 * @return result value
 	 */
-	public abstract <T extends OAObject> T callCacheGet(Class<T> clazz, OAObjectKey ok);
+	public abstract <T extends OAObject> T callCacheGetUsingKey(Class<T> clazz, OAObjectKey ok);
 	/**
 	 * Dependency hook used by this service to cacheFireAfterPropertyChange.
 	 *

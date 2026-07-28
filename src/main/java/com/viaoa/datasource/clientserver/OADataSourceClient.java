@@ -954,7 +954,7 @@ public class OADataSourceClient extends OADataSource {
 			Object obj = null;
 			if (key != null) {
 				final OA oa = OARuntime.oa(clazz);
-				obj = oa.internal().objects().cache().get(clazz, key);
+				obj = oa.internal().objects().cache().getUsingKey(clazz, key);
 				if (obj == null) {
 					// not on this system, need to get from server
 					oa.internal().sync().getRemoteServer().getObject(clazz, key);
