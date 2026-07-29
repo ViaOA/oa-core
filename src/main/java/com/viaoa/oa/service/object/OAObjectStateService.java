@@ -28,6 +28,7 @@ public abstract class OAObjectStateService {
 		if (b == old) {
 			return;
 		}
+//qqqqqqqqqqqqqqq see if  this needs to be sent ... might only need firePropChange, not the before		
 		callEventFireBeforePropertyChange(oaObj, "New", old, b, false, false);
 
 		faBridge.getObjectFriendAccess().setNew(oaObj, b);

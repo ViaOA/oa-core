@@ -1406,6 +1406,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 			boolean bOld = changedFlag;
 			final OA oa = OARuntime.oa(this);
 
+//qqqqqqqqqqq PUT this in OAObjectChangeService qqqqqqqqqqqqqqqqqq			
+			
 //qqqqqqqqqqqqqqq see if  this needs to be sent ... might only need firePropChange, not the before		
 			oa.internal().objects().event().fireBeforePropertyChange(	this, OAObjectParentService.WORD_Changed,
 															bOld ? Boolean.TRUE : Boolean.FALSE,
