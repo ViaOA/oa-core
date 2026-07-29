@@ -440,7 +440,9 @@ public abstract class HubAddRemoveService {
 			return false;
 		}
 
+		boolean bStartedNextThread = false;
 		if (callRemoteThreadIsRemoteThread()) {
+			bStartedNextThread = callRemoteThreadGetStartedNextThread();
 			callRemoteThreadSetStartedNextThread(true); // keep it from being started
 		}
 		
@@ -493,7 +495,8 @@ public abstract class HubAddRemoveService {
 
 		// if this is OAClientThread, so that OAClientMessageHandler can continue with next message
 		if (callRemoteThreadIsRemoteThread()) {
-			callRemoteThreadSetStartedNextThread(false);
+			//qqqqqq todo: put in 'finally' block
+			callRemoteThreadSetStartedNextThread(bStartedNextThread);
 		}
 		callRemoteThreadStartNextThread();
 
@@ -2004,6 +2007,8 @@ public abstract class HubAddRemoveService {
 	 * @param b method input
 	 */
 	public abstract void callRemoteThreadSetStartedNextThread(boolean b);
+	
+	public abstract boolean callRemoteThreadGetStartedNextThread();
 	
 	// Sync
 	/**

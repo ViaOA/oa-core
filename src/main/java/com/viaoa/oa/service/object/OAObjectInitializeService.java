@@ -288,102 +288,6 @@ public abstract class OAObjectInitializeService {
 	}
 
 	
-	/**
-	 * Convenience method that reinitializes the specified {@link OAObject} so it
-	 * behaves as a newly created instance. This method simply allocates a new GUID
-	 * and delegates to {@link #setAsNewObject(OAObject, long)}.
-	 *
-	 * @param oaObj the object to reinitialize; may be {@code null}.
-	 */
-/*qqqqqqqqqqqqq NOT Used
-
-
-	public void setAsNewObject(final OAObject oaObj) {
-		if (oaObj == null) return;
-		callGuidAssignNewGuid(oaObj);
-
-		UUID guid = callGuidGetGuid(oaObj);
-		_setAsNewObject(oaObj, guid);
-	}
-*/	
-	
-	/**
-	 * Reinitializes the specified {@link OAObject} so it behaves as a newly created
-	 * instance. This resets identity, lifecycle flags, and primary-key fields while
-	 * ensuring property-change and link events are suppressed during the transition.
-	 *
-	 * <p>Actions include:</p>
-	 * <ul>
-	 *   <li>Assigning the provided GUID.</li>
-	 *   <li>Setting <code>newFlag</code> to {@code true}.</li>
-	 *   <li>Clearing ID (primary-key) properties defined by the object's metadata.</li>
-	 *   <li>Suppressing events while clearing ID values to avoid notification
-	 *       during reinitialization.</li>
-	 *   <li>Rebuilding the object's {@link OAObjectKey}.</li>
-	 * </ul>
-	 *
-	 * @param oaObj the object to reset; may be {@code null}.
-	 * @param guid  the GUID to assign.
-	 */
-/*qqqqqqqqqq
-
-
-	protected void _setAsNewObject(final OAObject oaObj, UUID guid) {
-		if (oaObj == null) {
-			return;
-		}
-		faObject.setNew(oaObj, true);
-		faObject.setGuid(oaObj, guid); 
-
-		OAObjectInfo oi = callInfoGetObjectInfo(oaObj.getClass());
-		String[] ids = oi.getIdProperties();
-		if (ids == null) {
-			return;
-		}
-
-		callThreadLocalSetLoading(true);
-		try {
-			for (String id : ids) {
-				callReflectSetProperty(oaObj, id, null, null);
-			}
-		} finally {
-			callThreadLocalSetLoading(false);
-		}
-		if (callDSGetAssignIdOnCreate(oaObj)) {
-			callDSAssignId(oaObj);
-		}
-		oaObj.getObjectKey();
-	}
-*/
-	
-	/**
-	 * Reassigns the GUID of the specified {@link OAObject} to match the GUID
-	 * contained in the provided {@link OAObjectKey}. This is used when an object
-	 * has been reloaded or reconstructed and must retain its original identity
-	 * within the OA model.
-	 *
-	 * <p>If the object already has a GUID equal to the GUID in {@code origKey},
-	 * the method returns immediately with no changes.</p>
-	 *
-	 * <p>If reassignment is necessary, the new GUID is extracted from the key and
-	 * assigned using {@link #setObjectGuid(OAObject, long)}. This preserves the
-	 * object's identity for cache consistency, link resolution, and distributed
-	 * sync reconciliation.</p>
-	 *
-	 * @param obj the object whose GUID is being restored; may be {@code null}.
-	 * @param origKey the key containing the original GUID to apply; must not be {@code null}.
-	 */
-/*qqqqqqqqqq Remove this
-
-
-	public void reassignGuid(OAObject oaObj, OAObjectKey origKey) {
-		//qqqqqqqqqqqqqqq this is not be a good idea ... objectCache would need to be updated		
-		if (oaObj != null && origKey != null) {
-			faObject.setGuid(oaObj, origKey.getGuid()); // needs to re-cache
-		}
-	}
-*/
-	
 	public abstract OAObject callCacheAdd(OAObject obj, boolean bErrorIfExists, boolean bAddToSelectAll);
 	/**
 	 * Dependency hook used by this service to cacheFireAfterLoadEvent.
@@ -417,12 +321,6 @@ public abstract class OAObjectInitializeService {
 	 * @return result value
 	 */
 	public abstract UUID callGuidGetGuid(OAObject oaObj);
-	/**
-	 * Dependency hook used by this service to guidAssignNewGuid.
-	 *
-	 * @param obj method input
-	 */
-	public abstract void callGuidAssignNewGuid(OAObject obj);
 	/**
 	 * Dependency hook used by this service to guidAssignGuid.
 	 *

@@ -1,13 +1,21 @@
 package com.viaoa.oa.service.object;
 
+import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.logging.Logger;
 
 import com.viaoa.cascade.OACascade;
+import com.viaoa.datetime.OADateTime;
 import com.viaoa.hub.Hub;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.metadata.OAPropertyInfo;
+import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
+import com.viaoa.runtime.OARuntime;
+
+
+//qqqqqqqqqqqqqqqqqqqqqqq put this in OAObjectStateService ?? 
 
 /**
  * Evaluates changed-state for OAObjects and related Hubs according to cascade rules.
@@ -172,6 +180,66 @@ public abstract class OAObjectChangeService {
 		return false;
 	}
 
+//qqqqqqqqqqqqqqqqqqqqqqqqqqqqqq NEW	
+	public void setChanged(final OAObject oaObj, final boolean tf) {
+		if (oaObj == null) return;
+		
+		final boolean bOld = faObject.getChangedFlag(oaObj);
+		if (tf == bOld) return;
+
+		faObject.setChangedFlag(oaObj, tf);
+		callObjectEventFirePropertyChange(oaObj, OAObjectParentService.WORD_Changed, bOld, tf, false, false);
+
+		if (tf) {
+			if (!callRemoteThreadIsRemoteThread()) {
+				OAObjectInfo oi = callObjectInfoGetOAObjectInfo(oaObj);
+				OAPropertyInfo pi = oi.getTimestampProperty();
+				if (pi != null) {
+					oaObj.setProperty(pi.getName(), new OADateTime());
+				}
+			}
+			
+			callObjectPropertySetReferenceable(oaObj, true);
+		}
+		// notify owners
+		sendParentChangeEvent(oaObj, 0);
+	}
+	
+	protected void sendParentChangeEvent(final OAObject oaObj, final int cnt) {
+		if (oaObj == null) return;
+		if (cnt > 50) return;
+		
+		if (cnt > 0) callObjectEventFirePropertyChange(oaObj, OAObjectParentService.WORD_Changed, null, null, false, false);
+		
+		WeakReference<Hub<?>>[] refs = callObjectHubGetHubReferencesNoCopy(oaObj);
+		if (refs == null) return;
+		
+		for (WeakReference wr : refs) {
+			if (wr == null) continue;
+			Hub hx = (Hub) wr.get();
+			if (hx == null) continue;
+			OALinkInfo li = callDetailGetLinkInfoFromMasterToDetail(hx);
+			if (li == null) continue;
+			if (!li.getOwner() && !li.getCascadeSave()) continue;
+			OAObject obj = callHubMasterGetMasterObject(hx);
+			if (obj != null) sendParentChangeEvent(obj, cnt+1);
+		}
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 	/**
 	 * Dependency hook used by this service to objectInfoGetOAObjectInfo.
 	 *
@@ -228,5 +296,19 @@ public abstract class OAObjectChangeService {
 	 * @return {@code true} when the operation succeeds or condition is met
 	 */
     public abstract boolean callObjectReflectIsReferenceNullOrNotLoaded(OAObject oaObj, String prop);
+	
+	public abstract boolean callRemoteThreadIsRemoteThread();
+
+	public abstract void callObjectEventFirePropertyChange(OAObject oaObj, String propertyName, Object oldObj, Object newObj, boolean bLocalOnly, boolean bSetChanged);
+
+	public abstract WeakReference<Hub<?>>[] callObjectHubGetHubReferencesNoCopy(OAObject oaObj);
+
+	public abstract OALinkInfo callHubDetailGetLinkInfoFromMasterToDetail(Hub<?> thisDetailHub);
+	
+	public abstract OALinkInfo callDetailGetLinkInfoFromMasterToDetail(Hub<?> hub);
+
+	public abstract OAObject callHubMasterGetMasterObject(Hub<?> hub);
+
+	public abstract void callObjectPropertySetReferenceable(OAObject obj, boolean bReferenceable);
 	
 }

@@ -361,8 +361,9 @@ public class OAReplicationClient extends OAReplicationBase {
 		}
 
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
+		final String prevSource = srvcOAThreadLocal.getReplicationSource(); 
+		srvcOAThreadLocal.setReplicationSource(guid);
 		try {
-			srvcOAThreadLocal.setReplicationSource(guid);
 			LOG.fine(String.format("received msg from Master, masterSeq=%,d, methodName=%s", masterSeq, methodName));
 
 			Method method = getMethod(methodName);
@@ -372,7 +373,7 @@ public class OAReplicationClient extends OAReplicationBase {
 		} catch (Exception e) {
 			throw new RuntimeException("Exception onNewMessageFromMaster", e);
 		} finally {
-			srvcOAThreadLocal.setReplicationSource(null);
+			srvcOAThreadLocal.setReplicationSource(prevSource);
 		}
 	}
 

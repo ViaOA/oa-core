@@ -484,6 +484,10 @@ public class HubParentService {
 			public void callHubDSUpdateMany2ManyLinks(OAObject masterObject, OAObject[] adds, OAObject[] removes, String propFromMaster) {
 				HubParentService.this.getHubDSService().updateMany2ManyLinks(masterObject, adds, removes, propFromMaster);
 			}
+			@Override
+			public boolean callRemoteThreadGetStartedNextThread() {
+				return HubParentService.this.srvcRemoteThread.startedNextThread();
+			}
 		};
 		return srvcHubAddRemove;
 	}

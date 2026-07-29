@@ -2700,16 +2700,6 @@ public class OAObjectParentService {
 
 			@Override
 			/**
-			 * Performs callGuidAssignNewGuid behavior for the OA object service.
-			 *
-			 * @param obj method input
-			 */
-			public void callGuidAssignNewGuid(OAObject obj) {
-				OAObjectParentService.this.getOAObjectGuidService().assignNewGuid(obj);
-			}
-
-			@Override
-			/**
 			 * Performs callGuidAssignGuid behavior for the OA object service.
 			 *
 			 * @param obj method input

@@ -106,6 +106,9 @@ public abstract class HubStatusService {
                         OALinkInfo rli = li.getReverseLinkInfo();
                         bx = (rli != null && rli.getType() == li.MANY);
                     }
+//qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+//qqqqqqqqqqq ahh...NO ... dont do this								
+//qqqqqqqqqq but we want to send obj.firePropertyChange(WORD_Changed...)								
                     if (bx) obj.setChanged(true);
                 }
             }

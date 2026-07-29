@@ -1130,10 +1130,24 @@ public abstract class OAObjectReflectService {
 				try {
 					callThreadLocalSetSendSyncMessages(false);
 					bWasLoading = callThreadLocalSetLoading(true);
+					
+//qqqqqqqqqqq					
+boolean bx = callThreadLocalIsLoading();
+int xxx = 4;
+xxx++;
+
+
 					for (; select.hasMore();) {
+boolean bx5 = callThreadLocalIsLoading();
+xxx++;
 						OAObject objx = select.next();
+boolean bx6 = callThreadLocalIsLoading();
+xxx++;
+						
 						// find masterObj to put it in
 						Object valx = callPropertyGetProperty(objx, rli.getName(), false, false);
+boolean bx4 = callThreadLocalIsLoading();
+xxx++;
 Object hold = valx;//qqqqqqq						
 						if (valx instanceof OAObject) {
 							valx = ((OAObject) valx).getObjectKey();
@@ -1143,11 +1157,20 @@ Object hold = valx;//qqqqqqq
 						}
 						OAObjectKey okx = (OAObjectKey) valx;
 						if (callKeyIsForSameOAObject(null, okx, oaObj.getObjectKey())) {
+boolean bx2 = callThreadLocalIsLoading();
 							hub.add(objx);
+boolean bx3 = callThreadLocalIsLoading();
+xxx++;
 						} else if (hmSiblingHub != null) {
 							UUID guidx = okx.getGuid();
 							if (guidx == null) {
 								OAObject objx2 = callCacheGetUsingKey(oaObj.getClass(), okx);
+								
+//qqqqqqqqqqqqqqqqqqqqqqq								
+								if (objx2 == null) {
+									objx2 = callCacheGetUsingKey(oaObj.getClass(), okx);
+									if (objx2 == null) continue;
+								}
 								guidx = objx2.getObjectKey().getGuid();
 							}
 							Hub hx = hmSiblingHub.get(guidx);

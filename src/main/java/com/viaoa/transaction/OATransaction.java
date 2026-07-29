@@ -493,6 +493,10 @@ CLOSED       -> cleanup complete; no lifecycle operations allowed
 	 */
 	private boolean bAllowWritesIfDsIsReadonly;
 
+	
+	private OATransaction previousTransaction;
+	
+	
 	/*  java.sql.Connection isolation levels
 	    java.sql.Connection.X<br>
 	    TRANSACTION_NONE - level not set - some databases (ex: Derby) will throw and exception<br>
@@ -572,10 +576,12 @@ CLOSED       -> cleanup complete; no lifecycle operations allowed
 	 * context for the calling thread.
 	 */
 	public void start() {
-		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
+		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
+		previousTransaction = srvcOAThreadLocal.getTransaction(); 
 		srvcOAThreadLocal.setTransaction(this);
 	}
 
+	
 	/**
 	 * Determines whether this transaction is currently active on the calling
 	 * thread.
@@ -600,7 +606,7 @@ CLOSED       -> cleanup complete; no lifecycle operations allowed
 			}
 		} finally {
 			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();  
-			srvcOAThreadLocal.setTransaction(null);
+			srvcOAThreadLocal.setTransaction(previousTransaction);
 		}
 	}
 
@@ -616,7 +622,7 @@ CLOSED       -> cleanup complete; no lifecycle operations allowed
 				tl.commit(this);
 			}
 		} finally {
-			srvcOAThreadLocal.setTransaction(null);
+			srvcOAThreadLocal.setTransaction(previousTransaction);
 		}
 	}
 

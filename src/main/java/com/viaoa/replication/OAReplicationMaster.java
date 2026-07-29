@@ -340,6 +340,8 @@ public class OAReplicationMaster extends OAReplicationBase {
 
 			// invoke client changes on master.
 			final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
+
+			final String prevReplicationSource = srvcOAThreadLocal.getReplicationSource();
 			srvcOAThreadLocal.setReplicationSource(this.guid);
 			try {
 				for (int i = 0;; i++) {
@@ -364,7 +366,7 @@ public class OAReplicationMaster extends OAReplicationBase {
 				}
 			}
 			finally {
-				srvcOAThreadLocal.setReplicationSource(null);
+				srvcOAThreadLocal.setReplicationSource(prevReplicationSource);
 			}
 
 			// send master server msgs to client
