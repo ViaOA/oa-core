@@ -391,4 +391,6 @@ public @interface OAProperty {
 	 * a primary-key component within the generated POJO.
 	 */
 	int pojoKeyPos() default 0;
+	
+	boolean isTransient() default false;
 }

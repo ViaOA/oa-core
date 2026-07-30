@@ -1,5 +1,6 @@
 package com.viaoa.oa.service.object;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.util.Comparator;
 import java.util.List;
@@ -559,6 +560,42 @@ public class OAObjectParentService {
 			 */
 			public boolean callObjectReflectIsReferenceNullOrNotLoaded(OAObject oaObj, String prop) {
 				return OAObjectParentService.this.getOAObjectReflectService().isReferenceNullOrNotLoaded(oaObj, prop);
+			}
+
+			@Override
+			public boolean callRemoteThreadIsRemoteThread() {
+				return OARuntime.thread().isRemoteThread();
+			}
+
+			@Override
+			public void callObjectEventFirePropertyChange(OAObject oaObj, String propertyName, Object oldObj, Object newObj, boolean bLocalOnly, boolean bSetChanged) {
+				OAObjectParentService.this.getOAObjectEventService().firePropertyChange(oaObj, propertyName, oldObj, newObj, bLocalOnly, bSetChanged);
+			}
+
+			@Override
+			public WeakReference<Hub<?>>[] callObjectHubGetHubReferencesNoCopy(OAObject oaObj) {
+				return OAObjectParentService.this.getOAObjectHubService().getHubReferencesNoCopy(oaObj);
+			}
+
+
+			@Override
+			public OAObject callObjectHubGetMasterObject(Hub<?> hub) {
+				return OAObjectParentService.this.srvcHubParent.getHubMasterService().getMasterObject(hub);
+			}
+
+			@Override
+			public void callObjectPropertySetReferenceable(OAObject obj, boolean bReferenceable) {
+				OAObjectParentService.this.getOAObjectPropertyService().setReferenceable(obj, bReferenceable);
+			}
+
+			@Override
+			public OALinkInfo callObjectHubGetLinkInfoFromMasterToDetail(Hub<?> hub) {
+				return OAObjectParentService.this.srvcHubParent.getHubDetailService().getLinkInfoFromMasterToDetail(hub);
+			}
+
+			@Override
+			public void callObjectEventFirePropertyChange(OAObject oaObj, String propertyName, Object oldObj, Object newObj, boolean bLocalOnly, boolean bSetChanged, boolean bUnknownValues) {
+				OAObjectParentService.this.getOAObjectEventService().firePropertyChange(oaObj, propertyName, oldObj, newObj, bLocalOnly, bSetChanged, bUnknownValues);
 			}
 		};
 		return srvcOAObjectChange;
@@ -1721,7 +1758,6 @@ public class OAObjectParentService {
 			 * @return {@code true} when the operation succeeds or condition is met
 			 */
 			public boolean callThreadLocalIsLoading() {
-				// TODO Auto-generated method stub
 				return OAObjectParentService.this.srvcThreadLocal.isLoading();
 			}
 
@@ -2163,6 +2199,16 @@ public class OAObjectParentService {
 			 */
 			public void callThreadLocalSetSendSyncMessages(boolean b) {
 				OAObjectParentService.this.srvcThreadLocal.setSendSyncMessages(b);
+			}
+
+			@Override
+			public void callChangeSetChanged(OAObject obj, boolean b) {
+				OAObjectParentService.this.srvcOAObjectChange.setChanged(obj, b);
+			}
+
+			@Override
+			public void callChangeSendParentChangeEvent(OAObject obj) {
+				OAObjectParentService.this.srvcOAObjectChange.sendParentChangeEvent(obj);
 			}
 		};
 		return srvcOAObjectEvent;

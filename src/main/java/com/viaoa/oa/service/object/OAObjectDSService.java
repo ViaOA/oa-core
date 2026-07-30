@@ -275,11 +275,7 @@ public abstract class OAObjectDSService {
 	public void save(OAObject oaObj) {
 		OADataSource dataSource = getDataSource(oaObj);
 		if (dataSource != null) {
-			if (oaObj.getNew()) {
-				dataSource.insert(oaObj);
-			} else {
-				dataSource.update(oaObj);
-			}
+			dataSource.save(oaObj);
 		}
 	}
 

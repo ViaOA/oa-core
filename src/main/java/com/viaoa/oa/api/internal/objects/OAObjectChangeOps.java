@@ -15,4 +15,7 @@ public interface OAObjectChangeOps {
 	 * @return {@code true} if the object or included related objects have changes
 	 */
 	public boolean getChanged(OAObject oaObj, int cascadeRule);
+	
+	public void setChanged(OAObject oaObj, boolean tf);
+	
 }

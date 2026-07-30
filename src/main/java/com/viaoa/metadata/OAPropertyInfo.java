@@ -375,6 +375,7 @@ public class OAPropertyInfo implements java.io.Serializable {
 	 */
 	private int pojoKeyPos;
 
+	private boolean isTransient;
 	
 	
 	/**
@@ -1274,6 +1275,35 @@ public class OAPropertyInfo implements java.io.Serializable {
 	 */
 	public static FriendAccess getFriendAccess() {
 		return friendAccess;
+	}
+
+
+	/**
+	 * Returns whether this property is foreign-key only.
+	 */
+	public boolean isTransient() {
+		return isTransient;
+	}
+
+	/**
+	 * Returns whether this property is foreign-key only.
+	 */
+	public boolean getIsTransient() {
+		return isTransient;
+	}
+
+	/**
+	 * Sets whether this property is foreign-key only.
+	 */
+	public void setTransient(boolean b) {
+		this.isTransient = b;
+	}
+
+	/**
+	 * Sets whether this property is foreign-key only.
+	 */
+	public void setIsTransient(boolean b) {
+		this.isTransient = b;
 	}
 
 }

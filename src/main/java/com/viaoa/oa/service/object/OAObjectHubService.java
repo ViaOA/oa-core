@@ -614,8 +614,6 @@ public abstract class OAObjectHubService {
     }
 
 /*qqqqqqqq not used
-
-
     public <T extends OAObject> void setMasterObject(Hub<T> hub, T oaObj, OALinkInfo liDetailToMaster) {
         if (callHubDetailGetMasterObject(hub) == null) {
         	callHubDetailSetMasterObject(hub, oaObj, liDetailToMaster);

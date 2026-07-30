@@ -121,7 +121,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		// oaversion
 	    
 	    // pom version: 4.0.0
-		String ver = "4.0.0.202606260";
+		String ver = "4.0.0.202607290";
 		
 		/*
 		 *  previous:
@@ -1402,60 +1402,8 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 *           and remove original value tracking as defined by the delegates
 	 */
 	public void setChanged(boolean tf) {
-		if (changedFlag != tf) {
-			boolean bOld = changedFlag;
-			final OA oa = OARuntime.oa(this);
-
-//qqqqqqqqqqq PUT this in OAObjectChangeService qqqqqqqqqqqqqqqqqq			
-			
-//qqqqqqqqqqqqqqq see if  this needs to be sent ... might only need firePropChange, not the before		
-			oa.internal().objects().event().fireBeforePropertyChange(	this, OAObjectParentService.WORD_Changed,
-															bOld ? Boolean.TRUE : Boolean.FALSE,
-															tf ? Boolean.TRUE : Boolean.FALSE,
-															(tf == false), // local only  20150530 was: "false", now only sending if changed=false
-															false);
-			changedFlag = tf;
-			oa.internal().objects().event().firePropertyChange(	this, OAObjectParentService.WORD_Changed,
-														bOld ? Boolean.TRUE : Boolean.FALSE,
-														changedFlag ? Boolean.TRUE : Boolean.FALSE, false, false);
-
-			if (changedFlag) {
-				// 20190307
-				if (!isRemoteThread()) {
-					OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(this.getClass());
-					OAPropertyInfo pi = oi.getTimestampProperty();
-					if (pi != null) {
-						this.setProperty(pi.getName(), new OADateTime());
-					}
-				}
-
-				oa.internal().objects().property().setReferenceable(this, true);
-
-				// 20180520 notify owner
-				WeakReference<Hub<?>>[] refs = oa.internal().objects().hub().getHubReferencesNoCopy(this);
-				if (refs != null) {
-					for (WeakReference wr : refs) {
-						if (wr == null) {
-							continue;
-						}
-						Hub hx = (Hub) wr.get();
-						if (hx == null) {
-							continue;
-						}
-
-						OAObject obj = hx.getMasterObject();
-						if (obj != null) {
-							OALinkInfo li = oa.internal().hubs().detail().getLinkInfoFromMasterToDetail(hx);
-							if (li != null && (li.getCascadeSave() || li.getOwner())) {
-//qqqqqqqqqqq ahh...NO ... dont do this								
-//qqqqqqqqqq but we want to send obj.firePropertyChange(WORD_Changed...)								
-								obj.setChanged(true);
-							}
-						}
-					}
-				}
-			}
-		}
+		final OA oa = OARuntime.oa(this);
+		oa.internal().objects().change().setChanged(this, tf);
 	}
 
 	/**
@@ -1875,8 +1823,7 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @param newObj   the new primitive {@code boolean} value
 	 */
 	protected void firePropertyChange(String property, boolean oldObj, boolean newObj) {
-		firePropertyChange(	property, oldObj ? Boolean.TRUE : Boolean.FALSE,
-							newObj ? Boolean.TRUE : Boolean.FALSE);
+		firePropertyChange(	property, oldObj ? Boolean.TRUE : Boolean.FALSE, newObj ? Boolean.TRUE : Boolean.FALSE);
 	}
 
 	/**

@@ -620,9 +620,18 @@ public abstract class OAObjectEventService {
 			if (!oaObj.isChanged()) {
 				if (linkInfo == null || !linkInfo.getCalculated()) { // 20120429
 					final boolean bWas = callThreadLocalGetSendSyncMessages(); 
+					boolean bSetChanged2 = true;
+					if (linkInfo != null) {
+						bSetChanged2 = !linkInfo.getTransient();
+					}
+					else {
+						bSetChanged2 = propInfo != null && !propInfo.getIsTransient();
+					}
+				
 					try {
 						callThreadLocalSetSendSyncMessages(false); // the client will setChanged when it gets the propertyChange message
-						oaObj.setChanged(true);
+						if (bSetChanged2) callChangeSetChanged(oaObj, true);
+						else callChangeSendParentChangeEvent(oaObj);
 					} finally {
 						callThreadLocalSetSendSyncMessages(bWas);
 					}
@@ -1648,4 +1657,7 @@ public abstract class OAObjectEventService {
 	 * @param b method input
 	 */
 	public abstract void callThreadLocalSetSendSyncMessages(boolean b);
+	
+	public abstract void callChangeSetChanged(OAObject obj, boolean b);
+	public abstract void callChangeSendParentChangeEvent(OAObject obj);
 }

@@ -1798,6 +1798,10 @@ public class HubParentService {
 			public OALinkInfo callHubDetailGetLinkInfoFromMasterHubToDetail(Hub<?> thisDetailHub) {
 				return HubParentService.this.getHubDetailService().getLinkInfoFromMasterToDetail(thisDetailHub);
 			}
+			@Override
+			public void callObjectChangeSendParentChangeEvent(OAObject oaObj) {
+				HubParentService.this.srvcObjectParent.getOAObjectChangeService().sendParentChangeEvent(oaObj);
+			}
 		};
 		return srvcHubStatus;
 	}

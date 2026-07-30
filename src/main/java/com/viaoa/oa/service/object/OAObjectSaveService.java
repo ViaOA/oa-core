@@ -101,6 +101,8 @@ public abstract class OAObjectSaveService {
 
 	private final OAObject.FriendAccess faObject;
 
+	private final Map<UUID, Thread> hmSaveNewLock = new HashMap<>(11);
+	
 	/**
 	 * Performs OAObjectSaveService behavior for the OA object service.
 	 *
@@ -127,7 +129,7 @@ public abstract class OAObjectSaveService {
 
 		final boolean bSync = callCSSyncIsRunning();
 		
-		if (thisObj.isNew() && !callHubIsInHubWithMaster(thisObj) && bSync) {
+		if (bSync && thisObj.isNew() && !callHubIsInHubWithMaster(thisObj)) {
             OAObjectSerializer<OAObject> oos = new OAObjectSerializer<>(thisObj, false, new OAObjectSerializerCallback() {
                 @Override
                 public void beforeSerialize(OAObject obj) {
@@ -175,7 +177,6 @@ public abstract class OAObjectSaveService {
 	}
 
 	private <T extends OAObject> void save(final T oaObj, int iCascadeRule, OACascade cascade, boolean bIsFirst, boolean bCheckDepth) {
-
 		if (bCheckDepth && cascade.getDepth() > 50) {
 			if (!cascade.wasCascaded(oaObj, false)) {
 				cascade.addToOverflow(oaObj); // add to overflow, (tail recursion)
@@ -183,20 +184,15 @@ public abstract class OAObjectSaveService {
 			return;
 		}
 		
-		if (callThreadLocalIsDeleting()) {
-			return;
-		}
-
-		if (cascade.wasCascaded(oaObj, true)) {
-			return;
-		}
+		if (callThreadLocalIsDeleting()) return;
+		if (cascade.wasCascaded(oaObj, true)) return;
 		
 		cascade.depthAdd();
 
-		boolean b = (faObject.getNewFlag(oaObj) || faObject.getChangedFlag(oaObj) || bIsFirst);
+		final boolean bNeedsToSave = (faObject.getNewFlag(oaObj) || faObject.getChangedFlag(oaObj) || bIsFirst);
 		_save(oaObj, true, iCascadeRule, cascade); // "ONE" relationships
 		// cascadeSave() will check hash to see if object has already been checked
-		if (b) {
+		if (bNeedsToSave) {
 			Hub<T>[] hubs = callHubGetHubReferences(oaObj);
 			if (hubs != null) {
 				for (Hub<T> h : hubs) {
@@ -208,33 +204,21 @@ public abstract class OAObjectSaveService {
 
 			for (int i = 0; i < 4; i++) {
 				try {
-					if (onSave(oaObj)) {
-						if (i > 0) {
-							String msg = "Retry save successful, class=" + oaObj.getClass().getSimpleName() + ", key="
-									+ oaObj.getObjectKey() + ", try=" + (i + 1);
-							LOG.log(Level.WARNING, msg);
-						}
-						break;
+					onSave(oaObj);
+					if (i > 0) {
+						String msg = "Save retry successful, class=" + oaObj.getClass().getSimpleName() + ", key=" + oaObj.getObjectKey() + ", try=" + (i + 1);
+						LOG.log(Level.WARNING, msg);
 					}
+					break;
 				} catch (Exception e) {
-					String msg = "error saving, class=" + oaObj.getClass().getSimpleName() + ", key=" + oaObj.getObjectKey() + ", isNew="
+					String msg = "Save exception, class=" + oaObj.getClass().getSimpleName() + ", key=" + oaObj.getObjectKey() + ", isNew="
 							+ oaObj.isNew() + ", try=" + (i + 1) + " of 4";
-					if (i == 3) {
-						msg += " ALERT: possible data loss";
-					}
+					if (i == 3) msg += " ALERT: possible data loss";
 					LOG.log(Level.WARNING, msg, e);
 					oaObj.setChanged(true);
 					if (i == 0) _save(oaObj, true, iCascadeRule, cascade); // "ONE" relationships
-					
-					if (i == 3) throw new RuntimeException("Exception saving", e);
-					continue;
+					if (i == 3) throw new RuntimeException("Save exception", e);
 				}
-
-				// try again, object might have been changed in the process
-				String msg = "onSave returned false, class=" + oaObj.getClass().getSimpleName() + ", key=" + oaObj.getObjectKey()
-						+ ", isNew=" + oaObj.isNew() + ", will try again the next time save is called";
-				LOG.warning(msg);
-				break;
 			}
 
 			if (hubs != null) {
@@ -280,14 +264,14 @@ public abstract class OAObjectSaveService {
 	 * @param checkOnly if true then "canSave" is called, else "save()" is called
 	 * @return null if all objects can be saved
 	 */
-	private void _save(OAObject oaObj, boolean bOne, int iCascadeRule, OACascade cascade) {
+	private void _save(final OAObject oaObj, final boolean bOneLinkOnly, final int iCascadeRule, final OACascade cascade) {
 		if (oaObj == null) return;
 		OAObjectInfo oi = callInfoGetObjectInfo(oaObj);
 		List<OALinkInfo> al = oi.getLinkInfos();
 		for (int i = 0; i < al.size(); i++) {
 			OALinkInfo li = al.get(i);
 
-			if (bOne != (li.getType() == OALinkInfo.ONE)) {
+			if (bOneLinkOnly != (li.getType() == OALinkInfo.ONE)) {
 				continue;
 			}
 
@@ -323,13 +307,13 @@ public abstract class OAObjectSaveService {
 
 			// Note: if (iCascadeRule == OAObject.CASCADE_NONE) then only save ONE links that are new objects - so ref integrity is maintained.
 
-			if (li.getType() == OALinkInfo.ONE) {
+			if (bOneLinkOnly) {
 				Object obj = callReflectGetProperty(oaObj, li.getName());
 				if ((obj instanceof OAObject)) {
 					OAObject oaRef = (OAObject) obj;
 					if (oaRef.getNew()) {
 						if (cascade.wasCascaded(oaRef, false)) {
-							boolean bSave = false;
+							boolean bSaveNew = false;
 							synchronized (hmSaveNewLock) {
 								for (;;) {
 									if (!oaRef.getNew()) {
@@ -338,20 +322,20 @@ public abstract class OAObjectSaveService {
 									Thread t = hmSaveNewLock.get(oaRef.getGuid());
 									if (t == null) {
 										hmSaveNewLock.put(oaRef.getGuid(), Thread.currentThread());
-										bSave = true;
+										bSaveNew = true;
 										break;
 									}
 									if (t == Thread.currentThread()) {
 										break;
 									}
 									try {
-										hmSaveNewLock.wait(100);
+										hmSaveNewLock.wait(25);
 									} catch (Exception e) {
 									}
 								}
 							}
 
-							if (bSave) {
+							if (bSaveNew) {
 								// have to save new reference object before oaObj can be saved.
 								OAObjectInfo oiRef = callInfoGetOAObjectInfo(oaRef.getClass());
 								try {
@@ -400,51 +384,37 @@ public abstract class OAObjectSaveService {
 		}
 	}
 
-	private final Map<UUID, Thread> hmSaveNewLock = new HashMap<>(11);
 
 	/**
 	*/
-	public boolean onSave(OAObject oaObj) {
+	public void onSave(OAObject oaObj) {
 		OAObjectInfo oi = callInfoGetOAObjectInfo(oaObj.getClass());
 
-		//LOG.fine(oaObj.getClass().getSimpleName()+", isNew="+oaObj.isNew());        
-		// if new, then need to hold a lock
 		boolean bIsNew = oaObj.isNew();
 		if (bIsNew) {
 			synchronized (hmSaveNewLock) {
 				for (int i = 0;; i++) {
 					if (!oaObj.isNew()) {
-						return true; // already saved
+						return; // already saved
 					}
 					Thread t = hmSaveNewLock.get(oaObj.getGuid());
 					if (t == null) {
 						if (i > 0) {
-							return true; // already saved
+							return; // already saved
 						}
 						hmSaveNewLock.put(oaObj.getGuid(), Thread.currentThread());
 						break;
 					}
 					try {
 						if (t == Thread.currentThread()) {
-							return true; // already saving in this thread
+							return; // already saving in this thread
 						}
-						hmSaveNewLock.wait(100);
+						hmSaveNewLock.wait(25);
 					} catch (Exception e) {
 					}
 				}
 			}
 		}
-
-		/*
-		if (oi.getUseDataSource()) {
-		    OAObjectKey key = OAObjectKeyDelegate.getKey(oaObj);
-		    String s = String.format("Save, class=%s, id=%s",
-		            OAString.getClassName(oaObj.getClass()),
-		            key.toString()
-		    );
-		    OAObject.OALOG.fine(s);
-		}
-		*/
 
 		try {
 			// 20130504 moved before actual save, in case another thread makes a change
@@ -465,7 +435,6 @@ public abstract class OAObjectSaveService {
 			}
 		}
 		oaObj.afterSave();
-		return true;
 	}
 
 	/**

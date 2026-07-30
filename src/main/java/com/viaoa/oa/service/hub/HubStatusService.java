@@ -96,7 +96,7 @@ public abstract class HubStatusService {
         if (!bChanged) {
         	callHubDataClearHubChanges(thisHub);
         }
-        else {  // 20180529 if changed, then masterObject needs to be flagged as changed
+//was:        else {  // 20180529 if changed, then masterObject needs to be flagged as changed
             OAObject obj = thisHub.getMasterObject();
             if (obj != null) {
                 OALinkInfo li = callHubDetailGetLinkInfoFromMasterHubToDetail(thisHub);
@@ -106,13 +106,12 @@ public abstract class HubStatusService {
                         OALinkInfo rli = li.getReverseLinkInfo();
                         bx = (rli != null && rli.getType() == li.MANY);
                     }
-//qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
-//qqqqqqqqqqq ahh...NO ... dont do this								
-//qqqqqqqqqq but we want to send obj.firePropertyChange(WORD_Changed...)								
-                    if (bx) obj.setChanged(true);
+//qqqqqqqqqqqq
+                    if (bx) callObjectChangeSendParentChangeEvent(obj);
+                    //was: if (bx) obj.setChanged(true);
                 }
             }
-        }
+//        }
     }
 	
 
@@ -491,6 +490,8 @@ public abstract class HubStatusService {
 	 */
 	public abstract boolean callObjectChangeGetChanged(final OAObject oaObj, int iCascadeRule, OACascade cascade);
 
+	public abstract void callObjectChangeSendParentChangeEvent(final OAObject oaObj);
+	
 	/**
 	 * Dependency hook used by this service for SyncIsClient behavior.
 	 *

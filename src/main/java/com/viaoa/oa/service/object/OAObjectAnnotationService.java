@@ -420,6 +420,7 @@ public abstract class OAObjectAnnotationService {
 			pi.setProcessed(oaprop.isProcessed());
 			pi.setHtml(oaprop.isHtml());
 			pi.setJson(oaprop.isJson());
+			pi.setIsTransient(oaprop.isTransient());
 			pi.setTimestamp(oaprop.isTimestamp());
 			pi.setSubmit(oaprop.isSubmit());
 			pi.setObjectStatus(oaprop.isObjectStatus());
@@ -670,6 +671,7 @@ public abstract class OAObjectAnnotationService {
 			li.setMustBeEmptyForDelete(annotation.mustBeEmptyForDelete());
 			li.setCalculated(annotation.isCalculated());
 			li.setProcessed(annotation.isProcessed());
+			li.setTransient(annotation.isTransient());
 			//li.setRecursive(annotation.recursive());
 
 			for (OAFkey fkey : annotation.fkeys()) {

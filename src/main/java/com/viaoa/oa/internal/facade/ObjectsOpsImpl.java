@@ -700,6 +700,10 @@ public class ObjectsOpsImpl implements ObjectsOps {
 			public boolean getChanged(OAObject oaObj, int cascadeRule) {
 				return srvc.getOAObjectChangeService().getChanged(oaObj, cascadeRule);
 			}
+			@Override
+			public void setChanged(OAObject oaObj, boolean tf) {
+				srvc.getOAObjectChangeService().setChanged(oaObj, tf);
+			}
 		};
 		return opsChange;
 	}
