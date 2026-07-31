@@ -29,17 +29,13 @@ import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListener;
 import com.viaoa.hub.HubListenerAdapter;
-import com.viaoa.hub.HubListener.InsertLocation;
 import com.viaoa.hub.merge.HubMerger;
 import com.viaoa.lang.OAArray;
+import com.viaoa.lang.OAStr;
 import com.viaoa.metadata.OACalcInfo;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.oa.OA;
-import com.viaoa.oa.service.object.OAObjectAnnotationService;
-import com.viaoa.oa.service.object.OAObjectInfoService;
-import com.viaoa.oa.service.object.OAObjectPropertyService;
-import com.viaoa.oa.service.object.OAObjectReflectService;
 import com.viaoa.oa.sibling.OASiblingHelper;
 import com.viaoa.object.OAObject;
 import com.viaoa.path.OAPath;
@@ -49,21 +45,146 @@ import com.viaoa.runtime.OAThreadLocalService;
 import com.viaoa.runtime.OAThreadService;
 
 /**
- * Manages Hub listeners and their dependent property paths as a routed tree.
+ * Manages listeners for a root {@link Hub} and builds a shared dependency tree
+ * for calculated properties, linked properties, and explicit dependent paths.
  * <p>
- * Responsibilities:
- * <ul>
- *   <li>Maintain an ordered array of {@link HubListener}s with FIRST/NEXT/LAST placement.</li>
- *   <li>Build a dependency tree for calc/link properties so that changes in nested
- *       objects trigger the correct top-level listener property notifications.</li>
- *   <li>Resolve dependent paths using {@link com.viaoa.path.OAPath}, {@link com.viaoa.metadata.OALinkInfo},
- *       reverse links, and (when needed) {@link com.viaoa.find.OAFinder} fallbacks.</li>
- *   <li>Merge child hubs via {@link HubMerger} to watch nested collections (supports AO-only vs use-all modes,
- *       background thread option, and sibling scoping via {@link com.viaoa.oa.sibling.OASiblingHelper}).</li>
- * </ul>
- * The tree node model caches reverse-link info and last remove context, and can
- * compute root objects to notify for deep changes. This allows precise, minimal
- * event routing for calc properties and deep link dependencies.
+ * 
+ * A Hub can listen not only to direct property changes on its active objects,
+ * but also to calculated-property dependencies and dependent property paths.
+ * This class expands those dependencies into a tree rooted at the Hub's object
+ * type. Each tree node represents one segment of a dependent path and owns the
+ * internal listeners, HubMergers, and child nodes needed to observe changes
+ * below that point.
+ * </p>
+ * A {@code HubListenerTree} starts with one root Hub and expands each dependent
+ * property path into a tree of reusable nodes. Paths that share a prefix reuse
+ * the same nodes and supporting listeners.
+ * </p>
+ *
+ * <pre>
+ * Root Hub&lt;Order&gt;
+ *
+ * customer.address.city
+ * customer.address.zip
+ * items.product.price
+ * items.product.cost
+ *
+ * becomes:
+ *
+ * Order
+ * ├── customer
+ * │   └── address
+ * │       ├── city
+ * │       └── zip
+ * └── items
+ *     └── product
+ *         ├── price
+ *         └── cost
+ * </pre>
+ *
+ * <p>
+ * This shared structure prevents each listener from independently constructing
+ * duplicate listeners for the same path prefix. A node represents one property
+ * segment beneath its parent node, so the identity of a node is determined by
+ * both its property name and its location in the rooted dependency tree.
+ * </p>
+ *
+ * <h2>Listener routing</h2>
+ *
+ * <p>
+ * The tree installs the listeners and {@link HubMerger} instances needed to
+ * observe changes below the root Hub. When a nested object, link, or Hub
+ * membership changes, the tree determines which root objects are affected and
+ * fires the corresponding calculated-property or dependent-property
+ * notification on the root Hub.
+ * </p>
+ *
+ * <p>
+ * Reverse-link metadata is used when possible to navigate from the changed
+ * object back to the affected root objects. When a usable reverse path is not
+ * available, the implementation can fall back to Hub traversal or
+ * {@link com.viaoa.find.OAFinder}-based lookup.
+ * </p>
+ *
+ * <h2>Many-link paths</h2>
+ *
+ * <p>
+ * A path segment that returns a Hub is tracked using {@link HubMerger}. The
+ * merger maintains a derived Hub for the next tree node and allows the listener
+ * tree to observe nested collections. Depending on listener configuration, the
+ * tree can observe all objects in the path or only the active-object branch.
+ * </p>
+ *
+ * <p>
+ * Removal handling retains the most recent removed object and master object
+ * because reverse references may already be cleared by the time an
+ * after-remove event is delivered.
+ * </p>
+ *
+ * <h2>Recursive dependency expansion</h2>
+ *
+ * <p>
+ * The normal path-building algorithm is bounded: each property path contains a
+ * finite number of segments, and existing child nodes are reused instead of
+ * recreated. Recursive domain relationships are therefore not, by themselves,
+ * a problem. A finite path such as {@code employee.manager.manager.name} can be
+ * represented normally even when the underlying object model is recursive.
+ * </p>
+ *
+ * <p>
+ * Additional recursion can occur while registering a terminal property if that
+ * property is itself calculated or declares further dependent properties. For
+ * example, one calculated property can depend on another calculated property,
+ * which can cause nested dependency registration.
+ * </p>
+ *
+ * <p>
+ * Thread-local tracking is used to avoid immediately rebuilding the same
+ * dependent path, and a maximum nesting count provides a final safeguard
+ * against invalid circular metadata such as:
+ * </p>
+ *
+ * <pre>
+ * propertyA depends on propertyB
+ * propertyB depends on propertyA
+ * </pre>
+ *
+ * <p>
+ * These safeguards protect against circular dependency definitions. They are
+ * not general object-graph visit tracking, because the listener tree itself
+ * provides the canonical, shared structure for valid paths.
+ * </p>
+ *
+ * <h2>Listener ownership and cleanup</h2>
+ *
+ * <p>
+ * Dependent listeners created for an original listener are recorded at the
+ * relevant tree nodes. Removing the original listener removes its generated
+ * listeners recursively. Tree nodes and Hub mergers that are no longer used
+ * are then removed and closed.
+ * 
+ * <p>
+ * Listener ordering on the root Hub preserves
+ * {@link HubListener.InsertLocation#FIRST},
+ * normal, and {@link HubListener.InsertLocation#LAST} placement.
+ * </p>
+ *
+ * <h2>Threading</h2>
+ *
+ * <p>
+ * Tree construction and structural changes are synchronized using the root
+ * node. Thread-local state is used while recursively registering dependent
+ * listeners so nested listener creation can recognize the current construction
+ * context. Some Hub mergers may optionally use a background thread, while
+ * callers can require synchronous listener processing when necessary.
+ * </p>
+ *
+ * @see HubListener
+ * @see HubListenerAdapter
+ * @see HubMerger
+ * @see com.viaoa.path.OAPath
+ * @see com.viaoa.metadata.OALinkInfo
+ * @see com.viaoa.metadata.OACalcInfo
  */
 public class HubListenerTree {
 	private static Logger LOG = Logger.getLogger(HubListenerTree.class.getName());
@@ -610,12 +731,11 @@ public class HubListenerTree {
 	/**
 	 * Adds a Hub listener registration.
 	 */
-	public void addListener(HubListener hl, final String property, String[] dependentPaths, boolean bActiveObjectOnly,
-			boolean bAllowBackgroundThread) {
-		if (hl == null) {
-			return;
-		}
+	public void addListener(HubListener hl, final String property, String[] dependentPaths, boolean bActiveObjectOnly, boolean bAllowBackgroundThread) {
+		if (hl == null) return;
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
+
+		final String holdProp = srvcOAThreadLocal.getIgnoreTreeListenerProperty();
 		try {
 			srvcOAThreadLocal.setHubListenerTree(true);
 			addListener(hl, property, bActiveObjectOnly); // this will check for dependent calcProps
@@ -625,7 +745,7 @@ public class HubListenerTree {
 			}
 		} finally {
 			srvcOAThreadLocal.setHubListenerTree(false);
-			srvcOAThreadLocal.setIgnoreTreeListenerProperty(null);
+			srvcOAThreadLocal.setIgnoreTreeListenerProperty(holdProp);
 		}
 	}
 
@@ -636,6 +756,7 @@ public class HubListenerTree {
 	private void addListenerMain(HubListener hl, final String property, String[] dependentPaths, boolean bActiveObjectOnly,
 			final boolean bAllowBackgroundThread) {
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
+		final String holdProp = srvcOAThreadLocal.getIgnoreTreeListenerProperty();
 		try {
 			srvcOAThreadLocal.setHubListenerTree(true);
 			this.addListener(hl);
@@ -647,12 +768,15 @@ public class HubListenerTree {
 			}
 		} finally {
 			srvcOAThreadLocal.setHubListenerTree(false);
-			srvcOAThreadLocal.setIgnoreTreeListenerProperty(null);
+			srvcOAThreadLocal.setIgnoreTreeListenerProperty(holdProp);
 		}
 	}
 
 	private void addDependentListeners(final String origPropertyName, final HubListener origHubListener,
-			final String[] dependentPropertyNames, final boolean bActiveObjectOnly, final boolean bAllowBackgroundThread) {
+			final String[] dependentPropertyNames, 
+			final boolean bActiveObjectOnly, 
+			final boolean bAllowBackgroundThread) {
+
 		//LOG.finer("Hub="+root.hub+", property="+origPropertyName);
 
 		final OAThreadLocalService srvcOAThreadLocal = ((OAThreadService) OARuntime.thread()).getThreadLocalService();
@@ -664,18 +788,15 @@ public class HubListenerTree {
 			return;
 		}
 
-		String ignore = srvcOAThreadLocal.getIgnoreTreeListenerProperty();
+		final String ignoreHold = srvcOAThreadLocal.getIgnoreTreeListenerProperty();
 		for (int i = 0; i < dependentPropertyNames.length; i++) {
-			if (dependentPropertyNames[i] == null) {
-				continue;
-			}
-			if (dependentPropertyNames[i].length() == 0) {
-				continue;
-				//LOG.finer("Hub="+root.hub+", property="+origPropertyName+", dependentProp="+dependentPropertyNames[i]);
-			}
+			if (OAStr.isEmpty(dependentPropertyNames[i])) continue;
 
+			srvcOAThreadLocal.setIgnoreTreeListenerProperty(ignoreHold);
+			
+			
 			// 20120826 if recursive prop then dont need to listen to more, since a hubMerger is already listening
-			if (ignore != null && dependentPropertyNames[i].equalsIgnoreCase(ignore)) {
+			if (ignoreHold != null && dependentPropertyNames[i].equalsIgnoreCase(ignoreHold)) {
 				// todo: might want to have a better check.  This will only check to see if a recursive property
 				//   has the same dependency.  This might be good enough, since there is also a check (begin of method) for endless loop
 				//LOG.fine("ignoring "+dependentPropertyNames[i]+", since it was already being listened to");
@@ -727,8 +848,16 @@ public class HubListenerTree {
 							void update() {
 								try {
 									removeListener(this);
-									addDependentListeners(	origPropertyName, origHubListener, new String[] { dependPropName },
-															bActiveObjectOnly, bAllowBackgroundThread);
+									final String holdProp = srvcOAThreadLocal.getIgnoreTreeListenerProperty();
+									srvcOAThreadLocal.setHubListenerTree(true);
+									try {
+										addDependentListeners(	origPropertyName, origHubListener, new String[] { dependPropName },
+											bActiveObjectOnly, bAllowBackgroundThread);
+									}
+									finally {
+										srvcOAThreadLocal.setIgnoreTreeListenerProperty(holdProp);
+										srvcOAThreadLocal.setHubListenerTree(false);
+									}
 								} catch (Exception e) {
 									return;
 								}
@@ -826,6 +955,7 @@ public class HubListenerTree {
 					}
 
 					if (b) {
+//qqqqqqqqqq needs to check case-insensitive						
 						if (node.getCalcPropertyNames().indexOf(origPropertyName) < 0) {
 							synchronized (node.getCalcPropertyNames()) {
 								node.getCalcPropertyNames().add(origPropertyName);

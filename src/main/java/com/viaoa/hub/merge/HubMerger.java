@@ -947,16 +947,22 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
         if (nodeRoot == null) {
             return;
         }
+        
+        final boolean bIgnoreIsUsedFlagHold = bIgnoreIsUsedFlag;
         bIgnoreIsUsedFlag = true;
-        dataRoot.close();
-        Node node = nodeRoot;
-        while (node != null) {
-            if (dataRoot != node.data) {
-                node.close();
-            }
-            node = node.child;
+        try {
+	        dataRoot.close();
+	        Node node = nodeRoot;
+	        while (node != null) {
+	            if (dataRoot != node.data) {
+	                node.close();
+	            }
+	            node = node.child;
+	        }
         }
-        bIgnoreIsUsedFlag = false;
+        finally {
+        	bIgnoreIsUsedFlag = bIgnoreIsUsedFlagHold;
+        }
         nodeRoot = null;
         dataRoot = null;
 
@@ -2123,17 +2129,19 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             if (hub.isLoading()) return;
             */
 
-            boolean hold = bIgnoreIsUsedFlag;
+            boolean bIgnoreIsUsedFlagHold = bIgnoreIsUsedFlag;
             bIgnoreIsUsedFlag = true;
-            for (int i = 0;; i++) {
-                Object obj = hub.getAt(i);
-                if (obj == null) {
-                    break;
-                }
-                remove(obj);
+            try {
+	            for (int i = 0;; i++) {
+	                Object obj = hub.getAt(i);
+	                if (obj == null) {
+	                    break;
+	                }
+	                remove(obj);
+	            }
             }
-            if (!hold) {
-                bIgnoreIsUsedFlag = false;
+            finally {
+            	bIgnoreIsUsedFlag = bIgnoreIsUsedFlagHold;
             }
         }
 
@@ -2342,11 +2350,14 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
             if (!bEnabled) {
                 return;
             }
+            
+            
+            boolean bIgnoreIsUsedFlagHold = bIgnoreIsUsedFlag;
+            bIgnoreIsUsedFlag = true;
             try {
-                bIgnoreIsUsedFlag = true;
                 _onNewList5();
             } finally {
-                bIgnoreIsUsedFlag = false;
+                bIgnoreIsUsedFlag = bIgnoreIsUsedFlagHold;
             }
 
             // load children

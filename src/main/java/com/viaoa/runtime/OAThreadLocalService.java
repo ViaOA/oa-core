@@ -150,11 +150,6 @@ public class OAThreadLocalService {
 	 */
 	private final AtomicInteger aiTotalDelete = new AtomicInteger();
 	
-	/**
-	 * Diagnostic counter tracking how many thread-scoped transactions are
-	 * created, activated, or completed during runtime.
-	 */
-	private final AtomicInteger aiTotalTransaction = new AtomicInteger();
 	
 	/**
 	 * Counts the number of times threads enable or disable capture of undoable
@@ -335,18 +330,8 @@ public class OAThreadLocalService {
 	 * @param t the transaction to assign, or null to clear it
 	 */
 	public void setTransaction(OATransaction t) {
-		OAThreadLocal ti = getThreadLocal(t != null);
-		if (ti == null) return;
+		OAThreadLocal ti = getThreadLocal(true);
 		ti.setTransaction(t);
-		int x;
-		if (t != null) {
-			x = aiTotalTransaction.incrementAndGet();
-		} else {
-			x = aiTotalTransaction.decrementAndGet();
-		}
-		if (x > 7 || x < 0) {
-			msTransaction = throttleLOG("TotalTransaction =" + x, msTransaction);
-		}
 	}
 
 	/**
@@ -356,13 +341,7 @@ public class OAThreadLocalService {
 	 * @return the current transaction or null
 	 */
 	public OATransaction getTransaction() {
-		if (aiTotalTransaction.get() == 0) {
-			return null;
-		}
-		OAThreadLocal ti = getThreadLocal(false);
-		if (ti == null) {
-			return null;
-		}
+		OAThreadLocal ti = getThreadLocal(true);
 		return ti.getTransaction();
 	}
 	
