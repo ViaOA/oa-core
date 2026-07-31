@@ -271,6 +271,7 @@ public abstract class OAObjectAnnotationService {
 				oi.setLookup(oaclass.isLookup());
 				oi.setProcessed(oaclass.isProcessed());
 				oi.setModelUserClass(oaclass.isModelUserClass());
+				oi.setPreSelect(oaclass.isPreSelect());
 				
 				s = oaclass.pluralName();
 				if (OAStr.isNotEmpty(s))  oi.setPluralName(s);

@@ -131,7 +131,7 @@ public abstract class OAObjectChangeService {
 				continue;
 			}
 
-			// same as OAObjectSaveDelegate.cascadeSave()
+			// same as OAObjectSaveService.cascadeSave()
 			if (callObjectReflectIsReferenceNullOrNotLoaded(oaObj, prop)) {
 				continue;
 			}

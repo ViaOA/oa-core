@@ -593,9 +593,36 @@ public abstract class OAObjectInfoService {
 			thisOI.setLocalOnly(oaclass.localOnly());
 			thisOI.setAddToCache(oaclass.addToCache());
 			thisOI.setInitializeNewObjects(oaclass.initialize());
-			
+			thisOI.setLookup(oaclass.isLookup());
 			String s = oaclass.displayName();
 			if (OAStr.isNotEmpty(s)) thisOI.setDisplayName(s);
+			
+			thisOI.setName(child.getForClass().getSimpleName());
+
+			String[] pps = oaclass.rootTreePaths();
+			thisOI.setRootTreePaths(pps);
+			thisOI.setProcessed(oaclass.isProcessed());
+			thisOI.setModelUserClass(oaclass.isModelUserClass());
+			thisOI.setPreSelect(oaclass.isPreSelect());
+			
+			s = oaclass.pluralName();
+			if (OAStr.isNotEmpty(s))  thisOI.setPluralName(s);
+			
+            s = oaclass.lowerName();
+            if (OAStr.isEmpty(s)) s = OAString.mfcl(child.getForClass().getSimpleName()); 
+            thisOI.setLowerName(s);
+
+            thisOI.setSoftDeleteProperty(oaclass.softDeleteProperty());
+            thisOI.setSoftDeleteReasonProperty(oaclass.softDeleteReasonProperty());
+            thisOI.setVersionProperty(oaclass.versionProperty());
+            thisOI.setVersionLinkProperty(oaclass.versionLinkProperty());
+            thisOI.setTimeSeriesProperty(oaclass.timeSeriesProperty());
+            thisOI.setFreezeProperty(oaclass.freezeProperty());
+
+            thisOI.setSingleton(oaclass.singleton());
+            thisOI.setPojoSingleton(oaclass.pojoSingleton());
+            thisOI.setNoPojo(oaclass.noPojo());
+            thisOI.setJsonUsesCapital(oaclass.jsonUsesCapital());
 		}
 
 		// combine PropertyInfos

@@ -96,8 +96,7 @@ public abstract class HubDataService {
             if (hd.getHubDatax() != null) {
                 if (!hd.getHubDatax().isNeeded()) hd.setHubDataxNull();
             }
-        	hd.setChanged(false);
-        	hd.incrementChangeCount();
+            callHubStatusSetChanged(thisHub, false);            
     	}
 	}
 	
@@ -162,8 +161,7 @@ public abstract class HubDataService {
                         b &= (v == null || v.size() == 0);
                     }
                     if (b) {
-                    	faHub.getHubData(thisHub).setChanged(false);
-                    	faHub.getHubData(thisHub).incrementChangeCount();
+                        callHubStatusSetChanged(thisHub, false);            
                     }
                 }
             }
@@ -316,7 +314,8 @@ public abstract class HubDataService {
 	            }
 	    		v = faHub.getHubData(thisHub).getVecAdd();
 	    		Vector<T> v2 = faHub.getHubData(thisHub).getVecRemove();
-		        thisHub.setChanged( (v != null && v.size() > 0) || (v2 != null && v2.size() > 0) );
+		        boolean bx = (v != null && v.size() > 0) || (v2 != null && v2.size() > 0);
+	            callHubStatusSetChanged(thisHub, bx);            
 		    }
 		    else {
 		    	callHubStatusSetChanged(thisHub, true);
@@ -386,10 +385,11 @@ public abstract class HubDataService {
                     createVecAdd(thisHub).addElement(obj);
                 }
                 Vector<T> v2  = faHub.getHubData(thisHub).getVecAdd();
-                thisHub.setChanged( (v2 != null && v2.size() > 0) || (v != null && v.size() > 0) );
+                boolean bx = (v2 != null && v2.size() > 0) || (v != null && v.size() > 0);
+                callHubStatusSetChanged(thisHub, bx);        
             }
             else {
-                thisHub.setChanged(true);
+                callHubStatusSetChanged(thisHub, true);        
             }
         }
         faHub.getHubData(thisHub).incrementChangeCount();
@@ -449,9 +449,12 @@ public abstract class HubDataService {
                     createVecAdd(thisHub).addElement(obj);
                 }
                 Vector<T> v2  = faHub.getHubData(thisHub).getVecAdd();
-                thisHub.setChanged( (v2 != null && v2.size() > 0) || (v != null && v.size() > 0) );
+                boolean bx = (v2 != null && v2.size() > 0) || (v != null && v.size() > 0);
+				callHubStatusSetChanged(thisHub, bx);        
             }
-    	    else thisHub.setChanged(true);
+    	    else {
+				callHubStatusSetChanged(thisHub, true);        
+    	    }
     	}
         faHub.getHubData(thisHub).incrementChangeCount();
 	    return true;
@@ -823,8 +826,7 @@ public abstract class HubDataService {
                         b &= (v == null || v.size() == 0);
                     }
                     if (b) {
-                    	faHub.getHubData(thisHub).setChanged(false);
-                    	faHub.getHubData(thisHub).incrementChangeCount();
+        				callHubStatusSetChanged(thisHub, false);        
                     }
                 }
             }
@@ -859,8 +861,7 @@ public abstract class HubDataService {
                         b &= (v == null || v.size() == 0);
                     }
                     if (b) {
-                    	faHub.getHubData(thisHub).setChanged(false);
-                    	faHub.getHubData(thisHub).incrementChangeCount();
+        				callHubStatusSetChanged(thisHub, false);        
                     }
                 }
             }
@@ -1319,4 +1320,5 @@ public abstract class HubDataService {
 	 * @param b method input
 	 */
 	public abstract void callHubStatusSetChanged(Hub<?> thisHub, boolean b);
+	
 }
