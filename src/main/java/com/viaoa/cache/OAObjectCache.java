@@ -235,7 +235,7 @@ import com.viaoa.runtime.OARuntime;
 		        bsWasFound[0] = false;
 		        return new OAWeakRef<>(obj, ok, refQueue);
 		    }
-		    bsWasFound[0] = true;
+		    // bsWasFound[0] = true;
 		    return existing;
 		});
 		

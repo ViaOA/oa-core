@@ -16,6 +16,7 @@
 package com.viaoa.sync.remote;
 
 import java.util.Comparator;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 import com.viaoa.concurrent.OAThrottle;
@@ -335,9 +336,18 @@ public class RemoteSyncImpl implements RemoteSyncInterface {
 
 		if (obj == null && oa.sync().isServer()) {
 			OADataSource ds = OARuntime.datasource().get(objectClass);
-			if (ds != null) obj = (OAObject) ds.getObject(objectClass, origKey);
-			if (obj != null) {
-				// object must have been GCd, use the original guid
+			if (ds != null) {
+				obj = (OAObject) ds.getObject(objectClass, origKey);
+				if (obj != null) {
+					// object must have been GCd, use the original guid
+					UUID g = origKey.getGuid();
+					if (g != null && !g.equals(obj.getObjectKey().getGuid())) {
+						oa.internal().objects().cache().removeObject(obj);
+						oa.internal().objects().guid().setGuid(obj, null);
+						oa.internal().objects().guid().setGuid(obj, g);
+						oa.internal().objects().cache().add(obj, false, false);
+					}
+				}
 			}
 		}
 		return obj;
