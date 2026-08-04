@@ -43,6 +43,11 @@ public class ObjectsOpsImpl implements ObjectsOps {
 		if (opsCache != null) return opsCache;
 		
 		opsCache = new OAObjectCacheOps() {
+
+			@Override
+			public OAObject find(Class<? extends OAObject> clazz, String path, Object findObject) {
+				return srvc.getOAObjectCacheService().find(clazz, path, findObject);
+			}
 			// Public cache service methods are added here only after becoming supported OA service API.
 		};
 		return opsCache;

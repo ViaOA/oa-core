@@ -1901,12 +1901,19 @@ public abstract class OAObjectInfoService {
     }
 
 	/**
-	 * Returns the allClasses value.
-	 *
-	 * @return result value
+	 * Returns the all OAObject Classes used in this service.
 	 */
-    public Class<? extends OAObject>[] getAllClasses() {
-    	return (Class<? extends OAObject>[]) hmObjectInfo.keySet().toArray();
+    public Class<? extends OAObject>[] getAllOAObjectClasses() {
+    	List<Class<? extends OAObject>> al = new ArrayList<>();
+    	for (Class c : hmObjectInfo.keySet()) {
+    		if (OAObject.class.isAssignableFrom(c)) {
+        		if (c.equals(OAObject.class)) continue;
+    			al.add(c);
+    		}
+    	}
+    	Class<? extends OAObject>[] cs = new Class[al.size()];
+    	return al.toArray(cs);
+    	//was:  return (Class<? extends OAObject>[]) hmObjectInfo.keySet().toArray();
     }
     
     

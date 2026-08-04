@@ -44,6 +44,7 @@ import com.viaoa.metadata.OAObjectInfo;
 import com.viaoa.metadata.OAPropertyInfo;
 import com.viaoa.oa.OA;
 import com.viaoa.oa.service.object.OAObjectParentService;
+import com.viaoa.reflect.OAReflect;
 import com.viaoa.lang.oa.VEnum;
 import com.viaoa.runtime.OARemoteThreadService;
 import com.viaoa.runtime.OARuntime;
@@ -3408,7 +3409,13 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 				}
 			}
 		}
-		return false;
+		
+		// could be link with one property
+		final OALinkInfo li = oi.getLinkInfo(fkeyPropertyName);
+		if (li == null) return false;
+		List<OAFkeyInfo> al = li.getFkeyInfos();
+		if (al == null || al.size() != 1) return false;
+		return setFkeyProperty(fkeyPropertyName, li, al.get(0), newValue);
 	}
 
 	/**
@@ -3510,11 +3517,12 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		}
 
 		if (isLoading()) {
+			// put in oaobj.properties
 			oa.internal().objects().property().setProperty(this, linkName, okNew);
-	        return true;
 		}
-		
-		oa.internal().objects().reflect().setProperty(this, linkName, okNew, null);
+		else {
+			oa.internal().objects().reflect().setProperty(this, linkName, okNew, null);
+		}
 		return true;
 	}
 
@@ -3542,16 +3550,33 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	public Object getFkeyProperty(final String fkeyPropertyName) {
 		OA oa = OARuntime.oa(this);
 		OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(this.getClass());
-		OAPropertyInfo pi = oi.getPropertyInfo(fkeyPropertyName);
+		return _getFkeyProperty(fkeyPropertyName, oa, oi, false);
+	}
 
+	public Object getFkeyPrimitiveProperty(final String fkeyPropertyName) {
+		OA oa = OARuntime.oa(this);
+		OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(this.getClass());
+		return _getFkeyProperty(fkeyPropertyName, oa, oi, true);
+	}
+	
+	private Object _getFkeyProperty(final String fkeyPropertyName, final OA oa, final OAObjectInfo oi, final boolean bConvertNullIfPrimitive) {
+		OAPropertyInfo pi = oi.getPropertyInfo(fkeyPropertyName);
 		if (pi != null) {
 			for (OALinkInfo li : oi.getLinkInfos()) {
 				for (OAFkeyInfo fi : li.getFkeyInfos()) {
 					if (fi.getFromPropertyInfo() != pi) {
 						continue;
 					}
-					return getFkeyProperty(li.getName(), fi.getToPropertyInfo().getName());
+					Object result = _getFkeyProperty(li.getName(), fi.getToPropertyInfo().getName(), oa, oi, bConvertNullIfPrimitive);
+					if (result == null && bConvertNullIfPrimitive && pi.getIsPrimitive()) {
+						result = OAReflect.getEmptyPrimitive(pi.getClassType());
+					}
+					return result;
 				}
+			}
+			
+			if (bConvertNullIfPrimitive && pi.getIsPrimitive()) {
+				return OAReflect.getEmptyPrimitive(pi.getClassType());
 			}
 			return null;
 		}
@@ -3560,9 +3585,9 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 		if (li == null) {
 			return null;
 		}
-		return getFkeyProperty(li.getName(), null);
+		return _getFkeyProperty(li.getName(), null, oa, oi, bConvertNullIfPrimitive);
 	}
-
+	
 	/**
 	 * Returns the foreign-key component value for a TYPE_ONE link on this object.
 	 * <p>
@@ -3590,13 +3615,27 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 	 * @return the foreign-key component value, or {@code null} if unavailable
 	 */
 	public Object getFkeyProperty(final String linkName, String linkToPropertyName) {
+		OA oa = OARuntime.oa(this);
+		OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(this.getClass());
+		
+		Object result = _getFkeyProperty(linkName, linkToPropertyName, oa, oi, false);
+		return result;
+	}	
+
+	public Object getFkeyPrimitiveProperty(final String linkName, String linkToPropertyName) {
+		OA oa = OARuntime.oa(this);
+		OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(this.getClass());
+		
+		Object result = _getFkeyProperty(linkName, linkToPropertyName, oa, oi, true);
+		return result;
+	}
+	
+	
+	private Object _getFkeyProperty(final String linkName, String linkToPropertyName, final OA oa, final OAObjectInfo oi, final boolean bConvertNullIfPrimitive) {
 		if (OAString.isEmpty(linkName)) {
-			// throw new RuntimeException("linkName cant be empty, link=" + linkName);
 		    return null;
 		}
 
-		OA oa = OARuntime.oa(this);
-		OAObjectInfo oi = oa.internal().objects().info().getOAObjectInfo(this.getClass());
 		OALinkInfo linkInfo = oa.internal().objects().info().getLinkInfo(oi, linkName);
 		if (linkInfo == null) {
 			// throw new RuntimeException("linkName not found, link=" + linkName);
@@ -3641,17 +3680,16 @@ public class OAObject implements java.io.Serializable, Comparable<Object> {
 			result = ok.getObjectIds()[pos];
 		}
 
-		/* 20230128 changed to use wrappers and not primitives
-		if (result == null) {
+		if (result == null && bConvertNullIfPrimitive) {
 			OAPropertyInfo pi = oiTo.getPropertyInfo(linkToPropertyName);
 			if (pi.getIsPrimitive()) {
 				result = OAReflect.getEmptyPrimitive(pi.getClassType());
 			}
 		}
-		*/
 		return result;
 	}
 
+	
 	/**
 	 * Requests that this object's data be refreshed from its data source.
 	 * <p>

@@ -190,14 +190,17 @@ public abstract class OASyncClient {
      * sibling sets for detail loading, allowing {@code OASiblingHelperDelegate}
      * to avoid re-requesting the same siblings.
      */
-    private static final ConcurrentHashMap<UUID, Long> hmNewObjectsNotYetSent = new ConcurrentHashMap<UUID, Long>(31, .75f);
-
+    private final ConcurrentHashMap<UUID, Long> hmNewObjectsNotYetSent = new ConcurrentHashMap<UUID, Long>(31, .75f);
+    // 20260803 note: was 'static' 
+    
+    
     /**
      * Global map of object GUIDs for objects that currently do not belong to
      * any hub with a master object, indicating that they may be eligible to
      * be garbage collected on the server.
      */
-    private static final ConcurrentHashMap<UUID, Long> hmObjectsWithoutHubs = new ConcurrentHashMap<UUID, Long>(31, .75f);
+    private final ConcurrentHashMap<UUID, Long> hmObjectsWithoutHubs = new ConcurrentHashMap<UUID, Long>(31, .75f);
+    // 20260803 note: was 'static' 
 
     /**
      * Queue of objects whose hub-membership status has changed and that need

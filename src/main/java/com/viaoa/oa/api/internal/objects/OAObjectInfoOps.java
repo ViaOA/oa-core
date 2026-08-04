@@ -169,7 +169,5 @@ public interface OAObjectInfoOps {
 	 *
 	 * @return the known OAObject classes
 	 */
-	public Class<? extends OAObject>[] getAllClasses();
-
-	
+	public Class<? extends OAObject>[] getAllOAObjectClasses();
 }

@@ -1038,8 +1038,8 @@ public class ObjectsOpsImpl implements ObjectsOps {
 			}
 
 			@Override
-			public Class<? extends OAObject>[] getAllClasses() {
-				return srvc.getOAObjectInfoService().getAllClasses();
+			public Class<? extends OAObject>[] getAllOAObjectClasses() {
+				return srvc.getOAObjectInfoService().getAllOAObjectClasses();
 			}
 
 			@Override

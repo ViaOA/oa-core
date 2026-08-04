@@ -82,11 +82,6 @@ CODEX
     insertion or object-class resolution.
   - Classification: CODEX/DEFER
   
- - Method: getPropertyValue(Object, Method)
-  - Issue: Primitive OAObject getter is invoked before checking the primitive-null flag.
-  - Why it is a problem: A primitive-null property still executes the getter and any side effects/lazy calculation
-    before returning null. That can mutate state during what callers expect to be a null-preserving read.
-  - Classification: CODEX/CONTRACT
 
  - Method: setPropertyValue(Object, Method, Object)
   - Issue: null assigned to primitive OAObject property calls setNull(...) but does not invoke the setter.
@@ -100,18 +95,6 @@ CODEX
     the wrong primitive-null property.
   - Classification: CODEX/DEFER
 
- - Method: getEmptyPrimitive(Class)
-  - Issue: Boolean primitive default is true.
-  - Why it is a problem: Java’s default primitive boolean value is false. This method is used by OAObject and
-    remote multiplexer paths to synthesize primitive return/default values, so boolean failures/no-response paths
-    can report true.
-  - Classification: CODEX/FIXNOW
-
-  - Method: getEmptyPrimitive(Class)
-  - Issue: Documentation says wrapper classes are supported, but implementation only handles c.isPrimitive().
-  - Why it is a problem: Boolean.class, Integer.class, etc. return null despite the method contract, which can leak
-    null where callers expect a wrapper default.
-  - Classification: CODEX/CONTRACT
 
   - Method: getClassPath(Class)
   - Issue: clazz.getResource(className) is dereferenced without a null check.
@@ -876,10 +859,10 @@ public class OAReflect {
 			return Integer.valueOf(0);
 		}
 		if (clazz.equals(boolean.class) || clazz.equals(Boolean.class)) {
-			return Boolean.valueOf(false);
+			return Boolean.FALSE;
 		}
 		if (clazz.equals(long.class) || clazz.equals(Long.class)) {
-			return Long.valueOf(0);
+			return Long.valueOf(0L);
 		}
 		if (clazz.equals(double.class) || clazz.equals(Double.class)) {
 			return Double.valueOf(0.0D);
@@ -905,7 +888,7 @@ public class OAReflect {
 	 * <p>If the supplied class represents a primitive type (or its wrapper),
 	 * this method returns a corresponding default value:
 	 * <ul>
-	 *   <li>{@code boolean}/{@code Boolean} → {@code true}</li>
+	 *   <li>{@code boolean}/{@code Boolean} → {@code false}</li>
 	 *   <li>{@code int}/{@code Integer} → {@code 0}</li>
 	 *   <li>{@code long}/{@code Long} → {@code 0L}</li>
 	 *   <li>{@code short}/{@code Short} → {@code (short) 0}</li>
@@ -917,23 +900,37 @@ public class OAReflect {
 	 * @return the default value for the primitive type, or null if the class is not a supported primitive
 	 */
 	public static Object getEmptyPrimitive(Class c) {
-		Object response = null;
+		if (c == null) return null;
 		if (c.isPrimitive()) {
-			if (c.equals(boolean.class) || c.equals(Boolean.class)) {
-				response = true;
-			} else if (c.equals(int.class) || c.equals(Integer.class)) {
-				response = 0;
-			} else if (c.equals(long.class) || c.equals(Long.class)) {
-				response = 0L;
-			} else if (c.equals(short.class) || c.equals(Short.class)) {
-				response = (short) 0;
-			} else if (c.equals(double.class) || c.equals(Double.class)) {
-				response = 0.0D;
-			} else if (c.equals(float.class) || c.equals(Float.class)) {
-				response = 0.0F;
+			if (c.equals(boolean.class)) {
+				return false;
+			} 
+			if (c.equals(int.class)) {
+				return 0;
+			} 
+			if (c.equals(long.class)) {
+				return 0L;
+			}
+	
+			if (c.equals(short.class)) {
+				return (short) 0;
+			} 
+			
+			if (c.equals(double.class)) {
+				return 0.0D;
+			} 
+			if (c.equals(float.class)) {
+				return 0.0F;
+			} 
+			
+			if (c.equals(byte.class)) {
+				return (byte) 0;
+			} 
+			if (c.equals(char.class)) {
+				return (char) 0;
 			}
 		}
-		return response;
+		return null;
 	}
 
 

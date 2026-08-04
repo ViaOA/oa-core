@@ -1,5 +1,7 @@
 package com.viaoa.oa.api.services.objects;
 
+import com.viaoa.object.OAObject;
+
 /**
  * Public OA object-cache service operations.
  * <p>
@@ -12,5 +14,6 @@ public interface OAObjectCacheOps {
 
 	// Public cache service methods will be added as they become supported OA service API.
 	
-	
+	public OAObject find(Class<? extends  OAObject> clazz, String path, Object findObject);
+
 }
