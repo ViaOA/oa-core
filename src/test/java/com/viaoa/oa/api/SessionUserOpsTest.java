@@ -38,6 +38,7 @@ class SessionUserOpsTest {
         Hub<AppUser> hubAppUser = new Hub<>(AppUser.class);
         AppUser appUser = new AppUser();
         Customer customer = new Customer();
+        
         OASessionAccess sessionAccess = new OASessionAccess(true, true);
         OASessionUser<Customer> sessionUser = new OASessionUser<>(customer);
         sessionUser.setSessionAccess(sessionAccess);

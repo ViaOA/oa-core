@@ -803,8 +803,7 @@ public class OAObjectParentService {
 			 */
 			public <T extends OAObject> T callSyncServerGetObject(Class<T> clazz, OAObjectKey key) {
 				RemoteServerInterface rsi = OAObjectParentService.this.srvcSync.getRemoteServer();
-				if (rsi != null)
-					return rsi.getObject(clazz, key);
+				if (rsi != null) return rsi.getObject(clazz, key);
 				return null;
 			}
 
@@ -4626,8 +4625,9 @@ public class OAObjectParentService {
 			 * @param objTo   method input
 			 * @return result value
 			 */
-			public int callHubSerializeReplaceObject(Hub<?> thisHub, OAObject objFrom, OAObject objTo) {
-				return OAObjectParentService.this.getOAObjectSerializeService().callHubSerializeReplaceObject(thisHub, objFrom, objTo);
+			public <T extends OAObject> int callHubSerializeReplaceObject(Hub<T> thisHub, T objFrom, T objTo) {
+				return OAObjectParentService.this.srvcHubParent.getHubSerializeService().replaceObject(thisHub, objFrom, objTo);
+				//was: return OAObjectParentService.this.getOAObjectSerializeService().callHubSerializeReplaceObject(thisHub, objFrom, objTo);
 			}
 
 			@Override

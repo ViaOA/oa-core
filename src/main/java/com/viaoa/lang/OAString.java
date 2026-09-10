@@ -2961,6 +2961,12 @@ public class OAString {
 		if (c == null) return null;
 		return c.getSimpleName();
 	}
+
+	public static void main(String ...args) {
+		String s2 = OAStr.escapeJSON("Vince's test");
+		int xx = 4;
+		xx++;
+	}
 	
 }
 

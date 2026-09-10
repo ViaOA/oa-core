@@ -303,7 +303,7 @@ public abstract class OAObjectSerializeService {
 	 * @return {@code true} if reference replacement should continue; {@code false} otherwise
 	 */
 	@SuppressWarnings({"unchecked","rawtypes"})
-	private <T extends OAObject> boolean replaceReferences(final T oaObjFrom, final T oaObjTo, final OALinkInfo linkInfo, Object value) {
+	protected <T extends OAObject> boolean replaceReferences(final T oaObjFrom, final T oaObjTo, final OALinkInfo linkInfo, Object value) {
 		if (linkInfo == null) {
 			return false;
 		}
@@ -761,7 +761,7 @@ public abstract class OAObjectSerializeService {
 	 * @param objTo method input
 	 * @return result value
 	 */
-	public abstract int callHubSerializeReplaceObject(Hub<?> thisHub, OAObject objFrom, OAObject objTo);
+	public abstract <T extends OAObject> int callHubSerializeReplaceObject(Hub<T> thisHub, T objFrom, T objTo);
 	/**
 	 * Dependency hook used by this service to hubSerializeIsResolved.
 	 *
