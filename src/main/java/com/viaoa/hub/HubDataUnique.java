@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 
 import com.viaoa.hub.detail.HubDetail;
 import com.viaoa.hub.link.HubLinkEventListener;
+import com.viaoa.hub.link.HubSelectLink;
 import com.viaoa.hub.listener.HubListenerTree;
 import com.viaoa.object.*;
 
@@ -75,7 +76,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
      */
     public int getDefaultPos() {
         if (hubDataUniquex == null) return -1;
-        return hubDataUniquex.defaultPos;
+        return getHubDataUniquex().defaultPos;
     }
 
     /**
@@ -96,7 +97,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
      */
     public boolean isNullOnRemove() {
         if (hubDataUniquex == null) return false;
-        return hubDataUniquex.bNullOnRemove;
+        return getHubDataUniquex().bNullOnRemove;
     }
 
     /**
@@ -117,7 +118,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
      */
     public HubListenerTree getListenerTree() {
         if (hubDataUniquex == null) return null;
-        return hubDataUniquex.listenerTree;
+        return getHubDataUniquex().listenerTree;
     }
 
     /**
@@ -138,7 +139,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
      */
     public Vector<HubDetail> getVecHubDetail() {
         if (hubDataUniquex == null) return null;
-        return hubDataUniquex.vecHubDetail;
+        return getHubDataUniquex().vecHubDetail;
     }
 
     /**
@@ -184,7 +185,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
      */
     public Hub<?> getLinkToHub() {
         if (hubDataUniquex == null) return null;
-        return hubDataUniquex.linkToHub;
+        return getHubDataUniquex().linkToHub;
     }
 
     /**
@@ -205,7 +206,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
      */
     public boolean isLinkPos() {
         if (hubDataUniquex == null) return false;
-        return hubDataUniquex.linkPos;
+        return getHubDataUniquex().linkPos;
     }
 
     /**
@@ -226,7 +227,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
      */
     public String getLinkToPropertyName() {
         if (hubDataUniquex == null) return null;
-        return hubDataUniquex.linkToPropertyName;
+        return getHubDataUniquex().linkToPropertyName;
     }
 
     /**
@@ -247,7 +248,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
      */
     public Method getLinkToGetMethod() {
         if (hubDataUniquex == null) return null;
-        return hubDataUniquex.linkToGetMethod;
+        return getHubDataUniquex().linkToGetMethod;
     }
 
     /**
@@ -268,7 +269,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
      */
     public Method getLinkToSetMethod() {
         if (hubDataUniquex == null) return null;
-        return hubDataUniquex.linkToSetMethod;
+        return getHubDataUniquex().linkToSetMethod;
     }
 
     /**
@@ -289,7 +290,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
      */
     public String getLinkFromPropertyName() {
         if (hubDataUniquex == null) return null;
-        return hubDataUniquex.linkFromPropertyName;
+        return getHubDataUniquex().linkFromPropertyName;
     }
 
     /**
@@ -310,7 +311,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
      */
     public Method getLinkFromGetMethod() {
         if (hubDataUniquex == null) return null;
-        return hubDataUniquex.linkFromGetMethod;
+        return getHubDataUniquex().linkFromGetMethod;
     }
 
     /**
@@ -331,7 +332,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
      */
     public HubLinkEventListener getHubLinkEventListener() {
         if (hubDataUniquex == null) return null;
-        return hubDataUniquex.hubLinkEventListener;
+        return getHubDataUniquex().hubLinkEventListener;
     }
 
     /**
@@ -352,7 +353,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
      */
     public Hub<TYPE> getSharedHub() {
         if (hubDataUniquex == null) return null;
-        return hubDataUniquex.sharedHub;
+        return getHubDataUniquex().sharedHub;
     }
 
     /**
@@ -373,7 +374,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
      */
     public WeakReference<Hub<TYPE>>[] getWeakSharedHubs() {
         if (hubDataUniquex == null) return null;
-        return hubDataUniquex.weakSharedHubs;
+        return getHubDataUniquex().weakSharedHubs;
     }
 
     /**
@@ -394,7 +395,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
      */
     public Hub<TYPE> getAddHub() {
         if (hubDataUniquex == null) return null;
-        return hubDataUniquex.addHub;
+        return getHubDataUniquex().addHub;
     }
 
     /**
@@ -415,7 +416,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
      */
     public boolean isAutoCreate() {
         if (hubDataUniquex == null) return false;
-        return hubDataUniquex.bAutoCreate;
+        return getHubDataUniquex().bAutoCreate;
     }
 
     /**
@@ -436,7 +437,7 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
      */
     public boolean isAutoCreateAllowDups() {
         if (hubDataUniquex == null) return false;
-        return hubDataUniquex.bAutoCreateAllowDups;
+        return getHubDataUniquex().bAutoCreateAllowDups;
     }
 
     /**
@@ -450,4 +451,15 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
         }
     }
 
+    public void setSelectLink(HubSelectLink<?,?> hubSelectLink) {
+        if (hubDataUniquex != null || hubSelectLink != null) {
+        	getHubDataUniquex().hubSelectLink = hubSelectLink;
+        }
+    }
+    
+    public HubSelectLink<TYPE, ? extends OAObject> getSelectLink() {
+        if (hubDataUniquex == null) return null;
+        return getHubDataUniquex().hubSelectLink;
+    }
+    
 }

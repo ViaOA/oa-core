@@ -10,6 +10,7 @@ import com.viaoa.compare.OACompare;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.hub.*;
 import com.viaoa.hub.link.HubLinkEventListener;
+import com.viaoa.hub.link.HubSelectLink;
 import com.viaoa.lang.OAStr;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OALinkInfo;
@@ -908,6 +909,17 @@ public abstract class HubLinkService {
 		}
 	}
 
+	public <F extends OAObject, T extends OAObject> void setHubSelectLink(Hub<F> hubFrom, Hub<F> hubSelect, Hub<T> hubTo, String toProperty, 
+			boolean bFromAoOnly, boolean bToAoOnly, boolean bAllowRemove) {
+		HubSelectLink<F,T> hubSelectLink = new HubSelectLink<>(hubFrom, hubSelect, hubTo, toProperty, bFromAoOnly, bToAoOnly, bAllowRemove);
+
+		faHub.getHubDataUnique(hubFrom).setSelectLink(hubSelectLink);
+	}
+	
+	public <F extends OAObject> HubSelectLink<F, ? extends OAObject> getHubSelectLink(Hub<F> hubFrom) {
+		return faHub.getHubDataUnique(hubFrom).getSelectLink();
+	}	
+	
 	/**
 	 * Dependency hook used by this service for ObjectInfoGetObjectInfo behavior.
 	 *

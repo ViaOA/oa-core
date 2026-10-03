@@ -37,6 +37,7 @@ import com.viaoa.cascade.OACascade;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.hub.auto.HubAutoMatch;
 import com.viaoa.hub.filter.HubFilter;
+import com.viaoa.hub.link.HubSelectLink;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
@@ -2053,6 +2054,17 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		oa.internal().hubs().sort().sort(this);
 	}
 
+	public TYPE findOrCreate(String propertyName, OAObject findValue) {
+		TYPE objx = find(propertyName, findValue);
+		if (objx == null) {
+			final OA oa = OARuntime.oa(this);
+			objx = oa.internal().objects().reflect().createNewObject(getObjectClass());
+			objx.setProperty(propertyName, findValue);
+			this.add(objx);
+		}
+		return objx;
+	}
+	
 	/**
 	 * Finds and returns the first object whose property value matches the
 	 * supplied value using OACompare.like(). Does not change the active object.
@@ -2615,7 +2627,40 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		return this.createSharedHub();
 	}
 
+	public <T extends OAObject> void setSelectLink(
+			Hub<TYPE> hubSelect, Hub<T> hubTo, 
+			String toProperty, 
+			boolean bFromAoOnly, boolean bToAoOnly, boolean bAllowRemove) {
+		
+		final OA oa = OARuntime.oa(this);
+		oa.internal().hubs().link().setHubSelectLink(this, hubSelect, hubTo, toProperty, bFromAoOnly, bToAoOnly, bAllowRemove);
+	}
+	
+	public <T extends OAObject> void setSelectLink(Hub<T> hubTo, String toProperty, boolean bFromAoOnly, boolean bToAoOnly, boolean bAllowRemove) {
+		setSelectLink(null, hubTo, toProperty, bFromAoOnly, bToAoOnly, bAllowRemove);
+	}
+	
+	public <T extends OAObject> void setSelectLink(Hub<T> hubTo, boolean bFromAoOnly, boolean bAllowRemove) {
+		setSelectLink(null, hubTo, null, bFromAoOnly, false, bAllowRemove);
+	}
 
+	public <T extends OAObject> void setSelectLink(Hub<T> hubTo, String toProperty) {
+		setSelectLink(null, hubTo, toProperty, true, true, false);
+	}
+	
+	public <T extends OAObject> void setSelectLink(Hub<TYPE> hubSelect, Hub<T> hubTo, String toProperty) {
+		setSelectLink(hubSelect, hubTo, toProperty, false, false, false);
+	}
+	
+	public <T extends OAObject> void setSelectLink(Hub<TYPE> hubSelect, Hub<T> hubTo, boolean bAllowRemove) {
+		setSelectLink(hubSelect, hubTo, null, false, false, bAllowRemove);
+	}
+	
+	public HubSelectLink<TYPE, ? extends OAObject> getSelectLink() {
+		final OA oa = OARuntime.oa(this);
+		return oa.internal().hubs().link().getHubSelectLink(this);
+	}
+	
 	/**
 	 * Returns whether an object can be added to this Hub by delegating to
 	 * {@link HubAddRemoveDelegate#canAdd(Hub, Object)}.

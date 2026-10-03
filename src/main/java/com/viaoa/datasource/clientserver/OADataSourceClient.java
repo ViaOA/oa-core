@@ -309,7 +309,7 @@ public class OADataSourceClient extends OADataSource {
 	 */
 	public RemoteClientInterface getRemoteClient() {
 		if (remoteClientSync == null) {
-			final OA oa = OARuntime.oa(packageName);
+			final OA oa = OARuntime.oa(); // default qqqqqqqq might want to use packageName
 			remoteClientSync = oa.internal().sync().getRemoteClient();
 		}
 		return remoteClientSync;

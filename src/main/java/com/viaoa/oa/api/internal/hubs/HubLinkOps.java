@@ -1,6 +1,7 @@
 package com.viaoa.oa.api.internal.hubs;
 
 import com.viaoa.hub.Hub;
+import com.viaoa.hub.link.HubSelectLink;
 import com.viaoa.object.OAObject;
 
 /**
@@ -113,4 +114,10 @@ public interface HubLinkOps {
 	 */
 	public String getLinkFromProperty(Hub<?> thisHub, boolean bIncludeCopiedHubs);
     
+	
+	public <F extends OAObject, T extends OAObject> void setHubSelectLink(
+		Hub<F> hubFrom, Hub<F> hubSelect, Hub<T> hubTo, String toProperty, 
+		boolean bFromAoOnly, boolean bToAoOnly, boolean bAllowRemove);
+	
+	public <F extends OAObject> HubSelectLink<F, ? extends OAObject> getHubSelectLink(Hub<F> hubFrom);
 }

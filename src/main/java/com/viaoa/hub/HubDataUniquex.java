@@ -21,6 +21,7 @@ import java.util.*;
 
 import com.viaoa.hub.detail.HubDetail;
 import com.viaoa.hub.link.HubLinkEventListener;
+import com.viaoa.hub.link.HubSelectLink;
 import com.viaoa.hub.listener.HubListenerTree;
 import com.viaoa.object.OAObject;
 
@@ -186,4 +187,9 @@ class HubDataUniquex<T extends OAObject> implements java.io.Serializable {
 	static FriendAccess getFriendAccess() {
 		return friendAccess;
 	}
+
+
+	protected transient HubSelectLink hubSelectLink;
+
+
 }

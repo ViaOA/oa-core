@@ -18,6 +18,7 @@ import com.viaoa.hub.auto.HubAutoMatch;
 import com.viaoa.hub.auto.HubAutoSequence;
 import com.viaoa.hub.copy.HubCopy;
 import com.viaoa.hub.filter.HubFilter;
+import com.viaoa.hub.link.HubSelectLink;
 import com.viaoa.hub.merge.HubMerger;
 import com.viaoa.hub.sort.HubSortListener;
 import com.viaoa.hub.view.HubCombined;
@@ -363,6 +364,16 @@ public class HubsOpsImpl implements HubsOps {
 			@Override
 			public String getLinkFromProperty(Hub<?> thisHub, boolean bIncludeCopiedHubs) {
 				return srvc.getHubLinkService().getLinkFromProperty(thisHub, bIncludeCopiedHubs);
+			}
+
+			@Override
+			public <F extends OAObject, T extends OAObject> void setHubSelectLink(Hub<F> hubFrom, Hub<F> hubSelect, Hub<T> hubTo, String toProperty, boolean bFromAoOnly, boolean bToAoOnly, boolean bAllowRemove) {
+				srvc.getHubLinkService().setHubSelectLink(hubFrom, hubSelect, hubTo, toProperty, bFromAoOnly, bToAoOnly, bAllowRemove);
+			}
+
+			@Override
+			public <F extends OAObject> HubSelectLink<F, ? extends OAObject> getHubSelectLink(Hub<F> hubFrom) {
+				return srvc.getHubLinkService().getHubSelectLink(hubFrom);
 			}
 		};
 
