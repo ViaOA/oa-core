@@ -234,5 +234,14 @@ public @interface OAMany {
 	 * candidates for inclusion in this MANY Hub.
 	 */
 	String selectFromPath() default "";
+	
+	/**
+	 * Used when linkTo is a link-object, that forms a M2M between fromObject and pickFrom object.
+	 * This is the reference property to pick when creating a new instance.
+	 */
+	String pickFromLinkName() default "";
+	
+
+	String filterName() default "";
 }
 

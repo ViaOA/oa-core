@@ -225,4 +225,6 @@ public interface HubDetailOps {
 	public boolean getIsFromSameMasterHub(Hub<?> hub1, Hub<?> hub2);
 //remove, in Link.	public OALinkInfo getLinkInfoFromMasterToDetail(Hub<?> hub);
 
+	public boolean isLinkObjectFor(Hub hubThis, String linkName);
+
 }

@@ -226,4 +226,6 @@ public @interface OAOne {
 	 */
 	@Deprecated 
 	String[] pojoNames() default {};
+
+	String filterName() default "";
 }

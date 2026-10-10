@@ -21,6 +21,7 @@ import java.util.List;
 
 import com.viaoa.annotation.OAMany;
 import com.viaoa.annotation.OAOne;
+import com.viaoa.lang.OAStr;
 import com.viaoa.lang.OAString;
 import com.viaoa.oa.OA;
 import com.viaoa.oa.service.object.OAObjectInfoService;
@@ -219,6 +220,14 @@ public class OALinkInfo { //implements java.io.Serializable {
 	 */
 	private String selectFromPath;
 
+	
+	/**
+	 * Used by link objects.
+	 */
+	private String pickFromLinkName;
+	
+	private String filterName;
+	
 	// runtime
 	/**
 	 * Cache size for linked Hubs created through this link.
@@ -229,6 +238,8 @@ public class OALinkInfo { //implements java.io.Serializable {
 	 * Cached reference to the resolved reverse‐link metadata, if any.
 	 */
 	private OALinkInfo revLinkInfo;
+	
+	private OALinkInfo liPickFrom;
 	
 	/**
 	 * Indicates whether this link is marked as calculated.
@@ -1050,6 +1061,37 @@ public class OALinkInfo { //implements java.io.Serializable {
 		return revLinkInfo;
 	}
 
+	/**
+	 * Used by link objects to form a M2M between parent ObjectDef and 
+	 * PickFromLinkInfo ObjectDef.
+	 */
+	public String getPickFromLinkName() {
+		return this.pickFromLinkName;
+	}
+	
+	public void setPickFromLinkName(String linkName) {
+		this.pickFromLinkName = linkName;
+	}
+	
+	public OALinkInfo getPickFromLinkInfo() {
+		if (liPickFrom != null) return liPickFrom;
+		if (OAStr.isEmpty(this.pickFromLinkName)) return null;
+		for (OALinkInfo lix : getToObjectInfo().getLinkInfos()) {
+			if (lix.name != null && this.pickFromLinkName.equalsIgnoreCase(lix.name)) {
+				liPickFrom = lix;
+				break;
+			}
+		}
+		return liPickFrom;
+	}
+
+	public String getFilterName() {
+		return filterName;
+	}
+	public void setFilterName(String name) {
+		filterName = name;
+	}
+	
 	private transient OAObjectInfo oiTo;
 
 	/**

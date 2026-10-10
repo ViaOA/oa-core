@@ -1533,6 +1533,33 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		oa.internal().hubs().detail().setMasterHub(this, masterHub, null, bShared, null);
 	}
 
+
+	/**
+	 * Determines whether this Hub represents link objects whose master
+	 * relationship designates the named LinkOne as its PickFrom endpoint.
+	 *
+	 * <p>Returns {@code true} when this Hub has a master Hub and the incoming
+	 * master-to-detail relationship declares a {@code pickFromLinkName}
+	 * matching {@code linkName}. This describes this Hub's relationship
+	 * context, rather than a global characteristic of its object class.</p>
+	 *
+	 * <p>For example, an Order's OrderContacts Hub returns {@code true} for
+	 * {@code OrderContact.P_Contact} when Order.OrderContacts declares Contact
+	 * as its PickFrom endpoint. The Order supplies one endpoint of the
+	 * association; Contact supplies the endpoint to select.</p>
+	 *
+	 * <p>This method only inspects relationship metadata. It does not create
+	 * selection wiring or modify any objects.</p>
+	 *
+	 * @param linkName the LinkOne property name on this Hub's object class
+	 * @return {@code true} if the master relationship designates that property
+	 *         as its PickFrom endpoint; otherwise {@code false}
+	 */
+	public boolean isLinkObjectFor(String linkName) {
+		final OA oa = OARuntime.oa(this);
+		return oa.internal().hubs().detail().isLinkObjectFor(this, linkName);
+	}
+	
 	/**
 	 * Sets the master Hub and the property path needed to navigate from the
 	 * master to this Hub.
@@ -2644,6 +2671,10 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		setSelectLink(null, hubTo, null, bFromAoOnly, false, bAllowRemove);
 	}
 
+	public <T extends OAObject> void setSelectLink(Hub<T> hubTo) {
+		setSelectLink(null, hubTo, null, true, true, false);
+	}
+	
 	public <T extends OAObject> void setSelectLink(Hub<T> hubTo, String toProperty) {
 		setSelectLink(null, hubTo, toProperty, true, true, false);
 	}
@@ -2654,6 +2685,10 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	
 	public <T extends OAObject> void setSelectLink(Hub<TYPE> hubSelect, Hub<T> hubTo, boolean bAllowRemove) {
 		setSelectLink(hubSelect, hubTo, null, false, false, bAllowRemove);
+	}
+
+	public <T extends OAObject> void setSelectLink(Hub<TYPE> hubSelect, Hub<T> hubTo) {
+		setSelectLink(hubSelect, hubTo, null, false, false, true);
 	}
 	
 	public HubSelectLink<TYPE, ? extends OAObject> getSelectLink() {

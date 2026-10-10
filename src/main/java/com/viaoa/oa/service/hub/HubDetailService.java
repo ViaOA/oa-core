@@ -10,11 +10,14 @@ import com.viaoa.filter.OAFilter;
 import com.viaoa.hub.*;
 import com.viaoa.hub.detail.HubDetail;
 import com.viaoa.hub.merge.HubMerger;
+import com.viaoa.lang.OAStr;
 import com.viaoa.lang.OAString;
 import com.viaoa.metadata.OALinkInfo;
 import com.viaoa.metadata.OAObjectInfo;
+import com.viaoa.oa.OA;
 import com.viaoa.object.*;
 import com.viaoa.path.OAPath;
+import com.viaoa.runtime.OARuntime;
 
 
 /*qqqqqqqqqqqqqqqqqq
@@ -1674,6 +1677,32 @@ public abstract class HubDetailService {
 		return faHub.getHubDataUnique(thisHub).getVecHubDetail() != null && faHub.getHubDataUnique(thisHub).getVecHubDetail().size() > 0;
 	}
 
+	public boolean isLinkObjectFor(Hub hubThis, String linkName) {
+		if (hubThis == null || OAStr.isEmpty(linkName)) return false;
+    	
+        if (getMasterHub(hubThis) == null) return false;
+
+        OALinkInfo li = getLinkInfoFromMasterObjectToDetail(hubThis);
+    	if (li == null) return false;
+        if (li.getType() != li.TYPE_MANY) return false;
+        
+        OALinkInfo liRev = li.getReverseLinkInfo();
+        if (liRev == null || liRev.getType() != li.TYPE_ONE) return false;
+    	
+		li = li.getPickFromLinkInfo();
+		if (li == null) return false;
+
+		OAObjectInfo oi = hubThis.getOAObjectInfo();
+        OALinkInfo li2 = oi.getLinkInfo(linkName);
+        if (li != li2) return false;
+        
+        if (li2.getType() != li2.TYPE_ONE) return false;
+        liRev = li2.getReverseLinkInfo();
+        if (liRev == null || liRev.getType() != li2.TYPE_MANY) return false;
+        return true;
+	}
+	
+	
 	/**
 	 * 20111008 finish if/when needed public HubDetail getHubDetail(Hub hubDetail) { Hub hubMaster = hubDetail.getMasterHub();
 	 * Vector<HubDetail> vec = hubMaster.datau.vecHubDetail; if (vec == null) return null; for (HubDetail hd : vec) { if (hd.) } }
@@ -1919,4 +1948,5 @@ public abstract class HubDetailService {
 	 * @return result value
 	 */
 	public abstract <T extends OAObject> Hub<T> callHubLinkGetHubWithLink(final Hub<T> thisHub, boolean bIncludeCopiedHubs);
+
 }

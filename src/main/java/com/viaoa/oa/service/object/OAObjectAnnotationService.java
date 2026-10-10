@@ -674,6 +674,7 @@ public abstract class OAObjectAnnotationService {
 			li.setProcessed(annotation.isProcessed());
 			li.setTransient(annotation.isTransient());
 			//li.setRecursive(annotation.recursive());
+			li.setFilterName(annotation.filterName());
 
 			for (OAFkey fkey : annotation.fkeys()) {
 				OAPropertyInfo pi = oi.getPropertyInfo(fkey.fromProperty());
@@ -770,6 +771,9 @@ public abstract class OAObjectAnnotationService {
 			li.setCacheSize(annotation.cacheSize());
 			li.setCouldBeLarge(annotation.couldBeLarge());
 			li.setProcessed(annotation.isProcessed());
+			li.setPickFromLinkName(annotation.pickFromLinkName());
+			li.setFilterName(annotation.filterName());
+			
 
 			s = annotation.matchHub();
 			if (s != null && s.length() == 0) {

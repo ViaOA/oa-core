@@ -266,6 +266,11 @@ public class HubsOpsImpl implements HubsOps {
 			public boolean getIsFromSameMasterHub(Hub<?> hub1, Hub<?> hub2) {
 				return srvc.getHubDetailService().getIsFromSameMasterHub(hub1, hub2);
 			}
+
+			@Override
+			public boolean isLinkObjectFor(Hub hubThis, String linkName) {
+				return srvc.getHubDetailService().isLinkObjectFor(hubThis, linkName);
+			}
 		};
 		return opsDetail;
 	}
