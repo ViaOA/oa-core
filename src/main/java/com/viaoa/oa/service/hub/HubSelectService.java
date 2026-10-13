@@ -796,7 +796,7 @@ public abstract class HubSelectService {
 		faHub.getHubData(thisHub).setSelectWhereHubPath(pp);
 	}
 
-	/*
+	/**
 	 * Check to see if thisHub can use the whereHub and "converted" PP as another Hub.
 	 * <p>
 	 * Example setup:<br>
@@ -822,6 +822,7 @@ public abstract class HubSelectService {
 	 * @param propName the link name of thisHub from hubFrom.
 	 * @param hubFrom  hub that might have a selectWhereHub & PP that can be used by thisHub.
 	 */
+	//void testxx() {}
 	
 	/**
 	 * Attempts to adopt the whereHub + path from another Hub if thisHub

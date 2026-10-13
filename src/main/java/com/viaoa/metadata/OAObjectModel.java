@@ -15,7 +15,10 @@
  */
 package com.viaoa.metadata;
 
+import com.viaoa.hub.Hub;
+import com.viaoa.hub.copy.HubCopy;
 import com.viaoa.object.OAObject;
+import com.viaoa.runtime.OARuntime;
 
 /**
  * Configuration container describing UI and behavioral permissions for
@@ -47,9 +50,18 @@ import com.viaoa.object.OAObject;
  * metadata for identity, properties, links, rules, and persistence behavior.
  * </p>
  */
-public class OAObjectModel {
+public class OAObjectModel<T extends OAObject> {
 	//was: public class OAObjectModel extends OAObject {
 
+    
+    // Hubs
+    protected Hub<T> hub;
+    // selected contacts
+    protected Hub<T> hubMultiSelect;
+
+    protected OAObjectSearchModel<T> modelSearch;
+    
+    
 	/**
 	 * Constant property-name identifier for the singular display-name field.
 	 * Used by UI layers and reflective components to reference the property
@@ -259,6 +271,75 @@ public class OAObjectModel {
 		setCreateUI(true);
 	}
 
+    public OAObjectModel(Hub<T> hub, Class<T> type) {
+        this();
+
+        this.hub = hub;
+        if (hub == null || type == null) return;
+
+        if (hub.getObjectClass() == null) {
+            OARuntime.oa(type).internal().hubs().data().setObjectClass(getHub(type), type);
+        }
+        
+        OALinkInfo li = OARuntime.oa(hub).internal().hubs().detail().getLinkInfoFromDetailToMaster(hub);
+        if (li == null) return;
+        
+        OARuntime.oa(hub).internal().objects().rules().onObjectCallbackModel(li.getToClass(), li.getReverseName(), this);
+    }
+	
+	public OAObjectModel(Hub<T> hub) {
+	    this(hub, null);
+	}
+	public OAObjectModel(T obj) {
+        this();
+        if (hub == null) {
+            hub = new Hub<T>(obj);
+        }
+        getHub().add(obj);
+        getHub().setPos(0);
+	}
+    public Hub<T> getOriginalHub() {
+        return getHub();
+    }
+	
+    public Hub<T> getHub() {
+        if (hub == null) {
+            hub = new Hub<T>();
+        }
+        return hub;
+    }
+    public Hub<T> getHub(Class<T> c) {
+        if (hub == null) {
+            hub = new Hub<T>(c);
+        }
+        return hub;
+    }
+    public Hub<T> getMultiSelectHub() {
+        if (hubMultiSelect == null) {
+            hubMultiSelect = new Hub<T>();
+        }
+        return hubMultiSelect;
+    }
+    public T getAO() {
+        return getHub().getAO();
+    }
+    public HubCopy<T> createHubCopy() {
+        Hub<T> hubx;
+        Class<T> c = getHub().getObjectClass();
+        if (c == null) hubx = new Hub<T>(); 
+        else hubx = new Hub(c);
+        HubCopy<T> hc = new HubCopy<>(getHub(), hubx, true);
+        return hc;
+    }
+
+    public OAObjectModel<T> createCopy() {
+        OAObjectModel<T> mod = new OAObjectModel(createHubCopy().getHub());
+        return mod;
+    }
+	
+    
+    
+	
 	/**
 	 * Sets all configuration flags to the specified value. This provides a
 	 * bulk-operation mechanism to enable or disable all supported UI and
@@ -880,4 +961,6 @@ public class OAObjectModel {
 	public void setAllowChildrenSplitPanel(boolean b) {
 		bAllowChildrenSplitPanel = b;
 	}
+	
+	
 }

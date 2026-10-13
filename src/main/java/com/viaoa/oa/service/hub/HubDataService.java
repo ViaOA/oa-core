@@ -36,7 +36,7 @@ public abstract class HubDataService {
 	 * @throws RuntimeException if the object class cannot be changed due to
 	 *                          existing state constraints
 	 */
-	public <T extends OAObject> void setObjectClass(Hub<T> thisHub, Class<T> objClass) {
+	public <T extends OAObject> Hub<T> setObjectClass(Hub<T> thisHub, Class<T> objClass) {
 		final HubData<T> hd = faHub.getHubData(thisHub);
 		final HubDataMaster hdm = faHub.getHubDataMaster(thisHub);
 		final HubDataUnique<T> hdu = faHub.getHubDataUnique(thisHub);
@@ -69,6 +69,7 @@ public abstract class HubDataService {
 		    thisHub.data.setOAObjectFlag(false);
 		}
 		*/
+		return thisHub;
 	}
 	
 	

@@ -609,8 +609,8 @@ public class HubsOpsImpl implements HubsOps {
 			}
 
 			@Override
-			public <T extends OAObject> void setObjectClass(Hub<T> hubDetail, Class<T> clazz) {
-				srvc.getHubDataService().setObjectClass(hubDetail, clazz);
+			public <T extends OAObject> Hub<T> setObjectClass(Hub<T> hubDetail, Class<T> clazz) {
+				return srvc.getHubDataService().setObjectClass(hubDetail, clazz);
 			}
 
 			@Override

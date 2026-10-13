@@ -14,7 +14,7 @@ public interface HubDataOps {
 	 * @param hubDetail the Hub to update
 	 * @param clazz the object class
 	 */
-	public <T extends OAObject> void setObjectClass(Hub<T> hubDetail, Class<T> clazz);
+	public <T extends OAObject> Hub<T> setObjectClass(Hub<T> hubDetail, Class<T> clazz);
 	/**
 	 * Ensures that a Hub can hold at least the supplied number of objects.
 	 *
