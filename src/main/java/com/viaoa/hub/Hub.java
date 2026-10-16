@@ -2671,8 +2671,8 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 		setSelectLink(null, hubTo, null, bFromAoOnly, false, bAllowRemove);
 	}
 
-	public <T extends OAObject> void setSelectLink(Hub<T> hubTo) {
-		setSelectLink(null, hubTo, null, true, true, false);
+	public <T extends OAObject> void setSelectLink(Hub<T> hubTo) {  // add this.ao to hubTo
+		setSelectLink(null, hubTo, null, true, false, false);
 	}
 	
 	public <T extends OAObject> void setSelectLink(Hub<T> hubTo, String toProperty) {
@@ -3275,11 +3275,11 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 *
 	 * @param onEvent callback to invoke on active object change
 	 */
-	public void onChangeAO(HubOnEventInterface onEvent) {
+	public HubListener onChangeAO(HubOnEventInterface onEvent) {
 		if (onEvent == null) {
-			return;
+			return null;
 		}
-		addHubListener(new HubListenerAdapter() {
+		HubListener hl = new HubListenerAdapter() {
 			@Override
 			/**
 			 * Handles the Hub active-object change event.
@@ -3288,7 +3288,9 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			public void afterChangeActiveObject(HubEvent e) {
 				onEvent.onEvent(e);
 			}
-		});
+		};
+		addHubListener(hl);
+		return hl;
 	}
 
 	/**
@@ -3393,11 +3395,11 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 *
 	 * @param onEvent the callback to invoke on a new list event
 	 */
-	public void onNewList(HubOnEventInterface onEvent) {
+	public HubListener onNewList(HubOnEventInterface onEvent) {
 		if (onEvent == null) {
-			return;
+			return null;
 		}
-		addHubListener(new HubListenerAdapter() {
+		HubListener hl = new HubListenerAdapter() {
 			@Override
 			/**
 			 * Handles replacement or refresh of the Hub list.
@@ -3406,7 +3408,9 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 			public void onNewList(HubEvent e) {
 				onEvent.onEvent(e);
 			}
-		});
+		};
+		addHubListener(hl);
+		return hl;
 	}
 
 	/**

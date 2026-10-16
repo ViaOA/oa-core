@@ -82,6 +82,7 @@ public class HubSelectLink<F extends OAObject, T extends OAObject> {
 	public static enum Type {
 		Unknown,
 		// hubSelect=null
+        hubFromAoSetsHubToAo,
 		hubFromAoUpdatesHubToAoProperty,
 		hubFromAoFindOrCreateHubToUsingProperty,
 		hubFromAllFindOrCreateHubToUsingProperty, 
@@ -98,7 +99,11 @@ public class HubSelectLink<F extends OAObject, T extends OAObject> {
 
 		if (hubFrom == hubSelect || hubFrom == hubTo || hubSelect == hubTo) return;
 		final OA oa = OARuntime.oa(hubFrom);
-		if (oa.internal().hubs().share().isUsingSameSharedHub(hubFrom, hubTo)) return;
+		if (oa.internal().hubs().share().isUsingSameSharedHub(hubFrom, hubTo)) {
+		    if (!(hubSelect == null && bFromAoOnly && bToAoOnly && OAStr.isEmpty(toProperty))) {
+		        return;
+		    }
+		}
 		if (hubSelect != null) {
 			if (oa.internal().hubs().share().isUsingSameSharedHub(hubFrom, hubSelect)) return;
 			if (oa.internal().hubs().share().isUsingSameSharedHub(hubTo, hubSelect)) return;
@@ -116,7 +121,10 @@ public class HubSelectLink<F extends OAObject, T extends OAObject> {
 		if (hubSelect == null) {
 			if (OAStr.isEmpty(toProperty)) {
 				if (!hubFrom.getObjectClass().equals(hubTo.getObjectClass())) return;
-				if (bFromAoOnly) type = Type.hubFromAoAddToHubTo;
+				if (bFromAoOnly) {
+				    if (bToAoOnly) type = Type.hubFromAoSetsHubToAo;
+				    else type = Type.hubFromAoAddToHubTo;
+				}
 				else type = Type.hubFromMatchHubTo;
 				return; 
 			}
@@ -157,6 +165,8 @@ public class HubSelectLink<F extends OAObject, T extends OAObject> {
 		switch (type) {
 		case Type.Unknown:
 			break;
+		case Type.hubFromAoSetsHubToAo:
+		    break;
 		case Type.hubFromAoUpdatesHubToAoProperty:
 			break;
 		case Type.hubFromAoFindOrCreateHubToUsingProperty:
@@ -197,6 +207,9 @@ public class HubSelectLink<F extends OAObject, T extends OAObject> {
 		switch (type) {
 		case Type.Unknown:
 			break;
+		case Type.hubFromAoSetsHubToAo:
+		    hubTo.setAO(hubFrom.getAO());
+		    break;
 		case Type.hubFromAoUpdatesHubToAoProperty:
 			objTo = hubTo.getAO();
 			objFrom = hubFrom.getAO();

@@ -51,16 +51,15 @@ import com.viaoa.runtime.OARuntime;
  * </p>
  */
 public class OAObjectModel<T extends OAObject> {
-	//was: public class OAObjectModel extends OAObject {
+
+    // Hubs
+    protected Hub<T> hubContext;
+    protected Hub<T> hub;  // shared with active hub (default: hubUnfiltered)
+    protected Hub<T> hubUnfiltered;
 
     
-    // Hubs
-    protected Hub<T> hub;
-    // selected contacts
     protected Hub<T> hubMultiSelect;
 
-    protected OAObjectSearchModel<T> modelSearch;
-    
     
 	/**
 	 * Constant property-name identifier for the singular display-name field.
@@ -271,49 +270,83 @@ public class OAObjectModel<T extends OAObject> {
 		setCreateUI(true);
 	}
 
+    public OAObjectModel(Class<T> type) {
+        this(null, type);
+    }
+	
     public OAObjectModel(Hub<T> hub, Class<T> type) {
         this();
 
-        this.hub = hub;
-        if (hub == null || type == null) return;
+        this.hubContext = hub;
+        
+        if (hub == null) {
+            if (type != null) getContextHub(type);
+            return;
+        }
 
-        if (hub.getObjectClass() == null) {
-            OARuntime.oa(type).internal().hubs().data().setObjectClass(getHub(type), type);
+        if (type != null && hubContext.getObjectClass() == null) {
+            OARuntime.oa(type).internal().hubs().data().setObjectClass(hubContext, type);
         }
         
-        OALinkInfo li = OARuntime.oa(hub).internal().hubs().detail().getLinkInfoFromDetailToMaster(hub);
+        getHub();
+        
+        OALinkInfo li = OARuntime.oa(hubContext).internal().hubs().detail().getLinkInfoFromDetailToMaster(hubContext);
         if (li == null) return;
         
-        OARuntime.oa(hub).internal().objects().rules().onObjectCallbackModel(li.getToClass(), li.getReverseName(), this);
+        OARuntime.oa(hubContext).internal().objects().rules().onObjectCallbackModel(li.getToClass(), li.getReverseName(), this);
     }
 	
 	public OAObjectModel(Hub<T> hub) {
-	    this(hub, null);
+	    this(hub, hub == null ? null : hub.getObjectClass());
 	}
 	public OAObjectModel(T obj) {
         this();
-        if (hub == null) {
-            hub = new Hub<T>(obj);
+        if (hubContext == null) {
+            hubContext = new Hub<T>(obj);
         }
-        getHub().add(obj);
-        getHub().setPos(0);
+        else {
+            hubContext.add(obj);
+            hubContext.setPos(0);
+        }
 	}
-    public Hub<T> getOriginalHub() {
-        return getHub();
+    public Hub<T> getContextHub() {
+        if (hubContext == null) {
+            hubContext = new Hub<T>();
+        }
+        return hubContext;
+    }
+    public Hub<T> getContextHub(Class<T> type) {
+        if (hubContext == null) {
+            hubContext = new Hub<T>(type);
+        }
+        else {
+            if (type != null && hubContext.getObjectClass() == null) {
+                OARuntime.oa(type).internal().hubs().data().setObjectClass(hubContext, type);
+            }            
+        }
+        return hubContext;
     }
 	
     public Hub<T> getHub() {
         if (hub == null) {
             hub = new Hub<T>();
+            useUnfilteredHub();
         }
         return hub;
     }
-    public Hub<T> getHub(Class<T> c) {
-        if (hub == null) {
-            hub = new Hub<T>(c);
+    public Hub<T> getUnfilteredHub() {
+        if (hubUnfiltered == null) {
+            Class<T> type = getContextHub().getObjectClass();
+            if (type != null) hubUnfiltered = new Hub<T>(type);
+            else hubUnfiltered = new Hub<T>();
+            hubUnfiltered.setSharedHub(getContextHub(), true);
         }
-        return hub;
+        return hubUnfiltered;
     }
+    public void useUnfilteredHub() {
+        getHub().setSharedHub(getUnfilteredHub(), true);
+    }
+    
     public Hub<T> getMultiSelectHub() {
         if (hubMultiSelect == null) {
             hubMultiSelect = new Hub<T>();
@@ -962,5 +995,17 @@ public class OAObjectModel<T extends OAObject> {
 		bAllowChildrenSplitPanel = b;
 	}
 	
+	public boolean performCallback()  {
+        OALinkInfo li = OARuntime.oa(hubContext).internal().hubs().detail().getLinkInfoFromDetailToMaster(hubContext);
+        if (li == null) return false;
+	    
+        Class<? extends OAObject> type = li.getToClass();
+        OARuntime.oa(type).internal().objects().rules().onObjectCallbackModel(type, li.getReverseName(), this);
+        return true;
+	}
+	
+	public boolean isFromSameMaster() {
+	    return OARuntime.oa(getContextHub()).internal().hubs().detail().getIsFromSameMasterHub(getContextHub().getMasterHub(), getContextHub());
+	}
 	
 }

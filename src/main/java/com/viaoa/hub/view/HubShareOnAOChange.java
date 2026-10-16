@@ -1,9 +1,13 @@
 package com.viaoa.hub.view;
 
+import java.io.Closeable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.viaoa.hub.Hub;
+import com.viaoa.hub.HubListener;
 import com.viaoa.object.OAObject;
 
 /**
@@ -44,10 +48,9 @@ import com.viaoa.object.OAObject;
  *
  * @param <T> the OAObject type contained in the participating Hubs
  */
-public class HubShareOnAOChange<T extends OAObject> {
+public class HubShareOnAOChange<T extends OAObject> implements Closeable {
 
 	private Hub<T> hubMain;
-	private List<Hub<T>> alHubs = new ArrayList<>();;
 	
 	public HubShareOnAOChange(Hub<T> hubMain, Hub<T> ...hubs) {
 		this.hubMain = hubMain;
@@ -58,17 +61,31 @@ public class HubShareOnAOChange<T extends OAObject> {
 		}
 	}
 
+	private Map<Hub, HubListener> hmOnChangeListener = new HashMap<>();
+	
 	public void add(Hub<T> h) {
 		if (h == null || h == hubMain) return;
-		if (alHubs.contains(h)) return;
-		alHubs.add(h);
-		h.onChangeAO(onEvent -> {
+		if (hmOnChangeListener.containsKey(h)) return;
+		HubListener hl = h.onChangeAO(onEvent -> {
 			Hub<T> hx = onEvent.getHub();
 			T t = hx.getAO();
 			if (t == null) return;
 			hubMain.setSharedHub(hx, false);
 			hubMain.setActiveObject(t);
 		});
+		hmOnChangeListener.put(h, hl);
+	}
+	
+	public void remove(Hub<T> h) {
+	    if (h == null) return;
+	    HubListener<T> hl = hmOnChangeListener.remove(h);
+	    if (hl != null) h.removeListener(hl);
+	}
+
+	public void close() {
+	    for (Hub<T> h : hmOnChangeListener.keySet().toArray(new Hub[0])) {
+	        remove(h);
+	    }
 	}
 	
 }
