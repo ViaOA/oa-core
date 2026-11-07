@@ -82,6 +82,7 @@ public class HubShareOnAOChange<T extends OAObject> implements Closeable {
 	    if (hl != null) h.removeListener(hl);
 	}
 
+//qqqqqqq needs to be called.	
 	public void close() {
 	    for (Hub<T> h : hmOnChangeListener.keySet().toArray(new Hub[0])) {
 	        remove(h);

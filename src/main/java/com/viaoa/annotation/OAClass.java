@@ -138,6 +138,8 @@ public @interface OAClass {
 	 */
 	Class[] filterClasses() default {};
 
+	String[] groupByPaths() default {};
+	
 	// property path from a root class to this class.
 	/**
 	 * Property paths from root classes to this class.

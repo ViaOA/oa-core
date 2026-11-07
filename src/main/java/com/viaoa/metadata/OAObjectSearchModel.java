@@ -18,6 +18,7 @@ import com.viaoa.select.OASelect;
 
 public class OAObjectSearchModel<T extends OAObject> {
 
+    protected final OAObjectModel<T> model;
     protected final Hub<T> hubModel;
     protected Class<T> type;
 
@@ -36,35 +37,43 @@ public class OAObjectSearchModel<T extends OAObject> {
 
     // from hubDetail perspective
     protected enum ConfigType {
-        Standalone, LinkOnly, DetailOne, DetailMany, DetailManyLink, O2M2O
+        Standalone, 
+        LinkOnly, 
+        DetailOne, 
+        DetailMany, 
+        DetailManyLink, 
+        O2M2O
     }
     
     private ConfigType configType;
     private boolean bConfigCalled;
     
-    
-    public OAObjectSearchModel(final Hub<T> hubModel) {
-        this.hubModel = hubModel;
-        this.type = hubModel.getObjectClass();
-    }
 
+    protected OAObjectSearchModel(final OAObjectModel<T> model) {
+        this.model = model;
+        hubModel = model.getContextHub();
+        type = hubModel.getObjectClass();
+        config();
+    }
+    
     public Hub<T> getHub() {
         if (hub == null) {
             hub = new Hub<T>(type);
-            hubShareOnAOChange = new HubShareOnAOChange<T>(hub);
-            connectToHub(getSearchResults());
         }
         return hub;
     }
 
     protected void connectToHub(Hub<T> hub) {
-        getHub();
+        if (hubShareOnAOChange == null) {
+            hubShareOnAOChange = new HubShareOnAOChange<T>(getHub());
+        }
         hubShareOnAOChange.add(hub);
     }
 
     public Hub<T> getSearchResults() {
         if (hubSearchResults == null) {
             hubSearchResults = new Hub<T>(type);
+            connectToHub(hubSearchResults);
         }
         return hubSearchResults;
     }
@@ -77,13 +86,11 @@ public class OAObjectSearchModel<T extends OAObject> {
         return hubSearchFrom;
     }
 
-    
     private HubListener<T> hlSearchFrom;
-    public void setSearchFromHub(Hub<T> hub) {
-//qqqqqqqqqqq setting after config is not allowed qqqqqqqqqqqqqq        
+    protected void setSearchFromHub(Hub<T> hub) {
         if (hub == hubSearchFrom) return;
         if (hubSearchFrom != null) {
-            hubShareOnAOChange.remove(hubSearchFrom);
+            if (hubShareOnAOChange != null) hubShareOnAOChange.remove(hubSearchFrom);
             if (hlSearchFrom != null) {
                 hubSearchFrom.removeHubListener(hlSearchFrom);
                 hlSearchFrom = null;
@@ -128,8 +135,21 @@ public class OAObjectSearchModel<T extends OAObject> {
         bConfigCalled = true;
 
         final OA oa = OARuntime.oa(type);
-        final Hub<?> hubMaster = hubModel.getMasterHub();
-        OALinkInfo liMasterToDetail = oa.internal().hubs().detail().getLinkInfoFromMasterObjectToDetail(hubModel);
+        Hub<?> hubMaster = hubModel.getMasterHub(); 
+        OALinkInfo liMasterToDetail = null;
+        
+        if (hubMaster == null && model != null) {
+            // might be O2M2O, which does not have a hubMaster (hubModel created using HubMerger from hubMaster)
+            // example:  Order 1->M OrderContact M->1 Contact
+            hubMaster = model.getFromHub();
+            if (hubMaster != null) {
+                String sx = model.getFromLinkProperty();
+                liMasterToDetail = oa.info(hubMaster).getLinkInfo(sx);
+            }
+        }
+        else {
+            liMasterToDetail = oa.internal().hubs().detail().getLinkInfoFromMasterObjectToDetail(hubModel);
+        }
         
         if (liMasterToDetail != null && liMasterToDetail.getPrivateMethod()) {
             liMasterToDetail = null;
@@ -156,12 +176,7 @@ public class OAObjectSearchModel<T extends OAObject> {
 
         // PART 1: Filters
         // inFilter
-        if (liLinkTo != null && liMasterToDetail != null) {
-            OAFilter<T> filter = getExtraWhereFilter();
-            if (filter != null) filter = new OAAndFilter(filter, new OAInFilter(hubModel));
-            else filter = new OAInFilter(hubModel);
-            setExtraWhereFilter(filter);
-
+        if (liLinkTo != null && liMasterToDetail != null && liMasterToDetail.getType() == OALinkInfo.TYPE_MANY) {
             if (hubSearchFrom == null) setSearchFromHub(hubModel.createSharedHub(false));
         }
         
@@ -174,84 +189,42 @@ public class OAObjectSearchModel<T extends OAObject> {
         }
 
         // SelectFromPath
-        boolean bFound = false;
-        if (liLinkTo != null) {
-            String pp = liLinkTo.getSelectFromPath();
-            if (OAStr.isNotEmpty(pp)) {
-                setSearchFromHub(new Hub<T>(type));
-                new HubMerger(hubLinkedTo, getSearchFromHub(), pp, false);
-
-                OAFilter<T> filter = getExtraWhereFilter();
-                if (filter != null) filter = new OAAndFilter(filter, new OAInFilter(hubLinkedTo, pp));
-                else filter = new OAInFilter(hubLinkedTo, pp);
-                setExtraWhereFilter(filter);
-                bFound = true;
-            }
-        }
-        if (!bFound && liMasterToDetail != null) {
-            String pp = liMasterToDetail.getSelectFromPath();
-
-            if (OAStr.isNotEmpty(pp)) {
-                setSearchFromHub(new Hub<T>(type));
-                new HubMerger(hubMaster, getSearchFromHub(), pp, false);
-
-                OAFilter<T> filter = getExtraWhereFilter();
-                if (filter != null) filter = new OAAndFilter(filter, new OAInFilter(hubMaster, pp));
-                else filter = new OAInFilter(hubMaster, pp);
-                setExtraWhereFilter(filter);
-            }
-        }
-        
-        // EqualPath -------------------------------
-        bFound = false;
-        if (liLinkTo != null) {
-            OALinkInfo liRev = liLinkTo.getReverseLinkInfo();
-            if (liRev != null) {
-                String ppFrom = liLinkTo.getEqualPath();
-                String ppTo = liRev.getEqualPath();
-                if (OAStr.isNotEmpty(ppFrom) || OAStr.isNotEmpty(ppTo)) {
-                    OAFilter<T> filter = getExtraWhereFilter();
-                    OAFilter filterEqual = new OAEqualPathFilter(hubLinkedTo, ppFrom, ppTo);
-                    if (filter != null) filter = new OAAndFilter(filter, filterEqual);
-                    else filter = filterEqual;
-                    setExtraWhereFilter(filter);
-                    bFound = true;
-                }
-            }
-        }
-        if (!bFound && liMasterToDetail != null) {
-            OALinkInfo liRev = liMasterToDetail.getReverseLinkInfo();
-            if (liRev != null) {
-                String ppfrom = liMasterToDetail.getEqualPath();
-                String ppTo = liRev.getEqualPath();
-                if (OAStr.isNotEmpty(ppfrom) || OAStr.isNotEmpty(ppTo)) {
-                    OAFilter<T> filter = getExtraWhereFilter();
-                    OAFilter filterEqual = new OAEqualPathFilter(hubMaster, ppfrom, ppTo);
-                    if (filter != null) filter = new OAAndFilter(filter, filterEqual);
-                    else filter = filterEqual;
-                    setExtraWhereFilter(filter);
-                }
-            }
-        }
-        
-        // Filter name -------------------------------
-        String filterName = null;
-        if (liLinkTo != null) filterName = liLinkTo.getFilterName();
-        if (OAStr.isEmpty(filterName) && liMasterToDetail != null) filterName = liMasterToDetail.getFilterName();
-
-        if (OAStr.isNotEmpty(filterName)) {
-            OAFilter<T> filter = getExtraWhereFilter();
-            OAFilter filterEqual = new OAQueryFilter(type, ":" + filterName);
-            if (filter != null) filter = new OAAndFilter(filter, filterEqual);
-            else filter = filterEqual;
+        OAFilter<T> filter = model.getExtraFilter();
+        if (filter != null) {
+            OAFilter<T> f = getExtraWhereFilter();
+            if (f != null) filter = new OAAndFilter(f, filter);
             setExtraWhereFilter(filter);
         }
         
+        if (model.getChoicesHub() != null) {  // only exists if model.hubContext created it for list of choices
+            filter = new OAInFilter(model.getChoicesHub()); //qqqq might be able to the OASelect.hubSelect
+            OAFilter<T> f = getExtraWhereFilter();
+            if (f != null) filter = new OAAndFilter(f, filter);
+            setExtraWhereFilter(filter);
+            setSearchFromHub(model.getChoicesHub().createShared());
+        }
         
+        String sx = model.getExtraWhere(); //qqqqqqqqqqqq WIP:  where to put this?? put into AND + OAQueryFilter LOVE IT
+        if (OAStr.isNotEmpty(sx)) {
+            filter = new OAQueryFilter(type, sx);
+            OAFilter<T> f = getExtraWhereFilter();
+            if (f != null) filter = new OAAndFilter(f, filter);
+            setExtraWhereFilter(filter);
+        }
+        
+        Hub<?> hx = model.getSelectWhereHub();
+        if (hx != null) {
+            sx = model.getSelectWhereHubPath();
+            if (OAStr.isNotEmpty(sx)) {
+                getSearchResults().setSelectWhereHub(hx, sx);
+                
+                // clear if hubFrom.ao changes
+                hx.onChangeAO( event -> hubSearchResults.clear());
+            }
+        }
         
         // PART 2: set HubSelectLink
         // search results
-//qqqqqqqqqq todo: make this optional (ex: when using an dropdown Add table listing        
         switch (configType) {
         case Standalone:
             getSearchResults().setSelectLink(null, hubModel, null, true, true, false); // set hubModel.ao
@@ -302,10 +275,6 @@ public class OAObjectSearchModel<T extends OAObject> {
         // todo: Hub tree hubNodeSelected qqqqqqqqqqqqqqqqqqqqqqqqqqqqq 
         // todo: Calendar support qqqqqqqqqqqqq
     }
-
-    // qqqqqqqqqqqq make sure that *OAFilters are able to supply SQL for
-    // ExtraWhereFilter
-    // modelSearch.getContactSearch().setExtraWhere("salesPersonList = true");
 
     public void setExtraWhereFilter(OAFilter<T> filter) {
         this.filterExtraWhere = filter;

@@ -201,6 +201,8 @@ public class OAObjectInfo { //implements java.io.Serializable {
 	 * the OA model.</p>
 	 */
 	protected String[] rootTreePaths;
+	
+	protected String[] groupByPaths;
 
 	/**
 	 * Array of primitive (non-reference) property names defined for this
@@ -1295,6 +1297,13 @@ public class OAObjectInfo { //implements java.io.Serializable {
 		this.rootTreePaths = paths;
 	}
 
+    public String[] getGroupByPaths() {
+        return this.groupByPaths;
+    }
+    public void setGroupByPaths(String[] paths) {
+        this.groupByPaths = paths;
+    }
+	
 	/**
 	 * Marks the specified property as required by updating the
 	 * corresponding OAPropertyInfo entry.

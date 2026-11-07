@@ -916,8 +916,27 @@ public abstract class HubLinkService {
 		faHub.getHubDataUnique(hubFrom).setSelectLink(hubSelectLink);
 	}
 	
+    /**
+     * Retrieves the HubSelectLink that this hub has.
+     *
+     * @param hubFrom            the Hub to check
+     * @return the HubSelectLink
+     */
 	public <F extends OAObject> HubSelectLink<F, ? extends OAObject> getHubSelectLink(Hub<F> hubFrom) {
-		return faHub.getHubDataUnique(hubFrom).getSelectLink();
+	    HubSelectLink hsl = faHub.getHubDataUnique(hubFrom).getSelectLink();
+	    if (hsl != null) return hsl;
+		
+        Hub<F> hubx = callHubShareGetFirstSharedHub(hubFrom, new OAFilter<Hub<F>>() {
+            @Override
+            public boolean isUsed(Hub<F> h) {
+                if (faHub.getHubDataUnique(h).getSelectLink() != null) {
+                    return true;
+                }
+                return false;
+            }
+        }, false, false);
+		if (hubx == null) return null;
+		return hubx.getSelectLink();
 	}	
 	
 	/**

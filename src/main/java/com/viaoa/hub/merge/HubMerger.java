@@ -229,14 +229,14 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
 
     /**
      * Creates a HubMerger for a root Hub and property path using default settings:
-     * no sharing of the active object and using only the active object of the root.
+     * no sharing of the active object and using only the active object.
      *
      * @param hubRoot the root Hub used to traverse objects
      * @param hubCombinedObjects the destination Hub that receives merged objects
      * @param path the property path for traversal
      */
     public HubMerger(Hub<F> hubRoot, Hub<T> hubCombinedObjects, String path) {
-        this(hubRoot, hubCombinedObjects, path, false, null, true, false, false);
+        this(hubRoot, hubCombinedObjects, path, false, null, false, false, false);
     }
 
     /**
@@ -310,7 +310,7 @@ public class HubMerger<F extends OAObject, T extends OAObject> {
      * @param path the traversal path
      * @param bShareActiveObject true if the AO is shared from the terminal Hub
      * @param selectOrder optional ordering expression for filtering
-     * @param bUseAll true to use all objects in the root Hub
+     * @param bUseAll true to use all objects in the root Hub, false to only use AO
      * @param bIncludeRootHub true to include root Hub objects in the result
      * @param bUseBackgroundThread true to enable background updates
      */
