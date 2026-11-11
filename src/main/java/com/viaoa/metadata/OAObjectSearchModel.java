@@ -8,6 +8,7 @@ import com.viaoa.filter.OAQueryFilter;
 import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubListener;
+import com.viaoa.hub.link.HubSelectLink;
 import com.viaoa.hub.merge.HubMerger;
 import com.viaoa.hub.view.HubShareOnAOChange;
 import com.viaoa.lang.OAStr;
@@ -70,6 +71,10 @@ public class OAObjectSearchModel<T extends OAObject> {
         hubShareOnAOChange.add(hub);
     }
 
+    public void useSearchResults() {
+        getHub().setSharedHub(getSearchResults(), true);
+    }
+    
     public Hub<T> getSearchResults() {
         if (hubSearchResults == null) {
             hubSearchResults = new Hub<T>(type);
@@ -79,6 +84,7 @@ public class OAObjectSearchModel<T extends OAObject> {
     }
 
     public Hub<T> getMultiSelectHub() {
+        if (hubMultiSelect == null) hubMultiSelect = new Hub<T>(type);
         return hubMultiSelect;
     }
 
@@ -87,7 +93,7 @@ public class OAObjectSearchModel<T extends OAObject> {
     }
 
     private HubListener<T> hlSearchFrom;
-    protected void setSearchFromHub(Hub<T> hub) {
+    public void setSearchFromHub(Hub<T> hub) {
         if (hub == hubSearchFrom) return;
         if (hubSearchFrom != null) {
             if (hubShareOnAOChange != null) hubShareOnAOChange.remove(hubSearchFrom);
@@ -117,6 +123,10 @@ public class OAObjectSearchModel<T extends OAObject> {
     }
 
     public void performSearch() {
+        //qqqqqqqqqq this needs to be abstract ??
+//qqqqqqqqqqqqqqqqqvvvvvvvvvvvvv this wont be called        
+        useSearchResults();
+        getSearchResults().select();
     }
 
     public void reset() {
@@ -246,6 +256,7 @@ public class OAObjectSearchModel<T extends OAObject> {
             break;
         }
         
+//qqqqqvvvvv could it be call setSelectLink on both? qqqq        
         // hubSearchFrom
         if (hubSearchFrom != null) {
             switch (configType) {
@@ -259,14 +270,14 @@ public class OAObjectSearchModel<T extends OAObject> {
                 getSearchFromHub().setSelectLink(null, hubMaster, liMasterToDetail.getName(), true, true, false);
                 break;
             case DetailMany:
-                hubMultiSelect = new Hub<T>(type);
+                //qqq was: hubMultiSelect = new Hub<T>(type);
                 getSearchFromHub().setSelectLink(getMultiSelectHub(), hubModel);
                 break;
             case DetailManyLink:
                 getSearchFromHub().setSelectLink(null, hubModel, null, true, true, false);
                 break;
             case O2M2O:
-                hubMultiSelect = new Hub<T>(type);
+                //qqqq was: hubMultiSelect = new Hub<T>(type);
                 getSearchFromHub().setSelectLink(getMultiSelectHub(), hubMaster, liMasterToDetail.getName());
                 break;
             }
@@ -276,6 +287,27 @@ public class OAObjectSearchModel<T extends OAObject> {
         // todo: Calendar support qqqqqqqqqqqqq
     }
 
+    /**
+     * Uses HubSelectLink to update wired Hubs.
+     */
+    public void updateUsingSearchResults() {
+        Hub<T> hub = getSearchResults();
+        if (hub != null) {
+            HubSelectLink<T, ? extends OAObject> hsl = hub.getSelectLink();
+            if (hsl != null) hsl.select();
+        }        
+    }
+
+    public void updateUsingSearchFromHub() {
+        Hub<T> hub = getSearchFromHub();
+        if (hub != null) {
+            HubSelectLink<T, ? extends OAObject> hsl = hub.getSelectLink();
+            if (hsl != null) hsl.select();
+        }        
+    }
+
+    
+    
     public void setExtraWhereFilter(OAFilter<T> filter) {
         this.filterExtraWhere = filter;
     }

@@ -67,6 +67,22 @@ public class OAObjectModel<T extends OAObject> {
 
 //qqqqqqqqqqq add hubNewObjectWizard
 
+//qqqqqqqqq <brainstorming>
+/*    
+    public static enum ModelType {
+        ListOnly,
+        DetailOne,
+        DetailMany,
+        MultiSelect,
+        O2M2O
+    }
+
+    public OAObjectModel<T> createMultiSelectObjectModel() {
+        
+        return null;
+    }
+qqqqqqqqq*/    
+    
     protected Class<T> ctype;
 
     protected Hub<?> hubFrom;
@@ -78,8 +94,9 @@ public class OAObjectModel<T extends OAObject> {
     protected Hub<T> hub; // shared with active hub
 
     protected OAObjectSearchModel<T> objectSearchModel;
-    
-    protected HubAutoAdd<?, T> hubAutoAdd;    
+  
+//qqqqqqqq removing    
+//    protected HubAutoAdd<?, T> hubAutoAdd;    
     
     protected boolean bFiltered;
     protected boolean bGroupBy;
@@ -350,15 +367,19 @@ public class OAObjectModel<T extends OAObject> {
                         Hub<T> hubCombined = createCombinedHub(hubChoices, hubContext);
                         hubChoices = hubCombined;
                     }
-                    
+
+/*qqqqqqqqqqq replaced with OAObjectSearchModel.hubMultiSelect                    
                     hubAutoAdd = new HubAutoAdd(hubFrom, fromLinkProperty, hubContext, true) { //true=manual mode
                         public boolean okToRemove(Object obj, Object propertyValue) {
-//vvvvvvvv                            
-//qqqqqqqq defaults to false
                             return super.okToRemove(obj, propertyValue); 
+                        }
+                        @Override
+                        public void update() {
+                            super.update();
                         }
                     };
                     hubAutoAdd.update(); //qqqqqqqqqq manual mode, make automatic
+*/                    
                 }
                 else {
                     this.bAutoCreated = li.getAutoCreateNew();
@@ -468,10 +489,11 @@ public class OAObjectModel<T extends OAObject> {
         }
     }
 
+/*qqqqqqqqqq replacing    
     public HubAutoAdd<?, T> getHubAutoAdd() {
         return hubAutoAdd;
     }
-    
+*/    
     protected void init() {
         // if (isLoading()) return;
         setAllowGotoList(true);
@@ -1375,4 +1397,8 @@ public class OAObjectModel<T extends OAObject> {
         return objectSearchModel;
     }
 
+    public Hub<T> getMultiSelectHub() {
+        return getObjectSearchModel().getMultiSelectHub();
+    }
+    
 }
