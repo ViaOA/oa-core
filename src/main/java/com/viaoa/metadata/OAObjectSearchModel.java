@@ -20,29 +20,26 @@ import com.viaoa.select.OASelect;
 public class OAObjectSearchModel<T extends OAObject> {
 
     protected final OAObjectModel<T> model;
-    protected final Hub<T> hubModel;
-    protected Class<T> type;
+    protected Class<T> ctype;
 
-    protected Hub<T> hub; // main hub
-
-    protected HubShareOnAOChange<T> hubShareOnAOChange;
-
+    protected Hub<T> hub; // shares active hub
     protected Hub<T> hubSearchResults;
-    protected Hub<T> hubSearchFrom; // hub (optional) to search from
     protected Hub<T> hubMultiSelect; // optional if SearchFrom and wiring is Many
 
+    protected Hub<T> hubSearchFrom; // hub (optional) to search from
     protected OAFilter<T> filterExtraWhere;
 
     // finder used to find objects in a path
     protected OAFinder<?, T> finder;
 
+    
     // from hubDetail perspective
     protected enum ConfigType {
         Standalone, 
         LinkOnly, 
         DetailOne, 
-        DetailMany, 
-        DetailManyLink, 
+        DetailManyNoLinkTo, 
+        DetailManyWithLinkTo, 
         O2M2O
     }
     
@@ -52,39 +49,20 @@ public class OAObjectSearchModel<T extends OAObject> {
 
     protected OAObjectSearchModel(final OAObjectModel<T> model) {
         this.model = model;
-        hubModel = model.getContextHub();
-        type = hubModel.getObjectClass();
+        Hub<T> hubModel = model.getContextHub();
+        ctype = hubModel.getObjectClass();
         config();
-    }
-    
-    public Hub<T> getHub() {
-        if (hub == null) {
-            hub = new Hub<T>(type);
-        }
-        return hub;
-    }
-
-    protected void connectToHub(Hub<T> hub) {
-        if (hubShareOnAOChange == null) {
-            hubShareOnAOChange = new HubShareOnAOChange<T>(getHub());
-        }
-        hubShareOnAOChange.add(hub);
-    }
-
-    public void useSearchResults() {
-        getHub().setSharedHub(getSearchResults(), true);
     }
     
     public Hub<T> getSearchResults() {
         if (hubSearchResults == null) {
-            hubSearchResults = new Hub<T>(type);
-            connectToHub(hubSearchResults);
+            hubSearchResults = new Hub<T>(ctype);
         }
         return hubSearchResults;
     }
 
     public Hub<T> getMultiSelectHub() {
-        if (hubMultiSelect == null) hubMultiSelect = new Hub<T>(type);
+        if (hubMultiSelect == null) hubMultiSelect = new Hub<T>(ctype);
         return hubMultiSelect;
     }
 
@@ -96,18 +74,66 @@ public class OAObjectSearchModel<T extends OAObject> {
     public void setSearchFromHub(Hub<T> hub) {
         if (hub == hubSearchFrom) return;
         if (hubSearchFrom != null) {
-            if (hubShareOnAOChange != null) hubShareOnAOChange.remove(hubSearchFrom);
             if (hlSearchFrom != null) {
                 hubSearchFrom.removeHubListener(hlSearchFrom);
                 hlSearchFrom = null;
             }
+            hubSearchFrom.setSelectLink(null);
         }
+        clearResults();
 
         hubSearchFrom = hub;
         if (hubSearchFrom != null) {
-            connectToHub(hubSearchFrom);
             hlSearchFrom = hubSearchFrom.onNewList(onEvent -> OAObjectSearchModel.this.getSearchResults().clear());
         }
+        
+        if (hubSearchFrom != null) {
+            final OA oa = OARuntime.oa(ctype);
+            final Hub<T> hubModel = model.getContextHub();
+            Hub<?> hubMaster = hubModel.getMasterHub(); 
+            OALinkInfo liMasterToDetail = null;
+            
+            if (hubMaster == null && model != null) {
+                // might be O2M2O, which does not have a hubMaster (hubModel created using HubMerger from hubMaster)
+                // example:  Order 1->M OrderContact M->1 Contact
+                hubMaster = model.getFromHub();
+                if (hubMaster != null) {
+                    String sx = model.getFromLinkProperty();
+                    liMasterToDetail = oa.info(hubMaster).getLinkInfo(sx);
+                }
+            }
+            else {
+                liMasterToDetail = oa.internal().hubs().detail().getLinkInfoFromMasterObjectToDetail(hubModel);
+            }
+            
+            if (liMasterToDetail != null && liMasterToDetail.getPrivateMethod()) {
+                liMasterToDetail = null;
+            }
+
+            switch (configType) {
+            case Standalone:
+                hubSearchFrom.setSelectLink(null, hubModel, null, true, true, false); // set hubModel.ao
+                break;
+            case LinkOnly:
+                hubSearchFrom.setSelectLink(null, hubModel, null, true, true, false); // set hubModel.ao
+                break;
+            case DetailOne:
+                hubSearchFrom.setSelectLink(null, hubMaster, liMasterToDetail.getName(), true, true, false);
+                break;
+            case DetailManyNoLinkTo:
+                //qqq was: hubMultiSelect = new Hub<T>(type);
+                hubSearchFrom.setSelectLink(getMultiSelectHub(), hubModel);
+                break;
+            case DetailManyWithLinkTo:
+                hubSearchFrom.setSelectLink(null, hubModel, null, true, true, false);
+                break;
+            case O2M2O:
+                //qqqq was: hubMultiSelect = new Hub<T>(type);
+                hubSearchFrom.setSelectLink(getMultiSelectHub(), hubMaster, liMasterToDetail.getName());
+                break;
+            }
+        }
+        
     }
 
     public OAFinder<?, T> getFinder() {
@@ -123,28 +149,71 @@ public class OAObjectSearchModel<T extends OAObject> {
     }
 
     public void performSearch() {
-        //qqqqqqqqqq this needs to be abstract ??
-//qqqqqqqqqqqqqqqqqvvvvvvvvvvvvv this wont be called        
-        useSearchResults();
+        //qqqqqqqqqq this needs to be abstract qqqqqqqqqq
+        OASelect<T> sel = getSearchResults().getSelect(true);
+        updateSelect(sel);;
         getSearchResults().select();
     }
 
-    public void reset() {
+    public void clearResults() {
         cancelSelect();
         if (hubSearchResults != null) hubSearchResults.clear();
-        if (hub != null) hub.setAO(null);
-        if (hubMultiSelect != null) hubMultiSelect.clear();
+        //was: if (hubMultiSelect != null) hubMultiSelect.clear();
     }
 
+    //qqqqqq make abstract'ish
+    /**
+     * Clear the search values.
+     */
+    public void clearSearchValues() {
+    }
+    
+    
     public void cancelSelect() {
         getSearchResults().cancelSelect();
     }
+    
+
+
+    
+    protected boolean configA(final OA oa) {
+        final Hub<T> hubChoices = model.getChoicesHub();
+        if (hubChoices == null) return false;
+        if (hubChoices.getLinkHub(true) == null) return false; 
+        
+        final Hub<T> hubModel = model.getContextHub();
+        Hub<?> hubMaster = hubModel.getMasterHub();
+        if (hubMaster == null) return false;
+
+        final OA oa = OARuntime.oa(ctype);
+        OALinkInfo liMasterToDetail = oa.internal().hubs().detail().getLinkInfoFromMasterObjectToDetail(hubModel);
+        
+        if (liMasterToDetail == null || liMasterToDetail.getType() != OALinkInfo.TYPE_ONE) return false;
+
+        //qqqqqqqq wip: change to setSearchFromHub(..)
+        hubSearchFrom = hubChoices;
+        
+        OAFilter<T> filter = new OAInFilter(model.getChoicesHub());
+        OAFilter<T> f = getExtraWhereFilter();
+        if (f != null) filter = new OAAndFilter(f, filter);
+        setExtraWhereFilter(filter);
+
+        getSearchResults().setSelectLink(null, hubMaster, liMasterToDetail.getName(), true, true, false);
+        
+        return true;
+    }
+    
+    
+    
+    
 
     protected void config() {
         if (bConfigCalled) return;
         bConfigCalled = true;
 
-        final OA oa = OARuntime.oa(type);
+        final Hub<T> hubModel = model.getContextHub();
+        final OA oa = OARuntime.oa(ctype);
+        
         Hub<?> hubMaster = hubModel.getMasterHub(); 
         OALinkInfo liMasterToDetail = null;
         
@@ -168,6 +237,10 @@ public class OAObjectSearchModel<T extends OAObject> {
         final Hub<?> hubLinkedTo = hubModel.getLinkHub(true);
         final OALinkInfo liLinkTo = hubLinkedTo == null ? null : hubLinkedTo.getOAObjectInfo().getLinkInfo(hubModel.getLinkPath(true));
         
+        
+        
+        
+        // PART 1: ConfigType
         configType = ConfigType.Standalone;
         if (liMasterToDetail != null) {
             if (liMasterToDetail.getType() == OALinkInfo.TYPE_ONE) {
@@ -176,15 +249,24 @@ public class OAObjectSearchModel<T extends OAObject> {
                 }
                 else configType = ConfigType.DetailOne;
             }
-            else if (liMasterToDetail.getType() == OALinkInfo.TYPE_MANY) {
-                configType = liLinkTo != null ? ConfigType.DetailManyLink : ConfigType.DetailMany;
+            else {
+                configType = liLinkTo != null ? ConfigType.DetailManyWithLinkTo : ConfigType.DetailManyNoLinkTo;
             }
         }
         else if (liLinkTo != null) {
             configType = ConfigType.LinkOnly;
         }
 
-        // PART 1: Filters
+        
+// add 
+// pick
+// nav        
+   
+        
+        
+        
+        
+        // PART 2: Filters
         // inFilter
         if (liLinkTo != null && liMasterToDetail != null && liMasterToDetail.getType() == OALinkInfo.TYPE_MANY) {
             if (hubSearchFrom == null) setSearchFromHub(hubModel.createSharedHub(false));
@@ -216,7 +298,7 @@ public class OAObjectSearchModel<T extends OAObject> {
         
         String sx = model.getExtraWhere(); //qqqqqqqqqqqq WIP:  where to put this?? put into AND + OAQueryFilter LOVE IT
         if (OAStr.isNotEmpty(sx)) {
-            filter = new OAQueryFilter(type, sx);
+            filter = new OAQueryFilter(ctype, sx);
             OAFilter<T> f = getExtraWhereFilter();
             if (f != null) filter = new OAAndFilter(f, filter);
             setExtraWhereFilter(filter);
@@ -233,7 +315,7 @@ public class OAObjectSearchModel<T extends OAObject> {
             }
         }
         
-        // PART 2: set HubSelectLink
+        // PART 3: set HubSelectLink
         // search results
         switch (configType) {
         case Standalone:
@@ -243,12 +325,12 @@ public class OAObjectSearchModel<T extends OAObject> {
             getSearchResults().setSelectLink(null, hubModel, null, true, true, false); // set hubModel.ao
             break;
         case DetailOne:
-            getSearchResults().setSelectLink(null, hubMaster, liMasterToDetail.getName(), true, true, false);
+            getSearchResults().setSelectLink(null, hubMaster, liMasterToDetail.getName(), true, true, false); // hubMaster.ao.ref
             break;
-        case DetailMany:
-            getSearchResults().setSelectLink(hubModel);
+        case DetailManyNoLinkTo:
+            getSearchResults().setSelectLink(hubModel); // add/remove with hub
             break;
-        case DetailManyLink:
+        case DetailManyWithLinkTo:
             getSearchResults().setSelectLink(null, hubModel, null, true, true, false);
             break;
         case O2M2O:
@@ -256,32 +338,10 @@ public class OAObjectSearchModel<T extends OAObject> {
             break;
         }
         
+//qqqqqqqqq setSelectLink for hubMultiSelect ??        
+        
 //qqqqqvvvvv could it be call setSelectLink on both? qqqq        
         // hubSearchFrom
-        if (hubSearchFrom != null) {
-            switch (configType) {
-            case Standalone:
-                getSearchFromHub().setSelectLink(null, hubModel, null, true, true, false); // set hubModel.ao
-                break;
-            case LinkOnly:
-                getSearchFromHub().setSelectLink(null, hubModel, null, true, true, false); // set hubModel.ao
-                break;
-            case DetailOne:
-                getSearchFromHub().setSelectLink(null, hubMaster, liMasterToDetail.getName(), true, true, false);
-                break;
-            case DetailMany:
-                //qqq was: hubMultiSelect = new Hub<T>(type);
-                getSearchFromHub().setSelectLink(getMultiSelectHub(), hubModel);
-                break;
-            case DetailManyLink:
-                getSearchFromHub().setSelectLink(null, hubModel, null, true, true, false);
-                break;
-            case O2M2O:
-                //qqqq was: hubMultiSelect = new Hub<T>(type);
-                getSearchFromHub().setSelectLink(getMultiSelectHub(), hubMaster, liMasterToDetail.getName());
-                break;
-            }
-        }
         
         // todo: Hub tree hubNodeSelected qqqqqqqqqqqqqqqqqqqqqqqqqqqqq 
         // todo: Calendar support qqqqqqqqqqqqq

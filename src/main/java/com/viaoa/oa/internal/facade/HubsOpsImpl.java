@@ -380,6 +380,11 @@ public class HubsOpsImpl implements HubsOps {
 			public <F extends OAObject> HubSelectLink<F, ? extends OAObject> getHubSelectLink(Hub<F> hubFrom) {
 				return srvc.getHubLinkService().getHubSelectLink(hubFrom);
 			}
+
+            @Override
+            public boolean removeHubSelectLink(Hub<?> hub) {
+                return srvc.getHubLinkService().removeHubSelectLink(hub);
+            }
 		};
 
 		return opsLink;

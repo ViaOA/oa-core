@@ -938,6 +938,28 @@ public abstract class HubLinkService {
 		if (hubx == null) return null;
 		return hubx.getSelectLink();
 	}	
+
+    public <T extends OAObject> boolean removeHubSelectLink(Hub<T> hub) {
+        HubSelectLink hsl = faHub.getHubDataUnique(hub).getSelectLink();
+        if (hsl != null) {
+            faHub.getHubDataUnique(hub).setSelectLink(null);
+            return true;
+        }
+        
+        Hub<T> hubx = callHubShareGetFirstSharedHub(hub, new OAFilter<Hub<T>>() {
+            @Override
+            public boolean isUsed(Hub<T> h) {
+                if (faHub.getHubDataUnique(h).getSelectLink() != null) {
+                    return true;
+                }
+                return false;
+            }
+        }, false, false);
+        if (hubx == null) return false;
+        hsl = faHub.getHubDataUnique(hubx).getSelectLink();
+        if (hsl != null) faHub.getHubDataUnique(hubx).setSelectLink(null);
+        return (hsl != null);
+    }   
 	
 	/**
 	 * Dependency hook used by this service for ObjectInfoGetObjectInfo behavior.

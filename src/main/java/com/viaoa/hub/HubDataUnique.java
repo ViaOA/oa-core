@@ -453,7 +453,9 @@ public class HubDataUnique<TYPE extends OAObject> implements java.io.Serializabl
 
     public void setSelectLink(HubSelectLink<?,?> hubSelectLink) {
         if (hubDataUniquex != null || hubSelectLink != null) {
-        	getHubDataUniquex().hubSelectLink = hubSelectLink;
+            HubDataUniquex ux = getHubDataUniquex();
+            if (ux.hubSelectLink != null) ux.hubSelectLink.close();
+            ux.hubSelectLink = hubSelectLink;
         }
     }
     

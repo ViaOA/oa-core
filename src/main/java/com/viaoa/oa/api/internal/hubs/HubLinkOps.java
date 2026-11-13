@@ -119,5 +119,6 @@ public interface HubLinkOps {
 		Hub<F> hubFrom, Hub<F> hubSelect, Hub<T> hubTo, String toProperty, 
 		boolean bFromAoOnly, boolean bToAoOnly, boolean bAllowRemove);
 	
+    public boolean removeHubSelectLink(Hub<?> hub);
 	public <F extends OAObject> HubSelectLink<F, ? extends OAObject> getHubSelectLink(Hub<F> hubFrom);
 }

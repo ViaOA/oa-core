@@ -2407,9 +2407,9 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	 * @param bCreateIfNull true to create if not present
 	 * @return OASelect instance
 	 */
-	public OASelect<? extends OAObject> getSelect(boolean bCreateIfNull) {
+	public OASelect<TYPE> getSelect(boolean bCreateIfNull) {
 		final OA oa = OARuntime.oa(this);
-		OASelect sel = oa.internal().hubs().select().getSelect((Hub<? extends OAObject>) this, true);
+		OASelect sel = oa.internal().hubs().select().getSelect((Hub<TYPE>) this, bCreateIfNull);
 		return sel;
 	}
 
@@ -2672,7 +2672,11 @@ public class Hub<TYPE extends OAObject> implements Serializable, List<TYPE>, Clo
 	}
 
 	public <T extends OAObject> void setSelectLink(Hub<T> hubTo) {  // add this.ao to hubTo
-		setSelectLink(null, hubTo, null, true, false, false);
+	    if (hubTo == null) {
+	        final OA oa = OARuntime.oa(this);
+	        oa.internal().hubs().link().removeHubSelectLink(this);    
+	    }
+	    else setSelectLink(null, hubTo, null, true, false, false);
 	}
 	
 	public <T extends OAObject> void setSelectLink(Hub<T> hubTo, String toProperty) {

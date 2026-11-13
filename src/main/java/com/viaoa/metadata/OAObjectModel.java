@@ -20,6 +20,9 @@ import com.viaoa.filter.OAAndFilter;
 import com.viaoa.filter.OAEqualPathFilter;
 import com.viaoa.filter.OAFilter;
 import com.viaoa.hub.Hub;
+import com.viaoa.hub.HubEvent;
+import com.viaoa.hub.HubListener;
+import com.viaoa.hub.HubListenerAdapter;
 import com.viaoa.hub.auto.HubAutoAdd;
 import com.viaoa.hub.copy.HubCopy;
 import com.viaoa.hub.merge.HubMerger;
@@ -93,7 +96,10 @@ qqqqqqqqq*/
 
     protected Hub<T> hub; // shared with active hub
 
+    protected Hub<T> hubMultiSelect;
+    
     protected OAObjectSearchModel<T> objectSearchModel;
+    private HubListener<T> hlHubContext; 
   
 //qqqqqqqq removing    
 //    protected HubAutoAdd<?, T> hubAutoAdd;    
@@ -114,8 +120,8 @@ qqqqqqqqq*/
     protected HubGroupBy<T, ?>[] hubGroupBys;
 
     private String extraWhere;
-    private OAFilter extraFilter;  //qqq was extraWhereFilter
-    private Hub hubSelectWhere;
+    private OAFilter<T> extraFilter;  //qqq was extraWhereFilter
+    private Hub<?> hubSelectWhere;
     private String selectWhereHubPath;
     
     private boolean bAutoCreated;
@@ -334,18 +340,25 @@ qqqqqqqqq*/
             if (hubChoices != null) ctype = hubChoices.getObjectClass();
             if (ctype == null && hubFrom != null && OAStr.isNotEmpty(fromLinkProperty)) {
                 Class<? extends OAObject> ct = hubFrom.getObjectClass();
-                OA oa = OARuntime.oa(ct);
-                OALinkInfo li = oa.info(ct).getLinkInfo(fromLinkProperty);
-                if (li != null) ctype = li.getToClass();
+                if (ct != null) {
+                    OA oa = OARuntime.oa(ct);
+                    OALinkInfo li = oa.info(ct).getLinkInfo(fromLinkProperty);
+                    if (li != null) ctype = li.getToClass();
+                }
             }            
         }
         this.ctype = ctype;
-
+        if (ctype == null) {
+            throw new IllegalArgumentException("Hub.objectClass is null and cant be determined");
+        }
         
         if (hubFrom != null && OAStr.isNotEmpty(fromLinkProperty)) {
             final OA oa = OARuntime.oa(hubFrom);
             final OAObjectInfo oi = oa.info(hubFrom);
             final OALinkInfo li = oi.getLinkInfo(fromLinkProperty);
+            if (li == null) {
+                throw new IllegalArgumentException("Hub fromLinkProperty is invalid, hubFrom="+hubFrom+", fromLinkProperty="+fromLinkProperty);
+            }
 
             if (li.getType() == li.TYPE_ONE) {
                 // check O2M2O                
@@ -367,19 +380,6 @@ qqqqqqqqq*/
                         Hub<T> hubCombined = createCombinedHub(hubChoices, hubContext);
                         hubChoices = hubCombined;
                     }
-
-/*qqqqqqqqqqq replaced with OAObjectSearchModel.hubMultiSelect                    
-                    hubAutoAdd = new HubAutoAdd(hubFrom, fromLinkProperty, hubContext, true) { //true=manual mode
-                        public boolean okToRemove(Object obj, Object propertyValue) {
-                            return super.okToRemove(obj, propertyValue); 
-                        }
-                        @Override
-                        public void update() {
-                            super.update();
-                        }
-                    };
-                    hubAutoAdd.update(); //qqqqqqqqqq manual mode, make automatic
-*/                    
                 }
                 else {
                     this.bAutoCreated = li.getAutoCreateNew();
@@ -469,6 +469,10 @@ qqqqqqqqq*/
         OALinkInfo liRecursive = oi.getRecursiveLinkInfo(OALinkInfo.MANY);
         bRecursive = (liRecursive != null);
 
+        if (hubContext.getObjectClass() == null) {
+            oa.internal().hubs().data().setObjectClass(hubContext, ctype);
+        }
+        
         String[] ss = oi.getGroupByPaths();
         bGroupBy = ss != null && ss.length > 0;
         if (bGroupBy) {
@@ -524,7 +528,30 @@ qqqqqqqqq*/
     public Hub<T> getContextHub() {
         return hubContext;
     }
-    
+
+    public Hub<T> getMultiSelectHub() {
+        if (hubMultiSelect == null) {
+            hubMultiSelect = new Hub<T>(ctype);
+            
+            hlHubContext = new HubListenerAdapter<>(hubContext) {
+                @Override
+                public void afterRemove(HubEvent<T> e) {
+                    hubMultiSelect.remove(e.getObject());
+                }
+                @Override
+                public void afterRemoveAll(HubEvent<T> e) {
+                    hubMultiSelect.clear();
+                }
+                @Override
+                public void afterNewList(HubEvent<T> e) {
+                    hubMultiSelect.clear();
+                }
+            };
+            hubContext.addListener(hlHubContext);
+        }
+        return hubMultiSelect;
+    }
+
     public boolean getUsesFilters() {
         return bFiltered;
     }
@@ -1397,8 +1424,12 @@ qqqqqqqqq*/
         return objectSearchModel;
     }
 
-    public Hub<T> getMultiSelectHub() {
-        return getObjectSearchModel().getMultiSelectHub();
+  //vvvvvvvvvvvvvvvvvvvvqqqqqqqqqqqq needs to remove any other wiring/listeners
+    public void close() {
+        if (hlHubContext != null) {
+            hubContext.removeListener(hlHubContext);
+            hlHubContext = null;
+        }
     }
     
 }
