@@ -13,8 +13,11 @@ import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
 
-public class OAObjectModelIR<T extends OAObject> {
+//qqqqqqqqqqqqqqqqqqqq COntext ONE or MANY decides Select,Add qqqqqqqqqqq
+//qqqqqqq add OAFinder    
 
+
+public class OAObjectModelIR<T extends OAObject> {
     protected Class<T> ctype;
     protected Hub<T> hubContext;
     protected Hub<T> hubChoices;  
@@ -25,26 +28,20 @@ public class OAObjectModelIR<T extends OAObject> {
     protected OA oaFrom;
     protected OAObjectInfo oiFrom;
     protected OALinkInfo liFrom;
-//qqqq    protected Hub<T> hubFromDetail;
 
     protected OA oa;
     protected OAObjectInfo oi;
     
-    
-    
-    protected Hub<T> hubCombinedChoices;    
-    
     protected Hub<T> hubSelectFrom;
     
-    
-    protected boolean bPrivateMany;
-
     protected boolean bAutoCreated;
-    private String extraWhere;
-    private OAFilter<T> extraFilter;  //qqq was extraWhereFilter
-    private Hub<?> hubSelectWhere;  // for type=ManyPrivate, used by OASelect
-    private String selectWhereHubPath;  // for type=ManyPrivate, used by OASelect
+    protected String extraWhere;
+    protected OAFilter<T> extraFilter;  //qqq was extraWhereFilter
+    protected Hub<?> hubSelectWhere;  // for type=ManyPrivate, used by OASelect
+    protected String selectWhereHubPath;  // for type=ManyPrivate, used by OASelect
     
+    protected Hub<?> hubAdoptWhere;
+    protected String adoptWhereLinkName;
     
     protected boolean bFiltered;
     protected boolean bGroupBy;
@@ -60,7 +57,7 @@ public class OAObjectModelIR<T extends OAObject> {
     protected Hub<T> hubFilterShare;
     protected Hub<T>[] hubFilters;
     
-    
+    protected final boolean bUseForSearch;
     
     
     protected static enum Type {
@@ -97,12 +94,18 @@ public class OAObjectModelIR<T extends OAObject> {
     protected Type type;
     
     
-    public OAObjectModelIR(Class<T> ctype, Hub<T> hubContext, Hub<T> hubChoices, final Hub<?> hubFrom, final String linkPropertyName) {
+    public OAObjectModelIR(
+        Class<T> ctype, 
+        Hub<T> hubContext, Hub<T> hubChoices, 
+        final Hub<?> hubFrom, final String linkPropertyName,
+        boolean bUseForSearch
+    ) {
         this.ctype = ctype;
         this.hubContext = hubContext;
         this.hubChoices = hubChoices;
         this.hubFrom = hubFrom;
         this.fromLinkProperty = linkPropertyName;
+        this.bUseForSearch =  bUseForSearch;
         config();
     }
 
@@ -129,6 +132,7 @@ public class OAObjectModelIR<T extends OAObject> {
         }
         
         configRecursiveAndFilters();
+        configAdoptWhere();
     }
 
 
@@ -162,16 +166,6 @@ public class OAObjectModelIR<T extends OAObject> {
             if (!liFrom.getToClass().equals(ctype)) {
                 throw new IllegalArgumentException("Hub fromLinkProperty.class does not match ctype");
             }
-            
-            Hub<T> hubx = hubFrom.getDetailHub(fromLinkProperty);
-            if (hubContext != null) {
-                if (!oaFrom.internal().hubs().share().isUsingSameSharedHub(hubx, hubContext)) {
-                    throw new IllegalArgumentException("hubFrom.detail and hubContext are not the same");
-                }
-            }
-            else {
-                hubContext = hubx;
-            }
         }
         else if (hubContext != null) {
             Class<?> cx = hubContext.getObjectClass();
@@ -198,7 +192,6 @@ public class OAObjectModelIR<T extends OAObject> {
             oa.internal().hubs().data().setObjectClass(hubContext, ctype);
         }
         
-//qqqqqqqqqqqqqqqqqqqq COntext ONE or MANY decides Select,Add qqqqqqqqqqq
         if (liFrom == null) {
             type = Type.None;
         }
@@ -207,9 +200,21 @@ public class OAObjectModelIR<T extends OAObject> {
             Hub<?> hubMaster = hubFrom.getMasterHub();
             if (hubMaster != null && hubFrom.isLinkObjectFor(liFrom.getName())) {
                 type = Type.OMO;
+                if (hubContext != null &&  hubContext.getMasterHub() != null) {
+                    throw new IllegalArgumentException("hubContext cant be detail for OMO");
+                }
             }
             else {
                 type = Type.One;
+                Hub<T> hubx = hubFrom.getDetailHub(fromLinkProperty);
+                if (hubContext != null) {
+                    if (!oaFrom.internal().hubs().share().isUsingSameSharedHub(hubx, hubContext)) {
+                        throw new IllegalArgumentException("hubFrom.detail and hubContext are not the same");
+                    }
+                }
+                else {
+                    hubContext = hubx;
+                }
             }
         }
         else { // Many
@@ -218,12 +223,19 @@ public class OAObjectModelIR<T extends OAObject> {
             }
             else {
                 type = Type.Many;
+                Hub<T> hubx = hubFrom.getDetailHub(fromLinkProperty);
+                if (hubContext != null) {
+                    if (!oaFrom.internal().hubs().share().isUsingSameSharedHub(hubx, hubContext)) {
+                        throw new IllegalArgumentException("hubFrom.detail and hubContext are not the same");
+                    }
+                }
+                else {
+                    hubContext = hubx;
+                }
             }
         }
     }
 
-
-    
     protected void configTypeNone() {
         if (hubContext == null) hubContext = new Hub<>(ctype);
     }
@@ -246,7 +258,7 @@ public class OAObjectModelIR<T extends OAObject> {
     protected void configTypeOMO() {
         OALinkInfo lix = oaFrom.internal().hubs().detail().getLinkInfoFromMasterObjectToDetail(hubFrom);
         String pp = lix.getName() + "." + liFrom.getName();
-        hubContext = new Hub<T>(ctype);
+        if (hubContext == null) hubContext = new Hub<T>(ctype);
         new HubMerger(hubFrom.getMasterHub(), hubContext, pp);
         
         configSelectFromHub();
@@ -261,11 +273,9 @@ public class OAObjectModelIR<T extends OAObject> {
         }
         configExtraFilterAndWhereQuery();
     }
-    
 
     protected void configTypeMany() {
         this.bAutoCreated = liFrom.getMatchHub() != null;
-        this.hubContext = hubFrom.getDetailHub(fromLinkProperty);
 
         configSelectFromHub();
         if (hubSelectFrom != null) {
@@ -284,10 +294,8 @@ public class OAObjectModelIR<T extends OAObject> {
         if (hubContext == null) hubContext = new Hub<T>(ctype);
         this.hubSelectWhere = hubFrom;
         this.selectWhereHubPath = fromLinkProperty;
+        configExtraFilterAndWhereQuery();
     }
-    
-    
-    
     
     protected void configSelectFromHub() {
         if (liFrom != null) {
@@ -331,7 +339,6 @@ public class OAObjectModelIR<T extends OAObject> {
         }
     }
 
-
     protected void configRecursiveAndFilters() {
         OALinkInfo liRecursive = oi.getRecursiveLinkInfo(OALinkInfo.MANY);
         bRecursive = (liRecursive != null);
@@ -354,7 +361,47 @@ public class OAObjectModelIR<T extends OAObject> {
                 hubFilters[i] = new Hub<T>(ctype);
             }
         }
-        
     }
-   
+
+    protected void configAdoptWhere() {
+        final Hub<?> hubLinkedTo = hubContext.getLinkHub(true);
+        final OALinkInfo liLinkTo = hubLinkedTo == null ? null : hubLinkedTo.getOAObjectInfo().getLinkInfo(hubContext.getLinkPath(true));
+        
+        if (liLinkTo != null) {
+            hubAdoptWhere = hubLinkedTo;
+            adoptWhereLinkName = liLinkTo.getName();
+//qqqqqqqqqq            
+//            model.ir.oa.internal().hubs().select().adoptWhereHub(search.getSearchResults(), liLinkTo.getName(), hubLinkedTo);
+        }
+        else {
+            Hub<?> hubMaster = hubContext.getMasterHub(); 
+            OALinkInfo liMasterToDetail = null;
+            
+            if (hubMaster == null) {
+                // might be O2M2O, which does not have a hubMaster (hubModel created using HubMerger from hubMaster)
+                // example:  Order 1->M OrderContact M->1 Contact
+                hubMaster = hubFrom;
+                if (hubMaster != null) {
+                    liMasterToDetail = oa.info(hubMaster).getLinkInfo(fromLinkProperty);
+                }
+            }
+            else {
+                liMasterToDetail = oa.internal().hubs().detail().getLinkInfoFromMasterObjectToDetail(hubContext);
+            }
+            if (liMasterToDetail != null && liMasterToDetail.getPrivateMethod()) {
+                liMasterToDetail = null;
+            }
+            
+            if (liMasterToDetail != null) {
+                hubAdoptWhere = hubMaster;
+                adoptWhereLinkName = liMasterToDetail.getName();
+//qqqqqqqqq                
+//                model.ir.oa.internal().hubs().select().adoptWhereHub(search.getSearchResults(), liMasterToDetail.getName(), hubMaster);
+            }
+        }        
+
+    }
+    
+    
+ 
 }

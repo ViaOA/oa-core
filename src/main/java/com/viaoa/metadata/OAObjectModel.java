@@ -15,24 +15,27 @@
  */
 package com.viaoa.metadata;
 
-import com.viaoa.annotation.OAClass;
-import com.viaoa.filter.OAAndFilter;
-import com.viaoa.filter.OAEqualPathFilter;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.viaoa.filter.OAFilter;
+import com.viaoa.find.OAFinder;
 import com.viaoa.hub.Hub;
 import com.viaoa.hub.HubEvent;
 import com.viaoa.hub.HubListener;
 import com.viaoa.hub.HubListenerAdapter;
-import com.viaoa.hub.auto.HubAutoAdd;
 import com.viaoa.hub.copy.HubCopy;
-import com.viaoa.hub.merge.HubMerger;
 import com.viaoa.hub.view.HubCombined;
 import com.viaoa.hub.view.HubFlattened;
 import com.viaoa.hub.view.HubGroupBy;
-import com.viaoa.lang.OAStr;
+import com.viaoa.metadata.OAObjectSearchModel.Type;
 import com.viaoa.oa.OA;
 import com.viaoa.object.OAObject;
 import com.viaoa.runtime.OARuntime;
+
+//qqqqqq todo: add hubNewObjectWizard
+
+//qqqqqqqqqq have displayName use linkPropertyName qqqqqqqqqqqqqq
 
 /**
  * Configuration container describing UI and behavioral permissions for
@@ -67,64 +70,18 @@ import com.viaoa.runtime.OARuntime;
  * </p>
  */
 public class OAObjectModel<T extends OAObject> {
-
-//qqqqqqqqqqq add hubNewObjectWizard
-
-//qqqqqqqqq <brainstorming>
-/*    
-    public static enum ModelType {
-        ListOnly,
-        DetailOne,
-        DetailMany,
-        MultiSelect,
-        O2M2O
-    }
-
-    public OAObjectModel<T> createMultiSelectObjectModel() {
-        
-        return null;
-    }
-qqqqqqqqq*/    
+    final OAObjectModelIR<T> ir;
     
-    protected Class<T> ctype;
+    private Hub<T> hubView; // shared with active hub
 
-    protected Hub<?> hubFrom;
-    protected String fromLinkProperty;
-    
-    protected Hub<T> hubContext; 
-    protected Hub<T> hubChoices; 
-
-    protected Hub<T> hub; // shared with active hub
-
-    protected Hub<T> hubMultiSelect;
-    
-    protected OAObjectSearchModel<T> objectSearchModel;
+    protected OAObjectSearchModel<T> searchModel;
     private HubListener<T> hlHubContext; 
-  
-//qqqqqqqq removing    
-//    protected HubAutoAdd<?, T> hubAutoAdd;    
+
+    protected Hub<T> hubMultiSelect; 
     
-    protected boolean bFiltered;
-    protected boolean bGroupBy;
-    protected boolean bRecursive;
-
-    protected Hub<T> hubRecursiveShare;
-    protected Hub<T> hubRecursiveRoot;
-    protected Hub<T> hubRecursiveFlat;
-    protected Hub<T> hubRecursive;
-
-    protected Hub<T> hubFilterShare;
-    protected Hub<T>[] hubFilters;
-
-    protected Hub<T> hubGroupByShare;
-    protected HubGroupBy<T, ?>[] hubGroupBys;
-
-    private String extraWhere;
-    private OAFilter<T> extraFilter;  //qqq was extraWhereFilter
-    private Hub<?> hubSelectWhere;
-    private String selectWhereHubPath;
+    protected OAFinder<?, T> finder; 
     
-    private boolean bAutoCreated;
+    protected List<OAObjectSearchModel<T>> alSearchModel;
     
     /**
      * Constant property-name identifier for the singular display-name field. Used
@@ -303,201 +260,54 @@ qqqqqqqqq*/
      */
     protected boolean bForJfc;
 
-    
     public OAObjectModel(T obj) {
-        this(null, new Hub<T>(obj));
+        this(null, new Hub<T>(obj), (Hub<T>) null);
     }
     public OAObjectModel(Class<T> ctype) {
-        this(ctype, new Hub<T>(ctype));
+        this(ctype, new Hub<T>(ctype), (Hub<T>) null);
     }
-    public OAObjectModel(Class<T> ctype, Hub<T> hub) {
-        this(ctype, hub, (Hub) null, null);
+    public OAObjectModel(Class<T> ctype, boolean bUseForSearch) {
+        this(ctype, null, null, null, null, bUseForSearch);
+    }
+    
+    public OAObjectModel(Class<T> ctype, Hub<T> hubContext) {
+        this(ctype, hubContext, null, (Hub) null, null, false);
+    }
+    public OAObjectModel(Class<T> ctype, Hub<T> hubContext, Hub<T> hubChoices) {
+        this(ctype, hubContext, hubChoices, (Hub) null, null, false);
     }
     public OAObjectModel(final OAObjectModel<?> modelFrom, final String linkPropertyName) {
-        this(null, null, modelFrom==null?null:modelFrom.getContextHub(), linkPropertyName);
+        this(null, null, null, modelFrom==null?null:modelFrom.getContextHub(), linkPropertyName, false);
     }
     public OAObjectModel(Class<T> ctype, final OAObjectModel<?> modelFrom, final String linkPropertyName) {
-        this(ctype, null, modelFrom==null?null:modelFrom.getContextHub(), linkPropertyName);
+        this(ctype, null, null, modelFrom==null?null:modelFrom.getContextHub(), linkPropertyName, false);
     }
     public OAObjectModel(Hub<T> hubChoices, final OAObjectModel<?> modelFrom, final String linkPropertyName) {
-        this(null, hubChoices, modelFrom==null?null:modelFrom.getContextHub(), linkPropertyName);
+        this(null, null, hubChoices, modelFrom==null?null:modelFrom.getContextHub(), linkPropertyName, false);
     }
+    
     public OAObjectModel(Class<T> ctype, Hub<T> hubChoices, final OAObjectModel<?> modelFrom, final String linkPropertyName) {
-        this(ctype, hubChoices, modelFrom==null?null:modelFrom.getContextHub(), linkPropertyName);
+        this(ctype, null, hubChoices, modelFrom==null?null:modelFrom.getContextHub(), linkPropertyName, false);
     }
-    public OAObjectModel(Class<T> ctype, Hub<T> hubChoices, final Hub<?> hubFrom, final String linkPropertyName) {
-        this.ctype = ctype;
-        config(ctype, hubChoices, hubFrom, linkPropertyName);
+    
+    public OAObjectModel( Class<T> ctype, Hub<T> hubContext, Hub<T> hubChoices, OAObjectModel<?> modelFrom, String linkPropertyName) {
+        this(ctype, hubContext, hubChoices, modelFrom==null?null:modelFrom.getContextHub(), linkPropertyName, false);
+    }
+    
+    public OAObjectModel(Class<T> ctype, final Hub<?> hubFrom, final String linkPropertyName) {
+        this(ctype, null, null, hubFrom, linkPropertyName, false);
+    }
+    
+    public OAObjectModel(
+        Class<T> ctype, 
+        Hub<T> hubContext, Hub<T> hubChoices, 
+        final Hub<?> hubFrom, final String linkPropertyName,
+        boolean bUseForSearch
+    ) {
+        ir = new OAObjectModelIR<>(ctype, hubContext, hubChoices, hubFrom, linkPropertyName, bUseForSearch);
         init();
     }
     
-    protected void config(Class<T> ctype, Hub<T> hubChoices, final Hub<?> hubFrom, final String fromLinkProperty) {
-        this.hubFrom = hubFrom;
-        this.fromLinkProperty = fromLinkProperty;
-        
-        this.hubChoices = hubChoices;
-        if (ctype == null) {
-            if (hubChoices != null) ctype = hubChoices.getObjectClass();
-            if (ctype == null && hubFrom != null && OAStr.isNotEmpty(fromLinkProperty)) {
-                Class<? extends OAObject> ct = hubFrom.getObjectClass();
-                if (ct != null) {
-                    OA oa = OARuntime.oa(ct);
-                    OALinkInfo li = oa.info(ct).getLinkInfo(fromLinkProperty);
-                    if (li != null) ctype = li.getToClass();
-                }
-            }            
-        }
-        this.ctype = ctype;
-        if (ctype == null) {
-            throw new IllegalArgumentException("Hub.objectClass is null and cant be determined");
-        }
-        
-        if (hubFrom != null && OAStr.isNotEmpty(fromLinkProperty)) {
-            final OA oa = OARuntime.oa(hubFrom);
-            final OAObjectInfo oi = oa.info(hubFrom);
-            final OALinkInfo li = oi.getLinkInfo(fromLinkProperty);
-            if (li == null) {
-                throw new IllegalArgumentException("Hub fromLinkProperty is invalid, hubFrom="+hubFrom+", fromLinkProperty="+fromLinkProperty);
-            }
-
-            if (li.getType() == li.TYPE_ONE) {
-                // check O2M2O                
-                Hub<?> hubMaster = hubFrom.getMasterHub();
-                if (hubMaster != null && hubFrom.isLinkObjectFor(li.getName())) {
-                    OALinkInfo lix = oa.internal().hubs().detail().getLinkInfoFromMasterObjectToDetail(hubFrom);
-                    String pp = lix.getName() + "." + li.getName();
-                    if (hubContext == null) hubContext = new Hub<T>(ctype);
-                    new HubMerger(hubMaster, hubContext, pp);
-
-                    String s = li.getSelectFromPath();
-                    if (OAStr.isEmpty(s)) s = li.getMergerPath();
-                    if (OAStr.isNotEmpty(s)) {
-                        Hub<T> hubMerged = new Hub<>(ctype);
-                        new HubMerger(hubFrom, hubMerged, s, false);
-                        hubChoices = hubMerged;
-                    }
-                    if (hubChoices != null) {
-                        Hub<T> hubCombined = createCombinedHub(hubChoices, hubContext);
-                        hubChoices = hubCombined;
-                    }
-                }
-                else {
-                    this.bAutoCreated = li.getAutoCreateNew();
-                    
-                    this.hubContext = hubFrom.getDetailHub(fromLinkProperty);
-    
-                    String s = li.getSelectFromPath();
-                    if (OAStr.isEmpty(s)) s = li.getMergerPath();
-                    if (OAStr.isNotEmpty(s)) {
-                        Hub<T> hubMerged = new Hub<>(ctype);
-                        new HubMerger(hubFrom, hubMerged, s, false);
-                        hubChoices = hubMerged;
-                    }
-                    if (hubChoices != null) {
-                        Hub<T> hubCombined = createCombinedHub(hubChoices, hubContext);
-                        hubCombined.setLinkHub(hubFrom, fromLinkProperty);
-                        hubChoices = hubCombined;
-                    }
-                }
-            }
-            else {
-                if (li.getPrivateMethod()) {
-                    if (hubContext == null) hubContext = new Hub<T>(ctype);
-                    this.hubSelectWhere = hubFrom;
-                    this.selectWhereHubPath = fromLinkProperty;
-                }
-                else {
-                    this.bAutoCreated = li.getMatchHub() != null;
-                    this.hubContext = hubFrom.getDetailHub(fromLinkProperty);
-                    String s = li.getSelectFromPath();
-                    if (OAStr.isEmpty(s)) s = li.getMergerPath();
-                    if (OAStr.isNotEmpty(s)) {
-                        Hub<T> hubMerged = new Hub<>(ctype);
-                        new HubMerger(hubFrom, hubMerged, s, false);
-                        Hub<T> hubCombined = createCombinedHub(hubMerged, hubContext);
-                        hubChoices = hubCombined;
-                    }
-                    else {
-                        if (hubChoices != null) {
-                            Hub<T> hubCombined = createCombinedHub(hubChoices, hubContext);
-                            hubChoices = hubCombined;
-                        }
-                    }
-                }
-            }
-            this.hubChoices = hubChoices;
-        
-            OAFilter<T> filter = null;
-    
-            String path = li.getEqualPath();
-            OALinkInfo liRev = li.getReverseLinkInfo();
-            if (liRev != null) {
-                String path2 = liRev.getEqualPath();
-                if (OAStr.isNotEmpty(path) || OAStr.isNotEmpty(path2)) {
-                    OAEqualPathFilter filterEqualPath = new OAEqualPathFilter(hubFrom, path, path2);
-                    if (filter == null) filter = filterEqualPath;
-                    else filter = new OAAndFilter(filter, filterEqualPath);
-    
-                    extraFilter = filter; // qqqqq move from *Search class ??
-                }
-            }
-            String filterName = li.getFilterName();
-    
-            String s = li.getSelectFromPath();
-            if (OAStr.isNotEmpty(s)) {
-                if (OAStr.isNotEmpty(filterName)) {
-                    if (OAStr.indexOf(s.toUpperCase(), ":" + filterName.toUpperCase(), true) >= 0) {
-                        filterName = null;
-                    }
-                }
-            }
-    
-            if (OAStr.isNotEmpty(filterName)) {
-                extraWhere = OAStr.append(extraWhere, ":" + filterName, " AND ");
-            }
-        }
-        else {
-            hubContext = hubChoices;
-            this.hubChoices = null;
-            if (hubContext == null) hubContext = new Hub<>(ctype);
-        }
-        
-        
-        final OA oa = OARuntime.oa(ctype);
-        final OAObjectInfo oi = oa.info(ctype);
-        
-        OALinkInfo liRecursive = oi.getRecursiveLinkInfo(OALinkInfo.MANY);
-        bRecursive = (liRecursive != null);
-
-        if (hubContext.getObjectClass() == null) {
-            oa.internal().hubs().data().setObjectClass(hubContext, ctype);
-        }
-        
-        String[] ss = oi.getGroupByPaths();
-        bGroupBy = ss != null && ss.length > 0;
-        if (bGroupBy) {
-            hubGroupBys = new HubGroupBy[ss.length];
-        }
-
-        Class[] cs = null;
-        OAClass oac = (OAClass) ctype.getAnnotation(OAClass.class);
-        if (oac != null) {
-            cs = oac.filterClasses();
-        }
-        bFiltered = cs != null && cs.length > 0;
-        if (bFiltered) {
-            hubFilters = new Hub[cs.length];
-            for (int i = 0; i < cs.length; i++) {
-                hubFilters[i] = new Hub<T>(ctype);
-            }
-        }
-    }
-
-/*qqqqqqqqqq replacing    
-    public HubAutoAdd<?, T> getHubAutoAdd() {
-        return hubAutoAdd;
-    }
-*/    
     protected void init() {
         // if (isLoading()) return;
         setAllowGotoList(true);
@@ -522,18 +332,21 @@ qqqqqqqqq*/
     }
 
     public Hub<T> getChoicesHub() {
-        return hubChoices;
+        return ir.hubChoices;
     }
 
     public Hub<T> getContextHub() {
-        return hubContext;
+        return ir.hubContext;
     }
 
+    public Hub<T> getHub() {
+        return ir.hubContext;
+    }
+    
     public Hub<T> getMultiSelectHub() {
         if (hubMultiSelect == null) {
-            hubMultiSelect = new Hub<T>(ctype);
-            
-            hlHubContext = new HubListenerAdapter<>(hubContext) {
+            hubMultiSelect = new Hub<T>(ir.ctype);
+            hlHubContext = new HubListenerAdapter<>(ir.hubContext) {
                 @Override
                 public void afterRemove(HubEvent<T> e) {
                     hubMultiSelect.remove(e.getObject());
@@ -547,109 +360,109 @@ qqqqqqqqq*/
                     hubMultiSelect.clear();
                 }
             };
-            hubContext.addListener(hlHubContext);
+            ir.hubContext.addListener(hlHubContext);
         }
         return hubMultiSelect;
     }
 
     public boolean getUsesFilters() {
-        return bFiltered;
+        return ir.bFiltered;
     }
 
     public boolean getUsesGroupBy() {
-        return bGroupBy;
+        return ir.bGroupBy;
     }
 
     public boolean getUsesRecursive() {
-        return bRecursive;
+        return ir.bRecursive;
     }
 
-    public Hub<T> getHub() {
-        if (hub == null) {
-            hub = new Hub<T>();
-            if (bFiltered) hub.setSharedHub(getFilterShareHub(), true);
-            else if (bGroupBy) hub.setSharedHub(getGroupByShareHub(), true);
-            else if (bRecursive) hub.setSharedHub(getRecursiveShareHub(), true);
-            else hub.setSharedHub(hubContext, true);
+    public Hub<T> getViewHub() {
+        if (hubView == null) {
+            hubView = new Hub<T>(ir.ctype);
+            if (ir.bFiltered) hubView.setSharedHub(getFilterShareHub(), true);
+            else if (ir.bGroupBy) hubView.setSharedHub(getGroupByShareHub(), true);
+            else if (ir.bRecursive) hubView.setSharedHub(getRecursiveShareHub(), true);
+            else hubView.setSharedHub(ir.hubContext, true);
         }
-        return hub;
+        return hubView;
     }
 
     public Hub<T> getRecursiveShareHub() {
-        if (bRecursive && hubRecursiveShare == null) {
-            hubRecursiveShare = new Hub<T>(ctype);
-            hubRecursiveShare.setSharedHub(getRecursiveRootHub(), true);
+        if (ir.bRecursive && ir.hubRecursiveShare == null) {
+            ir.hubRecursiveShare = new Hub<T>(ir.ctype);
+            ir.hubRecursiveShare.setSharedHub(getRecursiveRootHub(), true);
         }
-        return hubRecursiveShare;
+        return ir.hubRecursiveShare;
     }
 
     public Hub<T> getRecursiveRootHub() {
-        if (!bRecursive) return null;
-        if (hubRecursiveRoot == null) {
-            hubRecursiveRoot = new Hub<T>(ctype);
-            hubRecursiveRoot.setSharedHub(hubContext, true);
+        if (!ir.bRecursive) return null;
+        if (ir.hubRecursiveRoot == null) {
+            ir.hubRecursiveRoot = new Hub<T>(ir.ctype);
+            ir.hubRecursiveRoot.setSharedHub(ir.hubContext, true);
         }
-        return hubRecursiveRoot;
+        return ir.hubRecursiveRoot;
     }
 
     public Hub<T> getRecursiveHub() {
-        if (bRecursive && hubRecursive == null) {
-            hubRecursive = new Hub<T>(ctype);
-            hubRecursive.setSharedHub(getRecursiveRootHub(), true);
+        if (ir.bRecursive && ir.hubRecursive == null) {
+            ir.hubRecursive = new Hub<T>(ir.ctype);
+            ir.hubRecursive.setSharedHub(getRecursiveRootHub(), true);
         }
-        return hubRecursive;
+        return ir.hubRecursive;
     }
 
     public Hub<T> getRecursiveFlattenedHub() {
-        if (!bRecursive) return null;
-        if (hubRecursiveFlat == null) {
-            hubRecursiveFlat = new Hub<T>(ctype);
-            HubFlattened hf = new HubFlattened(hubContext, hubRecursiveFlat);
+        if (!ir.bRecursive) return null;
+        if (ir.hubRecursiveFlat == null) {
+            ir.hubRecursiveFlat = new Hub<T>(ir.ctype);
+            HubFlattened hf = new HubFlattened(ir.hubContext, ir.hubRecursiveFlat);
         }
-        return hubRecursiveFlat;
+        return ir.hubRecursiveFlat;
     }
 
     public void useRecursiveRootHub() {
-        if (!bRecursive) return;
+        if (!ir.bRecursive) return;
         getRecursiveShareHub().setSharedHub(getRecursiveRootHub(), true);
     }
 
     public void useRecursiveFlattenedHub() {
-        if (!bRecursive) return;
+        if (!ir.bRecursive) return;
         getRecursiveShareHub().setSharedHub(getRecursiveFlattenedHub(), true);
     }
 
     public Hub<T> getGroupByShareHub() {
-        if (bGroupBy && hubGroupByShare == null) {
-            hubGroupByShare = new Hub<T>(ctype);
+        if (ir.bGroupBy && ir.hubGroupByShare == null) {
+            ir.hubGroupByShare = new Hub<T>(ir.ctype);
             useGroupByHub(null);
         }
-        return hubGroupByShare;
+        return ir.hubGroupByShare;
     }
 
     public Hub<T> getGroupByHub(int pos) {
-        if (!bGroupBy || pos < 0 || pos >= hubGroupBys.length) return null;
+        if (!ir.bGroupBy || pos < 0 || pos >= ir.hubGroupBys.length) return null;
 
-        if (hubGroupBys[pos] == null) {
-            final OA oa = OARuntime.oa(ctype);
-            OAObjectInfo oi = oa.info(ctype);
+        if (ir.hubGroupBys[pos] == null) {
+            final OA oa = OARuntime.oa(ir.ctype);
+            OAObjectInfo oi = oa.info(ir.ctype);
             String[] ss = oi.getGroupByPaths();
 
-            Hub<T> hx = bRecursive ? getRecursiveShareHub() : getContextHub();
+            Hub<T> hx = ir.bRecursive ? getRecursiveShareHub() : getContextHub();
             HubGroupBy<T, ?> hgb = new HubGroupBy<>(hx, ss[pos]);
-            hubGroupBys[pos] = hgb;
+            ir.hubGroupBys[pos] = hgb;
         }
-        return hubGroupBys[pos].getDetailHub();
+        return ir.hubGroupBys[pos].getDetailHub();
     }
 
     public void useGroupByHub(Hub<T> hub) {
-        if (!bGroupBy) return;
+        if (!ir.bGroupBy) return;
         if (hub == null) {
-            if (bRecursive) getGroupByShareHub().setSharedHub(getRecursiveShareHub(), true);
+            if (ir.bRecursive) getGroupByShareHub().setSharedHub(getRecursiveShareHub(), true);
             else getGroupByShareHub().setSharedHub(getContextHub(), true);
         }
         else {
-            for (HubGroupBy<T, ?> hgb : hubGroupBys) {
+            for (HubGroupBy<T, ?> hgb : ir.hubGroupBys) {
                 if (hgb == null) continue;
                 Hub<T> hx = hgb.getDetailHub();
                 if (hx != hub) continue;
@@ -660,45 +473,45 @@ qqqqqqqqq*/
     }
 
     public Hub<?> getGroupedByHub(int pos) {
-        if (!bGroupBy) return null;
-        if (hubGroupBys == null || pos < 0 || pos >= hubGroupBys.length) return null;
-        HubGroupBy<T, ?> hgb = hubGroupBys[pos];
+        if (!ir.bGroupBy) return null;
+        if (ir.hubGroupBys == null || pos < 0 || pos >= ir.hubGroupBys.length) return null;
+        HubGroupBy<T, ?> hgb = ir.hubGroupBys[pos];
         if (hgb == null) {
             getGroupByHub(pos);
-            hgb = hubGroupBys[pos];
+            hgb = ir.hubGroupBys[pos];
         }
         return hgb.getMasterHub();
     }
 
     public Hub<T> getHubToFilter() {
         Hub<T> h = null;
-        if (bGroupBy) h = getGroupByShareHub();
-        else if (bRecursive) h = getRecursiveShareHub();
+        if (ir.bGroupBy) h = getGroupByShareHub();
+        else if (ir.bRecursive) h = getRecursiveShareHub();
         else h = getContextHub();
         return h;
     }
 
     public Hub<T> getFilterShareHub() {
-        if (bFiltered && hubFilterShare == null) {
-            hubFilterShare = new Hub<T>(ctype);
+        if (ir.bFiltered && ir.hubFilterShare == null) {
+            ir.hubFilterShare = new Hub<T>(ir.ctype);
             useFilterHub(null);
         }
-        return hubFilterShare;
+        return ir.hubFilterShare;
     }
 
     public Hub<T> getFilterShareHub(int pos) {
-        if (!bFiltered || pos < 0) return null;
-        if (hubFilters == null || pos >= hubFilters.length) return null;
-        return hubFilters[pos];
+        if (!ir.bFiltered || pos < 0) return null;
+        if (ir.hubFilters == null || pos >= ir.hubFilters.length) return null;
+        return ir.hubFilters[pos];
     }
 
     public void useFilterHub(Hub<T> hub) {
-        if (!bFiltered) return;
+        if (!ir.bFiltered) return;
         if (hub == null) {
             getFilterShareHub().setSharedHub(getHubToFilter(), true);
         }
         else {
-            for (Hub<T> h : hubFilters) {
+            for (Hub<T> h : ir.hubFilters) {
                 if (h != hub) continue;
                 getFilterShareHub().setSharedHub(hub, true);
                 break;
@@ -706,21 +519,26 @@ qqqqqqqqq*/
         }
     }
 
-    public T getAO() {
-        return getHub().getAO();
+    public OAFinder<?, T> getFinder() {
+        return finder;
+    }
+    public <F extends OAObject> void setFinder(OAFinder<F, T> finder) {
+        this.finder = finder;
+    }
+    
+    
+    public T getViewAO() {
+        return getViewHub().getAO();
     }
 
     public HubCopy<T> createHubCopy() {
-        Hub<T> hubx;
-        Class<T> c = getHub().getObjectClass();
-        if (c == null) hubx = new Hub<T>();
-        else hubx = new Hub(c);
-        HubCopy<T> hc = new HubCopy<>(getHub(), hubx, true);
+        Hub<T> hubx = new Hub<>(ir.ctype);
+        HubCopy<T> hc = new HubCopy<>(getContextHub(), hubx, true);
         return hc;
     }
 
     public OAObjectModel<T> createCopy() {
-        OAObjectModel<T> mod = new OAObjectModel(null, createHubCopy().getHub());
+        OAObjectModel<T> mod = new OAObjectModel(ir.ctype, createHubCopy().getHub(), (Hub<T>) null);
         return mod;
     }
 
@@ -1359,13 +1177,13 @@ qqqqqqqqq*/
     }
 
     public boolean performCallback() {
-        OA oa = OARuntime.oa(getHub());
+        OA oa = OARuntime.oa(getViewHub());
 //qqqqvvvvvvvvvvvvvvvvv need to adjust for O2M2O        
         OALinkInfo li = oa.internal().hubs().detail().getLinkInfoFromDetailToMaster(getContextHub());
         if (li == null) {
-            Hub<?> hx = hub.getLinkHub(false);
+            Hub<?> hx = hubView.getLinkHub(false);
             if (hx == null) return false;
-            String name = oa.internal().hubs().link().getLinkToProperty(hub);
+            String name = oa.internal().hubs().link().getLinkToProperty(hubView);
             oa.internal().objects().rules().onObjectCallbackModel(hx.getObjectClass(), name, this);
         }
         else {
@@ -1394,42 +1212,75 @@ qqqqqqqqq*/
      * Add this to Hub searching.
      */
     public String getExtraWhere() {
-        return extraWhere;
+        return ir.extraWhere;
     }
     /**
      * Add this to Hub searching.
      */
     public OAFilter<T> getExtraFilter() {
-        return extraFilter;
+        return ir.extraFilter;
     }
     public Hub<?> getSelectWhereHub() {
-        return hubSelectWhere;
+        return ir.hubSelectWhere;
     }
     public String getSelectWhereHubPath() {
-        return selectWhereHubPath;
+        return ir.selectWhereHubPath;
     }
 
     public Hub<?> getFromHub() {
-        return hubFrom;
+        return ir.hubFrom;
     }
     public String getFromLinkProperty() {
-        return fromLinkProperty;
+        return ir.fromLinkProperty;
     }
 
-    public OAObjectSearchModel<T> getObjectSearchModel() {
-        if (objectSearchModel != null) return objectSearchModel;
-        
-        objectSearchModel = new OAObjectSearchModel(this);
-        
-        return objectSearchModel;
+    protected OAObjectSearchModel<T> getSearchModel(Type type) {
+        if (alSearchModel == null) {
+            alSearchModel = new ArrayList<>();
+        }
+        else {
+            for (OAObjectSearchModel<T> sm : alSearchModel) {
+                if (sm.type == type) return sm;
+            }
+        }
+        OAObjectSearchModel<T> searchModel = createSearchModel(type);
+        alSearchModel.add(searchModel);
+        return searchModel;
     }
 
-  //vvvvvvvvvvvvvvvvvvvvqqqqqqqqqqqq needs to remove any other wiring/listeners
+    protected OAObjectSearchModel<T> createSearchModel(Type type) {
+        OAObjectSearchModel<T> searchModel = new OAObjectSearchModel<>(this, type);
+        return searchModel;
+    }    
+    
+    
+    public OAObjectSearchModel<T> getSearchModel() {
+        OAObjectSearchModel<T> searchModel = getSearchModel(OAObjectSearchModel.Type.DefaultSearch);
+        return searchModel;
+    }
+    public OAObjectSearchModel<T> getInnerSearchModel() {
+        OAObjectSearchModel<T> searchModel = getSearchModel(OAObjectSearchModel.Type.InnerHubContextSearch);
+        return searchModel;
+    }
+    public OAObjectSearchModel<T> getSharedSearchModel() { 
+        OAObjectSearchModel<T> searchModel = getSearchModel(OAObjectSearchModel.Type.HubContextSharedWithSearchResults);
+        return searchModel;
+    }
+    
+    
+  //vvvvqqqqq needs to remove any other wiring/listeners
     public void close() {
         if (hlHubContext != null) {
-            hubContext.removeListener(hlHubContext);
+            ir.hubContext.removeListener(hlHubContext);
             hlHubContext = null;
         }
+    }
+
+    public OAFilter<T> getFilter() {
+        return ir.extraFilter;
+    }
+    public void setFilter(OAFilter<T> filter) {
+        ir.extraFilter = filter;
     }
     
 }

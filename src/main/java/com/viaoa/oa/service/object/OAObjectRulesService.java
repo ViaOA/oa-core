@@ -1643,19 +1643,22 @@ public abstract class OAObjectRulesService {
 	protected void processObjectCallback(OAObjectCallback cb) {
 		if (cb == null) return;
 		_processObjectCallback(cb);
-
-		if ((!cb.getAllowed() || cb.getThrowable() != null) && cb.isUsed(CheckType.SuperAdminOverride)) {
-			Class<? extends OAObject> c = cb.getCalcClass();
-			if (c != null) {
-				OA oa = OARuntime.oa(c);
-			    if (oa.modelUser().isSuperAdmin()) {
-			    	cb.setThrowable(null);
-			    	cb.setAllowed(true);
-				}
-			}
-		}
+		clearIfSuperAdmin(cb);
 	}
 
+	protected void clearIfSuperAdmin(OAObjectCallback cb) {
+        if ((!cb.getAllowed() || cb.getThrowable() != null) && cb.isUsed(CheckType.SuperAdminOverride)) {
+            Class<? extends OAObject> c = cb.getCalcClass();
+            if (c != null) {
+                OA oa = OARuntime.oa(c);
+                if (oa.modelUser().isSuperAdmin()) {
+                    cb.setThrowable(null);
+                    cb.setAllowed(true);
+                }
+            }
+        }
+	}
+	
 	private class ProcessInfo {
 		final OAObjectCallback cb;
 		final Hub hubThis;
@@ -2323,6 +2326,7 @@ public abstract class OAObjectRulesService {
 			}
 		}
 		_processObjectCallbackForHubListeners(objectCallback, hub, oaObj, propertyName, oldValue, newValue);
+		clearIfSuperAdmin(objectCallback);
 	}
 
 	/**
@@ -2812,7 +2816,12 @@ public abstract class OAObjectRulesService {
 		return b;
 	}
 
-	protected void processHubOnlyCallback(OAObjectCallback cb, Hub<? extends OAObject> hub, OAObject valueObj) {
+    protected void processHubOnlyCallback(OAObjectCallback cb, Hub<? extends OAObject> hub, OAObject valueObj) {
+        _processHubOnlyCallback(cb, hub, valueObj);
+        clearIfSuperAdmin(cb);
+    }
+	
+	protected void _processHubOnlyCallback(OAObjectCallback cb, Hub<? extends OAObject> hub, OAObject valueObj) {
 	    if (cb == null || hub == null || !cb.getAllowed()) return;
 
 	    Class<? extends OAObject> clazz = hub.getObjectClass();
@@ -2850,8 +2859,12 @@ public abstract class OAObjectRulesService {
 	        evaluateUser(cb, oi.getModelUserEnabledProperty(), oi.getModelUserEnabledValue());
 	    }
 	}
+    protected void processClassOnlyCallback(final OAObjectCallback cb, final Class<? extends OAObject> clazz, OAObject valueObj) {
+        _processClassOnlyCallback(cb, clazz, valueObj);
+        clearIfSuperAdmin(cb);
+    }
 
-	protected void processClassOnlyCallback(final OAObjectCallback cb, final Class<? extends OAObject> clazz, OAObject valueObj) {
+	protected void _processClassOnlyCallback(final OAObjectCallback cb, final Class<? extends OAObject> clazz, OAObject valueObj) {
 	    if (cb == null || clazz == null || !cb.getAllowed()) return;
 
 	    OA oa = OARuntime.oa(clazz);
